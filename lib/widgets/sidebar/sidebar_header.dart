@@ -19,7 +19,7 @@ class SidebarHeader extends StatelessWidget {
     
     return Container(
       height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 4 : 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
