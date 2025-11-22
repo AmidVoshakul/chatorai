@@ -9,6 +9,8 @@ class AppTheme {
   static const Color ubuntuLightGray = Color(0xFFEEEEEE);
   static const Color ubuntuDarkGray = Color(0xFF2A2A2A);
   static const Color ubuntuAccent = Color(0xFF6B008E); // Deeper purple
+  static const Color ubuntuLightBorderColor = Color(0xFFF5F5F5); // Light gray for light theme
+  static const Color ubuntuDarkBorderColor = Color(0xFF202020); // Dark border color for dark theme
 
 // Light theme
   static ThemeData lightTheme = ThemeData(
@@ -55,7 +57,7 @@ class AppTheme {
       error: Colors.red,
     ),
     iconTheme: IconThemeData(color: const Color(0xFF444444)),
-    dividerColor: const Color(0xFFE0E0E0),
+    dividerColor: ubuntuLightBorderColor,
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: ubuntuLight,
       selectedItemColor: ubuntuOrange,
@@ -146,7 +148,7 @@ class AppTheme {
       error: Colors.red,
     ),
     iconTheme: IconThemeData(color: const Color(0xFFE0E0E0)),
-    dividerColor: const Color(0xFF333333),
+    dividerColor: ubuntuDarkBorderColor,
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: const Color(0xFF0A0A0A),
       selectedItemColor: ubuntuOrange,
