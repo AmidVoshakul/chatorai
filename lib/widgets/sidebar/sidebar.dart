@@ -20,7 +20,7 @@ class Sidebar extends StatelessWidget {
     final theme = themeProvider.getTheme();
 
     return AnimatedContainer(
-      width: isCollapsed ? 80 : width,
+      width: isCollapsed ? 58 : width,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
@@ -44,7 +44,7 @@ class Sidebar extends StatelessWidget {
           // Header
           Container(
             height: 64,
-            padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 12 : 16),
+            padding: EdgeInsets.only(left: isCollapsed ? 4 : 16, right: 6),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
@@ -54,6 +54,7 @@ class Sidebar extends StatelessWidget {
               ),
             ),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 if (!isCollapsed)
                   Flexible(
@@ -62,20 +63,23 @@ class Sidebar extends StatelessWidget {
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.textTheme.headlineSmall?.color,
-                        fontSize: 18, // Reduced font size for better fit
+                        fontSize: 18,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                if (isCollapsed) const SizedBox(width: 4), // Small spacer for collapsed state
-                IconButton(
-                  icon: Icon(
-                    isCollapsed ? Icons.menu_open : Icons.menu,
-                    color: theme.iconTheme.color,
-                    size: 20, // Reduced icon size
+                if (isCollapsed) const SizedBox(),
+                Container(
+                  margin: EdgeInsets.zero,
+                  child: IconButton(
+                    icon: Icon(
+                      isCollapsed ? Icons.menu_open : Icons.menu,
+                      color: theme.iconTheme.color,
+                      size: 20,
+                    ),
+                    onPressed: onToggleSidebar,
+                    padding: EdgeInsets.all(8), // Center the icon within hover background
                   ),
-                  onPressed: onToggleSidebar,
-                  padding: EdgeInsets.zero, // Remove default padding
                 ),
               ],
             ),

@@ -15,7 +15,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   bool _isSidebarCollapsed = false;
   final double _sidebarWidth = 280;
-  final double _sidebarCollapsedWidth = 80;
+  final double _sidebarCollapsedWidth = 40;
 
   void _handleSendMessage(String message) {
     // Handle sending message
