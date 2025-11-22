@@ -429,6 +429,18 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
             ),
             IconButton(
               icon: Icon(
+                Icons.share,
+                size: 16,
+                color: theme.iconTheme.color?.withOpacity(0.7),
+              ),
+              onPressed: () {
+                // TODO: Share message
+              },
+              tooltip: 'Share',
+              splashRadius: 20,
+            ),
+            IconButton(
+              icon: Icon(
                 Icons.thumb_up,
                 size: 16,
                 color: theme.iconTheme.color?.withOpacity(0.7),
