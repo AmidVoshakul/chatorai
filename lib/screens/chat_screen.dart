@@ -136,7 +136,19 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         onPressed: () {
                           final themeProvider =
                               Provider.of<ThemeProvider>(context, listen: false);
-                          themeProvider.isDarkMode = !themeProvider.isDarkMode;
+                          if (themeProvider.themeMode == AppThemeMode.light) {
+                            themeProvider.themeMode = AppThemeMode.dark;
+                          } else if (themeProvider.themeMode == AppThemeMode.dark) {
+                            themeProvider.themeMode = AppThemeMode.light;
+                          } else {
+                            // If currently in system mode, switch to the opposite of system
+                            final brightness = MediaQuery.platformBrightnessOf(context);
+                            if (brightness == Brightness.dark) {
+                              themeProvider.themeMode = AppThemeMode.light;
+                            } else {
+                              themeProvider.themeMode = AppThemeMode.dark;
+                            }
+                          }
                         },
                       ),
                     ],

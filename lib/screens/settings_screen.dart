@@ -1,184 +1,422 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
+import 'package:gen_ui_chat_ai/utils/ui_helper.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final themeProvider = Provider.of<ThemeProvider>(context);
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
 
+class _SettingsScreenState extends State<SettingsScreen> {
+  late ThemeProvider _themeProvider;
+  late TextEditingController _apiKeyController;
+  late TextEditingController _baseUrlController;
+
+  @override
+  void initState() {
+    super.initState();
+    _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    
+    // Initialize controllers with current values
+    _apiKeyController = TextEditingController(text: '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');
+    _baseUrlController = TextEditingController(text: 'https://openrouter.ai/api/v1');
+  }
+
+  @override
+  void dispose() {
+    _apiKeyController.dispose();
+    _baseUrlController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _themeProvider = Provider.of<ThemeProvider>(context);
+
+    final String currentLanguage = _themeProvider.selectedLanguage;
+    
+    // Simple localization function
+    String t(String key) {
+      if (currentLanguage == 'en') {
+        return {
+          'settings': 'Settings',
+          'openRouterConfiguration': 'OpenRouter Configuration',
+          'apiKey': 'API Key',
+          'enterApiKey': 'Enter your OpenRouter API key',
+          'baseUrl': 'Base URL',
+          'appearance': 'Appearance',
+          'theme': 'Theme',
+          'system': 'System',
+          'useSystemTheme': 'Use system theme',
+          'light': 'Light',
+          'useLightTheme': 'Use light theme',
+          'dark': 'Dark',
+          'useDarkTheme': 'Use dark theme',
+          'fontSize': 'Font Size',
+          'currentSize': 'Current size: {percentage}%',
+          'accessibility': 'Accessibility',
+          'reduceMotion': 'Reduce Motion',
+          'disableAnimation': 'Disable or reduce animation effects',
+          'highContrast': 'High Contrast',
+          'increaseContrast': 'Increase contrast for better readability',
+          'language': 'Language',
+          'english': 'English',
+          'russian': 'Russian',
+          'arabic': 'Arabic (RTL)',
+          'chinese': 'Chinese',
+          'japanese': 'Japanese',
+          'resetSettings': 'Reset Settings',
+          'resetAllSettings': 'Reset all settings to default values',
+          'save': 'Save',
+          'copy': 'Copy',
+          'apiKeyCopied': 'API key copied',
+          'settingsSaved': 'Settings saved!',
+          'settingsReset': 'Settings reset to default values',
+        }[key] ?? key;
+      } else {
+        return {
+          'settings': 'Настройки',
+          'openRouterConfiguration': 'OpenRouter Конфигурация',
+          'apiKey': 'API Ключ',
+          'enterApiKey': 'Введите ваш OpenRouter API ключ',
+          'baseUrl': 'Base URL',
+          'appearance': 'Внешний вид',
+          'theme': 'Тема',
+          'system': 'Системная',
+          'useSystemTheme': 'Использовать тему системы',
+          'light': 'Светлая',
+          'useLightTheme': 'Использовать светлую тему',
+          'dark': 'Темная',
+          'useDarkTheme': 'Использовать темную тему',
+          'fontSize': 'Размер шрифта',
+          'currentSize': 'Текущий размер: {percentage}%',
+          'accessibility': 'Доступность',
+          'reduceMotion': 'Уменьшить анимацию',
+          'disableAnimation': 'Отключить или уменьшить анимационные эффекты',
+          'highContrast': 'Высокая контрастность',
+          'increaseContrast': 'Увеличить контрастность для лучшей читаемости',
+          'language': 'Язык',
+          'english': 'Английский',
+          'russian': 'Русский',
+          'arabic': 'Арабский (RTL)',
+          'chinese': 'Китайский',
+          'japanese': 'Японский',
+          'resetSettings': 'Сброс настроек',
+          'resetAllSettings': 'Сбросить все настройки к значениям по умолчанию',
+          'save': 'Сохранить',
+          'copy': 'Скопировать',
+          'apiKeyCopied': 'API ключ скопирован',
+          'settingsSaved': 'Настройки сохранены!',
+          'settingsReset': 'Настройки сброшены к значениям по умолчанию',
+        }[key] ?? key;
+      }
+    }
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Settings',
-          style: theme.textTheme.headlineMedium,
-        ),
-        backgroundColor: theme.canvasColor,
-        foregroundColor: theme.colorScheme.primary,
+        title: Text(t('settings')),
+        centerTitle: true,
+        backgroundColor: Theme.of(context).canvasColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Container(
-        padding: const EdgeInsets.all(20),
-        child: ListView(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // App Section
-            _buildSettingsSection(
-              context,
-              'App Settings',
-              [
-                _buildSwitchListTile(
-                  context,
-                  'Dark Mode',
-                  'Enable dark theme',
-                  themeProvider.isDarkMode,
-                  (value) {
-                    themeProvider.isDarkMode = value ?? false;
+            Text(
+              t('openRouterConfiguration'),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // API Key Field
+            TextField(
+              controller: _apiKeyController,
+              decoration: InputDecoration(
+                labelText: t('apiKey'),
+                hintText: t('enterApiKey'),
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.content_copy),
+                  onPressed: () {
+                    // Copy to clipboard functionality
+                    UIHelper.showCopySnackBar(context, t('apiKeyCopied'));
                   },
+                  tooltip: t('copy'),
                 ),
-                _buildListTile(
-                  context,
-                  'Font Size',
-                  'Adjust text size',
-                  Icons.text_fields,
-                  () {
-                    // TODO: Implement font size adjustment
-                  },
+              ),
+              maxLines: 1,
+              obscureText: true,
+            ),
+            const SizedBox(height: 12),
+            
+            // Base URL Field
+            TextField(
+              controller: _baseUrlController,
+              decoration: const InputDecoration(
+                labelText: 'Base URL',
+                hintText: 'https://openrouter.ai/api/v1',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 1,
+            ),
+            const SizedBox(height: 20),
+            
+            Text(
+              t('appearance'),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Theme Selection
+            Text(
+              t('theme'),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  children: [
+                    _buildThemeOption(
+                      Icons.brightness_6,
+                      t('system'),
+                      _themeProvider.themeMode == AppThemeMode.system,
+                      t('useSystemTheme'),
+                      AppThemeMode.system,
+                    ),
+                    const Divider(height: 1, thickness: 1),
+                    _buildThemeOption(
+                      Icons.wb_sunny,
+                      t('light'),
+                      _themeProvider.themeMode == AppThemeMode.light,
+                      t('useLightTheme'),
+                      AppThemeMode.light,
+                    ),
+                    const Divider(height: 1, thickness: 1),
+                    _buildThemeOption(
+                      Icons.nightlight,
+                      t('dark'),
+                      _themeProvider.themeMode == AppThemeMode.dark,
+                      t('useDarkTheme'),
+                      AppThemeMode.dark,
+                    ),
+                  ],
                 ),
-                _buildSwitchListTile(
-                  context,
-                  'Reduce Motion',
-                  'Reduce animation effects',
-                  themeProvider.reduceMotion,
-                  (value) {
-                    themeProvider.reduceMotion = value ?? false;
-                  },
-                ),
-                _buildSwitchListTile(
-                  context,
-                  'High Contrast',
-                  'Enhanced color contrast',
-                  themeProvider.highContrast,
-                  (value) {
-                    themeProvider.highContrast = value ?? false;
-                  },
-                ),
-              ],
+              ),
             ),
             
             const SizedBox(height: 20),
             
-            // Chat Section
-            _buildSettingsSection(
-              context,
-              'Chat Settings',
-              [
-                _buildSwitchListTile(
-                  context,
-                  'Enable Markdown',
-                  'Support for markdown formatting',
-                  true,
-                  (value) {
-                    // TODO: Implement markdown toggle
-                  },
+            // Font Size
+            Text(
+              t('fontSize'),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  children: [
+                    Text(
+                      t('currentSize').replaceFirst('{percentage}', '${(_themeProvider.fontSize * 100).toInt()}'),
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.text_fields, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Slider(
+                            value: _themeProvider.fontSize,
+                            min: 0.8,
+                            max: 1.5,
+                            divisions: 7,
+                            label: '${(_themeProvider.fontSize * 100).toInt()}%',
+                            onChanged: (value) {
+                              _themeProvider.fontSize = value;
+                            },
+                          ),
+                        ),
+                        const Icon(Icons.text_fields, size: 24),
+                      ],
+                    ),
+                  ],
                 ),
-                _buildSwitchListTile(
-                  context,
-                  'Enable Streaming',
-                  'Real-time message streaming',
-                  true,
-                  (value) {
-                    // TODO: Implement streaming toggle
-                  },
+              ),
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // Accessibility Options
+            Text(
+              t('accessibility'),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      value: _themeProvider.reduceMotion,
+                      onChanged: (value) {
+                        _themeProvider.reduceMotion = value;
+                      },
+                      title: Text(t('reduceMotion')),
+                      subtitle: Text(t('disableAnimation')),
+                      activeColor: Theme.of(context).colorScheme.primary,
+                    ),
+                    const Divider(height: 1, thickness: 1),
+                    SwitchListTile(
+                      value: _themeProvider.highContrast,
+                      onChanged: (value) {
+                        _themeProvider.highContrast = value;
+                      },
+                      title: Text(t('highContrast')),
+                      subtitle: Text(t('increaseContrast')),
+                      activeColor: Theme.of(context).colorScheme.primary,
+                    ),
+                  ],
                 ),
-                _buildSwitchListTile(
-                  context,
-                  'Speech to Text',
-                  'Voice input support',
-                  true,
-                  (value) {
-                    // TODO: Implement speech-to-text toggle
-                  },
-                ),
-                _buildListTile(
-                  context,
-                  'Max Message History',
-                  'Number of messages to keep',
-                  Icons.history,
-                  () {
-                    // TODO: Implement message history limit
-                  },
-                ),
-              ],
+              ),
             ),
             
             const SizedBox(height: 20),
             
             // Language Section
-            _buildSettingsSection(
-              context,
-              'Language & Region',
-              [
-                _buildListTile(
-                  context,
-                  'Language',
-                  'English (United States)',
-                  Icons.language,
-                  () {
-                    // TODO: Implement language selection
-                  },
+            Text(
+              t('language'),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  children: [
+                    _buildLanguageOption(
+                      t('english'),
+                      'en',
+                      t('english'),
+                    ),
+                    const Divider(height: 1, thickness: 1),
+                    _buildLanguageOption(
+                      t('russian'),
+                      'ru',
+                      t('russian'),
+                    ),
+                    const Divider(height: 1, thickness: 1),
+                    _buildLanguageOption(
+                      'العربية',
+                      'ar',
+                      t('arabic'),
+                    ),
+                    const Divider(height: 1, thickness: 1),
+                    _buildLanguageOption(
+                      '中文',
+                      'zh',
+                      t('chinese'),
+                    ),
+                    const Divider(height: 1, thickness: 1),
+                    _buildLanguageOption(
+                      '日本語',
+                      'ja',
+                      t('japanese'),
+                    ),
+                  ],
                 ),
-                _buildSwitchListTile(
-                  context,
-                  'RTL Support',
-                  'Right-to-left text direction',
-                  false,
-                  (value) {
-                    // TODO: Implement RTL support
-                  },
-                ),
-              ],
+              ),
             ),
             
             const SizedBox(height: 20),
             
-            // About Section
-            _buildSettingsSection(
-              context,
-              'About',
-              [
-                _buildListTile(
-                  context,
-                  'Version',
-                  '1.0.0',
-                  Icons.info,
-                  () {},
+            // Reset Settings
+            Text(
+              t('resetSettings'),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  children: [
+                    Text(
+                      t('resetAllSettings'),
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () async {
+                          await _themeProvider.resetSettings();
+                          if (mounted) {
+                            UIHelper.showInfoSnackBar(
+                              context, 
+                              t('settingsReset')
+                            );
+                          }
+                        },
+                        child: Text(t('resetSettings')),
+                      ),
+                    ),
+                  ],
                 ),
-                _buildListTile(
-                  context,
-                  'Privacy Policy',
-                  'Read our privacy policy',
-                  Icons.privacy_tip,
-                  () {
-                    // TODO: Open privacy policy
-                  },
-                ),
-                _buildListTile(
-                  context,
-                  'Terms of Service',
-                  'Read our terms',
-                  Icons.description,
-                  () {
-                    // TODO: Open terms of service
-                  },
-                ),
-              ],
+              ),
+            ),
+            
+            const SizedBox(height: 40),
+            
+            // Save Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (mounted) {
+                    UIHelper.showSuccessSnackBar(
+                      context, 
+                      t('settingsSaved')
+                    );
+                  }
+                  Navigator.of(context).pop();
+                },
+                child: Text(t('save')),
+              ),
             ),
           ],
         ),
@@ -186,106 +424,114 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsSection(BuildContext context, String title, List<Widget> children) {
-    final theme = Theme.of(context);
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: Text(
-              title,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
+  Widget _buildThemeOption(
+    IconData icon,
+    String title,
+    bool isSelected,
+    String description,
+    AppThemeMode appThemeMode,
+  ) {
+    return InkWell(
+      onTap: () {
+        _themeProvider.themeMode = appThemeMode;
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: isSelected ? Theme.of(context).colorScheme.primary : null,
+                    ),
+                  ),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          ...children,
-        ],
+            if (isSelected)
+              Icon(
+                Icons.check,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildListTile(
-    BuildContext context,
+  Widget _buildLanguageOption(
     String title,
-    String subtitle,
-    IconData icon,
-    VoidCallback onTap,
+    String languageCode,
+    String description,
   ) {
-    final theme = Theme.of(context);
+    final isSelected = _themeProvider.selectedLanguage == languageCode;
     
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(
-          icon,
-          color: theme.colorScheme.primary,
-          size: 20,
-        ),
-      ),
-      title: Text(
-        title,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: theme.textTheme.bodySmall,
-      ),
-      trailing: Icon(
-        Icons.chevron_right,
-        color: theme.iconTheme.color?.withOpacity(0.6),
-        size: 20,
-      ),
-      onTap: onTap,
-    );
-  }
-
-  Widget _buildSwitchListTile(
-    BuildContext context,
-    String title,
-    String subtitle,
-    bool value,
-    Function(bool?) onChanged,
-  ) {
-    final theme = Theme.of(context);
-    
-    return SwitchListTile(
-      title: Text(
-        title,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w500,
+    return InkWell(
+      onTap: () {
+        _themeProvider.selectedLanguage = languageCode;
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          children: [
+            Text(
+              languageCode.toUpperCase(),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: isSelected ? Theme.of(context).colorScheme.primary : null,
+                    ),
+                  ),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(
+                Icons.check,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
+          ],
         ),
       ),
-      subtitle: Text(
-        subtitle,
-        style: theme.textTheme.bodySmall,
-      ),
-      value: value,
-      onChanged: onChanged,
-      activeColor: theme.colorScheme.primary,
-      inactiveThumbColor: theme.canvasColor,
-      inactiveTrackColor: theme.dividerColor,
     );
   }
 }

@@ -110,20 +110,6 @@ class Sidebar extends StatelessWidget {
                     thickness: 1,
                     color: theme.dividerColor,
                   ),
-                  
-                  // Recent Chats Header
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text(
-                      'Recent Chats',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  
-
                 ],
               ],
             ),
