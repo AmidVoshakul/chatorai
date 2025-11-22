@@ -145,7 +145,44 @@ class Sidebar extends StatelessWidget {
                   // TODO: Open settings
                 },
               ),
+              // App Info
+              ListTile(
+                leading: const Icon(Icons.info),
+                title: !isCollapsed ? const Text('App Info') : null,
+                onTap: () {
+                  _showAppInfo(context);
+                },
+              ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show app information dialog
+  void _showAppInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Chat AI'),
+        backgroundColor: Theme.of(context).brightness == Brightness.dark 
+            ? const Color(0xFF1A1A1A) 
+            : Colors.white,
+        content: const Text(
+          'Приложение для общения с AI моделями через OpenRouter API.\n\n'
+          'Возможности:\n'
+          '• Общение с различными AI моделями\n'
+          '• Сохранение истории чатов\n'
+          '• Темная и светлая темы\n'
+          '• Адаптивный интерфейс\n\n'
+          'Разработано с ❤️ с использованием Flutter',
+          style: TextStyle(height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('ОК'),
           ),
         ],
       ),
