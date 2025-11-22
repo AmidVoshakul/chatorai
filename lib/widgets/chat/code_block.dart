@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:flutter_highlight/themes/monokai-sublime.dart';
+import 'package:gen_ui_chat_ai/utils/ui_helper.dart';
 
 class CodeBlock extends StatelessWidget {
   final String code;
@@ -54,9 +55,7 @@ class CodeBlock extends StatelessWidget {
                   icon: Icon(Icons.copy, color: isDark ? Colors.white70 : Colors.black87, size: 18),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: code));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Code copied to clipboard")),
-                    );
+                    UIHelper.showSuccessSnackBar(context, "Code copied to clipboard");
                   },
                   tooltip: 'Copy code',
                 ),

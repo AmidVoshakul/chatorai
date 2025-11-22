@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/code_block.dart';
+import 'package:gen_ui_chat_ai/utils/ui_helper.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 
 class ChatMessage extends StatefulWidget {
@@ -386,6 +387,23 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
             const SizedBox(width: 4),
           ],
           
+          // Share action for assistant messages
+          if (!isUser) ...[
+            IconButton(
+              icon: Icon(
+                Icons.share,
+                size: 16,
+                color: theme.iconTheme.color?.withOpacity(0.7),
+              ),
+              onPressed: () {
+                // TODO: Share message
+              },
+              tooltip: 'Share',
+              splashRadius: 20,
+            ),
+            const SizedBox(width: 4),
+          ],
+          
           // Universal copy action
           IconButton(
             icon: Icon(
@@ -395,6 +413,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
             ),
             onPressed: () {
               // TODO: Copy message
+              UIHelper.showSuccessSnackBar(context, "Message copied to clipboard");
             },
             tooltip: 'Copy',
             splashRadius: 20,
@@ -425,18 +444,6 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                 // TODO: Regenerate message
               },
               tooltip: 'Regenerate',
-              splashRadius: 20,
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.share,
-                size: 16,
-                color: theme.iconTheme.color?.withOpacity(0.7),
-              ),
-              onPressed: () {
-                // TODO: Share message
-              },
-              tooltip: 'Share',
               splashRadius: 20,
             ),
             IconButton(
