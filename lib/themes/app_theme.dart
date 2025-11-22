@@ -40,6 +40,25 @@ class AppTheme {
         fontSize: 14,
         color: const Color(0xFF666666),
       ),
+      bodySmall: TextStyle(
+        fontSize: 12,
+        color: const Color(0xFF666666),
+      ),
+      titleLarge: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: ubuntuDark,
+      ),
+      titleMedium: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: ubuntuDark,
+      ),
+      titleSmall: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: ubuntuDark,
+      ),
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: ubuntuLight,
@@ -130,6 +149,25 @@ class AppTheme {
       bodyMedium: TextStyle(
         fontSize: 14,
         color: const Color(0xFFB0B0B0),
+      ),
+      bodySmall: TextStyle(
+        fontSize: 12,
+        color: const Color(0xFFB0B0B0),
+      ),
+      titleLarge: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: ubuntuLight,
+      ),
+      titleMedium: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: ubuntuLight,
+      ),
+      titleSmall: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: ubuntuLight,
       ),
     ),
     appBarTheme: AppBarTheme(

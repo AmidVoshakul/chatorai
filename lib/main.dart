@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:gen_ui_chat_ai/screens/chat_screen.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +26,15 @@ class MyApp extends StatelessWidget {
         
         return MaterialApp(
           title: 'GenUI Chat AI',
+          localizationsDelegates: [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('en'),
+            Locale('ru'),
+          ],
           theme: theme,
           debugShowCheckedModeBanner: false,
           home: const ChatScreen(),
