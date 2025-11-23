@@ -10,7 +10,7 @@ class AppTheme {
   static const Color ubuntuDarkGray = Color(0xFF2A2A2A);
   static const Color ubuntuAccent = Color(0xFF6B008E); // Deeper purple
   static const Color ubuntuLightBorderColor = Color(0xFFF5F5F5); // Light gray for light theme
-  static const Color ubuntuDarkBorderColor = Color(0xFF202020); // Dark border color for dark theme
+  static const Color ubuntuDarkBorderColor = Color(0xFF0C0C0C); // Dark border color for dark theme
 
 // Light theme
   static ThemeData lightTheme = ThemeData(

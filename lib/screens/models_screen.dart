@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
+import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 
 class ModelsScreen extends StatefulWidget {
   const ModelsScreen({Key? key}) : super(key: key);
@@ -10,6 +13,7 @@ class ModelsScreen extends StatefulWidget {
 
 class _ModelsScreenState extends State<ModelsScreen> {
   late OpenRouterService _openRouterService;
+  late ThemeProvider _themeProvider;
   List<OpenRouterModel> _models = [];
   List<OpenRouterModel> _filteredModels = [];
   bool _isLoading = false;
@@ -18,6 +22,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
   @override
   void initState() {
     super.initState();
+    _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     _openRouterService = OpenRouterService();
     _searchController = TextEditingController();
     _searchController.addListener(_onSearchChanged);
@@ -56,10 +61,23 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 
   void _selectModel(OpenRouterModel model) {
+    final String currentLanguage = _themeProvider.selectedLanguage;
+    String getLocalizedText(String key) {
+      if (currentLanguage == 'en') {
+        return {
+          'modelSelected': 'Model "${model.name}" selected for chat',
+        }[key] ?? key;
+      } else {
+        return {
+          'modelSelected': 'Модель "${model.name}" выбрана для общения',
+        }[key] ?? key;
+      }
+    }
+    
     // Show success snackbar
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Модель "${model.name}" выбрана для общения'),
+        content: Text(getLocalizedText('modelSelected')),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
       ),
@@ -83,9 +101,22 @@ class _ModelsScreenState extends State<ModelsScreen> {
       });
     } catch (e) {
       if (mounted) {
+        final String currentLanguage = _themeProvider.selectedLanguage;
+        String getLocalizedText(String key) {
+          if (currentLanguage == 'en') {
+            return {
+              'errorLoadingModels': 'Error loading models: $e',
+            }[key] ?? key;
+          } else {
+            return {
+              'errorLoadingModels': 'Ошибка загрузки моделей: $e',
+            }[key] ?? key;
+          }
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ошибка загрузки моделей: $e'),
+            content: Text(getLocalizedText('errorLoadingModels')),
             backgroundColor: Colors.red,
           ),
         );
@@ -101,7 +132,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Доступные модели'),
+        title: Text(
+          _themeProvider.selectedLanguage == 'en' ? 'Models' : 'Модели',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Theme.of(context).canvasColor,
         elevation: 0,
       ),
@@ -113,7 +149,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Поиск моделей...',
+                hintText: _themeProvider.selectedLanguage == 'en' ? 'Search models...' : 'Поиск моделей...',
                 hintStyle: TextStyle(
                   color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600],
                   fontSize: 16,
@@ -219,11 +255,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
                         Text(
                           model.name,
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).textTheme.titleMedium!.color,
                           ),
-                          maxLines: 2,
+                          maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
@@ -239,7 +275,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
                       ],
                     ),
                   ),
-                  const Spacer(),
                   // Info button
                   IconButton(
                     icon: const Icon(
@@ -250,9 +285,17 @@ class _ModelsScreenState extends State<ModelsScreen> {
                     onPressed: () {
                       _showModelDetailsDialog(model);
                     },
-                    tooltip: 'Подробнее',
+                    tooltip: _themeProvider.selectedLanguage == 'en' ? 'Details' : 'Подробнее',
                   ),
                 ],
+              ),
+const SizedBox(height: 12),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? AppTheme.ubuntuDarkBorderColor 
+                    : AppTheme.ubuntuLightBorderColor,
               ),
               const SizedBox(height: 12),
               Text(
@@ -270,7 +313,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Контекст: ${model.formattedContextLength}',
+                      '${_themeProvider.selectedLanguage == 'en' ? 'Context' : 'Контекст'}: ${model.formattedContextLength}',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -303,7 +346,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       children: [
         if (model.isFree)
           Chip(
-            label: const Text('Бесплатно'),
+            label: Text(_themeProvider.selectedLanguage == 'en' ? 'Free' : 'Бесплатно'),
             backgroundColor: Colors.green.withOpacity(0.15),
             side: BorderSide(color: Colors.green.withOpacity(0.3), width: 1.5),
             labelStyle: const TextStyle(
@@ -316,7 +359,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
           ),
         if (model.supportsReasoning)
           Chip(
-            label: const Text('Рассуждения'),
+            label: Text(_themeProvider.selectedLanguage == 'en' ? 'Reasoning' : 'Рассуждения'),
             backgroundColor: Colors.blue.withOpacity(0.15),
             side: BorderSide(color: Colors.blue.withOpacity(0.3), width: 1.5),
             labelStyle: const TextStyle(
@@ -329,7 +372,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
           ),
         if (model.supportsMultimodal)
           Chip(
-            label: const Text('Мультимодальность'),
+            label: Text(_themeProvider.selectedLanguage == 'en' ? 'Multimodal' : 'Мультимодальность'),
             backgroundColor: Colors.purple.withOpacity(0.15),
             side: BorderSide(color: Colors.purple.withOpacity(0.3), width: 1.5),
             labelStyle: const TextStyle(
@@ -342,7 +385,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
           ),
         // Always show availability
         Chip(
-          label: const Text('Доступна'),
+          label: Text(_themeProvider.selectedLanguage == 'en' ? 'Available' : 'Доступна'),
           backgroundColor: Colors.green.withOpacity(0.15),
           side: BorderSide(color: Colors.green.withOpacity(0.3), width: 1.5),
           labelStyle: const TextStyle(
@@ -432,12 +475,20 @@ class _ModelsScreenState extends State<ModelsScreen> {
             children: [
               // Description section
               Text(
-                'Описание:',
+                _themeProvider.selectedLanguage == 'en' ? 'Description' : 'Описание',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).textTheme.titleMedium!.color,
                 ),
+              ),
+              const SizedBox(height: 4),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? AppTheme.ubuntuDarkBorderColor 
+                    : AppTheme.ubuntuLightBorderColor,
               ),
               const SizedBox(height: 8),
               Text(
@@ -452,7 +503,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
               // Technical details
               Text(
-                'Технические характеристики:',
+                _themeProvider.selectedLanguage == 'en' ? 'Technical Details' : 'Технические характеристики',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -460,14 +511,14 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              _buildDetailRow('Контекст', model.formattedContextLength, Icons.text_fields),
+              _buildDetailRow(_themeProvider.selectedLanguage == 'en' ? 'Context' : 'Контекст', model.formattedContextLength, Icons.text_fields),
               if (model.provider != null)
-                _buildDetailRow('Провайдер', model.provider!, Icons.account_circle),
+                _buildDetailRow(_themeProvider.selectedLanguage == 'en' ? 'Provider' : 'Провайдер', model.provider!, Icons.account_circle),
               
               // Features section
               const SizedBox(height: 20),
               Text(
-                'Возможности:',
+                _themeProvider.selectedLanguage == 'en' ? 'Features' : 'Возможности',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -476,7 +527,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Каждая возможность отображается цветным значком',
+                _themeProvider.selectedLanguage == 'en' 
+                  ? 'Each feature is displayed with a colored icon'
+                  : 'Каждая возможность отображается цветным значком',
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).textTheme.bodySmall!.color,
@@ -487,11 +540,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _buildFeatureChip('Бесплатно', true, Colors.green, Icons.attach_money),
-                  _buildFeatureChip('Рассуждения', model.capabilities.reasoning, Colors.blue, Icons.psychology),
-                  _buildFeatureChip('Мультимодальность', model.capabilities.multimodal, Colors.purple, Icons.view_in_ar),
-                  _buildFeatureChip('Видение', model.capabilities.vision, Colors.deepOrange, Icons.visibility),
-                  _buildFeatureChip('Инструменты', model.capabilities.tools, Colors.teal, Icons.build),
+                  _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Free' : 'Бесплатно', true, Colors.green, Icons.attach_money),
+                  _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Reasoning' : 'Рассуждения', model.capabilities.reasoning, Colors.blue, Icons.psychology),
+                  _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Multimodal' : 'Мультимодальность', model.capabilities.multimodal, Colors.purple, Icons.view_in_ar),
+                  _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Vision' : 'Видение', model.capabilities.vision, Colors.deepOrange, Icons.visibility),
+                  _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Tools' : 'Инструменты', model.capabilities.tools, Colors.teal, Icons.build),
                 ],
               ),
             ],
@@ -501,7 +554,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
-              child: const Text('Закрыть'),
+              child: Text(_themeProvider.selectedLanguage == 'en' ? 'Close' : 'Закрыть'),
             ),
           ],
         );
@@ -523,7 +576,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            isEmptySearch ? 'Модели не найдены' : 'Нет доступных моделей',
+            isEmptySearch 
+              ? (_themeProvider.selectedLanguage == 'en' ? 'No models found' : 'Модели не найдены')
+              : (_themeProvider.selectedLanguage == 'en' ? 'No available models' : 'Нет доступных моделей'),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -533,8 +588,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
           const SizedBox(height: 8),
           Text(
             isEmptySearch 
-              ? 'Попробуйте изменить поисковый запрос'
-              : 'Попробуйте обновить или проверьте интернет-соединение',
+              ? (_themeProvider.selectedLanguage == 'en' ? 'Try a different search query' : 'Попробуйте изменить поисковый запрос')
+              : (_themeProvider.selectedLanguage == 'en' ? 'Try refreshing or check your internet connection' : 'Попробуйте обновить или проверьте интернет-соединение'),
             style: TextStyle(
               color: Theme.of(context).textTheme.bodyMedium!.color,
               fontSize: 14,
