@@ -1,7 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
+import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_message.dart' as ChatMsg;
 
 class ChatMessages extends StatefulWidget {
@@ -25,6 +27,7 @@ class ChatMessages extends StatefulWidget {
 class _ChatMessagesState extends State<ChatMessages> {
   late List<Message> _messages;
   bool _isStreaming = false;
+  bool _isWaitingForResponse = false; // Новое состояние - ожидание ответа
   final ScrollController _scrollController = ScrollController();
   String _selectedModel = 'x-ai/grok-4.1-fast:free';
 
@@ -102,18 +105,14 @@ class _ChatMessagesState extends State<ChatMessages> {
   }
 
   void _addAssistantMessage() {
-    print('[ChatMessages] Creating assistant message placeholder');
-    final assistantMessage = Message(
-      role: MessageRole.assistant,
-      content: '',
-      timestamp: DateTime.now(),
-      isComplete: false,
-    );
+    print('[ChatMessages] 🚀 Creating assistant message placeholder');
     
     setState(() {
-      _messages.add(assistantMessage);
-      _isStreaming = true;
-      print('[ChatMessages] Assistant message placeholder added, streaming: $_isStreaming');
+      // Новое состояние - ожидание ответа
+      _isWaitingForResponse = true;
+      _isStreaming = false;
+      print('[ChatMessages] ✅ Waiting for response animation shown: _isWaitingForResponse=$_isWaitingForResponse, _isStreaming=$_isStreaming');
+      print('[ChatMessages] 📊 Messages count: ${_messages.length}, Total items: ${_messages.length + (_isWaitingForResponse ? 1 : 0)}');
     });
     
     _scrollToBottom();
@@ -121,15 +120,34 @@ class _ChatMessagesState extends State<ChatMessages> {
 
   void _updateAssistantMessage(String content) {
     final displayLength = min(50, content.length);
-    print('[ChatMessages] Updating assistant message with content: ${content.substring(0, displayLength)}...');
-    if (_messages.isNotEmpty && _messages.last.role == MessageRole.assistant) {
-      setState(() {
+    print('[ChatMessages] 🌊 Updating assistant message with content: ${content.substring(0, displayLength)}...');
+    
+    setState(() {
+      // Если это первое обновление (начало потока), переключаемся с анимации на сообщение
+      if (_isWaitingForResponse) {
+        print('[ChatMessages] 🎉 First update received! Switching from waiting animation to streaming message');
+        _isWaitingForResponse = false;
+        _isStreaming = true;
+        
+        // Создаем первое сообщение
+        final assistantMessage = Message(
+          role: MessageRole.assistant,
+          content: content,
+          timestamp: DateTime.now(),
+          isComplete: false,
+        );
+        _messages.add(assistantMessage);
+        print('[ChatMessages] ✅ Added first message to stream: _isWaitingForResponse=$_isWaitingForResponse, _isStreaming=$_isStreaming');
+      } else if (_messages.isNotEmpty && _messages.last.role == MessageRole.assistant) {
+        // Обновляем существующее сообщение
         _messages.last = _messages.last.copyWith(content: content);
-        print('[ChatMessages] Assistant message updated, content length: ${content.length}');
-      });
-    } else {
-      print('[ChatMessages] WARNING: No assistant message to update');
-    }
+        print('[ChatMessages] ✏️ Assistant message updated, content length: ${content.length}');
+      } else {
+        print('[ChatMessages] ⚠️ WARNING: No assistant message to update');
+      }
+    });
+    
+    _scrollToBottom();
   }
 
   void _completeAssistantMessage() {
@@ -137,8 +155,52 @@ class _ChatMessagesState extends State<ChatMessages> {
       setState(() {
         _messages.last = _messages.last.copyWith(isComplete: true);
         _isStreaming = false;
+        _isWaitingForResponse = false;
       });
     }
+  }
+
+  // Анимация "три точки" ожидания ответа
+  Widget _buildWaitingAnimation() {
+    final theme = Theme.of(context);
+    final isDarkTheme = theme.brightness == Brightness.dark;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          // Анимация "три точки" без аватара
+          Container(
+            constraints: const BoxConstraints(
+              maxWidth: 120,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDarkTheme ? AppTheme.ubuntuDarkGray : AppTheme.ubuntuLightGray,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SpinKitThreeBounce(
+                  color: isDarkTheme ? Colors.white70 : Colors.black54,
+                  size: 12,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _sendToAI(String userMessage) async {
@@ -208,26 +270,35 @@ class _ChatMessagesState extends State<ChatMessages> {
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              itemCount: _messages.length + (_isStreaming ? 1 : 0),
+              itemCount: _messages.length,
               itemBuilder: (context, index) {
-                print('[ChatMessages] 📋 Rendering item $index of ${_messages.length + (_isStreaming ? 1 : 0)}');
-                if (index < _messages.length) {
-                  final message = _messages[index];
-                  final isLastMessage = index == _messages.length - 1;
-                  
-                  return ChatMsg.ChatMessage(
-                    message: message,
-                    isStreaming: _isStreaming && isLastMessage,
-                    onRetry: () {
-                      if (message.role == MessageRole.user) {
-                        _sendToAI(message.content);
-                      }
-                    },
-                  );
-                } else {
-                  // Streaming message placeholder
+                print('[ChatMessages] 📋 Rendering item $index of ${_messages.length} | _isWaitingForResponse=$_isWaitingForResponse | _isStreaming=$_isStreaming');
+                
+                if (index >= _messages.length) {
+                  // Safety check
                   return Container();
                 }
+                
+                final message = _messages[index];
+                final isLastMessage = index == _messages.length - 1;
+                final isAssistantMessage = message.role == MessageRole.assistant;
+                final isEmptyAssistantMessage = isAssistantMessage && message.content.isEmpty;
+                
+                // Показываем анимацию для пустого assistant сообщения
+                if (isEmptyAssistantMessage && !message.isComplete) {
+                  print('[ChatMessages] 🎯 Showing waiting animation for empty assistant message at index $index');
+                  return _buildWaitingAnimation();
+                }
+                
+                return ChatMsg.ChatMessage(
+                  message: message,
+                  isStreaming: _isStreaming && isLastMessage,
+                  onRetry: () {
+                    if (message.role == MessageRole.user) {
+                      _sendToAI(message.content);
+                    }
+                  },
+                );
               },
             ),
           ),

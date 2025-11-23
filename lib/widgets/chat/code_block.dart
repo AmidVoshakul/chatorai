@@ -67,7 +67,6 @@ class CodeBlock extends StatelessWidget {
             color: isDark 
               ? const Color(0xFF23241F) 
               : const Color(0xFFF6F8FA),
-            constraints: const BoxConstraints(maxHeight: 300),
             child: SingleChildScrollView(
               scrollDirection: Axis.vertical,
               child: Padding(
