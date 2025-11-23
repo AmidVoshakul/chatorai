@@ -256,41 +256,40 @@ class _ModelsScreenState extends State<ModelsScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                model.description,
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyMedium!.color,
-                  fontSize: 14,
-                  height: 1.4,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
+              model.description,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium!.color,
+                fontSize: 14,
+                height: 1.4,
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Контекст: ${model.formattedContextLength}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).textTheme.bodySmall!.color,
-                      ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Контекст: ${model.formattedContextLength}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).textTheme.bodySmall!.color,
                     ),
                   ),
-                  if (model.provider != null)
-                    Chip(
-                      label: Text(model.provider!),
-                      backgroundColor: Colors.indigo[50],
-                      labelStyle: const TextStyle(fontSize: 10),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              _buildModelFeatures(model),
-            ],
-          ),
+                ),
+                if (model.provider != null)
+                  Chip(
+                    label: Text(model.provider!),
+                    backgroundColor: Colors.indigo[50],
+                    labelStyle: const TextStyle(fontSize: 10),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _buildModelFeatures(model),
+          ],
         ),
       ),
     );
@@ -358,49 +357,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 
   void _showModelDetailsDialog(OpenRouterModel model) {
-    Widget _buildDetailRow(String label, String value, IconData icon) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Row(
-          children: [
-            Icon(icon, size: 16, color: Theme.of(context).primaryColor),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).textTheme.bodyMedium!.color,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              value,
-              style: TextStyle(
-                color: Theme.of(context).textTheme.bodySmall!.color,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    Widget _buildFeatureChip(String label, bool enabled, Color color, IconData icon) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 4),
-        child: Chip(
-          label: Text(label, style: TextStyle(color: enabled ? color : Colors.grey[600], fontSize: 12, fontWeight: FontWeight.w500)),
-          backgroundColor: enabled ? color.withOpacity(0.15) : Colors.grey.withOpacity(0.1),
-          side: BorderSide(
-            color: enabled ? color.withOpacity(0.3) : Colors.grey.withOpacity(0.3),
-            width: 1.5,
-          ),
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          avatar: Icon(icon, size: 14, color: enabled ? color : Colors.grey[600]),
-        ),
-      );
-    }
-
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -414,14 +370,14 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.titleLarge!.color,
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 model.id,
                 style: TextStyle(
-                  color: Theme.of(context).textTheme.bodySmall!.color,
+                  color: Colors.grey[600],
                   fontSize: 12,
                 ),
               ),
@@ -436,16 +392,16 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Theme.of(context).textTheme.titleMedium!.color,
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 model.description,
                 style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyMedium!.color,
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[300] : Colors.grey[700],
                   fontSize: 14,
-                  height: 1.4,
+                  height: 1.5,
                 ),
               ),
               const SizedBox(height: 20),
@@ -456,7 +412,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Theme.of(context).textTheme.titleMedium!.color,
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
                 ),
               ),
               const SizedBox(height: 12),
@@ -488,10 +444,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 runSpacing: 8,
                 children: [
                   _buildFeatureChip('Бесплатно', true, Colors.green, Icons.attach_money),
-                  _buildFeatureChip('Рассуждения', model.capabilities.reasoning, Colors.blue, Icons.psychology),
-                  _buildFeatureChip('Мультимодальность', model.capabilities.multimodal, Colors.purple, Icons.view_in_ar),
-                  _buildFeatureChip('Видение', model.capabilities.vision, Colors.deepOrange, Icons.visibility),
-                  _buildFeatureChip('Инструменты', model.capabilities.tools, Colors.teal, Icons.build),
+                  _buildFeatureChip('Рассуждения', true, Colors.blue, Icons.psychology),
+                  _buildFeatureChip('Мультимодальность', true, Colors.purple, Icons.view_in_ar),
+                  _buildFeatureChip('Видение', true, Colors.deepOrange, Icons.visibility),
+                  _buildFeatureChip('Инструменты', true, Colors.teal, Icons.build),
                 ],
               ),
             ],
@@ -506,6 +462,49 @@ class _ModelsScreenState extends State<ModelsScreen> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Theme.of(context).brightness == Brightness.dark ? Colors.blueAccent : Colors.blueAccent),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[300] : Colors.grey[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureChip(String label, bool enabled, Color color, IconData icon) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      child: Chip(
+        label: Text(label, style: TextStyle(color: enabled ? color : Colors.grey[600], fontSize: 12, fontWeight: FontWeight.w500)),
+        backgroundColor: enabled ? color.withOpacity(0.15) : Colors.grey.withOpacity(0.1),
+        side: BorderSide(
+          color: enabled ? color.withOpacity(0.3) : Colors.grey.withOpacity(0.3),
+          width: 1.5,
+        ),
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        avatar: Icon(icon, size: 14, color: enabled ? color : Colors.grey[600]),
+      ),
     );
   }
 
