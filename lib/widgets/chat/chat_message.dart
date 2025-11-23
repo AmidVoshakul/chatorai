@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/code_block.dart';
@@ -29,6 +30,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
+    print('[ChatMessage] 🎨 Initializing message widget for: ${widget.message.role} - ${widget.message.content.substring(0, min(30, widget.message.content.length))}...');
     
     // Fade-in animation
     _fadeController = AnimationController(

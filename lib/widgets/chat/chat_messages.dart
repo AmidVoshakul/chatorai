@@ -1,9 +1,22 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/chat_message.dart';
+import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
+import 'package:gen_ui_chat_ai/widgets/chat/chat_message.dart' as ChatMsg;
 
 class ChatMessages extends StatefulWidget {
-  const ChatMessages({Key? key}) : super(key: key);
+  final Chat? chat;
+  final OpenRouterService openRouterService;
+  final String? selectedModel;
+  final Function(String) onSendMessage; // Add callback for sending messages
+
+  const ChatMessages({
+    Key? key,
+    required this.openRouterService,
+    this.chat,
+    this.selectedModel,
+    required this.onSendMessage,
+  }) : super(key: key);
 
   @override
   State<ChatMessages> createState() => _ChatMessagesState();
@@ -13,118 +26,173 @@ class _ChatMessagesState extends State<ChatMessages> {
   late List<Message> _messages;
   bool _isStreaming = false;
   final ScrollController _scrollController = ScrollController();
+  String _selectedModel = 'x-ai/grok-4.1-fast:free';
 
   @override
   void initState() {
     super.initState();
+    print('[ChatMessages] 🎯 Initializing ChatMessages with chat: ${widget.chat?.id}, messages: ${widget.chat?.messages.length ?? 0}');
+    _loadMessages();
+    if (widget.selectedModel != null) {
+      _selectedModel = widget.selectedModel!;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatMessages oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    print('[ChatMessages] 🔄 Widget updated, checking for changes...');
+    print('[ChatMessages] 🔄 Old chat: ${oldWidget.chat?.id}, New chat: ${widget.chat?.id}');
+    print('[ChatMessages] 🔄 Old messages: ${oldWidget.chat?.messages.length ?? 0}, New messages: ${widget.chat?.messages.length ?? 0}');
     
-    // Initialize with a welcome message and sample user message
-    _messages = [
-      Message(
-        role: MessageRole.assistant,
-        content: '''## Modern Chat Interface Design 🎨
-
-Here are the current **design trends** and **best practices** for chat interfaces:
-
-### Key Design Principles
-
-1. **Clean Typography**
-   - Use readable fonts like **Roboto**, **Inter**, or **SF Pro**
-   - Maintain proper line height (1.4-1.6)
-   - Ensure adequate font size (14-16px for body text)
-
-2. **Visual Hierarchy**
-   ```dart
-   // Example message bubble styling
-   BoxDecoration(
-     borderRadius: BorderRadius.circular(12),
-     color: Colors.blue.withOpacity(0.1),
-     boxShadow: [
-       BoxShadow(
-         color: Colors.black.withOpacity(0.05),
-         blurRadius: 5,
-         offset: Offset(0, 2),
-       ),
-     ],
-   )
-   ```
-
-3. **Consistent Spacing**
-   - Use `EdgeInsets.all(16)` for message padding
-   - Maintain `8-12px` margin between messages
-   - Consistent border radius for rounded corners
-
-### Modern Features
-
-- **Real-time typing indicators** ⚡
-- **Message reactions** (👍👎❤️✨🚀)
-- **Threaded conversations** 🧵
-- **Rich media support** (images, videos, files) 📸🎥📁
-- **Voice messages** 🎙️
-- **Dark/light theme support** 🌓
-
-### Color Palette Comparison
-
-| Theme | Primary | Background | Card | Text |
-|-------|---------|------------|------|------|
-| Light | #FF7F00 | #F8F9FA | #FFFFFF | #333333 |
-| Dark | #FF7F00 | #0A0A0A | #1A1A1A | #E0E0E0 |
-
-### Code Examples
-
-```javascript
-// JavaScript example
-const messageBubble = {
-  padding: '12px 16px',
-  borderRadius: '12px',
-  backgroundColor: 'rgba(0, 123, 255, 0.1)',
-  marginBottom: '8px'
-};
-```
-
-```css
-/* CSS example */
-.message-bubble {
-  padding: 12px 16px;
-  border-radius: 12px;
-  background-color: rgba(0, 123, 255, 0.1); background-color: rgba(0, 123, 255, 0.1);
-  margin-bottom: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-```
-
-### Accessibility Considerations
-
-- High contrast color schemes 🌈
-- Screen reader compatibility 👂
-- Keyboard navigation ⌨️
-- Proper ARIA labels 🏷️
-
-### Emoji Support Test 🎉
-
-Here are some commonly used emojis in chat interfaces:
-- Reactions: 👍👎❤️😂😢😡
-- Status: ✅❌🔄⏳⏰
-- Actions: 💬📞📧📷📹📍
-- Objects: 📱💻📺⌚🔋🔋
-
-Would you like me to elaborate on any specific aspect?''',
-        timestamp: DateTime.now(),
-        isComplete: true,
-      ),
-      Message(
-        role: MessageRole.user,
-        content: 'Hi! I need help with designing a modern chat interface. Can you provide some insights on current design trends and best practices?',
-        timestamp: DateTime.now(),
-        isComplete: true,
-      ),
-    ];
+    if (oldWidget.chat?.id != widget.chat?.id) {
+      print('[ChatMessages] 🔄 Chat ID changed, loading messages');
+      _loadMessages();
+    } else if (oldWidget.chat?.messages.length != widget.chat?.messages.length) {
+      print('[ChatMessages] 🔄 Message count changed, reloading');
+      _loadMessages();
+    } else if (widget.chat != null && oldWidget.chat != null &&
+              widget.chat!.messages.isNotEmpty && 
+              oldWidget.chat!.messages.isNotEmpty &&
+              oldWidget.chat!.messages.last.content != widget.chat!.messages.last.content) {
+      print('[ChatMessages] 🔄 Message content changed, reloading');
+      _loadMessages();
+    }
+    
+    if (oldWidget.selectedModel != widget.selectedModel && widget.selectedModel != null) {
+      _selectedModel = widget.selectedModel!;
+    }
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _loadMessages() {
+    print('[ChatMessages] 📥 Loading messages from chat widget...');
+    print('[ChatMessages] 📥 Chat object: ${widget.chat}');
+    print('[ChatMessages] 📥 Chat messages count: ${widget.chat?.messages.length ?? 0}');
+    setState(() {
+      _messages = widget.chat?.messages ?? [];
+      print('[ChatMessages] 📥 Messages loaded: ${_messages.length}');
+    });
+  }
+
+  void _addUserMessage(String content) {
+    print('[ChatMessages] Adding user message: $content');
+    final userMessage = Message(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      role: MessageRole.user,
+      content: content,
+      timestamp: DateTime.now(),
+      isComplete: true,
+    );
+    
+    setState(() {
+      _messages.add(userMessage);
+      print('[ChatMessages] User message added to state, total messages: ${_messages.length}');
+    });
+    
+    _scrollToBottom();
+    // Notify parent to handle AI response
+    print('[ChatMessages] Notifying parent about new message');
+    widget.onSendMessage(content);
+  }
+
+  void _addAssistantMessage() {
+    print('[ChatMessages] Creating assistant message placeholder');
+    final assistantMessage = Message(
+      role: MessageRole.assistant,
+      content: '',
+      timestamp: DateTime.now(),
+      isComplete: false,
+    );
+    
+    setState(() {
+      _messages.add(assistantMessage);
+      _isStreaming = true;
+      print('[ChatMessages] Assistant message placeholder added, streaming: $_isStreaming');
+    });
+    
+    _scrollToBottom();
+  }
+
+  void _updateAssistantMessage(String content) {
+    final displayLength = min(50, content.length);
+    print('[ChatMessages] Updating assistant message with content: ${content.substring(0, displayLength)}...');
+    if (_messages.isNotEmpty && _messages.last.role == MessageRole.assistant) {
+      setState(() {
+        _messages.last = _messages.last.copyWith(content: content);
+        print('[ChatMessages] Assistant message updated, content length: ${content.length}');
+      });
+    } else {
+      print('[ChatMessages] WARNING: No assistant message to update');
+    }
+  }
+
+  void _completeAssistantMessage() {
+    if (_messages.isNotEmpty && _messages.last.role == MessageRole.assistant) {
+      setState(() {
+        _messages.last = _messages.last.copyWith(isComplete: true);
+        _isStreaming = false;
+      });
+    }
+  }
+
+  Future<void> _sendToAI(String userMessage) async {
+    print('[ChatMessages] 🚀 Starting _sendToAI with message: $userMessage');
+    _addAssistantMessage();
+    
+    try {
+      print('[ChatMessages] 🌊 Calling streamChatCompletion...');
+      await widget.openRouterService.streamChatCompletion(
+        messages: [
+          ..._messages
+            .where((msg) => msg.role != MessageRole.assistant || !msg.isComplete)
+            .map((msg) => {
+              'role': msg.role.name,
+              'content': msg.content,
+            })
+            .toList(),
+        ],
+        model: _selectedModel,
+        onChunk: (content) {
+          _updateAssistantMessage(content);
+        },
+        onCompletion: (fullResponse) {
+          _completeAssistantMessage();
+          // Notify parent that chat has been updated
+        },
+      );
+    } catch (e) {
+      _updateAssistantMessage("Извините, произошла ошибка при обработке запроса. Пожалуйста, попробуйте еще раз.");
+      _completeAssistantMessage();
+    }
+  }
+
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  void selectModel(String modelId) {
+    setState(() {
+      _selectedModel = modelId;
+    });
+  }
+
+  // Public method to send messages from outside (e.g., from chat input)
+  void sendMessage(String content) {
+    _addUserMessage(content);
   }
 
   @override
@@ -142,15 +210,18 @@ Would you like me to elaborate on any specific aspect?''',
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               itemCount: _messages.length + (_isStreaming ? 1 : 0),
               itemBuilder: (context, index) {
+                print('[ChatMessages] 📋 Rendering item $index of ${_messages.length + (_isStreaming ? 1 : 0)}');
                 if (index < _messages.length) {
                   final message = _messages[index];
                   final isLastMessage = index == _messages.length - 1;
                   
-                  return ChatMessage(
+                  return ChatMsg.ChatMessage(
                     message: message,
                     isStreaming: _isStreaming && isLastMessage,
                     onRetry: () {
-                      // Handle retry
+                      if (message.role == MessageRole.user) {
+                        _sendToAI(message.content);
+                      }
                     },
                   );
                 } else {

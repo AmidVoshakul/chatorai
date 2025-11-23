@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:gen_ui_chat_ai/screens/chat_screen.dart';
+import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -38,6 +39,9 @@ class MyApp extends StatelessWidget {
           theme: theme,
           debugShowCheckedModeBanner: false,
           home: const ChatScreen(),
+          routes: {
+            '/settings': (context) => const SettingsScreen(),
+          },
         );
       },
     );
