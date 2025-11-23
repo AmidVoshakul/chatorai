@@ -1,6 +1,8 @@
 // Integration test for OpenRouter API
 // Run with: dart integration_test/api_test.dart
 
+// ignore_for_file: avoid_print
+
 import 'package:dio/dio.dart';
 
 void main() async {

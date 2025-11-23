@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
+import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
 
 class Sidebar extends StatefulWidget {
   final double width;
@@ -174,7 +175,17 @@ class _SidebarState extends State<Sidebar> {
                     ? const EdgeInsets.symmetric(horizontal: 16) 
                     : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 onTap: () {
-                  Navigator.pushNamed(context, '/settings');
+                  print('[Sidebar] 🚀 Attempting to navigate to settings...');
+                  try {
+                    Navigator.pushNamed(context, '/settings');
+                  } catch (e) {
+                    print('[Sidebar] ❌ Navigation failed: $e');
+                    print('[Sidebar] ℹ️  Manual navigation to SettingsScreen');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                    );
+                  }
                 },
               ),
               // App Info

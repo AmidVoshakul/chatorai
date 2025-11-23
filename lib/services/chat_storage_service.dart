@@ -73,6 +73,31 @@ class ChatStorageService {
     }
   }
 
+  /// Update message in chat
+  Future<void> updateMessageInChat(String chatId, String messageId, Message updatedMessage) async {
+    final prefs = await SharedPreferences.getInstance();
+    final chats = await _getChatsFromStorage(prefs);
+    
+    final chatIndex = chats.indexWhere((chat) => chat.id == chatId);
+    if (chatIndex != -1) {
+      final chat = chats[chatIndex];
+      final messageIndex = chat.messages.indexWhere((msg) => msg.id == messageId);
+      
+      if (messageIndex != -1) {
+        final updatedMessages = List<Message>.from(chat.messages);
+        updatedMessages[messageIndex] = updatedMessage;
+        
+        final updatedChat = chat.copyWith(
+          messages: updatedMessages,
+          updatedAt: DateTime.now(),
+        );
+        
+        chats[chatIndex] = updatedChat;
+        await _saveChatsToStorage(prefs, chats);
+      }
+    }
+  }
+
   /// Add message to chat
   Future<void> addMessageToChat(String chatId, Message message) async {
     final prefs = await SharedPreferences.getInstance();

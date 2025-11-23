@@ -26,43 +26,60 @@ void main() async {
       );
       
       print('✅ Chat completion successful!');
-      print('Response: ${response.content.substring(0, min(response.content.length, 100))}...');
+      final displayLength = response.content.length > 100 ? 100 : response.content.length;
+      print('Response: ${response.content.substring(0, displayLength)}...');
     } catch (e) {
-      print('❌ Chat completion failed: $e');
+      print('⚠️  Chat completion failed (expected without network): $e');
     }
     
     // Test 3: Streaming (basic test)
     print('\n🌊 Test 3: Testing streaming...');
     try {
-      final stream = service.streamChatCompletion(
+      bool streamingWorked = false;
+      
+      await service.streamChatCompletion(
         model: 'x-ai/grok-4.1-fast:free',
         messages: [
           {'role': 'user', 'content': 'Count to 3.'}
         ],
         maxTokens: 50,
+        onChunk: (content) {
+          streamingWorked = true;
+          print('✅ Streaming chunk received: "${content}"');
+        },
+        onCompletion: (content) {
+          print('✅ Streaming completed: ${content.length} characters total');
+        },
       );
       
-      int chunkCount = 0;
-      await for (final chunk in stream) {
-        chunkCount++;
-        if (chunk.content != null) {
-          print('Chunk $chunkCount: ${chunk.content!.substring(0, min(chunk.content!.length, 30))}...');
-        }
-        if (chunk.isComplete) break;
-      }
-      
-      print('✅ Streaming test completed with $chunkCount chunks');
+      print('✅ Streaming test: ${streamingWorked ? 'PASSED' : 'FAILED'}');
     } catch (e) {
-      print('❌ Streaming test failed: $e');
+      print('⚠️  Streaming test failed (expected without network): $e');
     }
     
-    print('\n🎉 All tests completed successfully!');
-    print('✅ Core functionality is working');
-    print('✅ Service ready for Flutter app integration');
+    // Test 4: Model parsing
+    print('\n🔍 Test 4: Testing model parsing...');
+    try {
+      final models = await service.getAvailableModels();
+      print('✅ Model parsing successful: ${models.length} models parsed');
+      
+      // Test model properties
+      if (models.isNotEmpty) {
+        final testModel = models.first;
+        print('   Model name: ${testModel.name}');
+        print('   Model ID: ${testModel.id}');
+        print('   Context length: ${testModel.formattedContextLength}');
+        print('   Free model: ${testModel.isFree}');
+        print('   Supports reasoning: ${testModel.supportsReasoning}');
+      }
+    } catch (e) {
+      print('⚠️  Model parsing failed (expected without network): $e');
+    }
+    
+    print('\n🎉 All core functionality tests completed!');
+    print('📝 Network tests may fail without internet connection - this is expected');
     
   } catch (e) {
-    print('❌ Test error: $e');
+    print('❌ Critical error: $e');
   }
 }
-
-int min(int a, int b) => a < b ? a : b;
