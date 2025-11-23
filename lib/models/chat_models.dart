@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 enum MessageRole {
   user,
@@ -80,6 +81,28 @@ class Message {
   int get hashCode {
     return id.hashCode ^ role.hashCode ^ content.hashCode ^ timestamp.hashCode ^ isComplete.hashCode ^ isError.hashCode;
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'role': role.name,
+      'content': content,
+      'timestamp': timestamp.toIso8601String(),
+      'isComplete': isComplete,
+      'isError': isError,
+    };
+  }
+
+  static Message fromJson(Map<String, dynamic> json) {
+    return Message(
+      id: json['id'],
+      role: MessageRole.values.firstWhere((r) => r.name == json['role']),
+      content: json['content'],
+      timestamp: DateTime.parse(json['timestamp']),
+      isComplete: json['isComplete'] ?? false,
+      isError: json['isError'] ?? false,
+    );
+  }
 }
 
 class Conversation {
@@ -130,6 +153,77 @@ class Conversation {
   @override
   int get hashCode {
     return id.hashCode ^ title.hashCode ^ createdAt.hashCode ^ lastModified.hashCode ^ messages.hashCode;
+  }
+}
+
+class Chat {
+  final String id;
+  final String title;
+  final List<Message> messages;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  Chat({
+    required this.id,
+    required this.title,
+    required this.messages,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  Chat copyWith({
+    String? id,
+    String? title,
+    List<Message>? messages,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return Chat(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      messages: messages ?? this.messages,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'messages': messages.map((message) => message.toJson()).toList(),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
+
+  static Chat fromJson(Map<String, dynamic> json) {
+    return Chat(
+      id: json['id'],
+      title: json['title'],
+      messages: (json['messages'] as List<dynamic>)
+          .map((message) => Message.fromJson(message))
+          .toList(),
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    
+    return other is Chat &&
+           other.id == id &&
+           other.title == title &&
+           other.createdAt == createdAt &&
+           other.updatedAt == updatedAt &&
+           listEquals(other.messages, messages);
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^ title.hashCode ^ createdAt.hashCode ^ updatedAt.hashCode ^ Object.hashAll(messages);
   }
 }
 
