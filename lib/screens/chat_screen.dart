@@ -13,7 +13,12 @@ import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
 import 'package:gen_ui_chat_ai/screens/models_screen.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({Key? key}) : super(key: key);
+  final String? initialModel;
+
+  const ChatScreen({
+    Key? key,
+    this.initialModel,
+  }) : super(key: key);
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -31,6 +36,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   List<Chat> _chats = [];
   Chat? _currentChat;
   final TextEditingController _titleController = TextEditingController();
+  String _selectedModel = 'x-ai/grok-4.1-fast:free'; // Default model
 
   @override
   void initState() {
@@ -41,6 +47,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _openRouterService = OpenRouterService();
     print('[ChatScreen] ✅ OpenRouterService initialized');
     _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    
+    // Initialize selected model from widget parameter or use default
+    if (widget.initialModel != null) {
+      _selectedModel = widget.initialModel!;
+      print('[ChatScreen] ✅ Using initial model: $_selectedModel');
+    } else {
+      print('[ChatScreen] ✅ Using default model: $_selectedModel');
+    }
+    
     _loadChats();
   }
 
@@ -195,6 +210,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         content: '',
         timestamp: DateTime.now(),
         isComplete: false,
+        model: _selectedModel,
       );
 
       // Update chat storage and local state immediately
@@ -257,7 +273,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       print('[ChatScreen] 📝 Messages: ${messages.map((m) => '${m['role']}: ${m['content']}').join(' | ')}');
 
       // Use a working OpenRouter model
-      final selectedModel = 'x-ai/grok-4.1-fast:free';
+      final selectedModel = _selectedModel;
       print('[ChatScreen] 🎯 Using model: $selectedModel');
       
       await _openRouterService.streamChatCompletion(
@@ -446,7 +462,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ModelsScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => ModelsScreen(
+                      onModelSelected: (String modelId) {
+                        setState(() {
+                          _selectedModel = modelId;
+                        });
+                        Navigator.pop(context);
+                      },
+                      currentModel: _selectedModel,
+                    ),
+                  ),
                 );
               },
               tooltip: 'Navigate to Models',
@@ -474,6 +500,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             child: ChatMessages(
               openRouterService: _openRouterService,
               chat: _currentChat,
+              selectedModel: _selectedModel,
               onSendMessage: _handleSendMessage,
             ),
           ),
@@ -541,7 +568,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const ModelsScreen()),
+                            MaterialPageRoute(
+                              builder: (context) => ModelsScreen(
+                                onModelSelected: (String modelId) {
+                                  setState(() {
+                                    _selectedModel = modelId;
+                                  });
+                                  Navigator.pop(context);
+                                },
+                                currentModel: _selectedModel,
+                              ),
+                            ),
                           );
                         },
                         tooltip: 'Navigate to Models',
@@ -555,6 +592,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   child: ChatMessages(
                     openRouterService: _openRouterService,
                     chat: _currentChat,
+                    selectedModel: _selectedModel,
                     onSendMessage: _handleSendMessage,
                   ),
                 ),

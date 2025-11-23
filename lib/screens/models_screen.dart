@@ -5,7 +5,14 @@ import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 
 class ModelsScreen extends StatefulWidget {
-  const ModelsScreen({Key? key}) : super(key: key);
+  final Function(String)? onModelSelected;
+  final String? currentModel;
+
+  const ModelsScreen({
+    Key? key,
+    this.onModelSelected,
+    this.currentModel,
+  }) : super(key: key);
 
   @override
   State<ModelsScreen> createState() => _ModelsScreenState();
@@ -72,6 +79,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
           'modelSelected': 'Модель "${model.name}" выбрана для общения',
         }[key] ?? key;
       }
+    }
+    
+    // Call the callback if provided
+    if (widget.onModelSelected != null) {
+      widget.onModelSelected!(model.id);
     }
     
     // Show success snackbar

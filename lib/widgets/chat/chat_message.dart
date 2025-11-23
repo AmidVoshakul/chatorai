@@ -154,7 +154,9 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                         Row(
                           children: [
                             Text(
-                              widget.message.role.displayName,
+                              widget.message.role == MessageRole.assistant && widget.message.model != null
+                                ? widget.message.model!
+                                : widget.message.role.displayName,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),

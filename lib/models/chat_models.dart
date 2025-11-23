@@ -36,6 +36,7 @@ class Message {
   final DateTime timestamp;
   final bool isComplete;
   final bool isError;
+  final String? model; // Model used for assistant messages
 
   Message({
     String? id,
@@ -44,6 +45,7 @@ class Message {
     required this.timestamp,
     this.isComplete = false,
     this.isError = false,
+    this.model,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
   Message copyWith({
@@ -53,6 +55,7 @@ class Message {
     DateTime? timestamp,
     bool? isComplete,
     bool? isError,
+    String? model,
   }) {
     return Message(
       id: id ?? this.id,
@@ -61,6 +64,7 @@ class Message {
       timestamp: timestamp ?? this.timestamp,
       isComplete: isComplete ?? this.isComplete,
       isError: isError ?? this.isError,
+      model: model ?? this.model,
     );
   }
 
@@ -90,6 +94,7 @@ class Message {
       'timestamp': timestamp.toIso8601String(),
       'isComplete': isComplete,
       'isError': isError,
+      'model': model,
     };
   }
 
@@ -101,6 +106,7 @@ class Message {
       timestamp: DateTime.parse(json['timestamp']),
       isComplete: json['isComplete'] ?? false,
       isError: json['isError'] ?? false,
+      model: json['model'],
     );
   }
 }
