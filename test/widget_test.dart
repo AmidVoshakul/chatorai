@@ -1,30 +1,62 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Widget tests for GenUI Chat AI
+// Run with: flutter test
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:gen_ui_chat_ai/main.dart';
+import 'package:gen_ui_chat_ai/screens/chat_screen.dart';
+import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('App Widget Tests', () {
+    testWidgets('should display main app structure', (WidgetTester tester) async {
+      await tester.pumpWidget(const MyApp());
+      
+      // Test that the main app loads without errors
+      expect(find.byType(Scaffold), findsOneWidget);
+      expect(find.byType(AppBar), findsOneWidget);
+    });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    testWidgets('should navigate to chat screen', (WidgetTester tester) async {
+      await tester.pumpWidget(const MyApp());
+      
+      // Verify chat screen is loaded
+      expect(find.byType(ChatScreen), findsOneWidget);
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    testWidgets('should navigate to settings screen', (WidgetTester tester) async {
+      await tester.pumpWidget(const MyApp());
+      
+      // Verify settings screen is accessible
+      expect(find.byType(SettingsScreen), findsOneWidget);
+    });
+  });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  group('Chat Screen Tests', () {
+    testWidgets('should display chat interface elements', (WidgetTester tester) async {
+      await tester.pumpWidget(const MaterialApp(home: ChatScreen()));
+      
+      // Test chat interface components
+      expect(find.byKey(const ValueKey('chat_messages')), findsOneWidget);
+      expect(find.byKey(const ValueKey('chat_input')), findsOneWidget);
+    });
+
+    testWidgets('should display message input field', (WidgetTester tester) async {
+      await tester.pumpWidget(const MaterialApp(home: ChatScreen()));
+      
+      // Test message input
+      expect(find.byType(TextField), findsOneWidget);
+    });
+  });
+
+  group('Settings Screen Tests', () {
+    testWidgets('should display settings interface', (WidgetTester tester) async {
+      await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+      
+      // Test settings components
+      expect(find.text('Settings'), findsOneWidget);
+      expect(find.byType(Switch), findsOneWidget);
+    });
   });
 }
