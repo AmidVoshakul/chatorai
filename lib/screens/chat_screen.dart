@@ -58,15 +58,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         elevation: 0,
         actions: [
           
-          IconButton(
-            icon: const Icon(Icons.smart_toy),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ModelsScreen()),
-              );
-            },
-            tooltip: 'Выбрать модель',
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              icon: const Icon(Icons.smart_toy),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ModelsScreen()),
+                );
+              },
+              tooltip: 'Navigate to Models',
+            ),
           ),
         ],
       ),
@@ -146,7 +149,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             MaterialPageRoute(builder: (context) => const ModelsScreen()),
                           );
                         },
-                        tooltip: 'Модели',
+                        tooltip: 'Navigate to Models',
                       ),
                     ],
                   ),
