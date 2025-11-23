@@ -104,12 +104,32 @@ class OpenRouterModel {
       modelData = json;
     }
     
-    final capabilitiesData = modelData['capabilities'] ?? {};
+    // Safely extract capabilities with proper type casting
+    final capabilitiesRaw = modelData['capabilities'];
+    Map<String, dynamic> capabilitiesData;
+    if (capabilitiesRaw is Map<String, dynamic>) {
+      capabilitiesData = capabilitiesRaw;
+    } else if (capabilitiesRaw is Map) {
+      capabilitiesData = Map<String, dynamic>.from(capabilitiesRaw);
+    } else {
+      capabilitiesData = {};
+    }
+    
     final contextLength = modelData['context_length'];
     final modelName = modelData['name'] ?? '';
     final description = modelData['description'] ?? '';
-    final providerData = modelData['provider'] as Map<String, dynamic>?;
-    final provider = providerData?['name'] ?? '';
+    
+    // Safely extract provider with proper type casting
+    final providerRaw = modelData['provider'];
+    String? provider;
+    if (providerRaw is Map<String, dynamic>) {
+      provider = providerRaw['name'] as String?;
+    } else if (providerRaw is Map) {
+      final providerMap = Map<String, dynamic>.from(providerRaw);
+      provider = providerMap['name'] as String?;
+    } else {
+      provider = null;
+    }
     
     // Parse context length from various possible formats
     int? parsedContextLength;
@@ -127,6 +147,8 @@ class OpenRouterModel {
       } else {
         parsedContextLength = int.tryParse(contextStr);
       }
+    } else {
+      parsedContextLength = null;
     }
 
     return OpenRouterModel(
