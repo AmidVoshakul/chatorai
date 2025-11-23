@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gen_ui_chat_ai/widgets/sidebar/sidebar.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
-import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:gen_ui_chat_ai/screens/models_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({Key? key}) : super(key: key);
@@ -26,6 +25,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // Handle toggling streaming
     print('Streaming toggled: $isStreaming');
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +56,19 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ),
         backgroundColor: theme.canvasColor,
         elevation: 0,
-        actions: [],
+        actions: [
+          
+          IconButton(
+            icon: const Icon(Icons.smart_toy),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ModelsScreen()),
+              );
+            },
+            tooltip: 'Выбрать модель',
+          ),
+        ],
       ),
       drawer: Drawer(
         child: Sidebar(
@@ -125,31 +137,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   child: Row(
                     children: [
                       const Spacer(),
-                      
-                      // Theme Toggle
+
                       IconButton(
-                        icon: Icon(
-                          theme.brightness == Brightness.dark
-                              ? Icons.wb_sunny
-                              : Icons.nightlight_round,
-                        ),
+                        icon: const Icon(Icons.smart_toy),
                         onPressed: () {
-                          final themeProvider =
-                              Provider.of<ThemeProvider>(context, listen: false);
-                          if (themeProvider.themeMode == AppThemeMode.light) {
-                            themeProvider.themeMode = AppThemeMode.dark;
-                          } else if (themeProvider.themeMode == AppThemeMode.dark) {
-                            themeProvider.themeMode = AppThemeMode.light;
-                          } else {
-                            // If currently in system mode, switch to the opposite of system
-                            final brightness = MediaQuery.platformBrightnessOf(context);
-                            if (brightness == Brightness.dark) {
-                              themeProvider.themeMode = AppThemeMode.light;
-                            } else {
-                              themeProvider.themeMode = AppThemeMode.dark;
-                            }
-                          }
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ModelsScreen()),
+                          );
                         },
+                        tooltip: 'Модели',
                       ),
                     ],
                   ),
