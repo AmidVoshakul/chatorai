@@ -36,6 +36,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   List<Chat> _chats = [];
   Chat? _currentChat;
   final TextEditingController _titleController = TextEditingController();
+  final FocusNode _chatInputFocusNode = FocusNode();
   String _selectedModel = 'x-ai/grok-4.1-fast:free'; // Default model
 
   @override
@@ -80,20 +81,49 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _createNewChat() async {
+    print('[ChatScreen] 🆕 Creating new chat...');
     final newChat = _chatStorageService.newChat();
     await _chatStorageService.addChat(newChat);
     await _loadChats();
     _selectChat(newChat.id);
-    
-    if (MediaQuery.of(context).size.width < 800) {
-      setState(() => _isSidebarCollapsed = true);
-    }
   }
 
   void _selectChat(String chatId) {
+    print('[ChatScreen] 🔄 Selecting chat: $chatId');
     final chat = _chats.firstWhere((c) => c.id == chatId);
     setState(() {
       _currentChat = chat;
+    });
+    
+    print('[ChatScreen] ✅ Chat selected: ${chat.title}');
+    
+    // Close sidebar on narrow screens when switching chats
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth < 800) {
+      print('[ChatScreen] 🔥 FORCE closing sidebar on narrow screen (${screenWidth.toInt()}px) when switching chats');
+      if (!_isSidebarCollapsed) {
+        setState(() {
+          _isSidebarCollapsed = true;
+        });
+      }
+      // Force rebuild to ensure visual update
+      Future.delayed(const Duration(milliseconds: 10), () {
+        setState(() {});
+      });
+    } else {
+      print('[ChatScreen] 💻 Keeping sidebar open on wide screen (${screenWidth.toInt()}px)');
+      // On wide screens, ensure sidebar stays open
+      if (_isSidebarCollapsed) {
+        setState(() {
+          _isSidebarCollapsed = false;
+        });
+      }
+    }
+    
+    // Focus on input field after a small delay to ensure UI updates
+    Future.delayed(Duration.zero, () {
+      print('[ChatScreen] 🎯 Focusing on input field');
+      FocusScope.of(context).requestFocus(_chatInputFocusNode);
     });
   }
 
@@ -155,6 +185,30 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   void _handleSendMessage(String message) async {
     print('[ChatScreen] 📤 Received message to send: $message');
+    
+    // Handle sidebar based on screen width
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth < 800) {
+      print('[ChatScreen] 🔥 FORCE closing sidebar on narrow screen (${screenWidth.toInt()}px) when sending message');
+      if (!_isSidebarCollapsed) {
+        setState(() {
+          _isSidebarCollapsed = true;
+        });
+      }
+      // Force rebuild to ensure visual update
+      Future.delayed(const Duration(milliseconds: 10), () {
+        setState(() {});
+      });
+    } else {
+      print('[ChatScreen] 💻 Keeping sidebar open on wide screen (${screenWidth.toInt()}px)');
+      // On wide screens, ensure sidebar stays open
+      if (_isSidebarCollapsed) {
+        setState(() {
+          _isSidebarCollapsed = false;
+        });
+      }
+    }
+    
     if (_currentChat == null) {
       print('[ChatScreen] 🆕 Creating new chat...');
       await _createNewChat();
@@ -481,6 +535,29 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             child: IconButton(
               icon: const Icon(Icons.smart_toy),
               onPressed: () {
+                // Handle sidebar based on screen width before navigation
+                final screenWidth = MediaQuery.of(context).size.width;
+                if (screenWidth < 800) {
+                  print('[ChatScreen] 🔥 FORCE closing sidebar on narrow screen (${screenWidth.toInt()}px) before navigation');
+                  if (!_isSidebarCollapsed) {
+                    setState(() {
+                      _isSidebarCollapsed = true;
+                    });
+                  }
+                  // Force rebuild to ensure visual update
+                  Future.delayed(const Duration(milliseconds: 10), () {
+                    setState(() {});
+                  });
+                } else {
+                  print('[ChatScreen] 💻 Keeping sidebar open on wide screen (${screenWidth.toInt()}px)');
+                  // On wide screens, ensure sidebar stays open
+                  if (_isSidebarCollapsed) {
+                    setState(() {
+                      _isSidebarCollapsed = false;
+                    });
+                  }
+                }
+                
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -530,6 +607,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           ChatInput(
             onSendMessage: _handleSendMessage,
             onToggleStreaming: _handleToggleStreaming,
+            focusNode: _chatInputFocusNode,
           ),
         ],
       ),
@@ -547,9 +625,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             width: _isSidebarCollapsed ? _sidebarCollapsedWidth : _sidebarWidth,
             isCollapsed: _isSidebarCollapsed,
             onToggleSidebar: () {
+              print('[ChatScreen] 🔄 Toggling sidebar (current: $_isSidebarCollapsed)');
               setState(() {
                 _isSidebarCollapsed = !_isSidebarCollapsed;
               });
+              print('[ChatScreen] ✅ Sidebar now: $_isSidebarCollapsed');
             },
             chats: _chats,
             currentChat: _currentChat,
@@ -589,6 +669,29 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       IconButton(
                         icon: const Icon(Icons.smart_toy),
                         onPressed: () {
+                          // Handle sidebar based on screen width before navigation
+                          final screenWidth = MediaQuery.of(context).size.width;
+                          if (screenWidth < 800) {
+                            print('[ChatScreen] 🔥 FORCE closing sidebar on narrow screen (${screenWidth.toInt()}px) before navigation');
+                            if (!_isSidebarCollapsed) {
+                              setState(() {
+                                _isSidebarCollapsed = true;
+                              });
+                            }
+                            // Force rebuild to ensure visual update
+                            Future.delayed(const Duration(milliseconds: 10), () {
+                              setState(() {});
+                            });
+                          } else {
+                            print('[ChatScreen] 💻 Keeping sidebar open on wide screen (${screenWidth.toInt()}px)');
+                            // On wide screens, ensure sidebar stays open
+                            if (_isSidebarCollapsed) {
+                              setState(() {
+                                _isSidebarCollapsed = false;
+                              });
+                            }
+                          }
+                          
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -626,6 +729,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 ChatInput(
                   onSendMessage: _handleSendMessage,
                   onToggleStreaming: _handleToggleStreaming,
+                  focusNode: _chatInputFocusNode,
                 ),
               ],
             ),

@@ -5,11 +5,13 @@ import 'package:speech_to_text/speech_to_text.dart';
 class ChatInput extends StatefulWidget {
   final Function(String) onSendMessage;
   final Function(bool) onToggleStreaming;
+  final FocusNode? focusNode;
 
   const ChatInput({
     Key? key,
     required this.onSendMessage,
     required this.onToggleStreaming,
+    this.focusNode,
   }) : super(key: key);
 
   @override
@@ -97,6 +99,7 @@ class _ChatInputState extends State<ChatInput> {
           Expanded(
             child: TextField(
               controller: _textController,
+              focusNode: widget.focusNode,
               maxLines: 1,
               decoration: InputDecoration(
                 hintText: 'Type your message...',

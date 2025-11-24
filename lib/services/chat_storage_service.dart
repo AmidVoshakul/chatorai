@@ -21,7 +21,7 @@ class ChatStorageService {
     final prefs = await SharedPreferences.getInstance();
     final chats = await _getChatsFromStorage(prefs);
     
-    chats.add(chat);
+    chats.insert(0, chat);
     await _saveChatsToStorage(prefs, chats);
   }
 
