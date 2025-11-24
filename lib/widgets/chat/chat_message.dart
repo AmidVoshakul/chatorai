@@ -3,6 +3,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/code_block.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/scrollable_action_buttons.dart';
 import 'package:gen_ui_chat_ai/utils/message_utils.dart';
+import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 
@@ -15,6 +16,7 @@ class ChatMessage extends StatefulWidget {
   final VoidCallback onMessageDeleted; // Callback for when message is deleted
   final VoidCallback? onDelete;
   final VoidCallback? onMessageEdited;
+  final Function(String)? onMessageUpdated; // Callback for when message content is updated
   final VoidCallback? onContinueResponse; // Callback for continuing response
   final bool isLastMessage; // Whether this is the last message in chat
 
@@ -28,6 +30,7 @@ class ChatMessage extends StatefulWidget {
     required this.onMessageDeleted,
     this.onDelete,
     this.onMessageEdited,
+    this.onMessageUpdated,
     this.onContinueResponse,
     this.isLastMessage = false,
   }) : super(key: key);
@@ -41,12 +44,25 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   late Animation<double> _fadeAnimation;
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
+  
+  bool _isEditing = false; // Режим редактирования
+  late TextEditingController _textController; // Контроллер для текста редактирования
 
   @override
   void initState() {
     super.initState();
     final previewLength = widget.message.content.length > 30 ? 30 : widget.message.content.length;
     print('[ChatMessage] 🎨 Initializing message widget for: ${widget.message.role} - ${widget.message.content.substring(0, previewLength)}...');
+    
+    // Инициализируем контроллер для редактирования
+    _textController = TextEditingController(text: widget.message.content);
+    
+    // Слушаем изменения сообщения
+    _textController.addListener(() {
+      if (!_isEditing && _textController.text != widget.message.content) {
+        _textController.text = widget.message.content;
+      }
+    });
     
     // Fade-in animation
     _fadeController = AnimationController(
@@ -221,9 +237,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                           size: 16,
                           color: theme.iconTheme.color?.withValues(alpha: 0.7),
                         ),
-                        onPressed: () {
-                          // TODO: Edit user message
-                        },
+                        onPressed: _startEditing,
                         tooltip: 'Edit',
                         splashRadius: 20,
                       ),
@@ -387,6 +401,11 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
     
     if (widget.message.content.isEmpty) {
       return Container();
+    }
+
+    // Режим inline редактирования
+    if (_isEditing) {
+      return _buildEditInterface(context);
     }
 
     // Check if content contains code blocks that need special handling
@@ -562,6 +581,192 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
       return '${difference.inDays}d ago';
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    }
+  }
+
+  /// Переключение в режим редактирования
+  void _startEditing() {
+    setState(() {
+      _isEditing = true;
+      // Обновляем текст в контроллере актуальным содержимым сообщения
+      _textController.text = widget.message.content;
+      _textController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _textController.text.length),
+      );
+    });
+    // Фокус на текстовом поле
+    FocusScope.of(context).requestFocus(FocusNode());
+  }
+
+  /// Отмена редактирования
+  void _cancelEditing() {
+    setState(() {
+      _isEditing = false;
+    });
+    // Восстанавливаем оригинальный текст
+    _textController.text = widget.message.content;
+  }
+
+  /// Сохранение изменений
+  Future<void> _saveEditing() async {
+    setState(() {
+      _isEditing = false;
+    });
+    
+    await _handleEditMessage(_textController.text);
+  }
+
+  /// Сохранение и отправка
+  Future<void> _saveAndSend() async {
+    setState(() {
+      _isEditing = false;
+    });
+    
+    await _handleEditAndSend(_textController.text);
+  }
+
+  /// Построение интерфейса редактирования
+  Widget _buildEditInterface(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Текстовое поле для редактирования
+        Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: theme.dividerColor),
+          ),
+          child: TextField(
+            controller: _textController,
+            maxLines: null,
+            minLines: 3,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: 'Enter your message...',
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(12),
+              isDense: true,
+            ),
+            style: TextStyle(
+              fontSize: 14,
+              color: theme.textTheme.bodyMedium?.color,
+            ),
+          ),
+        ),
+        
+        // Кнопки действий
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // Отмена
+            TextButton(
+              onPressed: _cancelEditing,
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+              ),
+            ),
+            
+            // Сохранить
+            TextButton(
+              onPressed: _saveEditing,
+              child: Text(
+                'Save',
+                style: TextStyle(color: theme.primaryColor),
+              ),
+            ),
+            
+            // Сохранить и отправить
+            ElevatedButton(
+              onPressed: _saveAndSend,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.primaryColor,
+                foregroundColor: theme.colorScheme.onPrimary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              child: Text('Save & Send'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Обработка редактирования сообщения
+  Future<void> _handleEditMessage(String newContent) async {
+    try {
+      // Создаем обновленное сообщение
+      final updatedMessage = widget.message.copyWith(content: newContent);
+      
+      // Сохраняем изменения в базе данных
+      await widget.chatStorageService.updateMessageInChat(
+        widget.chatId,
+        widget.message.id,
+        updatedMessage,
+      );
+      
+      // Обновляем текст в контроллере
+      _textController.text = newContent;
+      
+      // Уведомляем родительский компонент об изменении
+      if (widget.onMessageUpdated != null) {
+        widget.onMessageUpdated!(newContent);
+      }
+      
+      // Показываем уведомление об успешном редактировании
+      SnackbarUtils.showSuccessSnackBar(
+        context: context,
+        message: 'Message edited successfully',
+        icon: Icons.edit,
+      );
+    } catch (e) {
+      SnackbarUtils.showErrorSnackBar(
+        context: context,
+        message: 'Failed to edit message',
+        icon: Icons.error,
+      );
+    }
+  }
+
+  /// Обработка редактирования и отправки сообщения
+  Future<void> _handleEditAndSend(String newContent) async {
+    try {
+      // Создаем обновленное сообщение
+      final updatedMessage = widget.message.copyWith(content: newContent);
+      
+      // Сохраняем изменения в базе данных
+      await widget.chatStorageService.updateMessageInChat(
+        widget.chatId,
+        widget.message.id,
+        updatedMessage,
+      );
+      
+      // Обновляем текст в контроллере
+      _textController.text = newContent;
+      
+      // Уведомляем родительский компонент об изменении
+      if (widget.onMessageUpdated != null) {
+        widget.onMessageUpdated!(newContent);
+      }
+      
+      // TODO: Здесь должна быть логика удаления последующих сообщений и генерации нового ответа
+      
+      // Показываем уведомление
+      SnackbarUtils.showSuccessSnackBar(
+        context: context,
+        message: 'Message edited and response regenerated',
+        icon: Icons.refresh,
+      );
+    } catch (e) {
+      SnackbarUtils.showErrorSnackBar(
+        context: context,
+        message: 'Failed to edit and send message',
+        icon: Icons.error,
+      );
     }
   }
 }

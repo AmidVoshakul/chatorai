@@ -99,7 +99,7 @@ class MessageUtils {
   }
 
   /// Редактировать сообщение
-  static Future<String?> editMessage({
+  static Future<EditMessageResult> editMessage({
     required String currentContent,
     required BuildContext context,
   }) async {
@@ -107,9 +107,10 @@ class MessageUtils {
     final String currentLanguage = _getCurrentLanguage(context);
     final String titleText = currentLanguage == 'en' ? 'Edit Message' : 'Редактировать сообщение';
     final String saveText = currentLanguage == 'en' ? 'Save' : 'Сохранить';
+    final String saveAndSendText = currentLanguage == 'en' ? 'Save and Send' : 'Сохранить и отправить';
     final String cancelText = currentLanguage == 'en' ? 'Cancel' : 'Отмена';
 
-    final String? newContent = await showDialog<String?>(
+    final EditMessageResult? result = await showDialog<EditMessageResult>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
@@ -117,30 +118,107 @@ class MessageUtils {
           content: TextField(
             controller: controller,
             maxLines: 6,
+            autofocus: true,
             decoration: InputDecoration(
               hintText: currentLanguage == 'en' ? 'Enter new message content' : 'Введите новое содержание сообщения',
               border: const OutlineInputBorder(),
+              isDense: true,
             ),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop(null);
+                Navigator.of(dialogContext).pop(EditMessageResult.cancelled);
               },
               child: Text(cancelText),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop(controller.text);
+                Navigator.of(dialogContext).pop(EditMessageResult.saved);
               },
               child: Text(saveText),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(EditMessageResult.savedAndSent);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              child: Text(saveAndSendText),
             ),
           ],
         );
       },
     );
 
-    return newContent;
+    return result ?? EditMessageResult.cancelled;
+  }
+
+  /// Редактировать сообщение и получить новый контент
+  static Future<EditMessageResultWithContent> editMessageWithResult({
+    required String currentContent,
+    required BuildContext context,
+  }) async {
+    final TextEditingController controller = TextEditingController(text: currentContent);
+    final String currentLanguage = _getCurrentLanguage(context);
+    final String titleText = currentLanguage == 'en' ? 'Edit Message' : 'Редактировать сообщение';
+    final String saveText = currentLanguage == 'en' ? 'Save' : 'Сохранить';
+    final String saveAndSendText = currentLanguage == 'en' ? 'Save and Send' : 'Сохранить и отправить';
+    final String cancelText = currentLanguage == 'en' ? 'Cancel' : 'Отмена';
+
+    final EditMessageResult? result = await showDialog<EditMessageResult>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(titleText),
+          content: TextField(
+            controller: controller,
+            maxLines: 6,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: currentLanguage == 'en' ? 'Enter new message content' : 'Введите новое содержание сообщения',
+              border: const OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(EditMessageResult.cancelled);
+              },
+              child: Text(cancelText),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(EditMessageResult.saved);
+              },
+              child: Text(saveText),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(EditMessageResult.savedAndSent);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              child: Text(saveAndSendText),
+            ),
+          ],
+        );
+      },
+    );
+
+    return EditMessageResultWithContent(
+      result: result ?? EditMessageResult.cancelled,
+      newContent: controller.text,
+    );
   }
 
   /// Копировать сообщение в буфер обмена
@@ -355,6 +433,24 @@ enum MessageActionType {
   copy,
   share,
   copyChat, // Добавляем действие для копирования всего чата
+}
+
+/// Результат редактирования сообщения
+enum EditMessageResult {
+  cancelled,
+  saved,
+  savedAndSent
+}
+
+/// Результат редактирования сообщения с текстом
+class EditMessageResultWithContent {
+  final EditMessageResult result;
+  final String? newContent;
+
+  EditMessageResultWithContent({
+    required this.result,
+    this.newContent,
+  });
 }
 
 /// Действие с сообщением
