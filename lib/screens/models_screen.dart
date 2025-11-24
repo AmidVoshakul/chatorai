@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
+import 'package:gen_ui_chat_ai/themes/app_theme.dart' show UbuntuColors;
+import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 
 class ModelsScreen extends StatefulWidget {
   final Function(String)? onModelSelected;
@@ -87,25 +89,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
     }
     
     // Show success snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              getLocalizedText('modelSelected'),
-              style: const TextStyle(color: Colors.white),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
+    SnackbarUtils.showSuccessSnackBar(
+      context: context,
+      message: getLocalizedText('modelSelected'),
+      icon: Icons.check_circle,
     );
     
     // Navigate back to chat screen with selected model
@@ -139,22 +126,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
           }
         }
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.warning, color: Colors.white, size: 18),
-                SizedBox(width: 8),
-                Text(getLocalizedText('errorLoadingModels')),
-              ],
-            ),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
+        SnackbarUtils.showWarningSnackBar(
+          context: context,
+          message: getLocalizedText('errorLoadingModels'),
+          icon: Icons.warning,
+          duration: const Duration(seconds: 3),
         );
       }
     } finally {
@@ -330,8 +306,8 @@ const SizedBox(height: 12),
                 height: 1,
                 thickness: 1,
                 color: Theme.of(context).brightness == Brightness.dark 
-                    ? AppTheme.ubuntuDarkBorderColor 
-                    : AppTheme.ubuntuLightBorderColor,
+                    ? UbuntuColors.darkBorderColor 
+                    : UbuntuColors.lightBorderColor,
               ),
               const SizedBox(height: 12),
               Text(
@@ -523,8 +499,8 @@ const SizedBox(height: 12),
                 height: 1,
                 thickness: 1,
                 color: Theme.of(context).brightness == Brightness.dark 
-                    ? AppTheme.ubuntuDarkBorderColor 
-                    : AppTheme.ubuntuLightBorderColor,
+                    ? UbuntuColors.darkBorderColor 
+                    : UbuntuColors.lightBorderColor,
               ),
               const SizedBox(height: 8),
               Text(

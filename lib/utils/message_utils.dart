@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart' as ChatModels;
+import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 
 /// Утилиты для управления сообщениями
 class MessageUtils {
@@ -160,27 +161,13 @@ class MessageUtils {
       await Clipboard.setData(ClipboardData(text: formattedContent));
       
       // Показываем краткое сообщение об успехе
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.copy, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                currentLanguage == 'en' 
-                    ? 'Copied to clipboard' 
-                    : 'Скопировано в буфер',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 1),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
+      SnackbarUtils.showSuccessSnackBar(
+        context: context,
+        message: currentLanguage == 'en' 
+            ? 'Copied to clipboard' 
+            : 'Скопировано в буфер',
+        icon: Icons.copy,
+        duration: const Duration(seconds: 1),
       );
       
       print('[MessageUtils] ✅ Message copied to clipboard');
@@ -188,17 +175,10 @@ class MessageUtils {
       print('[MessageUtils] ❌ Error copying message: $e');
       
       final String currentLanguage = _getCurrentLanguage(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            currentLanguage == 'en' ? 'Failed to copy message' : 'Не удалось скопировать сообщение',
-            style: const TextStyle(fontSize: 14),
-          ),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.red,
-          elevation: 6,
-        ),
+      SnackbarUtils.showErrorSnackBar(
+        context: context,
+        message: currentLanguage == 'en' ? 'Failed to copy message' : 'Не удалось скопировать сообщение',
+        icon: Icons.error,
       );
     }
   }
@@ -267,27 +247,12 @@ class MessageUtils {
       await Clipboard.setData(ClipboardData(text: formattedChat));
       
       // Показываем успешное сообщение
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.copy_all, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                currentLanguage == 'en' 
-                    ? 'Chat copied to clipboard' 
-                    : 'Чат скопирован в буфер',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
+      SnackbarUtils.showSuccessSnackBar(
+        context: context,
+        message: currentLanguage == 'en' 
+            ? 'Chat copied to clipboard' 
+            : 'Чат скопирован в буфер',
+        icon: Icons.copy_all,
       );
       
       print('[MessageUtils] ✅ Chat copied to clipboard (${messages.length} messages)');
@@ -295,17 +260,10 @@ class MessageUtils {
       print('[MessageUtils] ❌ Error copying chat: $e');
       
       final String currentLanguage = _getCurrentLanguage(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            currentLanguage == 'en' ? 'Failed to copy chat' : 'Не удалось скопировать чат',
-            style: const TextStyle(fontSize: 14),
-          ),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.red,
-          elevation: 6,
-        ),
+      SnackbarUtils.showErrorSnackBar(
+        context: context,
+        message: currentLanguage == 'en' ? 'Failed to copy chat' : 'Не удалось скопировать чат',
+        icon: Icons.error,
       );
     }
   }

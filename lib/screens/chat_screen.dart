@@ -12,6 +12,7 @@ import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
 import 'package:gen_ui_chat_ai/screens/models_screen.dart';
 import 'package:gen_ui_chat_ai/utils/chat_scroll_utils.dart';
+import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? initialModel;
@@ -248,27 +249,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       await _loadChats();
       
       // Show success snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.delete, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                currentLanguage == 'en' 
-                    ? 'Chat deleted successfully' 
-                    : 'Чат успешно удален',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
+      SnackbarUtils.showSuccessSnackBar(
+        context: context,
+        message: currentLanguage == 'en' 
+            ? 'Chat deleted successfully' 
+            : 'Чат успешно удален',
+        icon: Icons.delete,
       );
       
       if (_currentChat?.id == chatId) {

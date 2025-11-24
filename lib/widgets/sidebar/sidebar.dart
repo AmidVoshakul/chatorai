@@ -6,6 +6,7 @@ import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
 import 'package:gen_ui_chat_ai/widgets/sidebar/chat_actions_menu.dart';
+import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 
 class Sidebar extends StatefulWidget {
   final double width;
@@ -297,50 +298,20 @@ class _SidebarState extends State<Sidebar> {
   void _handleRenameChat(Chat chat, String newTitle) async {
     try {
       await _chatStorageService.renameChat(chat.id, newTitle);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.edit, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                _language == 'en' 
-                    ? 'Chat renamed to: $newTitle' 
-                    : 'Чат переименован в: $newTitle',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
+      SnackbarUtils.showSuccessSnackBar(
+        context: context,
+        message: _language == 'en' 
+            ? 'Chat renamed to: $newTitle' 
+            : 'Чат переименован в: $newTitle',
+        icon: Icons.edit,
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                _language == 'en' 
-                    ? 'Failed to rename chat' 
-                    : 'Не удалось переименовать чат',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
+      SnackbarUtils.showErrorSnackBar(
+        context: context,
+        message: _language == 'en' 
+            ? 'Failed to rename chat' 
+            : 'Не удалось переименовать чат',
+        icon: Icons.error,
       );
     }
   }
