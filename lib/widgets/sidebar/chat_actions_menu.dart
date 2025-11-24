@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
+import 'package:gen_ui_chat_ai/utils/message_utils.dart';
 
 class ChatActionsMenu extends StatefulWidget {
   final Chat chat;
@@ -100,6 +101,21 @@ class _ChatActionsMenuState extends State<ChatActionsMenu> {
           enabled: true,
           child: Row(
             children: [
+              Icon(Icons.copy_all, size: 18, color: _theme.iconTheme.color),
+              const SizedBox(width: 12),
+              Text(
+                _language == 'en' ? 'Copy Chat' : 'Копировать чат',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          onTap: () => _handleCopyChat(),
+        ),
+        PopupMenuItem(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          enabled: true,
+          child: Row(
+            children: [
               Icon(Icons.edit, size: 18, color: _theme.iconTheme.color),
               const SizedBox(width: 12),
               Text(
@@ -116,7 +132,7 @@ class _ChatActionsMenuState extends State<ChatActionsMenu> {
           enabled: true,
           child: Row(
             children: [
-              Icon(Icons.delete, size: 18, color: _theme.colorScheme.error),
+              Icon(Icons.delete, size: 20, color: _theme.colorScheme.error),
               const SizedBox(width: 12),
               Text(
                 _language == 'en' ? 'Delete Chat' : 'Удалить чат',
@@ -140,8 +156,22 @@ class _ChatActionsMenuState extends State<ChatActionsMenu> {
         : 'Функция деления чата пока не реализована';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.share, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              message,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
         backgroundColor: _theme.colorScheme.secondary,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -201,6 +231,41 @@ class _ChatActionsMenuState extends State<ChatActionsMenu> {
 
     if (result != null && result is String && result.isNotEmpty) {
       widget.onRename(result);
+    }
+  }
+
+  void _handleCopyChat() async {
+    try {
+      // Используем функцию копирования чата из MessageUtils
+      await MessageUtils.copyChat(
+        messages: _chat.messages,
+        chatTitle: _chat.title,
+        context: context,
+      );
+    } catch (e) {
+      final message = _language == 'en' 
+          ? 'Failed to copy chat' 
+          : 'Не удалось скопировать чат';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                message,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+          backgroundColor: _theme.colorScheme.error,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
     }
   }
 }

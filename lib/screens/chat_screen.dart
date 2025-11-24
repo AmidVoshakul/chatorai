@@ -247,6 +247,30 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       await _chatStorageService.deleteChat(chatId);
       await _loadChats();
       
+      // Show success snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.delete, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                currentLanguage == 'en' 
+                    ? 'Chat deleted successfully' 
+                    : 'Чат успешно удален',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+      
       if (_currentChat?.id == chatId) {
         if (_chats.isNotEmpty) {
           _selectChat(_chats.first.id);
