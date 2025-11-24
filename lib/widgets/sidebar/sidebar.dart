@@ -155,7 +155,7 @@ class _SidebarState extends State<Sidebar> {
                           return _buildChatItem(chat);
                         },
                       ))
-                : Container(), // Пустой контейнер в свернутом состоянии
+                : Container(), // Пустой контейнер в свerнутом состоянии
           ),
           
           // Footer
@@ -271,35 +271,19 @@ class _SidebarState extends State<Sidebar> {
               if (!widget.isCollapsed)
                 Stack(
                   children: [
-                    // Chat actions menu (only show when not selected and sidebar expanded)
-                    if (!isSelected)
-                      Positioned(
-                        right: 8,
-                        top: 0,
-                        bottom: 0,
-                        child: ChatActionsButton(
-                          chat: chat,
-                          theme: _theme,
-                          language: _language,
-                          onRename: (newTitle) => _handleRenameChat(chat, newTitle),
-                          onDelete: () => widget.onChatDelete(chat.id),
-                        ),
+                    // Chat actions menu (show for all chats)
+                    Positioned(
+                      right: 8,
+                      top: 0,
+                      bottom: 0,
+                      child: ChatActionsButton(
+                        chat: chat,
+                        theme: _theme,
+                        language: _language,
+                        onRename: (newTitle) => _handleRenameChat(chat, newTitle),
+                        onDelete: () => widget.onChatDelete(chat.id),
                       ),
-                    // Check icon (only show when selected)
-                    if (isSelected)
-                      Positioned(
-                        right: 8,
-                        top: 0,
-                        bottom: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          child: Icon(
-                            Icons.check,
-                            color: _theme.colorScheme.primary,
-                            size: 16,
-                          ),
-                        ),
-                      ),
+                    ),
                   ],
                 ),
             ],

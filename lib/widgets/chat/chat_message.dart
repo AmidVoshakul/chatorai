@@ -84,28 +84,66 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
       position: _slideAnimation,
       child: FadeTransition(
         opacity: _fadeAnimation,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment:
-                isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-            children: [
-              // No avatar for any messages
-              
-              // User messages take responsive width, AI messages take full width
-              isUser 
-                ? Flexible(
-                    fit: FlexFit.loose,
-                    flex: 8,
-                    child: Container(
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width < 800 
-                          ? MediaQuery.of(context).size.width * 0.8  // Mobile: 80%
-                          : MediaQuery.of(context).size.width * 0.6  // Desktop: 60%
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            // Message bubble (without actions)
+            Row(
+              mainAxisAlignment:
+                  isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+              children: [
+                // No avatar for any messages
+                
+                // User messages take responsive width, AI messages take full width
+                isUser 
+                  ? Flexible(
+                      fit: FlexFit.loose,
+                      flex: 8,
+                      child: Container(
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width < 800 
+                            ? MediaQuery.of(context).size.width * 0.8  // Mobile: 80%
+                            : MediaQuery.of(context).size.width * 0.6  // Desktop: 60%
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 5,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                          border: Border.all(
+                            color: theme.dividerColor.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Message Content
+                            _buildMessageContent(context),
+                            
+                            // Error State
+                            if (widget.message.isError)
+                              _buildErrorMessage(),
+                            
+                            // Streaming Indicator
+                            if (widget.isStreaming && widget.message.role == MessageRole.assistant)
+                              _buildStreamingIndicator(),
+                          ],
+                        ),
                       ),
-                      padding: const EdgeInsets.all(16),
+                    )
+                  : Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
+                        color: theme.cardColor,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -122,6 +160,30 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Message Header
+                          Row(
+                            children: [
+                              Text(
+                                widget.message.role == MessageRole.assistant && widget.message.model != null
+                                  ? widget.message.model!
+                                  : widget.message.role.displayName,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                _formatTime(widget.message.timestamp),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          const SizedBox(height: 8),
+                          
                           // Message Content
                           _buildMessageContent(context),
                           
@@ -132,79 +194,25 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                           // Streaming Indicator
                           if (widget.isStreaming && widget.message.role == MessageRole.assistant)
                             _buildStreamingIndicator(),
-                          
-                          // Message Actions
-                          if (!widget.isStreaming)
-                            _buildMessageActions(),
                         ],
                       ),
                     ),
-                  )
-                : Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.cardColor,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 5,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: theme.dividerColor.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Message Header
-                        Row(
-                          children: [
-                            Text(
-                              widget.message.role == MessageRole.assistant && widget.message.model != null
-                                ? widget.message.model!
-                                : widget.message.role.displayName,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              _formatTime(widget.message.timestamp),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-                              ),
-                            ),
-                          ],
-                        ),
-                        
-                        const SizedBox(height: 8),
-                        
-                        // Message Content
-                        _buildMessageContent(context),
-                        
-                        // Error State
-                        if (widget.message.isError)
-                          _buildErrorMessage(),
-                        
-                        // Streaming Indicator
-                        if (widget.isStreaming && widget.message.role == MessageRole.assistant)
-                          _buildStreamingIndicator(),
-                        
-                        // Message Actions
-                        if (!widget.isStreaming)
-                          _buildMessageActions(),
-                      ],
-                    ),
                   ),
+              ],
+            ),
+            
+            // Message Actions (outside the message bubble, on main chat background)
+            if (!widget.isStreaming)
+              Container(
+                margin: const EdgeInsets.only(top: 4, bottom: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    _buildMessageActions(),
+                  ],
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
