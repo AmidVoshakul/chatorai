@@ -14,6 +14,8 @@ class ChatMessage extends StatefulWidget {
   final VoidCallback onMessageDeleted; // Callback for when message is deleted
   final VoidCallback? onDelete;
   final VoidCallback? onMessageEdited;
+  final VoidCallback? onContinueResponse; // Callback for continuing response
+  final bool isLastMessage; // Whether this is the last message in chat
 
   const ChatMessage({
     Key? key,
@@ -25,6 +27,8 @@ class ChatMessage extends StatefulWidget {
     required this.onMessageDeleted,
     this.onDelete,
     this.onMessageEdited,
+    this.onContinueResponse,
+    this.isLastMessage = false,
   }) : super(key: key);
 
   @override
@@ -497,6 +501,28 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
               tooltip: 'Regenerate',
               splashRadius: 20,
             ),
+            // Continue response button (only show for recent assistant messages that might be incomplete)
+            if (widget.isLastMessage && widget.message.content.isNotEmpty && 
+                (widget.message.content.endsWith('...') || 
+                 widget.message.content.split(' ').length > 30 ||
+                 !widget.message.isComplete)) ...[
+              const SizedBox(width: 4),
+              IconButton(
+                icon: Icon(
+                  Icons.play_arrow,
+                  size: 16,
+                  color: theme.colorScheme.primary.withOpacity(0.7),
+                ),
+                onPressed: () {
+                  // Continue response
+                  if (widget.onContinueResponse != null) {
+                    widget.onContinueResponse!();
+                  }
+                },
+                tooltip: 'Continue response',
+                splashRadius: 20,
+              ),
+            ],
             IconButton(
               icon: Icon(
                 Icons.thumb_up,
