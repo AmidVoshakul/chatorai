@@ -87,7 +87,7 @@ class _ChatInputState extends State<ChatInput> {
         color: Colors.transparent,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -104,7 +104,7 @@ class _ChatInputState extends State<ChatInput> {
               decoration: InputDecoration(
                 hintText: 'Type your message...',
                 hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
+                  color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -132,7 +132,7 @@ class _ChatInputState extends State<ChatInput> {
                   horizontal: 20,
                   vertical: 16,
                 ),
-                fillColor: theme.cardColor.withOpacity(0.5),
+                fillColor: theme.cardColor.withValues(alpha: 0.5),
                 filled: true,
               ),
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -160,14 +160,14 @@ class _ChatInputState extends State<ChatInput> {
                   : LinearGradient(
                       colors: [
                         theme.colorScheme.primary,
-                        theme.colorScheme.primary.withOpacity(0.8),
+                        theme.colorScheme.primary.withValues(alpha: 0.8),
                       ],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
               borderRadius: BorderRadius.circular(26),
               color: _textController.text.trim().isEmpty
-                  ? theme.iconTheme.color?.withOpacity(0.1)
+                  ? theme.iconTheme.color?.withValues(alpha: 0.1)
                   : null,
             ),
             child: Material(

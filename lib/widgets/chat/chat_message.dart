@@ -113,17 +113,17 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 5,
                               offset: const Offset(0, 2),
                             ),
                           ],
                           border: Border.all(
-                            color: theme.dividerColor.withOpacity(0.3),
+                            color: theme.dividerColor.withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -152,13 +152,13 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 5,
                             offset: const Offset(0, 2),
                           ),
                         ],
                         border: Border.all(
-                          color: theme.dividerColor.withOpacity(0.3),
+                          color: theme.dividerColor.withValues(alpha: 0.3),
                           width: 1,
                         ),
                       ),
@@ -174,14 +174,14 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                                   : widget.message.role.displayName,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                                 ),
                               ),
                               const Spacer(),
                               Text(
                                 _formatTime(widget.message.timestamp),
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                                 ),
                               ),
                             ],
@@ -496,7 +496,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
           Text(
             'AI is typing',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+              color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(width: 8),
@@ -511,7 +511,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.1),
+        color: Colors.red.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(

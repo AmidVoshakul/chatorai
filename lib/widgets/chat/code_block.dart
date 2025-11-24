@@ -26,7 +26,7 @@ class CodeBlock extends StatelessWidget {
         color: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF8F9FA),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: theme.dividerColor.withOpacity(0.3),
+          color: theme.dividerColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),

@@ -1094,7 +1094,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     'Tap suggestion or send your message',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                     ),
                   ),
                 const SizedBox(width: 8),

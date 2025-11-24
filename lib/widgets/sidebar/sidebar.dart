@@ -57,7 +57,7 @@ class _SidebarState extends State<Sidebar> {
         color: _theme.cardColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -215,7 +215,7 @@ class _SidebarState extends State<Sidebar> {
       child: InkWell(
         onTap: () => widget.onChatSelect(chat.id),
         borderRadius: BorderRadius.zero,
-        hoverColor: _theme.colorScheme.primary.withOpacity(0.1),
+        hoverColor: _theme.colorScheme.primary.withValues(alpha: 0.1),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           height: 60,
@@ -330,7 +330,7 @@ class _SidebarState extends State<Sidebar> {
             Icon(
               Icons.chat_bubble_outline,
               size: 60,
-              color: theme.iconTheme.color?.withOpacity(0.5),
+              color: theme.iconTheme.color?.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
@@ -463,7 +463,7 @@ class _ChatActionsButtonState extends State<ChatActionsButton> {
           child: Icon(
             Icons.more_vert,
             size: 18,
-            color: _theme.iconTheme.color?.withOpacity(0.6),
+            color: _theme.iconTheme.color?.withValues(alpha: 0.6),
           ),
         ),
       ),

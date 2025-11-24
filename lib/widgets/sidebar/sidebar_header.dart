@@ -24,7 +24,7 @@ class SidebarHeader extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             theme.colorScheme.primary,
-            theme.colorScheme.primary.withOpacity(0.8),
+            theme.colorScheme.primary.withValues(alpha: 0.8),
           ],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
