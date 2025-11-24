@@ -31,8 +31,8 @@ class ChatScrollUtils {
   bool _autoScrollEnabled = true;
   
   // Linux-specific optimizations (increased thresholds for better responsiveness)
-  static const double _scrollThreshold = 100.0; // Was 50, increased for Linux
-  static const int _scrollDelay = 30; // Was 50ms, reduced for Linux
+  static const double _scrollThreshold = 50.0; // Reduced for more sensitive auto-scroll
+  static const int _scrollDelay = 10; // Reduced for faster response
   
   /// Constructor
   ChatScrollUtils({
@@ -283,6 +283,25 @@ class ChatScrollUtils {
     print('[ChatScrollUtils] 🔄 Scroll state reset');
   }
   
+  /// Call this method when messages are updated during streaming for aggressive auto-scroll
+  void onNewMessagesStreaming() {
+    // During streaming, always scroll to bottom regardless of user position or locks
+    // This ensures user sees the live response immediately
+    Future.delayed(Duration(milliseconds: _scrollDelay), () {
+      if (scrollController.hasClients && !_isAnimating) {
+        _isAnimating = true;
+        scrollController.animateTo(
+          scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 50), // Very fast for streaming
+          curve: Curves.easeOut,
+        ).then((_) {
+          _isAnimating = false;
+        });
+        print('[ChatScrollUtils] 🌊 Streaming: Aggressive scroll to bottom');
+      }
+    });
+  }
+
   /// Call this method when messages are updated to trigger auto-scroll
   void onNewMessages() {
     if (!_autoScrollLocked && _autoScrollEnabled) {
@@ -294,17 +313,17 @@ class ChatScrollUtils {
           final threshold = _scrollThreshold;
           final isNearBottom = (maxScrollExtent - currentPosition) <= threshold;
           
-          if (isNearBottom) {
-            // User is near bottom, scroll to keep them there with Linux-optimized animation
+          if (isNearBottom || maxScrollExtent <= 0) {
+            // User is near bottom OR it's a new message at the beginning, scroll to keep them there with Linux-optimized animation
             scrollController.animateTo(
               maxScrollExtent,
-              duration: const Duration(milliseconds: 150), // Faster animation for Linux
+              duration: const Duration(milliseconds: 100), // Even faster animation for streaming
               curve: Curves.easeOut,
             );
-            print('[ChatScrollUtils] 📨 Linux: Scrolling to bottom (user near bottom)');
+            print('[ChatScrollUtils] 📨 Linux: Scrolling to bottom (user near bottom or new message)');
           } else {
-            // User is reading old messages, don't interrupt
-            print('[ChatScrollUtils] 📨 Linux: Not scrolling (user reading old messages)');
+            // User is reading old messages, don't interrupt but log for debugging
+            print('[ChatScrollUtils] 📨 Linux: Not scrolling (user reading old messages, distance: ${maxScrollExtent - currentPosition})');
           }
         }
       });

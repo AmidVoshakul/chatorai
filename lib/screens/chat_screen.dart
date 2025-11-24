@@ -165,6 +165,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _currentChat = chat;
     });
     
+    // 🚀 CRITICAL FIX: Auto-scroll to bottom when chat is loaded
+    Future.delayed(const Duration(milliseconds: 100), () {
+      _chatScrollUtils.onNewMessages();
+      print('[ChatScreen] 📨 Auto-scroll triggered after chat selection');
+    });
+    
     print('[ChatScreen] ✅ Chat selected: ${chat.title}');
     
     // Close sidebar on narrow screens when switching chats
@@ -356,6 +362,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         setState(() {
           _currentChat = updatedChat;
         });
+        
+        // 🚀 CRITICAL FIX: Auto-scroll after adding message
+        _chatScrollUtils.onNewMessages();
+        print('[ChatScreen] 📨 Auto-scroll triggered after adding message');
       }
 
       // Stream response from AI
@@ -443,6 +453,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 setState(() {
                   _currentChat = updatedChat;
                 });
+                
+                // 🚀 CRITICAL FIX: Aggressive auto-scroll during streaming
+                _chatScrollUtils.onNewMessagesStreaming();
+                print('[ChatScreen] 📨 Auto-scroll triggered during streaming');
               }
             });
           }
@@ -624,6 +638,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     setState(() {
       _currentChat = updatedChat;
     });
+    
+    // 🚀 CRITICAL FIX: Auto-scroll after adding continuation message
+    _chatScrollUtils.onNewMessages();
+    print('[ChatScreen] 📨 Auto-scroll triggered after adding continuation message');
 
     // Send continuation request to AI
     await _streamContinuationResponse(lastMessage.content);
