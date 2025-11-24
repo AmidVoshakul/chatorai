@@ -251,18 +251,32 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                     // Universal copy action
                     IconButton(
                       icon: Icon(
-                        Icons.copy,
-                        size: 16,
-                        color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                        Icons.copy_all, // Используем более современную иконку
+                        size: 18, // Увеличиваем размер
+                        color: theme.iconTheme.color?.withValues(alpha: 0.8), // Увеличиваем opacity
                       ),
                       onPressed: () {
+                        // Определяем имя отправителя для копирования
+                        String? senderName;
+                        if (widget.message.role == MessageRole.assistant && widget.message.model != null) {
+                          senderName = widget.message.model;
+                        } else if (widget.message.role == MessageRole.assistant) {
+                          senderName = 'AI';
+                        } else if (widget.message.role == MessageRole.user) {
+                          senderName = 'You';
+                        }
+                        
+                        // Используем простую функцию копирования
                         MessageUtils.copyMessage(
                           content: widget.message.content,
                           context: context,
+                          senderName: senderName,
                         );
                       },
-                      tooltip: 'Copy',
-                      splashRadius: 20,
+                      tooltip: 'Copy message (text or markdown)', // Улучшаем tooltip
+                      splashRadius: 24, // Увеличиваем радиус клика
+                      hoverColor: theme.colorScheme.primary.withValues(alpha: 0.1), // Добавляем hover эффект
+                      focusColor: theme.colorScheme.primary.withValues(alpha: 0.1), // Добавляем focus эффект
                     ),
                     
                     // Delete action for all messages
