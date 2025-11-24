@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart' as ChatModels;
@@ -145,23 +146,64 @@ class MessageUtils {
   static Future<void> copyMessage({
     required String content,
     required BuildContext context,
+    String? senderName, // Имя отправителя для форматирования
   }) async {
-    final String currentLanguage = _getCurrentLanguage(context);
-    final String successText = currentLanguage == 'en' 
-        ? 'Message copied to clipboard' 
-        : 'Сообщение скопировано в буфер обмена';
+    try {
+      final String currentLanguage = _getCurrentLanguage(context);
+      
+      // Форматируем контент в markdown с указанием отправителя
+      final String formattedContent = senderName != null 
+          ? '### $senderName\n\n$content'
+          : content;
 
-    // Здесь должна быть логика копирования в буфер обмена
-    // await Clipboard.setData(ClipboardData(text: content));
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(successText),
-        backgroundColor: Colors.blue,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      // Копируем в буфер обмена
+      await Clipboard.setData(ClipboardData(text: formattedContent));
+      
+      // Показываем краткое сообщение об успехе
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.copy, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                currentLanguage == 'en' 
+                    ? 'Copied to clipboard' 
+                    : 'Скопировано в буфер',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+      
+      print('[MessageUtils] ✅ Message copied to clipboard');
+    } catch (e) {
+      print('[MessageUtils] ❌ Error copying message: $e');
+      
+      final String currentLanguage = _getCurrentLanguage(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            currentLanguage == 'en' ? 'Failed to copy message' : 'Не удалось скопировать сообщение',
+            style: const TextStyle(fontSize: 14),
+          ),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+          elevation: 6,
+        ),
+      );
+    }
   }
+
+  
 
   /// Поделиться сообщением
   static Future<void> shareMessage({
@@ -192,8 +234,12 @@ class MessageUtils {
 
   /// Проверить, может ли сообщение быть удалено
   static bool canDeleteMessage(Message message) {
-    // Можно добавить логику, например:
-    // - Нельзя удалять системные сообщения
+    // Системные сообщения нельзя удалять
+    if (message.role == ChatModels.MessageRole.system) {
+      return false;
+    }
+    
+    // Можно добавить другие ограничения, например:
     // - Нельзя удалять сообщения старше N минут
     // - и т.д.
     return true;
@@ -222,6 +268,7 @@ class MessageUtils {
       ));
     }
 
+    // Редактирование доступно только для user сообщений
     if (canEditMessage(message)) {
       actions.add(MessageAction(
         icon: Icons.edit,
@@ -232,21 +279,27 @@ class MessageUtils {
       ));
     }
 
-    actions.add(MessageAction(
-      icon: Icons.copy_all,
-      label: 'Copy',
-      localizedLabel: {'en': 'Copy', 'ru': 'Копировать'},
-      action: MessageActionType.copy,
-      color: Colors.grey,
-    ));
+    // Копирование доступно для всех сообщений, кроме system
+    if (message.role != ChatModels.MessageRole.system) {
+      actions.add(MessageAction(
+        icon: Icons.copy_all,
+        label: 'Copy',
+        localizedLabel: {'en': 'Copy', 'ru': 'Копировать'},
+        action: MessageActionType.copy,
+        color: Colors.grey,
+      ));
+    }
 
-    actions.add(MessageAction(
-      icon: Icons.share,
-      label: 'Share',
-      localizedLabel: {'en': 'Share', 'ru': 'Поделиться'},
-      action: MessageActionType.share,
-      color: Colors.green,
-    ));
+    // Шаринг доступен для всех сообщений, кроме system
+    if (message.role != ChatModels.MessageRole.system) {
+      actions.add(MessageAction(
+        icon: Icons.share,
+        label: 'Share',
+        localizedLabel: {'en': 'Share', 'ru': 'Поделиться'},
+        action: MessageActionType.share,
+        color: Colors.green,
+      ));
+    }
 
     return actions;
   }

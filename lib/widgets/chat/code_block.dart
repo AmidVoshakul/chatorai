@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:flutter_highlight/themes/monokai-sublime.dart';
-import 'package:gen_ui_chat_ai/utils/ui_helper.dart';
+import 'package:gen_ui_chat_ai/utils/message_utils.dart';
 
 class CodeBlock extends StatelessWidget {
   final String code;
@@ -52,12 +51,17 @@ class CodeBlock extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.copy, color: isDark ? Colors.white70 : Colors.black87, size: 18),
+                  icon: Icon(Icons.copy_all, color: isDark ? Colors.white70 : Colors.black87, size: 18),
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: code));
-                    UIHelper.showSuccessSnackBar(context, "Code copied to clipboard");
+                    // Используем улучшенную логику копирования из MessageUtils
+                    MessageUtils.copyMessage(
+                      content: code,
+                      context: context,
+                    );
                   },
                   tooltip: 'Copy code',
+                  splashRadius: 20,
+                  hoverColor: isDark ? Colors.white10 : Colors.black12,
                 ),
               ],
             ),

@@ -89,9 +89,22 @@ class _ModelsScreenState extends State<ModelsScreen> {
     // Show success snackbar
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(getLocalizedText('modelSelected')),
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              getLocalizedText('modelSelected'),
+              style: const TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
     
@@ -128,8 +141,19 @@ class _ModelsScreenState extends State<ModelsScreen> {
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(getLocalizedText('errorLoadingModels')),
-            backgroundColor: Colors.red,
+            content: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.warning, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text(getLocalizedText('errorLoadingModels')),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         );
       }
