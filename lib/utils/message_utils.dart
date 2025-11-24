@@ -225,6 +225,91 @@ class MessageUtils {
     );
   }
 
+  /// Копировать весь чат в буфер обмена
+  static Future<void> copyChat({
+    required List<Message> messages,
+    required String chatTitle,
+    required BuildContext context,
+  }) async {
+    try {
+      final String currentLanguage = _getCurrentLanguage(context);
+      
+      // Форматируем весь чат с заголовком и сообщениями
+      final StringBuffer chatContent = StringBuffer();
+      
+      // Добавляем заголовок чата
+      chatContent.writeln('# $chatTitle\n');
+      chatContent.writeln('**Chat Date**: ${DateTime.now().toLocal().toString().split(' ').first}\n');
+      chatContent.writeln('---\n\n');
+      
+      // Добавляем все сообщения
+      for (final message in messages) {
+        final String sender = message.role == ChatModels.MessageRole.assistant 
+            ? (message.model ?? 'AI') 
+            : 'You';
+        
+        chatContent.writeln('### $sender');
+        chatContent.writeln('');
+        chatContent.writeln(message.content);
+        chatContent.writeln('');
+        
+        // Добавляем временную метку
+        final String timeString = message.timestamp.toLocal().toString().split(' ').last.split('.').first;
+        chatContent.writeln('_Sent at: $timeString');
+        chatContent.writeln('');
+        chatContent.writeln('---');
+        chatContent.writeln('');
+      }
+      
+      final String formattedChat = chatContent.toString().trim();
+      
+      // Копируем в буфер обмена
+      await Clipboard.setData(ClipboardData(text: formattedChat));
+      
+      // Показываем успешное сообщение
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.copy_all, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                currentLanguage == 'en' 
+                    ? 'Chat copied to clipboard' 
+                    : 'Чат скопирован в буфер',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+      
+      print('[MessageUtils] ✅ Chat copied to clipboard (${messages.length} messages)');
+    } catch (e) {
+      print('[MessageUtils] ❌ Error copying chat: $e');
+      
+      final String currentLanguage = _getCurrentLanguage(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            currentLanguage == 'en' ? 'Failed to copy chat' : 'Не удалось скопировать чат',
+            style: const TextStyle(fontSize: 14),
+          ),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+          elevation: 6,
+        ),
+      );
+    }
+  }
+
   /// Получить текущий язык
   static String _getCurrentLanguage(BuildContext context) {
     // Здесь должна быть логика получения текущего языка
@@ -311,6 +396,7 @@ enum MessageActionType {
   edit,
   copy,
   share,
+  copyChat, // Добавляем действие для копирования всего чата
 }
 
 /// Действие с сообщением
@@ -332,4 +418,38 @@ class MessageAction {
   String getLocalizedLabel(String language) {
     return localizedLabel[language] ?? label;
   }
+}
+
+/// Получить список доступных действий для чата
+List<MessageAction> getChatActions() {
+  return [
+    MessageAction(
+      icon: Icons.copy_all,
+      label: 'Copy Chat',
+      localizedLabel: {'en': 'Copy Chat', 'ru': 'Копировать чат'},
+      action: MessageActionType.copyChat,
+      color: Colors.green,
+    ),
+    MessageAction(
+      icon: Icons.share,
+      label: 'Share',
+      localizedLabel: {'en': 'Share', 'ru': 'Поделиться'},
+      action: MessageActionType.share,
+      color: Colors.blue,
+    ),
+    MessageAction(
+      icon: Icons.edit,
+      label: 'Rename',
+      localizedLabel: {'en': 'Rename', 'ru': 'Переименовать'},
+      action: MessageActionType.edit,
+      color: Colors.orange,
+    ),
+    MessageAction(
+      icon: Icons.delete,
+      label: 'Delete',
+      localizedLabel: {'en': 'Delete', 'ru': 'Удалить'},
+      action: MessageActionType.delete,
+      color: Colors.red,
+    ),
+  ];
 }

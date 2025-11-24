@@ -252,25 +252,16 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                     IconButton(
                       icon: Icon(
                         Icons.copy_all, // Используем более современную иконку
-                        size: 18, // Увеличиваем размер
+                        size: 16, // Увеличиваем размер
                         color: theme.iconTheme.color?.withValues(alpha: 0.8), // Увеличиваем opacity
                       ),
                       onPressed: () {
-                        // Определяем имя отправителя для копирования
-                        String? senderName;
-                        if (widget.message.role == MessageRole.assistant && widget.message.model != null) {
-                          senderName = widget.message.model;
-                        } else if (widget.message.role == MessageRole.assistant) {
-                          senderName = 'AI';
-                        } else if (widget.message.role == MessageRole.user) {
-                          senderName = 'You';
-                        }
-                        
-                        // Используем простую функцию копирования
+                        // Копируем сообщение без добавления имени отправителя
+                        // (для одиночных сообщений это не нужно)
                         MessageUtils.copyMessage(
                           content: widget.message.content,
                           context: context,
-                          senderName: senderName,
+                          senderName: null, // Не добавляем имя отправителя
                         );
                       },
                       tooltip: 'Copy message (text or markdown)', // Улучшаем tooltip
