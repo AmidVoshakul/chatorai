@@ -14,6 +14,7 @@ class ChatMessages extends StatefulWidget {
   final Function(String) onSendMessage; // Add callback for sending messages
   final Function() onMessageDeleted; // Add callback for message deletion
   final Function(String)? onContinueResponse; // Add callback for continuing response
+  final ScrollController? scrollController; // External scroll controller
 
   const ChatMessages({
     Key? key,
@@ -24,6 +25,7 @@ class ChatMessages extends StatefulWidget {
     required this.onSendMessage,
     required this.onMessageDeleted,
     this.onContinueResponse,
+    this.scrollController,
   }) : super(key: key);
 
   @override
@@ -32,15 +34,19 @@ class ChatMessages extends StatefulWidget {
 
 class _ChatMessagesState extends State<ChatMessages> {
   late List<Message> _messages;
+  late ScrollController _scrollController;
   bool _isStreaming = false;
   bool _isWaitingForResponse = false; // Новое состояние - ожидание ответа
-  final ScrollController _scrollController = ScrollController();
   String _selectedModel = 'x-ai/grok-4.1-fast:free';
 
   @override
   void initState() {
     super.initState();
     print('[ChatMessages] 🎯 Initializing ChatMessages with chat: ${widget.chat?.id}, messages: ${widget.chat?.messages.length ?? 0}');
+    
+    // Use external scroll controller if provided, otherwise create new one
+    _scrollController = widget.scrollController ?? ScrollController();
+    
     _loadMessages();
     if (widget.selectedModel != null) {
       _selectedModel = widget.selectedModel!;
@@ -104,7 +110,6 @@ class _ChatMessagesState extends State<ChatMessages> {
       print('[ChatMessages] User message added to state, total messages: ${_messages.length}');
     });
     
-    _scrollToBottom();
     // Notify parent to handle AI response
     print('[ChatMessages] Notifying parent about new message');
     widget.onSendMessage(content);
@@ -120,8 +125,6 @@ class _ChatMessagesState extends State<ChatMessages> {
       print('[ChatMessages] ✅ Waiting for response animation shown: _isWaitingForResponse=$_isWaitingForResponse, _isStreaming=$_isStreaming');
       print('[ChatMessages] 📊 Messages count: ${_messages.length}, Total items: ${_messages.length + (_isWaitingForResponse ? 1 : 0)}');
     });
-    
-    _scrollToBottom();
   }
 
   void _updateAssistantMessage(String content) {
@@ -152,8 +155,6 @@ class _ChatMessagesState extends State<ChatMessages> {
         print('[ChatMessages] ⚠️ WARNING: No assistant message to update');
       }
     });
-    
-    _scrollToBottom();
   }
 
   void _completeAssistantMessage() {
@@ -238,18 +239,6 @@ class _ChatMessagesState extends State<ChatMessages> {
       _updateAssistantMessage("Извините, произошла ошибка при обработке запроса. Пожалуйста, попробуйте еще раз.");
       _completeAssistantMessage();
     }
-  }
-
-  void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
   }
 
   void _handleDeleteMessage(Message message) async {
