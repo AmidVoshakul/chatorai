@@ -1,20 +1,30 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/code_block.dart';
-import 'package:gen_ui_chat_ai/utils/ui_helper.dart';
+import 'package:gen_ui_chat_ai/utils/message_utils.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
+import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 
 class ChatMessage extends StatefulWidget {
   final Message message;
   final bool isStreaming;
   final VoidCallback onRetry;
+  final String chatId;
+  final ChatStorageService chatStorageService;
+  final VoidCallback onMessageDeleted; // Callback for when message is deleted
+  final VoidCallback? onDelete;
+  final VoidCallback? onMessageEdited;
 
   const ChatMessage({
     Key? key,
     required this.message,
     required this.isStreaming,
     required this.onRetry,
+    required this.chatId,
+    required this.chatStorageService,
+    required this.onMessageDeleted,
+    this.onDelete,
+    this.onMessageEdited,
   }) : super(key: key);
 
   @override
@@ -30,7 +40,8 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    print('[ChatMessage] 🎨 Initializing message widget for: ${widget.message.role} - ${widget.message.content.substring(0, min(30, widget.message.content.length))}...');
+    final previewLength = widget.message.content.length > 30 ? 30 : widget.message.content.length;
+    print('[ChatMessage] 🎨 Initializing message widget for: ${widget.message.role} - ${widget.message.content.substring(0, previewLength)}...');
     
     // Fade-in animation
     _fadeController = AnimationController(
@@ -416,10 +427,38 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
               color: theme.iconTheme.color?.withOpacity(0.7),
             ),
             onPressed: () {
-              // TODO: Copy message
-              UIHelper.showSuccessSnackBar(context, "Message copied to clipboard");
+              MessageUtils.copyMessage(
+                content: widget.message.content,
+                context: context,
+              );
             },
             tooltip: 'Copy',
+            splashRadius: 20,
+          ),
+          
+          const SizedBox(width: 4),
+          
+          // Delete action for all messages
+          IconButton(
+            icon: Icon(
+              Icons.delete,
+              size: 16,
+              color: Colors.red.withOpacity(0.7),
+            ),
+            onPressed: () async {
+              final bool deleted = await MessageUtils.deleteMessage(
+                chatId: widget.chatId,
+                messageId: widget.message.id,
+                chatStorageService: widget.chatStorageService,
+                context: context,
+              );
+              
+              if (deleted) {
+                // Сообщение успешно удалено, уведомляем родительский компонент
+                widget.onMessageDeleted();
+              }
+            },
+            tooltip: 'Delete',
             splashRadius: 20,
           ),
           
