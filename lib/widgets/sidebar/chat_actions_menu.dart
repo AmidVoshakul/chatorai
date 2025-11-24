@@ -49,7 +49,7 @@ class _ChatActionsMenuState extends State<ChatActionsMenu> {
           child: Icon(
             Icons.more_vert,
             size: 18,
-            color: _theme.iconTheme.color?.withOpacity(0.6),
+            color: _theme.iconTheme.color?.withValues(alpha: 0.6),
           ),
         ),
       ),

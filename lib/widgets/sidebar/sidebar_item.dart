@@ -27,7 +27,7 @@ class SidebarItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        hoverColor: theme.colorScheme.primary.withOpacity(0.1),
+        hoverColor: theme.colorScheme.primary.withValues(alpha: 0.1),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(

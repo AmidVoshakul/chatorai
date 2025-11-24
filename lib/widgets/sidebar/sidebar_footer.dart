@@ -28,7 +28,7 @@ class SidebarFooter extends StatelessWidget {
             },
             tooltip: 'Settings',
             color: theme.iconTheme.color,
-            hoverColor: theme.colorScheme.primary.withOpacity(0.1),
+            hoverColor: theme.colorScheme.primary.withValues(alpha: 0.1),
           ),
           
           const SizedBox(width: 8),
@@ -44,7 +44,7 @@ class SidebarFooter extends StatelessWidget {
                     // TODO: Open profile
                   },
                   borderRadius: BorderRadius.circular(20),
-                  hoverColor: theme.colorScheme.primary.withOpacity(0.1),
+                  hoverColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Row(
@@ -79,7 +79,7 @@ class SidebarFooter extends StatelessWidget {
                                 'Free Plan',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   fontSize: 10,
-                                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),

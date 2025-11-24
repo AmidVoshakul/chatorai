@@ -359,8 +359,8 @@ const SizedBox(height: 12),
         if (model.isFree)
           Chip(
             label: Text(_themeProvider.selectedLanguage == 'en' ? 'Free' : 'Бесплатно'),
-            backgroundColor: Colors.green.withOpacity(0.15),
-            side: BorderSide(color: Colors.green.withOpacity(0.3), width: 1.5),
+            backgroundColor: Colors.green.withValues(alpha: 0.15),
+            side: BorderSide(color: Colors.green.withValues(alpha: 0.3), width: 1.5),
             labelStyle: const TextStyle(
               color: Colors.green,
               fontSize: 11, 
@@ -372,8 +372,8 @@ const SizedBox(height: 12),
         if (model.supportsReasoning)
           Chip(
             label: Text(_themeProvider.selectedLanguage == 'en' ? 'Reasoning' : 'Рассуждения'),
-            backgroundColor: Colors.blue.withOpacity(0.15),
-            side: BorderSide(color: Colors.blue.withOpacity(0.3), width: 1.5),
+            backgroundColor: Colors.blue.withValues(alpha: 0.15),
+            side: BorderSide(color: Colors.blue.withValues(alpha: 0.3), width: 1.5),
             labelStyle: const TextStyle(
               color: Colors.blue,
               fontSize: 11,
@@ -385,8 +385,8 @@ const SizedBox(height: 12),
         if (model.supportsMultimodal)
           Chip(
             label: Text(_themeProvider.selectedLanguage == 'en' ? 'Multimodal' : 'Мультимодальность'),
-            backgroundColor: Colors.purple.withOpacity(0.15),
-            side: BorderSide(color: Colors.purple.withOpacity(0.3), width: 1.5),
+            backgroundColor: Colors.purple.withValues(alpha: 0.15),
+            side: BorderSide(color: Colors.purple.withValues(alpha: 0.3), width: 1.5),
             labelStyle: const TextStyle(
               color: Colors.purple,
               fontSize: 11,
@@ -398,8 +398,8 @@ const SizedBox(height: 12),
         // Always show availability
         Chip(
           label: Text(_themeProvider.selectedLanguage == 'en' ? 'Available' : 'Доступна'),
-          backgroundColor: Colors.green.withOpacity(0.15),
-          side: BorderSide(color: Colors.green.withOpacity(0.3), width: 1.5),
+          backgroundColor: Colors.green.withValues(alpha: 0.15),
+          side: BorderSide(color: Colors.green.withValues(alpha: 0.3), width: 1.5),
           labelStyle: const TextStyle(
             color: Colors.green,
             fontSize: 11,
@@ -445,9 +445,9 @@ const SizedBox(height: 12),
         margin: const EdgeInsets.only(bottom: 4),
         child: Chip(
           label: Text(label, style: TextStyle(color: enabled ? color : Colors.grey[600], fontSize: 12, fontWeight: FontWeight.w500)),
-          backgroundColor: enabled ? color.withOpacity(0.15) : Colors.grey.withOpacity(0.1),
+          backgroundColor: enabled ? color.withValues(alpha: 0.15) : Colors.grey.withValues(alpha: 0.1),
           side: BorderSide(
-            color: enabled ? color.withOpacity(0.3) : Colors.grey.withOpacity(0.3),
+            color: enabled ? color.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.3),
             width: 1.5,
           ),
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -584,7 +584,7 @@ const SizedBox(height: 12),
           Icon(
             isEmptySearch ? Icons.search_off : Icons.model_training,
             size: 80,
-            color: Theme.of(context).primaryColor.withOpacity(0.6),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.6),
           ),
           const SizedBox(height: 16),
           Text(
