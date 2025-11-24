@@ -53,6 +53,17 @@ class _ChatMessagesState extends State<ChatMessages> {
     }
   }
 
+  /// Обновление сообщения в списке
+  void _updateMessageContent(String messageId, String newContent) {
+    setState(() {
+      final index = _messages.indexWhere((message) => message.id == messageId);
+      if (index != -1) {
+        _messages[index] = _messages[index].copyWith(content: newContent);
+        print('[ChatMessages] 📝 Message updated: ${_messages[index].content.substring(0, _messages[index].content.length > 30 ? 30 : _messages[index].content.length)}...');
+      }
+    });
+  }
+
   @override
   void didUpdateWidget(covariant ChatMessages oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -324,6 +335,9 @@ class _ChatMessagesState extends State<ChatMessages> {
                   chatId: widget.chat?.id ?? '',
                   chatStorageService: widget.chatStorageService,
                   onMessageDeleted: widget.onMessageDeleted,
+                  onMessageUpdated: (newContent) {
+                    _updateMessageContent(message.id, newContent);
+                  },
                   onDelete: () {
                     _handleDeleteMessage(message);
                   },
