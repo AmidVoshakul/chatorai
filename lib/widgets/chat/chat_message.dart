@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/code_block.dart';
+import 'package:gen_ui_chat_ai/widgets/chat/scrollable_action_buttons.dart';
 import 'package:gen_ui_chat_ai/utils/message_utils.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
@@ -209,11 +210,165 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
             if (!widget.isStreaming)
               Container(
                 margin: const EdgeInsets.only(top: 4, bottom: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                alignment: Alignment.centerRight,
+                child: ScrollableActionButtons(
                   children: [
-                    _buildMessageActions(),
+                    // User message actions (only edit and copy)
+                    if (isUser) ...[
+                      IconButton(
+                        icon: Icon(
+                          Icons.edit,
+                          size: 16,
+                          color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                        ),
+                        onPressed: () {
+                          // TODO: Edit user message
+                        },
+                        tooltip: 'Edit',
+                        splashRadius: 20,
+                      ),
+                    ],
+                    
+                    // Share action for assistant messages
+                    if (!isUser) ...[
+                      IconButton(
+                        icon: Icon(
+                          Icons.share,
+                          size: 16,
+                          color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                        ),
+                        onPressed: () {
+                          MessageUtils.shareMessage(
+                            content: widget.message.content,
+                            context: context,
+                          );
+                        },
+                        tooltip: 'Share',
+                        splashRadius: 20,
+                      ),
+                    ],
+                    
+                    // Universal copy action
+                    IconButton(
+                      icon: Icon(
+                        Icons.copy,
+                        size: 16,
+                        color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                      ),
+                      onPressed: () {
+                        MessageUtils.copyMessage(
+                          content: widget.message.content,
+                          context: context,
+                        );
+                      },
+                      tooltip: 'Copy',
+                      splashRadius: 20,
+                    ),
+                    
+                    // Delete action for all messages
+                    IconButton(
+                      icon: Icon(
+                        Icons.delete,
+                        size: 16,
+                        color: Colors.red.withValues(alpha: 0.7),
+                      ),
+                      onPressed: () async {
+                        final bool deleted = await MessageUtils.deleteMessage(
+                          chatId: widget.chatId,
+                          messageId: widget.message.id,
+                          chatStorageService: widget.chatStorageService,
+                          context: context,
+                        );
+                        
+                        if (deleted) {
+                          widget.onMessageDeleted();
+                        }
+                      },
+                      tooltip: 'Delete',
+                      splashRadius: 20,
+                    ),
+                    
+                    // AI-specific actions (only for assistant messages)
+                    if (!isUser) ...[
+                      // Listen button
+                      IconButton(
+                        icon: Icon(
+                          Icons.volume_up,
+                          size: 16,
+                          color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                        ),
+                        onPressed: () {
+                          // TODO: Voice message
+                        },
+                        tooltip: 'Listen',
+                        splashRadius: 20,
+                      ),
+                      
+                      // Regenerate button
+                      IconButton(
+                        icon: Icon(
+                          Icons.refresh,
+                          size: 16,
+                          color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                        ),
+                        onPressed: () {
+                          // TODO: Regenerate message
+                        },
+                        tooltip: 'Regenerate',
+                        splashRadius: 20,
+                      ),
+                      
+                      // Continue response button (only show for recent assistant messages that might be incomplete)
+                      if (widget.isLastMessage && widget.message.content.isNotEmpty && 
+                          (widget.message.content.endsWith('...') || 
+                           widget.message.content.split(' ').length > 30 ||
+                           !widget.message.isComplete))
+                        IconButton(
+                          icon: Icon(
+                            Icons.play_arrow,
+                            size: 16,
+                            color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                          ),
+                          onPressed: () {
+                            if (widget.onContinueResponse != null) {
+                              widget.onContinueResponse!();
+                            }
+                          },
+                          tooltip: 'Continue',
+                          splashRadius: 20,
+                        ),
+                      
+                      // Like button
+                      IconButton(
+                        icon: Icon(
+                          Icons.thumb_up,
+                          size: 16,
+                          color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                        ),
+                        onPressed: () {
+                          // TODO: Like message
+                        },
+                        tooltip: 'Like',
+                        splashRadius: 20,
+                      ),
+                      
+                      // Dislike button
+                      IconButton(
+                        icon: Icon(
+                          Icons.thumb_down,
+                          size: 16,
+                          color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                        ),
+                        onPressed: () {
+                          // TODO: Dislike message
+                        },
+                        tooltip: 'Dislike',
+                        splashRadius: 20,
+                      ),
+                    ],
                   ],
+                  buttonSpacing: 4.0,
+                  height: 40.0,
                 ),
               ),
           ],
@@ -383,171 +538,6 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageActions() {
-    final theme = Theme.of(context);
-    final isUser = widget.message.role == MessageRole.user;
-    
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          // User message actions (only edit and copy)
-          if (isUser) ...[
-            IconButton(
-              icon: Icon(
-                Icons.edit,
-                size: 16,
-                color: theme.iconTheme.color?.withOpacity(0.7),
-              ),
-              onPressed: () {
-                // TODO: Edit user message
-              },
-              tooltip: 'Edit',
-              splashRadius: 20,
-            ),
-            const SizedBox(width: 4),
-          ],
-          
-          // Share action for assistant messages
-          if (!isUser) ...[
-            IconButton(
-              icon: Icon(
-                Icons.share,
-                size: 16,
-                color: theme.iconTheme.color?.withOpacity(0.7),
-              ),
-              onPressed: () {
-                // TODO: Share message
-              },
-              tooltip: 'Share',
-              splashRadius: 20,
-            ),
-            const SizedBox(width: 4),
-          ],
-          
-          // Universal copy action
-          IconButton(
-            icon: Icon(
-              Icons.copy,
-              size: 16,
-              color: theme.iconTheme.color?.withOpacity(0.7),
-            ),
-            onPressed: () {
-              MessageUtils.copyMessage(
-                content: widget.message.content,
-                context: context,
-              );
-            },
-            tooltip: 'Copy',
-            splashRadius: 20,
-          ),
-          
-          const SizedBox(width: 4),
-          
-          // Delete action for all messages
-          IconButton(
-            icon: Icon(
-              Icons.delete,
-              size: 16,
-              color: Colors.red.withOpacity(0.7),
-            ),
-            onPressed: () async {
-              final bool deleted = await MessageUtils.deleteMessage(
-                chatId: widget.chatId,
-                messageId: widget.message.id,
-                chatStorageService: widget.chatStorageService,
-                context: context,
-              );
-              
-              if (deleted) {
-                // Сообщение успешно удалено, уведомляем родительский компонент
-                widget.onMessageDeleted();
-              }
-            },
-            tooltip: 'Delete',
-            splashRadius: 20,
-          ),
-          
-          // AI-specific actions (only for assistant messages)
-          if (!isUser) ...[
-            const SizedBox(width: 4),
-            IconButton(
-              icon: Icon(
-                Icons.volume_up,
-                size: 16,
-                color: theme.iconTheme.color?.withOpacity(0.7),
-              ),
-              onPressed: () {
-                // TODO: Voice message
-              },
-              tooltip: 'Listen',
-              splashRadius: 20,
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.refresh,
-                size: 16,
-                color: theme.iconTheme.color?.withOpacity(0.7),
-              ),
-              onPressed: () {
-                // TODO: Regenerate message
-              },
-              tooltip: 'Regenerate',
-              splashRadius: 20,
-            ),
-            // Continue response button (only show for recent assistant messages that might be incomplete)
-            if (widget.isLastMessage && widget.message.content.isNotEmpty && 
-                (widget.message.content.endsWith('...') || 
-                 widget.message.content.split(' ').length > 30 ||
-                 !widget.message.isComplete)) ...[
-              const SizedBox(width: 4),
-              IconButton(
-                icon: Icon(
-                  Icons.play_arrow,
-                  size: 16,
-                  color: theme.colorScheme.primary.withOpacity(0.7),
-                ),
-                onPressed: () {
-                  // Continue response
-                  if (widget.onContinueResponse != null) {
-                    widget.onContinueResponse!();
-                  }
-                },
-                tooltip: 'Continue response',
-                splashRadius: 20,
-              ),
-            ],
-            IconButton(
-              icon: Icon(
-                Icons.thumb_up,
-                size: 16,
-                color: theme.iconTheme.color?.withOpacity(0.7),
-              ),
-              onPressed: () {
-                // TODO: Like message
-              },
-              tooltip: 'Like',
-              splashRadius: 20,
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.thumb_down,
-                size: 16,
-                color: theme.iconTheme.color?.withOpacity(0.7),
-              ),
-              onPressed: () {
-                // TODO: Dislike message
-              },
-              tooltip: 'Dislike',
-              splashRadius: 20,
-            ),
-          ],
         ],
       ),
     );
