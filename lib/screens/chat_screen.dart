@@ -11,6 +11,7 @@ import 'package:gen_ui_chat_ai/widgets/sidebar/sidebar.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
 import 'package:gen_ui_chat_ai/screens/models_screen.dart';
+import 'package:gen_ui_chat_ai/utils/chat_scroll_utils.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? initialModel;
@@ -37,11 +38,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   Chat? _currentChat;
   final TextEditingController _titleController = TextEditingController();
   final FocusNode _chatInputFocusNode = FocusNode();
+  late ScrollController _messageScrollController;
   String _selectedModel = 'x-ai/grok-4.1-fast:free'; // Default model ID
   OpenRouterModel? _selectedModelObject; // Store full model object
   bool _isSuggestionsLoading = false;
   bool _showSuggestions = false;
   List<String> _continuationSuggestions = [];
+  late ChatScrollUtils _chatScrollUtils;
 
   @override
   void initState() {
@@ -52,6 +55,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _openRouterService = OpenRouterService();
     print('[ChatScreen] ✅ OpenRouterService initialized');
     _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    print('[ChatScreen] ✅ ThemeProvider accessed');
+    
+    // Initialize scroll controller
+    _messageScrollController = ScrollController();
+    print('[ChatScreen] ✅ ScrollController initialized');
     
     // Initialize selected model from widget parameter or use default
     if (widget.initialModel != null) {
@@ -65,6 +73,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _loadModelsAndSetDefault();
     
     _loadChats();
+    
+    // Initialize scroll utilities after widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _chatScrollUtils = ChatScrollUtils(
+        scrollController: _messageScrollController,
+        animationDuration: const Duration(milliseconds: 300),
+        animationCurve: Curves.easeOut,
+      );
+      _chatScrollUtils.initialize();
+      print('[ChatScreen] ✅ ChatScrollUtils initialized');
+    });
   }
 
   Future<void> _loadModelsAndSetDefault() async {
@@ -877,6 +896,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               onSendMessage: _handleSendMessage,
               onMessageDeleted: _refreshChatMessages,
               onContinueResponse: (messageId) => _continueAIResponse(messageId),
+              scrollController: _messageScrollController,
             ),
           ),
           // Continuation Suggestions
@@ -1000,6 +1020,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     selectedModel: _selectedModel,
                     onSendMessage: _handleSendMessage,
                     onMessageDeleted: _refreshChatMessages,
+                    scrollController: _messageScrollController,
                   ),
                 ),
                 
@@ -1049,13 +1070,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 const Spacer(),
-                Text(
-                  'Tap suggestion or send your message',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                // Only show hint text on desktop (not on mobile/narrow screens)
+                if (MediaQuery.of(context).size.width >= 800)
+                  Text(
+                    'Tap suggestion or send your message',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                    ),
                   ),
-                ),
                 const SizedBox(width: 8),
                 IconButton(
                   icon: Icon(Icons.close, size: 16),
