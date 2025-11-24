@@ -423,6 +423,27 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     print('Streaming toggled: $isStreaming');
   }
 
+  void _refreshChatMessages() async {
+    print('[ChatScreen] 🔄 Refreshing chat messages after deletion');
+    
+    if (_currentChat != null) {
+      try {
+        // Reload the chat from storage to get updated messages
+        final updatedChat = await _chatStorageService.getChat(_currentChat!.id);
+        if (updatedChat != null) {
+          setState(() {
+            _currentChat = updatedChat;
+            print('[ChatScreen] ✅ Chat messages refreshed, now ${updatedChat.messages.length} messages');
+          });
+        } else {
+          print('[ChatScreen] ❌ Failed to reload chat after deletion');
+        }
+      } catch (e) {
+        print('[ChatScreen] ❌ Error refreshing chat messages: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     print('[ChatScreen] 🏗️ Building ChatScreen, current chat: ${_currentChat?.id}, messages: ${_currentChat?.messages.length ?? 0}');
@@ -499,9 +520,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           Expanded(
             child: ChatMessages(
               openRouterService: _openRouterService,
+              chatStorageService: _chatStorageService,
               chat: _currentChat,
               selectedModel: _selectedModel,
               onSendMessage: _handleSendMessage,
+              onMessageDeleted: _refreshChatMessages,
             ),
           ),
           ChatInput(
@@ -591,9 +614,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 Expanded(
                   child: ChatMessages(
                     openRouterService: _openRouterService,
+                    chatStorageService: _chatStorageService,
                     chat: _currentChat,
                     selectedModel: _selectedModel,
                     onSendMessage: _handleSendMessage,
+                    onMessageDeleted: _refreshChatMessages,
                   ),
                 ),
                 

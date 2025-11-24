@@ -1,23 +1,27 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
-import 'package:gen_ui_chat_ai/themes/app_theme.dart';
+import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
+import 'package:gen_ui_chat_ai/utils/message_utils.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_message.dart' as ChatMsg;
 
 class ChatMessages extends StatefulWidget {
   final Chat? chat;
   final OpenRouterService openRouterService;
+  final ChatStorageService chatStorageService;
   final String? selectedModel;
   final Function(String) onSendMessage; // Add callback for sending messages
+  final Function() onMessageDeleted; // Add callback for message deletion
 
   const ChatMessages({
     Key? key,
     required this.openRouterService,
+    required this.chatStorageService,
     this.chat,
     this.selectedModel,
     required this.onSendMessage,
+    required this.onMessageDeleted,
   }) : super(key: key);
 
   @override
@@ -119,7 +123,7 @@ class _ChatMessagesState extends State<ChatMessages> {
   }
 
   void _updateAssistantMessage(String content) {
-    final displayLength = min(50, content.length);
+    final displayLength = content.length > 50 ? 50 : content.length;
     print('[ChatMessages] 🌊 Updating assistant message with content: ${content.substring(0, displayLength)}...');
     
     setState(() {
@@ -178,7 +182,7 @@ class _ChatMessagesState extends State<ChatMessages> {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isDarkTheme ? AppTheme.ubuntuDarkGray : AppTheme.ubuntuLightGray,
+              color: isDarkTheme ? Color(0xFF2A2A2A) : Color(0xFFEEEEEE),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -246,6 +250,33 @@ class _ChatMessagesState extends State<ChatMessages> {
     });
   }
 
+  void _handleDeleteMessage(Message message) async {
+    print('[ChatMessages] 🗑️ Deleting message: ${message.id}');
+    
+    final bool deleted = await MessageUtils.deleteMessage(
+      chatId: widget.chat?.id ?? '',
+      messageId: message.id,
+      chatStorageService: widget.chatStorageService,
+      context: context,
+    );
+    
+    if (deleted) {
+      // Сообщение успешно удалено из базы данных
+      print('[ChatMessages] ✅ Message deleted from database, refreshing UI...');
+      
+      // Удаляем сообщение из локального списка
+      setState(() {
+        _messages.remove(message);
+        print('[ChatMessages] 📱 UI updated, now ${_messages.length} messages in local list');
+      });
+      
+      // Сообщаем родительскому компоненту
+      widget.onMessageDeleted();
+    } else {
+      print('[ChatMessages] ❌ Failed to delete message from database');
+    }
+  }
+
   void selectModel(String modelId) {
     setState(() {
       _selectedModel = modelId;
@@ -297,6 +328,12 @@ class _ChatMessagesState extends State<ChatMessages> {
                     if (message.role == MessageRole.user) {
                       _sendToAI(message.content);
                     }
+                  },
+                  chatId: widget.chat?.id ?? '',
+                  chatStorageService: widget.chatStorageService,
+                  onMessageDeleted: widget.onMessageDeleted,
+                  onDelete: () {
+                    _handleDeleteMessage(message);
                   },
                 );
               },
