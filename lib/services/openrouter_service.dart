@@ -457,7 +457,7 @@ class OpenRouterService {
       final data = {
         'model': model,
         'messages': messages,
-        'max_tokens': maxTokens ?? 1000,
+        'max_tokens': maxTokens ?? 8000,
         'temperature': temperature ?? 0.7,
       };
 
@@ -582,7 +582,7 @@ class OpenRouterService {
       final data = {
         'model': model,
         'messages': messages,
-        'max_tokens': maxTokens ?? 1000,
+        'max_tokens': maxTokens ?? 8000,
         'temperature': temperature ?? 0.7,
         'stream': true,
       };

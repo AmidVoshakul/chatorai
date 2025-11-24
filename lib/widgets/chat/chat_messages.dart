@@ -13,6 +13,7 @@ class ChatMessages extends StatefulWidget {
   final String? selectedModel;
   final Function(String) onSendMessage; // Add callback for sending messages
   final Function() onMessageDeleted; // Add callback for message deletion
+  final Function(String)? onContinueResponse; // Add callback for continuing response
 
   const ChatMessages({
     Key? key,
@@ -22,6 +23,7 @@ class ChatMessages extends StatefulWidget {
     this.selectedModel,
     required this.onSendMessage,
     required this.onMessageDeleted,
+    this.onContinueResponse,
   }) : super(key: key);
 
   @override
@@ -324,6 +326,7 @@ class _ChatMessagesState extends State<ChatMessages> {
                 return ChatMsg.ChatMessage(
                   message: message,
                   isStreaming: _isStreaming && isLastMessage,
+                  isLastMessage: isLastMessage,
                   onRetry: () {
                     if (message.role == MessageRole.user) {
                       _sendToAI(message.content);
@@ -335,6 +338,9 @@ class _ChatMessagesState extends State<ChatMessages> {
                   onDelete: () {
                     _handleDeleteMessage(message);
                   },
+                  onContinueResponse: message.role == MessageRole.assistant 
+                      ? () => widget.onContinueResponse?.call(message.id)
+                      : null,
                 );
               },
             ),
