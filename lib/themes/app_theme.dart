@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 /// Ubuntu-inspired color palette
 class UbuntuColors {
@@ -124,6 +125,114 @@ class UbuntuTypography {
       color: UbuntuColors.darkSecondaryTextColor,
     ),
   );
+}
+
+/// Стили для Markdown в зависимости от темы
+class UbuntuMarkdownStyles {
+  /// Получить стили для Markdown в зависимости от текущей темы
+  static MarkdownStyleSheet getMarkdownStyles(BuildContext context) {
+    final brightness = MediaQuery.of(context).platformBrightness;
+    final theme = Theme.of(context);
+    
+    // Начинаем с базовых стилей темы
+    final baseStyle = MarkdownStyleSheet.fromTheme(theme);
+    
+    if (brightness == Brightness.light) {
+      return baseStyle.copyWith(
+        // Цитаты - светлая тема с оранжевым акцентом
+        blockquote: baseStyle.blockquote?.copyWith(
+          color: UbuntuColors.secondaryTextColor,
+          fontStyle: FontStyle.italic,
+          fontSize: 14,
+        ),
+        blockquoteDecoration: BoxDecoration(
+          color: UbuntuColors.lightGray.withAlpha(50), // Очень легкий серый
+          border: Border(
+            left: BorderSide(
+              color: UbuntuColors.orange,
+              width: 4,
+            ),
+          ),
+          borderRadius: BorderRadius.only(
+            topRight: Radius.circular(8),
+            bottomRight: Radius.circular(8),
+          ),
+        ),
+        
+        // Код - улучшаем видимость
+        code: baseStyle.code?.copyWith(
+          backgroundColor: UbuntuColors.lightGray.withAlpha(150), // Светлый фон с хорошей видимостью
+          color: Colors.blue[700],
+          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+          fontSize: 13,
+          shadows: [
+            Shadow(
+              color: UbuntuColors.lightGray.withAlpha(150),
+              offset: const Offset(-2, 0),
+              blurRadius: 0,
+            ),
+            Shadow(
+              color: UbuntuColors.lightGray.withAlpha(150),
+              offset: const Offset(2, 0),
+              blurRadius: 0,
+            ),
+          ], // Визуальное расширение фона слева и справа
+        ),
+        
+        // Ссылки - оранжевые
+        a: baseStyle.a?.copyWith(
+          color: UbuntuColors.orange,
+          decoration: TextDecoration.underline,
+        ),
+        
+        // Заголовки - улучшаем контраст
+        h1: baseStyle.h1?.copyWith(color: UbuntuColors.dark),
+        h2: baseStyle.h2?.copyWith(color: UbuntuColors.dark),
+        h3: baseStyle.h3?.copyWith(color: UbuntuColors.dark),
+      );
+    } else {
+      return baseStyle.copyWith(
+        // Цитаты - темная тема с оранжевым акцентом
+        blockquote: baseStyle.blockquote?.copyWith(
+          color: UbuntuColors.darkSecondaryTextColor,
+          fontStyle: FontStyle.italic,
+          fontSize: 14,
+        ),
+        blockquoteDecoration: BoxDecoration(
+          color: UbuntuColors.darkGray.withAlpha(150), // Темный фон с легкой прозрачностью
+          border: Border(
+            left: BorderSide(
+              color: UbuntuColors.orange,
+              width: 4,
+            ),
+          ),
+          borderRadius: BorderRadius.only(
+            topRight: Radius.circular(8),
+            bottomRight: Radius.circular(8),
+          ),
+        ),
+        
+        // Код - темная тема
+        code: baseStyle.code?.copyWith(
+          // backgroundColor: UbuntuColors.darkGray.withAlpha(200), // Темный фон с увеличенной непрозрачностью
+          color: Colors.blue[300],
+          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+          fontSize: 13,
+        ),
+        
+        // Ссылки - оранжевые
+        a: baseStyle.a?.copyWith(
+          color: UbuntuColors.orange,
+          decoration: TextDecoration.underline,
+        ),
+        
+        // Заголовки - светлые в темной теме
+        h1: baseStyle.h1?.copyWith(color: UbuntuColors.light),
+        h2: baseStyle.h2?.copyWith(color: UbuntuColors.light),
+        h3: baseStyle.h3?.copyWith(color: UbuntuColors.light),
+      );
+    }
+  }
 }
 
 /// Конфигурация темы приложения
