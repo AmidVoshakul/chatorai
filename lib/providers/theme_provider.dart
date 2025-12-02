@@ -3,6 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
+import '../utils/logger.dart';
+
+// Initialize logger for this provider
+final _logger = LogTags.settings;
 
 enum AppThemeMode {
   light,
@@ -99,7 +103,7 @@ class ThemeProvider with ChangeNotifier {
       
       notifyListeners();
     } catch (e) {
-      print('Error loading settings: $e');
+      _logger.logError('[Settings] Error loading settings: $e');
     }
   }
 
@@ -114,7 +118,7 @@ class ThemeProvider with ChangeNotifier {
       await prefs.setBool(_highContrastKey, _highContrast);
       await prefs.setString(_languageKey, _selectedLanguage);
     } catch (e) {
-      print('Error saving settings: $e');
+      _logger.logError('[Settings] Error saving settings: $e');
     }
   }
 

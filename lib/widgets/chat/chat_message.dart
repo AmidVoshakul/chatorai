@@ -6,6 +6,10 @@ import 'package:gen_ui_chat_ai/utils/message_utils.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
+import '../../utils/logger.dart';
+
+// Initialize logger for this widget
+final _logger = LogTags.message;
 
 class ChatMessage extends StatefulWidget {
   final Message message;
@@ -52,7 +56,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   void initState() {
     super.initState();
     final previewLength = widget.message.content.length > 30 ? 30 : widget.message.content.length;
-    print('[ChatMessage] 🎨 Initializing message widget for: ${widget.message.role} - ${widget.message.content.substring(0, previewLength)}...');
+    _logger.logInfo('Initializing message widget for: ${widget.message.role} - ${widget.message.content.substring(0, previewLength)}...');
     
     // Инициализируем контроллер для редактирования
     _textController = TextEditingController(text: widget.message.content);
@@ -228,6 +232,8 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                 margin: const EdgeInsets.only(top: 4, bottom: 8),
                 alignment: Alignment.centerRight,
                 child: ScrollableActionButtons(
+                  buttonSpacing: 4.0,
+                  height: 40.0,
                   children: [
                     // User message actions (only edit and copy)
                     if (isUser) ...[
@@ -386,8 +392,6 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                       ),
                     ],
                   ],
-                  buttonSpacing: 4.0,
-                  height: 40.0,
                 ),
               ),
           ],

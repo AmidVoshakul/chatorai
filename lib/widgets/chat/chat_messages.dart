@@ -4,7 +4,11 @@ import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 import 'package:gen_ui_chat_ai/utils/message_utils.dart';
+import 'package:gen_ui_chat_ai/utils/logger.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_message.dart' as ChatMsg;
+
+// Initialize logger for this widget
+final _logger = LogTags.chatService;
 
 class ChatMessages extends StatefulWidget {
   final Chat? chat;
@@ -42,7 +46,7 @@ class _ChatMessagesState extends State<ChatMessages> {
   @override
   void initState() {
     super.initState();
-    print('[ChatMessages] 🎯 Initializing ChatMessages with chat: ${widget.chat?.id}, messages: ${widget.chat?.messages.length ?? 0}');
+    _logger.logInfo('[ChatMessages] Initializing ChatMessages with chat: ${widget.chat?.id}, messages: ${widget.chat?.messages.length ?? 0}');
     
     // Use external scroll controller if provided, otherwise create new one
     _scrollController = widget.scrollController ?? ScrollController();
@@ -59,7 +63,7 @@ class _ChatMessagesState extends State<ChatMessages> {
       final index = _messages.indexWhere((message) => message.id == messageId);
       if (index != -1) {
         _messages[index] = _messages[index].copyWith(content: newContent);
-        print('[ChatMessages] 📝 Message updated: ${_messages[index].content.substring(0, _messages[index].content.length > 30 ? 30 : _messages[index].content.length)}...');
+        _logger.logDebug('Message updated: ${_messages[index].content.substring(0, _messages[index].content.length > 30 ? 30 : _messages[index].content.length)}...');
       }
     });
   }
@@ -67,21 +71,21 @@ class _ChatMessagesState extends State<ChatMessages> {
   @override
   void didUpdateWidget(covariant ChatMessages oldWidget) {
     super.didUpdateWidget(oldWidget);
-    print('[ChatMessages] 🔄 Widget updated, checking for changes...');
-    print('[ChatMessages] 🔄 Old chat: ${oldWidget.chat?.id}, New chat: ${widget.chat?.id}');
-    print('[ChatMessages] 🔄 Old messages: ${oldWidget.chat?.messages.length ?? 0}, New messages: ${widget.chat?.messages.length ?? 0}');
+    _logger.logDebug('[ChatMessages] Widget updated, checking for changes...');
+    _logger.logDebug('[ChatMessages] Old chat: ${oldWidget.chat?.id}, New chat: ${widget.chat?.id}');
+    _logger.logDebug('[ChatMessages] Old messages: ${oldWidget.chat?.messages.length ?? 0}, New messages: ${widget.chat?.messages.length ?? 0}');
     
     if (oldWidget.chat?.id != widget.chat?.id) {
-      print('[ChatMessages] 🔄 Chat ID changed, loading messages');
+      _logger.logInfo('[ChatMessages] Chat ID changed, loading messages');
       _loadMessages();
     } else if (oldWidget.chat?.messages.length != widget.chat?.messages.length) {
-      print('[ChatMessages] 🔄 Message count changed, reloading');
+      _logger.logInfo('[ChatMessages] Message count changed, reloading');
       _loadMessages();
     } else if (widget.chat != null && oldWidget.chat != null &&
               widget.chat!.messages.isNotEmpty && 
               oldWidget.chat!.messages.isNotEmpty &&
               oldWidget.chat!.messages.last.content != widget.chat!.messages.last.content) {
-      print('[ChatMessages] 🔄 Message content changed, reloading');
+      _logger.logInfo('[ChatMessages] Message content changed, reloading');
       _loadMessages();
     }
     
@@ -97,17 +101,17 @@ class _ChatMessagesState extends State<ChatMessages> {
   }
 
   void _loadMessages() {
-    print('[ChatMessages] 📥 Loading messages from chat widget...');
-    print('[ChatMessages] 📥 Chat object: ${widget.chat}');
-    print('[ChatMessages] 📥 Chat messages count: ${widget.chat?.messages.length ?? 0}');
+    _logger.logDebug('[ChatMessages] Loading messages from chat widget...');
+    _logger.logDebug('[ChatMessages] Chat object: ${widget.chat}');
+    _logger.logDebug('[ChatMessages] Chat messages count: ${widget.chat?.messages.length ?? 0}');
     setState(() {
       _messages = widget.chat?.messages ?? [];
-      print('[ChatMessages] 📥 Messages loaded: ${_messages.length}');
+      _logger.logInfo('[ChatMessages] Messages loaded: ${_messages.length}');
     });
   }
 
   void _addUserMessage(String content) {
-    print('[ChatMessages] Adding user message: $content');
+    _logger.logInfo('[ChatMessages] Adding user message: $content');
     final userMessage = Message(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       role: MessageRole.user,
@@ -118,34 +122,34 @@ class _ChatMessagesState extends State<ChatMessages> {
     
     setState(() {
       _messages.add(userMessage);
-      print('[ChatMessages] User message added to state, total messages: ${_messages.length}');
+      _logger.logInfo('[ChatMessages] User message added to state, total messages: ${_messages.length}');
     });
     
     // Notify parent to handle AI response
-    print('[ChatMessages] Notifying parent about new message');
+    _logger.logDebug('[ChatMessages] Notifying parent about new message');
     widget.onSendMessage(content);
   }
 
   void _addAssistantMessage() {
-    print('[ChatMessages] 🚀 Creating assistant message placeholder');
+    _logger.logInfo('[ChatMessages] Creating assistant message placeholder');
     
     setState(() {
       // Новое состояние - ожидание ответа
       _isWaitingForResponse = true;
       _isStreaming = false;
-      print('[ChatMessages] ✅ Waiting for response animation shown: _isWaitingForResponse=$_isWaitingForResponse, _isStreaming=$_isStreaming');
-      print('[ChatMessages] 📊 Messages count: ${_messages.length}, Total items: ${_messages.length + (_isWaitingForResponse ? 1 : 0)}');
+      _logger.logInfo('[ChatMessages] Waiting for response animation shown: _isWaitingForResponse=$_isWaitingForResponse, _isStreaming=$_isStreaming');
+      _logger.logDebug('[ChatMessages] Messages count: ${_messages.length}, Total items: ${_messages.length + (_isWaitingForResponse ? 1 : 0)}');
     });
   }
 
   void _updateAssistantMessage(String content) {
     final displayLength = content.length > 50 ? 50 : content.length;
-    print('[ChatMessages] 🌊 Updating assistant message with content: ${content.substring(0, displayLength)}...');
+    _logger.logInfo('[ChatMessages] Updating assistant message with content: ${content.substring(0, displayLength)}...');
     
     setState(() {
       // Если это первое обновление (начало потока), переключаемся с анимации на сообщение
       if (_isWaitingForResponse) {
-        print('[ChatMessages] 🎉 First update received! Switching from waiting animation to streaming message');
+        _logger.logInfo('[ChatMessages] First update received! Switching from waiting animation to streaming message');
         _isWaitingForResponse = false;
         _isStreaming = true;
         
@@ -157,13 +161,13 @@ class _ChatMessagesState extends State<ChatMessages> {
           isComplete: false,
         );
         _messages.add(assistantMessage);
-        print('[ChatMessages] ✅ Added first message to stream: _isWaitingForResponse=$_isWaitingForResponse, _isStreaming=$_isStreaming');
+        _logger.logInfo('[ChatMessages] Added first message to stream: _isWaitingForResponse=$_isWaitingForResponse, _isStreaming=$_isStreaming');
       } else if (_messages.isNotEmpty && _messages.last.role == MessageRole.assistant) {
         // Обновляем существующее сообщение
         _messages.last = _messages.last.copyWith(content: content);
-        print('[ChatMessages] ✏️ Assistant message updated, content length: ${content.length}');
+        _logger.logInfo('[ChatMessages] Assistant message updated, content length: ${content.length}');
       } else {
-        print('[ChatMessages] ⚠️ WARNING: No assistant message to update');
+        _logger.logWarning('[ChatMessages] WARNING: No assistant message to update');
       }
     });
   }
@@ -222,11 +226,11 @@ class _ChatMessagesState extends State<ChatMessages> {
   }
 
   Future<void> _sendToAI(String userMessage) async {
-    print('[ChatMessages] 🚀 Starting _sendToAI with message: $userMessage');
+    _logger.logInfo('[ChatMessages] Starting _sendToAI with message: $userMessage');
     _addAssistantMessage();
     
     try {
-      print('[ChatMessages] 🌊 Calling streamChatCompletion...');
+      _logger.logInfo('[ChatMessages] Calling streamChatCompletion...');
       await widget.openRouterService.streamChatCompletion(
         messages: [
           ..._messages
@@ -253,7 +257,7 @@ class _ChatMessagesState extends State<ChatMessages> {
   }
 
   void _handleDeleteMessage(Message message) async {
-    print('[ChatMessages] 🗑️ Deleting message: ${message.id}');
+    _logger.logInfo('[ChatMessages] Deleting message: ${message.id}');
     
     final bool deleted = await MessageUtils.deleteMessage(
       chatId: widget.chat?.id ?? '',
@@ -264,18 +268,18 @@ class _ChatMessagesState extends State<ChatMessages> {
     
     if (deleted) {
       // Сообщение успешно удалено из базы данных
-      print('[ChatMessages] ✅ Message deleted from database, refreshing UI...');
+      _logger.logInfo('[ChatMessages] Message deleted from database, refreshing UI...');
       
       // Удаляем сообщение из локального списка
       setState(() {
         _messages.remove(message);
-        print('[ChatMessages] 📱 UI updated, now ${_messages.length} messages in local list');
+        _logger.logInfo('[ChatMessages] UI updated, now ${_messages.length} messages in local list');
       });
       
       // Сообщаем родительскому компоненту
       widget.onMessageDeleted();
     } else {
-      print('[ChatMessages] ❌ Failed to delete message from database');
+      _logger.logError('[ChatMessages] Failed to delete message from database');
     }
   }
 
@@ -305,7 +309,7 @@ class _ChatMessagesState extends State<ChatMessages> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
-                print('[ChatMessages] 📋 Rendering item $index of ${_messages.length} | _isWaitingForResponse=$_isWaitingForResponse | _isStreaming=$_isStreaming');
+                _logger.logVerbose('[ChatMessages] Rendering item $index of ${_messages.length} | _isWaitingForResponse=$_isWaitingForResponse | _isStreaming=$_isStreaming');
                 
                 if (index >= _messages.length) {
                   // Safety check
@@ -319,7 +323,7 @@ class _ChatMessagesState extends State<ChatMessages> {
                 
                 // Показываем анимацию для пустого assistant сообщения
                 if (isEmptyAssistantMessage && !message.isComplete) {
-                  print('[ChatMessages] 🎯 Showing waiting animation for empty assistant message at index $index');
+                  _logger.logDebug('[ChatMessages] Showing waiting animation for empty assistant message at index $index');
                   return _buildWaitingAnimation();
                 }
                 

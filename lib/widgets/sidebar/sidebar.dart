@@ -7,6 +7,10 @@ import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
 import 'package:gen_ui_chat_ai/widgets/sidebar/chat_actions_menu.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
+import '../../utils/logger.dart';
+
+// Initialize logger for this widget
+final _logger = LogTags.sidebar;
 
 class Sidebar extends StatefulWidget {
   final double width;
@@ -177,12 +181,12 @@ class _SidebarState extends State<Sidebar> {
                     ? const EdgeInsets.symmetric(horizontal: 16) 
                     : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 onTap: () {
-                  print('[Sidebar] 🚀 Attempting to navigate to settings...');
+                  _logger.logInfo('[Sidebar] Attempting to navigate to settings...');
                   try {
                     Navigator.pushNamed(context, '/settings');
                   } catch (e) {
-                    print('[Sidebar] ❌ Navigation failed: $e');
-                    print('[Sidebar] ℹ️  Manual navigation to SettingsScreen');
+                    _logger.logError('[Sidebar] Navigation failed: $e');
+                    _logger.logInfo('[Sidebar] Manual navigation to SettingsScreen');
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const SettingsScreen()),
