@@ -13,6 +13,10 @@ import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
 import 'package:gen_ui_chat_ai/screens/models_screen.dart';
 import 'package:gen_ui_chat_ai/utils/chat_scroll_utils.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
+import '../utils/logger.dart';
+
+// Initialize logger for this screen
+final _logger = LogTags.chatScreen;
 
 class ChatScreen extends StatefulWidget {
   final String? initialModel;
@@ -50,24 +54,24 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    print('[ChatScreen] 🔧 Initializing ChatScreen services...');
+    _logger.logInfo('[ChatScreen] Initializing ChatScreen services...');
     _chatStorageService = ChatStorageService();
-    print('[ChatScreen] ✅ ChatStorageService initialized');
+    _logger.logInfo('[ChatScreen] ChatStorageService initialized');
     _openRouterService = OpenRouterService();
-    print('[ChatScreen] ✅ OpenRouterService initialized');
+    _logger.logInfo('[ChatScreen] OpenRouterService initialized');
     _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    print('[ChatScreen] ✅ ThemeProvider accessed');
+    _logger.logInfo('[ChatScreen] ThemeProvider accessed');
     
     // Initialize scroll controller
     _messageScrollController = ScrollController();
-    print('[ChatScreen] ✅ ScrollController initialized');
+    _logger.logInfo('[ChatScreen] ScrollController initialized');
     
     // Initialize selected model from widget parameter or use default
     if (widget.initialModel != null) {
       _selectedModel = widget.initialModel!;
-      print('[ChatScreen] ✅ Using initial model: $_selectedModel');
+      _logger.logInfo('Using initial model: $_selectedModel');
     } else {
-      print('[ChatScreen] ✅ Using default model: $_selectedModel');
+      _logger.logInfo('Using default model: $_selectedModel');
     }
     
     // Load available models and find the default one
@@ -83,13 +87,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         animationCurve: Curves.easeOut,
       );
       _chatScrollUtils.initialize();
-      print('[ChatScreen] ✅ ChatScrollUtils initialized');
+      _logger.logInfo('[ChatScreen] ChatScrollUtils initialized');
     });
   }
 
   Future<void> _loadModelsAndSetDefault() async {
     try {
-      print('[ChatScreen] 🔍 Loading available models...');
+      _logger.logInfo('[ChatScreen] Loading available models...');
       final models = await _openRouterService.getAvailableModels();
       
       // Find the default model
@@ -105,12 +109,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       
       final contextLength = defaultModel.contextLength ?? 'unknown';
       final maxTokens = _getOptimalMaxTokensForModel(defaultModel);
-      print('[ChatScreen] ✅ Default model loaded: ${defaultModel.name}');
-      print('[ChatScreen] 📏 Context length: $contextLength tokens');
-      print('[ChatScreen] 🎯 Optimal max_tokens: $maxTokens');
+      _logger.logInfo('[ChatScreen] Default model loaded: ${defaultModel.name}');
+      _logger.logInfo('[ChatScreen] Context length: $contextLength tokens');
+      _logger.logInfo('[ChatScreen] Optimal max_tokens: $maxTokens');
       
     } catch (e) {
-      print('[ChatScreen] ❌ Error loading models: $e');
+      _logger.logError('Error loading models: $e');
       // Fallback to hardcoded values for default model
       setState(() {
         _selectedModelObject = OpenRouterModel(
@@ -147,12 +151,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         }
       });
     } catch (e) {
-      print('Error loading chats: $e');
+      _logger.logError('[ChatScreen] Error loading chats: $e');
     }
   }
 
   Future<void> _createNewChat() async {
-    print('[ChatScreen] 🆕 Creating new chat...');
+    _logger.logInfo('[ChatScreen] Creating new chat...');
     final newChat = _chatStorageService.newChat();
     await _chatStorageService.addChat(newChat);
     await _loadChats();
@@ -160,7 +164,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _selectChat(String chatId) {
-    print('[ChatScreen] 🔄 Selecting chat: $chatId');
+    _logger.logInfo('[ChatScreen] Selecting chat: $chatId');
     final chat = _chats.firstWhere((c) => c.id == chatId);
     setState(() {
       _currentChat = chat;
@@ -169,15 +173,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // 🚀 CRITICAL FIX: Auto-scroll to bottom when chat is loaded
     Future.delayed(const Duration(milliseconds: 100), () {
       _chatScrollUtils.onNewMessages();
-      print('[ChatScreen] 📨 Auto-scroll triggered after chat selection');
     });
     
-    print('[ChatScreen] ✅ Chat selected: ${chat.title}');
+    _logger.logInfo('[ChatScreen] Chat selected: ${chat.title}');
     
     // Close sidebar on narrow screens when switching chats
     final screenWidth = MediaQuery.of(context).size.width;
     if (screenWidth < 800) {
-      print('[ChatScreen] 🔥 FORCE closing sidebar on narrow screen (${screenWidth.toInt()}px) when switching chats');
       if (!_isSidebarCollapsed) {
         setState(() {
           _isSidebarCollapsed = true;
@@ -188,7 +190,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         setState(() {});
       });
     } else {
-      print('[ChatScreen] 💻 Keeping sidebar open on wide screen (${screenWidth.toInt()}px)');
       // On wide screens, ensure sidebar stays open
       if (_isSidebarCollapsed) {
         setState(() {
@@ -199,7 +200,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     
     // Focus on input field after a small delay to ensure UI updates
     Future.delayed(Duration.zero, () {
-      print('[ChatScreen] 🎯 Focusing on input field');
+      _logger.logInfo('[ChatScreen] Focusing on input field');
       FocusScope.of(context).requestFocus(_chatInputFocusNode);
     });
   }
@@ -270,7 +271,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _handleSendMessage(String message) async {
-    print('[ChatScreen] 📤 Received message to send: $message');
+    _logger.logInfo('[ChatScreen] Received message to send: $message');
     
     // Hide continuation suggestions when user sends a new message
     if (_showSuggestions) {
@@ -283,7 +284,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // Handle sidebar based on screen width
     final screenWidth = MediaQuery.of(context).size.width;
     if (screenWidth < 800) {
-      print('[ChatScreen] 🔥 FORCE closing sidebar on narrow screen (${screenWidth.toInt()}px) when sending message');
+      _logger.logInfo('[ChatScreen] FORCE closing sidebar on narrow screen (${screenWidth.toInt()}px) when sending message');
       if (!_isSidebarCollapsed) {
         setState(() {
           _isSidebarCollapsed = true;
@@ -294,7 +295,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         setState(() {});
       });
     } else {
-      print('[ChatScreen] 💻 Keeping sidebar open on wide screen (${screenWidth.toInt()}px)');
+      _logger.logInfo('[ChatScreen] Keeping sidebar open on wide screen (${screenWidth.toInt()}px)');
       // On wide screens, ensure sidebar stays open
       if (_isSidebarCollapsed) {
         setState(() {
@@ -304,15 +305,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
     
     if (_currentChat == null) {
-      print('[ChatScreen] 🆕 Creating new chat...');
+      _logger.logInfo('[ChatScreen] Creating new chat...');
       await _createNewChat();
       if (_currentChat == null) {
-        print('[ChatScreen] ❌ Failed to create chat');
+        _logger.logError('[ChatScreen] Failed to create chat');
         return;
       }
-      print('[ChatScreen] ✅ New chat created: ${_currentChat!.id}');
+      _logger.logInfo('[ChatScreen] New chat created: ${_currentChat!.id}');
     } else {
-      print('[ChatScreen] 📝 Using existing chat: ${_currentChat!.id}');
+      _logger.logInfo('[ChatScreen] Using existing chat: ${_currentChat!.id}');
     }
 
     final userMessage = Message(
@@ -323,11 +324,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       isComplete: true,
     );
 
-    print('[ChatScreen] 📝 Created user message: ${userMessage.id}');
+    _logger.logInfo('[ChatScreen] Created user message: ${userMessage.id}');
     
     // Add user message to chat storage
     await _chatStorageService.addMessageToChat(_currentChat!.id, userMessage);
-    print('[ChatScreen] 💾 Message saved to storage');
+    _logger.logInfo('[ChatScreen] Message saved to storage');
     
     // Update local state immediately
     final updatedChat = _currentChat!.copyWith(
@@ -343,12 +344,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _sendToAI(String userMessage) async {
-    print('[ChatScreen] 📤 Starting _sendToAI with message: $userMessage');
+    _logger.logInfo('[ChatScreen] Starting _sendToAI with message: $userMessage');
     if (_currentChat == null) {
-      print('[ChatScreen] ❌ No current chat available in _sendToAI');
+      _logger.logError('[ChatScreen] No current chat available in _sendToAI');
       return;
     }
-    print('[ChatScreen] ✅ Current chat available, proceeding with AI processing');
+    _logger.logInfo('[ChatScreen] Current chat available, proceeding with AI processing');
 
     try {
       // Add assistant message placeholder
@@ -375,15 +376,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         
         // 🚀 CRITICAL FIX: Auto-scroll after adding message
         _chatScrollUtils.onNewMessages();
-        print('[ChatScreen] 📨 Auto-scroll triggered after adding message');
+        _logger.logInfo('[ChatScreen] Auto-scroll triggered after adding message');
       }
 
       // Stream response from AI
-      print('[ChatScreen] 📤 Starting AI response streaming after message saved');
+      _logger.logInfo('[ChatScreen] Starting AI response streaming after message saved');
       await _streamAIResponse();
-      print('[ChatScreen] ✅ AI response streaming completed');
+      _logger.logInfo('[ChatScreen] AI response streaming completed');
     } catch (e) {
-      print('Error sending message to AI: $e');
+      _logger.logError('[ChatScreen] Error sending message to AI: $e');
       
       // Add error message
       final errorMessage = Message(
@@ -406,12 +407,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _streamAIResponse() async {
-    print('[ChatScreen] 🚀 Starting AI response streaming...');
+    _logger.logInfo('[ChatScreen] Starting AI response streaming...');
     if (_currentChat == null) {
-      print('[ChatScreen] ❌ No current chat available');
+      _logger.logError('[ChatScreen] No current chat available');
       return;
     }
-    print('[ChatScreen] ✅ Current chat available, proceeding...');
+    _logger.logInfo('[ChatScreen] Current chat available, proceeding...');
 
     try {
       final messages = _currentChat!.messages
@@ -421,15 +422,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           })
           .toList();
       
-      print('[ChatScreen] 📝 Sending ${messages.length} messages to AI service');
-      print('[ChatScreen] 📝 Messages: ${messages.map((m) => '${m['role']}: ${m['content']}').join(' | ')}');
+      _logger.logInfo('[ChatScreen] Sending ${messages.length} messages to AI service');
+      _logger.logInfo('[ChatScreen] Messages: ${messages.map((m) => '${m['role']}: ${m['content']}').join(' | ')}');
 
       // Use a working OpenRouter model
       final selectedModel = _selectedModel;
       final optimalMaxTokens = _selectedModelObject != null 
           ? _getOptimalMaxTokensForModel(_selectedModelObject!)
           : _getOptimalMaxTokensFromId(selectedModel); // Fallback based on model ID
-      print('[ChatScreen] 🎯 Using model: $selectedModel with max_tokens: $optimalMaxTokens');
+      _logger.logInfo('[ChatScreen] Using model: $selectedModel with max_tokens: $optimalMaxTokens');
       
       await _openRouterService.streamChatCompletion(
         messages: messages,
@@ -437,20 +438,20 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         maxTokens: optimalMaxTokens, // Use optimal token limit based on model
         onChunk: (content) {
           final displayLength = min(50, content.length);
-          print('[ChatScreen] 🌊 Received chunk: ${content.substring(0, displayLength)}...');
+          _logger.logInfo('[ChatScreen] Received chunk: ${content.substring(0, displayLength)}...');
           if (content.isNotEmpty) {
             // Update the last message with new content
             final lastMessage = _currentChat!.messages.last;
             final updatedMessage = lastMessage.copyWith(content: lastMessage.content + content);
             
-            print('[ChatScreen] ✏️ Updating message ${updatedMessage.id} with content length: ${updatedMessage.content.length}');
+            _logger.logInfo('[ChatScreen] Updating message ${updatedMessage.id} with content length: ${updatedMessage.content.length}');
             
             _chatStorageService.updateMessageInChat(
               _currentChat!.id, 
               updatedMessage.id, 
               updatedMessage
             ).then((_) {
-              print('[ChatScreen] ✅ Message updated in storage');
+              _logger.logInfo('[ChatScreen] Message updated in storage');
               final updatedChat = _currentChat!.copyWith(
                 messages: [
                   ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
@@ -466,7 +467,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 
                 // 🚀 CRITICAL FIX: Aggressive auto-scroll during streaming
                 _chatScrollUtils.onNewMessagesStreaming();
-                print('[ChatScreen] 📨 Auto-scroll triggered during streaming');
+                _logger.logInfo('[ChatScreen] Auto-scroll triggered during streaming');
               }
             });
           }
@@ -501,7 +502,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         },
       );
     } catch (e) {
-      print('Error in streaming response: $e');
+      _logger.logError('[ChatScreen] Error in streaming response: $e');
       
       // Add error message
       final errorMessage = Message(
@@ -583,11 +584,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _handleToggleStreaming(bool isStreaming) {
-    print('Streaming toggled: $isStreaming');
+    _logger.logInfo('[ChatScreen] Streaming toggled: $isStreaming');
   }
 
   void _refreshChatMessages() async {
-    print('[ChatScreen] 🔄 Refreshing chat messages after deletion');
+    _logger.logInfo('[ChatScreen] Refreshing chat messages after deletion');
     
     if (_currentChat != null) {
       try {
@@ -596,23 +597,23 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         if (updatedChat != null) {
           setState(() {
             _currentChat = updatedChat;
-            print('[ChatScreen] ✅ Chat messages refreshed, now ${updatedChat.messages.length} messages');
+            _logger.logInfo('[ChatScreen] Chat messages refreshed, now ${updatedChat.messages.length} messages');
           });
         } else {
-          print('[ChatScreen] ❌ Failed to reload chat after deletion');
+          _logger.logError('[ChatScreen] Failed to reload chat after deletion');
         }
       } catch (e) {
-        print('[ChatScreen] ❌ Error refreshing chat messages: $e');
+        _logger.logError('[ChatScreen] Error refreshing chat messages: $e');
       }
     }
   }
 
   // Method to continue AI response
   void _continueAIResponse(String lastMessageId) async {
-    print('[ChatScreen] 🔄 Continuing AI response for message: $lastMessageId');
+    _logger.logInfo('[ChatScreen] Continuing AI response for message: $lastMessageId');
     
     if (_currentChat == null) {
-      print('[ChatScreen] ❌ No current chat available');
+      _logger.logError('[ChatScreen] No current chat available');
       return;
     }
     
@@ -623,7 +624,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
     
     if (lastMessage.content.isEmpty) {
-      print('[ChatScreen] ❌ Last message has no content to continue');
+      _logger.logError('[ChatScreen] Last message has no content to continue');
       return;
     }
     
@@ -651,14 +652,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     
     // 🚀 CRITICAL FIX: Auto-scroll after adding continuation message
     _chatScrollUtils.onNewMessages();
-    print('[ChatScreen] 📨 Auto-scroll triggered after adding continuation message');
+    _logger.logInfo('[ChatScreen] Auto-scroll triggered after adding continuation message');
 
     // Send continuation request to AI
     await _streamContinuationResponse(lastMessage.content);
   }
 
   Future<void> _streamContinuationResponse(String previousContent) async {
-    print('[ChatScreen] 🚀 Starting AI continuation streaming...');
+    _logger.logInfo('[ChatScreen] Starting AI continuation streaming...');
     
     try {
       // Create a continuation prompt
@@ -672,7 +673,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           ? _getOptimalMaxTokensForModel(_selectedModelObject!)
           : _getOptimalMaxTokensFromId(_selectedModel);
       
-      print('[ChatScreen] 🎯 Using model: $_selectedModel with max_tokens: $optimalMaxTokens for continuation');
+      _logger.logInfo('[ChatScreen] Using model: $_selectedModel with max_tokens: $optimalMaxTokens for continuation');
       
       await _openRouterService.streamChatCompletion(
         messages: continuationPrompt,
@@ -684,7 +685,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             final lastMessage = _currentChat!.messages.last;
             final updatedMessage = lastMessage.copyWith(content: lastMessage.content + content);
             
-            print('[ChatScreen] ✏️ Updating continuation message ${updatedMessage.id} with content length: ${updatedMessage.content.length}');
+            _logger.logInfo('[ChatScreen] Updating continuation message ${updatedMessage.id} with content length: ${updatedMessage.content.length}');
             
             _chatStorageService.updateMessageInChat(
               _currentChat!.id, 
@@ -737,7 +738,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         },
       );
     } catch (e) {
-      print('[ChatScreen] ❌ Error in continuation streaming: $e');
+      _logger.logError('[ChatScreen] Error in continuation streaming: $e');
       
       // Add error message
       final errorMessage = Message(
@@ -765,13 +766,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   // Method to get optimal max tokens for different models based on their context length
   int _getOptimalMaxTokensForModel(OpenRouterModel model) {
     if (model.contextLength == null) {
-      return 2000; // Default for models without specified context length
+      return 2046; // Default for models without specified context length
     }
     
     final contextLength = model.contextLength!;
     
-    // Use 10% of context length as max tokens, with reasonable limits
-    final maxTokens = (contextLength * 0.1).toInt();
+    // Use 20% of context length as max tokens, with reasonable limits
+    final maxTokens = (contextLength * 0.2).toInt();
     
     // Set reasonable bounds
     if (maxTokens < 1000) {
@@ -792,9 +793,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     if (modelObject != null) {
       final contextLength = modelObject.contextLength ?? 'unknown';
       final maxTokens = _getOptimalMaxTokensForModel(modelObject);
-      print('[ChatScreen] ✅ Model updated: ${modelObject.name}');
-      print('[ChatScreen] 📏 Context length: $contextLength tokens');
-      print('[ChatScreen] 🎯 Optimal max_tokens: $maxTokens');
+      _logger.logInfo('[ChatScreen] Model updated: ${modelObject.name}');
+      _logger.logInfo('[ChatScreen] Context length: $contextLength tokens');
+      _logger.logInfo('[ChatScreen] Optimal max_tokens: $maxTokens');
     }
   }
 
@@ -812,16 +813,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     if (modelId.contains('gpt-3.5') || 
         modelId.contains('llama') || 
         modelId.contains('mistral')) {
-      return 4000; // Medium limit for standard models
+      return 4096; // Medium limit for standard models
     }
     
     // Default limit
-    return 2000;
+    return 2046;
   }
 
   @override
   Widget build(BuildContext context) {
-    print('[ChatScreen] 🏗️ Building ChatScreen, current chat: ${_currentChat?.id}, messages: ${_currentChat?.messages.length ?? 0}');
+    _logger.logInfo('[ChatScreen] Building ChatScreen, current chat: ${_currentChat?.id}, messages: ${_currentChat?.messages.length ?? 0}');
     final screenWidth = MediaQuery.of(context).size.width;
 
     // Simple mobile/desktop detection
@@ -840,7 +841,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'GenUI',
+          '',
           style: TextStyle(
             color: theme.colorScheme.primary,
             fontWeight: FontWeight.bold,
@@ -859,7 +860,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 // Handle sidebar based on screen width before navigation
                 final screenWidth = MediaQuery.of(context).size.width;
                 if (screenWidth < 800) {
-                  print('[ChatScreen] 🔥 FORCE closing sidebar on narrow screen (${screenWidth.toInt()}px) before navigation');
                   if (!_isSidebarCollapsed) {
                     setState(() {
                       _isSidebarCollapsed = true;
@@ -870,7 +870,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     setState(() {});
                   });
                 } else {
-                  print('[ChatScreen] 💻 Keeping sidebar open on wide screen (${screenWidth.toInt()}px)');
                   // On wide screens, ensure sidebar stays open
                   if (_isSidebarCollapsed) {
                     setState(() {
@@ -951,11 +950,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             width: _isSidebarCollapsed ? _sidebarCollapsedWidth : _sidebarWidth,
             isCollapsed: _isSidebarCollapsed,
             onToggleSidebar: () {
-              print('[ChatScreen] 🔄 Toggling sidebar (current: $_isSidebarCollapsed)');
               setState(() {
                 _isSidebarCollapsed = !_isSidebarCollapsed;
               });
-              print('[ChatScreen] ✅ Sidebar now: $_isSidebarCollapsed');
             },
             chats: _chats,
             currentChat: _currentChat,
@@ -998,7 +995,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           // Handle sidebar based on screen width before navigation
                           final screenWidth = MediaQuery.of(context).size.width;
                           if (screenWidth < 800) {
-                            print('[ChatScreen] 🔥 FORCE closing sidebar on narrow screen (${screenWidth.toInt()}px) before navigation');
                             if (!_isSidebarCollapsed) {
                               setState(() {
                                 _isSidebarCollapsed = true;
@@ -1009,7 +1005,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                               setState(() {});
                             });
                           } else {
-                            print('[ChatScreen] 💻 Keeping sidebar open on wide screen (${screenWidth.toInt()}px)');
                             // On wide screens, ensure sidebar stays open
                             if (_isSidebarCollapsed) {
                               setState(() {
@@ -1180,7 +1175,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
     
     try {
-      print('[ChatScreen] 🤔 Generating continuation suggestions for message...');
+      _logger.logInfo('[ChatScreen] Generating continuation suggestions for message...');
       
       // Get suggestions from AI
       final suggestions = await _getContinuationSuggestions(message.content);
@@ -1203,7 +1198,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       }
       
     } catch (e) {
-      print('[ChatScreen] ❌ Error showing suggestions: $e');
+      _logger.logError('[ChatScreen] Error showing suggestions: $e');
     } finally {
       setState(() {
         _isSuggestionsLoading = false;
@@ -1214,7 +1209,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   // Method to get continuation suggestions from AI
   Future<List<String>> _getContinuationSuggestions(String lastMessageContent) async {
     try {
-      print('[ChatScreen] 🤔 Generating continuation suggestions...');
+      _logger.logInfo('[ChatScreen] Generating continuation suggestions...');
       
       // Create a prompt for generating continuation suggestions
       final suggestionPrompt = [
@@ -1250,11 +1245,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           .take(4)
           .toList();
       
-      print('[ChatScreen] ✅ Generated ${suggestions.length} continuation suggestions');
+      _logger.logInfo('[ChatScreen] Generated ${suggestions.length} continuation suggestions');
       return suggestions;
       
     } catch (e) {
-      print('[ChatScreen] ❌ Error generating suggestions: $e');
+      _logger.logError('[ChatScreen] Error generating suggestions: $e');
       // Return default suggestions
       return [
         'Tell me more about this topic',

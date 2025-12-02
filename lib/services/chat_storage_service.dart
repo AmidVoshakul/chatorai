@@ -1,6 +1,10 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/chat_models.dart';
+import '../utils/logger.dart';
+
+// Initialize logger for this service
+final _logger = LogTags.storage;
 
 class ChatStorageService {
   static const String _chatsKey = 'chats_storage';
@@ -177,7 +181,7 @@ class ChatStorageService {
       final List<dynamic> chatsData = json.decode(chatsJson);
       return chatsData.map((data) => Chat.fromJson(data)).toList();
     } catch (e) {
-      print('Error parsing chats from storage: $e');
+      _logger.logError('Error parsing chats from storage: $e');
       return [];
     }
   }

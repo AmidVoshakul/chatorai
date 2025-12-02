@@ -2,6 +2,10 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:gen_ui_chat_ai/utils/logger.dart';
+
+// Initialize logger for this utility
+final _logger = LogTags.scroll;
 
 /// Utility class for managing scroll behavior in chat interfaces
 class ChatScrollUtils {
@@ -53,7 +57,7 @@ class ChatScrollUtils {
       Future.delayed(const Duration(milliseconds: 100), () {
         if (scrollController.hasClients) {
           scrollController.jumpTo(scrollController.position.maxScrollExtent);
-          print('[ChatScrollUtils] 🔧 Linux initialization: Force scroll to bottom');
+          _logger.logDebug('[Scroll] Linux initialization: Force scroll to bottom');
         }
       });
     }
@@ -86,14 +90,14 @@ class ChatScrollUtils {
       // Store last position for comparison
       _lastScrollPosition = currentPosition;
       
-      print('[ChatScrollUtils] 📱 Scroll position: $currentPosition, Max: $maxScrollExtent, Near bottom: $isNearBottom, Locked: $_autoScrollLocked');
+      _logger.logVerbose('[Scroll] Scroll position: $currentPosition, Max: $maxScrollExtent, Near bottom: $isNearBottom, Locked: $_autoScrollLocked');
     }
   }
   
   /// Scroll to bottom with optional animation
   Future<void> scrollToBottom({bool animated = true}) async {
     if (_isAnimating) {
-      print('[ChatScrollUtils] ⏭️ Skip scroll - already animating');
+      _logger.logDebug('[Scroll] Skip scroll - already animating');
       return;
     }
     
@@ -106,10 +110,10 @@ class ChatScrollUtils {
           duration: animationDuration,
           curve: animationCurve,
         );
-        print('[ChatScrollUtils] 🎯 Smooth scroll to bottom completed');
+        _logger.logInfo('[Scroll] Smooth scroll to bottom completed');
       } else if (scrollController.hasClients) {
         scrollController.jumpTo(scrollController.position.maxScrollExtent);
-        print('[ChatScrollUtils] ⚡ Jump scroll to bottom completed');
+        _logger.logInfo('[Scroll] Jump scroll to bottom completed');
       }
       
       // Force focus on the last content for Linux compatibility
@@ -123,13 +127,13 @@ class ChatScrollUtils {
             // If we're not exactly at the bottom, make a final adjustment
             if ((maxScroll - currentScroll) > 1.0) {
               scrollController.jumpTo(maxScroll);
-              print('[ChatScrollUtils] 🔧 Linux fix: Final adjustment to exact bottom position');
+              _logger.logDebug('[Scroll] Linux fix: Final adjustment to exact bottom position');
             }
           }
         });
       }
     } catch (e) {
-      print('[ChatScrollUtils] ❌ Error scrolling to bottom: $e');
+      _logger.logError('[Scroll] Error scrolling to bottom: $e');
     } finally {
       _isAnimating = false;
     }
@@ -157,9 +161,9 @@ class ChatScrollUtils {
         scrollController.jumpTo(position);
       }
       
-      print('[ChatScrollUtils] 🎯 Scrolled to position: $position');
+      _logger.logInfo('[Scroll] Scrolled to position: $position');
     } catch (e) {
-      print('[ChatScrollUtils] ❌ Error scrolling to position $position: $e');
+      _logger.logError('[Scroll] Error scrolling to position $position: $e');
     } finally {
       _isAnimating = false;
     }
@@ -179,13 +183,13 @@ class ChatScrollUtils {
   /// Lock auto-scroll (useful during user interaction)
   void lockAutoScroll() {
     _autoScrollLocked = true;
-    print('[ChatScrollUtils] 🔒 Auto-scroll locked');
+    _logger.logInfo('[Scroll] Auto-scroll locked');
   }
   
   /// Unlock auto-scroll
   void unlockAutoScroll() {
     _autoScrollLocked = false;
-    print('[ChatScrollUtils] 🔓 Auto-scroll unlocked');
+    _logger.logInfo('[Scroll] Auto-scroll unlocked');
     // Auto-scroll to bottom when unlocked if needed
     if (scrollController.hasClients) {
       final isNearBottom = (scrollController.position.maxScrollExtent - scrollController.offset) <= 50;
@@ -230,9 +234,9 @@ class ChatScrollUtils {
         curve: curve ?? animationCurve,
       );
       
-      print('[ChatScrollUtils] 🎯 Smooth scroll completed: $targetPosition');
+      _logger.logInfo('[Scroll] Smooth scroll completed: $targetPosition');
     } catch (e) {
-      print('[ChatScrollUtils] ❌ Error in smooth scroll: $e');
+      _logger.logError('[Scroll] Error in smooth scroll: $e');
     } finally {
       _isAnimating = false;
     }
@@ -262,9 +266,9 @@ class ChatScrollUtils {
         animated: animated,
       );
       
-      print('[ChatScrollUtils] 🎯 Scrolled to item $index at position $targetPosition');
+      _logger.logInfo('[Scroll] Scrolled to item $index at position $targetPosition');
     } catch (e) {
-      print('[ChatScrollUtils] ❌ Error scrolling to item $index: $e');
+      _logger.logError('[Scroll] Error scrolling to item $index: $e');
     }
   }
   
@@ -280,7 +284,7 @@ class ChatScrollUtils {
       _lastScrollPosition = scrollController.offset;
     }
     
-    print('[ChatScrollUtils] 🔄 Scroll state reset');
+    _logger.logInfo('[Scroll] Scroll state reset');
   }
   
   /// Call this method when messages are updated during streaming for aggressive auto-scroll
@@ -297,7 +301,7 @@ class ChatScrollUtils {
         ).then((_) {
           _isAnimating = false;
         });
-        print('[ChatScrollUtils] 🌊 Streaming: Aggressive scroll to bottom');
+        _logger.logInfo('[Scroll] Streaming: Aggressive scroll to bottom');
       }
     });
   }
@@ -320,22 +324,22 @@ class ChatScrollUtils {
               duration: const Duration(milliseconds: 100), // Even faster animation for streaming
               curve: Curves.easeOut,
             );
-            print('[ChatScrollUtils] 📨 Linux: Scrolling to bottom (user near bottom or new message)');
+            _logger.logInfo('[Scroll] Linux: Scrolling to bottom (user near bottom or new message)');
           } else {
             // User is reading old messages, don't interrupt but log for debugging
-            print('[ChatScrollUtils] 📨 Linux: Not scrolling (user reading old messages, distance: ${maxScrollExtent - currentPosition})');
+            _logger.logDebug('[Scroll] Linux: Not scrolling (user reading old messages, distance: ${maxScrollExtent - currentPosition})');
           }
         }
       });
     } else {
-      print('[ChatScrollUtils] 📨 New messages detected, but auto-scroll is locked or disabled');
+      _logger.logDebug('[Scroll] New messages detected, but auto-scroll is locked or disabled');
     }
   }
   
   /// Enable or disable auto-scroll
   void setAutoScrollEnabled(bool enabled) {
     _autoScrollEnabled = enabled;
-    print('[ChatScrollUtils] 🔄 Auto-scroll ${enabled ? 'enabled' : 'disabled'}');
+    _logger.logInfo('[Scroll] Auto-scroll ${enabled ? 'enabled' : 'disabled'}');
   }
   
   /// Get debug information

@@ -4,6 +4,10 @@ import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart' as ChatModels;
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
+import 'package:gen_ui_chat_ai/utils/logger.dart';
+
+// Initialize logger for this utility
+final _logger = LogTags.message;
 
 /// Утилиты для управления сообщениями
 class MessageUtils {
@@ -248,9 +252,9 @@ class MessageUtils {
         duration: const Duration(seconds: 1),
       );
       
-      print('[MessageUtils] ✅ Message copied to clipboard');
+      _logger.logInfo('[MessageUtils] Message copied to clipboard');
     } catch (e) {
-      print('[MessageUtils] ❌ Error copying message: $e');
+      _logger.logError('[MessageUtils] Error copying message: $e');
       
       final String currentLanguage = _getCurrentLanguage(context);
       SnackbarUtils.showErrorSnackBar(
@@ -333,9 +337,9 @@ class MessageUtils {
         icon: Icons.copy_all,
       );
       
-      print('[MessageUtils] ✅ Chat copied to clipboard (${messages.length} messages)');
+      _logger.logInfo('[MessageUtils] Chat copied to clipboard (${messages.length} messages)');
     } catch (e) {
-      print('[MessageUtils] ❌ Error copying chat: $e');
+      _logger.logError('[MessageUtils] Error copying chat: $e');
       
       final String currentLanguage = _getCurrentLanguage(context);
       SnackbarUtils.showErrorSnackBar(

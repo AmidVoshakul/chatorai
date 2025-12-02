@@ -1,4 +1,8 @@
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
+import '../utils/logger.dart';
+
+// Initialize logger for this service
+final _logger = LogTags.pagination;
 
 class MessagePaginationService {
   static const int pageSize = 20;
@@ -11,6 +15,7 @@ class MessagePaginationService {
   }) async {
     // Simulate API call with pagination
     await Future.delayed(const Duration(milliseconds: 500));
+    _logger.logDebug('Loading messages for conversation: $conversationId, page: $page');
     
     // Generate mock messages for pagination
     final messages = <Message>[];
@@ -41,6 +46,7 @@ class MessagePaginationService {
   }) async {
     // Simulate checking if more messages exist
     await Future.delayed(const Duration(milliseconds: 200));
+    _logger.logDebug('Checking if more messages exist for conversation: $conversationId');
     
     // For demo purposes, return true for first few pages
     return beforeTimestamp != null && !beforeTimestamp.contains('page_0');
