@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
-import 'package:gen_ui_chat_ai/utils/ui_helper.dart';
+import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -151,7 +151,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: const Icon(Icons.content_copy),
                   onPressed: () {
                     // Copy to clipboard functionality
-                    UIHelper.showCopySnackBar(context, t('apiKeyCopied'));
+                    SnackbarUtils.showCopySnackBar(
+                    context: context,
+                    message: t('apiKeyCopied'),
+                  );
                   },
                   tooltip: t('copy'),
                 ),
@@ -386,9 +389,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onPressed: () async {
                           await _themeProvider.resetSettings();
                           if (mounted) {
-                            UIHelper.showInfoSnackBar(
-                              context, 
-                              t('settingsReset')
+                            SnackbarUtils.showInfoSnackBar(
+                              context: context, 
+                              message: t('settingsReset')
                             );
                           }
                         },
@@ -408,9 +411,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   if (mounted) {
-                    UIHelper.showSuccessSnackBar(
-                      context, 
-                      t('settingsSaved')
+                    SnackbarUtils.showSuccessSnackBar(
+                      context: context, 
+                      message: t('settingsSaved')
                     );
                   }
                   Navigator.of(context).pop();

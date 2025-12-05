@@ -82,6 +82,38 @@ class SnackbarUtils {
     );
   }
 
+  /// Сообщение о копировании (серый)
+  static void showCopySnackBar({
+    required BuildContext context,
+    required String message,
+    IconData? icon,
+    Duration? duration,
+  }) {
+    _showStyledSnackBar(
+      context: context,
+      message: message,
+      icon: icon ?? Icons.copy,
+      backgroundColor: Colors.grey[700]!,
+      duration: duration ?? const Duration(seconds: 2),
+    );
+  }
+
+  /// Сообщение о подключении (синий)
+  static void showConnectionSnackBar({
+    required BuildContext context,
+    required String message,
+    IconData? icon,
+    Duration? duration,
+  }) {
+    _showStyledSnackBar(
+      context: context,
+      message: message,
+      icon: icon ?? Icons.link,
+      backgroundColor: Colors.blue[600]!,
+      duration: duration ?? const Duration(seconds: 3),
+    );
+  }
+
   /// Приватный метод для создания стилизованного SnackBar
   static void _showStyledSnackBar({
     required BuildContext context,

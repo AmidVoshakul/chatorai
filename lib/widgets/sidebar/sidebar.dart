@@ -5,9 +5,9 @@ import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
-import 'package:gen_ui_chat_ai/widgets/sidebar/chat_actions_menu.dart';
+import 'package:gen_ui_chat_ai/widgets/sidebar/sidebar_chat_actions_menu.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
-import '../../utils/logger.dart';
+import 'package:gen_ui_chat_ai/utils/logger.dart';
 
 // Initialize logger for this widget
 final _logger = LogTags.sidebar;

@@ -13,7 +13,7 @@ import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
 import 'package:gen_ui_chat_ai/screens/models_screen.dart';
 import 'package:gen_ui_chat_ai/utils/chat_scroll_utils.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
-import '../utils/logger.dart';
+import 'package:gen_ui_chat_ai/utils/logger.dart';
 
 // Initialize logger for this screen
 final _logger = LogTags.chatScreen;
