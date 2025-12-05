@@ -338,14 +338,14 @@ class OpenRouterService {
   
   Future<void> _loadApiKey() async {
     try {
-      _logger.logDebug('[OpenRouter] Loading API key...');
+      LogTags.openRouter.logDebug('Loading API key...');
       _apiKey = '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';
-      _logger.logInfo('[OpenRouter] Using API key for testing');
+      LogTags.openRouter.logInfo('Using API key for testing');
     } catch (e) {
-      _logger.logError('[OpenRouter] Error loading API key: $e');
+      LogTags.openRouter.logError('Error loading API key: $e');
       // Fallback to hardcoded key
       _apiKey = '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';
-      _logger.logWarning('[OpenRouter] Using fallback API key for testing');
+      LogTags.openRouter.logWarning('Using fallback API key for testing');
     }
   }  /// Get available models with filtering
   Future<List<OpenRouterModel>> getAvailableModels({
@@ -362,7 +362,7 @@ class OpenRouterService {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
 
-    _logger.logInfo('[OpenRouter] Fetching models from OpenRouter API...');
+    LogTags.openRouter.logInfo('Fetching models from OpenRouter API...');
     _logger.logDebug('[OpenRouter] API URL: $_baseUrl/models');
     _logger.logDebug('[OpenRouter] API Key: ${_apiKey != null ? _apiKey!.substring(0, _apiKey!.length > 10 ? 10 : _apiKey!.length) : "Not found"}...');
 
