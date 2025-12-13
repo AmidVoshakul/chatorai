@@ -851,6 +851,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         backgroundColor: theme.canvasColor,
         elevation: 0,
         actions: [
+          // Current model name
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Text(
+              _selectedModelObject?.name ?? _selectedModel,
+              style: TextStyle(
+                color: theme.colorScheme.primary,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
           
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
@@ -988,6 +1000,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   child: Row(
                     children: [
                       const Spacer(),
+
+                      // Current model name
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: Text(
+                          _selectedModelObject?.name ?? _selectedModel,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
 
                       IconButton(
                         icon: const Icon(Icons.smart_toy),
