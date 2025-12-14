@@ -75,11 +75,13 @@ class ThemeProvider with ChangeNotifier {
   }
 
   set selectedLanguage(String value) {
-    _selectedLanguage = value;
-    // Update RTL based on language
-    _isRTL = ['ar', 'he', 'fa', 'ur'].contains(value);
-    saveSettings();
-    notifyListeners();
+    if (_selectedLanguage != value) {
+      _selectedLanguage = value;
+      // Update RTL based on language
+      _isRTL = ['ar', 'he', 'fa', 'ur'].contains(value);
+      saveSettings();
+      notifyListeners();
+    }
   }
 
   /// Load settings from SharedPreferences

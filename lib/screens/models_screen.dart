@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart' show UbuntuColors;
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
+import 'package:gen_ui_chat_ai/utils/logger.dart';
+import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+
+// Initialize logger for this screen
+final _logger = LogTags.modelsScreen;
 
 class ModelsScreen extends StatefulWidget {
   final Function(String)? onModelSelected;
   final String? currentModel;
 
   const ModelsScreen({
-    Key? key,
+    super.key,
     this.onModelSelected,
     this.currentModel,
-  }) : super(key: key);
+  });
 
   @override
   State<ModelsScreen> createState() => _ModelsScreenState();
@@ -22,7 +25,6 @@ class ModelsScreen extends StatefulWidget {
 
 class _ModelsScreenState extends State<ModelsScreen> {
   late OpenRouterService _openRouterService;
-  late ThemeProvider _themeProvider;
   List<OpenRouterModel> _models = [];
   List<OpenRouterModel> _filteredModels = [];
   bool _isLoading = false;
@@ -31,11 +33,15 @@ class _ModelsScreenState extends State<ModelsScreen> {
   @override
   void initState() {
     super.initState();
-    _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     _openRouterService = OpenRouterService();
     _searchController = TextEditingController();
     _searchController.addListener(_onSearchChanged);
-    _loadModels();
+    // Load models after a short delay to ensure service is initialized
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        _loadModels();
+      }
+    });
   }
 
   @override
@@ -78,19 +84,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
   // ==============================================
 
   void _selectModel(OpenRouterModel model) {
-    final String currentLanguage = _themeProvider.selectedLanguage;
-    String getLocalizedText(String key) {
-      if (currentLanguage == 'en') {
-        return {
-          'modelSelected': 'Model "${model.name}" selected for chat',
-        }[key] ?? key;
-      } else {
-        return {
-          'modelSelected': 'Модель "${model.name}" выбрана для общения',
-        }[key] ?? key;
-      }
-    }
-    
+    final localizations = AppLocalizations.of(context)!;
+
     // Call the callback if provided
     if (widget.onModelSelected != null) {
       widget.onModelSelected!(model.id);
@@ -99,13 +94,15 @@ class _ModelsScreenState extends State<ModelsScreen> {
     // Show success snackbar
     SnackbarUtils.showSuccessSnackBar(
       context: context,
-      message: getLocalizedText('modelSelected'),
+      message: '${localizations.modelSelected}: ${model.name}',
       icon: Icons.check_circle,
     );
     
     // Navigate back to chat screen with selected model
     Future.delayed(const Duration(seconds: 1), () {
-      Navigator.of(context).pop(model);
+      if (mounted) {
+        Navigator.of(context).pop(model);
+      }
     });
   }
 
@@ -118,29 +115,21 @@ class _ModelsScreenState extends State<ModelsScreen> {
       _isLoading = true;
     });
     try {
+      _logger.logInfo('[OpenRouter] Starting model loading...');
       final models = await _openRouterService.getAvailableModels();
+      _logger.logInfo('[OpenRouter] Successfully loaded ${models.length} models');
       setState(() {
         _models = models;
         _filteredModels = models;
       });
     } catch (e) {
+      _logger.logError('[OpenRouter] Failed to load models: $e');
       if (mounted) {
-        final String currentLanguage = _themeProvider.selectedLanguage;
-        String getLocalizedText(String key) {
-          if (currentLanguage == 'en') {
-            return {
-              'errorLoadingModels': 'Error loading models: $e',
-            }[key] ?? key;
-          } else {
-            return {
-              'errorLoadingModels': 'Ошибка загрузки моделей: $e',
-            }[key] ?? key;
-          }
-        }
-        
+        final localizations = AppLocalizations.of(context)!;
+
         SnackbarUtils.showWarningSnackBar(
           context: context,
-          message: getLocalizedText('errorLoadingModels'),
+          message: '${localizations.errorLoadingModels}: ${e.toString()}',
           icon: Icons.warning,
           duration: const Duration(seconds: 3),
         );
@@ -154,10 +143,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _themeProvider.selectedLanguage == 'en' ? 'Models' : 'Модели',
+          localizations.models,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
           ),
@@ -173,7 +164,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: _themeProvider.selectedLanguage == 'en' ? 'Search models...' : 'Поиск моделей...',
+                hintText: localizations.searchModels,
                 hintStyle: TextStyle(
                   color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600],
                   fontSize: 16,
@@ -250,7 +241,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _loadModels,
-        tooltip: 'Refresh',
+        tooltip: localizations.refresh,
         child: const Icon(Icons.refresh),
       ),
     );
@@ -262,7 +253,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   Widget _buildModelCard(OpenRouterModel model) {
     final isSelected = widget.currentModel == model.id;
-    
+    final localizations = AppLocalizations.of(context)!;
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
       elevation: 2,
@@ -329,7 +321,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                     onPressed: () {
                       _showModelDetailsDialog(model);
                     },
-                    tooltip: _themeProvider.selectedLanguage == 'en' ? 'Details' : 'Подробнее',
+                    tooltip: localizations.details,
                   ),
                 ],
               ),
@@ -357,7 +349,7 @@ const SizedBox(height: 12),
                 children: [
                   Expanded(
                     child: Text(
-                      '${_themeProvider.selectedLanguage == 'en' ? 'Context' : 'Контекст'}: ${model.formattedContextLength}',
+                      '${localizations.context}: ${model.formattedContextLength}',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -377,6 +369,8 @@ const SizedBox(height: 12),
   }
 
   Widget _buildModelFeatures(OpenRouterModel model) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Wrap(
       spacing: 6,
       runSpacing: 4,
@@ -384,9 +378,9 @@ const SizedBox(height: 12),
         // Free/Paid indicator
         Chip(
           label: Text(model.isFree 
-              ? (_themeProvider.selectedLanguage == 'en' ? 'Free' : 'Бесплатно')
-              : (_themeProvider.selectedLanguage == 'en' ? 'Paid' : 'Платно')),
-          backgroundColor: model.isFree 
+              ? localizations.free
+              : localizations.paid),
+          backgroundColor: model.isFree
               ? Colors.green.withValues(alpha: 0.15)
               : Colors.orange.withValues(alpha: 0.15),
           side: BorderSide(
@@ -411,7 +405,7 @@ const SizedBox(height: 12),
         // Reasoning capability
         if (model.supportsReasoning)
           Chip(
-            label: Text(_themeProvider.selectedLanguage == 'en' ? 'Reasoning' : 'Рассуждения'),
+            label: Text(localizations.reasoning),
             backgroundColor: Colors.blue.withValues(alpha: 0.15),
             side: BorderSide(color: Colors.blue.withValues(alpha: 0.3), width: 1.5),
             labelStyle: const TextStyle(
@@ -426,7 +420,7 @@ const SizedBox(height: 12),
         // Multimodal capability
         if (model.supportsMultimodal)
           Chip(
-            label: Text(_themeProvider.selectedLanguage == 'en' ? 'Multimodal' : 'Мультимодальность'),
+            label: Text(localizations.multimodal),
             backgroundColor: Colors.purple.withValues(alpha: 0.15),
             side: BorderSide(color: Colors.purple.withValues(alpha: 0.3), width: 1.5),
             labelStyle: const TextStyle(
@@ -441,7 +435,7 @@ const SizedBox(height: 12),
         // Vision capability
         if (model.capabilities.vision)
           Chip(
-            label: Text(_themeProvider.selectedLanguage == 'en' ? 'Vision' : 'Видение'),
+            label: Text(localizations.vision),
             backgroundColor: Colors.deepOrange.withValues(alpha: 0.15),
             side: BorderSide(color: Colors.deepOrange.withValues(alpha: 0.3), width: 1.5),
             labelStyle: const TextStyle(
@@ -456,7 +450,7 @@ const SizedBox(height: 12),
         // Tools capability
         if (model.capabilities.tools)
           Chip(
-            label: Text(_themeProvider.selectedLanguage == 'en' ? 'Tools' : 'Инструменты'),
+            label: Text(localizations.tools),
             backgroundColor: Colors.teal.withValues(alpha: 0.15),
             side: BorderSide(color: Colors.teal.withValues(alpha: 0.3), width: 1.5),
             labelStyle: const TextStyle(
@@ -470,7 +464,7 @@ const SizedBox(height: 12),
         
         // Always show availability
         Chip(
-          label: Text(_themeProvider.selectedLanguage == 'en' ? 'Available' : 'Доступна'),
+          label: Text(localizations.available),
           backgroundColor: Colors.green.withValues(alpha: 0.15),
           side: BorderSide(color: Colors.green.withValues(alpha: 0.3), width: 1.5),
           labelStyle: const TextStyle(
@@ -489,9 +483,10 @@ const SizedBox(height: 12),
     // ==============================================
     // Show model details
     // ==============================================
+    final localizations = AppLocalizations.of(context)!;
 
     /// Builds a detail row with icon, label, and value
-    Widget _buildDetailRow(String label, String value, IconData icon) {
+    Widget buildDetailRow(String label, String value, IconData icon) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Row(
@@ -519,7 +514,7 @@ const SizedBox(height: 12),
     }
 
     /// Builds a feature chip with label, color, and icon
-    Widget _buildFeatureChip(String label, bool enabled, Color color, IconData icon) {
+    Widget buildFeatureChip(String label, bool enabled, Color color, IconData icon) {
       return Container(
         margin: const EdgeInsets.only(bottom: 4),
         child: Chip(
@@ -566,7 +561,7 @@ const SizedBox(height: 12),
             children: [
               // Description section
               Text(
-                _themeProvider.selectedLanguage == 'en' ? 'Description' : 'Описание',
+                localizations.description,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -594,7 +589,7 @@ const SizedBox(height: 12),
 
               // Technical details
               Text(
-                _themeProvider.selectedLanguage == 'en' ? 'Technical Details' : 'Технические характеристики',
+                localizations.technicalDetails,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -602,29 +597,29 @@ const SizedBox(height: 12),
                 ),
               ),
               const SizedBox(height: 12),
-              _buildDetailRow(_themeProvider.selectedLanguage == 'en' ? 'Provider' : 'Провайдер', model.provider!, Icons.account_circle),
+              buildDetailRow(localizations.provider, model.provider!, Icons.account_circle),
               if (model.provider != null)
-                _buildDetailRow(_themeProvider.selectedLanguage == 'en' ? 'Context' : 'Контекст', model.formattedContextLength, Icons.text_fields),
+                buildDetailRow(localizations.context, model.formattedContextLength, Icons.text_fields),
 
-              _buildDetailRow(
-                _themeProvider.selectedLanguage == 'en' ? 'Input tokens' : 'Ввод токенов',
+              buildDetailRow(
+                localizations.inputTokens,
                 model.pricingPrompt != null
                     ? '\$${model.pricingPrompt}/M'
-                    : (_themeProvider.selectedLanguage == 'en' ? 'Not available' : 'Недоступно'),
+                    : localizations.notAvailable,
                 Icons.attach_money,
               ),
-              _buildDetailRow(
-                _themeProvider.selectedLanguage == 'en' ? 'Output tokens' : 'Вывод токенов',
+              buildDetailRow(
+                localizations.outputTokens,
                 model.pricingCompletion != null
                     ? '\$${model.pricingCompletion}/M'
-                    : (_themeProvider.selectedLanguage == 'en' ? 'Not available' : 'Недоступно'),
+                    : localizations.notAvailable,
                 Icons.monetization_on,
               ),
 
               // Features section
               const SizedBox(height: 20),
               Text(
-                _themeProvider.selectedLanguage == 'en' ? 'Features' : 'Возможности',
+                localizations.features,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -633,9 +628,7 @@ const SizedBox(height: 12),
               ),
               const SizedBox(height: 4),
               Text(
-                _themeProvider.selectedLanguage == 'en'
-                  ? 'Features are displayed based on actual model capabilities'
-                  : 'Возможности отображаются на основе реальных характеристик модели',
+                localizations.featuresDisplayedBasedOnActualModelCapabilities,
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).textTheme.bodySmall!.color,
@@ -646,22 +639,22 @@ const SizedBox(height: 12),
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _buildFeatureChip(
+                  buildFeatureChip(
                     model.isFree 
-                      ? (_themeProvider.selectedLanguage == 'en' ? 'Free' : 'Бесплатно')
-                      : (_themeProvider.selectedLanguage == 'en' ? 'Paid' : 'Платно'),
+                      ? localizations.free
+                      : localizations.paid,
                     true,
                     model.isFree ? Colors.green : Colors.orange,
                     model.isFree ? Icons.attach_money : Icons.payment,
                   ),
                   if (model.supportsReasoning)
-                    _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Reasoning' : 'Рассуждения', true, Colors.blue, Icons.psychology),
+                    buildFeatureChip(localizations.reasoning, true, Colors.blue, Icons.psychology),
                   if (model.supportsMultimodal)
-                    _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Multimodal' : 'Мультимодальность', true, Colors.purple, Icons.view_in_ar),
+                    buildFeatureChip(localizations.multimodal, true, Colors.purple, Icons.view_in_ar),
                   if (model.capabilities.vision)
-                    _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Vision' : 'Видение', true, Colors.deepOrange, Icons.visibility),
+                    buildFeatureChip(localizations.vision, true, Colors.deepOrange, Icons.visibility),
                   if (model.capabilities.tools)
-                    _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Tools' : 'Инструменты', true, Colors.teal, Icons.build),
+                    buildFeatureChip(localizations.tools, true, Colors.teal, Icons.build),
                 ],
               ),
             ],
@@ -671,7 +664,7 @@ const SizedBox(height: 12),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
-              child: Text(_themeProvider.selectedLanguage == 'en' ? 'Close' : 'Закрыть'),
+              child: Text(localizations.close),
             ),
           ],
         );
@@ -681,7 +674,8 @@ const SizedBox(height: 12),
 
   Widget _buildEmptyState() {
     final isEmptySearch = _searchController.text.isNotEmpty && _filteredModels.isEmpty;
-    
+    final localizations = AppLocalizations.of(context)!;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -694,8 +688,8 @@ const SizedBox(height: 12),
           const SizedBox(height: 16),
           Text(
             isEmptySearch 
-              ? (_themeProvider.selectedLanguage == 'en' ? 'No models found' : 'Модели не найдены')
-              : (_themeProvider.selectedLanguage == 'en' ? 'No available models' : 'Нет доступных моделей'),
+              ? localizations.noModelsFound
+              : localizations.noAvailableModels,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -705,8 +699,8 @@ const SizedBox(height: 12),
           const SizedBox(height: 8),
           Text(
             isEmptySearch 
-              ? (_themeProvider.selectedLanguage == 'en' ? 'Try a different search query' : 'Попробуйте изменить поисковый запрос')
-              : (_themeProvider.selectedLanguage == 'en' ? 'Try refreshing or check your internet connection' : 'Попробуйте обновить или проверьте интернет-соединение'),
+              ? localizations.tryADifferentSearchQuery
+              : localizations.tryRefreshingOrCheckYourInternetConnection,
             style: TextStyle(
               color: Theme.of(context).textTheme.bodyMedium!.color,
               fontSize: 14,

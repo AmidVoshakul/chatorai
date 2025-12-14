@@ -47,7 +47,7 @@ void main() async {
       final chatAfterDeletion = await chatStorageService.getChat(testChat.id);
       print('📊 Chat has ${chatAfterDeletion?.messages.length ?? 0} messages after deletion');
       
-      if (chatAfterDeletion?.messages.length == 0) {
+      if (chatAfterDeletion?.messages != null && chatAfterDeletion!.messages.isEmpty) {
         print('✅ Message deletion successful!');
       } else {
         print('❌ Message deletion failed');

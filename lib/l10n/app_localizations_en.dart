@@ -125,5 +125,235 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appDescription => 'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nDeveloped with ❤️ using Flutter';
 
   @override
+  String get shareChat => 'Share Chat';
+
+  @override
+  String get copyChat => 'Copy Chat';
+
+  @override
+  String get renameChat => 'Rename Chat';
+
+  @override
+  String get deleteChat => 'Delete Chat';
+
+  @override
+  String get failedToShowMenu => 'Failed to show menu';
+
+  @override
+  String get failedToRenameChat => 'Failed to rename chat';
+
+  @override
+  String get failedToCopyChat => 'Failed to copy chat';
+
+  @override
+  String get chatSharingNotImplemented => 'Chat sharing is not implemented yet';
+
+  @override
+  String get newChat => 'New Chat';
+
+  @override
+  String get noChatsYet => 'No chats yet';
+
+  @override
+  String get startConversation => 'Start a conversation by clicking \"New Chat\"';
+
+  @override
+  String chatRenamedTo(Object title) {
+    return 'Chat renamed to: $title';
+  }
+
+  @override
+  String get appTitle => 'Chat AI';
+
+  @override
+  String get justNow => 'Just now';
+
+  @override
+  String minAgo(Object minutes) {
+    return '$minutes min ago';
+  }
+
+  @override
+  String get onlyOneMinuteAgo => '1 min ago';
+
+  @override
+  String hoursAgo(Object hours) {
+    return '$hours hours ago';
+  }
+
+  @override
+  String get onlyOneHourAgo => '1 hour ago';
+
+  @override
+  String daysAgo(Object days) {
+    return '$days days ago';
+  }
+
+  @override
+  String get onlyOneDayAgo => '1 day ago';
+
+  @override
+  String get renameChatTitle => 'Rename Chat';
+
+  @override
+  String get enterNewChatName => 'Enter new chat name';
+
+  @override
+  String get rename => 'Rename';
+
+  @override
   String get ok => 'OK';
+
+  @override
+  String get modelSelected => 'Model Selected';
+
+  @override
+  String get errorLoadingModels => 'Error loading models';
+
+  @override
+  String get models => 'Models';
+
+  @override
+  String get searchModels => 'Search models';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get context => 'Context';
+
+  @override
+  String get free => 'Free';
+
+  @override
+  String get paid => 'Paid';
+
+  @override
+  String get reasoning => 'Reasoning';
+
+  @override
+  String get multimodal => 'Multimodal';
+
+  @override
+  String get vision => 'Vision';
+
+  @override
+  String get tools => 'Tools';
+
+  @override
+  String get available => 'Available';
+
+  @override
+  String get description => 'Description';
+
+  @override
+  String get technicalDetails => 'Technical Details';
+
+  @override
+  String get provider => 'Provider';
+
+  @override
+  String get inputTokens => 'Input Tokens';
+
+  @override
+  String get notAvailable => 'Not available';
+
+  @override
+  String get outputTokens => 'Output Tokens';
+
+  @override
+  String get features => 'Features';
+
+  @override
+  String get featuresDisplayedBasedOnActualModelCapabilities => 'Features displayed based on actual model capabilities';
+
+  @override
+  String get noModelsFound => 'No models found';
+
+  @override
+  String get noAvailableModels => 'No available models';
+
+  @override
+  String get tryADifferentSearchQuery => 'Try a different search query';
+
+  @override
+  String get tryRefreshingOrCheckYourInternetConnection => 'Try refreshing or check your internet connection';
+
+  @override
+  String get aiIsTyping => 'AI is typing';
+
+  @override
+  String get failedToSendMessage => 'Failed to send message';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get enterYourMessage => 'Enter your message...';
+
+  @override
+  String get saveAndSend => 'Save & Send';
+
+  @override
+  String get messageEditedSuccessfully => 'Message edited successfully';
+
+  @override
+  String get failedToEditMessage => 'Failed to edit message';
+
+  @override
+  String get messageEditedAndResponseRegenerated => 'Message edited and response regenerated';
+
+  @override
+  String get failedToEditAndSendMessage => 'Failed to edit and send message';
+
+  @override
+  String get areYouSureYouWantToDeleteThisMessage => 'Are you sure you want to delete this message?';
+
+  @override
+  String get messageDeletedSuccessfully => 'Message deleted successfully';
+
+  @override
+  String get failedToDeleteMessage => 'Failed to delete message';
+
+  @override
+  String get messageCopied => 'Message copied';
+
+  @override
+  String get failedToCopyMessage => 'Failed to copy message';
+
+  @override
+  String get messageShared => 'Message shared';
+
+  @override
+  String get failedToShareMessage => 'Failed to share message';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String get copyMessage => 'Copy Message';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get listen => 'Listen';
+
+  @override
+  String get regenerate => 'Regenerate';
+
+  @override
+  String get continueResponse => 'Continue Response';
+
+  @override
+  String get like => 'Like';
+
+  @override
+  String get dislike => 'Dislike';
 }

@@ -5,11 +5,13 @@ import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 
 void main() {
   // Initialize logger
-  initLogger();
-  
+  LogConfig.enabled = true;
+  LogConfig.minimumLevel = LogLevel.debug;
+
   runApp(
     MultiProvider(
       providers: [
@@ -28,18 +30,21 @@ class MyApp extends StatelessWidget {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         final theme = themeProvider.getTheme();
-        
+        final locale = Locale(themeProvider.selectedLanguage);
+
         return MaterialApp(
           title: 'GenUI Chat AI',
           localizationsDelegates: [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
+            AppLocalizations.delegate,
           ],
           supportedLocales: const [
             Locale('en'),
             Locale('ru'),
           ],
+          locale: locale,
           theme: theme,
           debugShowCheckedModeBanner: false,
           home: const ChatScreen(),

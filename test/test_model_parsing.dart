@@ -72,7 +72,7 @@ void main() async {
         contextLength: context,
         capabilities: ModelCapabilities(reasoning: true, multimodal: false, vision: false, tools: false),
       );
-      print('   ${context} tokens: ${testModel.formattedContextLength}');
+      print('   $context tokens: ${testModel.formattedContextLength}');
     }
 
     // Test 4: Edge cases

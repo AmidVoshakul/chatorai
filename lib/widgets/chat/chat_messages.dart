@@ -21,7 +21,7 @@ class ChatMessages extends StatefulWidget {
   final ScrollController? scrollController; // External scroll controller
 
   const ChatMessages({
-    Key? key,
+    super.key,
     required this.openRouterService,
     required this.chatStorageService,
     this.chat,
@@ -30,7 +30,7 @@ class ChatMessages extends StatefulWidget {
     required this.onMessageDeleted,
     this.onContinueResponse,
     this.scrollController,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatMessages> createState() => _ChatMessagesState();
@@ -41,7 +41,7 @@ class _ChatMessagesState extends State<ChatMessages> {
   late ScrollController _scrollController;
   bool _isStreaming = false;
   bool _isWaitingForResponse = false; // Новое состояние - ожидание ответа
-  String _selectedModel = 'x-ai/grok-4.1-fast:free';
+  String _selectedModel = 'openai/gpt-oss-20b:free';
 
   @override
   void initState() {
@@ -239,7 +239,7 @@ class _ChatMessagesState extends State<ChatMessages> {
               'role': msg.role.name,
               'content': msg.content,
             })
-            .toList(),
+            ,
         ],
         model: _selectedModel,
         onChunk: (content) {

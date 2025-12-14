@@ -18,7 +18,7 @@ void main() async {
     print('\n💬 Test 2: Testing chat completion...');
     try {
       final response = await service.getChatCompletion(
-        model: 'x-ai/grok-4.1-fast:free',
+        model: 'openai/gpt-oss-20b:free',
         messages: [
           {'role': 'user', 'content': 'Hello! Test message.'}
         ],
@@ -38,14 +38,14 @@ void main() async {
       bool streamingWorked = false;
       
       await service.streamChatCompletion(
-        model: 'x-ai/grok-4.1-fast:free',
+        model: 'openai/gpt-oss-20b:free',
         messages: [
           {'role': 'user', 'content': 'Count to 3.'}
         ],
         maxTokens: 50,
         onChunk: (content) {
           streamingWorked = true;
-          print('✅ Streaming chunk received: "${content}"');
+          print('✅ Streaming chunk received: "$content"');
         },
         onCompletion: (content) {
           print('✅ Streaming completed: ${content.length} characters total');

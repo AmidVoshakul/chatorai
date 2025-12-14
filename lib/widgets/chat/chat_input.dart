@@ -8,11 +8,11 @@ class ChatInput extends StatefulWidget {
   final FocusNode? focusNode;
 
   const ChatInput({
-    Key? key,
+    super.key,
     required this.onSendMessage,
     required this.onToggleStreaming,
     this.focusNode,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatInput> createState() => _ChatInputState();

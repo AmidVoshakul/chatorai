@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
-import 'package:gen_ui_chat_ai/models/chat_models.dart' as ChatModels;
+import 'package:gen_ui_chat_ai/models/chat_models.dart' as chat_models;
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
+import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+
 
 // Initialize logger for this utility
 final _logger = LogTags.message;
@@ -18,35 +20,31 @@ class MessageUtils {
     required ChatStorageService chatStorageService,
     BuildContext? context,
   }) async {
+    // Сохраняем локализации до любых асинхронных операций
+    final AppLocalizations? localizations = context != null ? AppLocalizations.of(context) : null;
+
     try {
       // Если context предоставлен, показываем подтверждение удаления
-      if (context != null) {
-        final String currentLanguage = _getCurrentLanguage(context);
-        final String confirmText = currentLanguage == 'en' 
-            ? 'Are you sure you want to delete this message?' 
-            : 'Вы уверены, что хотите удалить это сообщение?';
-        final String deleteText = currentLanguage == 'en' ? 'Delete' : 'Удалить';
-        final String cancelText = currentLanguage == 'en' ? 'Cancel' : 'Отмена';
-        
+      if (context != null && localizations != null) {
         final bool shouldDelete = await showDialog(
           context: context,
           builder: (BuildContext dialogContext) {
             return AlertDialog(
               title: const Icon(Icons.warning, color: Colors.orange),
-              content: Text(confirmText),
+              content: Text(localizations.areYouSureYouWantToDeleteThisMessage),
               actions: [
                 TextButton(
                   onPressed: () {
                     Navigator.of(dialogContext).pop(false);
                   },
-                  child: Text(cancelText),
+                  child: Text(localizations.cancel),
                 ),
                 TextButton(
                   onPressed: () {
                     Navigator.of(dialogContext).pop(true);
                   },
                   child: Text(
-                    deleteText,
+                    localizations.delete,
                     style: const TextStyle(color: Colors.red),
                   ),
                 ),
@@ -63,17 +61,12 @@ class MessageUtils {
 
       // Удаляем сообщение из базы данных
       await chatStorageService.deleteMessageFromChat(chatId, messageId);
-      
+
       // Если context предоставлен, показываем уведомление об успешном удалении
-      if (context != null) {
-        final String currentLanguage = _getCurrentLanguage(context);
-        final String successText = currentLanguage == 'en' 
-            ? 'Message deleted successfully' 
-            : 'Сообщение успешно удалено';
-        
+      if (context != null && localizations != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(successText),
+            content: Text(localizations.messageDeletedSuccessfully),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -83,15 +76,10 @@ class MessageUtils {
       return true;
     } catch (e) {
       // Показываем уведомление об ошибке
-      if (context != null) {
-        final String currentLanguage = _getCurrentLanguage(context);
-        final String errorText = currentLanguage == 'en' 
-            ? 'Failed to delete message: $e' 
-            : 'Ошибка удаления сообщения: $e';
-        
+      if (context != null && localizations != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorText),
+            content: Text(localizations.failedToDeleteMessage),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -108,23 +96,20 @@ class MessageUtils {
     required BuildContext context,
   }) async {
     final TextEditingController controller = TextEditingController(text: currentContent);
-    final String currentLanguage = _getCurrentLanguage(context);
-    final String titleText = currentLanguage == 'en' ? 'Edit Message' : 'Редактировать сообщение';
-    final String saveText = currentLanguage == 'en' ? 'Save' : 'Сохранить';
-    final String saveAndSendText = currentLanguage == 'en' ? 'Save and Send' : 'Сохранить и отправить';
-    final String cancelText = currentLanguage == 'en' ? 'Cancel' : 'Отмена';
+    // Сохраняем локализации до асинхронной операции
+    final AppLocalizations localizations = AppLocalizations.of(context)!;
 
     final EditMessageResult? result = await showDialog<EditMessageResult>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text(titleText),
+          title: Text(localizations.edit),
           content: TextField(
             controller: controller,
             maxLines: 6,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: currentLanguage == 'en' ? 'Enter new message content' : 'Введите новое содержание сообщения',
+              hintText: localizations.enterYourMessage,
               border: const OutlineInputBorder(),
               isDense: true,
             ),
@@ -134,13 +119,13 @@ class MessageUtils {
               onPressed: () {
                 Navigator.of(dialogContext).pop(EditMessageResult.cancelled);
               },
-              child: Text(cancelText),
+              child: Text(localizations.cancel),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop(EditMessageResult.saved);
               },
-              child: Text(saveText),
+              child: Text(localizations.save),
             ),
             ElevatedButton(
               onPressed: () {
@@ -152,7 +137,7 @@ class MessageUtils {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
-              child: Text(saveAndSendText),
+              child: Text(localizations.saveAndSend),
             ),
           ],
         );
@@ -168,23 +153,20 @@ class MessageUtils {
     required BuildContext context,
   }) async {
     final TextEditingController controller = TextEditingController(text: currentContent);
-    final String currentLanguage = _getCurrentLanguage(context);
-    final String titleText = currentLanguage == 'en' ? 'Edit Message' : 'Редактировать сообщение';
-    final String saveText = currentLanguage == 'en' ? 'Save' : 'Сохранить';
-    final String saveAndSendText = currentLanguage == 'en' ? 'Save and Send' : 'Сохранить и отправить';
-    final String cancelText = currentLanguage == 'en' ? 'Cancel' : 'Отмена';
+    // Сохраняем локализации до асинхронной операции
+    final AppLocalizations localizations = AppLocalizations.of(context)!;
 
     final EditMessageResult? result = await showDialog<EditMessageResult>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text(titleText),
+          title: Text(localizations.edit),
           content: TextField(
             controller: controller,
             maxLines: 6,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: currentLanguage == 'en' ? 'Enter new message content' : 'Введите новое содержание сообщения',
+              hintText: localizations.enterYourMessage,
               border: const OutlineInputBorder(),
               isDense: true,
             ),
@@ -194,13 +176,13 @@ class MessageUtils {
               onPressed: () {
                 Navigator.of(dialogContext).pop(EditMessageResult.cancelled);
               },
-              child: Text(cancelText),
+              child: Text(localizations.cancel),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop(EditMessageResult.saved);
               },
-              child: Text(saveText),
+              child: Text(localizations.save),
             ),
             ElevatedButton(
               onPressed: () {
@@ -212,7 +194,7 @@ class MessageUtils {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
-              child: Text(saveAndSendText),
+              child: Text(localizations.saveAndSend),
             ),
           ],
         );
@@ -232,8 +214,9 @@ class MessageUtils {
     String? senderName, // Имя отправителя для форматирования
   }) async {
     try {
-      final String currentLanguage = _getCurrentLanguage(context);
-      
+      // Сохраняем локализации до асинхронной операции
+      final AppLocalizations localizations = AppLocalizations.of(context)!;
+
       // Форматируем контент в markdown с указанием отправителя
       final String formattedContent = senderName != null 
           ? '### $senderName\n\n$content'
@@ -245,9 +228,7 @@ class MessageUtils {
       // Показываем краткое сообщение об успехе
       SnackbarUtils.showSuccessSnackBar(
         context: context,
-        message: currentLanguage == 'en' 
-            ? 'Copied to clipboard' 
-            : 'Скопировано в буфер',
+        message: localizations.messageCopied,
         icon: Icons.copy,
         duration: const Duration(seconds: 1),
       );
@@ -255,32 +236,31 @@ class MessageUtils {
       _logger.logInfo('[MessageUtils] Message copied to clipboard');
     } catch (e) {
       _logger.logError('[MessageUtils] Error copying message: $e');
-      
-      final String currentLanguage = _getCurrentLanguage(context);
+
+      // Сохраняем локализации до асинхронной операции
+      final AppLocalizations localizations = AppLocalizations.of(context)!;
       SnackbarUtils.showErrorSnackBar(
         context: context,
-        message: currentLanguage == 'en' ? 'Failed to copy message' : 'Не удалось скопировать сообщение',
+        message: localizations.failedToCopyMessage,
         icon: Icons.error,
       );
     }
   }
-
-  
 
   /// Поделиться сообщением
   static Future<void> shareMessage({
     required String content,
     required BuildContext context,
   }) async {
-    final String currentLanguage = _getCurrentLanguage(context);
-    final String shareText = currentLanguage == 'en' ? 'Share Message' : 'Поделиться сообщением';
-    
+    // Сохраняем локализации до асинхронной операции
+    final AppLocalizations localizations = AppLocalizations.of(context)!;
+
     // Здесь должна быть логика分享
     // await Share.share(content);
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(shareText),
+        content: Text(localizations.messageShared),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
       ),
@@ -294,8 +274,9 @@ class MessageUtils {
     required BuildContext context,
   }) async {
     try {
-      final String currentLanguage = _getCurrentLanguage(context);
-      
+      // Сохраняем локализации до асинхронной операции
+      final AppLocalizations localizations = AppLocalizations.of(context)!;
+
       // Форматируем весь чат с заголовком и сообщениями
       final StringBuffer chatContent = StringBuffer();
       
@@ -306,8 +287,8 @@ class MessageUtils {
       
       // Добавляем все сообщения
       for (final message in messages) {
-        final String sender = message.role == ChatModels.MessageRole.assistant 
-            ? (message.model ?? 'AI') 
+        final String sender = message.role == chat_models.MessageRole.assistant
+            ? (message.model ?? 'AI')
             : 'You';
         
         chatContent.writeln('### $sender');
@@ -331,36 +312,28 @@ class MessageUtils {
       // Показываем успешное сообщение
       SnackbarUtils.showSuccessSnackBar(
         context: context,
-        message: currentLanguage == 'en' 
-            ? 'Chat copied to clipboard' 
-            : 'Чат скопирован в буфер',
+        message: localizations.copyChat,
         icon: Icons.copy_all,
       );
       
       _logger.logInfo('[MessageUtils] Chat copied to clipboard (${messages.length} messages)');
     } catch (e) {
       _logger.logError('[MessageUtils] Error copying chat: $e');
-      
-      final String currentLanguage = _getCurrentLanguage(context);
+
+      // Сохраняем локализации до асинхронной операции
+      final AppLocalizations localizations = AppLocalizations.of(context)!;
       SnackbarUtils.showErrorSnackBar(
         context: context,
-        message: currentLanguage == 'en' ? 'Failed to copy chat' : 'Не удалось скопировать чат',
+        message: localizations.failedToCopyChat,
         icon: Icons.error,
       );
     }
   }
 
-  /// Получить текущий язык
-  static String _getCurrentLanguage(BuildContext context) {
-    // Здесь должна быть логика получения текущего языка
-    // Пока возвращаем 'en' по умолчанию
-    return 'en';
-  }
-
   /// Проверить, может ли сообщение быть удалено
   static bool canDeleteMessage(Message message) {
     // Системные сообщения нельзя удалять
-    if (message.role == ChatModels.MessageRole.system) {
+    if (message.role == chat_models.MessageRole.system) {
       return false;
     }
     
@@ -376,7 +349,7 @@ class MessageUtils {
     // - Можно редактировать только свои сообщения
     // - Можно редактировать только в течение N минут
     // - и т.д.
-    return message.role == ChatModels.MessageRole.user;
+    return message.role == chat_models.MessageRole.user;
   }
 
   /// Получить список доступных действий для сообщения
@@ -405,7 +378,7 @@ class MessageUtils {
     }
 
     // Копирование доступно для всех сообщений, кроме system
-    if (message.role != ChatModels.MessageRole.system) {
+    if (message.role != chat_models.MessageRole.system) {
       actions.add(MessageAction(
         icon: Icons.copy_all,
         label: 'Copy',
@@ -416,7 +389,7 @@ class MessageUtils {
     }
 
     // Шаринг доступен для всех сообщений, кроме system
-    if (message.role != ChatModels.MessageRole.system) {
+    if (message.role != chat_models.MessageRole.system) {
       actions.add(MessageAction(
         icon: Icons.share,
         label: 'Share',
@@ -473,38 +446,43 @@ class MessageAction {
     required this.color,
   });
 
-  String getLocalizedLabel(String language) {
-    return localizedLabel[language] ?? label;
+  /// Get localized label for the current locale
+  String getLocalizedLabel(BuildContext context) {
+    final AppLocalizations localizations = AppLocalizations.of(context)!;
+    // Try to get the localized label from the map, fallback to default label
+    return localizedLabel[localizations.localeName] ?? label;
   }
 }
 
 /// Получить список доступных действий для чата
-List<MessageAction> getChatActions() {
+List<MessageAction> getChatActions(BuildContext context) {
+  final AppLocalizations localizations = AppLocalizations.of(context)!;
+
   return [
     MessageAction(
       icon: Icons.copy_all,
-      label: 'Copy Chat',
+      label: localizations.copyChat,
       localizedLabel: {'en': 'Copy Chat', 'ru': 'Копировать чат'},
       action: MessageActionType.copyChat,
       color: Colors.green,
     ),
     MessageAction(
       icon: Icons.share,
-      label: 'Share',
+      label: localizations.shareChat,
       localizedLabel: {'en': 'Share', 'ru': 'Поделиться'},
       action: MessageActionType.share,
       color: Colors.blue,
     ),
     MessageAction(
       icon: Icons.edit,
-      label: 'Rename',
+      label: localizations.renameChat,
       localizedLabel: {'en': 'Rename', 'ru': 'Переименовать'},
       action: MessageActionType.edit,
       color: Colors.orange,
     ),
     MessageAction(
       icon: Icons.delete,
-      label: 'Delete',
+      label: localizations.deleteChat,
       localizedLabel: {'en': 'Delete', 'ru': 'Удалить'},
       action: MessageActionType.delete,
       color: Colors.red,
