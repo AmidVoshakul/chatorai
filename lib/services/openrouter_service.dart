@@ -67,6 +67,22 @@ class ModelCapabilities {
     );
   }
 
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is ModelCapabilities &&
+           other.reasoning == reasoning &&
+           other.multimodal == multimodal &&
+           other.vision == vision &&
+           other.tools == tools;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(reasoning, multimodal, vision, tools);
+  }
+
   Map<String, dynamic> toJson() => {
     'reasoning': reasoning,
     'multimodal': multimodal,
@@ -95,6 +111,37 @@ class OpenRouterModel {
     this.contextLength,
     required this.capabilities,
   });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other.runtimeType != runtimeType) return false;
+    return other is OpenRouterModel &&
+           other.id == id &&
+           other.name == name &&
+           other.description == description &&
+           other.provider == provider &&
+           other.pricingPrompt == pricingPrompt &&
+           other.pricingCompletion == pricingCompletion &&
+           other.contextLength == contextLength &&
+           other.capabilities == capabilities;
+  }
+
+  @override
+  int get hashCode {
+    // Use a more robust hash code calculation
+    // Combine all fields that define model identity
+    return Object.hash(
+      id,
+      name,
+      description,
+      provider,
+      pricingPrompt,
+      pricingCompletion,
+      contextLength,
+      capabilities,
+    );
+  }
 
   factory OpenRouterModel.fromJson(Map<String, dynamic> json) {
     // Handle both API response formats
@@ -387,6 +434,10 @@ class OpenRouterService {
         _logger.logError(
           '[OpenRouter] API key not found in .env file. Please add OPENROUTER_API_KEY to your .env file.',
         );
+        _logger.logDebug('[OpenRouter] Available environment variables:');
+        dotenv.env.forEach((key, value) {
+          _logger.logDebug('[OpenRouter]   $key: ${value.length > 10 ? '${value.substring(0, 10)}...' : value}');
+        });
         throw Exception(
           'OpenRouter API key not configured. Please add OPENROUTER_API_KEY to your .env file.',
         );
@@ -397,7 +448,7 @@ class OpenRouterService {
     }
   }
 
-  /// Get available models with filtering
+  /// Get available models with filtering and deduplication
   Future<List<OpenRouterModel>> getAvailableModels({
     String? category,
     bool? supportsReasoning,
@@ -464,10 +515,13 @@ class OpenRouterService {
               })
               .toList();
 
+          // Remove duplicates using Set (requires proper hashCode implementation)
+          final uniqueModels = _deduplicateModels(models);
+
           _logger.logInfo(
-            '[OpenRouter] Successfully parsed ${models.length} models',
+            '[OpenRouter] Successfully parsed ${uniqueModels.length} unique models (removed ${models.length - uniqueModels.length} duplicates)',
           );
-          return models;
+          return uniqueModels;
         } else if (data is List) {
           // Try direct format without 'data' wrapper
           final modelsData = data;
@@ -499,10 +553,13 @@ class OpenRouterService {
               })
               .toList();
 
+          // Remove duplicates using Set
+          final uniqueModels = models.toSet().toList();
+
           _logger.logInfo(
-            '[OpenRouter] Successfully parsed ${models.length} models (direct format)',
+            '[OpenRouter] Successfully parsed ${uniqueModels.length} unique models (direct format, removed ${models.length - uniqueModels.length} duplicates)',
           );
-          return models;
+          return uniqueModels;
         } else {
           _logger.logError(
             '[OpenRouter] Unexpected API response format. Available keys: ${data.keys}',
@@ -865,5 +922,22 @@ class OpenRouterService {
     } catch (e) {
       _logger.logError('[OpenRouter] Error testing provider structure: $e');
     }
+  }
+
+  /// Remove duplicate models using a more robust approach
+  List<OpenRouterModel> _deduplicateModels(List<OpenRouterModel> models) {
+    final Map<String, OpenRouterModel> uniqueModels = {};
+
+    for (final model in models) {
+      // Use model ID as the primary key for deduplication
+      uniqueModels[model.id] = model;
+    }
+
+    return uniqueModels.values.toList();
+  }
+
+  /// Check if OpenRouterService is ready for API calls
+  bool isReady() {
+    return _dio != null && _apiKey != null && _apiKey!.isNotEmpty;
   }
 }

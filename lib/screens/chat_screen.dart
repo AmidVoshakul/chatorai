@@ -44,12 +44,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final TextEditingController _titleController = TextEditingController();
   final FocusNode _chatInputFocusNode = FocusNode();
   late ScrollController _messageScrollController;
+  late ChatScrollUtils _chatScrollUtils;
   String _selectedModel = 'kwaipilot/kat-coder-pro:free'; // Default model ID
   OpenRouterModel? _selectedModelObject; // Store full model object
   bool _isSuggestionsLoading = false;
   bool _showSuggestions = false;
   List<String> _continuationSuggestions = [];
-  late ChatScrollUtils _chatScrollUtils;
 
   @override
   void initState() {
@@ -66,19 +66,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _messageScrollController = ScrollController();
     _logger.logInfo('[ChatScreen] ScrollController initialized');
     
-    // Initialize selected model from widget parameter or use default
-    if (widget.initialModel != null) {
-      _selectedModel = widget.initialModel!;
-      _logger.logInfo('Using initial model: $_selectedModel');
-    } else {
-      _logger.logInfo('Using default model: $_selectedModel');
-    }
-    
-    // Load available models and find the default one
-    _loadModelsAndSetDefault();
-    
-    _loadChats();
-    
     // Initialize scroll utilities after widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _chatScrollUtils = ChatScrollUtils(
@@ -89,54 +76,61 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _chatScrollUtils.initialize();
       _logger.logInfo('[ChatScreen] ChatScrollUtils initialized');
     });
+
+    _loadChats();
+
+    // Initialize model selection from ThemeProvider
+    _initializeModelSelection();
+
+    // Listen to ThemeProvider changes to update loading state
+    _themeProvider.addListener(_onThemeProviderChange);
   }
 
-  Future<void> _loadModelsAndSetDefault() async {
-    try {
-      _logger.logInfo('[ChatScreen] Loading available models...');
-      final models = await _openRouterService.getAvailableModels();
-      
-      // Find the default model
-      final defaultModel = models.firstWhere(
-        (model) => model.id == _selectedModel,
-        orElse: () => models.first, // Fallback to first model if default not found
-      );
-      
+  // Listen for ThemeProvider changes to update loading state
+  void _onThemeProviderChange() {
+    // Update the loading state when models finish loading
+    if (mounted) {
       setState(() {
-        _selectedModelObject = defaultModel;
-        _selectedModel = defaultModel.id;
+        // This will trigger a rebuild and update the loading indicator
       });
-      
-      final contextLength = defaultModel.contextLength ?? 'unknown';
-      final maxTokens = _getOptimalMaxTokensForModel(defaultModel);
-      _logger.logInfo('[ChatScreen] Default model loaded: ${defaultModel.name}');
-      _logger.logInfo('[ChatScreen] Context length: $contextLength tokens');
-      _logger.logInfo('[ChatScreen] Optimal max_tokens: $maxTokens');
-      
-    } catch (e) {
-      _logger.logError('Error loading models: $e');
-      // Fallback to hardcoded values for default model
-      setState(() {
-        _selectedModelObject = OpenRouterModel(
-          id: _selectedModel,
-          name: 'openai/gpt-oss-20b:free',
-          description: 'Default model',
-          contextLength: 131000,
-          capabilities: ModelCapabilities(
-            reasoning: true,
-            multimodal: false,
-            vision: false,
-            tools: false,
-          ),
-          pricingPrompt: '0',
-          pricingCompletion: '0',
-        );
+    }
+  }
+
+  // Initialize model selection from ThemeProvider
+  void _initializeModelSelection() {
+    // Set initial model from ThemeProvider
+    _selectedModel = _themeProvider.selectedModelId;
+    _selectedModelObject = _themeProvider.selectedModelObject;
+
+    // If models are already loaded, find the selected model
+    if (_themeProvider.modelsLoaded && _themeProvider.availableModels.isNotEmpty) {
+      _selectedModelObject = _themeProvider.getModelById(_selectedModel);
+      if (_selectedModelObject != null) {
+        _logger.logInfo('[ChatScreen] Using selected model: ${_selectedModelObject!.name}');
+      } else {
+        _logger.logWarning('[ChatScreen] Selected model not found in available models, using first available');
+        _selectedModelObject = _themeProvider.availableModels.first;
+        _selectedModel = _selectedModelObject!.id;
+      }
+    } else if (_themeProvider.isLoadingModels) {
+      // Wait for models to be loaded
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && _themeProvider.modelsLoaded && _themeProvider.availableModels.isNotEmpty) {
+          _selectedModelObject = _themeProvider.getModelById(_selectedModel);
+          if (_selectedModelObject == null) {
+            _selectedModelObject = _themeProvider.availableModels.first;
+            _selectedModel = _selectedModelObject!.id;
+          }
+          setState(() {});
+        }
       });
     }
   }
 
   @override
   void dispose() {
+    // Remove listener to prevent memory leaks
+    _themeProvider.removeListener(_onThemeProviderChange);
     _titleController.dispose();
     super.dispose();
   }
@@ -924,24 +918,51 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         backgroundColor: theme.canvasColor,
         elevation: 0,
         actions: [
-          // Current model name
+          // Current model display with loading state
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
-            child: Text(
-              _selectedModelObject?.name ?? _selectedModel,
-              style: TextStyle(
-                color: theme.colorScheme.primary,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+            child: Consumer<ThemeProvider>(
+              builder: (context, themeProvider, child) {
+                final isLoading = themeProvider.isLoadingModels;
+                final modelName = _selectedModelObject?.name ?? _selectedModel;
+
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Model name
+                    Text(
+                      modelName,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+
+                    // Loading indicator
+                    if (isLoading) ...[
+                      const SizedBox(width: 4),
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              },
             ),
           ),
           
+          // Model selection button
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
               icon: const Icon(Icons.smart_toy),
-              onPressed: () {
+              onPressed: () async {
                 // Handle sidebar based on screen width before navigation
                 final screenWidth = MediaQuery.of(context).size.width;
                 if (screenWidth < 800) {
@@ -963,20 +984,23 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   }
                 }
                 
-                Navigator.push(
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => ModelsScreen(
                       onModelSelected: (String modelId) {
-                        // For now, just update the model ID
-                        // In a full implementation, we would pass the model object
+                        // Update the model selection
                         _updateSelectedModel(modelId, null);
-                        Navigator.pop(context);
                       },
                       currentModel: _selectedModel,
                     ),
                   ),
                 );
+
+                // Handle result if a model object was returned
+                if (result is OpenRouterModel) {
+                  _updateSelectedModel(result.id, result);
+                }
               },
               tooltip: 'Navigate to Models',
             ),

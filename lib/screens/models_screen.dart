@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart' show UbuntuColors;
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
 import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
+import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
 
 // Initialize logger for this screen
 final _logger = LogTags.modelsScreen;
@@ -24,7 +26,7 @@ class ModelsScreen extends StatefulWidget {
 }
 
 class _ModelsScreenState extends State<ModelsScreen> {
-  late OpenRouterService _openRouterService;
+  late ThemeProvider _themeProvider;
   List<OpenRouterModel> _models = [];
   List<OpenRouterModel> _filteredModels = [];
   bool _isLoading = false;
@@ -33,15 +35,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
   @override
   void initState() {
     super.initState();
-    _openRouterService = OpenRouterService();
+    _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     _searchController = TextEditingController();
     _searchController.addListener(_onSearchChanged);
-    // Load models after a short delay to ensure service is initialized
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        _loadModels();
-      }
-    });
+
+    // Load models from ThemeProvider or refresh if needed
+    _loadModels();
   }
 
   @override
@@ -83,61 +82,93 @@ class _ModelsScreenState extends State<ModelsScreen> {
   // Model selection
   // ==============================================
 
-  void _selectModel(OpenRouterModel model) {
+  void _selectModel(OpenRouterModel model) async {
     final localizations = AppLocalizations.of(context)!;
 
-    // Call the callback if provided
-    if (widget.onModelSelected != null) {
-      widget.onModelSelected!(model.id);
-    }
-    
-    // Show success snackbar
-    SnackbarUtils.showSuccessSnackBar(
-      context: context,
-      message: '${localizations.modelSelected}: ${model.name}',
-      icon: Icons.check_circle,
-    );
-    
-    // Navigate back to chat screen with selected model
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        Navigator.of(context).pop(model);
+    try {
+      // Update model selection in ThemeProvider
+      await _themeProvider.setSelectedModel(model.id);
+
+      // Call the callback if provided
+      if (widget.onModelSelected != null) {
+        widget.onModelSelected!(model.id);
       }
-    });
+
+      // Show success snackbar
+      SnackbarUtils.showSuccessSnackBar(
+        context: context,
+        message: '${localizations.modelSelected}: ${model.name}',
+        icon: Icons.check_circle,
+      );
+
+      // Navigate back to chat screen with selected model
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          Navigator.of(context).pop(model);
+        }
+      });
+    } catch (e) {
+      _logger.logError('[ModelsScreen] Failed to select model: $e');
+      SnackbarUtils.showErrorSnackBar(
+        context: context,
+        message: 'Error selecting model: ${e.toString()}',
+        icon: Icons.error,
+      );
+    }
   }
 
   // ==============================================
-  // Data loading
+  // Model loading
   // ==============================================
 
   Future<void> _loadModels() async {
     setState(() {
       _isLoading = true;
     });
-    try {
-      _logger.logInfo('[OpenRouter] Starting model loading...');
-      final models = await _openRouterService.getAvailableModels();
-      _logger.logInfo('[OpenRouter] Successfully loaded ${models.length} models');
-      setState(() {
-        _models = models;
-        _filteredModels = models;
-      });
-    } catch (e) {
-      _logger.logError('[OpenRouter] Failed to load models: $e');
-      if (mounted) {
-        final localizations = AppLocalizations.of(context)!;
 
-        SnackbarUtils.showWarningSnackBar(
-          context: context,
-          message: '${localizations.errorLoadingModels}: ${e.toString()}',
-          icon: Icons.warning,
-          duration: const Duration(seconds: 3),
-        );
-      }
-    } finally {
+    try {
+      // Wait for models to be loaded in ThemeProvider
+      await _themeProvider.waitForModelsLoaded();
+
+      // Get models from ThemeProvider
+      _models = _themeProvider.availableModels;
+      _filteredModels = _models;
+
       setState(() {
         _isLoading = false;
       });
+
+      _logger.logInfo('[ModelsScreen] Successfully loaded ${_models.length} models');
+    } catch (e) {
+      _logger.logError('[ModelsScreen] Failed to load models: $e');
+      setState(() {
+        _isLoading = false;
+      });
+
+      // Show error snackbar with more helpful information
+      final localizations = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${localizations.errorLoadingModels}: $e'),
+              const SizedBox(height: 4),
+              Text(
+                'Please check your OpenRouter API key configuration.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white70,
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+        ),
+      );
     }
   }
 
