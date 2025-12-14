@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
+import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -19,7 +20,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    
+
     // Initialize controllers with current values
     _apiKeyController = TextEditingController(text: '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');
     _baseUrlController = TextEditingController(text: 'https://openrouter.ai/api/v1');
@@ -35,89 +36,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     _themeProvider = Provider.of<ThemeProvider>(context);
+    final localizations = AppLocalizations.of(context)!;
 
-    final String currentLanguage = _themeProvider.selectedLanguage;
-    
-    // Simple localization function
-    String t(String key) {
-      if (currentLanguage == 'en') {
-        return {
-          'settings': 'Settings',
-          'openRouterConfiguration': 'OpenRouter Configuration',
-          'apiKey': 'API Key',
-          'enterApiKey': 'Enter your OpenRouter API key',
-          'baseUrl': 'Base URL',
-          'appearance': 'Appearance',
-          'theme': 'Theme',
-          'system': 'System',
-          'useSystemTheme': 'Use system theme',
-          'light': 'Light',
-          'useLightTheme': 'Use light theme',
-          'dark': 'Dark',
-          'useDarkTheme': 'Use dark theme',
-          'fontSize': 'Font Size',
-          'currentSize': 'Current size: {percentage}%',
-          'accessibility': 'Accessibility',
-          'reduceMotion': 'Reduce Motion',
-          'disableAnimation': 'Disable or reduce animation effects',
-          'highContrast': 'High Contrast',
-          'increaseContrast': 'Increase contrast for better readability',
-          'language': 'Language',
-          'english': 'English',
-          'russian': 'Russian',
-          'arabic': 'Arabic (RTL)',
-          'chinese': 'Chinese',
-          'japanese': 'Japanese',
-          'resetSettings': 'Reset Settings',
-          'resetAllSettings': 'Reset all settings to default values',
-          'save': 'Save',
-          'copy': 'Copy',
-          'apiKeyCopied': 'API key copied',
-          'settingsSaved': 'Settings saved!',
-          'settingsReset': 'Settings reset to default values',
-        }[key] ?? key;
-      } else {
-        return {
-          'settings': 'Настройки',
-          'openRouterConfiguration': 'OpenRouter Конфигурация',
-          'apiKey': 'API Ключ',
-          'enterApiKey': 'Введите ваш OpenRouter API ключ',
-          'baseUrl': 'Base URL',
-          'appearance': 'Внешний вид',
-          'theme': 'Тема',
-          'system': 'Системная',
-          'useSystemTheme': 'Использовать тему системы',
-          'light': 'Светлая',
-          'useLightTheme': 'Использовать светлую тему',
-          'dark': 'Темная',
-          'useDarkTheme': 'Использовать темную тему',
-          'fontSize': 'Размер шрифта',
-          'currentSize': 'Текущий размер: {percentage}%',
-          'accessibility': 'Доступность',
-          'reduceMotion': 'Уменьшить анимацию',
-          'disableAnimation': 'Отключить или уменьшить анимационные эффекты',
-          'highContrast': 'Высокая контрастность',
-          'increaseContrast': 'Увеличить контрастность для лучшей читаемости',
-          'language': 'Язык',
-          'english': 'Английский',
-          'russian': 'Русский',
-          'arabic': 'Арабский (RTL)',
-          'chinese': 'Китайский',
-          'japanese': 'Японский',
-          'resetSettings': 'Сброс настроек',
-          'resetAllSettings': 'Сбросить все настройки к значениям по умолчанию',
-          'save': 'Сохранить',
-          'copy': 'Скопировать',
-          'apiKeyCopied': 'API ключ скопирован',
-          'settingsSaved': 'Настройки сохранены!',
-          'settingsReset': 'Настройки сброшены к значениям по умолчанию',
-        }[key] ?? key;
-      }
-    }
-    
     return Scaffold(
       appBar: AppBar(
-        title: Text(t('settings')),
+        title: Text(localizations.settings),
         centerTitle: true,
         backgroundColor: Theme.of(context).canvasColor,
         elevation: 0,
@@ -132,20 +55,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              t('openRouterConfiguration'),
+              localizations.openRouterConfiguration,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // API Key Field
             TextField(
               controller: _apiKeyController,
               decoration: InputDecoration(
-                labelText: t('apiKey'),
-                hintText: t('enterApiKey'),
+                labelText: localizations.apiKey,
+                hintText: localizations.enterApiKey,
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.content_copy),
@@ -153,17 +76,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     // Copy to clipboard functionality
                     SnackbarUtils.showCopySnackBar(
                     context: context,
-                    message: t('apiKeyCopied'),
+                    message: localizations.apiKeyCopied,
                   );
                   },
-                  tooltip: t('copy'),
+                  tooltip: localizations.copy,
                 ),
               ),
               maxLines: 1,
               obscureText: true,
             ),
             const SizedBox(height: 12),
-            
+
             // Base URL Field
             TextField(
               controller: _baseUrlController,
@@ -175,19 +98,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               maxLines: 1,
             ),
             const SizedBox(height: 20),
-            
+
             Text(
-              t('appearance'),
+              localizations.appearance,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Theme Selection
             Text(
-              t('theme'),
+              localizations.theme,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -201,37 +124,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     _buildThemeOption(
                       Icons.brightness_6,
-                      t('system'),
+                      localizations.system,
                       _themeProvider.themeMode == AppThemeMode.system,
-                      t('useSystemTheme'),
+                      localizations.useSystemTheme,
                       AppThemeMode.system,
                     ),
                     const Divider(height: 1, thickness: 1),
                     _buildThemeOption(
                       Icons.wb_sunny,
-                      t('light'),
+                      localizations.light,
                       _themeProvider.themeMode == AppThemeMode.light,
-                      t('useLightTheme'),
+                      localizations.useLightTheme,
                       AppThemeMode.light,
                     ),
                     const Divider(height: 1, thickness: 1),
                     _buildThemeOption(
                       Icons.nightlight,
-                      t('dark'),
+                      localizations.dark,
                       _themeProvider.themeMode == AppThemeMode.dark,
-                      t('useDarkTheme'),
+                      localizations.useDarkTheme,
                       AppThemeMode.dark,
                     ),
                   ],
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Font Size
             Text(
-              t('fontSize'),
+              localizations.fontSize,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -244,7 +167,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   children: [
                     Text(
-                      t('currentSize').replaceFirst('{percentage}', '${(_themeProvider.fontSize * 100).toInt()}'),
+                      localizations.currentSize((_themeProvider.fontSize * 100).toInt()),
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 8),
@@ -271,12 +194,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Accessibility Options
             Text(
-              t('accessibility'),
+              localizations.accessibility,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -293,9 +216,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged: (value) {
                         _themeProvider.reduceMotion = value;
                       },
-                      title: Text(t('reduceMotion')),
-                      subtitle: Text(t('disableAnimation')),
-                      activeColor: Theme.of(context).colorScheme.primary,
+                      title: Text(localizations.reduceMotion),
+                      subtitle: Text(localizations.disableAnimation),
+                      activeThumbColor: Theme.of(context).colorScheme.primary,
                     ),
                     const Divider(height: 1, thickness: 1),
                     SwitchListTile(
@@ -303,20 +226,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged: (value) {
                         _themeProvider.highContrast = value;
                       },
-                      title: Text(t('highContrast')),
-                      subtitle: Text(t('increaseContrast')),
-                      activeColor: Theme.of(context).colorScheme.primary,
+                      title: Text(localizations.highContrast),
+                      subtitle: Text(localizations.increaseContrast),
+                      activeThumbColor: Theme.of(context).colorScheme.primary,
                     ),
                   ],
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Language Section
             Text(
-              t('language'),
+              localizations.language,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -329,44 +252,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   children: [
                     _buildLanguageOption(
-                      t('english'),
+                      localizations.english,
                       'en',
-                      t('english'),
+                      localizations.english,
                     ),
                     const Divider(height: 1, thickness: 1),
                     _buildLanguageOption(
-                      t('russian'),
+                      localizations.russian,
                       'ru',
-                      t('russian'),
+                      localizations.russian,
                     ),
                     const Divider(height: 1, thickness: 1),
                     _buildLanguageOption(
                       'العربية',
                       'ar',
-                      t('arabic'),
+                      localizations.arabic,
                     ),
                     const Divider(height: 1, thickness: 1),
                     _buildLanguageOption(
                       '中文',
                       'zh',
-                      t('chinese'),
+                      localizations.chinese,
                     ),
                     const Divider(height: 1, thickness: 1),
                     _buildLanguageOption(
                       '日本語',
                       'ja',
-                      t('japanese'),
+                      localizations.japanese,
                     ),
                   ],
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Reset Settings
             Text(
-              t('resetSettings'),
+              localizations.resetSettings,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -379,7 +302,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   children: [
                     Text(
-                      t('resetAllSettings'),
+                      localizations.resetAllSettings,
                       style: const TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     const SizedBox(height: 12),
@@ -390,21 +313,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           await _themeProvider.resetSettings();
                           if (mounted) {
                             SnackbarUtils.showInfoSnackBar(
-                              context: context, 
-                              message: t('settingsReset')
+                              context: context,
+                              message: localizations.settingsReset
                             );
                           }
                         },
-                        child: Text(t('resetSettings')),
+                        child: Text(localizations.resetSettings),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 40),
-            
+
             // Save Button
             SizedBox(
               width: double.infinity,
@@ -412,13 +335,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onPressed: () {
                   if (mounted) {
                     SnackbarUtils.showSuccessSnackBar(
-                      context: context, 
-                      message: t('settingsSaved')
+                      context: context,
+                      message: localizations.settingsSaved
                     );
                   }
                   Navigator.of(context).pop();
                 },
-                child: Text(t('save')),
+                child: Text(localizations.save),
               ),
             ),
           ],
@@ -487,7 +410,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String description,
   ) {
     final isSelected = _themeProvider.selectedLanguage == languageCode;
-    
+
     return InkWell(
       onTap: () {
         _themeProvider.selectedLanguage = languageCode;

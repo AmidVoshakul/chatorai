@@ -336,7 +336,7 @@ class ChatScrollUtils {
     }
   }
   
-  /// Enable or disable auto-scroll
+  /// Enable or disable auto-scrollimport 'package:dio/dio.dart';
   void setAutoScrollEnabled(bool enabled) {
     _autoScrollEnabled = enabled;
     _logger.logInfo('[Scroll] Auto-scroll ${enabled ? 'enabled' : 'disabled'}');

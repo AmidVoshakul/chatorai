@@ -8,10 +8,12 @@ import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
 import 'package:gen_ui_chat_ai/widgets/sidebar/sidebar_chat_actions_menu.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
+import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 
 // Initialize logger for this widget
 final _logger = LogTags.sidebar;
 
+// Cache for formatted dates to avoid repeated formatting
 class Sidebar extends StatefulWidget {
   final double width;
   final bool isCollapsed;
@@ -23,7 +25,7 @@ class Sidebar extends StatefulWidget {
   final Function() onNewChat;
 
   const Sidebar({
-    Key? key,
+    super.key,
     required this.width,
     required this.isCollapsed,
     required this.onToggleSidebar,
@@ -32,7 +34,7 @@ class Sidebar extends StatefulWidget {
     required this.onChatSelect,
     required this.onChatDelete,
     required this.onNewChat,
-  }) : super(key: key);
+  });
 
   @override
   State<Sidebar> createState() => _SidebarState();
@@ -54,6 +56,7 @@ class _SidebarState extends State<Sidebar> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     _theme = themeProvider.getTheme();
     _language = themeProvider.selectedLanguage;
+    final localizations = AppLocalizations.of(context)!;
 
     return AnimatedContainer(
       width: widget.isCollapsed ? 58 : widget.width,
@@ -139,7 +142,7 @@ class _SidebarState extends State<Sidebar> {
                       const Icon(Icons.add, size: 16),
                       const SizedBox(width: 8),
                       Text(
-                        _language == 'en' ? 'New Chat' : 'Новый чат',
+                        localizations.newChat,
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -161,7 +164,7 @@ class _SidebarState extends State<Sidebar> {
                           return _buildChatItem(chat);
                         },
                       ))
-                : Container(), // Пустой контейнер в свerнутом состоянии
+                : Container(), // Пустой кон��ейнер в свeнутом состоянии
           ),
           
           // Footer
@@ -175,7 +178,7 @@ class _SidebarState extends State<Sidebar> {
               // Settings
               ListTile(
                 leading: const Icon(Icons.settings),
-                title: !widget.isCollapsed ? const Text('Settings') : null,
+                title: !widget.isCollapsed ? Text(localizations.settings) : null,
                 minLeadingWidth: 0,
                 contentPadding: !widget.isCollapsed 
                     ? const EdgeInsets.symmetric(horizontal: 16) 
@@ -197,13 +200,13 @@ class _SidebarState extends State<Sidebar> {
               // App Info
               ListTile(
                 leading: const Icon(Icons.info),
-                title: !widget.isCollapsed ? const Text('App Info') : null,
+                title: !widget.isCollapsed ? Text(localizations.appInfo) : null,
                 minLeadingWidth: 0,
                 contentPadding: !widget.isCollapsed 
                     ? const EdgeInsets.symmetric(horizontal: 16) 
                     : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 onTap: () {
-                  _showAppInfo(context, _language);
+                  _showAppInfo(context, _language, localizations);
                 },
               ),
             ],
@@ -215,7 +218,8 @@ class _SidebarState extends State<Sidebar> {
 
   Widget _buildChatItem(Chat chat) {
     final isSelected = widget.currentChat?.id == chat.id;
-    
+    final localizations = AppLocalizations.of(context)!;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -234,7 +238,7 @@ class _SidebarState extends State<Sidebar> {
                     Icon(
                       Icons.chat_bubble_outline,
                       color: isSelected 
-                          ? _theme.colorScheme.primary 
+                          ? _theme.colorScheme.primary
                           : _theme.iconTheme.color,
                       size: 20,
                     ),
@@ -250,14 +254,14 @@ class _SidebarState extends State<Sidebar> {
                               fontWeight: FontWeight.w500,
                               fontSize: 14,
                               color: isSelected 
-                                  ? _theme.colorScheme.primary 
+                                  ? _theme.colorScheme.primary
                                   : _theme.textTheme.bodyMedium?.color,
                             ),
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
                           ),
                           Text(
-                            _formatDate(chat.updatedAt, _language),
+                            _formatDate(chat.updatedAt, _language, localizations),
                             style: TextStyle(
                               fontSize: 11,
                               color: _theme.textTheme.bodySmall?.color,
@@ -286,7 +290,7 @@ class _SidebarState extends State<Sidebar> {
                         chat: chat,
                         theme: _theme,
                         language: _language,
-                        onRename: (newTitle) => _handleRenameChat(chat, newTitle),
+                        onRename: (newTitle) => _handleRenameChat(chat, newTitle, localizations),
                         onDelete: () => widget.onChatDelete(chat.id),
                       ),
                     ),
@@ -299,28 +303,25 @@ class _SidebarState extends State<Sidebar> {
     );
   }
 
-  void _handleRenameChat(Chat chat, String newTitle) async {
+  void _handleRenameChat(Chat chat, String newTitle, AppLocalizations localizations) async {
     try {
       await _chatStorageService.renameChat(chat.id, newTitle);
       SnackbarUtils.showSuccessSnackBar(
         context: context,
-        message: _language == 'en' 
-            ? 'Chat renamed to: $newTitle' 
-            : 'Чат переименован в: $newTitle',
+        message: localizations.chatRenamedTo(newTitle),
         icon: Icons.edit,
       );
     } catch (e) {
       SnackbarUtils.showErrorSnackBar(
         context: context,
-        message: _language == 'en' 
-            ? 'Failed to rename chat' 
-            : 'Не удалось переименовать чат',
+        message: localizations.failedToRenameChat,
         icon: Icons.error,
       );
     }
   }
 
   Widget _buildEmptyState(ThemeData theme, String language) {
+    final localizations = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -334,9 +335,7 @@ class _SidebarState extends State<Sidebar> {
             ),
             const SizedBox(height: 16),
             Text(
-              language == 'en' 
-                  ? 'No chats yet' 
-                  : 'Пока нет чатов',
+              localizations.noChatsYet,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -346,9 +345,7 @@ class _SidebarState extends State<Sidebar> {
             ),
             const SizedBox(height: 8),
             Text(
-              language == 'en' 
-                  ? 'Start a conversation by clicking "New Chat"' 
-                  : 'Начните разговор, нажав "Новый чат"',
+              localizations.startConversation,
               style: TextStyle(
                 fontSize: 12,
                 color: theme.textTheme.bodySmall?.color,
@@ -361,27 +358,27 @@ class _SidebarState extends State<Sidebar> {
     );
   }
 
-  String _formatDate(DateTime date, String language) {
+  String _formatDate(DateTime date, String language, AppLocalizations localizations) {
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inHours < 1) {
       if (language == 'en') {
-        return difference.inMinutes <= 1 ? 'Just now' : '${difference.inMinutes} min ago';
+        return difference.inMinutes <= 1 ? localizations.justNow : localizations.minAgo(difference.inMinutes);
       } else {
-        return difference.inMinutes <= 1 ? 'Только что' : '${difference.inMinutes} мин назад';
+        return difference.inMinutes <= 1 ? localizations.justNow : '${difference.inMinutes} мин назад';
       }
     } else if (difference.inHours < 24) {
       if (language == 'en') {
-        return '${difference.inHours} hours ago';
+        return difference.inHours == 1 ? localizations.onlyOneHourAgo : localizations.hoursAgo(difference.inHours);
       } else {
-        return '${difference.inHours} часов назад';
+        return difference.inHours == 1 ? localizations.onlyOneHourAgo : '${difference.inHours} часов назад';
       }
     } else if (difference.inDays < 7) {
       if (language == 'en') {
-        return '${difference.inDays} days ago';
+        return difference.inDays == 1 ? localizations.onlyOneDayAgo : localizations.daysAgo(difference.inDays);
       } else {
-        return '${difference.inDays} дней назад';
+        return difference.inDays == 1 ? localizations.onlyOneDayAgo : '${difference.inDays} дней назад';
       }
     } else {
       final String pattern = language == 'en' ? 'MMM d' : 'd MMM';
@@ -390,234 +387,25 @@ class _SidebarState extends State<Sidebar> {
     }
   }
 
-  void _showAppInfo(BuildContext context, String language) {
+  void _showAppInfo(BuildContext context, String language, AppLocalizations localizations) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(language == 'en' ? 'Chat AI' : 'Chat AI'),
-        backgroundColor: Theme.of(context).brightness == Brightness.dark 
-            ? const Color(0xFF1A1A1A) 
+        title: Text(localizations.appTitle),
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF1A1A1A)
             : Colors.white,
         content: Text(
-          language == 'en' 
-              ? 'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nDeveloped with ❤️ using Flutter'
-              : 'Приложение для общения с AI моделями через OpenRouter API.\n\nВозможности:\n• Общение с различными AI моделями\n• Сохранение истории чатов\n• Темная и светлая темы\n• Адаптивный интерфейс\n\nРазработано с ❤️ с использованием Flutter',
+          localizations.appDescription,
           style: const TextStyle(height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(language == 'en' ? 'OK' : 'ОК'),
+            child: Text(localizations.ok),
           ),
         ],
       ),
     );
-  }
-}
-
-class ChatActionsButton extends StatefulWidget {
-  final Chat chat;
-  final ThemeData theme;
-  final String language;
-  final Function(String) onRename;
-  final Function() onDelete;
-
-  const ChatActionsButton({
-    Key? key,
-    required this.chat,
-    required this.theme,
-    required this.language,
-    required this.onRename,
-    required this.onDelete,
-  }) : super(key: key);
-
-  @override
-  State<ChatActionsButton> createState() => _ChatActionsButtonState();
-}
-
-class _ChatActionsButtonState extends State<ChatActionsButton> {
-  late final Chat _chat;
-  late final ThemeData _theme;
-  late final String _language;
-
-  @override
-  void initState() {
-    super.initState();
-    _chat = widget.chat;
-    _theme = widget.theme;
-    _language = widget.language;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: _showChatActionsMenu,
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            Icons.more_vert,
-            size: 18,
-            color: _theme.iconTheme.color?.withValues(alpha: 0.6),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showChatActionsMenu() {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final RenderBox button = context.findRenderObject() as RenderBox;
-    
-    final position = button.localToGlobal(Offset.zero);
-    final size = button.size;
-
-    showMenu<PopupMenuItem>(
-      context: context,
-      position: RelativeRect.fromRect(
-        Rect.fromPoints(
-          Offset(position.dx - 40, position.dy + size.height),
-          Offset(position.dx - 40, position.dy + size.height),
-        ),
-        overlay.localToGlobal(Offset.zero) & overlay.size,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: _theme.dividerColor, width: 1),
-      ),
-      color: _theme.cardColor,
-      elevation: 8,
-      clipBehavior: Clip.antiAlias,
-      items: [
-        PopupMenuItem(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          enabled: true,
-          child: Row(
-            children: [
-              Icon(Icons.share, size: 18, color: _theme.iconTheme.color),
-              const SizedBox(width: 12),
-              Text(
-                _language == 'en' ? 'Share Chat' : 'Поделиться чатом',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-          onTap: () => _handleShareChat(),
-        ),
-        PopupMenuItem(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          enabled: true,
-          child: Row(
-            children: [
-              Icon(Icons.edit, size: 18, color: _theme.iconTheme.color),
-              const SizedBox(width: 12),
-              Text(
-                _language == 'en' ? 'Rename Chat' : 'Переименовать чат',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-          onTap: () => _handleRenameChat(),
-        ),
-        PopupMenuItem(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          enabled: false,
-          child: const Divider(height: 1),
-        ),
-        PopupMenuItem(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          enabled: true,
-          child: Row(
-            children: [
-              Icon(Icons.delete, size: 18, color: _theme.colorScheme.error),
-              const SizedBox(width: 12),
-              Text(
-                _language == 'en' ? 'Delete Chat' : 'Удалить чат',
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  color: _theme.colorScheme.error,
-                ),
-              ),
-            ],
-          ),
-          onTap: () => widget.onDelete(),
-        ),
-      ],
-    );
-  }
-
-  void _handleShareChat() {
-    final message = _language == 'en' 
-        ? 'Chat sharing is not implemented yet' 
-        : 'Функция деления чата пока не реализована';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: _theme.colorScheme.secondary,
-      ),
-    );
-  }
-
-  void _handleRenameChat() async {
-    final TextEditingController controller = TextEditingController(text: _chat.title);
-    
-    final result = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          _language == 'en' ? 'Rename Chat' : 'Переименовать чат',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: _language == 'en' ? 'Enter new chat name' : 'Введите новое имя чата',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(width: 1),
-            ),
-            isDense: true,
-          ),
-          maxLength: 50,
-          maxLines: 1,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              _language == 'en' ? 'Cancel' : 'Отмена',
-              style: TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                Navigator.of(context).pop(controller.text.trim());
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _theme.colorScheme.primary,
-              foregroundColor: _theme.colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            child: Text(
-              _language == 'en' ? 'Rename' : 'Переименовать',
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (result != null && result is String && result.isNotEmpty) {
-      widget.onRename(result);
-    }
   }
 }

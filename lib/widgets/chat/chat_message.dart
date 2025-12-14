@@ -6,7 +6,8 @@ import 'package:gen_ui_chat_ai/utils/message_utils.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
-import '../../utils/logger.dart';
+import 'package:gen_ui_chat_ai/utils/logger.dart';
+import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 
 // Initialize logger for this widget
 final _logger = LogTags.message;
@@ -25,7 +26,7 @@ class ChatMessage extends StatefulWidget {
   final bool isLastMessage; // Whether this is the last message in chat
 
   const ChatMessage({
-    Key? key,
+    super.key,
     required this.message,
     required this.isStreaming,
     required this.onRetry,
@@ -37,7 +38,7 @@ class ChatMessage extends StatefulWidget {
     this.onMessageUpdated,
     this.onContinueResponse,
     this.isLastMessage = false,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatMessage> createState() => _ChatMessageState();
@@ -104,6 +105,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isUser = widget.message.role == MessageRole.user;
+    final localizations = AppLocalizations.of(context)!;
 
     return SlideTransition(
       position: _slideAnimation,
@@ -244,7 +246,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                           color: theme.iconTheme.color?.withValues(alpha: 0.7),
                         ),
                         onPressed: _startEditing,
-                        tooltip: 'Edit',
+                        tooltip: localizations.edit,
                         splashRadius: 20,
                       ),
                     ],
@@ -263,7 +265,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                             context: context,
                           );
                         },
-                        tooltip: 'Share',
+                        tooltip: localizations.share,
                         splashRadius: 20,
                       ),
                     ],
@@ -284,7 +286,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                           senderName: null, // Не добавляем имя отправителя
                         );
                       },
-                      tooltip: 'Copy message (text or markdown)', // Улучшаем tooltip
+                      tooltip: localizations.copyMessage, // Улучшаем tooltip
                       splashRadius: 24, // Увеличиваем радиус клика
                       hoverColor: theme.colorScheme.primary.withValues(alpha: 0.1), // Добавляем hover эффект
                       focusColor: theme.colorScheme.primary.withValues(alpha: 0.1), // Добавляем focus эффект
@@ -309,7 +311,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                           widget.onMessageDeleted();
                         }
                       },
-                      tooltip: 'Delete',
+                      tooltip: localizations.delete,
                       splashRadius: 20,
                     ),
                     
@@ -325,7 +327,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                         onPressed: () {
                           // TODO: Voice message
                         },
-                        tooltip: 'Listen',
+                        tooltip: localizations.listen,
                         splashRadius: 20,
                       ),
                       
@@ -339,7 +341,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                         onPressed: () {
                           // TODO: Regenerate message
                         },
-                        tooltip: 'Regenerate',
+                        tooltip: localizations.regenerate,
                         splashRadius: 20,
                       ),
                       
@@ -359,7 +361,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                               widget.onContinueResponse!();
                             }
                           },
-                          tooltip: 'Continue',
+                          tooltip: localizations.continueResponse,
                           splashRadius: 20,
                         ),
                       
@@ -373,7 +375,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                         onPressed: () {
                           // TODO: Like message
                         },
-                        tooltip: 'Like',
+                        tooltip: localizations.like,
                         splashRadius: 20,
                       ),
                       
@@ -387,7 +389,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                         onPressed: () {
                           // TODO: Dislike message
                         },
-                        tooltip: 'Dislike',
+                        tooltip: localizations.dislike,
                         splashRadius: 20,
                       ),
                     ],
@@ -483,10 +485,10 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
         }
       } else if (inCodeBlock) {
         // Inside code block
-        currentCodeBlock += line + '\n';
+        currentCodeBlock += '$line\n';
       } else {
         // Regular text
-        currentTextBlock += line + '\n';
+        currentTextBlock += '$line\n';
       }
     }
 
@@ -516,13 +518,14 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   }
 
   Widget _buildStreamingIndicator() {
+    final localizations = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.only(top: 8),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'AI is typing',
+            localizations.aiIsTyping,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
             ),
@@ -535,6 +538,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   }
 
   Widget _buildErrorMessage() {
+    final localizations = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(8),
@@ -551,7 +555,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
           ),
           const SizedBox(width: 4),
           Text(
-            'Failed to send message',
+            localizations.failedToSendMessage,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Colors.red,
             ),
@@ -560,7 +564,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
           TextButton(
             onPressed: widget.onRetry,
             child: Text(
-              'Retry',
+              localizations.retry,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -572,17 +576,24 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   }
 
   String _formatTime(DateTime dateTime) {
+    final localizations = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final difference = now.difference(dateTime);
     
     if (difference.inMinutes < 1) {
-      return 'Just now';
+      return localizations.justNow;
     } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
+      return localizations.minAgo(difference.inMinutes);
     } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
+      if (difference.inHours == 1) {
+        return localizations.onlyOneHourAgo;
+      }
+      return localizations.hoursAgo(difference.inHours);
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
+      if (difference.inDays == 1) {
+        return localizations.onlyOneDayAgo;
+      }
+      return localizations.daysAgo(difference.inDays);
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
@@ -632,7 +643,8 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   /// Построение интерфейса редактирования
   Widget _buildEditInterface(BuildContext context) {
     final theme = Theme.of(context);
-    
+    final localizations = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -649,7 +661,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
             minLines: 3,
             autofocus: true,
             decoration: InputDecoration(
-              hintText: 'Enter your message...',
+              hintText: localizations.enterYourMessage,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(12),
               isDense: true,
@@ -669,7 +681,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
             TextButton(
               onPressed: _cancelEditing,
               child: Text(
-                'Cancel',
+                localizations.cancel,
                 style: TextStyle(color: theme.textTheme.bodyMedium?.color),
               ),
             ),
@@ -678,7 +690,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
             TextButton(
               onPressed: _saveEditing,
               child: Text(
-                'Save',
+                localizations.save,
                 style: TextStyle(color: theme.primaryColor),
               ),
             ),
@@ -692,7 +704,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
-              child: Text('Save & Send'),
+              child: Text(localizations.saveAndSend),
             ),
           ],
         ),
@@ -702,6 +714,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
 
   /// Обработка редактирования сообщения
   Future<void> _handleEditMessage(String newContent) async {
+    final localizations = AppLocalizations.of(context)!;
     try {
       // Создаем обновленное сообщение
       final updatedMessage = widget.message.copyWith(content: newContent);
@@ -724,13 +737,13 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
       // Показываем уведомление об успешном редактировании
       SnackbarUtils.showSuccessSnackBar(
         context: context,
-        message: 'Message edited successfully',
+        message: localizations.messageEditedSuccessfully,
         icon: Icons.edit,
       );
     } catch (e) {
       SnackbarUtils.showErrorSnackBar(
         context: context,
-        message: 'Failed to edit message',
+        message: localizations.failedToEditMessage,
         icon: Icons.error,
       );
     }
@@ -738,8 +751,9 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
 
   /// Обработка редактирования и отправки сообщения
   Future<void> _handleEditAndSend(String newContent) async {
+    final localizations = AppLocalizations.of(context)!;
     try {
-      // Создаем обновленное сообщение
+      // Создаем обновленое сообщение
       final updatedMessage = widget.message.copyWith(content: newContent);
       
       // Сохраняем изменения в базе данных
@@ -762,13 +776,13 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
       // Показываем уведомление
       SnackbarUtils.showSuccessSnackBar(
         context: context,
-        message: 'Message edited and response regenerated',
+        message: localizations.messageEditedAndResponseRegenerated,
         icon: Icons.refresh,
       );
     } catch (e) {
       SnackbarUtils.showErrorSnackBar(
         context: context,
-        message: 'Failed to edit and send message',
+        message: localizations.failedToEditAndSendMessage,
         icon: Icons.error,
       );
     }
@@ -844,3 +858,4 @@ class __TypingDotsAnimationState extends State<_TypingDotsAnimation>
     );
   }
 }
+

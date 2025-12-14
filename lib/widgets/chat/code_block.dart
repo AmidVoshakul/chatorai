@@ -9,10 +9,10 @@ class CodeBlock extends StatelessWidget {
   final String language;
 
   const CodeBlock({
-    Key? key,
+    super.key,
     required this.code,
     required this.language,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

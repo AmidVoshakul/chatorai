@@ -22,9 +22,9 @@ class ChatScreen extends StatefulWidget {
   final String? initialModel;
 
   const ChatScreen({
-    Key? key,
+    super.key,
     this.initialModel,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -44,7 +44,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final TextEditingController _titleController = TextEditingController();
   final FocusNode _chatInputFocusNode = FocusNode();
   late ScrollController _messageScrollController;
-  String _selectedModel = 'x-ai/grok-4.1-fast:free'; // Default model ID
+  String _selectedModel = 'kwaipilot/kat-coder-pro:free'; // Default model ID
   OpenRouterModel? _selectedModelObject; // Store full model object
   bool _isSuggestionsLoading = false;
   bool _showSuggestions = false;
@@ -119,9 +119,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       setState(() {
         _selectedModelObject = OpenRouterModel(
           id: _selectedModel,
-          name: 'x-ai/grok-4.1-fast:free',
+          name: 'openai/gpt-oss-20b:free',
           description: 'Default model',
-          contextLength: 2000000,
+          contextLength: 131000,
           capabilities: ModelCapabilities(
             reasoning: true,
             multimodal: false,
@@ -379,13 +379,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         _logger.logInfo('[ChatScreen] Auto-scroll triggered after adding message');
       }
 
-      // Stream response from AI
-      _logger.logInfo('[ChatScreen] Starting AI response streaming after message saved');
-      await _streamAIResponse();
-      _logger.logInfo('[ChatScreen] AI response streaming completed');
+      // Stream response from AI with retry logic
+      _sendToAIWithRetry(userMessage);
     } catch (e) {
       _logger.logError('[ChatScreen] Error sending message to AI: $e');
-      
+
       // Add error message
       final errorMessage = Message(
         role: MessageRole.assistant,
@@ -395,7 +393,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       );
 
       await _chatStorageService.addMessageToChat(_currentChat!.id, errorMessage);
-      
+
       final updatedChat = _currentChat!.copyWith(
         messages: [..._currentChat!.messages, errorMessage],
         updatedAt: DateTime.now(),
@@ -403,6 +401,84 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       setState(() {
         _currentChat = updatedChat;
       });
+    }
+  }
+
+  Future<void> _sendToAIWithRetry(String userMessage, {int retryCount = 0}) async {
+    try {
+      // Stream response from AI
+      _logger.logInfo('[ChatScreen] Starting AI response streaming after message saved');
+      await _streamAIResponse();
+      _logger.logInfo('[ChatScreen] AI response streaming completed');
+    } catch (e) {
+      // Check if it's a rate limit error (DioException with 429 status)
+      if (e.toString().contains('429') ||
+          e.toString().contains('Rate limit') ||
+          e.toString().contains('bad response')) {
+        if (retryCount < 3) {
+          final delay = Duration(seconds: pow(2, retryCount).toInt());
+          _logger.logWarning('[ChatScreen] Rate limit hit, retrying in ${delay.inSeconds} seconds... (attempt ${retryCount + 1}/3)');
+
+          // Show retry message to user
+          final retryMessage = Message(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            role: MessageRole.assistant,
+            content: 'Rate limit exceeded. Retrying in ${delay.inSeconds} seconds...',
+            timestamp: DateTime.now(),
+            isComplete: true,
+          );
+
+          await _chatStorageService.addMessageToChat(_currentChat!.id, retryMessage);
+          setState(() {
+            _currentChat = _currentChat!.copyWith(
+              messages: [..._currentChat!.messages, retryMessage],
+              updatedAt: DateTime.now(),
+            );
+          });
+
+          await Future.delayed(delay);
+
+          // Remove retry message and retry
+          final messagesWithoutRetry = _currentChat!.messages
+              .where((msg) => msg.content != retryMessage.content)
+              .toList();
+
+          setState(() {
+            _currentChat = _currentChat!.copyWith(
+              messages: messagesWithoutRetry,
+              updatedAt: DateTime.now(),
+            );
+          });
+
+          await _sendToAIWithRetry(userMessage, retryCount: retryCount + 1);
+        } else {
+          _logger.logError('[ChatScreen] Max retries exceeded for rate limit');
+
+          // Add final error message
+          final errorMessage = Message(
+            role: MessageRole.assistant,
+            content: 'Sorry, the service is currently at capacity. Please try again in a few minutes.',
+            timestamp: DateTime.now(),
+            isComplete: true,
+          );
+
+          await _chatStorageService.addMessageToChat(_currentChat!.id, errorMessage);
+
+          final updatedChat = _currentChat!.copyWith(
+            messages: [..._currentChat!.messages, errorMessage],
+            updatedAt: DateTime.now(),
+          );
+
+          if (mounted) {
+            setState(() {
+              _currentChat = updatedChat;
+            });
+          }
+        }
+      } else {
+        // Re-throw non-rate-limit errors
+        rethrow;
+      }
     }
   }
 
@@ -518,12 +594,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         messages: [..._currentChat!.messages, errorMessage],
         updatedAt: DateTime.now(),
       );
-      
-      if (mounted) {
-        setState(() {
-          _currentChat = updatedChat;
-        });
-      }
+      setState(() {
+        _currentChat = updatedChat;
+      });
     }
   }
 
@@ -1209,16 +1282,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           _continuationSuggestions = suggestions;
           _showSuggestions = true;
         });
-        
-        // Don't auto-hide suggestions - let user dismiss them manually
-        // Future.delayed(const Duration(seconds: 10), () {
-        //   if (mounted) {
-        //     setState(() {
-        //       _showSuggestions = false;
-        //       _continuationSuggestions.clear();
-        //     });
-        //   }
-        // });
+
       }
       
     } catch (e) {

@@ -1,104 +1,102 @@
-import 'package:logger/logger.dart';
+import 'dart:developer' as developer;
 
-/// Centralized logging configuration for the entire application
-/// Provides consistent logging across all modules with different log levels
+/// Enum representing different log levels
+enum LogLevel {
+  verbose,
+  debug,
+  info,
+  warning,
+  error,
+}
 
-class AppLogger {
-  static final AppLogger _instance = AppLogger._internal();
-  
-  factory AppLogger() => _instance;
-  
-  AppLogger._internal();
-  
-  late Logger _logger;
-  
-  /// Initialize logger with appropriate settings for development/production
-  void init({bool isDebug = true}) {
-    if (isDebug) {
-      _logger = Logger(
-        printer: PrettyPrinter(
-          methodCount: 0, // Remove stack trace lines
-          errorMethodCount: 0, // Remove error stack traces
-          lineLength: 120,
-          colors: true,
-          printEmojis: true,
-        ),
-      );
-    } else {
-      _logger = Logger(
-        printer: SimplePrinter(),
-      );
+/// Extension to add log level comparison methods
+extension LogLevelExtensions on LogLevel {
+  bool operator >(LogLevel other) => index > other.index;
+  bool operator >=(LogLevel other) => index >= other.index;
+  bool operator <(LogLevel other) => index < other.index;
+  bool operator <=(LogLevel other) => index <= other.index;
+}
+
+/// Configuration for logging
+class LogConfig {
+  static LogLevel minimumLevel = LogLevel.debug;
+  static bool enabled = true;
+}
+
+/// Logger class for structured logging
+class Logger {
+  final String tag;
+  final LogLevel minimumLevel;
+
+  Logger(this.tag, {LogLevel? minimumLevel})
+      : minimumLevel = minimumLevel ?? LogConfig.minimumLevel;
+
+  void logVerbose(String message, [Object? error, StackTrace? stackTrace]) {
+    if (!LogConfig.enabled || minimumLevel > LogLevel.verbose) return;
+    _log(LogLevel.verbose, message, error: error, stackTrace: stackTrace);
+  }
+
+  void logDebug(String message, [Object? error, StackTrace? stackTrace]) {
+    if (!LogConfig.enabled || minimumLevel > LogLevel.debug) return;
+    _log(LogLevel.debug, message, error: error, stackTrace: stackTrace);
+  }
+
+  void logInfo(String message, [Object? error, StackTrace? stackTrace]) {
+    if (!LogConfig.enabled || minimumLevel > LogLevel.info) return;
+    _log(LogLevel.info, message, error: error, stackTrace: stackTrace);
+  }
+
+  void logWarning(String message, [Object? error, StackTrace? stackTrace]) {
+    if (!LogConfig.enabled || minimumLevel > LogLevel.warning) return;
+    _log(LogLevel.warning, message, error: error, stackTrace: stackTrace);
+  }
+
+  void logError(String message, [Object? error, StackTrace? stackTrace]) {
+    if (!LogConfig.enabled || minimumLevel > LogLevel.error) return;
+    _log(LogLevel.error, message, error: error, stackTrace: stackTrace);
+  }
+
+  void _log(LogLevel level, String message,
+      {Object? error, StackTrace? stackTrace}) {
+    final timestamp = DateTime.now().toIso8601String();
+    final levelStr = level.name.toUpperCase().padRight(7);
+    final fullMessage = '[$timestamp] $levelStr [$tag] $message';
+
+    switch (level) {
+      case LogLevel.verbose:
+        developer.log(fullMessage, name: tag);
+        break;
+      case LogLevel.debug:
+        developer.log(fullMessage, name: tag);
+        break;
+      case LogLevel.info:
+        developer.log(fullMessage, name: tag);
+        break;
+      case LogLevel.warning:
+        developer.log(fullMessage, name: tag, error: error);
+        break;
+      case LogLevel.error:
+        developer.log(fullMessage, name: tag, error: error, stackTrace: stackTrace);
+        break;
     }
   }
-  
-  /// Log trace information (detailed debugging - replacement for verbose)
-  void t(String tag, String message, [dynamic error, StackTrace? stackTrace]) {
-    _logger.t('[$tag] $message', error: error, stackTrace: stackTrace);
-  }
-  
-  /// Log debug information (development only)
-  void d(String tag, String message, [dynamic error, StackTrace? stackTrace]) {
-    _logger.d('[$tag] $message', error: error, stackTrace: stackTrace);
-  }
-  
-  /// Log informational messages (important events)
-  void i(String tag, String message, [dynamic error, StackTrace? stackTrace]) {
-    _logger.i('[$tag] $message', error: error, stackTrace: stackTrace);
-  }
-  
-  /// Log warnings (potential issues)
-  void w(String tag, String message, [dynamic error, StackTrace? stackTrace]) {
-    _logger.w('[$tag] $message', error: error, stackTrace: stackTrace);
-  }
-  
-  /// Log errors (critical issues)
-  void e(String tag, String message, [dynamic error, StackTrace? stackTrace]) {
-    _logger.e('[$tag] $message', error: error, stackTrace: stackTrace);
-  }
 }
 
-/// Convenience extension for easier logging
-extension LoggerExtensions on String {
-  void logVerbose(String message, [dynamic error, StackTrace? stackTrace]) {
-    AppLogger().t(this, message, error, stackTrace);
-  }
-  
-  void logDebug(String message, [dynamic error, StackTrace? stackTrace]) {
-    AppLogger().d(this, message, error, stackTrace);
-  }
-  
-  void logInfo(String message, [dynamic error, StackTrace? stackTrace]) {
-    AppLogger().i(this, message, error, stackTrace);
-  }
-  
-  void logWarning(String message, [dynamic error, StackTrace? stackTrace]) {
-    AppLogger().w(this, message, error, stackTrace);
-  }
-  
-  void logError(String message, [dynamic error, StackTrace? stackTrace]) {
-    AppLogger().e(this, message, error, stackTrace);
-  }
-}
-
-/// Predefined log tags for different modules
+/// Log tags for different parts of the application
 class LogTags {
-  static const String openRouter = 'OpenRouter';
-  static const String chatService = 'ChatService';
-  static const String storage = 'Storage';
-  static const String ui = 'UI';
-  static const String pagination = 'Pagination';
-  static const String scroll = 'Scroll';
-  static const String message = 'Message';
-  static const String models = 'Models';
-  static const String settings = 'Settings';
-  static const String sidebar = 'Sidebar';
-  static const String input = 'Input';
-  static const String chatScreen = 'ChatScreen';
-  static const String modelsScreen = 'ModelsScreen';
-  static const String settingsScreen = 'SettingsScreen';
-}
-
-/// Initialize logger in main.dart
-void initLogger() {
-  AppLogger().init(isDebug: true);
+  static final Logger openRouter = Logger('OpenRouter');
+  static final Logger chat = Logger('Chat');
+  static final Logger storage = Logger('Storage');
+  static final Logger ui = Logger('UI');
+  static final Logger app = Logger('App');
+  static final Logger network = Logger('Network');
+  static final Logger speech = Logger('Speech');
+  static final Logger pagination = Logger('Pagination');
+  static final Logger settings = Logger('Settings');
+  static final Logger chatScreen = Logger('ChatScreen');
+  static final Logger scroll = Logger('Scroll');
+  static final Logger message = Logger('Message');
+  static final Logger chatService = Logger('ChatService');
+  static final Logger sidebar = Logger('Sidebar');
+  static final Logger modelsScreen = Logger('ModelsScreen');
 }

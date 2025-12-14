@@ -323,11 +323,455 @@ abstract class AppLocalizations {
   /// **'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nDeveloped with ❤️ using Flutter'**
   String get appDescription;
 
+  /// No description provided for @shareChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Chat'**
+  String get shareChat;
+
+  /// No description provided for @copyChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Chat'**
+  String get copyChat;
+
+  /// No description provided for @renameChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename Chat'**
+  String get renameChat;
+
+  /// No description provided for @deleteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Chat'**
+  String get deleteChat;
+
+  /// No description provided for @failedToShowMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to show menu'**
+  String get failedToShowMenu;
+
+  /// No description provided for @failedToRenameChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to rename chat'**
+  String get failedToRenameChat;
+
+  /// No description provided for @failedToCopyChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to copy chat'**
+  String get failedToCopyChat;
+
+  /// No description provided for @chatSharingNotImplemented.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat sharing is not implemented yet'**
+  String get chatSharingNotImplemented;
+
+  /// No description provided for @newChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New Chat'**
+  String get newChat;
+
+  /// No description provided for @noChatsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No chats yet'**
+  String get noChatsYet;
+
+  /// No description provided for @startConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a conversation by clicking \"New Chat\"'**
+  String get startConversation;
+
+  /// No description provided for @chatRenamedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat renamed to: {title}'**
+  String chatRenamedTo(Object title);
+
+  /// No description provided for @appTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat AI'**
+  String get appTitle;
+
+  /// No description provided for @justNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get justNow;
+
+  /// No description provided for @minAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min ago'**
+  String minAgo(Object minutes);
+
+  /// No description provided for @onlyOneMinuteAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'1 min ago'**
+  String get onlyOneMinuteAgo;
+
+  /// No description provided for @hoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hours ago'**
+  String hoursAgo(Object hours);
+
+  /// No description provided for @onlyOneHourAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'1 hour ago'**
+  String get onlyOneHourAgo;
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days ago'**
+  String daysAgo(Object days);
+
+  /// No description provided for @onlyOneDayAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'1 day ago'**
+  String get onlyOneDayAgo;
+
+  /// No description provided for @renameChatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename Chat'**
+  String get renameChatTitle;
+
+  /// No description provided for @enterNewChatName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter new chat name'**
+  String get enterNewChatName;
+
+  /// No description provided for @rename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get rename;
+
   /// No description provided for @ok.
   ///
   /// In en, this message translates to:
   /// **'OK'**
   String get ok;
+
+  /// No description provided for @modelSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Selected'**
+  String get modelSelected;
+
+  /// No description provided for @errorLoadingModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading models'**
+  String get errorLoadingModels;
+
+  /// No description provided for @models.
+  ///
+  /// In en, this message translates to:
+  /// **'Models'**
+  String get models;
+
+  /// No description provided for @searchModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Search models'**
+  String get searchModels;
+
+  /// No description provided for @refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
+
+  /// No description provided for @details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get details;
+
+  /// No description provided for @context.
+  ///
+  /// In en, this message translates to:
+  /// **'Context'**
+  String get context;
+
+  /// No description provided for @free.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get free;
+
+  /// No description provided for @paid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get paid;
+
+  /// No description provided for @reasoning.
+  ///
+  /// In en, this message translates to:
+  /// **'Reasoning'**
+  String get reasoning;
+
+  /// No description provided for @multimodal.
+  ///
+  /// In en, this message translates to:
+  /// **'Multimodal'**
+  String get multimodal;
+
+  /// No description provided for @vision.
+  ///
+  /// In en, this message translates to:
+  /// **'Vision'**
+  String get vision;
+
+  /// No description provided for @tools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get tools;
+
+  /// No description provided for @available.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get available;
+
+  /// No description provided for @description.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get description;
+
+  /// No description provided for @technicalDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical Details'**
+  String get technicalDetails;
+
+  /// No description provided for @provider.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get provider;
+
+  /// No description provided for @inputTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Input Tokens'**
+  String get inputTokens;
+
+  /// No description provided for @notAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available'**
+  String get notAvailable;
+
+  /// No description provided for @outputTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Output Tokens'**
+  String get outputTokens;
+
+  /// No description provided for @features.
+  ///
+  /// In en, this message translates to:
+  /// **'Features'**
+  String get features;
+
+  /// No description provided for @featuresDisplayedBasedOnActualModelCapabilities.
+  ///
+  /// In en, this message translates to:
+  /// **'Features displayed based on actual model capabilities'**
+  String get featuresDisplayedBasedOnActualModelCapabilities;
+
+  /// No description provided for @noModelsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No models found'**
+  String get noModelsFound;
+
+  /// No description provided for @noAvailableModels.
+  ///
+  /// In en, this message translates to:
+  /// **'No available models'**
+  String get noAvailableModels;
+
+  /// No description provided for @tryADifferentSearchQuery.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different search query'**
+  String get tryADifferentSearchQuery;
+
+  /// No description provided for @tryRefreshingOrCheckYourInternetConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Try refreshing or check your internet connection'**
+  String get tryRefreshingOrCheckYourInternetConnection;
+
+  /// No description provided for @aiIsTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'AI is typing'**
+  String get aiIsTyping;
+
+  /// No description provided for @failedToSendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send message'**
+  String get failedToSendMessage;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @enterYourMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your message...'**
+  String get enterYourMessage;
+
+  /// No description provided for @saveAndSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Save & Send'**
+  String get saveAndSend;
+
+  /// No description provided for @messageEditedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Message edited successfully'**
+  String get messageEditedSuccessfully;
+
+  /// No description provided for @failedToEditMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to edit message'**
+  String get failedToEditMessage;
+
+  /// No description provided for @messageEditedAndResponseRegenerated.
+  ///
+  /// In en, this message translates to:
+  /// **'Message edited and response regenerated'**
+  String get messageEditedAndResponseRegenerated;
+
+  /// No description provided for @failedToEditAndSendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to edit and send message'**
+  String get failedToEditAndSendMessage;
+
+  /// No description provided for @areYouSureYouWantToDeleteThisMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this message?'**
+  String get areYouSureYouWantToDeleteThisMessage;
+
+  /// No description provided for @messageDeletedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Message deleted successfully'**
+  String get messageDeletedSuccessfully;
+
+  /// No description provided for @failedToDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete message'**
+  String get failedToDeleteMessage;
+
+  /// No description provided for @messageCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Message copied'**
+  String get messageCopied;
+
+  /// No description provided for @failedToCopyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to copy message'**
+  String get failedToCopyMessage;
+
+  /// No description provided for @messageShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Message shared'**
+  String get messageShared;
+
+  /// No description provided for @failedToShareMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to share message'**
+  String get failedToShareMessage;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get share;
+
+  /// No description provided for @copyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Message'**
+  String get copyMessage;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @listen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get listen;
+
+  /// No description provided for @regenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Regenerate'**
+  String get regenerate;
+
+  /// No description provided for @continueResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Response'**
+  String get continueResponse;
+
+  /// No description provided for @like.
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get like;
+
+  /// No description provided for @dislike.
+  ///
+  /// In en, this message translates to:
+  /// **'Dislike'**
+  String get dislike;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

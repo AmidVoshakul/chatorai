@@ -13,14 +13,14 @@ class ScrollableActionButtons extends StatelessWidget {
   final ScrollController? scrollController;
 
   const ScrollableActionButtons({
-    Key? key,
+    super.key,
     required this.children,
     this.buttonSpacing = 4.0,
     this.height = 40.0,
     this.padding,
     this.backgroundColor,
     this.scrollController,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

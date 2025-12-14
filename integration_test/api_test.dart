@@ -45,7 +45,7 @@ void main() async {
     // Test 2: Simple chat completion
     print('\n💬 Test 2: Testing chat completion...');
     final chatResponse = await dio.post('/chat/completions', data: {
-      'model': 'x-ai/grok-4.1-fast:free',
+      'model': 'openai/gpt-oss-20b:free',
       'messages': [
         {'role': 'user', 'content': 'Hello! How are you?'}
       ],
@@ -70,7 +70,7 @@ void main() async {
       final streamResponse = await dio.post(
         '/chat/completions',
         data: {
-          'model': 'x-ai/grok-4.1-fast:free',
+          'model': 'openai/gpt-oss-20b:free',
           'messages': [
             {'role': 'user', 'content': 'Hello'}
           ],
