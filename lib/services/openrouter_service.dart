@@ -109,31 +109,51 @@ class OpenRouterModel {
       modelData = json;
     }
     
-    // Safely extract capabilities with proper type casting
-    final capabilitiesRaw = modelData['capabilities'];
-    Map<String, dynamic> capabilitiesData;
-    if (capabilitiesRaw is Map<String, dynamic>) {
-      capabilitiesData = capabilitiesRaw;
-    } else if (capabilitiesRaw is Map) {
-      capabilitiesData = Map<String, dynamic>.from(capabilitiesRaw);
-    } else {
-      capabilitiesData = {};
-    }
+    // Extract architecture information
+    final architecture = modelData['architecture'] ?? {};
+    final inputModalities = architecture['input_modalities'] ?? [];
+    final modality = architecture['modality'] ?? '';
+    
+    // Extract supported parameters
+    final supportedParameters = modelData['supported_parameters'] ?? [];
+    
+    // Determine capabilities based on architecture and supported parameters
+    final isMultimodal = inputModalities.contains('image') || modality.contains('image');
+    final hasVision = inputModalities.contains('image') || modality.contains('image');
+    final hasTools = supportedParameters.contains('tools') || supportedParameters.contains('tool_choice');
+    final hasReasoning = supportedParameters.contains('reasoning') || supportedParameters.contains('include_reasoning');
     
     final contextLength = modelData['context_length'];
     final modelName = modelData['name'] ?? '';
     final description = modelData['description'] ?? '';
     
-    // Safely extract provider with proper type casting
+    // Extract provider from model ID if provider field is null
     final providerRaw = modelData['provider'];
     String? provider;
     if (providerRaw is Map<String, dynamic>) {
       provider = providerRaw['name'] as String?;
+      _logger.logDebug('[OpenRouter] Provider (Map): $provider');
     } else if (providerRaw is Map) {
       final providerMap = Map<String, dynamic>.from(providerRaw);
       provider = providerMap['name'] as String?;
+      _logger.logDebug('[OpenRouter] Provider (Map<dynamic>): $provider');
+    } else if (providerRaw is String) {
+      provider = providerRaw;
+      _logger.logDebug('[OpenRouter] Provider (String): $provider');
     } else {
-      provider = null;
+      // Extract provider from model ID
+      final modelId = modelData['id'] as String?;
+      if (modelId != null && modelId.contains('/')) {
+        final parts = modelId.split('/');
+        if (parts.length >= 2) {
+          provider = parts[0];
+          _logger.logDebug('[OpenRouter] Provider extracted from ID: $provider');
+        }
+      }
+
+      if (provider == null) {
+        _logger.logDebug('[OpenRouter] Provider raw type: ${providerRaw?.runtimeType}, value: $providerRaw');
+      }
     }
     
     // Parse context length from various possible formats
@@ -163,10 +183,10 @@ class OpenRouterModel {
       pricingPrompt: _parsePricing(modelData['pricing']?['prompt']),
       pricingCompletion: _parsePricing(modelData['pricing']?['completion']),
       capabilities: ModelCapabilities(
-        reasoning: _getBoolValue(capabilitiesData, 'reasoning', false),
-        multimodal: _getBoolValue(capabilitiesData, 'multimodal', false),
-        vision: _getBoolValue(capabilitiesData, 'vision', false),
-        tools: _getBoolValue(capabilitiesData, 'tools', false),
+        reasoning: hasReasoning,
+        multimodal: isMultimodal,
+        vision: hasVision,
+        tools: hasTools,
       ),
       contextLength: parsedContextLength,
       provider: provider,
@@ -203,19 +223,6 @@ class OpenRouterModel {
   }
 
   // Helper method to safely get boolean values
-  static bool _getBoolValue(Map<String, dynamic> map, String key, bool defaultValue) {
-    final value = map[key];
-    if (value is bool) {
-      return value;
-    }
-    if (value is String) {
-      return value.toLowerCase() == 'true';
-    }
-    if (value is num) {
-      return value > 0;
-    }
-    return defaultValue;
-  }
 
   // Method to check if model is free
   bool get isFree => (pricingPrompt == '0' || pricingPrompt == null) && 
@@ -709,4 +716,46 @@ class OpenRouterService {
       return 'API key configured';
     }
   }
+
+  /// Test method to check provider field structure
+  Future<void> testProviderStructure() async {
+    if (_apiKey == null || _apiKey!.isEmpty) {
+      throw Exception('OpenRouter API key not configured');
+    }
+
+    // Wait for Dio to be initialized
+    while (_dio == null) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+
+    try {
+      final response = await _dio!.get('/models');
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+
+        if (data.containsKey('data')) {
+          final modelsData = data['data'] is List ? data['data'] as List : [data['data']];
+
+          for (int i = 0; i < modelsData.length && i < 5; i++) {
+            final modelData = modelsData[i] as Map<String, dynamic>;
+            final providerRaw = modelData['provider'];
+
+            _logger.logDebug('[OpenRouter] Model ${modelData['id']}:');
+            _logger.logDebug('[OpenRouter]   Provider type: ${providerRaw?.runtimeType}');
+            _logger.logDebug('[OpenRouter]   Provider value: $providerRaw');
+
+            if (providerRaw is Map<String, dynamic>) {
+              _logger.logDebug('[OpenRouter]   Provider name: ${providerRaw['name']}');
+            } else if (providerRaw is String) {
+              _logger.logDebug('[OpenRouter]   Provider string: $providerRaw');
+            }
+          }
+        }
+      }
+    } catch (e) {
+      _logger.logError('[OpenRouter] Error testing provider structure: $e');
+    }
+  }
 }
+
