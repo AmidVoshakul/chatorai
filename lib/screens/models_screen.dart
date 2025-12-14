@@ -44,6 +44,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
     super.dispose();
   }
 
+  // ==============================================
+  // Search functionality
+  // ==============================================
+
   void _onSearchChanged() {
     final searchQuery = _searchController.text.toLowerCase();
     if (searchQuery.isEmpty) {
@@ -68,6 +72,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
       _filteredModels = _models;
     });
   }
+
+  // ==============================================
+  // Model selection
+  // ==============================================
 
   void _selectModel(OpenRouterModel model) {
     final String currentLanguage = _themeProvider.selectedLanguage;
@@ -100,6 +108,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
       Navigator.of(context).pop(model);
     });
   }
+
+  // ==============================================
+  // Data loading
+  // ==============================================
 
   Future<void> _loadModels() async {
     setState(() {
@@ -244,10 +256,30 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
+  // ==============================================
+  // UI Components
+  // ==============================================
+
   Widget _buildModelCard(OpenRouterModel model) {
+    final isSelected = widget.currentModel == model.id;
+    
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
       elevation: 2,
+      color: isSelected 
+          ? Theme.of(context).cardColor
+          : Theme.of(context).cardColor,
+      shape: isSelected
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(
+                color: Colors.green,
+                width: 2.0,
+              ),
+            )
+          : RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: () {
@@ -333,13 +365,6 @@ const SizedBox(height: 12),
                       ),
                     ),
                   ),
-                  if (model.provider != null)
-                    Chip(
-                      label: Text(model.provider!),
-                      backgroundColor: Colors.indigo[50],
-                      labelStyle: const TextStyle(fontSize: 10),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -356,19 +381,34 @@ const SizedBox(height: 12),
       spacing: 6,
       runSpacing: 4,
       children: [
-        if (model.isFree)
-          Chip(
-            label: Text(_themeProvider.selectedLanguage == 'en' ? 'Free' : 'Бесплатно'),
-            backgroundColor: Colors.green.withValues(alpha: 0.15),
-            side: BorderSide(color: Colors.green.withValues(alpha: 0.3), width: 1.5),
-            labelStyle: const TextStyle(
-              color: Colors.green,
-              fontSize: 11, 
-              fontWeight: FontWeight.w500,
-            ),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            avatar: const Icon(Icons.attach_money, size: 14, color: Colors.green),
+        // Free/Paid indicator
+        Chip(
+          label: Text(model.isFree 
+              ? (_themeProvider.selectedLanguage == 'en' ? 'Free' : 'Бесплатно')
+              : (_themeProvider.selectedLanguage == 'en' ? 'Paid' : 'Платно')),
+          backgroundColor: model.isFree 
+              ? Colors.green.withValues(alpha: 0.15)
+              : Colors.orange.withValues(alpha: 0.15),
+          side: BorderSide(
+            color: model.isFree 
+                ? Colors.green.withValues(alpha: 0.3)
+                : Colors.orange.withValues(alpha: 0.3),
+            width: 1.5,
           ),
+          labelStyle: TextStyle(
+            color: model.isFree ? Colors.green : Colors.orange,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          avatar: Icon(
+            model.isFree ? Icons.attach_money : Icons.payment,
+            size: 14,
+            color: model.isFree ? Colors.green : Colors.orange,
+          ),
+        ),
+        
+        // Reasoning capability
         if (model.supportsReasoning)
           Chip(
             label: Text(_themeProvider.selectedLanguage == 'en' ? 'Reasoning' : 'Рассуждения'),
@@ -382,6 +422,8 @@ const SizedBox(height: 12),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             avatar: const Icon(Icons.psychology, size: 14, color: Colors.blue),
           ),
+        
+        // Multimodal capability
         if (model.supportsMultimodal)
           Chip(
             label: Text(_themeProvider.selectedLanguage == 'en' ? 'Multimodal' : 'Мультимодальность'),
@@ -395,6 +437,37 @@ const SizedBox(height: 12),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             avatar: const Icon(Icons.view_in_ar, size: 14, color: Colors.purple),
           ),
+        
+        // Vision capability
+        if (model.capabilities.vision)
+          Chip(
+            label: Text(_themeProvider.selectedLanguage == 'en' ? 'Vision' : 'Видение'),
+            backgroundColor: Colors.deepOrange.withValues(alpha: 0.15),
+            side: BorderSide(color: Colors.deepOrange.withValues(alpha: 0.3), width: 1.5),
+            labelStyle: const TextStyle(
+              color: Colors.deepOrange,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            avatar: const Icon(Icons.visibility, size: 14, color: Colors.deepOrange),
+          ),
+        
+        // Tools capability
+        if (model.capabilities.tools)
+          Chip(
+            label: Text(_themeProvider.selectedLanguage == 'en' ? 'Tools' : 'Инструменты'),
+            backgroundColor: Colors.teal.withValues(alpha: 0.15),
+            side: BorderSide(color: Colors.teal.withValues(alpha: 0.3), width: 1.5),
+            labelStyle: const TextStyle(
+              color: Colors.teal,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            avatar: const Icon(Icons.build, size: 14, color: Colors.teal),
+          ),
+        
         // Always show availability
         Chip(
           label: Text(_themeProvider.selectedLanguage == 'en' ? 'Available' : 'Доступна'),
@@ -413,6 +486,11 @@ const SizedBox(height: 12),
   }
 
   void _showModelDetailsDialog(OpenRouterModel model) {
+    // ==============================================
+    // Show model details
+    // ==============================================
+
+    /// Builds a detail row with icon, label, and value
     Widget _buildDetailRow(String label, String value, IconData icon) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -440,6 +518,7 @@ const SizedBox(height: 12),
       );
     }
 
+    /// Builds a feature chip with label, color, and icon
     Widget _buildFeatureChip(String label, bool enabled, Color color, IconData icon) {
       return Container(
         margin: const EdgeInsets.only(bottom: 4),
@@ -523,10 +602,25 @@ const SizedBox(height: 12),
                 ),
               ),
               const SizedBox(height: 12),
-              _buildDetailRow(_themeProvider.selectedLanguage == 'en' ? 'Context' : 'Контекст', model.formattedContextLength, Icons.text_fields),
+              _buildDetailRow(_themeProvider.selectedLanguage == 'en' ? 'Provider' : 'Провайдер', model.provider!, Icons.account_circle),
               if (model.provider != null)
-                _buildDetailRow(_themeProvider.selectedLanguage == 'en' ? 'Provider' : 'Провайдер', model.provider!, Icons.account_circle),
-              
+                _buildDetailRow(_themeProvider.selectedLanguage == 'en' ? 'Context' : 'Контекст', model.formattedContextLength, Icons.text_fields),
+
+              _buildDetailRow(
+                _themeProvider.selectedLanguage == 'en' ? 'Input tokens' : 'Ввод токенов',
+                model.pricingPrompt != null
+                    ? '\$${model.pricingPrompt}/M'
+                    : (_themeProvider.selectedLanguage == 'en' ? 'Not available' : 'Недоступно'),
+                Icons.attach_money,
+              ),
+              _buildDetailRow(
+                _themeProvider.selectedLanguage == 'en' ? 'Output tokens' : 'Вывод токенов',
+                model.pricingCompletion != null
+                    ? '\$${model.pricingCompletion}/M'
+                    : (_themeProvider.selectedLanguage == 'en' ? 'Not available' : 'Недоступно'),
+                Icons.monetization_on,
+              ),
+
               // Features section
               const SizedBox(height: 20),
               Text(
@@ -539,9 +633,9 @@ const SizedBox(height: 12),
               ),
               const SizedBox(height: 4),
               Text(
-                _themeProvider.selectedLanguage == 'en' 
-                  ? 'Each feature is displayed with a colored icon'
-                  : 'Каждая возможность отображается цветным значком',
+                _themeProvider.selectedLanguage == 'en'
+                  ? 'Features are displayed based on actual model capabilities'
+                  : 'Возможности отображаются на основе реальных характеристик модели',
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).textTheme.bodySmall!.color,
@@ -552,11 +646,22 @@ const SizedBox(height: 12),
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Free' : 'Бесплатно', true, Colors.green, Icons.attach_money),
-                  _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Reasoning' : 'Рассуждения', model.capabilities.reasoning, Colors.blue, Icons.psychology),
-                  _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Multimodal' : 'Мультимодальность', model.capabilities.multimodal, Colors.purple, Icons.view_in_ar),
-                  _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Vision' : 'Видение', model.capabilities.vision, Colors.deepOrange, Icons.visibility),
-                  _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Tools' : 'Инструменты', model.capabilities.tools, Colors.teal, Icons.build),
+                  _buildFeatureChip(
+                    model.isFree 
+                      ? (_themeProvider.selectedLanguage == 'en' ? 'Free' : 'Бесплатно')
+                      : (_themeProvider.selectedLanguage == 'en' ? 'Paid' : 'Платно'),
+                    true,
+                    model.isFree ? Colors.green : Colors.orange,
+                    model.isFree ? Icons.attach_money : Icons.payment,
+                  ),
+                  if (model.supportsReasoning)
+                    _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Reasoning' : 'Рассуждения', true, Colors.blue, Icons.psychology),
+                  if (model.supportsMultimodal)
+                    _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Multimodal' : 'Мультимодальность', true, Colors.purple, Icons.view_in_ar),
+                  if (model.capabilities.vision)
+                    _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Vision' : 'Видение', true, Colors.deepOrange, Icons.visibility),
+                  if (model.capabilities.tools)
+                    _buildFeatureChip(_themeProvider.selectedLanguage == 'en' ? 'Tools' : 'Инструменты', true, Colors.teal, Icons.build),
                 ],
               ),
             ],
