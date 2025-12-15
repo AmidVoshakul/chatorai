@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 import 'package:gen_ui_chat_ai/utils/message_utils.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_message.dart' as ChatMsg;
+import 'package:gen_ui_chat_ai/widgets/chat/loading_indicator.dart';
 
 // Initialize logger for this widget
 final _logger = LogTags.chatService;
@@ -184,41 +184,15 @@ class _ChatMessagesState extends State<ChatMessages> {
 
   // Анимация "три точки" ожидания ответа
   Widget _buildWaitingAnimation() {
-    final theme = Theme.of(context);
-    final isDarkTheme = theme.brightness == Brightness.dark;
-    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          // Анимация "три точки" без аватара
-          Container(
-            constraints: const BoxConstraints(
-              maxWidth: 120,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: isDarkTheme ? Color(0xFF2A2A2A) : Color(0xFFEEEEEE),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SpinKitThreeBounce(
-                  color: isDarkTheme ? Colors.white70 : Colors.black54,
-                  size: 12,
-                ),
-              ],
-            ),
+          // Используем унифицированный индикатор загрузки
+          ChatLoadingIndicator(
+            size: 12,
           ),
         ],
       ),
@@ -251,8 +225,27 @@ class _ChatMessagesState extends State<ChatMessages> {
         },
       );
     } catch (e) {
-      _updateAssistantMessage("Извините, произошла ошибка при обработке запроса. Пожалуйста, попробуйте еще раз.");
-      _completeAssistantMessage();
+      _logger.logError('[ChatMessages] Error in _sendToAI: $e');
+
+      // Remove the waiting animation
+      setState(() {
+        _isWaitingForResponse = false;
+        _isStreaming = false;
+      });
+
+      // Add error message to the chat
+      final errorMessage = Message(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        role: MessageRole.assistant,
+        content: e.toString(),
+        timestamp: DateTime.now(),
+        isComplete: true,
+        isError: true,
+      );
+
+      setState(() {
+        _messages.add(errorMessage);
+      });
     }
   }
 

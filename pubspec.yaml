@@ -49,6 +49,7 @@ dependencies:
   
   # Utilities
   uuid: ^4.5.2
+  clipboard: ^3.0.8
   logger: ^2.6.2
   connectivity_plus: ^7.0.0
   

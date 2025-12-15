@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print
 
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -574,23 +575,58 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     } catch (e) {
       _logger.logError('[ChatScreen] Error in streaming response: $e');
       
-      // Add error message
-      final errorMessage = Message(
-        role: MessageRole.assistant,
-        content: 'I apologize, but I encountered an error while generating the response. Please try again.',
-        timestamp: DateTime.now(),
-        isComplete: true,
-      );
+      // Extract and display the actual server response instead of generic error message
+      String errorMessage = _formatErrorMessage(e);
 
-      await _chatStorageService.addMessageToChat(_currentChat!.id, errorMessage);
-      
-      final updatedChat = _currentChat!.copyWith(
-        messages: [..._currentChat!.messages, errorMessage],
-        updatedAt: DateTime.now(),
-      );
-      setState(() {
-        _currentChat = updatedChat;
-      });
+      // First, update the existing assistant message with error content
+      if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
+        final lastMessage = _currentChat!.messages.last;
+        if (lastMessage.role == MessageRole.assistant) {
+          // Update existing message with error content
+          final errorResponseMessage = lastMessage.copyWith(
+            content: errorMessage,
+            isComplete: true,
+            isError: true, // Mark as error message
+          );
+
+          await _chatStorageService.updateMessageInChat(
+            _currentChat!.id, 
+            errorResponseMessage.id, 
+            errorResponseMessage
+          );
+
+          final updatedChat = _currentChat!.copyWith(
+            messages: [
+              ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
+              errorResponseMessage
+            ],
+            updatedAt: DateTime.now(),
+          );
+          
+          setState(() {
+            _currentChat = updatedChat;
+          });
+        } else {
+          // If last message is not assistant, add new error message
+          final errorResponseMessage = Message(
+            role: MessageRole.assistant,
+            content: errorMessage,
+            timestamp: DateTime.now(),
+            isComplete: true,
+            isError: true, // Mark as error message
+          );
+
+          await _chatStorageService.addMessageToChat(_currentChat!.id, errorResponseMessage);
+          
+          final updatedChat = _currentChat!.copyWith(
+            messages: [..._currentChat!.messages, errorResponseMessage],
+            updatedAt: DateTime.now(),
+          );
+          setState(() {
+            _currentChat = updatedChat;
+          });
+        }
+      }
     }
   }
 
@@ -807,25 +843,57 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     } catch (e) {
       _logger.logError('[ChatScreen] Error in continuation streaming: $e');
       
-      // Add error message
-      final errorMessage = Message(
-        role: MessageRole.assistant,
-        content: 'I apologize, but I encountered an error while continuing the response. Please try again.',
-        timestamp: DateTime.now(),
-        isComplete: true,
-      );
+      // Extract and display the actual server response instead of generic error message
+      String errorMessage = _formatErrorMessage(e);
 
-      await _chatStorageService.addMessageToChat(_currentChat!.id, errorMessage);
-      
-      final updatedChat = _currentChat!.copyWith(
-        messages: [..._currentChat!.messages, errorMessage],
-        updatedAt: DateTime.now(),
-      );
-      
-      if (mounted) {
-        setState(() {
-          _currentChat = updatedChat;
-        });
+      // Update the existing continuation message with error content
+      if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
+        final lastMessage = _currentChat!.messages.last;
+        if (lastMessage.role == MessageRole.assistant) {
+          // Update existing message with error content
+          final errorResponseMessage = lastMessage.copyWith(
+            content: errorMessage,
+            isComplete: true,
+            isError: true, // Mark as error message
+          );
+
+          await _chatStorageService.updateMessageInChat(
+            _currentChat!.id, 
+            errorResponseMessage.id, 
+            errorResponseMessage
+          );
+
+          final updatedChat = _currentChat!.copyWith(
+            messages: [
+              ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
+              errorResponseMessage
+            ],
+            updatedAt: DateTime.now(),
+          );
+          
+          setState(() {
+            _currentChat = updatedChat;
+          });
+        } else {
+          // If last message is not assistant, add new error message
+          final errorResponseMessage = Message(
+            role: MessageRole.assistant,
+            content: errorMessage,
+            timestamp: DateTime.now(),
+            isComplete: true,
+            isError: true, // Mark as error message
+          );
+
+          await _chatStorageService.addMessageToChat(_currentChat!.id, errorResponseMessage);
+          
+          final updatedChat = _currentChat!.copyWith(
+            messages: [..._currentChat!.messages, errorResponseMessage],
+            updatedAt: DateTime.now(),
+          );
+          setState(() {
+            _currentChat = updatedChat;
+          });
+        }
       }
     }
   }
@@ -1036,7 +1104,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             ),
           ),
           // Continuation Suggestions
-          if (_showSuggestions && _continuationSuggestions.isNotEmpty)
+          if (_showSuggestions && _continuationSuggestions.isNotEmpty &&
+              _currentChat?.messages.isNotEmpty == true &&
+              !_currentChat!.messages.last.isError)
             _buildContinuationSuggestions(),
           ChatInput(
             onSendMessage: _handleSendMessage,
@@ -1169,7 +1239,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 ),
                 
                 // Continuation Suggestions
-                if (_showSuggestions && _continuationSuggestions.isNotEmpty)
+                if (_showSuggestions && _continuationSuggestions.isNotEmpty &&
+                    _currentChat?.messages.isNotEmpty == true &&
+                    !_currentChat!.messages.last.isError)
                   _buildContinuationSuggestions(),
                 
                 // Input Area
@@ -1311,6 +1383,46 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       
     } catch (e) {
       _logger.logError('[ChatScreen] Error showing suggestions: $e');
+
+      // Extract and format the actual server response instead of generic error message
+      String errorMessage = _formatErrorMessage(e);
+      _logger.logError('[ChatScreen] Formatted error message: $errorMessage');
+
+      // Create an error message to show in the chat
+      final errorMessageObject = Message(
+        id: 'error_${DateTime.now().millisecondsSinceEpoch}',
+        role: MessageRole.assistant,
+        content: errorMessage,
+        timestamp: DateTime.now(),
+        isComplete: true,
+        isError: true,
+      );
+
+      _logger.logError('[ChatScreen] Created error message object: ${errorMessageObject.content}');
+
+      // Add the error message to the chat storage
+      if (_currentChat != null) {
+        await _chatStorageService.addMessageToChat(_currentChat!.id, errorMessageObject);
+
+        // Update the current chat state
+        final updatedChat = _currentChat!.copyWith(
+          messages: [..._currentChat!.messages, errorMessageObject],
+          updatedAt: DateTime.now(),
+        );
+
+        setState(() {
+          _currentChat = updatedChat;
+        });
+      }
+
+      // Show a snackbar to notify the user
+      if (mounted) {
+        SnackbarUtils.showErrorSnackBar(
+          context: context,
+          message: 'Failed to generate suggestions: ${errorMessage.length > 100 ? '${errorMessage.substring(0, 100)}...' : errorMessage}',
+          icon: Icons.error,
+        );
+      }
     } finally {
       setState(() {
         _isSuggestionsLoading = false;
@@ -1371,4 +1483,99 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       ];
     }
   }
+
+  // Method to extract and format error message from DioException or other errors
+  String _formatErrorMessage(Object error) {
+    try {
+      // Try to extract the actual server response
+      final errorString = error.toString();
+
+      // Check if it's a DioException with response data
+      if (errorString.contains('DioException') && errorString.contains('Response')) {
+        // Try to extract JSON response from the error string
+        final jsonMatch = RegExp(r'Response.*?\{.*?\}', dotAll: true).firstMatch(errorString);
+        if (jsonMatch != null) {
+          final jsonResponse = jsonMatch.group(0);
+          if (jsonResponse != null) {
+            try {
+              final parsed = jsonDecode(jsonResponse);
+              if (parsed is Map<String, dynamic> && parsed.containsKey('error')) {
+                final errorData = parsed['error'];
+                if (errorData is Map<String, dynamic>) {
+                  final message = errorData['message'] ?? 'Unknown error';
+                  final code = errorData['code'] ?? '';
+                  return 'Error $code: $message';
+                }
+              }
+            } catch (e) {
+              // If JSON parsing fails, fall back to original error
+            }
+          }
+        }
+      }
+
+      // Try to parse as JSON directly
+      try {
+        final parsed = jsonDecode(errorString);
+        if (parsed is Map<String, dynamic> && parsed.containsKey('error')) {
+          final errorData = parsed['error'];
+          if (errorData is Map<String, dynamic>) {
+            final message = errorData['message'] ?? 'Unknown error';
+            final code = errorData['code'] ?? '';
+            return 'Error $code: $message';
+          }
+        }
+      } catch (e) {
+        // Not JSON, continue with string processing
+      }
+
+      // Extract error message from string
+      if (errorString.contains('Server error:')) {
+        final responseIndex = errorString.indexOf('Server error:');
+        if (responseIndex != -1) {
+          return errorString.substring(responseIndex + 13).trim();
+        }
+      } else if (errorString.contains('Response')) {
+        final responseIndex = errorString.indexOf('Response');
+        if (responseIndex != -1) {
+          return errorString.substring(responseIndex + 8).trim();
+        }
+      }
+
+      // Clean up common error formatting issues
+      String cleanedError = errorString
+          .replaceAll('\\n', '\n')
+          .replaceAll('\\t', ' ')
+          .replaceAll('\\\\', '\\')
+          .trim();
+
+      // Remove common prefixes
+      final prefixes = [
+        'DioException [bad response]: ',
+        'DioException [connection error]: ',
+        'SocketException: ',
+        'HttpException: ',
+      ];
+
+      for (final prefix in prefixes) {
+        if (cleanedError.startsWith(prefix)) {
+          cleanedError = cleanedError.substring(prefix.length);
+          break;
+        }
+      }
+
+      // Truncate if too long
+      if (cleanedError.length > 500) {
+        cleanedError = '${cleanedError.substring(0, 500)}...';
+      }
+
+      return cleanedError;
+    } catch (e) {
+      return error.toString();
+    }
+  }
 }
+
+
+
+

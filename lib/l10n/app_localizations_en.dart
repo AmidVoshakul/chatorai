@@ -152,6 +152,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newChat => 'New Chat';
 
   @override
+  String get errorMessage => 'Error';
+
+  @override
+  String get copiedToClipboard => 'Copied to clipboard';
+
+  @override
+  String get failedToCopy => 'Failed to copy to clipboard';
+
+  @override
+  String get messageDeleted => 'Message deleted';
+
+  @override
+  String get failedToDeleteMessage => 'Failed to delete message';
+
+  @override
+  String get collapse => 'Collapse';
+
+  @override
+  String get expand => 'Expand';
+
+  @override
   String get noChatsYet => 'No chats yet';
 
   @override
@@ -314,9 +335,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messageDeletedSuccessfully => 'Message deleted successfully';
-
-  @override
-  String get failedToDeleteMessage => 'Failed to delete message';
 
   @override
   String get messageCopied => 'Message copied';

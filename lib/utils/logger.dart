@@ -99,4 +99,5 @@ class LogTags {
   static final Logger chatService = Logger('ChatService');
   static final Logger sidebar = Logger('Sidebar');
   static final Logger modelsScreen = Logger('ModelsScreen');
+  static final Logger errorMessage = Logger('ErrorMessage');
 }
