@@ -377,6 +377,48 @@ abstract class AppLocalizations {
   /// **'New Chat'**
   String get newChat;
 
+  /// No description provided for @errorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get errorMessage;
+
+  /// No description provided for @copiedToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get copiedToClipboard;
+
+  /// No description provided for @failedToCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to copy to clipboard'**
+  String get failedToCopy;
+
+  /// No description provided for @messageDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Message deleted'**
+  String get messageDeleted;
+
+  /// No description provided for @failedToDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete message'**
+  String get failedToDeleteMessage;
+
+  /// No description provided for @collapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get collapse;
+
+  /// No description provided for @expand.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand'**
+  String get expand;
+
   /// No description provided for @noChatsYet.
   ///
   /// In en, this message translates to:
@@ -688,12 +730,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Message deleted successfully'**
   String get messageDeletedSuccessfully;
-
-  /// No description provided for @failedToDeleteMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to delete message'**
-  String get failedToDeleteMessage;
 
   /// No description provided for @messageCopied.
   ///

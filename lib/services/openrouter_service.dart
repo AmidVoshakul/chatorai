@@ -72,10 +72,10 @@ class ModelCapabilities {
     if (identical(this, other)) return true;
 
     return other is ModelCapabilities &&
-           other.reasoning == reasoning &&
-           other.multimodal == multimodal &&
-           other.vision == vision &&
-           other.tools == tools;
+        other.reasoning == reasoning &&
+        other.multimodal == multimodal &&
+        other.vision == vision &&
+        other.tools == tools;
   }
 
   @override
@@ -117,14 +117,14 @@ class OpenRouterModel {
     if (identical(this, other)) return true;
     if (other.runtimeType != runtimeType) return false;
     return other is OpenRouterModel &&
-           other.id == id &&
-           other.name == name &&
-           other.description == description &&
-           other.provider == provider &&
-           other.pricingPrompt == pricingPrompt &&
-           other.pricingCompletion == pricingCompletion &&
-           other.contextLength == contextLength &&
-           other.capabilities == capabilities;
+        other.id == id &&
+        other.name == name &&
+        other.description == description &&
+        other.provider == provider &&
+        other.pricingPrompt == pricingPrompt &&
+        other.pricingCompletion == pricingCompletion &&
+        other.contextLength == contextLength &&
+        other.capabilities == capabilities;
   }
 
   @override
@@ -436,7 +436,9 @@ class OpenRouterService {
         );
         _logger.logDebug('[OpenRouter] Available environment variables:');
         dotenv.env.forEach((key, value) {
-          _logger.logDebug('[OpenRouter]   $key: ${value.length > 10 ? '${value.substring(0, 10)}...' : value}');
+          _logger.logDebug(
+            '[OpenRouter]   $key: ${value.length > 10 ? '${value.substring(0, 10)}...' : value}',
+          );
         });
         throw Exception(
           'OpenRouter API key not configured. Please add OPENROUTER_API_KEY to your .env file.',
@@ -627,8 +629,21 @@ class OpenRouterService {
         throw Exception('Chat completion failed');
       }
     } catch (e) {
-      _logger.logError('[OpenRouter] Error in chat completion: $e');
-      rethrow;
+      if (e is DioException && e.response != null) {
+        final errorResponse = e.response!.data;
+        final errorMessage = errorResponse is Map
+            ? (errorResponse['error']?['message'] ??
+                  errorResponse['message'] ??
+                  errorResponse.toString())
+            : errorResponse.toString();
+        _logger.logError('[OpenRouter] Error in chat completion: $e');
+        _logger.logError('[OpenRouter] Server error message: $errorMessage');
+        // Create a more descriptive exception with the server message
+        throw Exception('Server error: $errorMessage');
+      } else {
+        _logger.logError('[OpenRouter] Error in chat completion: $e');
+        rethrow;
+      }
     }
   }
 
@@ -836,7 +851,9 @@ class OpenRouterService {
         }
       } else if (response.statusCode == 429) {
         _logger.logError('[OpenRouter] Rate limit exceeded (429)');
-        throw Exception('Rate limit exceeded. Please wait a moment and try again.');
+        throw Exception(
+          'Rate limit exceeded. Please wait a moment and try again.',
+        );
       } else {
         _logger.logError(
           '[OpenRouter] Streaming failed with status: ${response.statusCode}',
@@ -846,6 +863,102 @@ class OpenRouterService {
       }
     } catch (e) {
       _logger.logError('[OpenRouter] Error in streaming: $e');
+
+      // Check if it's a DioException with specific status codes
+      if (e is DioException) {
+        if (e.response?.statusCode == 429) {
+          _logger.logError('[OpenRouter] Rate limit exceeded (429)');
+
+          // Extract error message from ResponseBody
+          String errorMessage = 'Please wait a moment and try again.';
+          if (e.response?.data != null) {
+            try {
+              if (e.response!.data is String) {
+                errorMessage = e.response!.data as String;
+              } else if (e.response!.data is Map) {
+                final errorData = Map<String, dynamic>.from(e.response!.data);
+                errorMessage =
+                    errorData['error']?['message'] ??
+                    errorData['message'] ??
+                    errorData.toString();
+              } else if (e.response!.data is ResponseBody) {
+                // Read the ResponseBody to get the actual error message
+                final responseBody = e.response!.data as ResponseBody;
+                final errorText = await utf8.decodeStream(responseBody.stream);
+                errorMessage = errorText;
+              }
+            } catch (err) {
+              _logger.logError(
+                '[OpenRouter] Error parsing error response: $err',
+              );
+            }
+          }
+
+          throw Exception('Rate limit exceeded: $errorMessage');
+        } else if (e.response?.statusCode == 400) {
+          _logger.logError('[OpenRouter] Bad request (400)');
+
+          // Extract error message from ResponseBody
+          String errorMessage = 'Please check your request and try again.';
+          if (e.response?.data != null) {
+            try {
+              if (e.response!.data is String) {
+                errorMessage = e.response!.data as String;
+              } else if (e.response!.data is Map) {
+                final errorData = Map<String, dynamic>.from(e.response!.data);
+                errorMessage =
+                    errorData['error']?['message'] ??
+                    errorData['message'] ??
+                    errorData.toString();
+              } else if (e.response!.data is ResponseBody) {
+                // Read the ResponseBody to get the actual error message
+                final responseBody = e.response!.data as ResponseBody;
+                final errorText = await utf8.decodeStream(responseBody.stream);
+                errorMessage = errorText;
+              }
+            } catch (err) {
+              _logger.logError(
+                '[OpenRouter] Error parsing error response: $err',
+              );
+            }
+          }
+
+          throw Exception('Bad request: $errorMessage');
+        } else {
+          _logger.logError(
+            '[OpenRouter] DioException with status: ${e.response?.statusCode}',
+          );
+
+          // Extract error message from ResponseBody
+          String errorMessage = 'Unknown error';
+          if (e.response?.data != null) {
+            try {
+              if (e.response!.data is String) {
+                errorMessage = e.response!.data as String;
+              } else if (e.response!.data is Map) {
+                final errorData = Map<String, dynamic>.from(e.response!.data);
+                errorMessage =
+                    errorData['error']?['message'] ??
+                    errorData['message'] ??
+                    errorData.toString();
+              } else if (e.response!.data is ResponseBody) {
+                // Read the ResponseBody to get the actual error message
+                final responseBody = e.response!.data as ResponseBody;
+                final errorText = await utf8.decodeStream(responseBody.stream);
+                errorMessage = errorText;
+              }
+            } catch (err) {
+              _logger.logError(
+                '[OpenRouter] Error parsing error response: $err',
+              );
+            }
+          }
+
+          throw Exception('Server error: $errorMessage');
+        }
+      }
+
+      // Re-throw the original exception
       rethrow;
     }
   }

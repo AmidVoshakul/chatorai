@@ -152,6 +152,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get newChat => 'Новый чат';
 
   @override
+  String get errorMessage => 'Ошибка';
+
+  @override
+  String get copiedToClipboard => 'Скопировано в буфер обмена';
+
+  @override
+  String get failedToCopy => 'Не удалось скопировать в буфер обмена';
+
+  @override
+  String get messageDeleted => 'Сообщение удалено';
+
+  @override
   String get noChatsYet => 'Пока нет чатов';
 
   @override
@@ -356,4 +368,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get dislike => 'Не нравится';
+
+  @override
+  String get collapse => 'Свернуть';
+
+  @override
+  String get expand => 'Развернуть';
 }

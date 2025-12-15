@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/code_block.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/scrollable_action_buttons.dart';
+import 'package:gen_ui_chat_ai/widgets/chat/error_message.dart';
+import 'package:gen_ui_chat_ai/widgets/chat/loading_indicator.dart';
 import 'package:gen_ui_chat_ai/utils/message_utils.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
@@ -106,6 +108,21 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
     final theme = Theme.of(context);
     final isUser = widget.message.role == MessageRole.user;
     final localizations = AppLocalizations.of(context)!;
+
+    // Если сообщение содержит ошибку, показываем ErrorMessage
+    if (widget.message.isError) {
+      return ErrorMessage(
+        errorMessage: widget.message.content,
+        chatId: widget.chatId,
+        messageId: widget.message.id,
+        chatStorageService: widget.chatStorageService,
+        onMessageDeleted: widget.onMessageDeleted,
+        onDelete: widget.onDelete,
+        onMessageUpdated: widget.onMessageUpdated,
+        isStreaming: widget.isStreaming, // Передаем флаг загрузки
+        showLoadingFirst: widget.isStreaming, // Показываем загрузку перед ошибкой если идет потоковая передача
+      );
+    }
 
     return SlideTransition(
       position: _slideAnimation,
@@ -518,21 +535,10 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   }
 
   Widget _buildStreamingIndicator() {
-    final localizations = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.only(top: 8),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            localizations.aiIsTyping,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(width: 8),
-          _TypingDotsAnimation(),
-        ],
+      child: ChatTypingDotsIndicator(
+        dotSize: 6,
       ),
     );
   }
@@ -789,73 +795,4 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   }
 }
 
-class _TypingDotsAnimation extends StatefulWidget {
-  @override
-  __TypingDotsAnimationState createState() => __TypingDotsAnimationState();
-}
-
-class __TypingDotsAnimationState extends State<_TypingDotsAnimation>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            final opacity = _controller.value >= 0.33 && _controller.value < 0.66
-                ? 1.0
-                : 0.3;
-            return Opacity(
-              opacity: opacity,
-              child: child,
-            );
-          },
-          child: const Text('•'),
-        ),
-        AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            final opacity = _controller.value >= 0.66
-                ? 1.0
-                : 0.3;
-            return Opacity(
-              opacity: opacity,
-              child: child,
-            );
-          },
-          child: const Text('•'),
-        ),
-        AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            final opacity = _controller.value < 0.33 ? 1.0 : 0.3;
-            return Opacity(
-              opacity: opacity,
-              child: child,
-            );
-          },
-          child: const Text('•'),
-        ),
-      ],
-    );
-  }
-}
-
+// Удаляем эти классы, так как они теперь в loading_indicator.dart
