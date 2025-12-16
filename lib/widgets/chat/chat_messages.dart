@@ -4,8 +4,12 @@ import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 import 'package:gen_ui_chat_ai/utils/message_utils.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/chat_message.dart' as ChatMsg;
+import 'package:gen_ui_chat_ai/widgets/chat/chat_message.dart' as chat_msg;
+import 'package:gen_ui_chat_ai/widgets/chat/reasoning_message.dart' as reasoning_msg;
 import 'package:gen_ui_chat_ai/widgets/chat/loading_indicator.dart';
+
+// Import min function
+import 'dart:math' show min;
 
 // Initialize logger for this widget
 final _logger = LogTags.chatService;
@@ -75,6 +79,18 @@ class _ChatMessagesState extends State<ChatMessages> {
     _logger.logDebug('[ChatMessages] Old chat: ${oldWidget.chat?.id}, New chat: ${widget.chat?.id}');
     _logger.logDebug('[ChatMessages] Old messages: ${oldWidget.chat?.messages.length ?? 0}, New messages: ${widget.chat?.messages.length ?? 0}');
     
+    // Check for reasoning content changes
+    if (widget.chat != null && oldWidget.chat != null &&
+        widget.chat!.messages.length == oldWidget.chat!.messages.length) {
+      for (int i = 0; i < widget.chat!.messages.length; i++) {
+        final oldMessage = oldWidget.chat!.messages[i];
+        final newMessage = widget.chat!.messages[i];
+        if (oldMessage.reasoning != newMessage.reasoning) {
+          _logger.logInfo('[ChatMessages] Reasoning content changed for message $i: old="${oldMessage.reasoning}", new="${newMessage.reasoning}"');
+        }
+      }
+    }
+    
     if (oldWidget.chat?.id != widget.chat?.id) {
       _logger.logInfo('[ChatMessages] Chat ID changed, loading messages');
       _loadMessages();
@@ -87,6 +103,14 @@ class _ChatMessagesState extends State<ChatMessages> {
               oldWidget.chat!.messages.last.content != widget.chat!.messages.last.content) {
       _logger.logInfo('[ChatMessages] Message content changed, reloading');
       _loadMessages();
+    }
+    
+    // Log details about each message
+    if (widget.chat != null) {
+      for (int i = 0; i < widget.chat!.messages.length; i++) {
+        final message = widget.chat!.messages[i];
+        _logger.logDebug('[ChatMessages] Message $i: role=${message.role}, content="${message.content.substring(0, min(50, message.content.length))}${message.content.length > 50 ? '...' : ''}", reasoning="${message.reasoning?.substring(0, min(50, message.reasoning!.length)) ?? 'null'}${message.reasoning != null && message.reasoning!.length > 50 ? '...' : ''}"');
+      }
     }
     
     if (oldWidget.selectedModel != widget.selectedModel && widget.selectedModel != null) {
@@ -104,8 +128,15 @@ class _ChatMessagesState extends State<ChatMessages> {
     _logger.logDebug('[ChatMessages] Loading messages from chat widget...');
     _logger.logDebug('[ChatMessages] Chat object: ${widget.chat}');
     _logger.logDebug('[ChatMessages] Chat messages count: ${widget.chat?.messages.length ?? 0}');
+    
+    final messages = widget.chat?.messages ?? [];
+    for (int i = 0; i < messages.length; i++) {
+      final message = messages[i];
+      _logger.logDebug('[ChatMessages] Message $i: role=${message.role}, content="${message.content.substring(0, min(30, message.content.length))}...", reasoning="${message.reasoning}"');
+    }
+    
     setState(() {
-      _messages = widget.chat?.messages ?? [];
+      _messages = messages;
       _logger.logInfo('[ChatMessages] Messages loaded: ${_messages.length}');
     });
   }
@@ -320,7 +351,51 @@ class _ChatMessagesState extends State<ChatMessages> {
                   return _buildWaitingAnimation();
                 }
                 
-                return ChatMsg.ChatMessage(
+                // Check if we should show reasoning first
+                if (message.reasoning != null && message.reasoning!.isNotEmpty) {
+                  _logger.logInfo('[ChatMessages] Creating ReasoningMessage for message $index with reasoning length: ${message.reasoning!.length}');
+                  _logger.logDebug('[ChatMessages] Reasoning content: "${message.reasoning!.substring(0, min(100, message.reasoning!.length))}${message.reasoning!.length > 100 ? '...' : ''}"');
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Show reasoning message first
+                      reasoning_msg.ReasoningMessage(
+                        key: ValueKey(message.id),
+                        reasoning: message.reasoning!,
+                        isStreaming: _isStreaming && isLastMessage,
+                      ),
+                      const SizedBox(height: 8),
+                      // Then show the main message content
+                      chat_msg.ChatMessage(
+                        message: message,
+                        isStreaming: _isStreaming && isLastMessage,
+                        isLastMessage: isLastMessage,
+                        onRetry: () {
+                          if (message.role == MessageRole.user) {
+                            _sendToAI(message.content);
+                          }
+                        },
+                        chatId: widget.chat?.id ?? '',
+                        chatStorageService: widget.chatStorageService,
+                        onMessageDeleted: widget.onMessageDeleted,
+                        onMessageUpdated: (newContent) {
+                          _updateMessageContent(message.id, newContent);
+                        },
+                        onDelete: () {
+                          _handleDeleteMessage(message);
+                        },
+                        onContinueResponse: message.role == MessageRole.assistant 
+                            ? () => widget.onContinueResponse?.call(message.id)
+                            : null,
+                      ),
+                    ],
+                  );
+                } else {
+                  _logger.logDebug('[ChatMessages] No reasoning for message $index. Reasoning: ${message.reasoning}');
+                }
+                
+                return chat_msg.ChatMessage(
                   message: message,
                   isStreaming: _isStreaming && isLastMessage,
                   isLastMessage: isLastMessage,

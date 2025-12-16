@@ -10,6 +10,10 @@ import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
 import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+import 'package:gen_ui_chat_ai/themes/app_theme.dart';
+
+// Import min function
+import 'dart:math' show min;
 
 // Initialize logger for this widget
 final _logger = LogTags.message;
@@ -47,19 +51,33 @@ class ChatMessage extends StatefulWidget {
 }
 
 class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin {
+  // ===========================================================================
+  // ANIMATION CONTROLLERS
+  // ===========================================================================
+
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
   
+  // ===========================================================================
+  // STATE VARIABLES
+  // ===========================================================================
+  
   bool _isEditing = false; // Режим редактирования
   late TextEditingController _textController; // Контроллер для текста редактирования
+
+  // ===========================================================================
+  // LIFECYCLE METHODS
+  // ===========================================================================
 
   @override
   void initState() {
     super.initState();
     final previewLength = widget.message.content.length > 30 ? 30 : widget.message.content.length;
     _logger.logInfo('Initializing message widget for: ${widget.message.role} - ${widget.message.content.substring(0, previewLength)}...');
+    _logger.logDebug('Message reasoning content length: ${widget.message.reasoning?.length ?? 0}');
+    _logger.logDebug('Message isStreaming: ${widget.isStreaming}');
     
     // Инициализируем контроллер для редактирования
     _textController = TextEditingController(text: widget.message.content);
@@ -104,6 +122,23 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   }
 
   @override
+  void didUpdateWidget(covariant ChatMessage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    _logger.logDebug('[ChatMessage] Widget updated - old reasoning length: ${oldWidget.message.reasoning?.length ?? 0}, new reasoning length: ${widget.message.reasoning?.length ?? 0}');
+    _logger.logDebug('[ChatMessage] Widget updated - old isStreaming: ${oldWidget.isStreaming}, new isStreaming: ${widget.isStreaming}');
+    _logger.logDebug('[ChatMessage] Widget updated - old content length: ${oldWidget.message.content.length}, new content length: ${widget.message.content.length}');
+    
+    // Если сообщение изменилось, обновляем контроллер
+    if (oldWidget.message.content != widget.message.content) {
+      _textController.value = TextEditingValue(
+        text: widget.message.content,
+        selection: TextSelection.collapsed(offset: widget.message.content.length),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isUser = widget.message.role == MessageRole.user;
@@ -122,6 +157,16 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
         isStreaming: widget.isStreaming, // Передаем флаг загрузки
         showLoadingFirst: widget.isStreaming, // Показываем загрузку перед ошибкой если идет потоковая передача
       );
+    }
+
+    // Если сообщение содержит reasoning, показываем ReasoningMessage
+    // Но только если это не уже обрабатывается родительским компонентом
+    if (widget.message.reasoning != null && widget.message.reasoning!.isNotEmpty) {
+      _logger.logInfo('[ChatMessage] Message has reasoning content, but should be handled by parent. Showing regular message content instead.');
+      _logger.logDebug('[ChatMessage] Reasoning content: "${widget.message.reasoning!.substring(0, min(widget.message.reasoning!.length, 100))}${widget.message.reasoning!.length > 100 ? '...' : ''}"');
+      _logger.logDebug('[ChatMessage] isStreaming: ${widget.isStreaming}');
+      // Don't return ReasoningMessage here - it should be handled by parent ChatMessages widget
+      // Just continue to show the regular message content
     }
 
     return SlideTransition(
@@ -419,9 +464,11 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
     );
   }
 
+  // ===========================================================================
+  // UI BUILDERS
+  // ===========================================================================
+
   Widget _buildMessageContent(BuildContext context) {
-    final theme = Theme.of(context);
-    
     if (widget.message.content.isEmpty) {
       return Container();
     }
@@ -438,7 +485,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
 
     return MarkdownBody(
       data: widget.message.content,
-      styleSheet: MarkdownStyleSheet.fromTheme(theme),
+      styleSheet: UbuntuMarkdownStyles.getMarkdownStyles(context),
       selectable: true,
       onTapLink: (text, href, title) {
         if (href != null) {
@@ -449,7 +496,6 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   }
 
   Widget _buildCustomMarkdownContent(BuildContext context) {
-    final theme = Theme.of(context);
     final lines = widget.message.content.split('\n');
     final List<Widget> contentWidgets = [];
     String currentTextBlock = '';
@@ -468,7 +514,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
             contentWidgets.add(
               MarkdownBody(
                 data: currentTextBlock,
-                styleSheet: MarkdownStyleSheet.fromTheme(theme),
+                styleSheet: UbuntuMarkdownStyles.getMarkdownStyles(context),
                 selectable: true,
               ),
             );
@@ -490,7 +536,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
             contentWidgets.add(
               MarkdownBody(
                 data: currentTextBlock,
-                styleSheet: MarkdownStyleSheet.fromTheme(theme),
+                styleSheet: UbuntuMarkdownStyles.getMarkdownStyles(context),
                 selectable: true,
               ),
             );
@@ -514,7 +560,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
       contentWidgets.add(
         MarkdownBody(
           data: currentTextBlock,
-          styleSheet: MarkdownStyleSheet.fromTheme(theme),
+          styleSheet: UbuntuMarkdownStyles.getMarkdownStyles(context),
           selectable: true,
         ),
       );
@@ -604,6 +650,10 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
   }
+
+  // ===========================================================================
+  // EDITING METHODS
+  // ===========================================================================
 
   /// Переключение в режим редактирования
   void _startEditing() {

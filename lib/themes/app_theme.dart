@@ -16,6 +16,7 @@ class UbuntuColors {
   
   // Accent colors
   static const Color accent = Color(0xFF6B008E); // Deep purple
+  static const Color neonBlue = Color.fromARGB(255, 0, 145, 255); // Neon blue
   
   // Border colors
   static const Color lightBorderColor = Color(0xFFF5F5F5); // Light gray for light theme

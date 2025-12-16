@@ -48,6 +48,10 @@
   "newChat": "Новый чат",
   "noChatsYet": "Пока нет чатов",
   "startConversation": "Начните разговор, нажав \"Новый чат\"",
+  "reasoning": "Рассуждения",
+  "tapToExpand": "Нажмите чтобы развернуть",
+  "collapse": "Свернуть",
+  "expand": "Развернуть",
   "chatRenamedTo": "Чат переименован в: {title}",
   "appTitle": "Chat AI",
   "justNow": "Только что",
@@ -113,5 +117,14 @@
   "regenerate": "Перегенерировать",
   "continueResponse": "Продолжить ответ",
   "like": "Нравится",
-  "dislike": "Не нравится"
+  "dislike": "Не нравится",
+  "reasoning": "Рассуждения",
+  "tapToExpand": "Нажмите чтобы развернуть",
+  "collapse": "Свернуть",
+  "expand": "Развернуть",
+  "copiedToClipboard": "Скопировано в буфер обмена",
+  "failedToCopy": "Не удалось скопировать",
+  "messageDeleted": "Сообщение удалено",
+  "errorMessage": "Сообщение об ошибке",
+  "failedToDeleteMessage": "Не удалось удалить сообщение"
 }

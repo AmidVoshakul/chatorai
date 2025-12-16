@@ -61,6 +61,7 @@ dependencies:
 
   # Responsive Design
   responsive_framework: ^1.5.1
+  intl_utils: ^2.8.13
 
 dev_dependencies:
   flutter_test:

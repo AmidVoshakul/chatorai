@@ -152,31 +152,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newChat => 'New Chat';
 
   @override
-  String get errorMessage => 'Error';
+  String get noChatsYet => 'No chats yet';
 
   @override
-  String get copiedToClipboard => 'Copied to clipboard';
+  String get startConversation => 'Start a conversation by clicking \"New Chat\"';
 
   @override
-  String get failedToCopy => 'Failed to copy to clipboard';
+  String get reasoning => 'Reasoning';
 
   @override
-  String get messageDeleted => 'Message deleted';
-
-  @override
-  String get failedToDeleteMessage => 'Failed to delete message';
+  String get tapToExpand => 'Tap to expand';
 
   @override
   String get collapse => 'Collapse';
 
   @override
   String get expand => 'Expand';
-
-  @override
-  String get noChatsYet => 'No chats yet';
-
-  @override
-  String get startConversation => 'Start a conversation by clicking \"New Chat\"';
 
   @override
   String chatRenamedTo(Object title) {
@@ -251,9 +242,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paid => 'Paid';
-
-  @override
-  String get reasoning => 'Reasoning';
 
   @override
   String get multimodal => 'Multimodal';
@@ -337,6 +325,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messageDeletedSuccessfully => 'Message deleted successfully';
 
   @override
+  String get failedToDeleteMessage => 'Failed to delete message';
+
+  @override
   String get messageCopied => 'Message copied';
 
   @override
@@ -374,4 +365,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dislike => 'Dislike';
+
+  @override
+  String get copiedToClipboard => 'Copied to clipboard';
+
+  @override
+  String get failedToCopy => 'Failed to copy';
+
+  @override
+  String get messageDeleted => 'Message deleted';
+
+  @override
+  String get errorMessage => 'Error message';
 }

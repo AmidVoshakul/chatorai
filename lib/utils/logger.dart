@@ -100,4 +100,5 @@ class LogTags {
   static final Logger sidebar = Logger('Sidebar');
   static final Logger modelsScreen = Logger('ModelsScreen');
   static final Logger errorMessage = Logger('ErrorMessage');
+  static final Logger reasoningMessage = Logger('ReasoningMessage');
 }
