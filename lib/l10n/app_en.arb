@@ -48,6 +48,10 @@
   "newChat": "New Chat",
   "noChatsYet": "No chats yet",
   "startConversation": "Start a conversation by clicking \"New Chat\"",
+  "reasoning": "Reasoning",
+  "tapToExpand": "Tap to expand",
+  "collapse": "Collapse",
+  "expand": "Expand",
   "chatRenamedTo": "Chat renamed to: {title}",
   "appTitle": "Chat AI",
   "justNow": "Just now",
@@ -113,5 +117,14 @@
   "regenerate": "Regenerate",
   "continueResponse": "Continue Response",
   "like": "Like",
-  "dislike": "Dislike"
+  "dislike": "Dislike",
+  "reasoning": "Reasoning",
+  "tapToExpand": "Tap to expand",
+  "collapse": "Collapse",
+  "expand": "Expand",
+  "copiedToClipboard": "Copied to clipboard",
+  "failedToCopy": "Failed to copy",
+  "messageDeleted": "Message deleted",
+  "errorMessage": "Error message",
+  "failedToDeleteMessage": "Failed to delete message"
 }

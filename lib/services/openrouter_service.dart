@@ -700,7 +700,7 @@ class OpenRouterService {
     final simulatedResponse = "simulated streaming response.";
 
     for (int i = 0; i < simulatedResponse.length; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await Future<void>.delayed(const Duration(milliseconds: 5));
       final chunk = simulatedResponse.substring(i, i + 1);
       onChunk(chunk);
     }
@@ -717,6 +717,7 @@ class OpenRouterService {
     String? reason,
     required Function(String) onChunk,
     required Function(String) onCompletion,
+    Function(String)? onReasoning,
   }) async {
     _logger.logInfo('[OpenRouter] Starting streaming chat completion...');
     _logger.logDebug('[OpenRouter] Model: $model');
@@ -796,6 +797,11 @@ class OpenRouterService {
               maxTokens: maxTokens,
               temperature: temperature,
             );
+
+            // Handle reasoning if callback is provided
+            if (onReasoning != null && response.reasoning != null) {
+              onReasoning(response.reasoning!);
+            }
 
             // Simulate streaming by sending chunks
             final fullContent = response.content;

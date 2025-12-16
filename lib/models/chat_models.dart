@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
+// Import min function
+import 'dart:math' show min;
+
 enum MessageRole {
   user,
   assistant,
@@ -37,6 +40,7 @@ class Message {
   final bool isComplete;
   final bool isError;
   final String? model; // Model used for assistant messages
+  final String? reasoning; // Model's reasoning/thoughts
 
   Message({
     String? id,
@@ -46,6 +50,7 @@ class Message {
     this.isComplete = false,
     this.isError = false,
     this.model,
+    this.reasoning,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
   Message copyWith({
@@ -56,6 +61,7 @@ class Message {
     bool? isComplete,
     bool? isError,
     String? model,
+    String? reasoning,
   }) {
     return Message(
       id: id ?? this.id,
@@ -65,6 +71,7 @@ class Message {
       isComplete: isComplete ?? this.isComplete,
       isError: isError ?? this.isError,
       model: model ?? this.model,
+      reasoning: reasoning ?? this.reasoning,
     );
   }
 
@@ -87,7 +94,7 @@ class Message {
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final json = {
       'id': id,
       'role': role.name,
       'content': content,
@@ -95,10 +102,29 @@ class Message {
       'isComplete': isComplete,
       'isError': isError,
       'model': model,
+      'reasoning': reasoning,
     };
+    
+    // Log reasoning content during serialization
+    if (reasoning != null && reasoning!.isNotEmpty) {
+      print('[Message.toJson] Serializing reasoning: "${reasoning!.substring(0, min(50, reasoning!.length))}..."');
+    } else {
+      print('[Message.toJson] No reasoning to serialize');
+    }
+    
+    return json;
   }
 
   static Message fromJson(Map<String, dynamic> json) {
+    final reasoning = json['reasoning'];
+    
+    // Log reasoning content during deserialization
+    if (reasoning != null && reasoning is String && reasoning.isNotEmpty) {
+      print('[Message.fromJson] Deserializing reasoning: "${reasoning.substring(0, min(50, reasoning.length))}..."');
+    } else {
+      print('[Message.fromJson] No reasoning found in JSON: $reasoning');
+    }
+    
     return Message(
       id: json['id'],
       role: MessageRole.values.firstWhere((r) => r.name == json['role']),
@@ -107,6 +133,7 @@ class Message {
       isComplete: json['isComplete'] ?? false,
       isError: json['isError'] ?? false,
       model: json['model'],
+      reasoning: reasoning,
     );
   }
 }

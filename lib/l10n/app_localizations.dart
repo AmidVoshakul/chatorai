@@ -377,35 +377,29 @@ abstract class AppLocalizations {
   /// **'New Chat'**
   String get newChat;
 
-  /// No description provided for @errorMessage.
+  /// No description provided for @noChatsYet.
   ///
   /// In en, this message translates to:
-  /// **'Error'**
-  String get errorMessage;
+  /// **'No chats yet'**
+  String get noChatsYet;
 
-  /// No description provided for @copiedToClipboard.
+  /// No description provided for @startConversation.
   ///
   /// In en, this message translates to:
-  /// **'Copied to clipboard'**
-  String get copiedToClipboard;
+  /// **'Start a conversation by clicking \"New Chat\"'**
+  String get startConversation;
 
-  /// No description provided for @failedToCopy.
+  /// No description provided for @reasoning.
   ///
   /// In en, this message translates to:
-  /// **'Failed to copy to clipboard'**
-  String get failedToCopy;
+  /// **'Reasoning'**
+  String get reasoning;
 
-  /// No description provided for @messageDeleted.
+  /// No description provided for @tapToExpand.
   ///
   /// In en, this message translates to:
-  /// **'Message deleted'**
-  String get messageDeleted;
-
-  /// No description provided for @failedToDeleteMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to delete message'**
-  String get failedToDeleteMessage;
+  /// **'Tap to expand'**
+  String get tapToExpand;
 
   /// No description provided for @collapse.
   ///
@@ -418,18 +412,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Expand'**
   String get expand;
-
-  /// No description provided for @noChatsYet.
-  ///
-  /// In en, this message translates to:
-  /// **'No chats yet'**
-  String get noChatsYet;
-
-  /// No description provided for @startConversation.
-  ///
-  /// In en, this message translates to:
-  /// **'Start a conversation by clicking \"New Chat\"'**
-  String get startConversation;
 
   /// No description provided for @chatRenamedTo.
   ///
@@ -562,12 +544,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Paid'**
   String get paid;
-
-  /// No description provided for @reasoning.
-  ///
-  /// In en, this message translates to:
-  /// **'Reasoning'**
-  String get reasoning;
 
   /// No description provided for @multimodal.
   ///
@@ -731,6 +707,12 @@ abstract class AppLocalizations {
   /// **'Message deleted successfully'**
   String get messageDeletedSuccessfully;
 
+  /// No description provided for @failedToDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete message'**
+  String get failedToDeleteMessage;
+
   /// No description provided for @messageCopied.
   ///
   /// In en, this message translates to:
@@ -808,6 +790,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dislike'**
   String get dislike;
+
+  /// No description provided for @copiedToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get copiedToClipboard;
+
+  /// No description provided for @failedToCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to copy'**
+  String get failedToCopy;
+
+  /// No description provided for @messageDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Message deleted'**
+  String get messageDeleted;
+
+  /// No description provided for @errorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error message'**
+  String get errorMessage;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

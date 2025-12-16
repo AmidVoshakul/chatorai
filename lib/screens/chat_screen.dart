@@ -51,6 +51,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   bool _isSuggestionsLoading = false;
   bool _showSuggestions = false;
   List<String> _continuationSuggestions = [];
+  
+  // State variables for managing reasoning updates
+  bool _isUpdatingReasoning = false;
+  bool _pendingContentUpdate = false;
+  String _pendingContent = '';
 
   @override
   void initState() {
@@ -511,34 +516,78 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           final displayLength = min(50, content.length);
           _logger.logInfo('[ChatScreen] Received chunk: ${content.substring(0, displayLength)}...');
           if (content.isNotEmpty) {
-            // Update the last message with new content
-            final lastMessage = _currentChat!.messages.last;
-            final updatedMessage = lastMessage.copyWith(content: lastMessage.content + content);
+            // Check if reasoning is currently being updated
+            if (_isUpdatingReasoning) {
+              _logger.logInfo('[ChatScreen] Reasoning update in progress, queuing content update');
+              _pendingContentUpdate = true;
+              _pendingContent = content;
+              return;
+            }
             
-            _logger.logInfo('[ChatScreen] Updating message ${updatedMessage.id} with content length: ${updatedMessage.content.length}');
+            _updateMessageContent(content);
+          }
+        },
+        onReasoning: (reasoning) {
+          if (reasoning.isNotEmpty) {
+            _logger.logInfo('[ChatScreen] Received reasoning: ${reasoning.substring(0, min(50, reasoning.length))}...');
+            _logger.logDebug('[ChatScreen] Full reasoning content: "$reasoning"');
+            
+            // Add print statement for terminal visibility
+            print('[ChatScreen] [ChatScreen] Received reasoning: ${reasoning.substring(0, min(50, reasoning.length))}...');
+            print('[ChatScreen] [ChatScreen] Full reasoning content: "$reasoning"');
+            
+            // Set flag to indicate reasoning is being updated
+            _isUpdatingReasoning = true;
+            
+            // Update the last message with reasoning
+            final lastMessage = _currentChat!.messages.last;
+            _logger.logDebug('[ChatScreen] Updating message ${lastMessage.id} with reasoning');
+            
+            // Add print statement for terminal visibility
+            print('[ChatScreen] [ChatScreen] Updating message ${lastMessage.id} with reasoning');
+            
+            final updatedMessage = lastMessage.copyWith(reasoning: reasoning);
+            
+            _logger.logDebug('[ChatScreen] Before saving reasoning - message content: "${updatedMessage.content}", reasoning: "${updatedMessage.reasoning}"');
+            print('[ChatScreen] [ChatScreen] Before saving reasoning - message content: "${updatedMessage.content}", reasoning: "${updatedMessage.reasoning}"');
             
             _chatStorageService.updateMessageInChat(
               _currentChat!.id, 
               updatedMessage.id, 
               updatedMessage
-            ).then((_) {
-              _logger.logInfo('[ChatScreen] Message updated in storage');
-              final updatedChat = _currentChat!.copyWith(
-                messages: [
-                  ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
-                  updatedMessage
-                ],
-                updatedAt: DateTime.now(),
-              );
+            ).then((_) async {
+              _logger.logInfo('[ChatScreen] Reasoning updated in storage');
+              _logger.logDebug('[ChatScreen] Reasoning stored in message: "${updatedMessage.reasoning}"');
               
-              if (mounted) {
-                setState(() {
-                  _currentChat = updatedChat;
-                });
-                
-                // 🚀 CRITICAL FIX: Aggressive auto-scroll during streaming
-                _chatScrollUtils.onNewMessagesStreaming();
-                _logger.logInfo('[ChatScreen] Auto-scroll triggered during streaming');
+              // Add print statement for terminal visibility
+              print('[ChatScreen] [ChatScreen] Reasoning updated in storage');
+              print('[ChatScreen] [ChatScreen] Reasoning stored in message: "${updatedMessage.reasoning}"');
+              
+              // Wait a bit to ensure the save is complete before reloading
+              await Future.delayed(const Duration(milliseconds: 100));
+              
+              // Reload the chat from storage to ensure we have the latest data
+              final updatedChat = await _chatStorageService.getChat(_currentChat!.id);
+              
+              if (updatedChat != null) {
+                if (mounted) {
+                  setState(() {
+                    _currentChat = updatedChat;
+                  });
+                }
+              }
+              
+              // Clear the flag and process any pending content updates
+              _isUpdatingReasoning = false;
+              
+              // Process any pending content update
+              if (_pendingContentUpdate && _pendingContent.isNotEmpty) {
+                _logger.logInfo('[ChatScreen] Processing pending content update after reasoning save');
+                _logger.logDebug('[ChatScreen] Pending content: "${_pendingContent}"');
+                print('[ChatScreen] [ChatScreen] Processing pending content update after reasoning save');
+                print('[ChatScreen] [ChatScreen] Pending content: "${_pendingContent}"');
+                _pendingContentUpdate = false;
+                _updateMessageContent(_pendingContent);
               }
             });
           }
@@ -628,6 +677,54 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         }
       }
     }
+  }
+
+  /// Handle content updates from streaming
+  void _updateMessageContent(String content) {
+    // Update the last message with new content
+    final lastMessage = _currentChat!.messages.last;
+    final updatedContent = lastMessage.content + content;
+    final updatedMessage = lastMessage.copyWith(content: updatedContent);
+    
+    _logger.logInfo('[ChatScreen] Updating message ${updatedMessage.id} with content length: ${updatedContent.length}');
+    _logger.logDebug('[ChatScreen] Content update - message content: "${updatedContent}", reasoning: "${updatedMessage.reasoning}"');
+    print('[ChatScreen] [ChatScreen] Content update - message content: "${updatedContent}", reasoning: "${updatedMessage.reasoning}"');
+    
+    // Debug: Log the chunk being added
+    _logger.logDebug('[ChatScreen] Adding chunk: "${content}" to existing content: "${lastMessage.content}"');
+    print('[ChatScreen] [ChatScreen] Adding chunk: "${content}" to existing content: "${lastMessage.content}"');
+    
+    // Ensure we're not updating while reasoning is being saved
+    if (_isUpdatingReasoning) {
+      _logger.logInfo('[ChatScreen] Reasoning update in progress, queuing content update');
+      _pendingContentUpdate = true;
+      _pendingContent = content;
+      return;
+    }
+    
+    _chatStorageService.updateMessageInChat(
+      _currentChat!.id, 
+      updatedMessage.id, 
+      updatedMessage
+    ).then((_) {
+      _logger.logInfo('[ChatScreen] Message updated in storage');
+      final updatedChat = _currentChat!.copyWith(
+        messages: [
+          ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
+          updatedMessage
+        ],
+        updatedAt: DateTime.now(),
+      );
+      
+      if (mounted) {
+        setState(() {
+          _currentChat = updatedChat;
+        });
+      }
+    });
+    
+    _chatScrollUtils.onNewMessagesStreaming();
+    _logger.logInfo('[ChatScreen] Auto-scroll triggered during streaming');
   }
 
   // Method to add assistant message from ChatMessages

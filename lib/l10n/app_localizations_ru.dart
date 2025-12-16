@@ -152,22 +152,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get newChat => 'Новый чат';
 
   @override
-  String get errorMessage => 'Ошибка';
-
-  @override
-  String get copiedToClipboard => 'Скопировано в буфер обмена';
-
-  @override
-  String get failedToCopy => 'Не удалось скопировать в буфер обмена';
-
-  @override
-  String get messageDeleted => 'Сообщение удалено';
-
-  @override
   String get noChatsYet => 'Пока нет чатов';
 
   @override
   String get startConversation => 'Начните разговор, нажав \"Новый чат\"';
+
+  @override
+  String get reasoning => 'Рассуждения';
+
+  @override
+  String get tapToExpand => 'Нажмите чтобы развернуть';
+
+  @override
+  String get collapse => 'Свернуть';
+
+  @override
+  String get expand => 'Развернуть';
 
   @override
   String chatRenamedTo(Object title) {
@@ -242,9 +242,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get paid => 'Платно';
-
-  @override
-  String get reasoning => 'Рассуждение';
 
   @override
   String get multimodal => 'Мультимодально';
@@ -370,8 +367,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dislike => 'Не нравится';
 
   @override
-  String get collapse => 'Свернуть';
+  String get copiedToClipboard => 'Скопировано в буфер обмена';
 
   @override
-  String get expand => 'Развернуть';
+  String get failedToCopy => 'Не удалось скопировать';
+
+  @override
+  String get messageDeleted => 'Сообщение удалено';
+
+  @override
+  String get errorMessage => 'Сообщение об ошибке';
 }
