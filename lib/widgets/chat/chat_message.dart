@@ -221,8 +221,11 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                             if (widget.message.isError)
                               _buildErrorMessage(),
                             
-                            // Streaming Indicator
-                            if (widget.isStreaming && widget.message.role == MessageRole.assistant)
+                            // Streaming Indicator - only show if no reasoning (reasoning handles its own indicator)
+                            // This prevents duplicate indicators when reasoning is present
+                            if (widget.isStreaming && 
+                                widget.message.role == MessageRole.assistant &&
+                                (widget.message.reasoning == null || widget.message.reasoning!.isEmpty))
                               _buildStreamingIndicator(),
                           ],
                         ),
@@ -280,8 +283,11 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                           if (widget.message.isError)
                             _buildErrorMessage(),
                           
-                          // Streaming Indicator
-                          if (widget.isStreaming && widget.message.role == MessageRole.assistant)
+                          // Streaming Indicator - only show if no reasoning (reasoning handles its own indicator)
+                          // This prevents duplicate indicators when reasoning is present
+                          if (widget.isStreaming && 
+                              widget.message.role == MessageRole.assistant &&
+                              (widget.message.reasoning == null || widget.message.reasoning!.isEmpty))
                             _buildStreamingIndicator(),
                         ],
                       ),
