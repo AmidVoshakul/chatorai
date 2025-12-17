@@ -19,6 +19,46 @@ import 'package:gen_ui_chat_ai/utils/logger.dart';
 // Initialize logger for this screen
 final _logger = LogTags.chatScreen;
 
+/// Centralized constants for ChatScreen configuration
+class ChatScreenConstants {
+  // UI Constants
+  static const double sidebarWidth = 280.0;
+  static const double sidebarCollapsedWidth = 40.0;
+  static const int mobileBreakpoint = 800;
+  
+  // Retry Configuration
+  static const int maxRetryAttempts = 3;
+  static const int baseRetryDelaySeconds = 2;
+  
+  // Token Management
+  static const int defaultMaxTokens = 2046;
+  static const int minMaxTokens = 1000;
+  static const int maxMaxTokens = 16000;
+  static const double tokenContextRatio = 0.2; // 20% of context length
+  
+  // Suggestion Configuration
+  static const int maxSuggestions = 4;
+  static const int minSuggestionLength = 5;
+  static const int maxSuggestionTextLength = 100;
+  
+  // Error Handling
+  static const int maxErrorLength = 500;
+  static const String defaultErrorMessage = 'Sorry, I encountered an error while processing your request. Please try again.';
+  static const String rateLimitMessage = 'Sorry, the service is currently at capacity. Please try again in a few minutes.';
+  
+  // Scroll & Animation
+  static const Duration scrollAnimationDuration = Duration(milliseconds: 300);
+  static const Duration sidebarUpdateDelay = Duration(milliseconds: 10);
+  static const Duration modelLoadWaitTime = Duration(milliseconds: 500);
+  
+  // Model Defaults
+  static const String defaultModelId = 'nvidia/nemotron-3-nano-30b-a3b:free';
+  
+  // Continuation Suggestions
+  static const String continuationSystemPrompt = 'You are a helpful assistant. Based on the previous conversation, suggest 3-4 different ways the user might want to continue the conversation. Each suggestion should be a short question or prompt (1-2 sentences max). Return only the suggestions separated by newlines, no additional text.';
+  static const String continuationUserPrompt = 'Please suggest different ways I could continue this conversation.';
+}
+
 class ChatScreen extends StatefulWidget {
   final String? initialModel;
 
@@ -37,8 +77,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   late ThemeProvider _themeProvider;
   
   bool _isSidebarCollapsed = false;
-  final double _sidebarWidth = 280;
-  final double _sidebarCollapsedWidth = 40;
   
   List<Chat> _chats = [];
   Chat? _currentChat;
@@ -46,16 +84,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final FocusNode _chatInputFocusNode = FocusNode();
   late ScrollController _messageScrollController;
   late ChatScrollUtils _chatScrollUtils;
-  String _selectedModel = 'kwaipilot/kat-coder-pro:free'; // Default model ID
-  OpenRouterModel? _selectedModelObject; // Store full model object
+  String _selectedModel = ChatScreenConstants.defaultModelId;
+  OpenRouterModel? _selectedModelObject;
   bool _isSuggestionsLoading = false;
   bool _showSuggestions = false;
   List<String> _continuationSuggestions = [];
   
   // State variables for managing reasoning updates
-  bool _isUpdatingReasoning = false;
-  bool _pendingContentUpdate = false;
   String _pendingContent = '';
+  String _accumulatedReasoning = ''; // Accumulate reasoning in memory
 
   @override
   void initState() {
@@ -76,7 +113,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _chatScrollUtils = ChatScrollUtils(
         scrollController: _messageScrollController,
-        animationDuration: const Duration(milliseconds: 300),
+        animationDuration: ChatScreenConstants.scrollAnimationDuration,
         animationCurve: Curves.easeOut,
       );
       _chatScrollUtils.initialize();
@@ -120,7 +157,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       }
     } else if (_themeProvider.isLoadingModels) {
       // Wait for models to be loaded
-      Future.delayed(const Duration(milliseconds: 500), () {
+      Future.delayed(ChatScreenConstants.modelLoadWaitTime, () {
         if (mounted && _themeProvider.modelsLoaded && _themeProvider.availableModels.isNotEmpty) {
           _selectedModelObject = _themeProvider.getModelById(_selectedModel);
           if (_selectedModelObject == null) {
@@ -170,7 +207,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _currentChat = chat;
     });
     
-    // 🚀 CRITICAL FIX: Auto-scroll to bottom when chat is loaded
+    // Auto-scroll to bottom when chat is loaded
     Future.delayed(const Duration(milliseconds: 100), () {
       _chatScrollUtils.onNewMessages();
     });
@@ -179,14 +216,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     
     // Close sidebar on narrow screens when switching chats
     final screenWidth = MediaQuery.of(context).size.width;
-    if (screenWidth < 800) {
+    if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
       if (!_isSidebarCollapsed) {
         setState(() {
           _isSidebarCollapsed = true;
         });
       }
       // Force rebuild to ensure visual update
-      Future.delayed(const Duration(milliseconds: 10), () {
+      Future.delayed(ChatScreenConstants.sidebarUpdateDelay, () {
         setState(() {});
       });
     } else {
@@ -283,7 +320,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     
     // Handle sidebar based on screen width
     final screenWidth = MediaQuery.of(context).size.width;
-    if (screenWidth < 800) {
+    if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
       _logger.logInfo('[ChatScreen] FORCE closing sidebar on narrow screen (${screenWidth.toInt()}px) when sending message');
       if (!_isSidebarCollapsed) {
         setState(() {
@@ -291,7 +328,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         });
       }
       // Force rebuild to ensure visual update
-      Future.delayed(const Duration(milliseconds: 10), () {
+      Future.delayed(ChatScreenConstants.sidebarUpdateDelay, () {
         setState(() {});
       });
     } else {
@@ -351,6 +388,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
     _logger.logInfo('[ChatScreen] Current chat available, proceeding with AI processing');
 
+    // Reset accumulators for new stream
+    _accumulatedReasoning = '';
+    _pendingContent = '';
+    
     try {
       // Add assistant message placeholder
       final assistantMessage = Message(
@@ -374,7 +415,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           _currentChat = updatedChat;
         });
         
-        // 🚀 CRITICAL FIX: Auto-scroll after adding message
+        // Auto-scroll after adding message
         _chatScrollUtils.onNewMessages();
         _logger.logInfo('[ChatScreen] Auto-scroll triggered after adding message');
       }
@@ -387,7 +428,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       // Add error message
       final errorMessage = Message(
         role: MessageRole.assistant,
-        content: 'Sorry, I encountered an error while processing your request. Please try again.',
+        content: ChatScreenConstants.defaultErrorMessage,
         timestamp: DateTime.now(),
         isComplete: true,
       );
@@ -415,9 +456,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       if (e.toString().contains('429') ||
           e.toString().contains('Rate limit') ||
           e.toString().contains('bad response')) {
-        if (retryCount < 3) {
-          final delay = Duration(seconds: pow(2, retryCount).toInt());
-          _logger.logWarning('[ChatScreen] Rate limit hit, retrying in ${delay.inSeconds} seconds... (attempt ${retryCount + 1}/3)');
+        if (retryCount < ChatScreenConstants.maxRetryAttempts) {
+          final delay = Duration(seconds: ChatScreenConstants.baseRetryDelaySeconds * pow(2, retryCount).toInt());
+          _logger.logWarning('[ChatScreen] Rate limit hit, retrying in ${delay.inSeconds} seconds... (attempt ${retryCount + 1}/${ChatScreenConstants.maxRetryAttempts})');
 
           // Show retry message to user
           final retryMessage = Message(
@@ -457,7 +498,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           // Add final error message
           final errorMessage = Message(
             role: MessageRole.assistant,
-            content: 'Sorry, the service is currently at capacity. Please try again in a few minutes.',
+            content: ChatScreenConstants.rateLimitMessage,
             timestamp: DateTime.now(),
             isComplete: true,
           );
@@ -490,242 +531,31 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
     _logger.logInfo('[ChatScreen] Current chat available, proceeding...');
 
-    try {
-      final messages = _currentChat!.messages
-          .map((msg) => {
-            'role': msg.role.name,
-            'content': msg.content
-          })
-          .toList();
-      
-      _logger.logInfo('[ChatScreen] Sending ${messages.length} messages to AI service');
-      _logger.logInfo('[ChatScreen] Messages: ${messages.map((m) => '${m['role']}: ${m['content']}').join(' | ')}');
-
-      // Use a working OpenRouter model
-      final selectedModel = _selectedModel;
-      final optimalMaxTokens = _selectedModelObject != null 
-          ? _getOptimalMaxTokensForModel(_selectedModelObject!)
-          : _getOptimalMaxTokensFromId(selectedModel); // Fallback based on model ID
-      _logger.logInfo('[ChatScreen] Using model: $selectedModel with max_tokens: $optimalMaxTokens');
-      
-      await _openRouterService.streamChatCompletion(
-        messages: messages,
-        model: selectedModel,
-        maxTokens: optimalMaxTokens, // Use optimal token limit based on model
-        onChunk: (content) {
-          final displayLength = min(50, content.length);
-          _logger.logInfo('[ChatScreen] Received chunk: ${content.substring(0, displayLength)}...');
-          if (content.isNotEmpty) {
-            // Check if reasoning is currently being updated
-            if (_isUpdatingReasoning) {
-              _logger.logInfo('[ChatScreen] Reasoning update in progress, queuing content update');
-              _pendingContentUpdate = true;
-              _pendingContent = content;
-              return;
-            }
-            
-            _updateMessageContent(content);
-          }
-        },
-        onReasoning: (reasoning) {
-          if (reasoning.isNotEmpty) {
-            _logger.logInfo('[ChatScreen] Received reasoning: ${reasoning.substring(0, min(50, reasoning.length))}...');
-            _logger.logDebug('[ChatScreen] Full reasoning content: "$reasoning"');
-            
-            // Add print statement for terminal visibility
-            print('[ChatScreen] [ChatScreen] Received reasoning: ${reasoning.substring(0, min(50, reasoning.length))}...');
-            print('[ChatScreen] [ChatScreen] Full reasoning content: "$reasoning"');
-            
-            // Set flag to indicate reasoning is being updated
-            _isUpdatingReasoning = true;
-            
-            // Update the last message with reasoning
-            final lastMessage = _currentChat!.messages.last;
-            _logger.logDebug('[ChatScreen] Updating message ${lastMessage.id} with reasoning');
-            
-            // Add print statement for terminal visibility
-            print('[ChatScreen] [ChatScreen] Updating message ${lastMessage.id} with reasoning');
-            
-            final updatedMessage = lastMessage.copyWith(reasoning: reasoning);
-            
-            _logger.logDebug('[ChatScreen] Before saving reasoning - message content: "${updatedMessage.content}", reasoning: "${updatedMessage.reasoning}"');
-            print('[ChatScreen] [ChatScreen] Before saving reasoning - message content: "${updatedMessage.content}", reasoning: "${updatedMessage.reasoning}"');
-            
-            _chatStorageService.updateMessageInChat(
-              _currentChat!.id, 
-              updatedMessage.id, 
-              updatedMessage
-            ).then((_) async {
-              _logger.logInfo('[ChatScreen] Reasoning updated in storage');
-              _logger.logDebug('[ChatScreen] Reasoning stored in message: "${updatedMessage.reasoning}"');
-              
-              // Add print statement for terminal visibility
-              print('[ChatScreen] [ChatScreen] Reasoning updated in storage');
-              print('[ChatScreen] [ChatScreen] Reasoning stored in message: "${updatedMessage.reasoning}"');
-              
-              // Wait a bit to ensure the save is complete before reloading
-              await Future.delayed(const Duration(milliseconds: 100));
-              
-              // Reload the chat from storage to ensure we have the latest data
-              final updatedChat = await _chatStorageService.getChat(_currentChat!.id);
-              
-              if (updatedChat != null) {
-                if (mounted) {
-                  setState(() {
-                    _currentChat = updatedChat;
-                  });
-                }
-              }
-              
-              // Clear the flag and process any pending content updates
-              _isUpdatingReasoning = false;
-              
-              // Process any pending content update
-              if (_pendingContentUpdate && _pendingContent.isNotEmpty) {
-                _logger.logInfo('[ChatScreen] Processing pending content update after reasoning save');
-                _logger.logDebug('[ChatScreen] Pending content: "${_pendingContent}"');
-                print('[ChatScreen] [ChatScreen] Processing pending content update after reasoning save');
-                print('[ChatScreen] [ChatScreen] Pending content: "${_pendingContent}"');
-                _pendingContentUpdate = false;
-                _updateMessageContent(_pendingContent);
-              }
-            });
-          }
-        },
-        onCompletion: (fullContent) {
-          // Mark message as complete
-          final lastMessage = _currentChat!.messages.last;
-          final completedMessage = lastMessage.copyWith(isComplete: true);
-          
-          _chatStorageService.updateMessageInChat(
-            _currentChat!.id, 
-            completedMessage.id, 
-            completedMessage
-          ).then((_) {
-            final updatedChat = _currentChat!.copyWith(
-              messages: [
-                ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
-                completedMessage
-              ],
-              updatedAt: DateTime.now(),
-            );
-            
-            if (mounted) {
-              setState(() {
-                _currentChat = updatedChat;
-              });
-            }
-            
-            // Show continuation suggestions after completion
-            _showContinuationSuggestions(completedMessage);
-          });
-        },
-      );
-    } catch (e) {
-      _logger.logError('[ChatScreen] Error in streaming response: $e');
-      
-      // Extract and display the actual server response instead of generic error message
-      String errorMessage = _formatErrorMessage(e);
-
-      // First, update the existing assistant message with error content
-      if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
-        final lastMessage = _currentChat!.messages.last;
-        if (lastMessage.role == MessageRole.assistant) {
-          // Update existing message with error content
-          final errorResponseMessage = lastMessage.copyWith(
-            content: errorMessage,
-            isComplete: true,
-            isError: true, // Mark as error message
-          );
-
-          await _chatStorageService.updateMessageInChat(
-            _currentChat!.id, 
-            errorResponseMessage.id, 
-            errorResponseMessage
-          );
-
-          final updatedChat = _currentChat!.copyWith(
-            messages: [
-              ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
-              errorResponseMessage
-            ],
-            updatedAt: DateTime.now(),
-          );
-          
-          setState(() {
-            _currentChat = updatedChat;
-          });
-        } else {
-          // If last message is not assistant, add new error message
-          final errorResponseMessage = Message(
-            role: MessageRole.assistant,
-            content: errorMessage,
-            timestamp: DateTime.now(),
-            isComplete: true,
-            isError: true, // Mark as error message
-          );
-
-          await _chatStorageService.addMessageToChat(_currentChat!.id, errorResponseMessage);
-          
-          final updatedChat = _currentChat!.copyWith(
-            messages: [..._currentChat!.messages, errorResponseMessage],
-            updatedAt: DateTime.now(),
-          );
-          setState(() {
-            _currentChat = updatedChat;
-          });
-        }
-      }
-    }
+    final messages = _currentChat!.messages
+        .map((msg) => {
+          'role': msg.role.name,
+          'content': msg.content
+        })
+        .toList();
+    
+    _logger.logInfo('[ChatScreen] Sending ${messages.length} messages to AI service');
+    
+    final selectedModel = _selectedModel;
+    final optimalMaxTokens = _selectedModelObject != null 
+        ? _getOptimalMaxTokensForModel(_selectedModelObject!)
+        : _getOptimalMaxTokensFromId(selectedModel);
+    
+    _logger.logInfo('[ChatScreen] Using model: $selectedModel with max_tokens: $optimalMaxTokens');
+    
+    await _handleStreamingResponse(
+      messages: messages,
+      isContinuation: false,
+      modelId: selectedModel,
+      maxTokens: optimalMaxTokens,
+    );
   }
 
-  /// Handle content updates from streaming
-  void _updateMessageContent(String content) {
-    // Update the last message with new content
-    final lastMessage = _currentChat!.messages.last;
-    final updatedContent = lastMessage.content + content;
-    final updatedMessage = lastMessage.copyWith(content: updatedContent);
-    
-    _logger.logInfo('[ChatScreen] Updating message ${updatedMessage.id} with content length: ${updatedContent.length}');
-    _logger.logDebug('[ChatScreen] Content update - message content: "${updatedContent}", reasoning: "${updatedMessage.reasoning}"');
-    print('[ChatScreen] [ChatScreen] Content update - message content: "${updatedContent}", reasoning: "${updatedMessage.reasoning}"');
-    
-    // Debug: Log the chunk being added
-    _logger.logDebug('[ChatScreen] Adding chunk: "${content}" to existing content: "${lastMessage.content}"');
-    print('[ChatScreen] [ChatScreen] Adding chunk: "${content}" to existing content: "${lastMessage.content}"');
-    
-    // Ensure we're not updating while reasoning is being saved
-    if (_isUpdatingReasoning) {
-      _logger.logInfo('[ChatScreen] Reasoning update in progress, queuing content update');
-      _pendingContentUpdate = true;
-      _pendingContent = content;
-      return;
-    }
-    
-    _chatStorageService.updateMessageInChat(
-      _currentChat!.id, 
-      updatedMessage.id, 
-      updatedMessage
-    ).then((_) {
-      _logger.logInfo('[ChatScreen] Message updated in storage');
-      final updatedChat = _currentChat!.copyWith(
-        messages: [
-          ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
-          updatedMessage
-        ],
-        updatedAt: DateTime.now(),
-      );
-      
-      if (mounted) {
-        setState(() {
-          _currentChat = updatedChat;
-        });
-      }
-    });
-    
-    _chatScrollUtils.onNewMessagesStreaming();
-    _logger.logInfo('[ChatScreen] Auto-scroll triggered during streaming');
-  }
+
 
   // Method to add assistant message from ChatMessages
   void addAssistantMessage() {
@@ -850,7 +680,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _currentChat = updatedChat;
     });
     
-    // 🚀 CRITICAL FIX: Auto-scroll after adding continuation message
+    // Auto-scroll after adding continuation message
     _chatScrollUtils.onNewMessages();
     _logger.logInfo('[ChatScreen] Auto-scroll triggered after adding continuation message');
 
@@ -861,57 +691,131 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   Future<void> _streamContinuationResponse(String previousContent) async {
     _logger.logInfo('[ChatScreen] Starting AI continuation streaming...');
     
+    // Create a continuation prompt
+    final continuationPrompt = [
+      {'role': 'user', 'content': 'Please continue your previous response. Do not repeat what you already said.'},
+      {'role': 'assistant', 'content': previousContent},
+      {'role': 'user', 'content': 'Continue from where you left off.'},
+    ];
+    
+    final optimalMaxTokens = _selectedModelObject != null 
+        ? _getOptimalMaxTokensForModel(_selectedModelObject!)
+        : _getOptimalMaxTokensFromId(_selectedModel);
+    
+    _logger.logInfo('[ChatScreen] Using model: $_selectedModel with max_tokens: $optimalMaxTokens for continuation');
+    
+    await _handleStreamingResponse(
+      messages: continuationPrompt,
+      isContinuation: true,
+      modelId: _selectedModel,
+      maxTokens: optimalMaxTokens,
+    );
+  }
+
+  // Method to get optimal max tokens for different models based on their context length
+  int _getOptimalMaxTokensForModel(OpenRouterModel model) {
+    if (model.contextLength == null) {
+      return ChatScreenConstants.defaultMaxTokens;
+    }
+    
+    final contextLength = model.contextLength!;
+    
+    // Use configured ratio of context length as max tokens
+    final maxTokens = (contextLength * ChatScreenConstants.tokenContextRatio).toInt();
+    
+    // Set reasonable bounds
+    if (maxTokens < ChatScreenConstants.minMaxTokens) {
+      return ChatScreenConstants.minMaxTokens;
+    } else if (maxTokens > ChatScreenConstants.maxMaxTokens) {
+      return ChatScreenConstants.maxMaxTokens;
+    } else {
+      return maxTokens;
+    }
+  }
+
+  /// Shared method to handle streaming responses (both regular and continuation)
+  Future<void> _handleStreamingResponse({
+    required List<Map<String, String>> messages,
+    required bool isContinuation,
+    required String modelId,
+    required int maxTokens,
+  }) async {
+    final streamType = isContinuation ? 'Continuation' : 'AI';
+    _logger.logInfo('[ChatScreen] Starting $streamType streaming...');
+    
+    // Reset accumulators
+    _accumulatedReasoning = '';
+    _pendingContent = '';
+    
     try {
-      // Create a continuation prompt
-      final continuationPrompt = [
-        {'role': 'user', 'content': 'Please continue your previous response. Do not repeat what you already said.'},
-        {'role': 'assistant', 'content': previousContent},
-        {'role': 'user', 'content': 'Continue from where you left off.'},
-      ];
-      
-      final optimalMaxTokens = _selectedModelObject != null 
-          ? _getOptimalMaxTokensForModel(_selectedModelObject!)
-          : _getOptimalMaxTokensFromId(_selectedModel);
-      
-      _logger.logInfo('[ChatScreen] Using model: $_selectedModel with max_tokens: $optimalMaxTokens for continuation');
-      
       await _openRouterService.streamChatCompletion(
-        messages: continuationPrompt,
-        model: _selectedModel,
-        maxTokens: optimalMaxTokens,
+        messages: messages,
+        model: modelId,
+        maxTokens: maxTokens,
+        includeReasoning: true,
         onChunk: (content) {
-          if (content.isNotEmpty) {
-            // Update the last message with new content
-            final lastMessage = _currentChat!.messages.last;
-            final updatedMessage = lastMessage.copyWith(content: lastMessage.content + content);
-            
-            _logger.logInfo('[ChatScreen] Updating continuation message ${updatedMessage.id} with content length: ${updatedMessage.content.length}');
-            
-            _chatStorageService.updateMessageInChat(
-              _currentChat!.id, 
-              updatedMessage.id, 
-              updatedMessage
-            ).then((_) {
-              final updatedChat = _currentChat!.copyWith(
-                messages: [
-                  ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
-                  updatedMessage
-                ],
+          // Don't skip empty chunks - they might be important for some models
+          final displayLength = content.length > 50 ? 50 : content.length;
+          _logger.logInfo('[ChatScreen] $streamType chunk: ${content.substring(0, displayLength)}...');
+          print('[DEBUG] [ChatScreen] Content chunk: "${content.substring(0, content.length > 20 ? 20 : content.length)}${content.length > 20 ? '...' : ''}"');
+          
+          // Accumulate content in memory
+          _pendingContent += content;
+          print('[DEBUG] [ChatScreen] Accumulated content length: ${_pendingContent.length}');
+          
+          // Update UI immediately
+          if (mounted) {
+            print('[DEBUG] [ChatScreen] setState called for content chunk, length: ${_pendingContent.length}, chatId: ${_currentChat?.id}');
+            setState(() {
+              final lastMessage = _currentChat!.messages.last;
+              final updatedMessage = lastMessage.copyWith(content: _pendingContent);
+              final updatedMessages = List<Message>.from(_currentChat!.messages);
+              updatedMessages[updatedMessages.length - 1] = updatedMessage;
+              _currentChat = _currentChat!.copyWith(
+                messages: updatedMessages,
                 updatedAt: DateTime.now(),
               );
-              
-              if (mounted) {
-                setState(() {
-                  _currentChat = updatedChat;
-                });
-              }
             });
+            print('[DEBUG] [ChatScreen] setState completed, chat messages count: ${_currentChat?.messages.length}, last message content length: ${_currentChat?.messages.last.content.length}');
+            print('[DEBUG] [ChatScreen] Chat object ID: ${_currentChat?.id}, pointer: ${_currentChat.hashCode}');
+          }
+        },
+        onReasoning: (reasoning) {
+          if (reasoning.isNotEmpty) {
+            _logger.logInfo('[ChatScreen] $streamType reasoning: ${reasoning.substring(0, reasoning.length > 50 ? 50 : reasoning.length)}...');
+            print('[DEBUG] [ChatScreen] Reasoning chunk: "${reasoning.substring(0, reasoning.length > 30 ? 30 : reasoning.length)}${reasoning.length > 30 ? '...' : ''}"');
+            
+            // Accumulate reasoning
+            _accumulatedReasoning += reasoning;
+            print('[DEBUG] [ChatScreen] Accumulated reasoning length: ${_accumulatedReasoning.length}');
+            
+            // Update UI immediately (don't save to storage yet)
+            if (mounted) {
+              setState(() {
+                final lastMessage = _currentChat!.messages.last;
+                final updatedMessage = lastMessage.copyWith(reasoning: _accumulatedReasoning);
+                final updatedMessages = List<Message>.from(_currentChat!.messages);
+                updatedMessages[updatedMessages.length - 1] = updatedMessage;
+                _currentChat = _currentChat!.copyWith(
+                  messages: updatedMessages,
+                  updatedAt: DateTime.now(),
+                );
+              });
+            }
           }
         },
         onCompletion: (fullContent) {
-          // Mark message as complete
+          print('[DEBUG] [ChatScreen] $streamType completed, saving to storage...');
+          print('[DEBUG] [ChatScreen] Final reasoning length: ${_accumulatedReasoning.length}');
+          print('[DEBUG] [ChatScreen] Final content length: ${_pendingContent.length}');
+          
+          // Save accumulated data to storage
           final lastMessage = _currentChat!.messages.last;
-          final completedMessage = lastMessage.copyWith(isComplete: true);
+          final completedMessage = lastMessage.copyWith(
+            content: _pendingContent,
+            reasoning: _accumulatedReasoning,
+            isComplete: true,
+          );
           
           _chatStorageService.updateMessageInChat(
             _currentChat!.id, 
@@ -932,87 +836,82 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               });
             }
             
-            // Show continuation suggestions after completion
-            _showContinuationSuggestions(completedMessage);
+            print('[DEBUG] [ChatScreen] Message saved to storage with full reasoning and content');
+            
+            // Show continuation suggestions after completion (only for regular AI responses)
+            if (!isContinuation) {
+              _showContinuationSuggestions(completedMessage);
+            }
+            
+            // Reset accumulators
+            _accumulatedReasoning = '';
+            _pendingContent = '';
           });
         },
       );
     } catch (e) {
-      _logger.logError('[ChatScreen] Error in continuation streaming: $e');
-      
-      // Extract and display the actual server response instead of generic error message
-      String errorMessage = _formatErrorMessage(e);
+      _logger.logError('[ChatScreen] Error in $streamType streaming: $e');
+      await _handleStreamingError(e, isContinuation);
+    }
+  }
 
-      // Update the existing continuation message with error content
-      if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
-        final lastMessage = _currentChat!.messages.last;
-        if (lastMessage.role == MessageRole.assistant) {
-          // Update existing message with error content
-          final errorResponseMessage = lastMessage.copyWith(
-            content: errorMessage,
-            isComplete: true,
-            isError: true, // Mark as error message
-          );
+  /// Handle streaming errors with proper error message display
+  Future<void> _handleStreamingError(Object error, bool isContinuation) async {
+    final errorMessage = _formatErrorMessage(error);
 
-          await _chatStorageService.updateMessageInChat(
-            _currentChat!.id, 
-            errorResponseMessage.id, 
+    // Update the existing assistant message with error content
+    if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
+      final lastMessage = _currentChat!.messages.last;
+      if (lastMessage.role == MessageRole.assistant) {
+        // Update existing message with error content
+        final errorResponseMessage = lastMessage.copyWith(
+          content: errorMessage,
+          isComplete: true,
+          isError: true,
+        );
+
+        await _chatStorageService.updateMessageInChat(
+          _currentChat!.id, 
+          errorResponseMessage.id, 
+          errorResponseMessage
+        );
+
+        final updatedChat = _currentChat!.copyWith(
+          messages: [
+            ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
             errorResponseMessage
-          );
-
-          final updatedChat = _currentChat!.copyWith(
-            messages: [
-              ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
-              errorResponseMessage
-            ],
-            updatedAt: DateTime.now(),
-          );
-          
+          ],
+          updatedAt: DateTime.now(),
+        );
+        
+        if (mounted) {
           setState(() {
             _currentChat = updatedChat;
           });
-        } else {
-          // If last message is not assistant, add new error message
-          final errorResponseMessage = Message(
-            role: MessageRole.assistant,
-            content: errorMessage,
-            timestamp: DateTime.now(),
-            isComplete: true,
-            isError: true, // Mark as error message
-          );
+        }
+      } else {
+        // If last message is not assistant, add new error message
+        final errorResponseMessage = Message(
+          role: MessageRole.assistant,
+          content: errorMessage,
+          timestamp: DateTime.now(),
+          isComplete: true,
+          isError: true,
+        );
 
-          await _chatStorageService.addMessageToChat(_currentChat!.id, errorResponseMessage);
-          
-          final updatedChat = _currentChat!.copyWith(
-            messages: [..._currentChat!.messages, errorResponseMessage],
-            updatedAt: DateTime.now(),
-          );
+        await _chatStorageService.addMessageToChat(_currentChat!.id, errorResponseMessage);
+        
+        final updatedChat = _currentChat!.copyWith(
+          messages: [..._currentChat!.messages, errorResponseMessage],
+          updatedAt: DateTime.now(),
+        );
+        
+        if (mounted) {
           setState(() {
             _currentChat = updatedChat;
           });
         }
       }
-    }
-  }
-
-  // Method to get optimal max tokens for different models based on their context length
-  int _getOptimalMaxTokensForModel(OpenRouterModel model) {
-    if (model.contextLength == null) {
-      return 2046; // Default for models without specified context length
-    }
-    
-    final contextLength = model.contextLength!;
-    
-    // Use 20% of context length as max tokens, with reasonable limits
-    final maxTokens = (contextLength * 0.2).toInt();
-    
-    // Set reasonable bounds
-    if (maxTokens < 1000) {
-      return 1000;
-    } else if (maxTokens > 16000) {
-      return 16000; // Cap at 16K tokens to avoid API limits
-    } else {
-      return maxTokens;
     }
   }
 
@@ -1130,14 +1029,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               onPressed: () async {
                 // Handle sidebar based on screen width before navigation
                 final screenWidth = MediaQuery.of(context).size.width;
-                if (screenWidth < 800) {
+                if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
                   if (!_isSidebarCollapsed) {
                     setState(() {
                       _isSidebarCollapsed = true;
                     });
                   }
                   // Force rebuild to ensure visual update
-                  Future.delayed(const Duration(milliseconds: 10), () {
+                  Future.delayed(ChatScreenConstants.sidebarUpdateDelay, () {
                     setState(() {});
                   });
                 } else {
@@ -1174,7 +1073,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       ),
       drawer: Drawer(
         child: Sidebar(
-          width: _sidebarWidth,
+          width: ChatScreenConstants.sidebarWidth,
           isCollapsed: false,
           onToggleSidebar: () {
             Navigator.pop(context);
@@ -1223,7 +1122,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         children: [
           // Sidebar
           Sidebar(
-            width: _isSidebarCollapsed ? _sidebarCollapsedWidth : _sidebarWidth,
+            width: _isSidebarCollapsed ? ChatScreenConstants.sidebarCollapsedWidth : ChatScreenConstants.sidebarWidth,
             isCollapsed: _isSidebarCollapsed,
             onToggleSidebar: () {
               setState(() {
@@ -1282,14 +1181,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         onPressed: () {
                           // Handle sidebar based on screen width before navigation
                           final screenWidth = MediaQuery.of(context).size.width;
-                          if (screenWidth < 800) {
+                          if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
                             if (!_isSidebarCollapsed) {
                               setState(() {
                                 _isSidebarCollapsed = true;
                               });
                             }
                             // Force rebuild to ensure visual update
-                            Future.delayed(const Duration(milliseconds: 10), () {
+                            Future.delayed(ChatScreenConstants.sidebarUpdateDelay, () {
                               setState(() {});
                             });
                           } else {
@@ -1384,7 +1283,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 ),
                 const Spacer(),
                 // Only show hint text on desktop (not on mobile/narrow screens)
-                if (MediaQuery.of(context).size.width >= 800)
+                if (MediaQuery.of(context).size.width >= ChatScreenConstants.mobileBreakpoint)
                   Text(
                     'Tap suggestion or send your message',
                     style: TextStyle(
@@ -1514,9 +1413,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
       // Show a snackbar to notify the user
       if (mounted) {
+        final displayMessage = errorMessage.length > ChatScreenConstants.maxSuggestionTextLength 
+            ? '${errorMessage.substring(0, ChatScreenConstants.maxSuggestionTextLength)}...' 
+            : errorMessage;
+            
         SnackbarUtils.showErrorSnackBar(
           context: context,
-          message: 'Failed to generate suggestions: ${errorMessage.length > 100 ? '${errorMessage.substring(0, 100)}...' : errorMessage}',
+          message: 'Failed to generate suggestions: $displayMessage',
           icon: Icons.error,
         );
       }
@@ -1532,11 +1435,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     try {
       _logger.logInfo('[ChatScreen] Generating continuation suggestions...');
       
-      // Create a prompt for generating continuation suggestions
       final suggestionPrompt = [
         {
           'role': 'system', 
-          'content': 'You are a helpful assistant. Based on the previous conversation, suggest 3-4 different ways the user might want to continue the conversation. Each suggestion should be a short question or prompt (1-2 sentences max). Return only the suggestions separated by newlines, no additional text.'
+          'content': ChatScreenConstants.continuationSystemPrompt
         },
         {
           'role': 'assistant', 
@@ -1544,7 +1446,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         },
         {
           'role': 'user', 
-          'content': 'Please suggest different ways I could continue this conversation.'
+          'content': ChatScreenConstants.continuationUserPrompt
         },
       ];
       
@@ -1562,8 +1464,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           .map((s) => s.trim())
           .where((s) => s.isNotEmpty && (s.startsWith('-') || s.startsWith('1.') || s.startsWith('2.') || s.startsWith('3.') || s.startsWith('•') || s.length > 10))
           .map((s) => s.replaceFirst(RegExp(r'^[-•]\s*'), '').replaceFirst(RegExp(r'^\d+\.\s*'), ''))
-          .where((s) => s.length > 5)
-          .take(4)
+          .where((s) => s.length > ChatScreenConstants.minSuggestionLength)
+          .take(ChatScreenConstants.maxSuggestions)
           .toList();
       
       _logger.logInfo('[ChatScreen] Generated ${suggestions.length} continuation suggestions');
@@ -1584,34 +1486,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   // Method to extract and format error message from DioException or other errors
   String _formatErrorMessage(Object error) {
     try {
-      // Try to extract the actual server response
       final errorString = error.toString();
 
-      // Check if it's a DioException with response data
-      if (errorString.contains('DioException') && errorString.contains('Response')) {
-        // Try to extract JSON response from the error string
-        final jsonMatch = RegExp(r'Response.*?\{.*?\}', dotAll: true).firstMatch(errorString);
-        if (jsonMatch != null) {
-          final jsonResponse = jsonMatch.group(0);
-          if (jsonResponse != null) {
-            try {
-              final parsed = jsonDecode(jsonResponse);
-              if (parsed is Map<String, dynamic> && parsed.containsKey('error')) {
-                final errorData = parsed['error'];
-                if (errorData is Map<String, dynamic>) {
-                  final message = errorData['message'] ?? 'Unknown error';
-                  final code = errorData['code'] ?? '';
-                  return 'Error $code: $message';
-                }
-              }
-            } catch (e) {
-              // If JSON parsing fails, fall back to original error
-            }
-          }
-        }
-      }
-
-      // Try to parse as JSON directly
+      // Try to parse as JSON first
       try {
         final parsed = jsonDecode(errorString);
         if (parsed is Map<String, dynamic> && parsed.containsKey('error')) {
@@ -1622,24 +1499,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             return 'Error $code: $message';
           }
         }
-      } catch (e) {
+      } catch (_) {
         // Not JSON, continue with string processing
       }
 
-      // Extract error message from string
-      if (errorString.contains('Server error:')) {
-        final responseIndex = errorString.indexOf('Server error:');
-        if (responseIndex != -1) {
-          return errorString.substring(responseIndex + 13).trim();
-        }
-      } else if (errorString.contains('Response')) {
-        final responseIndex = errorString.indexOf('Response');
-        if (responseIndex != -1) {
-          return errorString.substring(responseIndex + 8).trim();
-        }
-      }
-
-      // Clean up common error formatting issues
+      // Clean up common error formatting
       String cleanedError = errorString
           .replaceAll('\\n', '\n')
           .replaceAll('\\t', ' ')
@@ -1662,8 +1526,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       }
 
       // Truncate if too long
-      if (cleanedError.length > 500) {
-        cleanedError = '${cleanedError.substring(0, 500)}...';
+      if (cleanedError.length > ChatScreenConstants.maxErrorLength) {
+        cleanedError = '${cleanedError.substring(0, ChatScreenConstants.maxErrorLength)}...';
       }
 
       return cleanedError;

@@ -30,7 +30,7 @@ class ThemeProvider with ChangeNotifier {
   bool _highContrast = false;
   bool _isRTL = false;
   String _selectedLanguage = 'en';
-  String _selectedModelId = 'kwaipilot/kat-coder-pro:free'; // Default model ID
+  String _selectedModelId = 'nvidia/nemotron-3-nano-30b-a3b:free'; // Default model ID
   OpenRouterModel? _selectedModelObject;
   List<OpenRouterModel> _availableModels = [];
   bool _modelsLoaded = false;
@@ -232,7 +232,7 @@ class ThemeProvider with ChangeNotifier {
       _reduceMotion = prefs.getBool(_reduceMotionKey) ?? false;
       _highContrast = prefs.getBool(_highContrastKey) ?? false;
       _selectedLanguage = prefs.getString(_languageKey) ?? 'en';
-      _selectedModelId = prefs.getString(_selectedModelKey) ?? 'kwaipilot/kat-coder-pro:free';
+      _selectedModelId = prefs.getString(_selectedModelKey) ?? 'nvidia/nemotron-3-nano-30b-a3b:free';
 
       // Update RTL based on loaded language
       _isRTL = ['ar', 'he', 'fa', 'ur'].contains(_selectedLanguage);
@@ -274,7 +274,7 @@ class ThemeProvider with ChangeNotifier {
     _reduceMotion = false;
     _highContrast = false;
     _selectedLanguage = 'en';
-    _selectedModelId = 'kwaipilot/kat-coder-pro:free';
+    _selectedModelId = 'nvidia/nemotron-3-nano-30b-a3b:free';
     _isRTL = false;
     _selectedModelObject = null;
     _availableModels.clear();

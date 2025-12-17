@@ -71,7 +71,7 @@ class Message {
       isComplete: isComplete ?? this.isComplete,
       isError: isError ?? this.isError,
       model: model ?? this.model,
-      reasoning: reasoning ?? this.reasoning,
+      reasoning: reasoning ?? this.reasoning, // Preserve current reasoning if not provided
     );
   }
 
