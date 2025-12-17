@@ -1,11 +1,34 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../utils/logger.dart';
 
 // Initialize logger for this service
 final _logger = LogTags.openRouter;
+
+// Constants for configuration
+class OpenRouterConstants {
+  static const String baseUrl = 'https://openrouter.ai/api/v1';
+  static const Duration defaultConnectTimeout = Duration(seconds: 30);
+  static const Duration defaultReceiveTimeout = Duration(seconds: 30);
+  static const Duration initializationWaitDelay = Duration(milliseconds: 100);
+  static const int maxRetryAttempts = 3;
+  static const Duration baseRetryDelay = Duration(seconds: 1);
+  static const int modelsCacheDurationMinutes = 15;
+  static const int chunkProcessingDelayMs = 5;
+  
+  // API endpoints
+  static const String modelsEndpoint = '/models';
+  static const String completionsEndpoint = '/chat/completions';
+  static const String filesEndpoint = '/files';
+  static const String healthEndpoint = '/health';
+  
+  // Environment variables
+  static const String envApiKey = 'OPENROUTER_API_KEY';
+  static const String envBaseUrl = 'OPENROUTER_BASE_URL';
+}
 
 // Message and role enums from chat_models.dart
 enum ChatRole { user, assistant, system }
@@ -380,12 +403,37 @@ class ChatCompletionResponse {
   }
 }
 
+/// Configuration for OpenRouterService
+class OpenRouterConfig {
+  final Duration connectTimeout;
+  final Duration receiveTimeout;
+  final int maxRetryAttempts;
+  final Duration baseRetryDelay;
+  final bool enableCaching;
+
+  const OpenRouterConfig({
+    this.connectTimeout = OpenRouterConstants.defaultConnectTimeout,
+    this.receiveTimeout = OpenRouterConstants.defaultReceiveTimeout,
+    this.maxRetryAttempts = OpenRouterConstants.maxRetryAttempts,
+    this.baseRetryDelay = OpenRouterConstants.baseRetryDelay,
+    this.enableCaching = true,
+  });
+}
+
 class OpenRouterService {
   String? _apiKey;
-  final String _baseUrl = 'https://openrouter.ai/api/v1';
+  final String _baseUrl;
+  final OpenRouterConfig _config;
   Dio? _dio;
+  
+  // Caching
+  final Map<String, List<OpenRouterModel>> _modelsCache = {};
+  DateTime? _modelsCacheTimestamp;
+  final Map<String, String> _fileCache = {};
 
-  OpenRouterService() {
+  OpenRouterService({OpenRouterConfig? config, String? baseUrl})
+      : _config = config ?? const OpenRouterConfig(),
+        _baseUrl = baseUrl ?? OpenRouterConstants.baseUrl {
     _initializeService();
   }
 
@@ -393,15 +441,15 @@ class OpenRouterService {
     await _loadApiKey();
 
     // Get base URL from environment variables, fallback to default
-    final baseUrl = dotenv.env['OPENROUTER_BASE_URL'] ?? _baseUrl;
+    final baseUrl = dotenv.env[OpenRouterConstants.envBaseUrl] ?? _baseUrl;
 
     _logger.logInfo('[OpenRouter] Initializing Dio with base URL: $baseUrl');
 
     _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
+        connectTimeout: _config.connectTimeout,
+        receiveTimeout: _config.receiveTimeout,
         headers: {
           'Content-Type': 'application/json',
           if (_apiKey != null) 'Authorization': 'Bearer $_apiKey',
@@ -420,8 +468,8 @@ class OpenRouterService {
       await dotenv.load(fileName: '.env');
 
       // Get API key from environment variables
-      _apiKey = dotenv.env['OPENROUTER_API_KEY'];
-      final baseUrl = dotenv.env['OPENROUTER_BASE_URL'];
+      _apiKey = dotenv.env[OpenRouterConstants.envApiKey];
+      final baseUrl = dotenv.env[OpenRouterConstants.envBaseUrl];
 
       if (_apiKey != null && _apiKey!.isNotEmpty) {
         _logger.logInfo(
@@ -432,7 +480,7 @@ class OpenRouterService {
         }
       } else {
         _logger.logError(
-          '[OpenRouter] API key not found in .env file. Please add OPENROUTER_API_KEY to your .env file.',
+          '[OpenRouter] API key not found in .env file. Please add ${OpenRouterConstants.envApiKey} to your .env file.',
         );
         _logger.logDebug('[OpenRouter] Available environment variables:');
         dotenv.env.forEach((key, value) {
@@ -441,7 +489,7 @@ class OpenRouterService {
           );
         });
         throw Exception(
-          'OpenRouter API key not configured. Please add OPENROUTER_API_KEY to your .env file.',
+          'OpenRouter API key not configured. Please add ${OpenRouterConstants.envApiKey} to your .env file.',
         );
       }
     } catch (e) {
@@ -450,138 +498,189 @@ class OpenRouterService {
     }
   }
 
-  /// Get available models with filtering and deduplication
+  // ===========================================================================
+  // HELPER METHODS
+  // ===========================================================================
+
+  /// Wait for Dio to be initialized
+  Future<void> _waitForInitialization() async {
+    while (_dio == null) {
+      await Future<void>.delayed(OpenRouterConstants.initializationWaitDelay);
+    }
+  }
+
+  /// Extract error message from DioException
+  Future<String> _extractErrorMessage(DioException e) async {
+    String errorMessage = 'Unknown error';
+    
+    if (e.response?.data == null) return errorMessage;
+
+    try {
+      if (e.response!.data is String) {
+        errorMessage = e.response!.data as String;
+      } else if (e.response!.data is Map) {
+        final errorData = Map<String, dynamic>.from(e.response!.data);
+        errorMessage = errorData['error']?['message'] ??
+            errorData['message'] ??
+            errorData.toString();
+      } else if (e.response!.data is ResponseBody) {
+        final responseBody = e.response!.data as ResponseBody;
+        final errorText = await utf8.decodeStream(responseBody.stream);
+        errorMessage = errorText;
+      }
+    } catch (err) {
+      _logger.logError('[OpenRouter] Error parsing error response: $err');
+    }
+
+    return errorMessage;
+  }
+
+  /// Retry mechanism with exponential backoff
+  Future<T> _retryWithBackoff<T>({
+    required Future<T> Function() operation,
+    required String operationName,
+    int maxAttempts = 3,
+  }) async {
+    int attempt = 0;
+    Exception? lastException;
+
+    while (attempt < maxAttempts) {
+      try {
+        attempt++;
+        if (attempt > 1) {
+          _logger.logInfo(
+            '[OpenRouter] Retry attempt $attempt/$maxAttempts for $operationName',
+          );
+        }
+        return await operation();
+      } catch (e) {
+        lastException = e as Exception;
+        
+        if (e is DioException && e.response?.statusCode == 429) {
+          // Rate limit - wait longer
+          final delay = Duration(seconds: pow(2, attempt).toInt());
+          _logger.logWarning(
+            '[OpenRouter] Rate limit hit, waiting ${delay.inSeconds}s before retry...',
+          );
+          await Future.delayed(delay);
+        } else if (attempt < maxAttempts) {
+          // Other errors - exponential backoff
+          final delay = Duration(seconds: attempt);
+          _logger.logWarning(
+            '[OpenRouter] Error on attempt $attempt, waiting ${delay.inSeconds}s before retry...',
+          );
+          await Future.delayed(delay);
+        }
+      }
+    }
+
+    // All attempts failed
+    throw lastException!;
+  }
+
+  /// Clear expired cache
+  void _clearExpiredCache() {
+    if (_modelsCacheTimestamp == null) return;
+    
+    final age = DateTime.now().difference(_modelsCacheTimestamp!).inMinutes;
+    if (age > OpenRouterConstants.modelsCacheDurationMinutes) {
+      _logger.logInfo('[OpenRouter] Clearing expired models cache');
+      _modelsCache.clear();
+      _modelsCacheTimestamp = null;
+    }
+  }
+
+  // ===========================================================================
+  // PUBLIC API METHODS
+  // ===========================================================================
+
+  /// Get available models with filtering, deduplication, and caching
   Future<List<OpenRouterModel>> getAvailableModels({
     String? category,
     bool? supportsReasoning,
     bool? supportsMultimodal,
+    bool forceRefresh = false,
   }) async {
     if (_apiKey == null || _apiKey!.isEmpty) {
       throw Exception('OpenRouter API key not configured');
     }
 
-    // Wait for Dio to be initialized
-    while (_dio == null) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+    await _waitForInitialization();
+
+    // Check cache first
+    if (_config.enableCaching && !forceRefresh) {
+      _clearExpiredCache();
+      final cacheKey = _buildModelsCacheKey(category, supportsReasoning, supportsMultimodal);
+      if (_modelsCache.containsKey(cacheKey)) {
+        _logger.logInfo('[OpenRouter] Returning cached models');
+        return _modelsCache[cacheKey]!;
+      }
     }
 
     _logger.logInfo('[OpenRouter] Fetching models from OpenRouter API...');
     _logger.logDebug(
-      '[OpenRouter] API URL: ${dotenv.env['OPENROUTER_BASE_URL'] ?? _baseUrl}/models',
-    );
-    _logger.logDebug(
-      '[OpenRouter] API Key: ${_apiKey != null ? _apiKey!.substring(0, _apiKey!.length > 10 ? 10 : _apiKey!.length) : "Not found"}...',
+      '[OpenRouter] API URL: ${dotenv.env[OpenRouterConstants.envBaseUrl] ?? _baseUrl}${OpenRouterConstants.modelsEndpoint}',
     );
 
-    try {
-      final response = await _dio!.get('/models');
+    return _retryWithBackoff(
+      operationName: 'getAvailableModels',
+      operation: () async {
+        final response = await _dio!.get(OpenRouterConstants.modelsEndpoint);
 
-      _logger.logDebug('[OpenRouter] Response status: ${response.statusCode}');
-      _logger.logVerbose(
-        '[OpenRouter] Response body preview: ${response.data.toString().substring(0, response.data.toString().length > 200 ? 200 : response.data.toString().length)}...',
-      );
+        _logger.logDebug('[OpenRouter] Response status: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
+        if (response.statusCode != 200) {
+          _logger.logError(
+            '[OpenRouter] API request failed with status: ${response.statusCode}',
+          );
+          _logger.logError('[OpenRouter] Response: ${response.data}');
+          throw Exception('Failed to fetch models from OpenRouter API');
+        }
+
         final data = response.data;
-        _logger.logVerbose('[OpenRouter] Full JSON structure: ${data.keys}');
+        List<OpenRouterModel> models;
 
         if (data.containsKey('data')) {
           final modelsData = data['data'] is List
               ? data['data'] as List
               : [data['data']];
-          _logger.logDebug(
-            '[OpenRouter] Found ${modelsData.length} models in response',
-          );
-
-          final models = modelsData
-              .map(
-                (model) =>
-                    OpenRouterModel.fromJson(model as Map<String, dynamic>),
-              )
-              .where((model) {
-                if (category != null &&
-                    !model.name.toLowerCase().contains(
-                      category.toLowerCase(),
-                    )) {
-                  return false;
-                }
-                if (supportsReasoning == true &&
-                    !model.capabilities.reasoning) {
-                  return false;
-                }
-                if (supportsMultimodal == true &&
-                    !model.capabilities.multimodal) {
-                  return false;
-                }
-                return true;
-              })
+          
+          models = modelsData
+              .map((model) => OpenRouterModel.fromJson(model as Map<String, dynamic>))
+              .where((model) => _filterModel(model, category, supportsReasoning, supportsMultimodal))
               .toList();
-
-          // Remove duplicates using Set (requires proper hashCode implementation)
-          final uniqueModels = _deduplicateModels(models);
-
-          _logger.logInfo(
-            '[OpenRouter] Successfully parsed ${uniqueModels.length} unique models (removed ${models.length - uniqueModels.length} duplicates)',
-          );
-          return uniqueModels;
         } else if (data is List) {
-          // Try direct format without 'data' wrapper
-          final modelsData = data;
-          _logger.logDebug(
-            '[OpenRouter] Found ${modelsData.length} models in direct format',
-          );
-
-          final models = modelsData
-              .map(
-                (model) =>
-                    OpenRouterModel.fromJson(model as Map<String, dynamic>),
-              )
-              .where((model) {
-                if (category != null &&
-                    !model.name.toLowerCase().contains(
-                      category.toLowerCase(),
-                    )) {
-                  return false;
-                }
-                if (supportsReasoning == true &&
-                    !model.capabilities.reasoning) {
-                  return false;
-                }
-                if (supportsMultimodal == true &&
-                    !model.capabilities.multimodal) {
-                  return false;
-                }
-                return true;
-              })
+          models = data
+              .map((model) => OpenRouterModel.fromJson(model as Map<String, dynamic>))
+              .where((model) => _filterModel(model, category, supportsReasoning, supportsMultimodal))
               .toList();
-
-          // Remove duplicates using Set
-          final uniqueModels = models.toSet().toList();
-
-          _logger.logInfo(
-            '[OpenRouter] Successfully parsed ${uniqueModels.length} unique models (direct format, removed ${models.length - uniqueModels.length} duplicates)',
-          );
-          return uniqueModels;
         } else {
           _logger.logError(
             '[OpenRouter] Unexpected API response format. Available keys: ${data.keys}',
           );
           throw Exception('Unexpected API response format');
         }
-      } else {
-        _logger.logError(
-          '[OpenRouter] API request failed with status: ${response.statusCode}',
+
+        final uniqueModels = _deduplicateModels(models);
+
+        _logger.logInfo(
+          '[OpenRouter] Successfully parsed ${uniqueModels.length} unique models (removed ${models.length - uniqueModels.length} duplicates)',
         );
-        _logger.logError('[OpenRouter] Response: ${response.data}');
-        throw Exception('Failed to fetch models from OpenRouter API');
-      }
-    } catch (e) {
-      _logger.logError('[OpenRouter] Error fetching models: $e');
-      rethrow;
-    }
+
+        // Cache the result
+        if (_config.enableCaching) {
+          final cacheKey = _buildModelsCacheKey(category, supportsReasoning, supportsMultimodal);
+          _modelsCache[cacheKey] = uniqueModels;
+          _modelsCacheTimestamp = DateTime.now();
+          _logger.logInfo('[OpenRouter] Models cached for ${OpenRouterConstants.modelsCacheDurationMinutes} minutes');
+        }
+
+        return uniqueModels;
+      },
+    );
   }
 
-  /// Get chat completion (non-streaming)
+  /// Get chat completion (non-streaming) with retry
   Future<ChatCompletionResponse> getChatCompletion({
     required String model,
     required List<Map<String, dynamic>> messages,
@@ -593,58 +692,49 @@ class OpenRouterService {
       throw Exception('OpenRouter API key not configured');
     }
 
-    // Wait for Dio to be initialized
-    while (_dio == null) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
+    await _waitForInitialization();
 
     _logger.logInfo('[OpenRouter] Getting chat completion...');
     _logger.logDebug('[OpenRouter] Model: $model');
     _logger.logDebug('[OpenRouter] Messages: ${messages.length} messages');
 
-    try {
-      final data = {
-        'model': model,
-        'messages': messages,
-        'max_tokens': maxTokens ?? 8000,
-        'temperature': temperature ?? 0.7,
-      };
+    return _retryWithBackoff(
+      operationName: 'getChatCompletion',
+      operation: () async {
+        final data = {
+          'model': model,
+          'messages': messages,
+          'max_tokens': maxTokens ?? 8000,
+          'temperature': temperature ?? 0.7,
+        };
 
-      if (reason != null) {
-        data['reason'] = reason;
-      }
+        if (reason != null) {
+          data['reason'] = reason;
+        }
 
-      final response = await _dio!.post('/chat/completions', data: data);
-
-      if (response.statusCode == 200) {
-        final responseData = response.data;
-        _logger.logInfo('[OpenRouter] Chat completion successful!');
-
-        return ChatCompletionResponse.fromOpenRouterResponse(responseData);
-      } else {
-        _logger.logError(
-          '[OpenRouter] Chat completion failed with status: ${response.statusCode}',
+        final response = await _dio!.post(
+          OpenRouterConstants.completionsEndpoint,
+          data: data,
         );
-        _logger.logError('[OpenRouter] Response: ${response.data}');
-        throw Exception('Chat completion failed');
-      }
-    } catch (e) {
-      if (e is DioException && e.response != null) {
-        final errorResponse = e.response!.data;
-        final errorMessage = errorResponse is Map
-            ? (errorResponse['error']?['message'] ??
-                  errorResponse['message'] ??
-                  errorResponse.toString())
-            : errorResponse.toString();
-        _logger.logError('[OpenRouter] Error in chat completion: $e');
-        _logger.logError('[OpenRouter] Server error message: $errorMessage');
-        // Create a more descriptive exception with the server message
-        throw Exception('Server error: $errorMessage');
-      } else {
-        _logger.logError('[OpenRouter] Error in chat completion: $e');
-        rethrow;
-      }
-    }
+
+        if (response.statusCode == 200) {
+          _logger.logInfo('[OpenRouter] Chat completion successful!');
+          return ChatCompletionResponse.fromOpenRouterResponse(response.data);
+        } else {
+          final errorMessage = await _extractErrorMessage(
+            DioException(
+              requestOptions: RequestOptions(path: OpenRouterConstants.completionsEndpoint),
+              response: response,
+            ),
+          );
+          _logger.logError(
+            '[OpenRouter] Chat completion failed with status: ${response.statusCode}',
+          );
+          _logger.logError('[OpenRouter] Error message: $errorMessage');
+          throw Exception('Server error: $errorMessage');
+        }
+      },
+    );
   }
 
   /// Upload file for multimodal models
@@ -653,201 +743,132 @@ class OpenRouterService {
       throw Exception('OpenRouter API key not configured');
     }
 
-    // Wait for Dio to be initialized
-    while (_dio == null) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
+    await _waitForInitialization();
 
     _logger.logInfo('[OpenRouter] Uploading file: $filePath');
 
-    try {
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(filePath),
-        if (model != null) 'model': model,
-      });
+    // Check cache
+    final cacheKey = '$filePath|$model';
+    if (_fileCache.containsKey(cacheKey)) {
+      _logger.logInfo('[OpenRouter] Returning cached file ID');
+      return _fileCache[cacheKey]!;
+    }
 
-      final response = await _dio!.post(
-        '/files',
-        data: formData,
-        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
-      );
+    return _retryWithBackoff(
+      operationName: 'uploadFile',
+      operation: () async {
+        final formData = FormData.fromMap({
+          'file': await MultipartFile.fromFile(filePath),
+          if (model != null) 'model': model,
+        });
 
-      if (response.statusCode == 200) {
-        final responseData = response.data;
-        final fileId = responseData['data']?['id'] as String?;
+        final response = await _dio!.post(
+          OpenRouterConstants.filesEndpoint,
+          data: formData,
+          options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+        );
 
-        if (fileId != null) {
-          _logger.logInfo('[OpenRouter] File uploaded successfully: $fileId');
-          return fileId;
+        if (response.statusCode == 200) {
+          final responseData = response.data;
+          final fileId = responseData['data']?['id'] as String?;
+
+          if (fileId != null) {
+            _logger.logInfo('[OpenRouter] File uploaded successfully: $fileId');
+            _fileCache[cacheKey] = fileId;
+            return fileId;
+          } else {
+            throw Exception('File upload response missing file ID');
+          }
         } else {
-          throw Exception('File upload response missing file ID');
+          throw Exception('File upload failed');
         }
-      } else {
-        throw Exception('File upload failed');
-      }
-    } catch (e) {
-      _logger.logError('[OpenRouter] Error uploading file: $e');
-      rethrow;
-    }
+      },
+    );
   }
 
-  /// Stream chat completion for real-time responses
-  /// Simulate streaming response for testing
-  Future<void> _simulateStreamingResponse(
-    Function(String) onChunk,
-    Function(String) onCompletion,
-  ) async {
-    final simulatedResponse = "simulated streaming response.";
-
-    for (int i = 0; i < simulatedResponse.length; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 5));
-      final chunk = simulatedResponse.substring(i, i + 1);
-      onChunk(chunk);
-    }
-
-    onCompletion(simulatedResponse);
-  }
-
-  /// Stream chat completion for real-time responses with rate limiting
+  /// Stream chat completion for real-time responses with proper SSE parsing
   Future<void> streamChatCompletion({
     required List<Map<String, dynamic>> messages,
     required String model,
     int? maxTokens,
     double? temperature,
-    String? reason,
+    bool includeReasoning = false,
     required Function(String) onChunk,
     required Function(String) onCompletion,
     Function(String)? onReasoning,
   }) async {
-    _logger.logInfo('[OpenRouter] Starting streaming chat completion...');
+    _logger.logInfo('[OpenRouter] Starting REAL streaming chat completion...');
     _logger.logDebug('[OpenRouter] Model: $model');
     _logger.logDebug('[OpenRouter] Messages: ${messages.length} messages');
-    _logger.logVerbose(
-      '[OpenRouter] Messages content: ${messages.map((m) => '${m['role']}: ${m['content']}').join(' | ')}',
-    );
+    _logger.logDebug('[OpenRouter] Include reasoning: $includeReasoning');
 
     if (_apiKey == null || _apiKey!.isEmpty) {
       _logger.logError('[OpenRouter] API key not configured');
       throw Exception('OpenRouter API key not configured');
     }
-    _logger.logInfo('[OpenRouter] API key configured');
 
-    // Wait for Dio to be initialized
-    while (_dio == null) {
-      _logger.logDebug('[OpenRouter] Waiting for Dio initialization...');
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
+    await _waitForInitialization();
     _logger.logInfo('[OpenRouter] Dio initialized');
 
-    try {
-      final data = {
-        'model': model,
-        'messages': messages,
-        'max_tokens': maxTokens ?? 8000,
-        'temperature': temperature ?? 0.7,
-        'stream': true,
-      };
+    return _retryWithBackoff(
+      operationName: 'streamChatCompletion',
+      operation: () async {
+        final data = {
+          'model': model,
+          'messages': messages,
+          'stream': true,
+          if (maxTokens != null) 'max_tokens': maxTokens,
+          if (temperature != null) 'temperature': temperature,
+          if (includeReasoning) 'include_reasoning': true,
+        };
 
-      if (reason != null) {
-        data['reason'] = reason;
-      }
+        _logger.logInfo('[OpenRouter] Making API request to OpenRouter...');
+        _logger.logVerbose('[OpenRouter] Request data: ${jsonEncode(data)}');
 
-      _logger.logInfo('[OpenRouter] Making API request to OpenRouter...');
-      _logger.logVerbose('[OpenRouter] Request data: ${jsonEncode(data)}');
-
-      final response = await _dio!.post(
-        '/chat/completions',
-        data: data,
-        options: Options(responseType: ResponseType.stream),
-      );
-
-      _logger.logDebug('[OpenRouter] Response status: ${response.statusCode}');
-      _logger.logDebug('[OpenRouter] Response headers: ${response.headers}');
-
-      if (response.statusCode == 200) {
-        _logger.logInfo('[OpenRouter] Streaming started successfully!');
-
-        // Parse streaming response from OpenRouter using proper SSE format
-        final stream = response.data;
-        _logger.logVerbose('[OpenRouter] Stream type: ${stream.runtimeType}');
-        final streamPreview = stream.toString();
-        final previewLength = streamPreview.length > 100
-            ? 100
-            : streamPreview.length;
-        _logger.logVerbose(
-          '[OpenRouter] Stream data preview: ${streamPreview.substring(0, previewLength)}...',
+        final response = await _dio!.post(
+          OpenRouterConstants.completionsEndpoint,
+          data: data,
+          options: Options(responseType: ResponseType.stream),
         );
 
-        // Handle ResponseBody stream with proper SSE parsing
+        _logger.logDebug('[OpenRouter] Response status: ${response.statusCode}');
+
+        if (response.statusCode != 200) {
+          final errorMessage = await _extractErrorMessage(
+            DioException(
+              requestOptions: RequestOptions(path: OpenRouterConstants.completionsEndpoint),
+              response: response,
+            ),
+          );
+          _logger.logError(
+            '[OpenRouter] Streaming failed with status: ${response.statusCode}',
+          );
+          _logger.logError('[OpenRouter] Error message: $errorMessage');
+          throw Exception('Server error: $errorMessage');
+        }
+
+        _logger.logInfo('[OpenRouter] Streaming started successfully!');
+
+        final stream = response.data;
+        
         if (stream is ResponseBody) {
-          _logger.logDebug(
-            '[OpenRouter] Processing ResponseBody stream with SSE format',
+          return await _processSSEStream(
+            stream,
+            onChunk,
+            onCompletion,
+            onReasoning,
+            includeReasoning,
           );
-
-          // For now, use non-streaming approach since streaming has type issues
-          _logger.logWarning(
-            '[OpenRouter] Switching to non-streaming approach due to type compatibility issues',
-          );
-
-          // Use getChatCompletion instead for now
-          try {
-            final response = await getChatCompletion(
-              model: model,
-              messages: messages,
-              maxTokens: maxTokens,
-              temperature: temperature,
-            );
-
-            // Handle reasoning if callback is provided
-            if (onReasoning != null && response.reasoning != null) {
-              onReasoning(response.reasoning!);
-            }
-
-            // Simulate streaming by sending chunks
-            final fullContent = response.content;
-            final previewLength = fullContent.length > 50
-                ? 50
-                : fullContent.length;
-            _logger.logDebug(
-              '[OpenRouter] Got response: ${fullContent.substring(0, previewLength)}...',
-            );
-
-            // Send content in chunks to simulate streaming
-            const chunkSize = 10;
-            for (int i = 0; i < fullContent.length; i += chunkSize) {
-              final end = i + chunkSize < fullContent.length
-                  ? i + chunkSize
-                  : fullContent.length;
-              final chunk = fullContent.substring(i, end);
-              onChunk(chunk);
-              await Future<void>.delayed(
-                const Duration(milliseconds: 50),
-              ); // Small delay for effect
-            }
-
-            onCompletion(fullContent);
-            _logger.logInfo('[OpenRouter] Non-streaming response completed');
-          } catch (e) {
-            _logger.logError('[OpenRouter] Non-streaming approach failed: $e');
-            // Fallback to simulation
-            await _simulateStreamingResponse(onChunk, onCompletion);
-          }
         } else {
           _logger.logWarning(
             '[OpenRouter] Unknown stream type: ${stream.runtimeType}',
           );
-          _logger.logDebug(
-            '[OpenRouter] Attempting to process as raw response',
-          );
-
-          // Try to get the response as text
+          
+          // Try to process as raw response
           if (response.data is String) {
             final responseText = response.data as String;
-            final previewLength = responseText.length > 200
-                ? 200
-                : responseText.length;
             _logger.logVerbose(
-              '[OpenRouter] Raw response: ${responseText.substring(0, previewLength)}...',
+              '[OpenRouter] Raw response: ${responseText.substring(0, responseText.length > 200 ? 200 : responseText.length)}...',
             );
           }
 
@@ -855,129 +876,16 @@ class OpenRouterService {
           _logger.logWarning('[OpenRouter] Using simulation fallback');
           await _simulateStreamingResponse(onChunk, onCompletion);
         }
-      } else if (response.statusCode == 429) {
-        _logger.logError('[OpenRouter] Rate limit exceeded (429)');
-        throw Exception(
-          'Rate limit exceeded. Please wait a moment and try again.',
-        );
-      } else {
-        _logger.logError(
-          '[OpenRouter] Streaming failed with status: ${response.statusCode}',
-        );
-        _logger.logError('[OpenRouter] Response data: ${response.data}');
-        throw Exception('Streaming chat completion failed');
-      }
-    } catch (e) {
-      _logger.logError('[OpenRouter] Error in streaming: $e');
-
-      // Check if it's a DioException with specific status codes
-      if (e is DioException) {
-        if (e.response?.statusCode == 429) {
-          _logger.logError('[OpenRouter] Rate limit exceeded (429)');
-
-          // Extract error message from ResponseBody
-          String errorMessage = 'Please wait a moment and try again.';
-          if (e.response?.data != null) {
-            try {
-              if (e.response!.data is String) {
-                errorMessage = e.response!.data as String;
-              } else if (e.response!.data is Map) {
-                final errorData = Map<String, dynamic>.from(e.response!.data);
-                errorMessage =
-                    errorData['error']?['message'] ??
-                    errorData['message'] ??
-                    errorData.toString();
-              } else if (e.response!.data is ResponseBody) {
-                // Read the ResponseBody to get the actual error message
-                final responseBody = e.response!.data as ResponseBody;
-                final errorText = await utf8.decodeStream(responseBody.stream);
-                errorMessage = errorText;
-              }
-            } catch (err) {
-              _logger.logError(
-                '[OpenRouter] Error parsing error response: $err',
-              );
-            }
-          }
-
-          throw Exception('Rate limit exceeded: $errorMessage');
-        } else if (e.response?.statusCode == 400) {
-          _logger.logError('[OpenRouter] Bad request (400)');
-
-          // Extract error message from ResponseBody
-          String errorMessage = 'Please check your request and try again.';
-          if (e.response?.data != null) {
-            try {
-              if (e.response!.data is String) {
-                errorMessage = e.response!.data as String;
-              } else if (e.response!.data is Map) {
-                final errorData = Map<String, dynamic>.from(e.response!.data);
-                errorMessage =
-                    errorData['error']?['message'] ??
-                    errorData['message'] ??
-                    errorData.toString();
-              } else if (e.response!.data is ResponseBody) {
-                // Read the ResponseBody to get the actual error message
-                final responseBody = e.response!.data as ResponseBody;
-                final errorText = await utf8.decodeStream(responseBody.stream);
-                errorMessage = errorText;
-              }
-            } catch (err) {
-              _logger.logError(
-                '[OpenRouter] Error parsing error response: $err',
-              );
-            }
-          }
-
-          throw Exception('Bad request: $errorMessage');
-        } else {
-          _logger.logError(
-            '[OpenRouter] DioException with status: ${e.response?.statusCode}',
-          );
-
-          // Extract error message from ResponseBody
-          String errorMessage = 'Unknown error';
-          if (e.response?.data != null) {
-            try {
-              if (e.response!.data is String) {
-                errorMessage = e.response!.data as String;
-              } else if (e.response!.data is Map) {
-                final errorData = Map<String, dynamic>.from(e.response!.data);
-                errorMessage =
-                    errorData['error']?['message'] ??
-                    errorData['message'] ??
-                    errorData.toString();
-              } else if (e.response!.data is ResponseBody) {
-                // Read the ResponseBody to get the actual error message
-                final responseBody = e.response!.data as ResponseBody;
-                final errorText = await utf8.decodeStream(responseBody.stream);
-                errorMessage = errorText;
-              }
-            } catch (err) {
-              _logger.logError(
-                '[OpenRouter] Error parsing error response: $err',
-              );
-            }
-          }
-
-          throw Exception('Server error: $errorMessage');
-        }
-      }
-
-      // Re-throw the original exception
-      rethrow;
-    }
+      },
+    );
   }
 
   /// Get service health status
   Future<bool> isHealthy() async {
-    // Wait for Dio to be initialized
-    while (_dio == null) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
+    await _waitForInitialization();
 
     try {
-      final response = await _dio!.get('/health');
+      final response = await _dio!.get(OpenRouterConstants.healthEndpoint);
       return response.statusCode == 200;
     } catch (e) {
       _logger.logError('[OpenRouter] Health check failed: $e');
@@ -1002,13 +910,10 @@ class OpenRouterService {
       throw Exception('OpenRouter API key not configured');
     }
 
-    // Wait for Dio to be initialized
-    while (_dio == null) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
+    await _waitForInitialization();
 
     try {
-      final response = await _dio!.get('/models');
+      final response = await _dio!.get(OpenRouterConstants.modelsEndpoint);
 
       if (response.statusCode == 200) {
         final data = response.data;
@@ -1043,20 +948,154 @@ class OpenRouterService {
     }
   }
 
+  /// Check if OpenRouterService is ready for API calls
+  bool isReady() {
+    return _dio != null && _apiKey != null && _apiKey!.isNotEmpty;
+  }
+
+  /// Clear all caches
+  void clearCache() {
+    _modelsCache.clear();
+    _modelsCacheTimestamp = null;
+    _fileCache.clear();
+    _logger.logInfo('[OpenRouter] All caches cleared');
+  }
+
+  // ===========================================================================
+  // PRIVATE HELPER METHODS
+  // ===========================================================================
+
+  bool _filterModel(
+    OpenRouterModel model,
+    String? category,
+    bool? supportsReasoning,
+    bool? supportsMultimodal,
+  ) {
+    if (category != null &&
+        !model.name.toLowerCase().contains(category.toLowerCase())) {
+      return false;
+    }
+    if (supportsReasoning == true && !model.capabilities.reasoning) {
+      return false;
+    }
+    if (supportsMultimodal == true && !model.capabilities.multimodal) {
+      return false;
+    }
+    return true;
+  }
+
+  String _buildModelsCacheKey(
+    String? category,
+    bool? supportsReasoning,
+    bool? supportsMultimodal,
+  ) {
+    return '${category ?? 'all'}_${supportsReasoning ?? false}_${supportsMultimodal ?? false}';
+  }
+
+  Future<void> _processSSEStream(
+    ResponseBody stream,
+    Function(String) onChunk,
+    Function(String) onCompletion,
+    Function(String)? onReasoning,
+    bool includeReasoning,
+  ) async {
+    String fullContent = '';
+    bool hasReasoning = false;
+    int chunkCount = 0;
+    int reasoningChunkCount = 0;
+
+    print('[DEBUG] [OpenRouter] _processSSEStream START, includeReasoning: $includeReasoning');
+
+    await for (final chunk in stream.stream) {
+      final decoded = utf8.decode(chunk);
+      final lines = decoded.split('\n');
+
+      for (final line in lines) {
+        if (line.startsWith('data: ')) {
+          final dataStr = line.substring(6).trim();
+          
+          if (dataStr.isEmpty || dataStr == '[DONE]') {
+            if (dataStr == '[DONE]') {
+              _logger.logInfo('[OpenRouter] Stream completed');
+              print('[DEBUG] [OpenRouter] Received [DONE]');
+            }
+            continue;
+          }
+
+          try {
+            final chunkData = jsonDecode(dataStr);
+            final choices = chunkData['choices'] as List?;
+            final choice = (choices != null && choices.isNotEmpty) ? choices[0] : null;
+            final delta = choice?['delta'] ?? {};
+            final content = delta['content'];
+            final reasoning = delta['reasoning'];
+
+            if (content != null && content is String) {
+              fullContent += content;
+              chunkCount++;
+              onChunk(content);
+              _logger.logVerbose('[OpenRouter] Content chunk: "$content"');
+              print('[DEBUG] [OpenRouter] Content chunk #$chunkCount: "${content.substring(0, min(20, content.length))}${content.length > 20 ? '...' : ''}"');
+            }
+
+            if (reasoning != null && reasoning is String) {
+              hasReasoning = true;
+              reasoningChunkCount++;
+              if (onReasoning != null) {
+                onReasoning(reasoning);
+              }
+              _logger.logVerbose('[OpenRouter] Reasoning chunk: "$reasoning"');
+              print('[DEBUG] [OpenRouter] Reasoning chunk #$reasoningChunkCount: "${reasoning.substring(0, min(20, reasoning.length))}${reasoning.length > 20 ? '...' : ''}"');
+            }
+
+            if (choice?['finish_reason'] != null) {
+              _logger.logInfo('[OpenRouter] Finish reason: ${choice?['finish_reason']}');
+              print('[DEBUG] [OpenRouter] Finish reason: ${choice?['finish_reason']}');
+            }
+          } catch (e) {
+            _logger.logWarning('[OpenRouter] Failed to parse chunk: $e');
+            print('[DEBUG] [OpenRouter] ERROR parsing chunk: $e');
+          }
+        }
+      }
+    }
+
+    if (includeReasoning && !hasReasoning) {
+      _logger.logInfo('[OpenRouter] Reasoning not in stream, will be available after completion');
+      print('[DEBUG] [OpenRouter] No reasoning chunks received');
+    }
+
+    onCompletion(fullContent);
+    _logger.logInfo('[OpenRouter] Streaming completed, total content length: ${fullContent.length}');
+    print('[DEBUG] [OpenRouter] _processSSEStream END, total content: ${fullContent.length}, chunks: $chunkCount, reasoning chunks: $reasoningChunkCount');
+  }
+
+  /// Simulate streaming response for testing
+  Future<void> _simulateStreamingResponse(
+    Function(String) onChunk,
+    Function(String) onCompletion,
+  ) async {
+    final simulatedResponse = "simulated streaming response.";
+
+    for (int i = 0; i < simulatedResponse.length; i++) {
+      await Future<void>.delayed(
+        const Duration(milliseconds: OpenRouterConstants.chunkProcessingDelayMs),
+      );
+      final chunk = simulatedResponse.substring(i, i + 1);
+      onChunk(chunk);
+    }
+
+    onCompletion(simulatedResponse);
+  }
+
   /// Remove duplicate models using a more robust approach
   List<OpenRouterModel> _deduplicateModels(List<OpenRouterModel> models) {
     final Map<String, OpenRouterModel> uniqueModels = {};
 
     for (final model in models) {
-      // Use model ID as the primary key for deduplication
       uniqueModels[model.id] = model;
     }
 
     return uniqueModels.values.toList();
-  }
-
-  /// Check if OpenRouterService is ready for API calls
-  bool isReady() {
-    return _dio != null && _apiKey != null && _apiKey!.isNotEmpty;
   }
 }

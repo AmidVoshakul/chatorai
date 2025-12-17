@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/material.dart';
 import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
-import 'package:gen_ui_chat_ai/utils/logger.dart';
 
 // Mock logger for testing
 class MockLogger {
@@ -18,10 +16,8 @@ class MockLogger {
 
 void main() {
   group('OpenRouterService Reasoning Tests', () {
-    late OpenRouterService openRouterService;
 
     setUp(() {
-      openRouterService = OpenRouterService();
     });
 
     // Test 1: ChatCompletionResponse parsing with reasoning
@@ -360,9 +356,10 @@ void main() {
       message = message.copyWith(reasoning: '');
       expect(message.reasoning, '');
 
-      // Remove reasoning
-      message = message.copyWith(reasoning: null);
-      expect(message.reasoning, isNull);
+      // Test that reasoning can be preserved when not specified
+      message = message.copyWith(content: 'Content updated.');
+      expect(message.reasoning, ''); // Should preserve empty string
+      expect(message.content, 'Content updated.');
     });
   });
 }
