@@ -216,12 +216,12 @@ class _ChatMessagesState extends State<ChatMessages> {
 
     // Check if we should show reasoning during streaming
     final lastMessage = hasMessages ? messages.last : null;
-    final showReasoningDuringStreaming = 
-        isStreaming && 
-        lastMessage != null && 
+    final hasReasoning = lastMessage != null && 
         lastMessage.reasoning != null && 
-        lastMessage.reasoning!.isNotEmpty &&
-        lastMessage.content.isEmpty;
+        lastMessage.reasoning!.isNotEmpty;
+    
+    // Show reasoning if: streaming AND has reasoning
+    final showReasoningDuringStreaming = isStreaming && hasReasoning;
 
     // Don't show waiting animation if reasoning is already being displayed
     final shouldShowWaitingAnimation = shouldShowWaiting && !showReasoningDuringStreaming;
@@ -256,9 +256,12 @@ class _ChatMessagesState extends State<ChatMessages> {
                 final isEmptyAssistantMessage =
                     isAssistantMessage && message.content.isEmpty;
 
-                // During streaming with reasoning: show reasoning, skip waiting animation
+                // During streaming: handle assistant message with reasoning
                 if (isEmptyAssistantMessage && !message.isComplete && isLastMessage) {
-                  if (message.reasoning != null && message.reasoning!.isNotEmpty) {
+                  final hasReasoning = message.reasoning != null && message.reasoning!.isNotEmpty;
+                  
+                  if (hasReasoning) {
+                    // Show reasoning (streaming) - this replaces waiting animation
                     return reasoning_msg.ReasoningMessage(
                       key: ValueKey('${message.id}_${message.reasoning?.length ?? 0}'),
                       reasoning: message.reasoning!,
