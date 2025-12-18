@@ -100,15 +100,6 @@ class ChatScrollUtils {
     _isAnimating = true;
     _log('[START] scrollToIndicator');
     
-    // Ждем, чтобы ListView обновился
-    await Future.delayed(const Duration(milliseconds: 30));
-    
-    // Проверяем еще раз после задержки
-    if (!scrollController.hasClients || _autoScrollLocked) {
-      _isAnimating = false;
-      return;
-    }
-    
     try {
       final maxScroll = scrollController.position.maxScrollExtent;
       final currentScroll = scrollController.offset;
@@ -120,6 +111,7 @@ class ChatScrollUtils {
       final scrollDifference = (targetScroll - currentScroll).abs();
       if (scrollDifference < 5) {
         _log('[SKIP] Already at target position (diff: ${scrollDifference.toStringAsFixed(1)}px)');
+        _hasScrolledToIndicator = true; // ← ОБЯЗАТЕЛЬНО устанавливаем флаг
         _isAnimating = false;
         return;
       }

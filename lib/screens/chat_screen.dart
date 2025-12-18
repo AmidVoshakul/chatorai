@@ -312,6 +312,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _logger.logInfo('[ChatScreen] Received message to send: $message');
     
     // Reset scroll lock before sending new message
+    // Это единственное место, где сбрасываем флаг для нового user intent
     _chatScrollUtils?.resetAutoScrollLock();
     print('[CHAT_SCREEN] Auto-scroll lock reset before sending');
     
@@ -402,9 +403,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
 
     // CRITICAL: Scroll to indicator AFTER it appears
-    // Ждем 100ms, чтобы ListView гарантированно обновился
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _logger.logInfo('[ChatScreen] Delayed: scrolling to indicator');
+    // Используем post-frame callback для гарантированного вызова после обновления UI
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _logger.logInfo('[ChatScreen] PostFrame: scrolling to indicator');
       _chatScrollUtils?.scrollToIndicator();
     });
 
@@ -682,9 +683,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
     
     // CRITICAL: Scroll to indicator AFTER it appears
-    // Используем Future.microtask для гарантированного вызова после setState
-    Future.microtask(() {
-      _logger.logInfo('[ChatScreen] Microtask: scrolling to indicator (continuation)');
+    // Используем post-frame callback для гарантированного вызова после обновления UI
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _logger.logInfo('[ChatScreen] PostFrame: scrolling to indicator (continuation)');
       _chatScrollUtils?.scrollToIndicator();
     });
 
