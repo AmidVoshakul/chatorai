@@ -1,358 +1,230 @@
 // ignore_for_file: avoid_print
 
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
 
-// Initialize logger for this utility
 final _logger = LogTags.scroll;
 
-/// Utility class for managing scroll behavior in chat interfaces
+/// Упрощенная логика автоскролла для чата
+/// 
+/// Правила:
+/// 1. После отправки → скролл к индикатору (ОДИН РАЗ)
+/// 2. Во время стриминга → НЕ скроллим
+/// 3. В конце → НЕ скроллим (если пользователь не двигал)
 class ChatScrollUtils {
   final ScrollController scrollController;
   final Duration animationDuration;
   final Curve animationCurve;
   
-  // Debounce timer for scroll events to prevent excessive scrolling
-  Timer? _scrollDebounceTimer;
-  
-  // Flag to track if we're currently animating
+  // Флаги состояния
   bool _isAnimating = false;
-  
-  // Last known scroll position for comparison
-  double _lastScrollPosition = 0.0;
-  
-  // Minimum distance threshold for auto-scroll (prevents tiny adjustments)
-  static const double _minScrollThreshold = 5.0;
-  
-  // Auto-scroll lock to prevent conflicts during user interaction
   bool _autoScrollLocked = false;
+  bool _hasScrolledToIndicator = false; // NEW: Флаг, что уже скроллили к индикатору
   
-  // Callback for when messages are updated
-  final VoidCallback? onMessagesUpdated;
+  // Для отладки: история операций
+  final List<String> _debugHistory = [];
   
-  // Auto-scroll to bottom when new content is added
-  bool _autoScrollEnabled = true;
-  
-  // Linux-specific optimizations (increased thresholds for better responsiveness)
-  static const double _scrollThreshold = 50.0; // Reduced for more sensitive auto-scroll
-  static const int _scrollDelay = 10; // Reduced for faster response
-  
-  /// Constructor
   ChatScrollUtils({
     required this.scrollController,
-    this.animationDuration = const Duration(milliseconds: 300),
-    this.animationCurve = Curves.easeOut,
-    this.onMessagesUpdated,
-  }) {
-    _initializeScrollListener();
-  }
+    required this.animationDuration,
+    required this.animationCurve,
+  });
   
-  /// Initialize scroll position tracking
+  /// Инициализация (вызывается после создания)
   void initialize() {
-    if (scrollController.hasClients) {
-      _lastScrollPosition = scrollController.offset;
-      
-      // Force immediate scroll to bottom for better Linux compatibility
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (scrollController.hasClients) {
-          scrollController.jumpTo(scrollController.position.maxScrollExtent);
-          _logger.logDebug('[Scroll] Linux initialization: Force scroll to bottom');
-        }
-      });
-    }
+    _initListener();
+    _log('[INIT] ChatScrollUtils initialized');
   }
   
-  /// Start listening to scroll events
-  void _initializeScrollListener() {
-    scrollController.addListener(_onScrollEvent);
-  }
-  
-  /// Stop listening to scroll events
+  /// Очистка
   void dispose() {
-    _scrollDebounceTimer?.cancel();
-    scrollController.removeListener(_onScrollEvent);
+    _log('[DISPOSE] ChatScrollUtils disposed');
+    _debugHistory.clear();
   }
   
-  /// Handle scroll events to determine auto-scroll behavior
-  void _onScrollEvent() {
-    if (!_autoScrollLocked) {
-      final currentPosition = scrollController.offset;
-      final maxScrollExtent = scrollController.position.maxScrollExtent;
+  void _initListener() {
+    scrollController.addListener(() {
+      // НЕ реагируем, если идет анимация скролла
+      if (_isAnimating) return;
       
-      // Use Linux-optimized threshold
-      final threshold = _scrollThreshold;
-      final isNearBottom = (maxScrollExtent - currentPosition) <= threshold;
+      final current = scrollController.offset;
+      final max = scrollController.position.maxScrollExtent;
+      final distance = (max - current).abs();
       
-      // Update auto-scroll lock based on user interaction
-      _autoScrollLocked = !isNearBottom;
-      
-      // Store last position for comparison
-      _lastScrollPosition = currentPosition;
-      
-      _logger.logVerbose('[Scroll] Scroll position: $currentPosition, Max: $maxScrollExtent, Near bottom: $isNearBottom, Locked: $_autoScrollLocked');
+      // Если пользователь отскроллил больше 50px от конца → блокируем автоскролл
+      if (distance > 50 && !_autoScrollLocked) {
+        _autoScrollLocked = true;
+        _log('[USER SCROLL] Locked auto-scroll (distance: ${distance.toStringAsFixed(1)}px)');
+      }
+    });
+  }
+  
+  void _log(String message) {
+    _debugHistory.add('${DateTime.now().toString().split(' ')[1]}: $message');
+    if (_debugHistory.length > 20) {
+      _debugHistory.removeAt(0); // Keep last 20 entries
     }
+    // Выводим в консоль для отладки
+    print('[SCROLL] $message');
+    _logger.logInfo('[Scroll] $message');
   }
   
-  /// Scroll to bottom with optional animation
-  Future<void> scrollToBottom({bool animated = true}) async {
+  /// Скролл к индикатору (вызывается ПОСЛЕ добавления сообщения)
+  /// 
+  /// Скроллит в конец списка, чтобы индикатор был виден под AppBar
+  /// Вызывается ТОЛЬКО ОДИН РАЗ (флаг _hasScrolledToIndicator)
+  Future<void> scrollToIndicator() async {
+    // ПРОВЕРКА: Если уже скроллили к индикатору — ВЫХОДИМ
+    if (_hasScrolledToIndicator) {
+      _log('[SKIP] Already scrolled to indicator (once)');
+      return;
+    }
+    
+    // Быстрая проверка: если уже анимируем или заблокировано — выходим
     if (_isAnimating) {
-      _logger.logDebug('[Scroll] Skip scroll - already animating');
+      _log('[SKIP] Already animating');
+      return;
+    }
+    
+    if (!scrollController.hasClients) {
+      _log('[SKIP] Controller not attached');
+      return;
+    }
+    
+    // Проверяем, не заблокирован ли автоскролл пользователем
+    if (_autoScrollLocked) {
+      _log('[SKIP] Auto-scroll locked by user');
+      return;
+    }
+    
+    _isAnimating = true;
+    _log('[START] scrollToIndicator');
+    
+    // Ждем, чтобы ListView обновился
+    await Future.delayed(const Duration(milliseconds: 30));
+    
+    // Проверяем еще раз после задержки
+    if (!scrollController.hasClients || _autoScrollLocked) {
+      _isAnimating = false;
       return;
     }
     
     try {
-      _isAnimating = true;
+      final maxScroll = scrollController.position.maxScrollExtent;
+      final currentScroll = scrollController.offset;
       
-      if (animated && scrollController.hasClients) {
-        await scrollController.animateTo(
-          scrollController.position.maxScrollExtent,
-          duration: animationDuration,
-          curve: animationCurve,
-        );
-        _logger.logInfo('[Scroll] Smooth scroll to bottom completed');
-      } else if (scrollController.hasClients) {
-        scrollController.jumpTo(scrollController.position.maxScrollExtent);
-        _logger.logInfo('[Scroll] Jump scroll to bottom completed');
+      // Скроллим в конец (где индикатор)
+      final targetScroll = maxScroll;
+      
+      // Проверяем, нужно ли скроллить
+      final scrollDifference = (targetScroll - currentScroll).abs();
+      if (scrollDifference < 5) {
+        _log('[SKIP] Already at target position (diff: ${scrollDifference.toStringAsFixed(1)}px)');
+        _isAnimating = false;
+        return;
       }
       
-      // Force focus on the last content for Linux compatibility
-      if (scrollController.hasClients) {
-        // Small delay to ensure scroll is complete, then ensure we're really at bottom
-        Future.delayed(const Duration(milliseconds: 10), () {
-          if (scrollController.hasClients && scrollController.position.maxScrollExtent > 0) {
-            final currentScroll = scrollController.offset;
-            final maxScroll = scrollController.position.maxScrollExtent;
-            
-            // If we're not exactly at the bottom, make a final adjustment
-            if ((maxScroll - currentScroll) > 1.0) {
-              scrollController.jumpTo(maxScroll);
-              _logger.logDebug('[Scroll] Linux fix: Final adjustment to exact bottom position');
-            }
-          }
-        });
-      }
+      _log('[EXECUTE] current=${currentScroll.toStringAsFixed(0)}, target=${targetScroll.toStringAsFixed(0)}');
+      
+      await scrollController.animateTo(
+        targetScroll,
+        duration: animationDuration,
+        curve: animationCurve,
+      );
+      
+      _hasScrolledToIndicator = true; // УСТАНАВЛИВАЕМ ФЛАГ
+      _log('[COMPLETE] Scrolled to indicator (once)');
     } catch (e) {
+      _log('[ERROR] $e');
+      _logger.logError('[Scroll] Error scrolling to indicator: $e');
+    } finally {
+      _isAnimating = false;
+    }
+  }
+  
+  /// Скролл в конец (для смены чата)
+  /// 
+  /// Скроллит в самый низ, чтобы видеть последние сообщения
+  Future<void> scrollToBottom() async {
+    if (_isAnimating) {
+      _log('[SKIP] Already animating');
+      return;
+    }
+    
+    if (!scrollController.hasClients) {
+      _log('[SKIP] Controller not attached');
+      return;
+    }
+    
+    _isAnimating = true;
+    _log('[START] scrollToBottom');
+    
+    try {
+      final maxScroll = scrollController.position.maxScrollExtent;
+      final currentScroll = scrollController.offset;
+      
+      final scrollDifference = (maxScroll - currentScroll).abs();
+      if (scrollDifference < 5) {
+        _log('[SKIP] Already at bottom (diff: ${scrollDifference.toStringAsFixed(1)}px)');
+        _isAnimating = false;
+        return;
+      }
+      
+      _log('[EXECUTE] target=${maxScroll.toStringAsFixed(0)}, current=${currentScroll.toStringAsFixed(0)}');
+      
+      await scrollController.animateTo(
+        maxScroll,
+        duration: animationDuration,
+        curve: animationCurve,
+      );
+      
+      _log('[COMPLETE] Scrolled to bottom');
+    } catch (e) {
+      _log('[ERROR] $e');
       _logger.logError('[Scroll] Error scrolling to bottom: $e');
     } finally {
       _isAnimating = false;
     }
   }
   
-  /// Scroll to specific position
-  Future<void> scrollToPosition(
-    double position, {
-    bool animated = true,
-  }) async {
-    if (_isAnimating || !scrollController.hasClients) {
-      return;
-    }
-    
-    try {
-      _isAnimating = true;
-      
-      if (animated) {
-        await scrollController.animateTo(
-          position,
-          duration: animationDuration,
-          curve: animationCurve,
-        );
-      } else {
-        scrollController.jumpTo(position);
-      }
-      
-      _logger.logInfo('[Scroll] Scrolled to position: $position');
-    } catch (e) {
-      _logger.logError('[Scroll] Error scrolling to position $position: $e');
-    } finally {
-      _isAnimating = false;
-    }
-  }
+
   
-  /// Debounced scroll to bottom (prevents excessive scrolling)
-  void debouncedScrollToBottom({int debounceMs = 100}) {
-    _scrollDebounceTimer?.cancel();
-    
-    _scrollDebounceTimer = Timer(Duration(milliseconds: debounceMs), () {
-      if (!_autoScrollLocked) {
-        scrollToBottom();
-      }
-    });
-  }
-  
-  /// Lock auto-scroll (useful during user interaction)
-  void lockAutoScroll() {
-    _autoScrollLocked = true;
-    _logger.logInfo('[Scroll] Auto-scroll locked');
-  }
-  
-  /// Unlock auto-scroll
-  void unlockAutoScroll() {
-    _autoScrollLocked = false;
-    _logger.logInfo('[Scroll] Auto-scroll unlocked');
-    // Auto-scroll to bottom when unlocked if needed
-    if (scrollController.hasClients) {
-      final isNearBottom = (scrollController.position.maxScrollExtent - scrollController.offset) <= 50;
-      if (isNearBottom) {
-        scrollToBottom();
-      }
-    }
-  }
-  
-  /// Check if scroll is at bottom
-  bool get isAtBottom {
-    if (!scrollController.hasClients) return true;
-    
-    final position = scrollController.offset;
-    final maxExtent = scrollController.position.maxScrollExtent;
-    return (maxExtent - position) <= _minScrollThreshold;
-  }
-  
-  /// Check if auto-scroll is locked
-  bool get isAutoScrollLocked => _autoScrollLocked;
-  
-  /// Get current scroll position
-  double get currentPosition => scrollController.hasClients ? scrollController.offset : 0.0;
-  
-  /// Get max scroll extent
-  double get maxScrollExtent => scrollController.hasClients ? scrollController.position.maxScrollExtent : 0.0;
-  
-  /// Smooth scroll with custom duration and curve
-  Future<void> smoothScroll({
-    required double targetPosition,
-    Duration? duration,
-    Curve? curve,
-  }) async {
-    if (_isAnimating || !scrollController.hasClients) return;
-    
-    try {
-      _isAnimating = true;
-      
-      await scrollController.animateTo(
-        targetPosition,
-        duration: duration ?? animationDuration,
-        curve: curve ?? animationCurve,
-      );
-      
-      _logger.logInfo('[Scroll] Smooth scroll completed: $targetPosition');
-    } catch (e) {
-      _logger.logError('[Scroll] Error in smooth scroll: $e');
-    } finally {
-      _isAnimating = false;
-    }
-  }
-  
-  /// Scroll to specific item index (if using ListView with item extent)
-  Future<void> scrollToItem({
-    required int index,
-    double? itemExtent,
-    bool animated = true,
-  }) async {
-    if (!scrollController.hasClients) return;
-    
-    try {
-      double targetPosition;
-      
-      if (itemExtent != null) {
-        // For fixed item extent
-        targetPosition = index * itemExtent;
-      } else {
-        // For variable item extent, use an estimate
-        targetPosition = index * 80.0; // Average message height
-      }
-      
-      await scrollToPosition(
-        targetPosition.clamp(0, scrollController.position.maxScrollExtent),
-        animated: animated,
-      );
-      
-      _logger.logInfo('[Scroll] Scrolled to item $index at position $targetPosition');
-    } catch (e) {
-      _logger.logError('[Scroll] Error scrolling to item $index: $e');
-    }
-  }
-  
-  /// Reset scroll state
+  /// Сброс состояния (вызывается при новом чате)
   void reset() {
     _autoScrollLocked = false;
     _isAnimating = false;
-    _scrollDebounceTimer?.cancel();
-    _lastScrollPosition = 0.0;
-    _autoScrollEnabled = true;
-    
-    if (scrollController.hasClients) {
-      _lastScrollPosition = scrollController.offset;
+    _hasScrolledToIndicator = false; // СБРОС ФЛАГА
+    _debugHistory.clear();
+    _log('[RESET] All state cleared');
+  }
+  
+  /// Сбросить только блокировку автоскролла (перед отправкой сообщения)
+  void resetAutoScrollLock() {
+    if (_autoScrollLocked) {
+      _autoScrollLocked = false;
+      _log('[RESET] Auto-scroll lock cleared');
     }
-    
-    _logger.logInfo('[Scroll] Scroll state reset');
+    // СБРОС ФЛАГА: новое сообщение = новый скролл
+    _hasScrolledToIndicator = false;
+    _log('[RESET] Indicator scroll flag cleared');
   }
   
-  /// Call this method when messages are updated during streaming for aggressive auto-scroll
-  void onNewMessagesStreaming() {
-    // During streaming, always scroll to bottom regardless of user position or locks
-    // This ensures user sees the live response immediately
-    Future.delayed(Duration(milliseconds: _scrollDelay), () {
-      if (scrollController.hasClients && !_isAnimating) {
-        _isAnimating = true;
-        scrollController.animateTo(
-          scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 50), // Very fast for streaming
-          curve: Curves.easeOut,
-        ).then((_) {
-          _isAnimating = false;
-        });
-        _logger.logInfo('[Scroll] Streaming: Aggressive scroll to bottom');
-      }
-    });
-  }
-
-  /// Call this method when messages are updated to trigger auto-scroll
-  void onNewMessages() {
-    if (!_autoScrollLocked && _autoScrollEnabled) {
-      // For better Linux support, always try to scroll immediately
-      Future.delayed(Duration(milliseconds: _scrollDelay), () {
-        if (scrollController.hasClients) {
-          final currentPosition = scrollController.offset;
-          final maxScrollExtent = scrollController.position.maxScrollExtent;
-          final threshold = _scrollThreshold;
-          final isNearBottom = (maxScrollExtent - currentPosition) <= threshold;
-          
-          if (isNearBottom || maxScrollExtent <= 0) {
-            // User is near bottom OR it's a new message at the beginning, scroll to keep them there with Linux-optimized animation
-            scrollController.animateTo(
-              maxScrollExtent,
-              duration: const Duration(milliseconds: 100), // Even faster animation for streaming
-              curve: Curves.easeOut,
-            );
-            _logger.logInfo('[Scroll] Linux: Scrolling to bottom (user near bottom or new message)');
-          } else {
-            // User is reading old messages, don't interrupt but log for debugging
-            _logger.logDebug('[Scroll] Linux: Not scrolling (user reading old messages, distance: ${maxScrollExtent - currentPosition})');
-          }
-        }
-      });
-    } else {
-      _logger.logDebug('[Scroll] New messages detected, but auto-scroll is locked or disabled');
-    }
+  /// Проверка, внизу ли пользователь
+  bool get isAtBottom {
+    if (!scrollController.hasClients) return true;
+    final current = scrollController.offset;
+    final max = scrollController.position.maxScrollExtent;
+    return (max - current) <= 20;
   }
   
-  /// Enable or disable auto-scrollimport 'package:dio/dio.dart';
-  void setAutoScrollEnabled(bool enabled) {
-    _autoScrollEnabled = enabled;
-    _logger.logInfo('[Scroll] Auto-scroll ${enabled ? 'enabled' : 'disabled'}');
+  /// Разрешить/запретить автоскролл
+  set autoScrollLocked(bool locked) {
+    _autoScrollLocked = locked;
+    _log('[SET] Auto-scroll ${locked ? 'LOCKED' : 'UNLOCKED'}');
   }
   
-  /// Get debug information
-  Map<String, dynamic> getDebugInfo() {
-    return {
-      'isAnimating': _isAnimating,
-      'isAutoScrollLocked': _autoScrollLocked,
-      'isAtBottom': isAtBottom,
-      'autoScrollEnabled': _autoScrollEnabled,
-      'currentPosition': currentPosition,
-      'maxScrollExtent': maxScrollExtent,
-      'lastScrollPosition': _lastScrollPosition,
-      'hasClients': scrollController.hasClients,
-    };
-  }
+  bool get autoScrollLocked => _autoScrollLocked;
+  
+  /// Получить историю для отладки
+  List<String> getDebugHistory() => List.from(_debugHistory);
 }

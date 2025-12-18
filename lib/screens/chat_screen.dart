@@ -83,17 +83,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final TextEditingController _titleController = TextEditingController();
   final FocusNode _chatInputFocusNode = FocusNode();
   late ScrollController _messageScrollController;
-  late ChatScrollUtils _chatScrollUtils;
+  ChatScrollUtils? _chatScrollUtils;
   String _selectedModel = ChatScreenConstants.defaultModelId;
   OpenRouterModel? _selectedModelObject;
   bool _isSuggestionsLoading = false;
   bool _showSuggestions = false;
   List<String> _continuationSuggestions = [];
   
-  // State variables for managing reasoning updates
-  String _pendingContent = '';
-  String _accumulatedReasoning = ''; // Accumulate reasoning in memory
-
   @override
   void initState() {
     super.initState();
@@ -109,16 +105,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _messageScrollController = ScrollController();
     _logger.logInfo('[ChatScreen] ScrollController initialized');
     
-    // Initialize scroll utilities after widget is built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _chatScrollUtils = ChatScrollUtils(
-        scrollController: _messageScrollController,
-        animationDuration: ChatScreenConstants.scrollAnimationDuration,
-        animationCurve: Curves.easeOut,
-      );
-      _chatScrollUtils.initialize();
-      _logger.logInfo('[ChatScreen] ChatScrollUtils initialized');
-    });
+    // Initialize scroll utilities immediately (no need to wait for frame)
+    _chatScrollUtils = ChatScrollUtils(
+      scrollController: _messageScrollController,
+      animationDuration: ChatScreenConstants.scrollAnimationDuration,
+      animationCurve: Curves.easeOut,
+    );
+    _chatScrollUtils!.initialize();
+    _logger.logInfo('[ChatScreen] ChatScrollUtils initialized');
 
     _loadChats();
 
@@ -175,6 +169,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // Remove listener to prevent memory leaks
     _themeProvider.removeListener(_onThemeProviderChange);
     _titleController.dispose();
+    _chatScrollUtils?.dispose();
     super.dispose();
   }
 
@@ -203,13 +198,19 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   void _selectChat(String chatId) {
     _logger.logInfo('[ChatScreen] Selecting chat: $chatId');
     final chat = _chats.firstWhere((c) => c.id == chatId);
+    
+    // Reset scroll state before switching
+    _chatScrollUtils?.reset();
+    
     setState(() {
       _currentChat = chat;
     });
     
     // Auto-scroll to bottom when chat is loaded
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _chatScrollUtils.onNewMessages();
+    // Используем Future.microtask для гарантированного вызова после setState
+    Future.microtask(() {
+      _logger.logInfo('[ChatScreen] Microtask: scrolling to bottom');
+      _chatScrollUtils?.scrollToBottom();
     });
     
     _logger.logInfo('[ChatScreen] Chat selected: ${chat.title}');
@@ -310,6 +311,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   void _handleSendMessage(String message) async {
     _logger.logInfo('[ChatScreen] Received message to send: $message');
     
+    // Reset scroll lock before sending new message
+    _chatScrollUtils?.resetAutoScrollLock();
+    print('[CHAT_SCREEN] Auto-scroll lock reset before sending');
+    
     // Hide continuation suggestions when user sends a new message
     if (_showSuggestions) {
       setState(() {
@@ -376,7 +381,34 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _currentChat = updatedChat;
     });
 
-    // Send message to AI and handle streaming response
+    // Add assistant placeholder (indicators will show)
+    final assistantMessage = Message(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      role: MessageRole.assistant,
+      content: '',
+      timestamp: DateTime.now(),
+      isComplete: false,
+      model: _selectedModel,
+    );
+    
+    await _chatStorageService.addMessageToChat(_currentChat!.id, assistantMessage);
+    
+    final chatWithAssistant = _currentChat!.copyWith(
+      messages: [..._currentChat!.messages, assistantMessage],
+      updatedAt: DateTime.now(),
+    );
+    setState(() {
+      _currentChat = chatWithAssistant;
+    });
+
+    // CRITICAL: Scroll to indicator AFTER it appears
+    // Ждем 100ms, чтобы ListView гарантированно обновился
+    Future.delayed(const Duration(milliseconds: 100), () {
+      _logger.logInfo('[ChatScreen] Delayed: scrolling to indicator');
+      _chatScrollUtils?.scrollToIndicator();
+    });
+
+    // Start streaming
     _sendToAI(message);
   }
 
@@ -387,39 +419,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       return;
     }
     _logger.logInfo('[ChatScreen] Current chat available, proceeding with AI processing');
-
-    // Reset accumulators for new stream
-    _accumulatedReasoning = '';
-    _pendingContent = '';
     
     try {
-      // Add assistant message placeholder
-      final assistantMessage = Message(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        role: MessageRole.assistant,
-        content: '',
-        timestamp: DateTime.now(),
-        isComplete: false,
-        model: _selectedModel,
-      );
-
-      // Update chat storage and local state immediately
-      await _chatStorageService.addMessageToChat(_currentChat!.id, assistantMessage);
-      
-      final updatedChat = _currentChat!.copyWith(
-        messages: [..._currentChat!.messages, assistantMessage],
-        updatedAt: DateTime.now(),
-      );
-      if (mounted) {
-        setState(() {
-          _currentChat = updatedChat;
-        });
-        
-        // Auto-scroll after adding message
-        _chatScrollUtils.onNewMessages();
-        _logger.logInfo('[ChatScreen] Auto-scroll triggered after adding message');
-      }
-
       // Stream response from AI with retry logic
       _sendToAIWithRetry(userMessage);
     } catch (e) {
@@ -680,9 +681,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _currentChat = updatedChat;
     });
     
-    // Auto-scroll after adding continuation message
-    _chatScrollUtils.onNewMessages();
-    _logger.logInfo('[ChatScreen] Auto-scroll triggered after adding continuation message');
+    // CRITICAL: Scroll to indicator AFTER it appears
+    // Используем Future.microtask для гарантированного вызова после setState
+    Future.microtask(() {
+      _logger.logInfo('[ChatScreen] Microtask: scrolling to indicator (continuation)');
+      _chatScrollUtils?.scrollToIndicator();
+    });
 
     // Send continuation request to AI
     await _streamContinuationResponse(lastMessage.content);
@@ -734,6 +738,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   /// Shared method to handle streaming responses (both regular and continuation)
+  /// 
+  /// CRITICAL: This method implements proper Flutter streaming architecture:
+  /// 1. Each chunk creates NEW Message object
+  /// 2. Each chunk creates NEW List
+  /// 3. setState() is called on every chunk
+  /// 4. No mutation of existing objects
   Future<void> _handleStreamingResponse({
     required List<Map<String, String>> messages,
     required bool isContinuation,
@@ -743,9 +753,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final streamType = isContinuation ? 'Continuation' : 'AI';
     _logger.logInfo('[ChatScreen] Starting $streamType streaming...');
     
-    // Reset accumulators
-    _accumulatedReasoning = '';
-    _pendingContent = '';
+    // Local accumulators for this stream (not state variables)
+    String accumulatedContent = '';
+    String accumulatedReasoning = '';
     
     try {
       await _openRouterService.streamChatCompletion(
@@ -754,99 +764,106 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         maxTokens: maxTokens,
         includeReasoning: true,
         onChunk: (content) {
-          // Don't skip empty chunks - they might be important for some models
-          final displayLength = content.length > 50 ? 50 : content.length;
-          _logger.logInfo('[ChatScreen] $streamType chunk: ${content.substring(0, displayLength)}...');
-          print('[DEBUG] [ChatScreen] Content chunk: "${content.substring(0, content.length > 20 ? 20 : content.length)}${content.length > 20 ? '...' : ''}"');
+          if (content.isEmpty) return;
           
-          // Accumulate content in memory
-          _pendingContent += content;
-          print('[DEBUG] [ChatScreen] Accumulated content length: ${_pendingContent.length}');
+          // Accumulate locally
+          accumulatedContent += content;
           
-          // Update UI immediately
-          if (mounted) {
-            print('[DEBUG] [ChatScreen] setState called for content chunk, length: ${_pendingContent.length}, chatId: ${_currentChat?.id}');
-            setState(() {
-              final lastMessage = _currentChat!.messages.last;
-              final updatedMessage = lastMessage.copyWith(content: _pendingContent);
-              final updatedMessages = List<Message>.from(_currentChat!.messages);
-              updatedMessages[updatedMessages.length - 1] = updatedMessage;
-              _currentChat = _currentChat!.copyWith(
-                messages: updatedMessages,
-                updatedAt: DateTime.now(),
-              );
-            });
-            print('[DEBUG] [ChatScreen] setState completed, chat messages count: ${_currentChat?.messages.length}, last message content length: ${_currentChat?.messages.last.content.length}');
-            print('[DEBUG] [ChatScreen] Chat object ID: ${_currentChat?.id}, pointer: ${_currentChat.hashCode}');
-          }
-        },
-        onReasoning: (reasoning) {
-          if (reasoning.isNotEmpty) {
-            _logger.logInfo('[ChatScreen] $streamType reasoning: ${reasoning.substring(0, reasoning.length > 50 ? 50 : reasoning.length)}...');
-            print('[DEBUG] [ChatScreen] Reasoning chunk: "${reasoning.substring(0, reasoning.length > 30 ? 30 : reasoning.length)}${reasoning.length > 30 ? '...' : ''}"');
+          // Update UI on EVERY chunk with IMMUTABLE update
+          if (mounted && _currentChat != null && _currentChat!.messages.isNotEmpty) {
+            final lastMessage = _currentChat!.messages.last;
             
-            // Accumulate reasoning
-            _accumulatedReasoning += reasoning;
-            print('[DEBUG] [ChatScreen] Accumulated reasoning length: ${_accumulatedReasoning.length}');
+            // CRITICAL: Create NEW message object with new content
+            final updatedMessage = lastMessage.copyWith(
+              content: accumulatedContent,
+            );
             
-            // Update UI immediately (don't save to storage yet)
-            if (mounted) {
-              setState(() {
-                final lastMessage = _currentChat!.messages.last;
-                final updatedMessage = lastMessage.copyWith(reasoning: _accumulatedReasoning);
-                final updatedMessages = List<Message>.from(_currentChat!.messages);
-                updatedMessages[updatedMessages.length - 1] = updatedMessage;
-                _currentChat = _currentChat!.copyWith(
-                  messages: updatedMessages,
-                  updatedAt: DateTime.now(),
-                );
-              });
-            }
-          }
-        },
-        onCompletion: (fullContent) {
-          print('[DEBUG] [ChatScreen] $streamType completed, saving to storage...');
-          print('[DEBUG] [ChatScreen] Final reasoning length: ${_accumulatedReasoning.length}');
-          print('[DEBUG] [ChatScreen] Final content length: ${_pendingContent.length}');
-          
-          // Save accumulated data to storage
-          final lastMessage = _currentChat!.messages.last;
-          final completedMessage = lastMessage.copyWith(
-            content: _pendingContent,
-            reasoning: _accumulatedReasoning,
-            isComplete: true,
-          );
-          
-          _chatStorageService.updateMessageInChat(
-            _currentChat!.id, 
-            completedMessage.id, 
-            completedMessage
-          ).then((_) {
-            final updatedChat = _currentChat!.copyWith(
-              messages: [
-                ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
-                completedMessage
-              ],
+            // CRITICAL: Create NEW list with updated message
+            final newMessages = List<Message>.from(_currentChat!.messages);
+            newMessages[newMessages.length - 1] = updatedMessage;
+            
+            // CRITICAL: Create NEW chat object
+            final newChat = _currentChat!.copyWith(
+              messages: newMessages,
               updatedAt: DateTime.now(),
             );
             
-            if (mounted) {
-              setState(() {
-                _currentChat = updatedChat;
-              });
-            }
+            // CRITICAL: setState with NEW objects
+            setState(() {
+              _currentChat = newChat;
+            });
+          }
+        },
+        onReasoning: (reasoning) {
+          if (reasoning.isEmpty) return;
+          
+          // Accumulate locally
+          accumulatedReasoning += reasoning;
+          
+          // Update UI on EVERY reasoning chunk
+          if (mounted && _currentChat != null && _currentChat!.messages.isNotEmpty) {
+            final lastMessage = _currentChat!.messages.last;
             
-            print('[DEBUG] [ChatScreen] Message saved to storage with full reasoning and content');
+            // CRITICAL: Create NEW message with new reasoning
+            final updatedMessage = lastMessage.copyWith(
+              reasoning: accumulatedReasoning,
+            );
             
-            // Show continuation suggestions after completion (only for regular AI responses)
+            // CRITICAL: Create NEW list
+            final newMessages = List<Message>.from(_currentChat!.messages);
+            newMessages[newMessages.length - 1] = updatedMessage;
+            
+            // CRITICAL: Create NEW chat
+            final newChat = _currentChat!.copyWith(
+              messages: newMessages,
+              updatedAt: DateTime.now(),
+            );
+            
+            // CRITICAL: setState with NEW objects
+            setState(() {
+              _currentChat = newChat;
+            });
+          }
+        },
+        onCompletion: (fullContent) {
+          // Final immutable update to mark as complete
+          if (mounted && _currentChat != null && _currentChat!.messages.isNotEmpty) {
+            final lastMessage = _currentChat!.messages.last;
+            
+            // CRITICAL: Create NEW completed message
+            final completedMessage = lastMessage.copyWith(
+              content: accumulatedContent,
+              reasoning: accumulatedReasoning,
+              isComplete: true,
+            );
+            
+            // CRITICAL: Create NEW list
+            final newMessages = List<Message>.from(_currentChat!.messages);
+            newMessages[newMessages.length - 1] = completedMessage;
+            
+            // CRITICAL: Create NEW chat
+            final newChat = _currentChat!.copyWith(
+              messages: newMessages,
+              updatedAt: DateTime.now(),
+            );
+            
+            // CRITICAL: setState with NEW objects
+            setState(() {
+              _currentChat = newChat;
+            });
+            
+            // Save to storage (this is OK, it's the final state)
+            _chatStorageService.updateMessageInChat(
+              newChat.id, 
+              completedMessage.id, 
+              completedMessage
+            );
+            
+            // Show continuation suggestions
             if (!isContinuation) {
               _showContinuationSuggestions(completedMessage);
             }
-            
-            // Reset accumulators
-            _accumulatedReasoning = '';
-            _pendingContent = '';
-          });
+          }
         },
       );
     } catch (e) {

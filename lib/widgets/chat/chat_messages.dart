@@ -64,6 +64,7 @@ class ChatMessages extends StatefulWidget {
 
 class _ChatMessagesState extends State<ChatMessages> {
   late ScrollController _scrollController;
+  final GlobalKey _loadingIndicatorKey = GlobalKey();
 
   @override
   void initState() {
@@ -74,46 +75,6 @@ class _ChatMessagesState extends State<ChatMessages> {
 
     // Use external scroll controller if provided, otherwise create new one
     _scrollController = widget.scrollController ?? ScrollController();
-  }
-
-  @override
-  void didUpdateWidget(covariant ChatMessages oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    // Check if this is a new chat or messages changed
-    final messagesChanged =
-        widget.chat?.id != oldWidget.chat?.id ||
-        (widget.chat?.messages.length ?? 0) !=
-            (oldWidget.chat?.messages.length ?? 0);
-
-    // Also check if last message content changed (for streaming updates)
-    final lastMessageChanged = _hasLastMessageChanged(oldWidget);
-
-    if (messagesChanged || lastMessageChanged) {
-      setState(() {});
-    }
-  }
-
-  bool _hasLastMessageChanged(ChatMessages oldWidget) {
-    if (widget.chat == null || oldWidget.chat == null) {
-      return false;
-    }
-    if (widget.chat!.messages.isEmpty || oldWidget.chat!.messages.isEmpty) {
-      return false;
-    }
-    
-    final oldLast = oldWidget.chat!.messages.last;
-    final newLast = widget.chat!.messages.last;
-    
-    // Check if it's the same message but content/reasoning changed
-    if (oldLast.id == newLast.id) {
-      final changed = oldLast.content != newLast.content ||
-          oldLast.reasoning != newLast.reasoning ||
-          oldLast.isComplete != newLast.isComplete;
-      return changed;
-    }
-    
-    return false;
   }
 
   @override
@@ -164,6 +125,7 @@ class _ChatMessagesState extends State<ChatMessages> {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           ChatLoadingIndicator(
+            key: _loadingIndicatorKey,
             size: ChatMessagesConstants.loadingIndicatorSize,
           ),
         ],
@@ -176,55 +138,21 @@ class _ChatMessagesState extends State<ChatMessages> {
     final theme = Theme.of(context);
 
     // CRITICAL: Always read from widget.chat, never from local state
+    // This is the ONLY place we read messages - no local state, no caching
     final messages = widget.chat?.messages ?? [];
     final hasMessages = messages.isNotEmpty;
     final hasAssistantMessage =
         hasMessages && messages.last.role == MessageRole.assistant;
     final isStreaming = hasAssistantMessage && !messages.last.isComplete;
     
-    // FIX: Only show waiting animation when:
-    // 1. There are no messages at all (first message being sent)
-    // 2. OR there's an assistant message but it has NO content yet (waiting for first chunk)
-    final isWaiting = !hasMessages || 
-        (hasAssistantMessage && messages.last.content.isEmpty && !messages.last.isComplete);
-
-    // CRITICAL: Force continuous rebuilds during streaming
-    // This is the KEY to real-time visual updates!
-    if (isStreaming) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          // Re-check current state after frame
-          final currentMessages = widget.chat?.messages ?? [];
-          final currentHasAssistant =
-              currentMessages.isNotEmpty &&
-              currentMessages.last.role == MessageRole.assistant;
-          final currentIsStreaming =
-              currentHasAssistant && !currentMessages.last.isComplete;
-
-          if (currentIsStreaming) {
-            // Force rebuild to show new content
-            setState(() {});
-          }
-        }
-      });
-    }
-
-    // CRITICAL FIX: Prevent animations on empty chat
-    // Only show waiting animation AFTER user has sent first message
-    final shouldShowWaiting = (isWaiting && hasMessages) || 
-        (hasAssistantMessage && messages.last.content.isEmpty && !messages.last.isComplete);
-
-    // Check if we should show reasoning during streaming
-    final lastMessage = hasMessages ? messages.last : null;
-    final hasReasoning = lastMessage != null && 
-        lastMessage.reasoning != null && 
-        lastMessage.reasoning!.isNotEmpty;
-    
-    // Show reasoning if: streaming AND has reasoning
-    final showReasoningDuringStreaming = isStreaming && hasReasoning;
-
-    // Don't show waiting animation if reasoning is already being displayed
-    final shouldShowWaitingAnimation = shouldShowWaiting && !showReasoningDuringStreaming;
+    // Show waiting animation ONLY when:
+    // 1. There ARE messages (user has sent something)
+    // 2. AND last message is assistant
+    // 3. AND it has no content yet (waiting for first chunk)
+    final shouldShowWaitingAnimation = hasMessages && 
+        hasAssistantMessage && 
+        messages.last.content.isEmpty && 
+        !messages.last.isComplete;
 
     return Container(
       color: theme.scaffoldBackgroundColor,
@@ -240,7 +168,7 @@ class _ChatMessagesState extends State<ChatMessages> {
               ),
               itemCount: messages.length + (shouldShowWaitingAnimation ? 1 : 0),
               itemBuilder: (context, index) {
-                // Show waiting animation at the end (only if reasoning not shown)
+                // Show waiting animation at the end
                 if (shouldShowWaitingAnimation && index == messages.length) {
                   return _buildWaitingAnimation();
                 }
@@ -263,7 +191,7 @@ class _ChatMessagesState extends State<ChatMessages> {
                   if (hasReasoning) {
                     // Show reasoning (streaming) - this replaces waiting animation
                     return reasoning_msg.ReasoningMessage(
-                      key: ValueKey('${message.id}_${message.reasoning?.length ?? 0}'),
+                      key: ValueKey(message.id), // CRITICAL: Only use message.id
                       reasoning: message.reasoning!,
                       isStreaming: true,
                     );
@@ -276,14 +204,13 @@ class _ChatMessagesState extends State<ChatMessages> {
                 if (message.reasoning != null &&
                     message.reasoning!.isNotEmpty) {
                   return Column(
+                    key: ValueKey(message.id), // Key on the Column
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Reasoning message
                       reasoning_msg.ReasoningMessage(
-                        key: ValueKey(
-                          '${message.id}_${message.reasoning?.length ?? 0}',
-                        ),
+                        key: ValueKey('${message.id}_reasoning'), // Unique key
                         reasoning: message.reasoning!,
                         isStreaming: isStreaming && isLastMessage,
                       ),
@@ -292,15 +219,12 @@ class _ChatMessagesState extends State<ChatMessages> {
                       ),
                       // Main message
                       chat_msg.ChatMessage(
-                        key: ValueKey(
-                          '${message.id}_${message.content.length}',
-                        ),
+                        key: ValueKey('${message.id}_content'), // Unique key
                         message: message,
                         isStreaming: isStreaming && isLastMessage,
                         isLastMessage: isLastMessage,
                         onRetry: () {
                           if (message.role == MessageRole.user) {
-                            // Call parent's send method through widget
                             widget.onSendMessage(message.content);
                           }
                         },
@@ -323,6 +247,7 @@ class _ChatMessagesState extends State<ChatMessages> {
                 }
 
                 return chat_msg.ChatMessage(
+                  key: ValueKey(message.id), // CRITICAL: Only use message.id
                   message: message,
                   isStreaming: isStreaming && isLastMessage,
                   isLastMessage: isLastMessage,

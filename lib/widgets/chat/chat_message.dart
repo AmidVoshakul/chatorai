@@ -125,11 +125,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   void didUpdateWidget(covariant ChatMessage oldWidget) {
     super.didUpdateWidget(oldWidget);
     
-    _logger.logDebug('[ChatMessage] Widget updated - old reasoning length: ${oldWidget.message.reasoning?.length ?? 0}, new reasoning length: ${widget.message.reasoning?.length ?? 0}');
-    _logger.logDebug('[ChatMessage] Widget updated - old isStreaming: ${oldWidget.isStreaming}, new isStreaming: ${widget.isStreaming}');
-    _logger.logDebug('[ChatMessage] Widget updated - old content length: ${oldWidget.message.content.length}, new content length: ${widget.message.content.length}');
-    
-    // Если сообщение изменилось, обновляем контроллер
+    // Update text controller if content changed
     if (oldWidget.message.content != widget.message.content) {
       _textController.value = TextEditingValue(
         text: widget.message.content,
