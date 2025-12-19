@@ -30,6 +30,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
   List<OpenRouterModel> _models = [];
   List<OpenRouterModel> _filteredModels = [];
   bool _isLoading = false;
+  bool _showFavoritesOnly = false;
   late TextEditingController _searchController;
 
   @override
@@ -55,27 +56,67 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   void _onSearchChanged() {
     final searchQuery = _searchController.text.toLowerCase();
-    if (searchQuery.isEmpty) {
-      setState(() {
-        _filteredModels = _models;
-      });
-    } else {
-      setState(() {
-        _filteredModels = _models.where((model) {
+    setState(() {
+      // Apply favorites filter first
+      List<OpenRouterModel> models = _showFavoritesOnly 
+          ? _models.where((model) => _themeProvider.isFavoriteModel(model.id)).toList()
+          : _models;
+
+      // Then apply search filter
+      if (searchQuery.isEmpty) {
+        _filteredModels = models;
+      } else {
+        _filteredModels = models.where((model) {
           return model.name.toLowerCase().contains(searchQuery) ||
                  model.id.toLowerCase().contains(searchQuery) ||
                  model.description.toLowerCase().contains(searchQuery) ||
                  (model.provider?.toLowerCase().contains(searchQuery) ?? false);
         }).toList();
-      });
-    }
+      }
+    });
   }
 
   void _clearSearch() {
     _searchController.clear();
     setState(() {
-      _filteredModels = _models;
+      _filteredModels = _showFavoritesOnly 
+          ? _models.where((model) => _themeProvider.isFavoriteModel(model.id)).toList()
+          : _models;
     });
+  }
+
+  void _toggleFavoritesFilter() {
+    setState(() {
+      _showFavoritesOnly = !_showFavoritesOnly;
+      _onSearchChanged(); // Reapply filters
+    });
+  }
+
+  void _toggleFavorite(String modelId) {
+    final isNowFavorite = !_themeProvider.isFavoriteModel(modelId);
+    setState(() {
+      _themeProvider.toggleFavoriteModel(modelId);
+    });
+    
+    // Show notification
+    if (isNowFavorite) {
+      SnackbarUtils.showSuccessSnackBar(
+        context: context,
+        message: 'Added to favorites',
+        icon: Icons.favorite,
+      );
+    } else {
+      SnackbarUtils.showInfoSnackBar(
+        context: context,
+        message: 'Removed from favorites',
+        icon: Icons.favorite_border,
+      );
+    }
+    
+    // Update filtered list if favorites filter is active
+    if (_showFavoritesOnly) {
+      _onSearchChanged();
+    }
   }
 
   // ==============================================
@@ -132,7 +173,23 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
       // Get models from ThemeProvider
       _models = _themeProvider.availableModels;
-      _filteredModels = _models;
+      
+      // Preserve current filters and search state
+      final searchQuery = _searchController.text.toLowerCase();
+      List<OpenRouterModel> models = _showFavoritesOnly 
+          ? _models.where((model) => _themeProvider.isFavoriteModel(model.id)).toList()
+          : _models;
+
+      if (searchQuery.isEmpty) {
+        _filteredModels = models;
+      } else {
+        _filteredModels = models.where((model) {
+          return model.name.toLowerCase().contains(searchQuery) ||
+                 model.id.toLowerCase().contains(searchQuery) ||
+                 model.description.toLowerCase().contains(searchQuery) ||
+                 (model.provider?.toLowerCase().contains(searchQuery) ?? false);
+        }).toList();
+      }
 
       setState(() {
         _isLoading = false;
@@ -186,71 +243,100 @@ class _ModelsScreenState extends State<ModelsScreen> {
         ),
         backgroundColor: Theme.of(context).canvasColor,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(
+              _showFavoritesOnly ? Icons.favorite : Icons.favorite_border,
+              color: _showFavoritesOnly ? Colors.red : null,
+            ),
+            onPressed: _toggleFavoritesFilter,
+            tooltip: _showFavoritesOnly ? 'Show All Models' : 'Show Favorites Only',
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // Search bar
+          // Search bar and filters
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: localizations.searchModels,
-                hintStyle: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600],
-                  fontSize: 16,
-                ),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[300] : Colors.grey[700],
-                ),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.clear,
-                          color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[300] : Colors.grey[700],
-                        ),
-                        onPressed: _clearSearch,
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).brightness == Brightness.dark 
-                        ? Colors.grey[700]! 
-                        : Colors.grey[400]!,
+            child: Column(
+              children: [
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: _showFavoritesOnly 
+                        ? 'Search favorites...' 
+                        : localizations.searchModels,
+                    hintStyle: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600],
+                      fontSize: 16,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[300] : Colors.grey[700],
+                    ),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_showFavoritesOnly)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: Icon(
+                              Icons.favorite,
+                              color: Colors.red,
+                              size: 20,
+                            ),
+                          ),
+                        if (_searchController.text.isNotEmpty)
+                          IconButton(
+                            icon: Icon(
+                              Icons.clear,
+                              color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[300] : Colors.grey[700],
+                            ),
+                            onPressed: _clearSearch,
+                          ),
+                      ],
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark 
+                            ? Colors.grey[700]! 
+                            : Colors.grey[400]!,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark 
+                            ? Colors.grey[700]! 
+                            : Colors.grey[400]!,
+                        width: 1,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).primaryColor,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    filled: true,
+                    fillColor: Theme.of(context).brightness == Brightness.dark 
+                        ? Theme.of(context).cardColor 
+                        : Colors.white,
+                    isDense: true,
                   ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).brightness == Brightness.dark 
-                        ? Colors.grey[700]! 
-                        : Colors.grey[400]!,
-                    width: 1,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge!.color,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
+                  cursorColor: Theme.of(context).primaryColor,
+                  textInputAction: TextInputAction.search,
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).primaryColor,
-                    width: 2,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                filled: true,
-                fillColor: Theme.of(context).brightness == Brightness.dark 
-                    ? Theme.of(context).cardColor 
-                    : Colors.white,
-                isDense: true,
-              ),
-              style: TextStyle(
-                color: Theme.of(context).textTheme.bodyLarge!.color,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-              cursorColor: Theme.of(context).primaryColor,
-              textInputAction: TextInputAction.search,
+              ],
             ),
           ),
           const SizedBox(height: 8),
@@ -341,6 +427,24 @@ class _ModelsScreenState extends State<ModelsScreen> {
                         ),
                       ],
                     ),
+                  ),
+                  // Favorite button
+                  IconButton(
+                    icon: Icon(
+                      _themeProvider.isFavoriteModel(model.id) 
+                          ? Icons.favorite 
+                          : Icons.favorite_border,
+                      color: _themeProvider.isFavoriteModel(model.id) 
+                          ? Colors.red 
+                          : null,
+                      size: 24,
+                    ),
+                    onPressed: () {
+                      _toggleFavorite(model.id);
+                    },
+                    tooltip: _themeProvider.isFavoriteModel(model.id) 
+                        ? 'Remove from favorites' 
+                        : 'Add to favorites',
                   ),
                   // Info button
                   IconButton(
@@ -705,22 +809,39 @@ const SizedBox(height: 12),
 
   Widget _buildEmptyState() {
     final isEmptySearch = _searchController.text.isNotEmpty && _filteredModels.isEmpty;
+    final isEmptyFavorites = _showFavoritesOnly && _filteredModels.isEmpty;
     final localizations = AppLocalizations.of(context)!;
+
+    String message;
+    String submessage;
+    IconData icon;
+
+    if (isEmptyFavorites) {
+      icon = Icons.favorite_border;
+      message = 'No favorite models';
+      submessage = 'Tap the heart icon on models to add them to your favorites';
+    } else if (isEmptySearch) {
+      icon = Icons.search_off;
+      message = localizations.noModelsFound;
+      submessage = localizations.tryADifferentSearchQuery;
+    } else {
+      icon = Icons.model_training;
+      message = localizations.noAvailableModels;
+      submessage = localizations.tryRefreshingOrCheckYourInternetConnection;
+    }
 
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            isEmptySearch ? Icons.search_off : Icons.model_training,
+            icon,
             size: 80,
             color: Theme.of(context).primaryColor.withValues(alpha: 0.6),
           ),
           const SizedBox(height: 16),
           Text(
-            isEmptySearch 
-              ? localizations.noModelsFound
-              : localizations.noAvailableModels,
+            message,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -729,9 +850,7 @@ const SizedBox(height: 12),
           ),
           const SizedBox(height: 8),
           Text(
-            isEmptySearch 
-              ? localizations.tryADifferentSearchQuery
-              : localizations.tryRefreshingOrCheckYourInternetConnection,
+            submessage,
             style: TextStyle(
               color: Theme.of(context).textTheme.bodyMedium!.color,
               fontSize: 14,
