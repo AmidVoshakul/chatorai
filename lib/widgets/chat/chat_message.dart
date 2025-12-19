@@ -251,16 +251,20 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                           // Message Header
                           Row(
                             children: [
-                              Text(
-                                widget.message.role == MessageRole.assistant && widget.message.model != null
-                                  ? widget.message.model!
-                                  : widget.message.role.displayName,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                              Expanded(
+                                child: Text(
+                                  widget.message.role == MessageRole.assistant && widget.message.model != null
+                                    ? widget.message.model!
+                                    : widget.message.role.displayName,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               ),
-                              const Spacer(),
+                              const SizedBox(width: 8),
                               Text(
                                 _formatTime(widget.message.timestamp),
                                 style: theme.textTheme.bodySmall?.copyWith(
