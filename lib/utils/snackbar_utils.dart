@@ -31,22 +31,24 @@ class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerP
     
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
-      reverseDuration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 400),
+      reverseDuration: const Duration(milliseconds: 250),
     );
     
+    // Smooth fade with slight bounce
     _fadeAnimation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOut,
-      reverseCurve: Curves.easeIn,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
     );
     
+    // Slide with subtle bounce effect
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, -1),
+      begin: const Offset(0, -1.2),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOut,
+      curve: Curves.elasticOut,
     ));
     
     // Start animation
@@ -70,39 +72,108 @@ class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerP
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Glass effect colors based on theme
+    final glassColor = isDark 
+        ? Colors.black.withValues(alpha: 0.7)
+        : Colors.white.withValues(alpha: 0.85);
+    
+    final borderColor = isDark 
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.1);
+    
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: widget.backgroundColor,
-            borderRadius: BorderRadius.circular(8),
+            // Glass effect background
+            color: glassColor,
+            // Blur effect
+            backgroundBlendMode: BlendMode.luminosity,
+            // Rounded corners
+            borderRadius: BorderRadius.circular(16),
+            // Border for glass effect
+            border: Border.all(
+              color: borderColor,
+              width: 1,
+            ),
+            // Multiple shadow layers for depth
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+                spreadRadius: 1,
+              ),
+              BoxShadow(
+                color: widget.backgroundColor.withValues(alpha: 0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 0),
+                spreadRadius: -5,
               ),
             ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(widget.icon, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
+              // Icon with glow effect
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: widget.backgroundColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  widget.icon,
+                  color: widget.backgroundColor,
+                  size: 20,
+                  shadows: [
+                    Shadow(
+                      color: widget.backgroundColor.withValues(alpha: 0.5),
+                      blurRadius: 4,
+                      offset: const Offset(0, 0),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              // Message text
               Expanded(
                 child: Text(
                   widget.message,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
                     fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 2,
                 ),
+              ),
+              // Close button (optional)
+              IconButton(
+                icon: Icon(
+                  Icons.close,
+                  size: 16,
+                  color: isDark ? Colors.white70 : Colors.black54,
+                ),
+                onPressed: () {
+                  _controller.reverse().then((_) {
+                    widget.onDismiss();
+                  });
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 24,
+                  minHeight: 24,
+                ),
+                splashRadius: 12,
               ),
             ],
           ),
