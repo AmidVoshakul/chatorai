@@ -23,6 +23,7 @@ class ThemeProvider with ChangeNotifier {
   static const String _highContrastKey = 'high_contrast';
   static const String _languageKey = 'selected_language';
   static const String _selectedModelKey = 'selected_model_id';
+  static const String _favoriteModelsKey = 'favorite_models';
 
   AppThemeMode _themeMode = AppThemeMode.system;
   double _fontSize = 1.0;
@@ -33,13 +34,14 @@ class ThemeProvider with ChangeNotifier {
   String _selectedModelId = 'nvidia/nemotron-3-nano-30b-a3b:free'; // Default model ID
   OpenRouterModel? _selectedModelObject;
   List<OpenRouterModel> _availableModels = [];
+  List<String> _favoriteModelIds = [];
   bool _modelsLoaded = false;
   bool _isLoadingModels = false;
 
   // Computed property for dark mode based on theme mode
   bool get isDarkMode => _themeMode == AppThemeMode.dark || 
                        (_themeMode == AppThemeMode.system && 
-                        WidgetsBinding.instance.window.platformBrightness == Brightness.dark);
+                        PlatformDispatcher.instance.platformBrightness == Brightness.dark);
 
   AppThemeMode get themeMode => _themeMode;
   double get fontSize => _fontSize;
@@ -50,6 +52,7 @@ class ThemeProvider with ChangeNotifier {
   String get selectedModelId => _selectedModelId;
   OpenRouterModel? get selectedModelObject => _selectedModelObject;
   List<OpenRouterModel> get availableModels => _availableModels;
+  List<String> get favoriteModelIds => _favoriteModelIds;
   bool get modelsLoaded => _modelsLoaded;
   bool get isLoadingModels => _isLoadingModels;
 
@@ -113,6 +116,30 @@ class ThemeProvider with ChangeNotifier {
       saveSettings();
       notifyListeners();
     }
+  }
+
+  /// Check if a model is in favorites
+  bool isFavoriteModel(String modelId) {
+    return _favoriteModelIds.contains(modelId);
+  }
+
+  /// Toggle favorite status for a model
+  Future<void> toggleFavoriteModel(String modelId) async {
+    if (_favoriteModelIds.contains(modelId)) {
+      _favoriteModelIds.remove(modelId);
+      _logger.logInfo('[ThemeProvider] Removed model from favorites: $modelId');
+    } else {
+      _favoriteModelIds.add(modelId);
+      _logger.logInfo('[ThemeProvider] Added model to favorites: $modelId');
+    }
+
+    await saveSettings();
+    notifyListeners();
+  }
+
+  /// Get favorite models
+  List<OpenRouterModel> getFavoriteModels() {
+    return _availableModels.where((model) => _favoriteModelIds.contains(model.id)).toList();
   }
 
   /// Load models asynchronously
@@ -233,6 +260,10 @@ class ThemeProvider with ChangeNotifier {
       _highContrast = prefs.getBool(_highContrastKey) ?? false;
       _selectedLanguage = prefs.getString(_languageKey) ?? 'en';
       _selectedModelId = prefs.getString(_selectedModelKey) ?? 'nvidia/nemotron-3-nano-30b-a3b:free';
+      
+      // Load favorite models
+      final favoriteModelsString = prefs.getStringList(_favoriteModelsKey) ?? [];
+      _favoriteModelIds = favoriteModelsString;
 
       // Update RTL based on loaded language
       _isRTL = ['ar', 'he', 'fa', 'ur'].contains(_selectedLanguage);
@@ -262,6 +293,7 @@ class ThemeProvider with ChangeNotifier {
       await prefs.setBool(_highContrastKey, _highContrast);
       await prefs.setString(_languageKey, _selectedLanguage);
       await prefs.setString(_selectedModelKey, _selectedModelId);
+      await prefs.setStringList(_favoriteModelsKey, _favoriteModelIds);
     } catch (e) {
       _logger.logError('[Settings] Error saving settings: $e');
     }
@@ -278,6 +310,7 @@ class ThemeProvider with ChangeNotifier {
     _isRTL = false;
     _selectedModelObject = null;
     _availableModels.clear();
+    _favoriteModelIds.clear();
     _modelsLoaded = false;
 
     await saveSettings();
