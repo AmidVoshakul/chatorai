@@ -74,6 +74,8 @@ class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerP
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth >= 800;
     
     // Glass effect colors based on theme
     final glassColor = isDark 
@@ -84,19 +86,28 @@ class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerP
         ? Colors.white.withValues(alpha: 0.1)
         : Colors.black.withValues(alpha: 0.1);
     
+    // Adjust padding and icon size for desktop
+    final padding = isDesktop 
+        ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
+        : const EdgeInsets.symmetric(horizontal: 16, vertical: 14);
+    
+    final iconSize = isDesktop ? 18.0 : 20.0;
+    final fontSize = isDesktop ? 13.0 : 14.0;
+    final borderRadius = isDesktop ? 12.0 : 16.0;
+    
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: padding,
           decoration: BoxDecoration(
             // Glass effect background
             color: glassColor,
             // Blur effect
             backgroundBlendMode: BlendMode.luminosity,
-            // Rounded corners
-            borderRadius: BorderRadius.circular(16),
+            // Rounded corners (smaller for desktop)
+            borderRadius: BorderRadius.circular(borderRadius),
             // Border for glass effect
             border: Border.all(
               color: borderColor,
@@ -106,13 +117,13 @@ class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerP
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 12,
+                blurRadius: isDesktop ? 8 : 12,
                 offset: const Offset(0, 4),
                 spreadRadius: 1,
               ),
               BoxShadow(
                 color: widget.backgroundColor.withValues(alpha: 0.3),
-                blurRadius: 20,
+                blurRadius: isDesktop ? 12 : 20,
                 offset: const Offset(0, 0),
                 spreadRadius: -5,
               ),
@@ -123,44 +134,44 @@ class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerP
             children: [
               // Icon with glow effect
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: widget.backgroundColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
                   widget.icon,
                   color: widget.backgroundColor,
-                  size: 20,
+                  size: iconSize,
                   shadows: [
                     Shadow(
                       color: widget.backgroundColor.withValues(alpha: 0.5),
-                      blurRadius: 4,
+                      blurRadius: 3,
                       offset: const Offset(0, 0),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               // Message text
               Expanded(
                 child: Text(
                   widget.message,
                   style: TextStyle(
                     color: isDark ? Colors.white : Colors.black87,
-                    fontSize: 14,
+                    fontSize: fontSize,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.2,
                   ),
                   overflow: TextOverflow.ellipsis,
-                  maxLines: 2,
+                  maxLines: isDesktop ? 1 : 2, // Single line on desktop
                 ),
               ),
-              // Close button (optional)
+              // Close button (smaller on desktop)
               IconButton(
                 icon: Icon(
                   Icons.close,
-                  size: 16,
+                  size: isDesktop ? 14 : 16,
                   color: isDark ? Colors.white70 : Colors.black54,
                 ),
                 onPressed: () {
@@ -169,11 +180,11 @@ class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerP
                   });
                 },
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 24,
-                  minHeight: 24,
+                constraints: BoxConstraints(
+                  minWidth: isDesktop ? 20 : 24,
+                  minHeight: isDesktop ? 20 : 24,
                 ),
-                splashRadius: 12,
+                splashRadius: isDesktop ? 10 : 12,
               ),
             ],
           ),
@@ -308,23 +319,32 @@ class SnackbarUtils {
     // Remove any existing overlays first
     _removeExistingOverlay(context);
     
+    // Get screen dimensions
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth >= 800;
+    
     // Create overlay entry
     final overlayState = Overlay.of(context);
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         top: 80, // Position below app bar
-        left: 20,
-        right: 20,
+        right: isDesktop ? 40 : 20, // Closer to right edge for desktop
+        left: isDesktop ? null : 20, // No left constraint for desktop
         child: Material(
           color: Colors.transparent,
-          child: _AnimatedSnackbar(
-            message: message,
-            icon: icon,
-            backgroundColor: backgroundColor,
-            duration: duration ?? const Duration(seconds: 2),
-            onDismiss: () {
-              _removeExistingOverlay(context);
-            },
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: isDesktop ? 400 : screenWidth - 40, // Max width for desktop
+            ),
+            child: _AnimatedSnackbar(
+              message: message,
+              icon: icon,
+              backgroundColor: backgroundColor,
+              duration: duration ?? const Duration(seconds: 2),
+              onDismiss: () {
+                _removeExistingOverlay(context);
+              },
+            ),
           ),
         ),
       ),
