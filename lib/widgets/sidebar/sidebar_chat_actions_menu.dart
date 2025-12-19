@@ -141,7 +141,15 @@ class _ChatActionsMenuState extends State<ChatActionsMenu> {
             ),
             onTap: () => _handleRenameChat(),
           ),
-          const PopupMenuDivider(height: 1),
+          PopupMenuItem(
+            enabled: false,
+            padding: const EdgeInsets.all(0),
+            height: 4,
+            child: Container(
+              height: 1,
+              color: _getDividerColor(),
+            ),
+          ),
           PopupMenuItem(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             enabled: true,

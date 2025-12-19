@@ -64,12 +64,10 @@ class MessageUtils {
 
       // Если context предоставлен, показываем уведомление об успешном удалении
       if (context != null && localizations != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations.messageDeletedSuccessfully),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
+        SnackbarUtils.showSuccessSnackBar(
+          context: context,
+          message: localizations.messageDeletedSuccessfully,
+          icon: Icons.delete,
         );
       }
 
@@ -77,12 +75,10 @@ class MessageUtils {
     } catch (e) {
       // Показываем уведомление об ошибке
       if (context != null && localizations != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations.failedToDeleteMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+        SnackbarUtils.showErrorSnackBar(
+          context: context,
+          message: localizations.failedToDeleteMessage,
+          icon: Icons.error,
         );
       }
 
@@ -258,12 +254,10 @@ class MessageUtils {
     // Здесь должна быть логика分享
     // await Share.share(content);
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(localizations.messageShared),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
-      ),
+    SnackbarUtils.showSuccessSnackBar(
+      context: context,
+      message: localizations.messageShared,
+      icon: Icons.share,
     );
   }
 

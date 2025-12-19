@@ -977,14 +977,22 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // Simple mobile/desktop detection
     final isMobile = screenWidth < 800;
 
+    // Create ChatInput once to preserve state across layout changes
+    final chatInput = ChatInput(
+      key: const ValueKey('chat_input_widget'),
+      onSendMessage: _handleSendMessage,
+      onToggleStreaming: _handleToggleStreaming,
+      focusNode: _chatInputFocusNode,
+    );
+
     if (isMobile) {
-      return _buildMobileLayout(context);
+      return _buildMobileLayout(context, chatInput);
     } else {
-      return _buildDesktopLayout(context);
+      return _buildDesktopLayout(context, chatInput);
     }
   }
 
-  Widget _buildMobileLayout(BuildContext context) {
+  Widget _buildMobileLayout(BuildContext context, Widget chatInput) {
     final theme = Theme.of(context);
     
     return Scaffold(
@@ -1007,17 +1015,30 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               builder: (context, themeProvider, child) {
                 final isLoading = themeProvider.isLoadingModels;
                 final modelName = _selectedModelObject?.name ?? _selectedModel;
+                final screenWidth = MediaQuery.of(context).size.width;
+
+                // Calculate max width based on screen size
+                // Mobile: 35% of screen width (more space for model names)
+                // Desktop: 40% of screen width (more generous)
+                final maxWidth = screenWidth < 800 
+                    ? screenWidth * 0.55 
+                    : screenWidth * 0.4;
 
                 return Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Model name
-                    Text(
-                      modelName,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                    // Model name with constraints
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: Text(
+                        modelName,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ),
 
@@ -1122,17 +1143,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               _currentChat?.messages.isNotEmpty == true &&
               !_currentChat!.messages.last.isError)
             _buildContinuationSuggestions(),
-          ChatInput(
-            onSendMessage: _handleSendMessage,
-            onToggleStreaming: _handleToggleStreaming,
-            focusNode: _chatInputFocusNode,
-          ),
+          chatInput,
         ],
       ),
     );
   }
 
-  Widget _buildDesktopLayout(BuildContext context) {
+  Widget _buildDesktopLayout(BuildContext context, Widget chatInput) {
     final theme = Theme.of(context);
     
     return Scaffold(
@@ -1182,7 +1199,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                     children: [
                       const Spacer(),
 
-                      // Current model name
+                      // Current model name - no truncation on desktop
                       Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: Text(
@@ -1259,11 +1276,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   _buildContinuationSuggestions(),
                 
                 // Input Area
-                ChatInput(
-                  onSendMessage: _handleSendMessage,
-                  onToggleStreaming: _handleToggleStreaming,
-                  focusNode: _chatInputFocusNode,
-                ),
+                chatInput,
               ],
             ),
           ),
