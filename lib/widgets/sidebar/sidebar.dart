@@ -306,6 +306,9 @@ class _SidebarState extends State<Sidebar> {
   void _handleRenameChat(Chat chat, String newTitle, AppLocalizations localizations) async {
     try {
       await _chatStorageService.renameChat(chat.id, newTitle);
+      setState(() {
+        widget.chats.firstWhere((c) => c.id == chat.id).title = newTitle;
+      });
       SnackbarUtils.showSuccessSnackBar(
         context: context,
         message: localizations.chatRenamedTo(newTitle),
