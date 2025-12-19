@@ -191,7 +191,7 @@ class Conversation {
 
 class Chat {
   final String id;
-  final String title;
+  String title; // Made mutable by removing 'final'
   final List<Message> messages;
   final DateTime createdAt;
   final DateTime updatedAt;
