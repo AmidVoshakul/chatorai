@@ -49,6 +49,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions> with TickerProv
   // Question transition animation
   late AnimationController _questionsTransitionController;
   late Animation<double> _questionsFadeAnimation;
+  late Animation<Offset> _questionsSlideAnimation;
 
   @override
   void initState() {
@@ -81,13 +82,21 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions> with TickerProv
     // Questions transition animation (for smooth rotation)
     _questionsTransitionController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 600),
       value: 1.0, // Start fully visible
     );
     
     _questionsFadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _questionsTransitionController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _questionsSlideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.15),
+      end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _questionsTransitionController,
       curve: Curves.easeInOut,
@@ -141,7 +150,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions> with TickerProv
   }
 
   void _rotateQuestions() {
-    // Fade out current questions
+    // Fade out and slide up current questions
     _questionsTransitionController.reverse().then((_) {
       if (!mounted) return;
       
@@ -156,11 +165,11 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions> with TickerProv
         _currentSuggestions = newQuestions;
       });
       
-      // Fade in new questions
+      // Fade in and slide down new questions
       _questionsTransitionController.forward();
       
       // Restart pulse animations for new questions
-      Future.delayed(const Duration(milliseconds: 100), () {
+      Future.delayed(const Duration(milliseconds: 200), () {
         if (mounted) {
           _startSequentialPulseAnimations();
         }
@@ -180,7 +189,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions> with TickerProv
     for (int i = 0; i < _currentSuggestions.length; i++) {
       final controller = AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 800),
+        duration: const Duration(milliseconds: 1000),
       );
 
       final animation = Tween<double>(
@@ -204,7 +213,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions> with TickerProv
   void _startNextPulse(int index) {
     if (index >= _suggestionPulseControllers.length) {
       // Reset to first suggestion after completing all
-      Future.delayed(const Duration(milliseconds: 500), () {
+      Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
           _startNextPulse(0);
         }
@@ -224,7 +233,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions> with TickerProv
         controller.reverse();
       } else if (status == AnimationStatus.dismissed) {
         // Pulse cycle complete, move to next suggestion
-        Future.delayed(const Duration(milliseconds: 200), () {
+        Future.delayed(const Duration(milliseconds: 250), () {
           if (mounted) {
             _startNextPulse(index + 1);
           }
@@ -317,30 +326,33 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions> with TickerProv
   Widget _buildSuggestionsList() {
     return FadeTransition(
       opacity: _questionsFadeAnimation,
-      child: Column(
-        children: _currentSuggestions.asMap().entries.map((entry) {
-          final index = entry.key;
-          final suggestion = entry.value;
-          
-          return Container(
-            margin: EdgeInsets.only(top: index == 0 ? 0 : 8.0),
-            child: AnimatedBuilder(
-              animation: _suggestionPulseControllers.length > index 
-                  ? _suggestionPulseControllers[index] 
-                  : const AlwaysStoppedAnimation(0),
-              builder: (context, child) {
-                final scale = _suggestionPulseControllers.length > index
-                    ? _suggestionPulseAnimations[index].value
-                    : 1.0;
-                return Transform.scale(
-                  scale: scale,
-                  child: child,
-                );
-              },
-              child: _buildSuggestionItem(suggestion, index),
-            ),
-          );
-        }).toList(),
+      child: SlideTransition(
+        position: _questionsSlideAnimation,
+        child: Column(
+          children: _currentSuggestions.asMap().entries.map((entry) {
+            final index = entry.key;
+            final suggestion = entry.value;
+            
+            return Container(
+              margin: EdgeInsets.only(top: index == 0 ? 0 : 8.0),
+              child: AnimatedBuilder(
+                animation: _suggestionPulseControllers.length > index 
+                    ? _suggestionPulseControllers[index] 
+                    : const AlwaysStoppedAnimation(0),
+                builder: (context, child) {
+                  final scale = _suggestionPulseControllers.length > index
+                      ? _suggestionPulseAnimations[index].value
+                      : 1.0;
+                  return Transform.scale(
+                    scale: scale,
+                    child: child,
+                  );
+                },
+                child: _buildSuggestionItem(suggestion, index),
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
