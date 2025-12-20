@@ -74,6 +74,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get increaseContrast => 'Увеличить контрастность для лучшей читаемости';
 
   @override
+  String get wideScreenMode => 'Широкоэкранный режим';
+
+  @override
+  String get useFullScreenWidth => 'Использовать полную ширину экрана для чата';
+
+  @override
   String get language => 'Язык';
 
   @override

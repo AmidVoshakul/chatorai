@@ -74,6 +74,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get increaseContrast => 'Increase contrast for better readability';
 
   @override
+  String get wideScreenMode => 'Wide Screen Mode';
+
+  @override
+  String get useFullScreenWidth => 'Use full screen width for chat content';
+
+  @override
   String get language => 'Language';
 
   @override

@@ -20,6 +20,8 @@
   "disableAnimation": "Disable or reduce animation effects",
   "highContrast": "High Contrast",
   "increaseContrast": "Increase contrast for better readability",
+  "wideScreenMode": "Wide Screen Mode",
+  "useFullScreenWidth": "Use full screen width for chat content",
   "language": "Language",
   "english": "English",
   "russian": "Russian",

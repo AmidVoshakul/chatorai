@@ -230,6 +230,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: Text(localizations.increaseContrast),
                       activeThumbColor: Theme.of(context).colorScheme.primary,
                     ),
+                    const Divider(height: 1, thickness: 1),
+                    SwitchListTile(
+                      value: _themeProvider.wideScreenMode,
+                      onChanged: (value) {
+                        _themeProvider.wideScreenMode = value;
+                      },
+                      title: Text(localizations.wideScreenMode),
+                      subtitle: Text(localizations.useFullScreenWidth),
+                      activeThumbColor: Theme.of(context).colorScheme.primary,
+                    ),
                   ],
                 ),
               ),
