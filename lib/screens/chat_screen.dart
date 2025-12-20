@@ -1126,24 +1126,38 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       ),
       body: Column(
         children: [
+          // Chat content area with width control
           Expanded(
-            child: ChatMessages(
-              openRouterService: _openRouterService,
-              chatStorageService: _chatStorageService,
-              chat: _currentChat,
-              selectedModel: _selectedModel,
-              onSendMessage: _handleSendMessage,
-              onMessageDeleted: _refreshChatMessages,
-              onContinueResponse: (messageId) => _continueAIResponse(messageId),
-              scrollController: _messageScrollController,
+            child: _buildChatContentWrapper(
+              context,
+              child: Column(
+                children: [
+                  // Chat Messages
+                  Expanded(
+                    child: ChatMessages(
+                      openRouterService: _openRouterService,
+                      chatStorageService: _chatStorageService,
+                      chat: _currentChat,
+                      selectedModel: _selectedModel,
+                      onSendMessage: _handleSendMessage,
+                      onMessageDeleted: _refreshChatMessages,
+                      onContinueResponse: (messageId) => _continueAIResponse(messageId),
+                      scrollController: _messageScrollController,
+                    ),
+                  ),
+                  
+                  // Continuation Suggestions
+                  if (_showSuggestions && _continuationSuggestions.isNotEmpty &&
+                      _currentChat?.messages.isNotEmpty == true &&
+                      !_currentChat!.messages.last.isError)
+                    _buildContinuationSuggestions(),
+                  
+                  // Input Area
+                  chatInput,
+                ],
+              ),
             ),
           ),
-          // Continuation Suggestions
-          if (_showSuggestions && _continuationSuggestions.isNotEmpty &&
-              _currentChat?.messages.isNotEmpty == true &&
-              !_currentChat!.messages.last.isError)
-            _buildContinuationSuggestions(),
-          chatInput,
         ],
       ),
     );
@@ -1175,7 +1189,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           Expanded(
             child: Column(
               children: [
-                // Header
+                // Header - always full width
                 Container(
                   height: 64,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1256,27 +1270,37 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 
-                // Chat Messages
+                // Chat content area with width control
                 Expanded(
-                  child: ChatMessages(
-                    openRouterService: _openRouterService,
-                    chatStorageService: _chatStorageService,
-                    chat: _currentChat,
-                    selectedModel: _selectedModel,
-                    onSendMessage: _handleSendMessage,
-                    onMessageDeleted: _refreshChatMessages,
-                    scrollController: _messageScrollController,
+                  child: _buildChatContentWrapper(
+                    context,
+                    child: Column(
+                      children: [
+                        // Chat Messages
+                        Expanded(
+                          child: ChatMessages(
+                            openRouterService: _openRouterService,
+                            chatStorageService: _chatStorageService,
+                            chat: _currentChat,
+                            selectedModel: _selectedModel,
+                            onSendMessage: _handleSendMessage,
+                            onMessageDeleted: _refreshChatMessages,
+                            scrollController: _messageScrollController,
+                          ),
+                        ),
+                        
+                        // Continuation Suggestions
+                        if (_showSuggestions && _continuationSuggestions.isNotEmpty &&
+                            _currentChat?.messages.isNotEmpty == true &&
+                            !_currentChat!.messages.last.isError)
+                          _buildContinuationSuggestions(),
+                        
+                        // Input Area
+                        chatInput,
+                      ],
+                    ),
                   ),
                 ),
-                
-                // Continuation Suggestions
-                if (_showSuggestions && _continuationSuggestions.isNotEmpty &&
-                    _currentChat?.messages.isNotEmpty == true &&
-                    !_currentChat!.messages.last.isError)
-                  _buildContinuationSuggestions(),
-                
-                // Input Area
-                chatInput,
               ],
             ),
           ),
@@ -1384,6 +1408,32 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  /// Widget to wrap chat content with responsive width
+  Widget _buildChatContentWrapper(BuildContext context, {required Widget child}) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Only apply width constraints on desktop (wide screens)
+    if (screenWidth >= ChatScreenConstants.mobileBreakpoint) {
+      // If wide screen mode is enabled, use full width
+      if (themeProvider.wideScreenMode) {
+        return child;
+      } else {
+        // Use 75% width by default on desktop
+        return Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            width: screenWidth * 0.75,
+            child: child,
+          ),
+        );
+      }
+    } else {
+      // On mobile, always use full width
+      return child;
+    }
   }
 
   // Method to show continuation suggestions for a message

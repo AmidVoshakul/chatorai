@@ -21,6 +21,7 @@ class ThemeProvider with ChangeNotifier {
   static const String _fontSizeKey = 'font_size';
   static const String _reduceMotionKey = 'reduce_motion';
   static const String _highContrastKey = 'high_contrast';
+  static const String _wideScreenModeKey = 'wide_screen_mode';
   static const String _languageKey = 'selected_language';
   static const String _selectedModelKey = 'selected_model_id';
   static const String _favoriteModelsKey = 'favorite_models';
@@ -29,6 +30,7 @@ class ThemeProvider with ChangeNotifier {
   double _fontSize = 1.0;
   bool _reduceMotion = false;
   bool _highContrast = false;
+  bool _wideScreenMode = false; // New setting for wide screen mode
   bool _isRTL = false;
   String _selectedLanguage = 'en';
   String _selectedModelId = 'nvidia/nemotron-3-nano-30b-a3b:free'; // Default model ID
@@ -47,6 +49,7 @@ class ThemeProvider with ChangeNotifier {
   double get fontSize => _fontSize;
   bool get reduceMotion => _reduceMotion;
   bool get highContrast => _highContrast;
+  bool get wideScreenMode => _wideScreenMode; // Getter for wide screen mode
   bool get isRTL => _isRTL;
   String get selectedLanguage => _selectedLanguage;
   String get selectedModelId => _selectedModelId;
@@ -82,6 +85,12 @@ class ThemeProvider with ChangeNotifier {
 
   set highContrast(bool value) {
     _highContrast = value;
+    saveSettings();
+    notifyListeners();
+  }
+
+  set wideScreenMode(bool value) {
+    _wideScreenMode = value;
     saveSettings();
     notifyListeners();
   }
@@ -258,6 +267,7 @@ class ThemeProvider with ChangeNotifier {
       _fontSize = prefs.getDouble(_fontSizeKey) ?? 1.0;
       _reduceMotion = prefs.getBool(_reduceMotionKey) ?? false;
       _highContrast = prefs.getBool(_highContrastKey) ?? false;
+      _wideScreenMode = prefs.getBool(_wideScreenModeKey) ?? false;
       _selectedLanguage = prefs.getString(_languageKey) ?? 'en';
       _selectedModelId = prefs.getString(_selectedModelKey) ?? 'nvidia/nemotron-3-nano-30b-a3b:free';
       
@@ -291,6 +301,7 @@ class ThemeProvider with ChangeNotifier {
       await prefs.setDouble(_fontSizeKey, _fontSize);
       await prefs.setBool(_reduceMotionKey, _reduceMotion);
       await prefs.setBool(_highContrastKey, _highContrast);
+      await prefs.setBool(_wideScreenModeKey, _wideScreenMode);
       await prefs.setString(_languageKey, _selectedLanguage);
       await prefs.setString(_selectedModelKey, _selectedModelId);
       await prefs.setStringList(_favoriteModelsKey, _favoriteModelIds);
@@ -305,6 +316,7 @@ class ThemeProvider with ChangeNotifier {
     _fontSize = 1.0;
     _reduceMotion = false;
     _highContrast = false;
+    _wideScreenMode = false;
     _selectedLanguage = 'en';
     _selectedModelId = 'nvidia/nemotron-3-nano-30b-a3b:free';
     _isRTL = false;

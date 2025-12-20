@@ -221,6 +221,18 @@ abstract class AppLocalizations {
   /// **'Increase contrast for better readability'**
   String get increaseContrast;
 
+  /// No description provided for @wideScreenMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Wide Screen Mode'**
+  String get wideScreenMode;
+
+  /// No description provided for @useFullScreenWidth.
+  ///
+  /// In en, this message translates to:
+  /// **'Use full screen width for chat content'**
+  String get useFullScreenWidth;
+
   /// No description provided for @language.
   ///
   /// In en, this message translates to:
