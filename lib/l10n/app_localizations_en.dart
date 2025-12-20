@@ -626,4 +626,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get welcomeQuestion80 => 'How to learn a new language quickly?';
+
+  @override
+  String get continueConversation => 'Continue the conversation';
+
+  @override
+  String get generatingSuggestions => 'Generating suggestions...';
 }

@@ -1402,8 +1402,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     try {
       _logger.logInfo('[ChatScreen] Generating continuation suggestions for message...');
       
-      // Get suggestions from AI
-      final suggestions = await _getContinuationSuggestions(message.content);
+      // Detect language from message
+      final language = _detectLanguage(message.content);
+      _logger.logInfo('[ChatScreen] Detected language: $language');
+      
+      // Get suggestions from AI with detected language
+      final suggestions = await _getContinuationSuggestions(message.content, language);
       
       if (suggestions.isNotEmpty) {
         setState(() {
@@ -1466,15 +1470,63 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
+  // Method to detect language from text
+  String _detectLanguage(String text) {
+    // Simple language detection based on common characters
+    final hasCyrillic = RegExp(r'[а-яА-Я]').hasMatch(text);
+    final hasLatin = RegExp(r'[a-zA-Z]').hasMatch(text);
+    final hasChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
+    final hasJapanese = RegExp(r'[\u3040-\u309f\u30a0-\u30ff]').hasMatch(text);
+    
+    if (hasCyrillic) return 'ru';
+    if (hasChinese) return 'zh';
+    if (hasJapanese) return 'ja';
+    if (hasLatin) return 'en';
+    
+    return 'en'; // Default
+  }
+
+  // Method to get localized system prompt based on language
+  String _getLocalizedSystemPrompt(String language) {
+    switch (language) {
+      case 'ru':
+        return 'Ты — полезный ассистент. Продолжи диалог, предложив 3 конкретных и логичных продолжения последнего сообщения. Отвечай на русском языке.';
+      case 'zh':
+        return '你是一个有用的助手。继续对话，为最后一条消息提供3个具体且合乎逻辑的延续。用中文回答。';
+      case 'ja':
+        return 'あなたは有用なアシスタントです。会話を続け、最後のメッセージに対して3つの具体的で論理的な続きを提案してください。日本語で回答してください。';
+      default:
+        return 'You are a helpful assistant. Continue the conversation by providing 3 specific and logical continuations of the last message. Respond in the same language as the user.';
+    }
+  }
+
+  // Method to get localized user prompt based on language
+  String _getLocalizedUserPrompt(String language) {
+    switch (language) {
+      case 'ru':
+        return 'Предложи 3 конкретных и логичных продолжения для этого сообщения. Отвечай только списком, без дополнительного текста.';
+      case 'zh':
+        return '为这条消息提供3个具体且合乎逻辑的延续。只回答列表，不要额外文本。';
+      case 'ja':
+        return 'このメッセージに対して3つの具体的で論理的な続きを提案してください。リストのみで回答し、追加テキストは含めないでください。';
+      default:
+        return 'Provide 3 specific and logical continuations for this message. Answer only with the list, no additional text.';
+    }
+  }
+
   // Method to get continuation suggestions from AI
-  Future<List<String>> _getContinuationSuggestions(String lastMessageContent) async {
+  Future<List<String>> _getContinuationSuggestions(String lastMessageContent, String language) async {
     try {
-      _logger.logInfo('[ChatScreen] Generating continuation suggestions...');
+      _logger.logInfo('[ChatScreen] Generating continuation suggestions in $language...');
+      
+      // Get language-specific system prompt
+      final systemPrompt = _getLocalizedSystemPrompt(language);
+      final userPrompt = _getLocalizedUserPrompt(language);
       
       final suggestionPrompt = [
         {
           'role': 'system', 
-          'content': ContinuationSuggestionsConstants.systemPrompt
+          'content': systemPrompt
         },
         {
           'role': 'assistant', 
@@ -1482,7 +1534,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         },
         {
           'role': 'user', 
-          'content': ContinuationSuggestionsConstants.userPrompt
+          'content': userPrompt
         },
       ];
       

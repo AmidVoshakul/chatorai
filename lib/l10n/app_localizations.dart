@@ -1312,6 +1312,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'How to learn a new language quickly?'**
   String get welcomeQuestion80;
+
+  /// No description provided for @continueConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue the conversation'**
+  String get continueConversation;
+
+  /// No description provided for @generatingSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating suggestions...'**
+  String get generatingSuggestions;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
