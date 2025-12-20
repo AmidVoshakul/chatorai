@@ -205,7 +205,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   void _showWelcomeSuggestionsForNewChat() {
     // Generate random welcome questions
-    final questions = WelcomeQuestionsData.getRandomQuestions(count: 4);
+    final questions = WelcomeQuestionsData.getRandomQuestions(context, count: 4);
     
     setState(() {
       _welcomeSuggestions = questions;

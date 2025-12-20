@@ -383,4 +383,247 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorMessage => 'Error message';
+
+  @override
+  String get welcomeMessage => 'Welcome! How can I help you today?';
+
+  @override
+  String get welcomeQuestion1 => 'Explain quantum computing in simple terms';
+
+  @override
+  String get welcomeQuestion2 => 'What are the latest trends in artificial intelligence?';
+
+  @override
+  String get welcomeQuestion3 => 'Help me write a professional email to my team';
+
+  @override
+  String get welcomeQuestion4 => 'What should I learn to become a better programmer?';
+
+  @override
+  String get welcomeQuestion5 => 'Give me 5 creative ideas for a weekend project';
+
+  @override
+  String get welcomeQuestion6 => 'What are some good books for personal development?';
+
+  @override
+  String get welcomeQuestion7 => 'Help me brainstorm names for my new startup';
+
+  @override
+  String get welcomeQuestion8 => 'Create a meal plan for a healthy week';
+
+  @override
+  String get welcomeQuestion9 => 'What are the best practices for Flutter development?';
+
+  @override
+  String get welcomeQuestion10 => 'Explain the difference between async and sync programming';
+
+  @override
+  String get welcomeQuestion11 => 'How do I optimize my code for better performance?';
+
+  @override
+  String get welcomeQuestion12 => 'What are the most useful programming design patterns?';
+
+  @override
+  String get welcomeQuestion13 => 'Teach me the basics of machine learning';
+
+  @override
+  String get welcomeQuestion14 => 'What are the key concepts of cloud computing?';
+
+  @override
+  String get welcomeQuestion15 => 'Explain blockchain technology to a beginner';
+
+  @override
+  String get welcomeQuestion16 => 'How does the internet work from a technical perspective?';
+
+  @override
+  String get welcomeQuestion17 => 'What are the best productivity techniques?';
+
+  @override
+  String get welcomeQuestion18 => 'How can I improve my focus and concentration?';
+
+  @override
+  String get welcomeQuestion19 => 'Give me a daily routine for maximum productivity';
+
+  @override
+  String get welcomeQuestion20 => 'What are some good habits for success?';
+
+  @override
+  String get welcomeQuestion21 => 'How to prepare for a software engineering interview?';
+
+  @override
+  String get welcomeQuestion22 => 'What skills are most valuable in tech industry?';
+
+  @override
+  String get welcomeQuestion23 => 'How to negotiate a salary increase?';
+
+  @override
+  String get welcomeQuestion24 => 'What are the top tech companies to work for?';
+
+  @override
+  String get welcomeQuestion25 => 'What are the latest breakthroughs in space exploration?';
+
+  @override
+  String get welcomeQuestion26 => 'How is AI changing healthcare?';
+
+  @override
+  String get welcomeQuestion27 => 'What are the most exciting technologies of 2025?';
+
+  @override
+  String get welcomeQuestion28 => 'Explain the future of renewable energy';
+
+  @override
+  String get welcomeQuestion29 => 'What are the most important philosophical questions?';
+
+  @override
+  String get welcomeQuestion30 => 'How can I think more critically about problems?';
+
+  @override
+  String get welcomeQuestion31 => 'What are the best ways to learn new skills?';
+
+  @override
+  String get welcomeQuestion32 => 'How do I stay motivated when learning something difficult?';
+
+  @override
+  String get welcomeQuestion33 => 'What are the best programming languages to learn in 2025?';
+
+  @override
+  String get welcomeQuestion34 => 'How to build a strong portfolio for tech jobs?';
+
+  @override
+  String get welcomeQuestion35 => 'What are the top AI tools for productivity?';
+
+  @override
+  String get welcomeQuestion36 => 'How does machine learning actually work?';
+
+  @override
+  String get welcomeQuestion37 => 'What are the best practices for code review?';
+
+  @override
+  String get welcomeQuestion38 => 'How to write clean and maintainable code?';
+
+  @override
+  String get welcomeQuestion39 => 'What are microservices and when to use them?';
+
+  @override
+  String get welcomeQuestion40 => 'Explain REST API vs GraphQL';
+
+  @override
+  String get welcomeQuestion41 => 'What are the best cloud platforms to learn?';
+
+  @override
+  String get welcomeQuestion42 => 'How to prepare for technical interviews?';
+
+  @override
+  String get welcomeQuestion43 => 'What are soft skills every developer needs?';
+
+  @override
+  String get welcomeQuestion44 => 'How to negotiate salary as a developer?';
+
+  @override
+  String get welcomeQuestion45 => 'What are the best remote work tools?';
+
+  @override
+  String get welcomeQuestion46 => 'How to stay productive working from home?';
+
+  @override
+  String get welcomeQuestion47 => 'What are the best project management methodologies?';
+
+  @override
+  String get welcomeQuestion48 => 'How to handle difficult coworkers?';
+
+  @override
+  String get welcomeQuestion49 => 'What are the best books for leadership?';
+
+  @override
+  String get welcomeQuestion50 => 'How to start a successful tech startup?';
+
+  @override
+  String get welcomeQuestion51 => 'What are the latest trends in web development?';
+
+  @override
+  String get welcomeQuestion52 => 'How does blockchain technology work?';
+
+  @override
+  String get welcomeQuestion53 => 'What are NFTs and should I care?';
+
+  @override
+  String get welcomeQuestion54 => 'Explain the metaverse concept';
+
+  @override
+  String get welcomeQuestion55 => 'What are the best AI models for coding?';
+
+  @override
+  String get welcomeQuestion56 => 'How to use ChatGPT effectively?';
+
+  @override
+  String get welcomeQuestion57 => 'What are the ethics of AI?';
+
+  @override
+  String get welcomeQuestion58 => 'How will AI change jobs in the future?';
+
+  @override
+  String get welcomeQuestion59 => 'What are the best cybersecurity practices?';
+
+  @override
+  String get welcomeQuestion60 => 'How to protect my privacy online?';
+
+  @override
+  String get welcomeQuestion61 => 'What are the best data science tools?';
+
+  @override
+  String get welcomeQuestion62 => 'How to visualize data effectively?';
+
+  @override
+  String get welcomeQuestion63 => 'What are the best mobile app frameworks?';
+
+  @override
+  String get welcomeQuestion64 => 'How to build cross-platform apps?';
+
+  @override
+  String get welcomeQuestion65 => 'What are the best game development engines?';
+
+  @override
+  String get welcomeQuestion66 => 'How to get started with 3D modeling?';
+
+  @override
+  String get welcomeQuestion67 => 'What are the best video editing tools?';
+
+  @override
+  String get welcomeQuestion68 => 'How to create engaging content?';
+
+  @override
+  String get welcomeQuestion69 => 'What are the best social media strategies?';
+
+  @override
+  String get welcomeQuestion70 => 'How to build a personal brand?';
+
+  @override
+  String get welcomeQuestion71 => 'What are the best networking tips?';
+
+  @override
+  String get welcomeQuestion72 => 'How to give a great presentation?';
+
+  @override
+  String get welcomeQuestion73 => 'What are the best time management techniques?';
+
+  @override
+  String get welcomeQuestion74 => 'How to avoid burnout?';
+
+  @override
+  String get welcomeQuestion75 => 'What are the best meditation apps?';
+
+  @override
+  String get welcomeQuestion76 => 'How to improve sleep quality?';
+
+  @override
+  String get welcomeQuestion77 => 'What are the best exercise routines?';
+
+  @override
+  String get welcomeQuestion78 => 'How to eat healthy on a budget?';
+
+  @override
+  String get welcomeQuestion79 => 'What are the best travel destinations for tech workers?';
+
+  @override
+  String get welcomeQuestion80 => 'How to learn a new language quickly?';
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/welcome_questions_data.dart';
@@ -145,7 +146,10 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions> with TickerProv
       if (!mounted) return;
       
       // Generate new questions (different from current)
-      final newQuestions = WelcomeQuestionsData.getRandomQuestions(count: 4);
+      final newQuestions = WelcomeQuestionsData.getRandomQuestions(
+        context,
+        count: 4,
+      );
       
       // Update state
       setState(() {
@@ -286,7 +290,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions> with TickerProv
                     
                     // Welcome text centered and larger
                     Text(
-                      'Welcome! How can I help you today?',
+                      AppLocalizations.of(context)?.welcomeMessage ?? 'Welcome! How can I help you today?',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,

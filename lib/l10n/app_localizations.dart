@@ -826,6 +826,492 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error message'**
   String get errorMessage;
+
+  /// No description provided for @welcomeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome! How can I help you today?'**
+  String get welcomeMessage;
+
+  /// No description provided for @welcomeQuestion1.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain quantum computing in simple terms'**
+  String get welcomeQuestion1;
+
+  /// No description provided for @welcomeQuestion2.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the latest trends in artificial intelligence?'**
+  String get welcomeQuestion2;
+
+  /// No description provided for @welcomeQuestion3.
+  ///
+  /// In en, this message translates to:
+  /// **'Help me write a professional email to my team'**
+  String get welcomeQuestion3;
+
+  /// No description provided for @welcomeQuestion4.
+  ///
+  /// In en, this message translates to:
+  /// **'What should I learn to become a better programmer?'**
+  String get welcomeQuestion4;
+
+  /// No description provided for @welcomeQuestion5.
+  ///
+  /// In en, this message translates to:
+  /// **'Give me 5 creative ideas for a weekend project'**
+  String get welcomeQuestion5;
+
+  /// No description provided for @welcomeQuestion6.
+  ///
+  /// In en, this message translates to:
+  /// **'What are some good books for personal development?'**
+  String get welcomeQuestion6;
+
+  /// No description provided for @welcomeQuestion7.
+  ///
+  /// In en, this message translates to:
+  /// **'Help me brainstorm names for my new startup'**
+  String get welcomeQuestion7;
+
+  /// No description provided for @welcomeQuestion8.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a meal plan for a healthy week'**
+  String get welcomeQuestion8;
+
+  /// No description provided for @welcomeQuestion9.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best practices for Flutter development?'**
+  String get welcomeQuestion9;
+
+  /// No description provided for @welcomeQuestion10.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain the difference between async and sync programming'**
+  String get welcomeQuestion10;
+
+  /// No description provided for @welcomeQuestion11.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I optimize my code for better performance?'**
+  String get welcomeQuestion11;
+
+  /// No description provided for @welcomeQuestion12.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the most useful programming design patterns?'**
+  String get welcomeQuestion12;
+
+  /// No description provided for @welcomeQuestion13.
+  ///
+  /// In en, this message translates to:
+  /// **'Teach me the basics of machine learning'**
+  String get welcomeQuestion13;
+
+  /// No description provided for @welcomeQuestion14.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the key concepts of cloud computing?'**
+  String get welcomeQuestion14;
+
+  /// No description provided for @welcomeQuestion15.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain blockchain technology to a beginner'**
+  String get welcomeQuestion15;
+
+  /// No description provided for @welcomeQuestion16.
+  ///
+  /// In en, this message translates to:
+  /// **'How does the internet work from a technical perspective?'**
+  String get welcomeQuestion16;
+
+  /// No description provided for @welcomeQuestion17.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best productivity techniques?'**
+  String get welcomeQuestion17;
+
+  /// No description provided for @welcomeQuestion18.
+  ///
+  /// In en, this message translates to:
+  /// **'How can I improve my focus and concentration?'**
+  String get welcomeQuestion18;
+
+  /// No description provided for @welcomeQuestion19.
+  ///
+  /// In en, this message translates to:
+  /// **'Give me a daily routine for maximum productivity'**
+  String get welcomeQuestion19;
+
+  /// No description provided for @welcomeQuestion20.
+  ///
+  /// In en, this message translates to:
+  /// **'What are some good habits for success?'**
+  String get welcomeQuestion20;
+
+  /// No description provided for @welcomeQuestion21.
+  ///
+  /// In en, this message translates to:
+  /// **'How to prepare for a software engineering interview?'**
+  String get welcomeQuestion21;
+
+  /// No description provided for @welcomeQuestion22.
+  ///
+  /// In en, this message translates to:
+  /// **'What skills are most valuable in tech industry?'**
+  String get welcomeQuestion22;
+
+  /// No description provided for @welcomeQuestion23.
+  ///
+  /// In en, this message translates to:
+  /// **'How to negotiate a salary increase?'**
+  String get welcomeQuestion23;
+
+  /// No description provided for @welcomeQuestion24.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the top tech companies to work for?'**
+  String get welcomeQuestion24;
+
+  /// No description provided for @welcomeQuestion25.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the latest breakthroughs in space exploration?'**
+  String get welcomeQuestion25;
+
+  /// No description provided for @welcomeQuestion26.
+  ///
+  /// In en, this message translates to:
+  /// **'How is AI changing healthcare?'**
+  String get welcomeQuestion26;
+
+  /// No description provided for @welcomeQuestion27.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the most exciting technologies of 2025?'**
+  String get welcomeQuestion27;
+
+  /// No description provided for @welcomeQuestion28.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain the future of renewable energy'**
+  String get welcomeQuestion28;
+
+  /// No description provided for @welcomeQuestion29.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the most important philosophical questions?'**
+  String get welcomeQuestion29;
+
+  /// No description provided for @welcomeQuestion30.
+  ///
+  /// In en, this message translates to:
+  /// **'How can I think more critically about problems?'**
+  String get welcomeQuestion30;
+
+  /// No description provided for @welcomeQuestion31.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best ways to learn new skills?'**
+  String get welcomeQuestion31;
+
+  /// No description provided for @welcomeQuestion32.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I stay motivated when learning something difficult?'**
+  String get welcomeQuestion32;
+
+  /// No description provided for @welcomeQuestion33.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best programming languages to learn in 2025?'**
+  String get welcomeQuestion33;
+
+  /// No description provided for @welcomeQuestion34.
+  ///
+  /// In en, this message translates to:
+  /// **'How to build a strong portfolio for tech jobs?'**
+  String get welcomeQuestion34;
+
+  /// No description provided for @welcomeQuestion35.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the top AI tools for productivity?'**
+  String get welcomeQuestion35;
+
+  /// No description provided for @welcomeQuestion36.
+  ///
+  /// In en, this message translates to:
+  /// **'How does machine learning actually work?'**
+  String get welcomeQuestion36;
+
+  /// No description provided for @welcomeQuestion37.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best practices for code review?'**
+  String get welcomeQuestion37;
+
+  /// No description provided for @welcomeQuestion38.
+  ///
+  /// In en, this message translates to:
+  /// **'How to write clean and maintainable code?'**
+  String get welcomeQuestion38;
+
+  /// No description provided for @welcomeQuestion39.
+  ///
+  /// In en, this message translates to:
+  /// **'What are microservices and when to use them?'**
+  String get welcomeQuestion39;
+
+  /// No description provided for @welcomeQuestion40.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain REST API vs GraphQL'**
+  String get welcomeQuestion40;
+
+  /// No description provided for @welcomeQuestion41.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best cloud platforms to learn?'**
+  String get welcomeQuestion41;
+
+  /// No description provided for @welcomeQuestion42.
+  ///
+  /// In en, this message translates to:
+  /// **'How to prepare for technical interviews?'**
+  String get welcomeQuestion42;
+
+  /// No description provided for @welcomeQuestion43.
+  ///
+  /// In en, this message translates to:
+  /// **'What are soft skills every developer needs?'**
+  String get welcomeQuestion43;
+
+  /// No description provided for @welcomeQuestion44.
+  ///
+  /// In en, this message translates to:
+  /// **'How to negotiate salary as a developer?'**
+  String get welcomeQuestion44;
+
+  /// No description provided for @welcomeQuestion45.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best remote work tools?'**
+  String get welcomeQuestion45;
+
+  /// No description provided for @welcomeQuestion46.
+  ///
+  /// In en, this message translates to:
+  /// **'How to stay productive working from home?'**
+  String get welcomeQuestion46;
+
+  /// No description provided for @welcomeQuestion47.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best project management methodologies?'**
+  String get welcomeQuestion47;
+
+  /// No description provided for @welcomeQuestion48.
+  ///
+  /// In en, this message translates to:
+  /// **'How to handle difficult coworkers?'**
+  String get welcomeQuestion48;
+
+  /// No description provided for @welcomeQuestion49.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best books for leadership?'**
+  String get welcomeQuestion49;
+
+  /// No description provided for @welcomeQuestion50.
+  ///
+  /// In en, this message translates to:
+  /// **'How to start a successful tech startup?'**
+  String get welcomeQuestion50;
+
+  /// No description provided for @welcomeQuestion51.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the latest trends in web development?'**
+  String get welcomeQuestion51;
+
+  /// No description provided for @welcomeQuestion52.
+  ///
+  /// In en, this message translates to:
+  /// **'How does blockchain technology work?'**
+  String get welcomeQuestion52;
+
+  /// No description provided for @welcomeQuestion53.
+  ///
+  /// In en, this message translates to:
+  /// **'What are NFTs and should I care?'**
+  String get welcomeQuestion53;
+
+  /// No description provided for @welcomeQuestion54.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain the metaverse concept'**
+  String get welcomeQuestion54;
+
+  /// No description provided for @welcomeQuestion55.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best AI models for coding?'**
+  String get welcomeQuestion55;
+
+  /// No description provided for @welcomeQuestion56.
+  ///
+  /// In en, this message translates to:
+  /// **'How to use ChatGPT effectively?'**
+  String get welcomeQuestion56;
+
+  /// No description provided for @welcomeQuestion57.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the ethics of AI?'**
+  String get welcomeQuestion57;
+
+  /// No description provided for @welcomeQuestion58.
+  ///
+  /// In en, this message translates to:
+  /// **'How will AI change jobs in the future?'**
+  String get welcomeQuestion58;
+
+  /// No description provided for @welcomeQuestion59.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best cybersecurity practices?'**
+  String get welcomeQuestion59;
+
+  /// No description provided for @welcomeQuestion60.
+  ///
+  /// In en, this message translates to:
+  /// **'How to protect my privacy online?'**
+  String get welcomeQuestion60;
+
+  /// No description provided for @welcomeQuestion61.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best data science tools?'**
+  String get welcomeQuestion61;
+
+  /// No description provided for @welcomeQuestion62.
+  ///
+  /// In en, this message translates to:
+  /// **'How to visualize data effectively?'**
+  String get welcomeQuestion62;
+
+  /// No description provided for @welcomeQuestion63.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best mobile app frameworks?'**
+  String get welcomeQuestion63;
+
+  /// No description provided for @welcomeQuestion64.
+  ///
+  /// In en, this message translates to:
+  /// **'How to build cross-platform apps?'**
+  String get welcomeQuestion64;
+
+  /// No description provided for @welcomeQuestion65.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best game development engines?'**
+  String get welcomeQuestion65;
+
+  /// No description provided for @welcomeQuestion66.
+  ///
+  /// In en, this message translates to:
+  /// **'How to get started with 3D modeling?'**
+  String get welcomeQuestion66;
+
+  /// No description provided for @welcomeQuestion67.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best video editing tools?'**
+  String get welcomeQuestion67;
+
+  /// No description provided for @welcomeQuestion68.
+  ///
+  /// In en, this message translates to:
+  /// **'How to create engaging content?'**
+  String get welcomeQuestion68;
+
+  /// No description provided for @welcomeQuestion69.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best social media strategies?'**
+  String get welcomeQuestion69;
+
+  /// No description provided for @welcomeQuestion70.
+  ///
+  /// In en, this message translates to:
+  /// **'How to build a personal brand?'**
+  String get welcomeQuestion70;
+
+  /// No description provided for @welcomeQuestion71.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best networking tips?'**
+  String get welcomeQuestion71;
+
+  /// No description provided for @welcomeQuestion72.
+  ///
+  /// In en, this message translates to:
+  /// **'How to give a great presentation?'**
+  String get welcomeQuestion72;
+
+  /// No description provided for @welcomeQuestion73.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best time management techniques?'**
+  String get welcomeQuestion73;
+
+  /// No description provided for @welcomeQuestion74.
+  ///
+  /// In en, this message translates to:
+  /// **'How to avoid burnout?'**
+  String get welcomeQuestion74;
+
+  /// No description provided for @welcomeQuestion75.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best meditation apps?'**
+  String get welcomeQuestion75;
+
+  /// No description provided for @welcomeQuestion76.
+  ///
+  /// In en, this message translates to:
+  /// **'How to improve sleep quality?'**
+  String get welcomeQuestion76;
+
+  /// No description provided for @welcomeQuestion77.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best exercise routines?'**
+  String get welcomeQuestion77;
+
+  /// No description provided for @welcomeQuestion78.
+  ///
+  /// In en, this message translates to:
+  /// **'How to eat healthy on a budget?'**
+  String get welcomeQuestion78;
+
+  /// No description provided for @welcomeQuestion79.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best travel destinations for tech workers?'**
+  String get welcomeQuestion79;
+
+  /// No description provided for @welcomeQuestion80.
+  ///
+  /// In en, this message translates to:
+  /// **'How to learn a new language quickly?'**
+  String get welcomeQuestion80;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
