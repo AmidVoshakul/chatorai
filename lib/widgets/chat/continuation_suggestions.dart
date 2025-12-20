@@ -397,8 +397,6 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions> with 
           ),
           child: Row(
             children: [
-              const SizedBox(width: 20), // Empty space where numbering was
-              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   suggestion,

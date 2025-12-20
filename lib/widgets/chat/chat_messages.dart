@@ -9,6 +9,7 @@ import 'package:gen_ui_chat_ai/widgets/chat/reasoning_message.dart'
     as reasoning_msg;
 import 'package:gen_ui_chat_ai/widgets/chat/loading_indicator.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/continuation_suggestions.dart';
+import 'package:gen_ui_chat_ai/widgets/chat/welcome_suggestions.dart';
 
 // Initialize logger for this widget
 final _logger = LogTags.chatService;
@@ -50,6 +51,11 @@ class ChatMessages extends StatefulWidget {
   final bool showSuggestions; // Whether to show suggestions
   final bool isSuggestionsLoading; // Whether suggestions are loading
   final VoidCallback? onSuggestionsClose; // Callback when suggestions are closed
+  
+  // Welcome suggestions for empty chats
+  final List<String> welcomeSuggestions; // Welcome questions to display
+  final bool showWelcomeSuggestions; // Whether to show welcome suggestions
+  final VoidCallback? onWelcomeSuggestionsClose; // Callback when welcome suggestions are closed
 
   const ChatMessages({
     super.key,
@@ -65,6 +71,9 @@ class ChatMessages extends StatefulWidget {
     this.showSuggestions = false,
     this.isSuggestionsLoading = false,
     this.onSuggestionsClose,
+    this.welcomeSuggestions = const [],
+    this.showWelcomeSuggestions = false,
+    this.onWelcomeSuggestionsClose,
   });
 
   @override
@@ -163,6 +172,9 @@ class _ChatMessagesState extends State<ChatMessages> {
         messages.last.content.isEmpty && 
         !messages.last.isComplete;
 
+    // Show welcome suggestions when chat is empty and welcome suggestions are enabled
+    final shouldShowWelcome = !hasMessages && widget.showWelcomeSuggestions && widget.welcomeSuggestions.isNotEmpty;
+
     return Container(
       color: theme.scaffoldBackgroundColor,
       child: Column(
@@ -177,7 +189,8 @@ class _ChatMessagesState extends State<ChatMessages> {
               ),
               itemCount: messages.length + 
                   (shouldShowWaitingAnimation ? 1 : 0) + 
-                  (widget.showSuggestions && widget.continuationSuggestions.isNotEmpty ? 1 : 0),
+                  (widget.showSuggestions && widget.continuationSuggestions.isNotEmpty ? 1 : 0) +
+                  (shouldShowWelcome ? 1 : 0),
               itemBuilder: (context, index) {
                 // Show waiting animation at the end
                 if (shouldShowWaitingAnimation && index == messages.length) {
@@ -188,6 +201,11 @@ class _ChatMessagesState extends State<ChatMessages> {
                 final suggestionsIndex = messages.length + (shouldShowWaitingAnimation ? 1 : 0);
                 if (widget.showSuggestions && widget.continuationSuggestions.isNotEmpty && index == suggestionsIndex) {
                   return _buildContinuationSuggestions();
+                }
+
+                // Show welcome suggestions at the beginning
+                if (shouldShowWelcome && index == 0) {
+                  return _buildWelcomeSuggestions();
                 }
 
                 if (index >= messages.length) {
@@ -291,6 +309,18 @@ class _ChatMessagesState extends State<ChatMessages> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildWelcomeSuggestions() {
+    return WelcomeSuggestions(
+      suggestions: widget.welcomeSuggestions,
+      context: context,
+      onSuggestionTap: (suggestion) {
+        // Send the suggestion through the parent callback
+        widget.onSendMessage(suggestion);
+      },
+      onClose: widget.onWelcomeSuggestionsClose,
     );
   }
 
