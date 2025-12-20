@@ -209,5 +209,7 @@
   "welcomeQuestion77": "What are the best exercise routines?",
   "welcomeQuestion78": "How to eat healthy on a budget?",
   "welcomeQuestion79": "What are the best travel destinations for tech workers?",
-  "welcomeQuestion80": "How to learn a new language quickly?"
+  "welcomeQuestion80": "How to learn a new language quickly?",
+  "continueConversation": "Continue the conversation",
+  "generatingSuggestions": "Generating suggestions..."
 }

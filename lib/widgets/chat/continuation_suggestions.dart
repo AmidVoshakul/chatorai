@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 
@@ -137,11 +138,11 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions> with 
     _suggestionPulseControllers.clear();
     _suggestionPulseAnimations.clear();
 
-    // Create controllers for each suggestion
+    // Create controllers for each suggestion with smooth timing
     for (int i = 0; i < widget.suggestions.length; i++) {
       final controller = AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 800),
+        duration: const Duration(milliseconds: 800), // Faster pulse
       );
 
       final animation = Tween<double>(
@@ -158,14 +159,14 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions> with 
       _suggestionPulseAnimations.add(animation);
     }
 
-    // Start sequential pulse animation
+    // Start sequential pulse animation with smooth timing
     _startNextPulse(0);
   }
 
   void _startNextPulse(int index) {
     if (index >= _suggestionPulseControllers.length) {
-      // Reset to first suggestion after completing all
-      Future.delayed(const Duration(milliseconds: 500), () {
+      // Reset to first suggestion after completing all with shorter delay
+      Future.delayed(const Duration(milliseconds: 400), () {
         if (mounted) {
           _startNextPulse(0);
         }
@@ -175,7 +176,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions> with 
 
     final controller = _suggestionPulseControllers[index];
     
-    // Start pulse animation
+    // Start pulse animation with smooth easing
     controller.forward();
 
     // When pulse completes (forward + reverse), move to next
@@ -184,7 +185,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions> with 
         // Start reverse
         controller.reverse();
       } else if (status == AnimationStatus.dismissed) {
-        // Pulse cycle complete, move to next suggestion
+        // Pulse cycle complete, move to next suggestion with optimized timing
         Future.delayed(const Duration(milliseconds: 200), () {
           if (mounted) {
             _startNextPulse(index + 1);
@@ -197,6 +198,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions> with 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     
     return AnimatedBuilder(
       animation: _animationController,
@@ -259,7 +261,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions> with 
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Continue the conversation',
+                          l10n.continueConversation,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -275,7 +277,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions> with 
                           color: theme.colorScheme.primary.withValues(alpha: 0.7),
                         ),
                         onPressed: widget.onClose,
-                        tooltip: 'Close suggestions',
+                        tooltip: l10n.close,
                         splashRadius: 16,
                       ),
                     ],
@@ -300,6 +302,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions> with 
   }
 
   Widget _buildLoadingState() {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         SizedBox(
@@ -314,7 +317,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions> with 
         ),
         const SizedBox(width: 10),
         Text(
-          'Generating suggestions...',
+          l10n.generatingSuggestions,
           style: TextStyle(
             fontSize: 13,
             color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),

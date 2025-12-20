@@ -451,7 +451,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get welcomeQuestion21 => 'Как подготовиться к собеседованию в IT?';
 
   @override
-  String get welcomeQuestion22 => 'Какие навыки最有价值 в tech индустрии?';
+  String get welcomeQuestion22 => 'Какие навыки в tech индустрии?';
 
   @override
   String get welcomeQuestion23 => 'Как договориться о повышении зарплаты?';
@@ -626,4 +626,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get welcomeQuestion80 => 'Как быстро выучить новый язык?';
+
+  @override
+  String get continueConversation => 'Продолжить диалог';
+
+  @override
+  String get generatingSuggestions => 'Генерация предложений...';
 }
