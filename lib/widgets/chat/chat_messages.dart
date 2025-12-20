@@ -166,10 +166,11 @@ class _ChatMessagesState extends State<ChatMessages> {
     // Show waiting animation ONLY when:
     // 1. There ARE messages (user has sent something)
     // 2. AND last message is assistant
-    // 3. AND it has no content yet (waiting for first chunk)
+    // 3. AND it has no content yet AND no reasoning yet (waiting for first chunk)
     final shouldShowWaitingAnimation = hasMessages && 
         hasAssistantMessage && 
         messages.last.content.isEmpty && 
+        (messages.last.reasoning == null || messages.last.reasoning!.isEmpty) &&
         !messages.last.isComplete;
 
     // Show welcome suggestions when chat is empty and welcome suggestions are enabled
@@ -222,13 +223,42 @@ class _ChatMessagesState extends State<ChatMessages> {
                 // During streaming: handle assistant message with reasoning
                 if (isEmptyAssistantMessage && !message.isComplete && isLastMessage) {
                   final hasReasoning = message.reasoning != null && message.reasoning!.isNotEmpty;
+                  final hasContent = message.content.isNotEmpty;
                   
-                  if (hasReasoning) {
-                    // Show reasoning (streaming) - this replaces waiting animation
+                  if (hasReasoning && !hasContent) {
+                    // Show only reasoning (streaming) - content not started yet
                     return reasoning_msg.ReasoningMessage(
-                      key: ValueKey(message.id), // CRITICAL: Only use message.id
+                      key: ValueKey(message.id),
                       reasoning: message.reasoning!,
                       isStreaming: true,
+                    );
+                  } else if (hasReasoning && hasContent) {
+                    // Show both reasoning and content (streaming)
+                    return Column(
+                      key: ValueKey(message.id),
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        reasoning_msg.ReasoningMessage(
+                          key: ValueKey('${message.id}_reasoning'),
+                          reasoning: message.reasoning!,
+                          isStreaming: true,
+                        ),
+                        const SizedBox(height: ChatMessagesConstants.messageSpacing),
+                        chat_msg.ChatMessage(
+                          key: ValueKey('${message.id}_content'),
+                          message: message,
+                          isStreaming: true,
+                          isLastMessage: isLastMessage,
+                          onRetry: () {},
+                          chatId: widget.chat?.id ?? '',
+                          chatStorageService: widget.chatStorageService,
+                          onMessageDeleted: widget.onMessageDeleted,
+                          onMessageUpdated: (newContent) {},
+                          onDelete: () {},
+                          onContinueResponse: null,
+                        ),
+                      ],
                     );
                   }
                   // No reasoning yet, skip this message (waiting animation shown separately)
