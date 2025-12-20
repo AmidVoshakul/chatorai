@@ -12,6 +12,7 @@ import 'package:gen_ui_chat_ai/widgets/sidebar/sidebar.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/continuation_suggestions.dart';
+import 'package:gen_ui_chat_ai/widgets/chat/welcome_questions_data.dart';
 import 'package:gen_ui_chat_ai/screens/models_screen.dart';
 import 'package:gen_ui_chat_ai/utils/chat_scroll_utils.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
@@ -83,6 +84,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   bool _isSuggestionsLoading = false;
   bool _showSuggestions = false;
   List<String> _continuationSuggestions = [];
+  
+  // Welcome suggestions for empty chats
+  bool _showWelcomeSuggestions = false;
+  List<String> _welcomeSuggestions = [];
   
   @override
   void initState() {
@@ -174,6 +179,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         _chats = chats;
         if (_chats.isNotEmpty && _currentChat == null) {
           _selectChat(_chats.first.id);
+        } else if (_chats.isEmpty) {
+          // No chats, hide welcome suggestions
+          setState(() {
+            _showWelcomeSuggestions = false;
+            _welcomeSuggestions.clear();
+          });
         }
       });
     } catch (e) {
@@ -187,6 +198,22 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     await _chatStorageService.addChat(newChat);
     await _loadChats();
     _selectChat(newChat.id);
+    
+    // Show welcome suggestions for new chat
+    _showWelcomeSuggestionsForNewChat();
+  }
+
+  void _showWelcomeSuggestionsForNewChat() {
+    // Generate random welcome questions
+    final questions = WelcomeQuestionsData.getRandomQuestions(count: 4);
+    
+    setState(() {
+      _welcomeSuggestions = questions;
+      _showWelcomeSuggestions = true;
+      // Hide continuation suggestions if they're showing
+      _showSuggestions = false;
+      _continuationSuggestions.clear();
+    });
   }
 
   void _selectChat(String chatId) {
@@ -199,6 +226,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     setState(() {
       _currentChat = chat;
     });
+    
+    // Show welcome suggestions if chat is empty
+    if (chat.messages.isEmpty) {
+      _showWelcomeSuggestionsForNewChat();
+    } else {
+      // Hide welcome suggestions if chat has messages
+      setState(() {
+        _showWelcomeSuggestions = false;
+        _welcomeSuggestions.clear();
+      });
+    }
     
     // Auto-scroll to bottom when chat is loaded
     // Используем Future.microtask для гарантированного вызова после setState
@@ -310,11 +348,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _chatScrollUtils?.resetAutoScrollLock();
     print('[CHAT_SCREEN] Auto-scroll lock reset before sending');
     
-    // Hide continuation suggestions when user sends a new message
-    if (_showSuggestions) {
+    // Hide continuation and welcome suggestions when user sends a new message
+    if (_showSuggestions || _showWelcomeSuggestions) {
       setState(() {
         _showSuggestions = false;
         _continuationSuggestions.clear();
+        _showWelcomeSuggestions = false;
+        _welcomeSuggestions.clear();
       });
     }
     
@@ -1146,6 +1186,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           _continuationSuggestions.clear();
                         });
                       },
+                      welcomeSuggestions: _welcomeSuggestions,
+                      showWelcomeSuggestions: _showWelcomeSuggestions,
+                      onWelcomeSuggestionsClose: () {
+                        setState(() {
+                          _showWelcomeSuggestions = false;
+                          _welcomeSuggestions.clear();
+                        });
+                      },
                     ),
                   ),
                   
@@ -1290,6 +1338,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                               setState(() {
                                 _showSuggestions = false;
                                 _continuationSuggestions.clear();
+                              });
+                            },
+                            welcomeSuggestions: _welcomeSuggestions,
+                            showWelcomeSuggestions: _showWelcomeSuggestions,
+                            onWelcomeSuggestionsClose: () {
+                              setState(() {
+                                _showWelcomeSuggestions = false;
+                                _welcomeSuggestions.clear();
                               });
                             },
                           ),
