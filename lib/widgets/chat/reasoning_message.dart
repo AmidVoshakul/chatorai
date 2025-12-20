@@ -1,12 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
-
-/// Фазы отображения reasoning
-enum ReasoningPhase {
-  thinking, // модель думает (streaming)
-  typing,   // reasoning печатается
-  done,     // reasoning готов
-}
 
 class ReasoningMessage extends StatefulWidget {
   final String reasoning;
@@ -24,37 +18,87 @@ class ReasoningMessage extends StatefulWidget {
 
 class _ReasoningMessageState extends State<ReasoningMessage>
     with TickerProviderStateMixin {
-  
+  static const _shimmerDuration = Duration(milliseconds: 1500);
+  static const _chunkTimeout = Duration(milliseconds: 300);
+  static const _bubbleWidthRatio = 0.65;
+  static const _bubblePadding = 12.0;
+  static const _textFontSize = 13.0;
+  static const _headerFontSize = 12.0;
+  static const _shimmerAlpha = 0.4;
+  static const _shimmerAlphaMax = 1.0;
+
   bool _isExpanded = false;
-  late final AnimationController _fadeInController;
-  late final Animation<double> _fadeIn;
+  bool _isShimmering = false;
+  Timer? _shimmerStopTimer;
+  late final AnimationController _shimmerController;
+  late final Animation<double> _shimmerAnimation;
 
   @override
   void initState() {
     super.initState();
-    
-    // Simple fade-in animation
-    _fadeInController = AnimationController(
+    _initShimmer();
+  }
+
+  void _initShimmer() {
+    _shimmerController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 200),
-      value: 0.0,
+      duration: _shimmerDuration,
+    );
+    _shimmerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _shimmerController, curve: Curves.linear),
     );
 
-    _fadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeInController, curve: Curves.easeInOut),
-    );
+    if (widget.isStreaming) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _startShimmer();
+      });
+    }
+  }
 
-    // Start fade-in immediately
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _fadeInController.forward();
-      }
+  @override
+  void didUpdateWidget(ReasoningMessage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.reasoning != oldWidget.reasoning) {
+      _startShimmer();
+    }
+
+    if (widget.isStreaming != oldWidget.isStreaming && !widget.isStreaming) {
+      _stopShimmer();
+    }
+  }
+
+  void _startShimmer() {
+    _shimmerStopTimer?.cancel();
+
+    if (!_isShimmering) {
+      setState(() {
+        _isShimmering = true;
+      });
+      _shimmerController.repeat();
+    }
+
+    _shimmerStopTimer = Timer(_chunkTimeout, () {
+      if (mounted) _stopShimmer();
     });
+  }
+
+  void _stopShimmer() {
+    _shimmerStopTimer?.cancel();
+    _shimmerStopTimer = null;
+
+    if (_isShimmering) {
+      setState(() {
+        _isShimmering = false;
+      });
+      _shimmerController.stop();
+    }
   }
 
   @override
   void dispose() {
-    _fadeInController.dispose();
+    _shimmerStopTimer?.cancel();
+    _shimmerController.dispose();
     super.dispose();
   }
 
@@ -63,112 +107,144 @@ class _ReasoningMessageState extends State<ReasoningMessage>
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context);
 
-    // Directly use widget.reasoning - no local state, no typing animation
-    final String sourceText = widget.reasoning;
-    final List<String> lines = sourceText.split('\n');
-    final String previewText = lines.take(2).join('\n');
+    final content = _buildContent(theme, localizations);
 
-    // Show shimmer/spinner only during streaming with no content yet
-    final bool showShimmer = widget.isStreaming && sourceText.isEmpty;
+    if (_isShimmering) {
+      return _buildShimmerWrapper(theme, content);
+    }
 
+    return content;
+  }
+
+  Widget _buildContent(ThemeData theme, AppLocalizations? localizations) {
+    return Container(
+      width: MediaQuery.of(context).size.width * _bubbleWidthRatio,
+      padding: const EdgeInsets.all(_bubblePadding),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+      ),
+      child: _isExpanded
+          ? _buildExpandedContent(theme, localizations)
+          : _buildCollapsedContent(theme, localizations),
+    );
+  }
+
+  Widget _buildExpandedContent(
+    ThemeData theme,
+    AppLocalizations? localizations,
+  ) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHeader(localizations, theme),
+          const SizedBox(height: 8),
+          Text(
+            widget.reasoning,
+            style: const TextStyle(fontSize: _textFontSize, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollapsedContent(
+    ThemeData theme,
+    AppLocalizations? localizations,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildHeader(localizations, theme),
+        const SizedBox(height: 8),
+        if (widget.reasoning.isNotEmpty)
+          Text(
+            widget.reasoning,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: _textFontSize, height: 1.4),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildShimmerWrapper(ThemeData theme, Widget child) {
     return AnimatedBuilder(
-      animation: _fadeIn,
-      builder: (_, child) {
-        return Opacity(
-          opacity: _fadeIn.value,
-          child: child,
-        );
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        height: _isExpanded ? null : 140,
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.65,
-          padding: const EdgeInsets.all(12),
+      animation: _shimmerAnimation,
+      builder: (_, __) {
+        return Container(
           decoration: BoxDecoration(
-            color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+            color: theme.colorScheme.secondary.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: theme.dividerColor.withValues(alpha: 0.3),
             ),
           ),
-          child: _isExpanded
-              ? SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildHeader(localizations, theme),
-                      const SizedBox(height: 8),
-                      Text(
-                        sourceText,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildHeader(localizations, theme),
-                    const SizedBox(height: 8),
-                    if (sourceText.isNotEmpty)
-                      Text(
-                        previewText,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          height: 1.4,
-                        ),
-                      ),
-                    if (showShimmer)
-                      Container(
-                        height: 10,
-                        width: 120,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(6),
-                          color: theme.colorScheme.secondary.withValues(alpha: 0.2),
-                        ),
-                      ),
-                  ],
-                ),
-        ),
-      ),
+          child: ShaderMask(
+            shaderCallback: _buildShimmerGradient(theme),
+            blendMode: BlendMode.srcIn,
+            child: child,
+          ),
+        );
+      },
     );
   }
 
+  ShaderCallback _buildShimmerGradient(ThemeData theme) {
+    return (bounds) {
+      final shimmerPosition = _shimmerAnimation.value;
+      final shimmerWidth = 0.3;
+      final beginX = (shimmerPosition - shimmerWidth) * bounds.width;
+      final endX = shimmerPosition * bounds.width;
+
+      return LinearGradient(
+        begin: Alignment(beginX / bounds.width, 0),
+        end: Alignment(endX / bounds.width, 0),
+        colors: [
+          theme.colorScheme.secondary.withValues(alpha: _shimmerAlpha),
+          theme.colorScheme.secondary.withValues(alpha: _shimmerAlphaMax),
+          theme.colorScheme.secondary.withValues(alpha: _shimmerAlpha),
+        ],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(bounds);
+    };
+  }
+
   Widget _buildHeader(AppLocalizations? localizations, ThemeData theme) {
+    final iconColor = theme.textTheme.bodyMedium?.color ?? Colors.grey.shade700;
     return Row(
       children: [
-        const Icon(Icons.psychology, size: 16),
-        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(Icons.lightbulb_outline, size: 12, color: iconColor),
+        ),
+        const SizedBox(width: 6),
         Expanded(
           child: Text(
             localizations?.reasoning ?? 'Reasoning',
             style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+              fontSize: _headerFontSize,
+              fontWeight: FontWeight.w600,
+              height: 1.4,
             ),
           ),
         ),
-        IconButton(
-          icon: Icon(
-            _isExpanded ? Icons.expand_less : Icons.expand_more,
+        GestureDetector(
+          onTap: () => setState(() => _isExpanded = !_isExpanded),
+          child: Icon(
+            _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
             size: 16,
+            color: iconColor,
           ),
-          splashRadius: 18,
-          onPressed: () {
-            setState(() {
-              _isExpanded = !_isExpanded;
-            });
-          },
         ),
       ],
     );
