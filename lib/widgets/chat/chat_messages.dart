@@ -8,6 +8,7 @@ import 'package:gen_ui_chat_ai/widgets/chat/chat_message.dart' as chat_msg;
 import 'package:gen_ui_chat_ai/widgets/chat/reasoning_message.dart'
     as reasoning_msg;
 import 'package:gen_ui_chat_ai/widgets/chat/loading_indicator.dart';
+import 'package:gen_ui_chat_ai/widgets/chat/continuation_suggestions.dart';
 
 // Initialize logger for this widget
 final _logger = LogTags.chatService;
@@ -45,6 +46,10 @@ class ChatMessages extends StatefulWidget {
   final Function(String)?
   onContinueResponse; // Add callback for continuing response
   final ScrollController? scrollController; // External scroll controller
+  final List<String> continuationSuggestions; // Suggestions to display
+  final bool showSuggestions; // Whether to show suggestions
+  final bool isSuggestionsLoading; // Whether suggestions are loading
+  final VoidCallback? onSuggestionsClose; // Callback when suggestions are closed
 
   const ChatMessages({
     super.key,
@@ -56,6 +61,10 @@ class ChatMessages extends StatefulWidget {
     required this.onMessageDeleted,
     this.onContinueResponse,
     this.scrollController,
+    this.continuationSuggestions = const [],
+    this.showSuggestions = false,
+    this.isSuggestionsLoading = false,
+    this.onSuggestionsClose,
   });
 
   @override
@@ -166,11 +175,19 @@ class _ChatMessagesState extends State<ChatMessages> {
                 horizontal: ChatMessagesConstants.horizontalPadding,
                 vertical: ChatMessagesConstants.verticalPadding,
               ),
-              itemCount: messages.length + (shouldShowWaitingAnimation ? 1 : 0),
+              itemCount: messages.length + 
+                  (shouldShowWaitingAnimation ? 1 : 0) + 
+                  (widget.showSuggestions && widget.continuationSuggestions.isNotEmpty ? 1 : 0),
               itemBuilder: (context, index) {
                 // Show waiting animation at the end
                 if (shouldShowWaitingAnimation && index == messages.length) {
                   return _buildWaitingAnimation();
+                }
+
+                // Show continuation suggestions after messages
+                final suggestionsIndex = messages.length + (shouldShowWaitingAnimation ? 1 : 0);
+                if (widget.showSuggestions && widget.continuationSuggestions.isNotEmpty && index == suggestionsIndex) {
+                  return _buildContinuationSuggestions();
                 }
 
                 if (index >= messages.length) {
@@ -274,6 +291,19 @@ class _ChatMessagesState extends State<ChatMessages> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildContinuationSuggestions() {
+    return ContinuationSuggestions(
+      suggestions: widget.continuationSuggestions,
+      isLoading: widget.isSuggestionsLoading,
+      context: context,
+      onSuggestionTap: (suggestion) {
+        // Send the suggestion through the parent callback
+        widget.onSendMessage(suggestion);
+      },
+      onClose: widget.onSuggestionsClose,
     );
   }
 }
