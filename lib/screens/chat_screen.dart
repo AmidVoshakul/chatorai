@@ -11,6 +11,7 @@ import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/widgets/sidebar/sidebar.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
+import 'package:gen_ui_chat_ai/widgets/chat/continuation_suggestions.dart';
 import 'package:gen_ui_chat_ai/screens/models_screen.dart';
 import 'package:gen_ui_chat_ai/utils/chat_scroll_utils.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
@@ -36,11 +37,6 @@ class ChatScreenConstants {
   static const int maxMaxTokens = 16000;
   static const double tokenContextRatio = 0.2; // 20% of context length
   
-  // Suggestion Configuration
-  static const int maxSuggestions = 4;
-  static const int minSuggestionLength = 5;
-  static const int maxSuggestionTextLength = 100;
-  
   // Error Handling
   static const int maxErrorLength = 500;
   static const String defaultErrorMessage = 'Sorry, I encountered an error while processing your request. Please try again.';
@@ -54,9 +50,7 @@ class ChatScreenConstants {
   // Model Defaults
   static const String defaultModelId = 'nvidia/nemotron-3-nano-30b-a3b:free';
   
-  // Continuation Suggestions
-  static const String continuationSystemPrompt = 'You are a helpful assistant. Based on the previous conversation, suggest 3-4 different ways the user might want to continue the conversation. Each suggestion should be a short question or prompt (1-2 sentences max). Return only the suggestions separated by newlines, no additional text.';
-  static const String continuationUserPrompt = 'Please suggest different ways I could continue this conversation.';
+  // Continuation Suggestions (moved to ContinuationSuggestions widget constants)
 }
 
 class ChatScreen extends StatefulWidget {
@@ -1143,14 +1137,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       onMessageDeleted: _refreshChatMessages,
                       onContinueResponse: (messageId) => _continueAIResponse(messageId),
                       scrollController: _messageScrollController,
+                      continuationSuggestions: _continuationSuggestions,
+                      showSuggestions: _showSuggestions,
+                      isSuggestionsLoading: _isSuggestionsLoading,
+                      onSuggestionsClose: () {
+                        setState(() {
+                          _showSuggestions = false;
+                          _continuationSuggestions.clear();
+                        });
+                      },
                     ),
                   ),
-                  
-                  // Continuation Suggestions
-                  if (_showSuggestions && _continuationSuggestions.isNotEmpty &&
-                      _currentChat?.messages.isNotEmpty == true &&
-                      !_currentChat!.messages.last.isError)
-                    _buildContinuationSuggestions(),
                   
                   // Input Area
                   chatInput,
@@ -1286,14 +1283,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             onSendMessage: _handleSendMessage,
                             onMessageDeleted: _refreshChatMessages,
                             scrollController: _messageScrollController,
+                            continuationSuggestions: _continuationSuggestions,
+                            showSuggestions: _showSuggestions,
+                            isSuggestionsLoading: _isSuggestionsLoading,
+                            onSuggestionsClose: () {
+                              setState(() {
+                                _showSuggestions = false;
+                                _continuationSuggestions.clear();
+                              });
+                            },
                           ),
                         ),
-                        
-                        // Continuation Suggestions
-                        if (_showSuggestions && _continuationSuggestions.isNotEmpty &&
-                            _currentChat?.messages.isNotEmpty == true &&
-                            !_currentChat!.messages.last.isError)
-                          _buildContinuationSuggestions(),
                         
                         // Input Area
                         chatInput,
@@ -1305,107 +1305,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // Method to build continuation suggestions widget
-  Widget _buildContinuationSuggestions() {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 300),
-      height: _showSuggestions ? null : 0,
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor.withValues(alpha: 0.8),
-        border: Border(top: BorderSide(color: Theme.of(context).dividerColor, width: 0.5)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            Row(
-              children: [
-                Icon(Icons.lightbulb_outline, size: 16, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'Continue the conversation:',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                const Spacer(),
-                // Only show hint text on desktop (not on mobile/narrow screens)
-                if (MediaQuery.of(context).size.width >= ChatScreenConstants.mobileBreakpoint)
-                  Text(
-                    'Tap suggestion or send your message',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
-                    ),
-                  ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: Icon(Icons.close, size: 16),
-                  onPressed: () {
-                    setState(() {
-                      _showSuggestions = false;
-                      _continuationSuggestions.clear();
-                    });
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            
-            // Suggestions
-            Column(
-              children: _continuationSuggestions.map((suggestion) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        // Send the suggestion as a new message
-                        _handleSendMessage(suggestion);
-                        
-                        // Hide suggestions
-                        setState(() {
-                          _showSuggestions = false;
-                          _continuationSuggestions.clear();
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        child: Row(
-                          children: [
-                            Icon(Icons.arrow_upward, size: 14, color: Theme.of(context).colorScheme.secondary),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                suggestion,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Theme.of(context).textTheme.bodyMedium?.color,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1494,8 +1393,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
       // Show a snackbar to notify the user
       if (mounted) {
-        final displayMessage = errorMessage.length > ChatScreenConstants.maxSuggestionTextLength 
-            ? '${errorMessage.substring(0, ChatScreenConstants.maxSuggestionTextLength)}...' 
+        final displayMessage = errorMessage.length > ContinuationSuggestionsConstants.maxSuggestionTextLength 
+            ? '${errorMessage.substring(0, ContinuationSuggestionsConstants.maxSuggestionTextLength)}...' 
             : errorMessage;
             
         SnackbarUtils.showErrorSnackBar(
@@ -1519,7 +1418,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       final suggestionPrompt = [
         {
           'role': 'system', 
-          'content': ChatScreenConstants.continuationSystemPrompt
+          'content': ContinuationSuggestionsConstants.systemPrompt
         },
         {
           'role': 'assistant', 
@@ -1527,7 +1426,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         },
         {
           'role': 'user', 
-          'content': ChatScreenConstants.continuationUserPrompt
+          'content': ContinuationSuggestionsConstants.userPrompt
         },
       ];
       
@@ -1545,8 +1444,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           .map((s) => s.trim())
           .where((s) => s.isNotEmpty && (s.startsWith('-') || s.startsWith('1.') || s.startsWith('2.') || s.startsWith('3.') || s.startsWith('•') || s.length > 10))
           .map((s) => s.replaceFirst(RegExp(r'^[-•]\s*'), '').replaceFirst(RegExp(r'^\d+\.\s*'), ''))
-          .where((s) => s.length > ChatScreenConstants.minSuggestionLength)
-          .take(ChatScreenConstants.maxSuggestions)
+          .where((s) => s.length > ContinuationSuggestionsConstants.minSuggestionLength)
+          .take(ContinuationSuggestionsConstants.maxSuggestions)
           .toList();
       
       _logger.logInfo('[ChatScreen] Generated ${suggestions.length} continuation suggestions');
