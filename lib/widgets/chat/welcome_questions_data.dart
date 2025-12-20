@@ -1,62 +1,103 @@
+import 'package:flutter/material.dart';
+import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+
 /// Welcome questions data for new chats
 /// 
 /// This file contains a curated list of popular questions that users can start with.
-/// Add, remove, or modify questions as needed. The system will randomly select 4 questions
-/// to display when a new chat is created or when the chat is empty.
+/// Questions are loaded from localization files for multi-language support.
 class WelcomeQuestionsData {
-  /// All available welcome questions
-  static const List<String> allQuestions = [
-    // General AI assistance
-    'Explain quantum computing in simple terms',
-    'What are the latest trends in artificial intelligence?',
-    'Help me write a professional email to my team',
-    'What should I learn to become a better programmer?',
+  /// Get all available welcome questions using localization
+  static List<String> getAllQuestions(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return [];
     
-    // Creative & brainstorming
-    'Give me 5 creative ideas for a weekend project',
-    'What are some good books for personal development?',
-    'Help me brainstorm names for my new startup',
-    'Create a meal plan for a healthy week',
-    
-    // Technical & coding
-    'What are the best practices for Flutter development?',
-    'Explain the difference between async and sync programming',
-    'How do I optimize my code for better performance?',
-    'What are the most useful programming design patterns?',
-    
-    // Learning & education
-    'Teach me the basics of machine learning',
-    'What are the key concepts of cloud computing?',
-    'Explain blockchain technology to a beginner',
-    'How does the internet work from a technical perspective?',
-    
-    // Productivity & life
-    'What are the best productivity techniques?',
-    'How can I improve my focus and concentration?',
-    'Give me a daily routine for maximum productivity',
-    'What are some good habits for success?',
-    
-    // Business & career
-    'How to prepare for a software engineering interview?',
-    'What skills are most valuable in tech industry?',
-    'How to negotiate a salary increase?',
-    'What are the top tech companies to work for?',
-    
-    // Science & technology
-    'What are the latest breakthroughs in space exploration?',
-    'How is AI changing healthcare?',
-    'What are the most exciting technologies of 2025?',
-    'Explain the future of renewable energy',
-    
-    // Philosophy & thinking
-    'What are the most important philosophical questions?',
-    'How can I think more critically about problems?',
-    'What are the best ways to learn new skills?',
-    'How do I stay motivated when learning something difficult?',
-  ];
+    return [
+      l10n.welcomeQuestion1,
+      l10n.welcomeQuestion2,
+      l10n.welcomeQuestion3,
+      l10n.welcomeQuestion4,
+      l10n.welcomeQuestion5,
+      l10n.welcomeQuestion6,
+      l10n.welcomeQuestion7,
+      l10n.welcomeQuestion8,
+      l10n.welcomeQuestion9,
+      l10n.welcomeQuestion10,
+      l10n.welcomeQuestion11,
+      l10n.welcomeQuestion12,
+      l10n.welcomeQuestion13,
+      l10n.welcomeQuestion14,
+      l10n.welcomeQuestion15,
+      l10n.welcomeQuestion16,
+      l10n.welcomeQuestion17,
+      l10n.welcomeQuestion18,
+      l10n.welcomeQuestion19,
+      l10n.welcomeQuestion20,
+      l10n.welcomeQuestion21,
+      l10n.welcomeQuestion22,
+      l10n.welcomeQuestion23,
+      l10n.welcomeQuestion24,
+      l10n.welcomeQuestion25,
+      l10n.welcomeQuestion26,
+      l10n.welcomeQuestion27,
+      l10n.welcomeQuestion28,
+      l10n.welcomeQuestion29,
+      l10n.welcomeQuestion30,
+      l10n.welcomeQuestion31,
+      l10n.welcomeQuestion32,
+      l10n.welcomeQuestion33,
+      l10n.welcomeQuestion34,
+      l10n.welcomeQuestion35,
+      l10n.welcomeQuestion36,
+      l10n.welcomeQuestion37,
+      l10n.welcomeQuestion38,
+      l10n.welcomeQuestion39,
+      l10n.welcomeQuestion40,
+      l10n.welcomeQuestion41,
+      l10n.welcomeQuestion42,
+      l10n.welcomeQuestion43,
+      l10n.welcomeQuestion44,
+      l10n.welcomeQuestion45,
+      l10n.welcomeQuestion46,
+      l10n.welcomeQuestion47,
+      l10n.welcomeQuestion48,
+      l10n.welcomeQuestion49,
+      l10n.welcomeQuestion50,
+      l10n.welcomeQuestion51,
+      l10n.welcomeQuestion52,
+      l10n.welcomeQuestion53,
+      l10n.welcomeQuestion54,
+      l10n.welcomeQuestion55,
+      l10n.welcomeQuestion56,
+      l10n.welcomeQuestion57,
+      l10n.welcomeQuestion58,
+      l10n.welcomeQuestion59,
+      l10n.welcomeQuestion60,
+      l10n.welcomeQuestion61,
+      l10n.welcomeQuestion62,
+      l10n.welcomeQuestion63,
+      l10n.welcomeQuestion64,
+      l10n.welcomeQuestion65,
+      l10n.welcomeQuestion66,
+      l10n.welcomeQuestion67,
+      l10n.welcomeQuestion68,
+      l10n.welcomeQuestion69,
+      l10n.welcomeQuestion70,
+      l10n.welcomeQuestion71,
+      l10n.welcomeQuestion72,
+      l10n.welcomeQuestion73,
+      l10n.welcomeQuestion74,
+      l10n.welcomeQuestion75,
+      l10n.welcomeQuestion76,
+      l10n.welcomeQuestion77,
+      l10n.welcomeQuestion78,
+      l10n.welcomeQuestion79,
+      l10n.welcomeQuestion80,
+    ];
+  }
 
   /// Get a random subset of questions
-  static List<String> getRandomQuestions({int count = 4}) {
+  static List<String> getRandomQuestions(BuildContext context, {int count = 4}) {
+    final allQuestions = getAllQuestions(context);
     if (count >= allQuestions.length) {
       return allQuestions;
     }
@@ -64,76 +105,5 @@ class WelcomeQuestionsData {
     // Create a copy to avoid modifying the original
     final shuffled = List<String>.from(allQuestions)..shuffle();
     return shuffled.take(count).toList();
-  }
-
-  /// Get questions by category
-  static List<String> getQuestionsByCategory(String category) {
-    final categoryMap = {
-      'technical': [
-        'What are the best practices for Flutter development?',
-        'Explain the difference between async and sync programming',
-        'How do I optimize my code for better performance?',
-        'What are the most useful programming design patterns?',
-      ],
-      'creative': [
-        'Give me 5 creative ideas for a weekend project',
-        'What are some good books for personal development?',
-        'Help me brainstorm names for my new startup',
-        'Create a meal plan for a healthy week',
-      ],
-      'learning': [
-        'Teach me the basics of machine learning',
-        'What are the key concepts of cloud computing?',
-        'Explain blockchain technology to a beginner',
-        'How does the internet work from a technical perspective?',
-      ],
-      'productivity': [
-        'What are the best productivity techniques?',
-        'How can I improve my focus and concentration?',
-        'Give me a daily routine for maximum productivity',
-        'What are some good habits for success?',
-      ],
-      'career': [
-        'How to prepare for a software engineering interview?',
-        'What skills are most valuable in tech industry?',
-        'How to negotiate a salary increase?',
-        'What are the top tech companies to work for?',
-      ],
-      'science': [
-        'What are the latest breakthroughs in space exploration?',
-        'How is AI changing healthcare?',
-        'What are the most exciting technologies of 2025?',
-        'Explain the future of renewable energy',
-      ],
-      'philosophy': [
-        'What are the most important philosophical questions?',
-        'How can I think more critically about problems?',
-        'What are the best ways to learn new skills?',
-        'How do I stay motivated when learning something difficult?',
-      ],
-    };
-    
-    return categoryMap[category] ?? [];
-  }
-
-  /// Get all available categories
-  static List<String> getCategories() {
-    return [
-      'technical',
-      'creative', 
-      'learning',
-      'productivity',
-      'career',
-      'science',
-      'philosophy',
-    ];
-  }
-
-  /// Add a new question to the list
-  static void addQuestion(String question) {
-    // Note: This is a static method for API purposes, but since we can't modify
-    // the const list at runtime, this would need to be implemented with a 
-    // persistent storage solution if dynamic modification is needed
-    // For now, questions must be added manually to the const list
   }
 }

@@ -383,4 +383,247 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get errorMessage => 'Сообщение об ошибке';
+
+  @override
+  String get welcomeMessage => 'Добро пожаловать! Чем я могу помочь сегодня?';
+
+  @override
+  String get welcomeQuestion1 => 'Объясни квантовые вычисления простыми словами';
+
+  @override
+  String get welcomeQuestion2 => 'Какие последние тренды в искусственном интеллекте?';
+
+  @override
+  String get welcomeQuestion3 => 'Помоги мне написать профессиональное письмо моей команде';
+
+  @override
+  String get welcomeQuestion4 => 'Что мне изучить, чтобы стать лучшим программистом?';
+
+  @override
+  String get welcomeQuestion5 => 'Дай 5 креативных идей для проекта на выходные';
+
+  @override
+  String get welcomeQuestion6 => 'Какие хорошие книги по личностному росту?';
+
+  @override
+  String get welcomeQuestion7 => 'Помоги придумать названия для моего стартапа';
+
+  @override
+  String get welcomeQuestion8 => 'Составь план питания на здоровую неделю';
+
+  @override
+  String get welcomeQuestion9 => 'Какие лучшие практики для Flutter разработки?';
+
+  @override
+  String get welcomeQuestion10 => 'Объясни разницу между асинхронным и синхронным программированием';
+
+  @override
+  String get welcomeQuestion11 => 'Как оптимизировать код для лучшей производительности?';
+
+  @override
+  String get welcomeQuestion12 => 'Какие самые полезные паттерны проектирования?';
+
+  @override
+  String get welcomeQuestion13 => 'Научи меня основам машинного обучения';
+
+  @override
+  String get welcomeQuestion14 => 'Какие ключевые концепции облачных вычислений?';
+
+  @override
+  String get welcomeQuestion15 => 'Объясни блокчейн технологию для новичка';
+
+  @override
+  String get welcomeQuestion16 => 'Как работает интернет с технической точки зрения?';
+
+  @override
+  String get welcomeQuestion17 => 'Какие лучшие техники продуктивности?';
+
+  @override
+  String get welcomeQuestion18 => 'Как улучшить концентрацию и фокус?';
+
+  @override
+  String get welcomeQuestion19 => 'Дай распорядок дня для максимальной продуктивности';
+
+  @override
+  String get welcomeQuestion20 => 'Какие хорошие привычки для успеха?';
+
+  @override
+  String get welcomeQuestion21 => 'Как подготовиться к собеседованию в IT?';
+
+  @override
+  String get welcomeQuestion22 => 'Какие навыки最有价值 в tech индустрии?';
+
+  @override
+  String get welcomeQuestion23 => 'Как договориться о повышении зарплаты?';
+
+  @override
+  String get welcomeQuestion24 => 'Какие топ tech компании для работы?';
+
+  @override
+  String get welcomeQuestion25 => 'Какие последние прорывы в космических исследованиях?';
+
+  @override
+  String get welcomeQuestion26 => 'Как ИИ меняет здравоохранение?';
+
+  @override
+  String get welcomeQuestion27 => 'Какие самые захватывающие технологии 2025 года?';
+
+  @override
+  String get welcomeQuestion28 => 'Объясни будущее возобновляемой энергетики';
+
+  @override
+  String get welcomeQuestion29 => 'Какие самые важные философские вопросы?';
+
+  @override
+  String get welcomeQuestion30 => 'Как научиться мыслить более критически?';
+
+  @override
+  String get welcomeQuestion31 => 'Какие лучшие способы изучения новых навыков?';
+
+  @override
+  String get welcomeQuestion32 => 'Как сохранить мотивацию при изучении сложного материала?';
+
+  @override
+  String get welcomeQuestion33 => 'Какие языки программирования лучше учить в 2025 году?';
+
+  @override
+  String get welcomeQuestion34 => 'Как создать сильное портфолио для IT вакансий?';
+
+  @override
+  String get welcomeQuestion35 => 'Какие топ AI инструменты для продуктивности?';
+
+  @override
+  String get welcomeQuestion36 => 'Как на самом деле работает машинное обучение?';
+
+  @override
+  String get welcomeQuestion37 => 'Какие лучшие практики для ревью кода?';
+
+  @override
+  String get welcomeQuestion38 => 'Как писать чистый и поддерживаемый код?';
+
+  @override
+  String get welcomeQuestion39 => 'Что такое микросервисы и когда их использовать?';
+
+  @override
+  String get welcomeQuestion40 => 'Объясни разницу REST API и GraphQL';
+
+  @override
+  String get welcomeQuestion41 => 'Какие облачные платформы лучше учить?';
+
+  @override
+  String get welcomeQuestion42 => 'Как подготовиться к техническим собеседованиям?';
+
+  @override
+  String get welcomeQuestion43 => 'Какие мягкие навыки нужны каждому разработчику?';
+
+  @override
+  String get welcomeQuestion44 => 'Как договориться о зарплате разработчику?';
+
+  @override
+  String get welcomeQuestion45 => 'Какие лучшие инструменты для удаленной работы?';
+
+  @override
+  String get welcomeQuestion46 => 'Как оставаться продуктивным на удаленке?';
+
+  @override
+  String get welcomeQuestion47 => 'Какие лучшие методологии управления проектами?';
+
+  @override
+  String get welcomeQuestion48 => 'Как работать с трудными коллегами?';
+
+  @override
+  String get welcomeQuestion49 => 'Какие лучшие книги по лидерству?';
+
+  @override
+  String get welcomeQuestion50 => 'Как запустить успешный tech стартап?';
+
+  @override
+  String get welcomeQuestion51 => 'Какие последние тренды в веб-разработке?';
+
+  @override
+  String get welcomeQuestion52 => 'Как работает блокчейн технология?';
+
+  @override
+  String get welcomeQuestion53 => 'Что такое NFT и стоит ли обращать внимание?';
+
+  @override
+  String get welcomeQuestion54 => 'Объясни концепцию метавселенной';
+
+  @override
+  String get welcomeQuestion55 => 'Какие лучшие AI модели для программирования?';
+
+  @override
+  String get welcomeQuestion56 => 'Как эффективно использовать ChatGPT?';
+
+  @override
+  String get welcomeQuestion57 => 'Какие этические аспекты AI?';
+
+  @override
+  String get welcomeQuestion58 => 'Как AI изменит работу в будущем?';
+
+  @override
+  String get welcomeQuestion59 => 'Какие лучшие практики кибербезопасности?';
+
+  @override
+  String get welcomeQuestion60 => 'Как защитить свою приватность в интернете?';
+
+  @override
+  String get welcomeQuestion61 => 'Какие лучшие инструменты для data science?';
+
+  @override
+  String get welcomeQuestion62 => 'Как эффективно визуализировать данные?';
+
+  @override
+  String get welcomeQuestion63 => 'Какие лучшие фреймворки для мобильных приложений?';
+
+  @override
+  String get welcomeQuestion64 => 'Как создавать кроссплатформенные приложения?';
+
+  @override
+  String get welcomeQuestion65 => 'Какие лучшие движки для разработки игр?';
+
+  @override
+  String get welcomeQuestion66 => 'Как начать работать с 3D моделированием?';
+
+  @override
+  String get welcomeQuestion67 => 'Какие лучшие инструменты для видеомонтажа?';
+
+  @override
+  String get welcomeQuestion68 => 'Как создавать контент, который вовлекает?';
+
+  @override
+  String get welcomeQuestion69 => 'Какие лучшие стратегии для соцсетей?';
+
+  @override
+  String get welcomeQuestion70 => 'Как построить личный бренд?';
+
+  @override
+  String get welcomeQuestion71 => 'Какие лучшие советы для нетворкинга?';
+
+  @override
+  String get welcomeQuestion72 => 'Как сделать отличную презентацию?';
+
+  @override
+  String get welcomeQuestion73 => 'Какие лучшие техники тайм-менеджмента?';
+
+  @override
+  String get welcomeQuestion74 => 'Как избежать выгорания?';
+
+  @override
+  String get welcomeQuestion75 => 'Какие лучшие приложения для медитации?';
+
+  @override
+  String get welcomeQuestion76 => 'Как улучшить качество сна?';
+
+  @override
+  String get welcomeQuestion77 => 'Какие лучшие тренировки?';
+
+  @override
+  String get welcomeQuestion78 => 'Как питаться здоровой едой с ограниченным бюджетом?';
+
+  @override
+  String get welcomeQuestion79 => 'Какие лучшие места для путешествий для tech специалистов?';
+
+  @override
+  String get welcomeQuestion80 => 'Как быстро выучить новый язык?';
 }
