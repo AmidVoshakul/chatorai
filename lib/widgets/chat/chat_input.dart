@@ -6,12 +6,16 @@ import 'package:speech_to_text/speech_to_text.dart';
 class ChatInput extends StatefulWidget {
   final Function(String) onSendMessage;
   final Function(bool) onToggleStreaming;
+  final VoidCallback? onStopStreaming;
+  final bool isStreaming;
   final FocusNode? focusNode;
 
   const ChatInput({
     super.key,
     required this.onSendMessage,
     required this.onToggleStreaming,
+    this.onStopStreaming,
+    this.isStreaming = false,
     this.focusNode,
   });
 
@@ -81,9 +85,12 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
     widget.onToggleStreaming(true);
 
     setState(() => _isSending = false);
+  }
 
-    await Future.delayed(const Duration(seconds: 2));
-    widget.onToggleStreaming(false);
+  void _handleStopStreaming() {
+    if (widget.onStopStreaming != null) {
+      widget.onStopStreaming!();
+    }
   }
 
   Future<void> _showPlusMenu() async {
@@ -306,31 +313,48 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                         ),
                       ),
                       const Spacer(),
-                      buildActionButton(
-                        gradient: _textController.text.trim().isEmpty
-                            ? null
-                            : LinearGradient(
-                                colors: [
-                                  theme.colorScheme.primary,
-                                  theme.colorScheme.primary.withValues(alpha: 0.8),
-                                ],
-                              ),
-                        bgColor: _textController.text.trim().isEmpty
-                            ? const Color(0xFF1A1A1A)
-                            : null,
-                        onTap: _textController.text.trim().isEmpty
-                            ? _startSpeechToText
-                            : _sendMessage,
-                        child: Icon(
-                          _textController.text.trim().isEmpty
-                              ? (_isListening ? Icons.stop : Icons.mic)
-                              : (_isSending ? Icons.autorenew : Icons.send),
-                          size: iconSize,
-                          color: _textController.text.trim().isEmpty
-                              ? theme.iconTheme.color
-                              : Colors.white,
+                      // Show stop button when streaming
+                      if (widget.isStreaming)
+                        buildActionButton(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.red,
+                              Colors.red.withValues(alpha: 0.8),
+                            ],
+                          ),
+                          onTap: _handleStopStreaming,
+                          child: Icon(
+                            Icons.stop,
+                            size: iconSize,
+                            color: Colors.white,
+                          ),
+                        )
+                      else
+                        buildActionButton(
+                          gradient: _textController.text.trim().isEmpty
+                              ? null
+                              : LinearGradient(
+                                  colors: [
+                                    theme.colorScheme.primary,
+                                    theme.colorScheme.primary.withValues(alpha: 0.8),
+                                  ],
+                                ),
+                          bgColor: _textController.text.trim().isEmpty
+                              ? const Color(0xFF1A1A1A)
+                              : null,
+                          onTap: _textController.text.trim().isEmpty
+                              ? _startSpeechToText
+                              : _sendMessage,
+                          child: Icon(
+                            _textController.text.trim().isEmpty
+                                ? (_isListening ? Icons.stop : Icons.mic)
+                                : (_isSending ? Icons.autorenew : Icons.send),
+                            size: iconSize,
+                            color: _textController.text.trim().isEmpty
+                                ? theme.iconTheme.color
+                                : Colors.white,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -372,30 +396,46 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                   ),
                 ),
                 const SizedBox(width: 12),
-                buildActionButton(
-                  gradient: _textController.text.trim().isEmpty
-                      ? null
-                      : LinearGradient(
-                          colors: [
-                            theme.colorScheme.primary,
-                            theme.colorScheme.primary.withValues(alpha: 0.8),
-                          ],
-                        ),
-                  bgColor: _textController.text.trim().isEmpty
-                      ? theme.iconTheme.color?.withValues(alpha: 0.1)
-                      : null,
-                  onTap: _textController.text.trim().isEmpty
-                      ? _startSpeechToText
-                      : _sendMessage,
-                  child: Icon(
-                    _textController.text.trim().isEmpty
-                        ? (_isListening ? Icons.stop : Icons.mic)
-                        : Icons.send,
-                    color: _textController.text.trim().isEmpty
-                        ? theme.iconTheme.color
-                        : Colors.white,
+                // Show stop button when streaming
+                if (widget.isStreaming)
+                  buildActionButton(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.red,
+                        Colors.red.withValues(alpha: 0.8),
+                      ],
+                    ),
+                    onTap: _handleStopStreaming,
+                    child: Icon(
+                      Icons.stop,
+                      color: Colors.white,
+                    ),
+                  )
+                else
+                  buildActionButton(
+                    gradient: _textController.text.trim().isEmpty
+                        ? null
+                        : LinearGradient(
+                            colors: [
+                              theme.colorScheme.primary,
+                              theme.colorScheme.primary.withValues(alpha: 0.8),
+                            ],
+                          ),
+                    bgColor: _textController.text.trim().isEmpty
+                        ? theme.iconTheme.color?.withValues(alpha: 0.1)
+                        : null,
+                    onTap: _textController.text.trim().isEmpty
+                        ? _startSpeechToText
+                        : _sendMessage,
+                    child: Icon(
+                      _textController.text.trim().isEmpty
+                          ? (_isListening ? Icons.stop : Icons.mic)
+                          : Icons.send,
+                      color: _textController.text.trim().isEmpty
+                          ? theme.iconTheme.color
+                          : Colors.white,
+                    ),
                   ),
-                ),
               ],
             ),
     );
