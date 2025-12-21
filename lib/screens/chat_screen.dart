@@ -188,6 +188,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
+  // Helper method to update both current chat and chats list
+  void _updateCurrentChat(Chat updatedChat) {
+    setState(() {
+      _currentChat = updatedChat;
+      // Update the chat in the _chats list
+      final index = _chats.indexWhere((c) => c.id == updatedChat.id);
+      if (index != -1) {
+        _chats[index] = updatedChat;
+      }
+    });
+  }
+
   Future<void> _createNewChat() async {
     _logger.logInfo('[ChatScreen] Creating new chat...');
     final newChat = _chatStorageService.newChat();
@@ -198,22 +210,27 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _currentChat = newChat;
       // Update chats list for sidebar - new chat at the beginning
       _chats = [newChat, ..._chats];
-      // Hide welcome suggestions
-      _showWelcomeSuggestions = false;
-      _welcomeSuggestions.clear();
     });
+    
+    // Show welcome suggestions for the new empty chat
+    _showWelcomeSuggestionsForNewChat();
   }
 
   void _showWelcomeSuggestionsForNewChat() {
-    // Generate random welcome questions
-    final questions = WelcomeQuestionsData.getRandomQuestions(context, count: 4);
-    
-    setState(() {
-      _welcomeSuggestions = questions;
-      _showWelcomeSuggestions = true;
-      // Hide continuation suggestions if they're showing
-      _showSuggestions = false;
-      _continuationSuggestions.clear();
+    // Use post-frame callback to ensure context is fully updated
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      
+      // Generate random welcome questions
+      final questions = WelcomeQuestionsData.getRandomQuestions(context, count: 4);
+      
+      setState(() {
+        _welcomeSuggestions = questions;
+        _showWelcomeSuggestions = true;
+        // Hide continuation suggestions if they're showing
+        _showSuggestions = false;
+        _continuationSuggestions.clear();
+      });
     });
   }
 
@@ -258,33 +275,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
     
     _logger.logInfo('[ChatScreen] Chat selected: ${chat.title}');
-    
-    // Close sidebar on narrow screens when switching chats
-    final screenWidth = MediaQuery.of(context).size.width;
-    if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
-      if (!_isSidebarCollapsed) {
-        setState(() {
-          _isSidebarCollapsed = true;
-        });
-      }
-      // Force rebuild to ensure visual update
-      Future.delayed(ChatScreenConstants.sidebarUpdateDelay, () {
-        setState(() {});
-      });
-    } else {
-      // On wide screens, ensure sidebar stays open
-      if (_isSidebarCollapsed) {
-        setState(() {
-          _isSidebarCollapsed = false;
-        });
-      }
-    }
-    
-    // Focus on input field after a small delay to ensure UI updates
-    Future.delayed(Duration.zero, () {
-      _logger.logInfo('[ChatScreen] Focusing on input field');
-      FocusScope.of(context).requestFocus(_chatInputFocusNode);
-    });
   }
 
   Future<void> _deleteChat(String chatId) async {
@@ -376,10 +366,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           _isSidebarCollapsed = true;
         });
       }
-      // Force rebuild to ensure visual update
-      Future.delayed(ChatScreenConstants.sidebarUpdateDelay, () {
-        setState(() {});
-      });
     } else {
       _logger.logInfo('[ChatScreen] Keeping sidebar open on wide screen (${screenWidth.toInt()}px)');
       // On wide screens, ensure sidebar stays open
@@ -421,9 +407,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       messages: [..._currentChat!.messages, userMessage],
       updatedAt: DateTime.now(),
     );
-    setState(() {
-      _currentChat = updatedChat;
-    });
+    _updateCurrentChat(updatedChat);
 
     // Add assistant placeholder (indicators will show)
     final assistantMessage = Message(
@@ -441,9 +425,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       messages: [..._currentChat!.messages, assistantMessage],
       updatedAt: DateTime.now(),
     );
-    setState(() {
-      _currentChat = chatWithAssistant;
-    });
+    _updateCurrentChat(chatWithAssistant);
 
     // CRITICAL: Scroll to indicator AFTER it appears
     // Используем post-frame callback для гарантированного вызова после обновления UI
@@ -484,9 +466,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         messages: [..._currentChat!.messages, errorMessage],
         updatedAt: DateTime.now(),
       );
-      setState(() {
-        _currentChat = updatedChat;
-      });
+      _updateCurrentChat(updatedChat);
     }
   }
 
@@ -515,12 +495,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           );
 
           await _chatStorageService.addMessageToChat(_currentChat!.id, retryMessage);
-          setState(() {
-            _currentChat = _currentChat!.copyWith(
-              messages: [..._currentChat!.messages, retryMessage],
-              updatedAt: DateTime.now(),
-            );
-          });
+          _updateCurrentChat(_currentChat!.copyWith(
+            messages: [..._currentChat!.messages, retryMessage],
+            updatedAt: DateTime.now(),
+          ));
 
           await Future.delayed(delay);
 
@@ -529,12 +507,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               .where((msg) => msg.content != retryMessage.content)
               .toList();
 
-          setState(() {
-            _currentChat = _currentChat!.copyWith(
-              messages: messagesWithoutRetry,
-              updatedAt: DateTime.now(),
-            );
-          });
+          _updateCurrentChat(_currentChat!.copyWith(
+            messages: messagesWithoutRetry,
+            updatedAt: DateTime.now(),
+          ));
 
           await _sendToAIWithRetry(userMessage, retryCount: retryCount + 1);
         } else {
@@ -556,9 +532,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           );
 
           if (mounted) {
-            setState(() {
-              _currentChat = updatedChat;
-            });
+            _updateCurrentChat(updatedChat);
           }
         }
       } else {
@@ -622,9 +596,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       updatedAt: DateTime.now(),
     );
     if (mounted) {
-      setState(() {
-        _currentChat = updatedChat;
-      });
+      _updateCurrentChat(updatedChat);
     }
   }
 
@@ -650,9 +622,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         );
         
         if (mounted) {
-          setState(() {
-            _currentChat = updatedChat;
-          });
+          _updateCurrentChat(updatedChat);
         }
       });
     }
@@ -670,10 +640,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         // Reload the chat from storage to get updated messages
         final updatedChat = await _chatStorageService.getChat(_currentChat!.id);
         if (updatedChat != null) {
-          setState(() {
-            _currentChat = updatedChat;
-            _logger.logInfo('[ChatScreen] Chat messages refreshed, now ${updatedChat.messages.length} messages');
-          });
+          _updateCurrentChat(updatedChat);
+          _logger.logInfo('[ChatScreen] Chat messages refreshed, now ${updatedChat.messages.length} messages');
         } else {
           _logger.logError('[ChatScreen] Failed to reload chat after deletion');
         }
@@ -721,9 +689,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       updatedAt: DateTime.now(),
     );
     
-    setState(() {
-      _currentChat = updatedChat;
-    });
+    _updateCurrentChat(updatedChat);
     
     // CRITICAL: Scroll to indicator AFTER it appears
     // Используем post-frame callback для гарантированного вызова после обновления UI
@@ -833,9 +799,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             );
             
             // CRITICAL: setState with NEW objects
-            setState(() {
-              _currentChat = newChat;
-            });
+            _updateCurrentChat(newChat);
           }
         },
         onReasoning: (reasoning) {
@@ -864,9 +828,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             );
             
             // CRITICAL: setState with NEW objects
-            setState(() {
-              _currentChat = newChat;
-            });
+            _updateCurrentChat(newChat);
           }
         },
         onCompletion: (fullContent) {
@@ -892,9 +854,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             );
             
             // CRITICAL: setState with NEW objects
-            setState(() {
-              _currentChat = newChat;
-            });
+            _updateCurrentChat(newChat);
             
             // Save to storage (this is OK, it's the final state)
             _chatStorageService.updateMessageInChat(
@@ -946,9 +906,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         );
         
         if (mounted) {
-          setState(() {
-            _currentChat = updatedChat;
-          });
+          _updateCurrentChat(updatedChat);
         }
       } else {
         // If last message is not assistant, add new error message
@@ -968,9 +926,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         );
         
         if (mounted) {
-          setState(() {
-            _currentChat = updatedChat;
-          });
+          _updateCurrentChat(updatedChat);
         }
       }
     }
@@ -1051,81 +1007,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         backgroundColor: theme.canvasColor,
         elevation: 0,
         actions: [
-          // Current model display with loading state
+          // Model selection button only on mobile (compact)
           Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Consumer<ThemeProvider>(
-              builder: (context, themeProvider, child) {
-                final isLoading = themeProvider.isLoadingModels;
-                final modelName = _selectedModelObject?.name ?? _selectedModel;
-                final screenWidth = MediaQuery.of(context).size.width;
-
-                // Calculate max width based on screen size
-                // Mobile: 35% of screen width (more space for model names)
-                // Desktop: 40% of screen width (more generous)
-                final maxWidth = screenWidth < 800 
-                    ? screenWidth * 0.55 
-                    : screenWidth * 0.4;
-
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Model name with constraints
-                    ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: maxWidth),
-                      child: Text(
-                        modelName,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-
-                    // Loading indicator
-                    if (isLoading) ...[
-                      const SizedBox(width: 4),
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
-                        ),
-                      ),
-                    ],
-                  ],
-                );
-              },
-            ),
-          ),
-          
-          // Model selection button
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
+            padding: const EdgeInsets.only(right: 4.0),
             child: IconButton(
-              icon: const Icon(Icons.smart_toy),
+              icon: const Icon(Icons.smart_toy, size: 20),
               onPressed: () async {
-                // Handle sidebar based on screen width before navigation
+                // Close sidebar on mobile before navigation
                 final screenWidth = MediaQuery.of(context).size.width;
                 if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
                   if (!_isSidebarCollapsed) {
                     setState(() {
                       _isSidebarCollapsed = true;
-                    });
-                  }
-                  // Force rebuild to ensure visual update
-                  Future.delayed(ChatScreenConstants.sidebarUpdateDelay, () {
-                    setState(() {});
-                  });
-                } else {
-                  // On wide screens, ensure sidebar stays open
-                  if (_isSidebarCollapsed) {
-                    setState(() {
-                      _isSidebarCollapsed = false;
                     });
                   }
                 }
@@ -1135,7 +1028,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   MaterialPageRoute(
                     builder: (context) => ModelsScreen(
                       onModelSelected: (String modelId) {
-                        // Update the model selection
                         _updateSelectedModel(modelId, null);
                       },
                       currentModel: _selectedModel,
@@ -1143,12 +1035,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                   ),
                 );
 
-                // Handle result if a model object was returned
                 if (result is OpenRouterModel) {
                   _updateSelectedModel(result.id, result);
                 }
               },
-              tooltip: 'Navigate to Models',
+              tooltip: 'Select Model',
             ),
           ),
         ],
@@ -1162,9 +1053,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           },
           chats: _chats,
           currentChat: _currentChat,
-          onChatSelect: _selectChat,
+          onChatSelect: (chatId) {
+            _selectChat(chatId);
+            // Close drawer after selection
+            Navigator.of(context).pop();
+          },
           onChatDelete: _deleteChat,
-          onNewChat: _createNewChat,
+          onNewChat: () {
+            _createNewChat();
+            // Close drawer after creating new chat
+            Navigator.of(context).pop();
+          },
         ),
       ),
       body: Column(
@@ -1455,9 +1354,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           updatedAt: DateTime.now(),
         );
 
-        setState(() {
-          _currentChat = updatedChat;
-        });
+        _updateCurrentChat(updatedChat);
       }
 
       // Show a snackbar to notify the user
