@@ -628,6 +628,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion80 => 'How to learn a new language quickly?';
 
   @override
+  String get welcomeQuestion81 => 'What are the best practices for remote team collaboration?';
+
+  @override
+  String get welcomeQuestion82 => 'How to conduct effective code reviews?';
+
+  @override
+  String get welcomeQuestion83 => 'What are the top skills for software architects?';
+
+  @override
+  String get welcomeQuestion84 => 'How to design scalable database systems?';
+
+  @override
+  String get welcomeQuestion85 => 'What are the best DevOps tools to learn?';
+
+  @override
+  String get welcomeQuestion86 => 'How to implement CI/CD pipelines?';
+
+  @override
+  String get welcomeQuestion87 => 'What are container orchestration platforms?';
+
+  @override
+  String get welcomeQuestion88 => 'Explain serverless computing benefits';
+
+  @override
+  String get welcomeQuestion89 => 'What are the best practices for API security?';
+
+  @override
+  String get welcomeQuestion90 => 'How to optimize mobile app performance?';
+
+  @override
+  String get welcomeQuestion91 => 'What are progressive web apps?';
+
+  @override
+  String get welcomeQuestion92 => 'How to build accessible web applications?';
+
+  @override
+  String get welcomeQuestion93 => 'What are the best UI/UX design principles?';
+
+  @override
+  String get welcomeQuestion94 => 'How to conduct user research effectively?';
+
+  @override
+  String get welcomeQuestion95 => 'What are the best A/B testing strategies?';
+
+  @override
+  String get welcomeQuestion96 => 'How to analyze user behavior data?';
+
+  @override
+  String get welcomeQuestion97 => 'What are the best growth hacking techniques?';
+
+  @override
+  String get welcomeQuestion98 => 'How to build a community around your product?';
+
+  @override
+  String get welcomeQuestion99 => 'What are the best customer support tools?';
+
+  @override
+  String get welcomeQuestion100 => 'How to handle customer feedback effectively?';
+
+  @override
   String get continueConversation => 'Continue the conversation';
 
   @override

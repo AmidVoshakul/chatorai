@@ -151,7 +151,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
 
       // Generate new questions
       final newQuestions = WelcomeQuestionsData.getRandomQuestions(
-        context,
+        widget.context ?? context,
         count: 4,
       );
 

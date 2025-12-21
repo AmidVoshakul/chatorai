@@ -187,9 +187,8 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
         fontSize: 16,
         height: 1.2,
       ),
-      textInputAction: isMobile ? TextInputAction.send : null,
+      textInputAction: isMobile ? TextInputAction.newline : null,
       onChanged: (text) => setState(() {}),
-      onEditingComplete: isMobile ? _sendMessage : null,
       enabled: !_isSending,
     );
 
@@ -227,17 +226,34 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
           : const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isMobile ? const Color(0xFF1A1A1A) : Colors.transparent,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        boxShadow: isMobile
+            ? [
+                // Shadow on top to make it float
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, -4),
+                  spreadRadius: 0,
+                ),
+                // Subtle shadow on sides
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                  spreadRadius: 0,
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+                ),
+              ],
         borderRadius: isMobile
             ? const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
               )
             : BorderRadius.circular(0),
       ),
@@ -254,14 +270,14 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                     decoration: BoxDecoration(
                       color: const Color(0xFF1A1A1A),
                       borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
                       ),
                     ),
                     child: textField,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
                       sidePadding, 0, sidePadding, bottomPadding),

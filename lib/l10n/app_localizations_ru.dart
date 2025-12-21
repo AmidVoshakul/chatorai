@@ -628,6 +628,66 @@ class AppLocalizationsRu extends AppLocalizations {
   String get welcomeQuestion80 => 'Как быстро выучить новый язык?';
 
   @override
+  String get welcomeQuestion81 => 'Какие лучшие практики для удаленной командной работы?';
+
+  @override
+  String get welcomeQuestion82 => 'Как проводить эффективные ревью кода?';
+
+  @override
+  String get welcomeQuestion83 => 'Какие топ навыки для software архитекторов?';
+
+  @override
+  String get welcomeQuestion84 => 'Как проектировать масштабируемые базы данных?';
+
+  @override
+  String get welcomeQuestion85 => 'Какие лучшие DevOps инструменты для изучения?';
+
+  @override
+  String get welcomeQuestion86 => 'Как внедрять CI/CD пайплайны?';
+
+  @override
+  String get welcomeQuestion87 => 'Что такое оркестрация контейнеров?';
+
+  @override
+  String get welcomeQuestion88 => 'Объясни преимущества serverless вычислений';
+
+  @override
+  String get welcomeQuestion89 => 'Какие лучшие практики для безопасности API?';
+
+  @override
+  String get welcomeQuestion90 => 'Как оптимизировать производительность мобильных приложений?';
+
+  @override
+  String get welcomeQuestion91 => 'Что такое прогрессивные веб-приложения?';
+
+  @override
+  String get welcomeQuestion92 => 'Как создавать доступные веб-приложения?';
+
+  @override
+  String get welcomeQuestion93 => 'Какие лучшие принципы UI/UX дизайна?';
+
+  @override
+  String get welcomeQuestion94 => 'Как эффективно проводить пользовательские исследования?';
+
+  @override
+  String get welcomeQuestion95 => 'Какие лучшие стратегии A/B тестирования?';
+
+  @override
+  String get welcomeQuestion96 => 'Как анализировать поведение пользователей?';
+
+  @override
+  String get welcomeQuestion97 => 'Какие лучшие техники growth hacking?';
+
+  @override
+  String get welcomeQuestion98 => 'Как построить сообщество вокруг продукта?';
+
+  @override
+  String get welcomeQuestion99 => 'Какие лучшие инструменты для поддержки клиентов?';
+
+  @override
+  String get welcomeQuestion100 => 'Как эффективно обрабатывать отзывы клиентов?';
+
+  @override
   String get continueConversation => 'Продолжить диалог';
 
   @override
