@@ -88,6 +88,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   bool _showWelcomeSuggestions = false;
   List<String> _welcomeSuggestions = [];
   
+  // Streaming state
+  bool _isStreaming = false;
+  
   @override
   void initState() {
     super.initState();
@@ -402,7 +405,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     await _chatStorageService.addMessageToChat(_currentChat!.id, userMessage);
     _logger.logInfo('[ChatScreen] Message saved to storage');
     
-    // Update local state immediately
+    // Get updated chat from storage (includes title update if it was a new chat)
+    final chatFromStorage = await _chatStorageService.getChat(_currentChat!.id);
+    if (chatFromStorage != null) {
+      _currentChat = chatFromStorage;
+    }
+    
+    // Update local state immediately with the message
     final updatedChat = _currentChat!.copyWith(
       messages: [..._currentChat!.messages, userMessage],
       updatedAt: DateTime.now(),
@@ -420,6 +429,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
     
     await _chatStorageService.addMessageToChat(_currentChat!.id, assistantMessage);
+    
+    // Get updated chat from storage to ensure we have latest data
+    final chatFromStorage2 = await _chatStorageService.getChat(_currentChat!.id);
+    if (chatFromStorage2 != null) {
+      _currentChat = chatFromStorage2;
+    }
     
     final chatWithAssistant = _currentChat!.copyWith(
       messages: [..._currentChat!.messages, assistantMessage],
@@ -462,6 +477,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
       await _chatStorageService.addMessageToChat(_currentChat!.id, errorMessage);
 
+      // Get updated chat from storage to ensure we have latest data
+      final chatFromStorage = await _chatStorageService.getChat(_currentChat!.id);
+      if (chatFromStorage != null) {
+        _currentChat = chatFromStorage;
+      }
+
       final updatedChat = _currentChat!.copyWith(
         messages: [..._currentChat!.messages, errorMessage],
         updatedAt: DateTime.now(),
@@ -495,6 +516,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           );
 
           await _chatStorageService.addMessageToChat(_currentChat!.id, retryMessage);
+          
+          // Get updated chat from storage to ensure we have latest data
+          final chatFromStorage = await _chatStorageService.getChat(_currentChat!.id);
+          if (chatFromStorage != null) {
+            _currentChat = chatFromStorage;
+          }
+          
           _updateCurrentChat(_currentChat!.copyWith(
             messages: [..._currentChat!.messages, retryMessage],
             updatedAt: DateTime.now(),
@@ -525,6 +553,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           );
 
           await _chatStorageService.addMessageToChat(_currentChat!.id, errorMessage);
+
+          // Get updated chat from storage to ensure we have latest data
+          final chatFromStorage = await _chatStorageService.getChat(_currentChat!.id);
+          if (chatFromStorage != null) {
+            _currentChat = chatFromStorage;
+          }
 
           final updatedChat = _currentChat!.copyWith(
             messages: [..._currentChat!.messages, errorMessage],
@@ -577,7 +611,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
 
   // Method to add assistant message from ChatMessages
-  void addAssistantMessage() {
+  Future<void> addAssistantMessage() async {
     if (_currentChat == null) return;
 
     final assistantMessage = Message(
@@ -589,7 +623,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
 
     // Update chat storage and local state immediately
-    _chatStorageService.addMessageToChat(_currentChat!.id, assistantMessage);
+    await _chatStorageService.addMessageToChat(_currentChat!.id, assistantMessage);
+    
+    // Get updated chat from storage to ensure we have latest data
+    final chatFromStorage = await _chatStorageService.getChat(_currentChat!.id);
+    if (chatFromStorage != null) {
+      _currentChat = chatFromStorage;
+    }
     
     final updatedChat = _currentChat!.copyWith(
       messages: [..._currentChat!.messages, assistantMessage],
@@ -630,6 +670,54 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   void _handleToggleStreaming(bool isStreaming) {
     _logger.logInfo('[ChatScreen] Streaming toggled: $isStreaming');
+    // This is called when a message is sent to start streaming
+    // The actual streaming state is managed in _handleStreamingResponse
+  }
+
+  Future<void> _stopStreaming() async {
+    _logger.logInfo('[ChatScreen] Stopping streaming...');
+    print('[DEBUG] [ChatScreen] _stopStreaming called, _isStreaming was: $_isStreaming');
+    
+    // Set streaming state to false - this will cause streaming callbacks to stop
+    setState(() {
+      _isStreaming = false;
+    });
+    
+    print('[DEBUG] [ChatScreen] _isStreaming set to: false');
+    
+    // Mark the last message as complete (stopped)
+    if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
+      final lastMessage = _currentChat!.messages.last;
+      print('[DEBUG] [ChatScreen] Last message isComplete: ${lastMessage.isComplete}, role: ${lastMessage.role}');
+      
+      if (!lastMessage.isComplete) {
+        final stoppedMessage = lastMessage.copyWith(isComplete: true);
+        
+        // Update storage
+        await _chatStorageService.updateMessageInChat(
+          _currentChat!.id,
+          stoppedMessage.id,
+          stoppedMessage,
+        );
+        
+        // Get updated chat from storage to ensure we have latest data
+        final chatFromStorage = await _chatStorageService.getChat(_currentChat!.id);
+        if (chatFromStorage != null) {
+          _currentChat = chatFromStorage;
+        }
+        
+        // Update state
+        _updateCurrentChat(_currentChat!.copyWith(
+          messages: [..._currentChat!.messages.take(_currentChat!.messages.length - 1), stoppedMessage],
+          updatedAt: DateTime.now(),
+        ));
+        
+        print('[DEBUG] [ChatScreen] Last message marked as complete (stopped)');
+      }
+    }
+    
+    _logger.logInfo('[ChatScreen] Streaming stopped successfully');
+    print('[DEBUG] [ChatScreen] _stopStreaming completed');
   }
 
   void _refreshChatMessages() async {
@@ -683,6 +771,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
     // Update chat storage and local state immediately
     await _chatStorageService.addMessageToChat(_currentChat!.id, continuationMessage);
+    
+    // Get updated chat from storage to ensure we have latest data
+    final chatFromStorage = await _chatStorageService.getChat(_currentChat!.id);
+    if (chatFromStorage != null) {
+      _currentChat = chatFromStorage;
+    }
     
     final updatedChat = _currentChat!.copyWith(
       messages: [..._currentChat!.messages, continuationMessage],
@@ -763,9 +857,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final streamType = isContinuation ? 'Continuation' : 'AI';
     _logger.logInfo('[ChatScreen] Starting $streamType streaming...');
     
+    // Set streaming state
+    setState(() {
+      _isStreaming = true;
+    });
+    
     // Local accumulators for this stream (not state variables)
     String accumulatedContent = '';
     String accumulatedReasoning = '';
+    
+    // Create a local flag that can be captured by closures
+    bool isStreamingLocal = true;
     
     try {
       await _openRouterService.streamChatCompletion(
@@ -774,7 +876,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         maxTokens: maxTokens,
         includeReasoning: true,
         onChunk: (content) {
-          if (content.isEmpty) return;
+          // Check local flag first (fast), then state flag
+          if (!isStreamingLocal || !_isStreaming || content.isEmpty) {
+            if (isStreamingLocal) {
+              _logger.logInfo('[ChatScreen] Chunk skipped: streaming stopped (content: "${content.substring(0, min(20, content.length))}")');
+            }
+            return;
+          }
           
           // Accumulate locally
           accumulatedContent += content;
@@ -803,7 +911,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           }
         },
         onReasoning: (reasoning) {
-          if (reasoning.isEmpty) return;
+          // Check local flag first (fast), then state flag
+          if (!isStreamingLocal || !_isStreaming || reasoning.isEmpty) {
+            if (isStreamingLocal) {
+              _logger.logInfo('[ChatScreen] Reasoning skipped: streaming stopped (reasoning: "${reasoning.substring(0, min(20, reasoning.length))}")');
+            }
+            return;
+          }
           
           // Accumulate locally
           accumulatedReasoning += reasoning;
@@ -832,6 +946,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           }
         },
         onCompletion: (fullContent) {
+          // Check if streaming was stopped
+          if (!isStreamingLocal || !_isStreaming) {
+            _logger.logInfo('[ChatScreen] Completion skipped: streaming was stopped');
+            print('[DEBUG] [ChatScreen] onCompletion called but streaming was stopped');
+            return;
+          }
+          
+          _logger.logInfo('[ChatScreen] Streaming completed normally');
+          print('[DEBUG] [ChatScreen] onCompletion called, streaming completed normally');
+          
           // Final immutable update to mark as complete
           if (mounted && _currentChat != null && _currentChat!.messages.isNotEmpty) {
             final lastMessage = _currentChat!.messages.last;
@@ -856,6 +980,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             // CRITICAL: setState with NEW objects
             _updateCurrentChat(newChat);
             
+            // Reset streaming state
+            setState(() {
+              _isStreaming = false;
+            });
+            
             // Save to storage (this is OK, it's the final state)
             _chatStorageService.updateMessageInChat(
               newChat.id, 
@@ -872,6 +1001,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       );
     } catch (e) {
       _logger.logError('[ChatScreen] Error in $streamType streaming: $e');
+      setState(() {
+        _isStreaming = false;
+      });
       await _handleStreamingError(e, isContinuation);
     }
   }
@@ -897,6 +1029,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           errorResponseMessage
         );
 
+        // Get updated chat from storage to ensure we have latest data
+        final chatFromStorage = await _chatStorageService.getChat(_currentChat!.id);
+        if (chatFromStorage != null) {
+          _currentChat = chatFromStorage;
+        }
+
         final updatedChat = _currentChat!.copyWith(
           messages: [
             ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
@@ -919,6 +1057,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         );
 
         await _chatStorageService.addMessageToChat(_currentChat!.id, errorResponseMessage);
+        
+        // Get updated chat from storage to ensure we have latest data
+        final chatFromStorage = await _chatStorageService.getChat(_currentChat!.id);
+        if (chatFromStorage != null) {
+          _currentChat = chatFromStorage;
+        }
         
         final updatedChat = _currentChat!.copyWith(
           messages: [..._currentChat!.messages, errorResponseMessage],
@@ -981,6 +1125,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       key: const ValueKey('chat_input_widget'),
       onSendMessage: _handleSendMessage,
       onToggleStreaming: _handleToggleStreaming,
+      onStopStreaming: _stopStreaming,
+      isStreaming: _isStreaming,
       focusNode: _chatInputFocusNode,
     );
 

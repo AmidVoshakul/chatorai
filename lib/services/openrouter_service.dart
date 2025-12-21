@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../utils/logger.dart';
@@ -796,6 +797,7 @@ class OpenRouterService {
     required Function(String) onChunk,
     required Function(String) onCompletion,
     Function(String)? onReasoning,
+    VoidCallback? onStopped,
   }) async {
     _logger.logInfo('[OpenRouter] Starting REAL streaming chat completion...');
     _logger.logDebug('[OpenRouter] Model: $model');
@@ -858,6 +860,7 @@ class OpenRouterService {
             onCompletion,
             onReasoning,
             includeReasoning,
+            onStopped,
           );
         } else {
           _logger.logWarning(
@@ -998,6 +1001,7 @@ class OpenRouterService {
     Function(String) onCompletion,
     Function(String)? onReasoning,
     bool includeReasoning,
+    VoidCallback? onStopped,
   ) async {
     String fullContent = '';
     bool hasReasoning = false;
@@ -1006,58 +1010,68 @@ class OpenRouterService {
 
     print('[DEBUG] [OpenRouter] _processSSEStream START, includeReasoning: $includeReasoning');
 
-    await for (final chunk in stream.stream) {
-      final decoded = utf8.decode(chunk);
-      final lines = decoded.split('\n');
+    try {
+      await for (final chunk in stream.stream) {
+        final decoded = utf8.decode(chunk);
+        final lines = decoded.split('\n');
 
-      for (final line in lines) {
-        if (line.startsWith('data: ')) {
-          final dataStr = line.substring(6).trim();
-          
-          if (dataStr.isEmpty || dataStr == '[DONE]') {
-            if (dataStr == '[DONE]') {
-              _logger.logInfo('[OpenRouter] Stream completed');
-              print('[DEBUG] [OpenRouter] Received [DONE]');
-            }
-            continue;
-          }
-
-          try {
-            final chunkData = jsonDecode(dataStr);
-            final choices = chunkData['choices'] as List?;
-            final choice = (choices != null && choices.isNotEmpty) ? choices[0] : null;
-            final delta = choice?['delta'] ?? {};
-            final content = delta['content'];
-            final reasoning = delta['reasoning'];
-
-            if (content != null && content is String) {
-              fullContent += content;
-              chunkCount++;
-              onChunk(content);
-              _logger.logVerbose('[OpenRouter] Content chunk: "$content"');
-              print('[DEBUG] [OpenRouter] Content chunk #$chunkCount: "${content.substring(0, min(20, content.length))}${content.length > 20 ? '...' : ''}"');
-            }
-
-            if (reasoning != null && reasoning is String) {
-              hasReasoning = true;
-              reasoningChunkCount++;
-              if (onReasoning != null) {
-                onReasoning(reasoning);
+        for (final line in lines) {
+          if (line.startsWith('data: ')) {
+            final dataStr = line.substring(6).trim();
+            
+            if (dataStr.isEmpty || dataStr == '[DONE]') {
+              if (dataStr == '[DONE]') {
+                _logger.logInfo('[OpenRouter] Stream completed');
+                print('[DEBUG] [OpenRouter] Received [DONE]');
               }
-              _logger.logVerbose('[OpenRouter] Reasoning chunk: "$reasoning"');
-              print('[DEBUG] [OpenRouter] Reasoning chunk #$reasoningChunkCount: "${reasoning.substring(0, min(20, reasoning.length))}${reasoning.length > 20 ? '...' : ''}"');
+              continue;
             }
 
-            if (choice?['finish_reason'] != null) {
-              _logger.logInfo('[OpenRouter] Finish reason: ${choice?['finish_reason']}');
-              print('[DEBUG] [OpenRouter] Finish reason: ${choice?['finish_reason']}');
+            try {
+              final chunkData = jsonDecode(dataStr);
+              final choices = chunkData['choices'] as List?;
+              final choice = (choices != null && choices.isNotEmpty) ? choices[0] : null;
+              final delta = choice?['delta'] ?? {};
+              final content = delta['content'];
+              final reasoning = delta['reasoning'];
+
+              if (content != null && content is String) {
+                fullContent += content;
+                chunkCount++;
+                onChunk(content);
+                _logger.logVerbose('[OpenRouter] Content chunk: "$content"');
+                print('[DEBUG] [OpenRouter] Content chunk #$chunkCount: "${content.substring(0, min(20, content.length))}${content.length > 20 ? '...' : ''}"');
+              }
+
+              if (reasoning != null && reasoning is String) {
+                hasReasoning = true;
+                reasoningChunkCount++;
+                if (onReasoning != null) {
+                  onReasoning(reasoning);
+                }
+                _logger.logVerbose('[OpenRouter] Reasoning chunk: "$reasoning"');
+                print('[DEBUG] [OpenRouter] Reasoning chunk #$reasoningChunkCount: "${reasoning.substring(0, min(20, reasoning.length))}${reasoning.length > 20 ? '...' : ''}"');
+              }
+
+              if (choice?['finish_reason'] != null) {
+                _logger.logInfo('[OpenRouter] Finish reason: ${choice?['finish_reason']}');
+                print('[DEBUG] [OpenRouter] Finish reason: ${choice?['finish_reason']}');
+              }
+            } catch (e) {
+              _logger.logWarning('[OpenRouter] Failed to parse chunk: $e');
+              print('[DEBUG] [OpenRouter] ERROR parsing chunk: $e');
             }
-          } catch (e) {
-            _logger.logWarning('[OpenRouter] Failed to parse chunk: $e');
-            print('[DEBUG] [OpenRouter] ERROR parsing chunk: $e');
           }
         }
       }
+    } catch (e) {
+      if (e is Exception && e.toString().contains('cancelled')) {
+        _logger.logInfo('[OpenRouter] Stream cancelled');
+        print('[DEBUG] [OpenRouter] Stream cancelled');
+        if (onStopped != null) onStopped();
+        return;
+      }
+      rethrow;
     }
 
     if (includeReasoning && !hasReasoning) {
