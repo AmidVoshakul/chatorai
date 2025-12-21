@@ -688,6 +688,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion100 => 'How to handle customer feedback effectively?';
 
   @override
+  String get welcomeQuestion101 => 'What are the differences between React and Vue?';
+
+  @override
+  String get welcomeQuestion102 => 'How does TypeScript improve JavaScript development?';
+
+  @override
+  String get welcomeQuestion103 => 'What are the best practices for REST API design?';
+
+  @override
+  String get welcomeQuestion104 => 'How to implement authentication in web apps?';
+
+  @override
+  String get welcomeQuestion105 => 'What are GraphQL advantages over REST?';
+
+  @override
+  String get welcomeQuestion106 => 'How to optimize database queries for performance?';
+
+  @override
+  String get welcomeQuestion107 => 'What are microservices architecture patterns?';
+
+  @override
+  String get welcomeQuestion108 => 'How to implement caching strategies?';
+
+  @override
+  String get welcomeQuestion109 => 'What are the best testing frameworks for JavaScript?';
+
+  @override
+  String get welcomeQuestion110 => 'How to write unit tests for React components?';
+
+  @override
+  String get welcomeQuestion111 => 'What are the SOLID principles in OOP?';
+
+  @override
+  String get welcomeQuestion112 => 'How to implement design patterns in Python?';
+
+  @override
+  String get welcomeQuestion113 => 'What are the best practices for Git workflow?';
+
+  @override
+  String get welcomeQuestion114 => 'How to handle merge conflicts effectively?';
+
+  @override
+  String get welcomeQuestion115 => 'What are containerization best practices?';
+
+  @override
+  String get welcomeQuestion116 => 'How to secure Docker containers?';
+
+  @override
+  String get welcomeQuestion117 => 'What are Kubernetes deployment strategies?';
+
+  @override
+  String get welcomeQuestion118 => 'How to monitor application performance?';
+
+  @override
+  String get welcomeQuestion119 => 'What are the best logging practices?';
+
+  @override
+  String get welcomeQuestion120 => 'How to implement error handling in distributed systems?';
+
+  @override
   String get continueConversation => 'Continue the conversation';
 
   @override

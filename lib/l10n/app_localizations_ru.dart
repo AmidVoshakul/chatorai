@@ -688,6 +688,66 @@ class AppLocalizationsRu extends AppLocalizations {
   String get welcomeQuestion100 => 'Как эффективно обрабатывать отзывы клиентов?';
 
   @override
+  String get welcomeQuestion101 => 'В чем разница между React и Vue?';
+
+  @override
+  String get welcomeQuestion102 => 'Как TypeScript улучшает разработку на JavaScript?';
+
+  @override
+  String get welcomeQuestion103 => 'Какие лучшие практики для проектирования REST API?';
+
+  @override
+  String get welcomeQuestion104 => 'Как реализовать аутентификацию в веб-приложениях?';
+
+  @override
+  String get welcomeQuestion105 => 'Какие преимущества GraphQL перед REST?';
+
+  @override
+  String get welcomeQuestion106 => 'Как оптимизировать запросы к базе данных для производительности?';
+
+  @override
+  String get welcomeQuestion107 => 'Что такое паттерны архитектуры микросервисов?';
+
+  @override
+  String get welcomeQuestion108 => 'Как реализовать стратегии кэширования?';
+
+  @override
+  String get welcomeQuestion109 => 'Какие лучшие фреймворки для тестирования JavaScript?';
+
+  @override
+  String get welcomeQuestion110 => 'Как писать unit-тесты для React-компонентов?';
+
+  @override
+  String get welcomeQuestion111 => 'Что такое принципы SOLID в ООП?';
+
+  @override
+  String get welcomeQuestion112 => 'Как реализовать паттерны проектирования в Python?';
+
+  @override
+  String get welcomeQuestion113 => 'Какие лучшие практики для Git workflow?';
+
+  @override
+  String get welcomeQuestion114 => 'Как эффективно разрешать merge conflicts?';
+
+  @override
+  String get welcomeQuestion115 => 'Какие лучшие практики для контейнеризации?';
+
+  @override
+  String get welcomeQuestion116 => 'Как защитить Docker контейнеры?';
+
+  @override
+  String get welcomeQuestion117 => 'Что такое стратегии развертывания в Kubernetes?';
+
+  @override
+  String get welcomeQuestion118 => 'Как мониторить производительность приложения?';
+
+  @override
+  String get welcomeQuestion119 => 'Какие лучшие практики для логирования?';
+
+  @override
+  String get welcomeQuestion120 => 'Как реализовать обработку ошибок в распределенных системах?';
+
+  @override
   String get continueConversation => 'Продолжить диалог';
 
   @override

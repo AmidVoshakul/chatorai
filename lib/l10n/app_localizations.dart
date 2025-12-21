@@ -1433,6 +1433,126 @@ abstract class AppLocalizations {
   /// **'How to handle customer feedback effectively?'**
   String get welcomeQuestion100;
 
+  /// No description provided for @welcomeQuestion101.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the differences between React and Vue?'**
+  String get welcomeQuestion101;
+
+  /// No description provided for @welcomeQuestion102.
+  ///
+  /// In en, this message translates to:
+  /// **'How does TypeScript improve JavaScript development?'**
+  String get welcomeQuestion102;
+
+  /// No description provided for @welcomeQuestion103.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best practices for REST API design?'**
+  String get welcomeQuestion103;
+
+  /// No description provided for @welcomeQuestion104.
+  ///
+  /// In en, this message translates to:
+  /// **'How to implement authentication in web apps?'**
+  String get welcomeQuestion104;
+
+  /// No description provided for @welcomeQuestion105.
+  ///
+  /// In en, this message translates to:
+  /// **'What are GraphQL advantages over REST?'**
+  String get welcomeQuestion105;
+
+  /// No description provided for @welcomeQuestion106.
+  ///
+  /// In en, this message translates to:
+  /// **'How to optimize database queries for performance?'**
+  String get welcomeQuestion106;
+
+  /// No description provided for @welcomeQuestion107.
+  ///
+  /// In en, this message translates to:
+  /// **'What are microservices architecture patterns?'**
+  String get welcomeQuestion107;
+
+  /// No description provided for @welcomeQuestion108.
+  ///
+  /// In en, this message translates to:
+  /// **'How to implement caching strategies?'**
+  String get welcomeQuestion108;
+
+  /// No description provided for @welcomeQuestion109.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best testing frameworks for JavaScript?'**
+  String get welcomeQuestion109;
+
+  /// No description provided for @welcomeQuestion110.
+  ///
+  /// In en, this message translates to:
+  /// **'How to write unit tests for React components?'**
+  String get welcomeQuestion110;
+
+  /// No description provided for @welcomeQuestion111.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the SOLID principles in OOP?'**
+  String get welcomeQuestion111;
+
+  /// No description provided for @welcomeQuestion112.
+  ///
+  /// In en, this message translates to:
+  /// **'How to implement design patterns in Python?'**
+  String get welcomeQuestion112;
+
+  /// No description provided for @welcomeQuestion113.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best practices for Git workflow?'**
+  String get welcomeQuestion113;
+
+  /// No description provided for @welcomeQuestion114.
+  ///
+  /// In en, this message translates to:
+  /// **'How to handle merge conflicts effectively?'**
+  String get welcomeQuestion114;
+
+  /// No description provided for @welcomeQuestion115.
+  ///
+  /// In en, this message translates to:
+  /// **'What are containerization best practices?'**
+  String get welcomeQuestion115;
+
+  /// No description provided for @welcomeQuestion116.
+  ///
+  /// In en, this message translates to:
+  /// **'How to secure Docker containers?'**
+  String get welcomeQuestion116;
+
+  /// No description provided for @welcomeQuestion117.
+  ///
+  /// In en, this message translates to:
+  /// **'What are Kubernetes deployment strategies?'**
+  String get welcomeQuestion117;
+
+  /// No description provided for @welcomeQuestion118.
+  ///
+  /// In en, this message translates to:
+  /// **'How to monitor application performance?'**
+  String get welcomeQuestion118;
+
+  /// No description provided for @welcomeQuestion119.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the best logging practices?'**
+  String get welcomeQuestion119;
+
+  /// No description provided for @welcomeQuestion120.
+  ///
+  /// In en, this message translates to:
+  /// **'How to implement error handling in distributed systems?'**
+  String get welcomeQuestion120;
+
   /// No description provided for @continueConversation.
   ///
   /// In en, this message translates to:
