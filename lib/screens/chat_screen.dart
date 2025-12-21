@@ -11,7 +11,6 @@ import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/widgets/sidebar/sidebar.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/continuation_suggestions.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/welcome_questions_data.dart';
 import 'package:gen_ui_chat_ai/screens/models_screen.dart';
 import 'package:gen_ui_chat_ai/utils/chat_scroll_utils.dart';
@@ -113,13 +112,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _chatScrollUtils!.initialize();
     _logger.logInfo('[ChatScreen] ChatScrollUtils initialized');
 
-    _loadChats();
-
     // Initialize model selection from ThemeProvider
     _initializeModelSelection();
 
     // Listen to ThemeProvider changes to update loading state
     _themeProvider.addListener(_onThemeProviderChange);
+
+    // Load chats after a short delay to ensure context is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadChats();
+    });
   }
 
   // Listen for ThemeProvider changes to update loading state
@@ -177,15 +179,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       final chats = await _chatStorageService.getChats();
       setState(() {
         _chats = chats;
-        if (_chats.isNotEmpty && _currentChat == null) {
-          _selectChat(_chats.first.id);
-        } else if (_chats.isEmpty) {
-          // No chats, hide welcome suggestions
-          setState(() {
-            _showWelcomeSuggestions = false;
-            _welcomeSuggestions.clear();
-          });
-        }
+        // Always show welcome suggestions on app load
+        // User can either send a message (creates new chat) or open sidebar to select existing chat
+        _showWelcomeSuggestionsForEmptyState();
       });
     } catch (e) {
       _logger.logError('[ChatScreen] Error loading chats: $e');
@@ -196,11 +192,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _logger.logInfo('[ChatScreen] Creating new chat...');
     final newChat = _chatStorageService.newChat();
     await _chatStorageService.addChat(newChat);
-    await _loadChats();
-    _selectChat(newChat.id);
     
-    // Show welcome suggestions for new chat
-    _showWelcomeSuggestionsForNewChat();
+    // Update local state - new chat should be at the top
+    setState(() {
+      _currentChat = newChat;
+      // Update chats list for sidebar - new chat at the beginning
+      _chats = [newChat, ..._chats];
+      // Hide welcome suggestions
+      _showWelcomeSuggestions = false;
+      _welcomeSuggestions.clear();
+    });
   }
 
   void _showWelcomeSuggestionsForNewChat() {
@@ -216,6 +217,20 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
   }
 
+  void _showWelcomeSuggestionsForEmptyState() {
+    // Generate random welcome questions
+    final questions = WelcomeQuestionsData.getRandomQuestions(context, count: 4);
+    
+    setState(() {
+      _welcomeSuggestions = questions;
+      _showWelcomeSuggestions = true;
+      _currentChat = null; // Always reset to no chat selected
+      // Hide continuation suggestions
+      _showSuggestions = false;
+      _continuationSuggestions.clear();
+    });
+  }
+
   void _selectChat(String chatId) {
     _logger.logInfo('[ChatScreen] Selecting chat: $chatId');
     final chat = _chats.firstWhere((c) => c.id == chatId);
@@ -225,17 +240,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     
     setState(() {
       _currentChat = chat;
+      // Always hide welcome suggestions when selecting a chat
+      _showWelcomeSuggestions = false;
+      _welcomeSuggestions.clear();
     });
     
-    // Show welcome suggestions if chat is empty
+    // Show welcome suggestions if chat is empty (for continuation)
     if (chat.messages.isEmpty) {
       _showWelcomeSuggestionsForNewChat();
-    } else {
-      // Hide welcome suggestions if chat has messages
-      setState(() {
-        _showWelcomeSuggestions = false;
-        _welcomeSuggestions.clear();
-      });
     }
     
     // Auto-scroll to bottom when chat is loaded
@@ -328,14 +340,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         icon: Icons.delete,
       );
       
+      // Clear current chat if it was deleted
       if (_currentChat?.id == chatId) {
-        if (_chats.isNotEmpty) {
-          _selectChat(_chats.first.id);
-        } else {
-          setState(() {
-            _currentChat = null;
-          });
-        }
+        setState(() {
+          _currentChat = null;
+        });
       }
     }
   }
@@ -1453,8 +1462,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
       // Show a snackbar to notify the user
       if (mounted) {
-        final displayMessage = errorMessage.length > ContinuationSuggestionsConstants.maxSuggestionTextLength 
-            ? '${errorMessage.substring(0, ContinuationSuggestionsConstants.maxSuggestionTextLength)}...' 
+        const maxLength = 100;
+        final displayMessage = errorMessage.length > maxLength 
+            ? '${errorMessage.substring(0, maxLength)}...' 
             : errorMessage;
             
         SnackbarUtils.showErrorSnackBar(
@@ -1552,8 +1562,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           .map((s) => s.trim())
           .where((s) => s.isNotEmpty && (s.startsWith('-') || s.startsWith('1.') || s.startsWith('2.') || s.startsWith('3.') || s.startsWith('•') || s.length > 10))
           .map((s) => s.replaceFirst(RegExp(r'^[-•]\s*'), '').replaceFirst(RegExp(r'^\d+\.\s*'), ''))
-          .where((s) => s.length > ContinuationSuggestionsConstants.minSuggestionLength)
-          .take(ContinuationSuggestionsConstants.maxSuggestions)
+          .where((s) => s.length > 5) // minSuggestionLength
+          .take(4) // maxSuggestions
           .toList();
       
       _logger.logInfo('[ChatScreen] Generated ${suggestions.length} continuation suggestions');
