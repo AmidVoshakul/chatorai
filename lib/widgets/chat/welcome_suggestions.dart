@@ -180,10 +180,15 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
       // Fade in new questions
       _rotationController.forward();
 
-      // Restart cycle
+      // ДОБАВЛЯЕМ ЗАДЕРЖКУ 2 СЕКУНДЫ ПЕРЕД НАЧАЛОМ АНИМАЦИИ ВОПРОСОВ
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_isCycleActive) return;
-        _pulseNext(0);
+
+        // Ждем 2 секунды перед началом пульсации
+        _cycleTimer = Timer(const Duration(seconds: 2), () {
+          if (!mounted || !_isCycleActive) return;
+          _pulseNext(0);
+        });
       });
     });
   }
@@ -192,12 +197,12 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
     _isCycleActive = false;
     _cycleTimer?.cancel();
     _cycleTimer = null;
-    
+
     for (var c in _pulseControllers) {
       c.stop();
       c.reset();
     }
-    
+
     setState(() {
       _currentIndex = 0;
     });
@@ -256,7 +261,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
+
                     // Welcome text
                     Text(
                       l10n?.welcomeMessage ?? 'Welcome! How can I help you today?',
@@ -268,9 +273,9 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                         height: 1.3,
                       ),
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Suggestions list
                     _buildSuggestions(),
                   ],
@@ -285,7 +290,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
 
   Widget _buildSuggestions() {
     final theme = Theme.of(context);
-    
+
     return FadeTransition(
       opacity: _rotationFadeAnimation,
       child: SlideTransition(
