@@ -41,6 +41,18 @@ class UbuntuColors {
   static const Color darkInputFill = Color(0xFF252525); // Input background for dark theme
   static const Color inputBorder = Color(0xFFDDDDDD); // Input border for light theme
   static const Color darkInputBorder = Color(0xFF252525); // Input border for dark theme
+  
+  // Navigation bar colors
+  static const Color navBarBackgroundLight = Color(0xFFF0F0F0); // Light theme nav bar background
+  static const Color navBarBackgroundDark = Color(0xFF1A1A1A); // Dark theme nav bar background
+  static const Color navBarBorderLight = Color(0xFFE0E0E0); // Light theme nav bar border
+  static const Color navBarBorderDark = Color(0xFF2A2A2A); // Dark theme nav bar border
+  
+  // Input widget container colors
+  static const Color inputContainerLight = Color(0xFFFFFFFF); // Light theme input container
+  static const Color inputContainerDark = Color(0xFF1A1A1A); // Dark theme input container
+  static const Color inputContainerBorderLight = Color(0xFFE0E0E0); // Light theme input border
+  static const Color inputContainerBorderDark = Color(0xFF2A2A2A); // Dark theme input border
 }
 
 /// Типографика для разных элементов

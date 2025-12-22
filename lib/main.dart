@@ -5,6 +5,7 @@ import 'package:gen_ui_chat_ai/screens/chat_screen.dart';
 import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
+import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 
@@ -35,11 +36,13 @@ class MyApp extends StatelessWidget {
 
         // Determine navigation bar colors based on theme
         final isDark = theme.brightness == Brightness.dark;
-        final navBarColor = isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF0F0F0);
+        final navBarColor = isDark
+            ? UbuntuColors.navBarBackgroundDark
+            : UbuntuColors.navBarBackgroundLight;
         final navBarIconBrightness = isDark ? Brightness.light : Brightness.dark;
 
         return MaterialApp(
-          title: 'GenUI Chat AI',
+          title: 'ORAI',
           localizationsDelegates: [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
@@ -64,6 +67,8 @@ class MyApp extends StatelessWidget {
                 SystemUiOverlayStyle(
                   systemNavigationBarColor: navBarColor,
                   systemNavigationBarIconBrightness: navBarIconBrightness,
+                  // Add a subtle border line above the navigation bar
+                  systemNavigationBarContrastEnforced: true,
                 ),
               );
             });
