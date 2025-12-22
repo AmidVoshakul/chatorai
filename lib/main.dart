@@ -13,14 +13,6 @@ void main() {
   LogConfig.enabled = true;
   LogConfig.minimumLevel = LogLevel.debug;
 
-  // Set navigation bar color to match chat input
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      systemNavigationBarColor: Color(0xFF1A1A1A),
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),
-  );
-
   runApp(
     MultiProvider(
       providers: [
@@ -41,6 +33,11 @@ class MyApp extends StatelessWidget {
         final theme = themeProvider.getTheme();
         final locale = Locale(themeProvider.selectedLanguage);
 
+        // Determine navigation bar colors based on theme
+        final isDark = theme.brightness == Brightness.dark;
+        final navBarColor = isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF0F0F0);
+        final navBarIconBrightness = isDark ? Brightness.light : Brightness.dark;
+
         return MaterialApp(
           title: 'GenUI Chat AI',
           localizationsDelegates: [
@@ -59,6 +56,18 @@ class MyApp extends StatelessWidget {
           home: const ChatScreen(),
           routes: {
             '/settings': (context) => const SettingsScreen(),
+          },
+          builder: (context, child) {
+            // Set system navigation bar color after theme is applied
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              SystemChrome.setSystemUIOverlayStyle(
+                SystemUiOverlayStyle(
+                  systemNavigationBarColor: navBarColor,
+                  systemNavigationBarIconBrightness: navBarIconBrightness,
+                ),
+              );
+            });
+            return child!;
           },
         );
       },

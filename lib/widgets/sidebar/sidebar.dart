@@ -44,11 +44,19 @@ class _SidebarState extends State<Sidebar> {
   late ThemeData _theme;
   late String _language;
   late ChatStorageService _chatStorageService;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _chatStorageService = ChatStorageService();
+  }
+
+  List<Chat> get _filteredChats {
+    if (_searchQuery.isEmpty) return widget.chats;
+    return widget.chats.where((chat) => 
+      chat.title.toLowerCase().contains(_searchQuery.toLowerCase())
+    ).toList();
   }
 
   @override
@@ -82,8 +90,12 @@ class _SidebarState extends State<Sidebar> {
         children: [
           // Header
           Container(
-            height: 64,
-            padding: EdgeInsets.only(left: widget.isCollapsed ? 2 : 16, right: 2),
+            padding: EdgeInsets.only(
+              left: widget.isCollapsed ? 2 : 16, 
+              right: widget.isCollapsed ? 2 : 16,
+              top: widget.isCollapsed ? 0 : 12,
+              bottom: widget.isCollapsed ? 0 : 8,
+            ),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
@@ -92,37 +104,42 @@ class _SidebarState extends State<Sidebar> {
                 ),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
               children: [
-                if (!widget.isCollapsed)
-                  Expanded(
-                    child: Text(
-                      'GenUI',
-                      style: _theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: _theme.textTheme.headlineSmall?.color,
-                        fontSize: 18,
+                // Title and close button row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (!widget.isCollapsed)
+                      Expanded(
+                        child: Text(
+                          'GenUI',
+                          style: _theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: _theme.textTheme.headlineSmall?.color,
+                            fontSize: 18,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: false,
+                    if (widget.isCollapsed)
+                      const Spacer(),
+                    IconButton(
+                      icon: Icon(
+                        widget.isCollapsed ? Icons.menu : Icons.close,
+                        color: _theme.iconTheme.color,
+                        size: 18,
+                      ),
+                      onPressed: widget.onToggleSidebar,
+                      padding: widget.isCollapsed ? const EdgeInsets.all(4) : const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                      splashRadius: widget.isCollapsed ? 16 : 20,
                     ),
-                  ),
-                if (widget.isCollapsed)
-                  const Spacer(),
-                IconButton(
-                  icon: Icon(
-                    widget.isCollapsed ? Icons.menu : Icons.close,
-                    color: _theme.iconTheme.color,
-                    size: 18,
-                  ),
-                  onPressed: widget.onToggleSidebar,
-                  padding: widget.isCollapsed ? const EdgeInsets.all(4) : const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(
-                    minWidth: 28,
-                    minHeight: 28,
-                  ),
-                  splashRadius: widget.isCollapsed ? 16 : 20,
+                  ],
                 ),
               ],
             ),
@@ -155,20 +172,52 @@ class _SidebarState extends State<Sidebar> {
               ),
             ),
           
+          // Search field (only when expanded)
+          if (!widget.isCollapsed)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search chats...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: _theme.dividerColor, width: 1),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: _theme.dividerColor, width: 1),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: _theme.colorScheme.primary, width: 1),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  isDense: true,
+                ),
+                style: const TextStyle(fontSize: 14),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+              ),
+            ),
+          
           // Chat List
           Expanded(
             child: !widget.isCollapsed 
-                ? (widget.chats.isEmpty
+                ? (_filteredChats.isEmpty
                     ? _buildEmptyState(_theme, _language)
                     : ListView.builder(
                         padding: EdgeInsets.zero,
-                        itemCount: widget.chats.length,
+                        itemCount: _filteredChats.length,
                         itemBuilder: (context, index) {
-                          final chat = widget.chats[index];
+                          final chat = _filteredChats[index];
                           return _buildChatItem(chat);
                         },
                       ))
-                : Container(), // Пустой кон��ейнер в свeнутом состоянии
+                : Container(), // Пустой контейнер в свёрнутом состоянии
           ),
           
           // Footer
@@ -326,6 +375,8 @@ class _SidebarState extends State<Sidebar> {
 
   Widget _buildEmptyState(ThemeData theme, String language) {
     final localizations = AppLocalizations.of(context)!;
+    final hasSearch = _searchQuery.isNotEmpty;
+    
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -333,13 +384,15 @@ class _SidebarState extends State<Sidebar> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.chat_bubble_outline,
+              hasSearch ? Icons.search_off : Icons.chat_bubble_outline,
               size: 60,
               color: theme.iconTheme.color?.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
-              localizations.noChatsYet,
+              hasSearch 
+                  ? 'No chats found for "$_searchQuery"'
+                  : localizations.noChatsYet,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -349,7 +402,9 @@ class _SidebarState extends State<Sidebar> {
             ),
             const SizedBox(height: 8),
             Text(
-              localizations.startConversation,
+              hasSearch 
+                  ? 'Try a different search term'
+                  : localizations.startConversation,
               style: TextStyle(
                 fontSize: 12,
                 color: theme.textTheme.bodySmall?.color,

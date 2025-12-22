@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/markdown_navigator_sidebar.dart';
-import 'package:gen_ui_chat_ai/utils/markdown_parser.dart';
+import 'package:gen_ui_chat_ai/utils/markdown_parser_with_keys.dart';
 
 /// Пример виджета чата с интегрированным навигатором по Markdown
+/// Устаревший файл, используется для тестирования. Основная логика в ChatMessages.
 class ChatWithNavigator extends StatefulWidget {
   final String chatContent;
 
@@ -17,8 +18,7 @@ class ChatWithNavigator extends StatefulWidget {
 
 class _ChatWithNavigatorState extends State<ChatWithNavigator> {
   bool _isNavigatorOpen = false;
-  List<MarkdownHeadingInfo> _headings = [];
-  final ScrollController _scrollController = ScrollController();
+  List<MarkdownHeadingInfoWithKey> _headings = [];
 
   @override
   void initState() {
@@ -34,15 +34,9 @@ class _ChatWithNavigatorState extends State<ChatWithNavigator> {
     }
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
   void _parseHeadings() {
     setState(() {
-      _headings = MarkdownParser.parseHeadings(widget.chatContent);
+      _headings = MarkdownParserWithKeys.parseHeadingsWithKeys(widget.chatContent);
     });
   }
 
@@ -59,25 +53,16 @@ class _ChatWithNavigatorState extends State<ChatWithNavigator> {
       orElse: () => throw Exception('Heading not found: $headingText'),
     );
 
-    // Рассчитываем позицию для прокрутки
-    // Учитываем только отступы
-    final linesBeforeHeading = heading.lineIndex;
-    
-    // Примерная высота строки (может потребоваться калибровка)
-    const double lineHeight = 20.0;
-    const double padding = 16.0;
-    
-    double scrollOffset = padding + (linesBeforeHeading * lineHeight);
-    
-    // Ограничиваем максимальное значение
-    scrollOffset = scrollOffset.clamp(0.0, _scrollController.position.maxScrollExtent);
-    
-    // Прокручиваем к заголовку
-    _scrollController.animateTo(
-      scrollOffset,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-    );
+    // Используем Scrollable.ensureVisible (правильный подход)
+    final context = heading.key.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        alignment: 0.15,
+      );
+    }
     
     // Закрываем навигатор
     setState(() {
@@ -98,7 +83,6 @@ class _ChatWithNavigatorState extends State<ChatWithNavigator> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   child: SingleChildScrollView(
-                    controller: _scrollController,
                     child: Text(widget.chatContent),
                   ),
                 ),
@@ -109,7 +93,7 @@ class _ChatWithNavigatorState extends State<ChatWithNavigator> {
         
         // Сайдбар навигации
         MarkdownNavigatorSidebar(
-          content: widget.chatContent,
+          headings: _headings,
           isOpen: _isNavigatorOpen,
           onClose: _toggleNavigator,
           onHeadingTap: _onHeadingTap,
