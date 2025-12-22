@@ -52,6 +52,7 @@ class ChatMessages extends StatefulWidget {
   final bool showSuggestions; // Whether to show suggestions
   final bool isSuggestionsLoading; // Whether suggestions are loading
   final VoidCallback? onSuggestionsClose; // Callback when suggestions are closed
+  final VoidCallback? onSuggestionsRefresh; // Callback to refresh suggestions
   
   // Welcome suggestions for empty chats
   final List<String> welcomeSuggestions; // Welcome questions to display
@@ -76,6 +77,7 @@ class ChatMessages extends StatefulWidget {
     this.showSuggestions = false,
     this.isSuggestionsLoading = false,
     this.onSuggestionsClose,
+    this.onSuggestionsRefresh,
     this.welcomeSuggestions = const [],
     this.showWelcomeSuggestions = false,
     this.onWelcomeSuggestionsClose,
@@ -445,6 +447,7 @@ class ChatMessagesState extends State<ChatMessages>
         widget.onSendMessage(suggestion);
       },
       onClose: widget.onSuggestionsClose,
+      onRefresh: widget.onSuggestionsRefresh,
     );
   }
 }

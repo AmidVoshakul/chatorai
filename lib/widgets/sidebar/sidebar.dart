@@ -224,7 +224,7 @@ class _SidebarState extends State<Sidebar> {
           if (!widget.isCollapsed)
             Container(
               decoration: BoxDecoration(
-                color: _theme.scaffoldBackgroundColor,
+                color: _theme.cardColor,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.15),
