@@ -245,6 +245,20 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
     }
   }
 
+  Future<void> _regenerateMessage() async {
+    // Сначала удаляем сообщение об ошибке из UI
+    widget.onMessageDeleted();
+    
+    // Затем вызываем callback для перегенерации
+    // Это вызовет onRegenerateResponse в ChatScreen, который:
+    // 1. Удалит последнее AI сообщение из БД (это сообщение об ошибке)
+    // 2. Возьмет последнее user сообщение
+    // 3. Сгенерирует новый ответ
+    if (widget.onMessageUpdated != null) {
+      widget.onMessageUpdated!('REGENERATE');
+    }
+  }
+
   // ===========================================================================
   // UTILITY METHODS
   // ===========================================================================
@@ -393,6 +407,17 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.refresh,
+                      size: 16,
+                      color: theme.iconTheme.color?.withValues(alpha: 0.8),
+                    ),
+                    onPressed: _regenerateMessage,
+                    tooltip: localizations?.regenerate ?? 'Regenerate',
+                    splashRadius: 20,
+                  ),
+                  const SizedBox(width: 8),
                   IconButton(
                     icon: Icon(
                       Icons.copy_all,

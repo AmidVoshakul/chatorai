@@ -410,8 +410,18 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                           size: 16,
                           color: theme.iconTheme.color?.withValues(alpha: 0.7),
                         ),
-                        onPressed: () {
-                          // TODO: Regenerate message
+                        onPressed: () async {
+                          await MessageUtils.regenerateMessage(
+                            chatId: widget.chatId,
+                            messageId: widget.message.id,
+                            chatStorageService: widget.chatStorageService,
+                            onRegenerate: () {
+                              // Вызываем callback родителя для перегенерации
+                              if (widget.onMessageUpdated != null) {
+                                widget.onMessageUpdated!('REGENERATE');
+                              }
+                            },
+                          );
                         },
                         tooltip: localizations.regenerate,
                         splashRadius: 20,

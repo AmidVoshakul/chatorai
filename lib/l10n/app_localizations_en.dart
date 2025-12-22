@@ -328,10 +328,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get areYouSureYouWantToDeleteThisMessage => 'Are you sure you want to delete this message?';
 
   @override
+  String get areYouSureYouWantToRegenerateThisMessage => 'Are you sure you want to regenerate this message?';
+
+  @override
   String get messageDeletedSuccessfully => 'Message deleted successfully';
 
   @override
   String get failedToDeleteMessage => 'Failed to delete message';
+
+  @override
+  String get regenerationStarted => 'Regeneration started';
+
+  @override
+  String get failedToRegenerateMessage => 'Failed to regenerate message';
 
   @override
   String get messageCopied => 'Message copied';
@@ -752,16 +761,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generatingSuggestions => 'Generating suggestions...';
-
-  @override
-  String get tableOfContents => 'Table of Contents';
-
-  @override
-  String get noHeadingsFound => 'No headings found';
-
-  @override
-  String get useMarkdownHeadings => 'Use #, ##, ### in Markdown';
-
-  @override
-  String get totalHeadings => 'Total headings';
 }

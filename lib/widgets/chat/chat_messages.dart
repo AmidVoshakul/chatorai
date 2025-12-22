@@ -45,8 +45,8 @@ class ChatMessages extends StatefulWidget {
   final String? selectedModel;
   final Function(String) onSendMessage; // Add callback for sending messages
   final Function() onMessageDeleted; // Add callback for message deletion
-  final Function(String)?
-  onContinueResponse; // Add callback for continuing response
+  final Function(String)? onContinueResponse; // Add callback for continuing response
+  final VoidCallback? onRegenerateResponse; // Add callback for regenerating response
   final ScrollController? scrollController; // External scroll controller
   final List<String> continuationSuggestions; // Suggestions to display
   final bool showSuggestions; // Whether to show suggestions
@@ -72,6 +72,7 @@ class ChatMessages extends StatefulWidget {
     required this.onSendMessage,
     required this.onMessageDeleted,
     this.onContinueResponse,
+    this.onRegenerateResponse,
     this.scrollController,
     this.continuationSuggestions = const [],
     this.showSuggestions = false,
@@ -329,7 +330,11 @@ class ChatMessagesState extends State<ChatMessages>
                           chatId: widget.chat?.id ?? '',
                           chatStorageService: widget.chatStorageService,
                           onMessageDeleted: widget.onMessageDeleted,
-                          onMessageUpdated: (newContent) {},
+                          onMessageUpdated: (newContent) {
+                            if (newContent == 'REGENERATE') {
+                              widget.onRegenerateResponse?.call();
+                            }
+                          },
                           onDelete: () {},
                           onContinueResponse: null,
                           headings: _headings,
@@ -373,7 +378,9 @@ class ChatMessagesState extends State<ChatMessages>
                         chatStorageService: widget.chatStorageService,
                         onMessageDeleted: widget.onMessageDeleted,
                         onMessageUpdated: (newContent) {
-                          // Parent handles updates
+                          if (newContent == 'REGENERATE') {
+                            widget.onRegenerateResponse?.call();
+                          }
                         },
                         onDelete: () {
                           _handleDeleteMessage(message);
@@ -407,7 +414,9 @@ class ChatMessagesState extends State<ChatMessages>
                   chatStorageService: widget.chatStorageService,
                   onMessageDeleted: widget.onMessageDeleted,
                   onMessageUpdated: (newContent) {
-                    // Parent handles updates
+                    if (newContent == 'REGENERATE') {
+                      widget.onRegenerateResponse?.call();
+                    }
                   },
                   onDelete: () {
                     _handleDeleteMessage(message);
