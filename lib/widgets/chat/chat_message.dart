@@ -896,13 +896,17 @@ class _HeadingBuilder extends MarkdownElementBuilder {
     // Find the matching heading with key
     final heading = headings.firstWhere(
       (h) => h.text == text && h.level == level,
-      orElse: () => MarkdownHeadingInfoWithKey(
-        text: text,
-        level: level,
-        lineIndex: 0,
-        rawLine: '',
-        key: GlobalKey(),
-      ),
+      orElse: () {
+        // This should not happen if headings are properly synced
+        // Create a fallback key if no match found
+        return MarkdownHeadingInfoWithKey(
+          text: text,
+          level: level,
+          lineIndex: 0,
+          rawLine: '',
+          key: GlobalKey(),
+        );
+      },
     );
 
     return Container(

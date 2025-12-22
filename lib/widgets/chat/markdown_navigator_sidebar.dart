@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:gen_ui_chat_ai/utils/markdown_parser.dart';
+import 'package:gen_ui_chat_ai/utils/markdown_parser_with_keys.dart';
 
 /// Сайдбар для навигации по заголовкам Markdown в чате
 /// Открывается слайдом с правого края экрана влево
 /// Аналогичен основному сайдбару, но для заголовков чата
 class MarkdownNavigatorSidebar extends StatefulWidget {
-  final String content;
+  final List<MarkdownHeadingInfoWithKey> headings;
   final Function(String)? onHeadingTap;
   final bool isOpen;
   final VoidCallback? onClose;
 
   const MarkdownNavigatorSidebar({
     super.key,
-    required this.content,
+    required this.headings,
     this.onHeadingTap,
     required this.isOpen,
     this.onClose,
@@ -25,7 +25,6 @@ class MarkdownNavigatorSidebar extends StatefulWidget {
 class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  List<MarkdownHeadingInfo> _headings = [];
   int _activeIndex = -1;
 
   @override
@@ -39,17 +38,11 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
     if (widget.isOpen) {
       _animationController.forward();
     }
-    
-    _parseHeadings();
   }
 
   @override
   void didUpdateWidget(MarkdownNavigatorSidebar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
-    if (widget.content != oldWidget.content) {
-      _parseHeadings();
-    }
     
     if (widget.isOpen != oldWidget.isOpen) {
       if (widget.isOpen) {
@@ -66,20 +59,13 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
     super.dispose();
   }
 
-  void _parseHeadings() {
-    final headings = MarkdownParser.parseHeadings(widget.content);
-    setState(() {
-      _headings = headings;
-    });
-  }
-
   void _scrollToHeading(int index) {
     setState(() {
       _activeIndex = index;
     });
     
     if (widget.onHeadingTap != null) {
-      widget.onHeadingTap!(_headings[index].text);
+      widget.onHeadingTap!(widget.headings[index].text);
     }
   }
 
@@ -133,40 +119,39 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
                   ),
                   child: Column(
                     children: [
-                      // Header - only show close button on mobile
-                      if (!_isDesktop())
-                        Container(
-                          height: 35,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: theme.cardColor,
-                            border: Border(
-                              bottom: BorderSide(
-                                color: theme.dividerColor,
-                                width: 1,
-                              ),
+                      // Header with close button - always visible
+                      Container(
+                        height: 55,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: theme.cardColor,
+                          border: Border(
+                            bottom: BorderSide(
+                              color: theme.dividerColor,
+                              width: 1,
                             ),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.close, size: 20),
-                                onPressed: widget.onClose,
-                                padding: const EdgeInsets.all(8),
-                                constraints: const BoxConstraints(
-                                  minWidth: 32,
-                                  minHeight: 32,
-                                ),
-                                splashRadius: 20,
-                              ),
-                            ],
-                          ),
                         ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.close, size: 20),
+                              onPressed: widget.onClose,
+                              padding: const EdgeInsets.all(8),
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
+                              splashRadius: 20,
+                            ),
+                          ],
+                        ),
+                      ),
                       
                       // Content
                       Expanded(
-                        child: _headings.isEmpty
+                        child: widget.headings.isEmpty
                             ? Center(
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
@@ -203,13 +188,13 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
                                   left: 0,
                                   right: 0,
                                 ),
-                                itemCount: _headings.length,
+                                itemCount: widget.headings.length,
                                 separatorBuilder: (context, index) => Divider(
                                   height: 1,
                                   color: theme.dividerColor.withValues(alpha: 0.1),
                                 ),
                                 itemBuilder: (context, index) {
-                                  final heading = _headings[index];
+                                  final heading = widget.headings[index];
                                   final isActive = index == _activeIndex;
                                   
                                   return Material(

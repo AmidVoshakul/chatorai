@@ -11,12 +11,13 @@ import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/widgets/sidebar/sidebar.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
+import 'package:gen_ui_chat_ai/widgets/chat/markdown_navigator_sidebar.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/welcome_questions_data.dart';
 import 'package:gen_ui_chat_ai/screens/models_screen.dart';
 import 'package:gen_ui_chat_ai/utils/chat_scroll_utils.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
-import 'package:gen_ui_chat_ai/utils/markdown_parser.dart';
+import 'package:gen_ui_chat_ai/utils/markdown_parser_with_keys.dart';
 
 // Initialize logger for this screen
 final _logger = LogTags.chatScreen;
@@ -94,6 +95,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   
   // Navigator state
   final GlobalKey<ChatMessagesState> _chatMessagesKey = GlobalKey<ChatMessagesState>();
+  bool _isNavigatorVisible = false;
+  List<MarkdownHeadingInfoWithKey> _navigatorHeadings = [];
   
   @override
   void initState() {
@@ -735,6 +738,62 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
+  // Navigator methods
+  void _onHeadingsUpdated(List<MarkdownHeadingInfoWithKey> headings) {
+    // Use post-frame callback to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _navigatorHeadings = headings;
+        });
+      }
+    });
+  }
+
+  void _toggleNavigator() {
+    setState(() {
+      _isNavigatorVisible = !_isNavigatorVisible;
+    });
+  }
+
+  void _onHeadingTap(String headingText) {
+    _logger.logInfo('[HeadingTap] Tapped heading: $headingText');
+    
+    // Find the heading with its key
+    final heading = _navigatorHeadings.firstWhere(
+      (h) => h.text == headingText,
+      orElse: () {
+        _logger.logError('[HeadingTap] Heading not found: $headingText');
+        throw Exception('Heading not found: $headingText');
+      },
+    );
+    
+    // Close the navigator FIRST
+    setState(() {
+      _isNavigatorVisible = false;
+    });
+    
+    // Wait for the navigator to close and UI to update
+    Future.delayed(const Duration(milliseconds: 150), () {
+      // Get the context of the heading widget
+      final context = heading.key.currentContext;
+      if (context == null) {
+        _logger.logError('[HeadingTap] Heading context is null!');
+        return;
+      }
+      
+      // Use Scrollable.ensureVisible to scroll to the widget
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        alignment: 0.15, // 15% from top (below AppBar)
+      ).catchError((error) {
+        _logger.logError('[HeadingTap] Scroll error: $error');
+      });
+    });
+  }
+
   // Method to continue AI response
   void _continueAIResponse(String lastMessageId) async {
     _logger.logInfo('[ChatScreen] Continuing AI response for message: $lastMessageId');
@@ -1106,22 +1165,106 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     return 2046;
   }
 
-  // Navigator methods
-  void _toggleNavigator() {
-    print('[DEBUG ChatScreen] _toggleNavigator called');
-    _chatMessagesKey.currentState?.toggleNavigator();
-    print('[DEBUG ChatScreen] _toggleNavigator completed');
-  }
-
   bool _hasHeadings() {
-    if (_currentChat == null || _currentChat!.messages.isEmpty) return false;
-    
-    final allContent = _currentChat!.messages.map((m) => m.content).join('\n\n');
-    return MarkdownParser.hasHeadings(allContent);
+    return _navigatorHeadings.isNotEmpty;
   }
 
-  bool _isNavigatorOpen() {
-    return _chatMessagesKey.currentState?.isNavigatorOpen ?? false;
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 800;
+    
+    // Darker text on dark theme, icon color on light theme
+    final modelTextColor = theme.brightness == Brightness.dark
+        ? Colors.grey[700] // Darker gray for dark theme
+        : theme.iconTheme.color; // Icon color for light theme
+    
+    return AppBar(
+      title: Text(
+        '',
+        style: TextStyle(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.bold,
+          fontSize: 20,
+        ),
+      ),
+      backgroundColor: theme.canvasColor,
+      elevation: 0,
+      leading: Builder(
+        builder: (context) => IconButton(
+          icon: const Icon(Icons.menu, size: 20),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
+      ),
+      actions: [
+        // Current model name - with width limit and overflow
+        if (isMobile)
+          SizedBox(
+            width: screenWidth * 0.50, // 50% of screen width
+            child: Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Center(
+                child: Text(
+                  _selectedModelObject?.name ?? _selectedModel,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: modelTextColor,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Text(
+              _selectedModelObject?.name ?? _selectedModel,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: modelTextColor,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
+
+        // Model selection
+        IconButton(
+          icon: const Icon(Icons.smart_toy, size: 20),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ModelsScreen(
+                  onModelSelected: (String modelId) {
+                    _updateSelectedModel(modelId, null);
+                    Navigator.pop(context);
+                  },
+                  currentModel: _selectedModel,
+                ),
+              ),
+            );
+          },
+          tooltip: 'Select Model',
+        ),
+        
+        // Navigator button - only show if there are headings
+        if (_hasHeadings())
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              icon: const Icon(Icons.format_list_bulleted, size: 20),
+              onPressed: _toggleNavigator,
+              tooltip: 'Toggle Navigator',
+            ),
+          ),
+      ],
+    );
   }
 
   @override
@@ -1142,66 +1285,35 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       focusNode: _chatInputFocusNode,
     );
 
+    // Build the base layout
+    Widget baseLayout;
     if (isMobile) {
-      return _buildMobileLayout(context, chatInput);
+      baseLayout = _buildMobileLayout(context, chatInput);
     } else {
-      return _buildDesktopLayout(context, chatInput);
+      baseLayout = _buildDesktopLayout(context, chatInput);
     }
+
+    // Wrap with navigator overlay if needed
+    if (_navigatorHeadings.isNotEmpty) {
+      return Stack(
+        children: [
+          baseLayout,
+          MarkdownNavigatorSidebar(
+            headings: _navigatorHeadings,
+            isOpen: _isNavigatorVisible,
+            onClose: _toggleNavigator,
+            onHeadingTap: _onHeadingTap,
+          ),
+        ],
+      );
+    }
+
+    return baseLayout;
   }
 
   Widget _buildMobileLayout(BuildContext context, Widget chatInput) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          '',
-          style: TextStyle(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
-        backgroundColor: theme.canvasColor,
-        elevation: 0,
-        actions: [
-          // Model selection button only on mobile (compact)
-          Padding(
-            padding: const EdgeInsets.only(right: 4.0),
-            child: IconButton(
-              icon: const Icon(Icons.smart_toy, size: 20),
-              onPressed: () async {
-                // Close sidebar on mobile before navigation
-                final screenWidth = MediaQuery.of(context).size.width;
-                if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
-                  if (!_isSidebarCollapsed) {
-                    setState(() {
-                      _isSidebarCollapsed = true;
-                    });
-                  }
-                }
-                
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ModelsScreen(
-                      onModelSelected: (String modelId) {
-                        _updateSelectedModel(modelId, null);
-                      },
-                      currentModel: _selectedModel,
-                    ),
-                  ),
-                );
-
-                if (result is OpenRouterModel) {
-                  _updateSelectedModel(result.id, result);
-                }
-              },
-              tooltip: 'Select Model',
-            ),
-          ),
-        ],
-      ),
+      appBar: _buildAppBar(context),
       drawer: Drawer(
         child: Sidebar(
           width: ChatScreenConstants.sidebarWidth,
@@ -1213,13 +1325,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           currentChat: _currentChat,
           onChatSelect: (chatId) {
             _selectChat(chatId);
-            // Close drawer after selection
             Navigator.of(context).pop();
           },
           onChatDelete: _deleteChat,
           onNewChat: () {
             _createNewChat();
-            // Close drawer after creating new chat
             Navigator.of(context).pop();
           },
         ),
@@ -1268,6 +1378,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             _welcomeSuggestions.clear();
                           });
                         },
+                        onHeadingsUpdated: _onHeadingsUpdated,
+                        onToggleNavigator: _toggleNavigator,
                       ),
                     ),
                   ),
@@ -1284,166 +1396,74 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildDesktopLayout(BuildContext context, Widget chatInput) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
-      body: Row(
+      appBar: _buildAppBar(context),
+      drawer: Drawer(
+        width: ChatScreenConstants.sidebarWidth,
+        child: Sidebar(
+          width: ChatScreenConstants.sidebarWidth,
+          isCollapsed: false,
+          onToggleSidebar: () {
+            Navigator.pop(context);
+          },
+          chats: _chats,
+          currentChat: _currentChat,
+          onChatSelect: (chatId) {
+            _selectChat(chatId);
+            Navigator.of(context).pop();
+          },
+          onChatDelete: _deleteChat,
+          onNewChat: () {
+            _createNewChat();
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+      body: Column(
         children: [
-          // Sidebar
-          Sidebar(
-            width: _isSidebarCollapsed ? ChatScreenConstants.sidebarCollapsedWidth : ChatScreenConstants.sidebarWidth,
-            isCollapsed: _isSidebarCollapsed,
-            onToggleSidebar: () {
-              setState(() {
-                _isSidebarCollapsed = !_isSidebarCollapsed;
-              });
-            },
-            chats: _chats,
-            currentChat: _currentChat,
-            onChatSelect: _selectChat,
-            onChatDelete: _deleteChat,
-            onNewChat: _createNewChat,
-          ),
-          
-          // Main Content
+          // Chat content area with width control
           Expanded(
-            child: Column(
-              children: [
-                // Header - always full width
-                Container(
-                  height: 64,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: theme.cardColor,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 5,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                    border: Border(
-                      bottom: BorderSide(
-                        color: theme.dividerColor,
-                        width: 1,
-                      ),
+            child: _buildChatContentWrapper(
+              context,
+              child: Column(
+                children: [
+                  // Chat Messages
+                  Expanded(
+                    child: ChatMessages(
+                      key: _chatMessagesKey,
+                      openRouterService: _openRouterService,
+                      chatStorageService: _chatStorageService,
+                      chat: _currentChat,
+                      selectedModel: _selectedModel,
+                      onSendMessage: _handleSendMessage,
+                      onMessageDeleted: _refreshChatMessages,
+                      scrollController: _messageScrollController,
+                      continuationSuggestions: _continuationSuggestions,
+                      showSuggestions: _showSuggestions,
+                      isSuggestionsLoading: _isSuggestionsLoading,
+                      onSuggestionsClose: () {
+                        setState(() {
+                          _showSuggestions = false;
+                          _continuationSuggestions.clear();
+                        });
+                      },
+                      welcomeSuggestions: _welcomeSuggestions,
+                      showWelcomeSuggestions: _showWelcomeSuggestions,
+                      onWelcomeSuggestionsClose: () {
+                        setState(() {
+                          _showWelcomeSuggestions = false;
+                          _welcomeSuggestions.clear();
+                        });
+                      },
+                      onHeadingsUpdated: _onHeadingsUpdated,
+                      onToggleNavigator: _toggleNavigator,
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      const Spacer(),
-
-                      // Current model name - no truncation on desktop
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: Text(
-                          _selectedModelObject?.name ?? _selectedModel,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-
-                      IconButton(
-                        icon: const Icon(Icons.smart_toy),
-                        onPressed: () {
-                          // Handle sidebar based on screen width before navigation
-                          final screenWidth = MediaQuery.of(context).size.width;
-                          if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
-                            if (!_isSidebarCollapsed) {
-                              setState(() {
-                                _isSidebarCollapsed = true;
-                              });
-                            }
-                            // Force rebuild to ensure visual update
-                            Future.delayed(ChatScreenConstants.sidebarUpdateDelay, () {
-                              setState(() {});
-                            });
-                          } else {
-                            // On wide screens, ensure sidebar stays open
-                            if (_isSidebarCollapsed) {
-                              setState(() {
-                                _isSidebarCollapsed = false;
-                              });
-                            }
-                          }
-                          
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ModelsScreen(
-                                onModelSelected: (String modelId) {
-                                  // For now, just update the model ID
-                                  // In a full implementation, we would pass the model object
-                                  _updateSelectedModel(modelId, null);
-                                  Navigator.pop(context);
-                                },
-                                currentModel: _selectedModel,
-                              ),
-                            ),
-                          );
-                        },
-                        tooltip: 'Navigate to Models',
-                      ),
-                      
-                      // Navigator button - only show if there are headings
-                      if (_hasHeadings())
-                        IconButton(
-                          icon: Icon(
-                            _isNavigatorOpen() ? Icons.close : Icons.format_list_bulleted,
-                          ),
-                          onPressed: _toggleNavigator,
-                          tooltip: _isNavigatorOpen() ? 'Close Navigator' : 'Open Navigator',
-                        ),
-                    ],
-                  ),
-                ),
-                
-                // Chat content area with width control
-                Expanded(
-                  child: _buildChatContentWrapper(
-                    context,
-                    child: Column(
-                      children: [
-                        // Chat Messages
-                        Expanded(
-                          child: ChatMessages(
-                            key: _chatMessagesKey,
-                            openRouterService: _openRouterService,
-                            chatStorageService: _chatStorageService,
-                            chat: _currentChat,
-                            selectedModel: _selectedModel,
-                            onSendMessage: _handleSendMessage,
-                            onMessageDeleted: _refreshChatMessages,
-                            scrollController: _messageScrollController,
-                            continuationSuggestions: _continuationSuggestions,
-                            showSuggestions: _showSuggestions,
-                            isSuggestionsLoading: _isSuggestionsLoading,
-                            onSuggestionsClose: () {
-                              setState(() {
-                                _showSuggestions = false;
-                                _continuationSuggestions.clear();
-                              });
-                            },
-                            welcomeSuggestions: _welcomeSuggestions,
-                            showWelcomeSuggestions: _showWelcomeSuggestions,
-                            onWelcomeSuggestionsClose: () {
-                              setState(() {
-                                _showWelcomeSuggestions = false;
-                                _welcomeSuggestions.clear();
-                              });
-                            },
-                          ),
-                        ),
-                        
-                        // Input Area
-                        chatInput,
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+                  
+                  // Input Area
+                  chatInput,
+                ],
+              ),
             ),
           ),
         ],

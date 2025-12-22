@@ -270,37 +270,26 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
         final suggestion = entry.value;
         final isActive = index == _currentIndex;
 
-        // Get animation for this suggestion
-        Animation<double>? animation;
-        if (index < _pulseControllers.length && isActive) {
-          animation = Tween<double>(begin: 1.0, end: 0.97).animate(
-            CurvedAnimation(
-              parent: _pulseControllers[index],
-              curve: Curves.easeInOut,
-            ),
-          );
-        }
-
         return Container(
           margin: EdgeInsets.only(top: index == 0 ? 0 : 8.0),
-          child: animation != null
-              ? AnimatedBuilder(
-                  animation: animation,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: animation!.value,
-                      child: child,
-                    );
-                  },
-                  child: _buildSuggestionItem(suggestion, isActive, theme),
-                )
-              : _buildSuggestionItem(suggestion, isActive, theme),
+          child: _buildSuggestionItem(suggestion, isActive, theme),
         );
       }).toList(),
     );
   }
 
   Widget _buildSuggestionItem(String suggestion, bool isActive, ThemeData theme) {
+    // Get animation for this suggestion
+    Animation<double>? animation;
+    if (isActive && _currentIndex < _pulseControllers.length) {
+      animation = Tween<double>(begin: 1.0, end: 0.96).animate(
+        CurvedAnimation(
+          parent: _pulseControllers[_currentIndex],
+          curve: Curves.easeInOutCubic,
+        ),
+      );
+    }
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -309,34 +298,67 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
           widget.onSuggestionTap(suggestion);
         },
         borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: theme.dividerColor.withValues(alpha: 0.3),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
+        child: animation != null
+            ? AnimatedBuilder(
+                animation: animation,
+                builder: (context, child) {
+                  // Use scale directly for perfectly synchronized transition
+                  final scale = animation!.value;
+                  final progress = 1.0 - scale; // 0.0 to 0.04
+                  
+                  // Smooth color transition - perfectly synced with scale
+                  final bgColor = theme.brightness == Brightness.dark
+                      ? Color.lerp(
+                          theme.cardColor,
+                          Colors.white,
+                          progress * 3.5,
+                        )!.withValues(alpha: 0.8)
+                      : Color.lerp(
+                          theme.scaffoldBackgroundColor,
+                          Colors.black,
+                          progress * 2.5,
+                        )!.withValues(alpha: 0.95);
+                  
+                  // Smooth shadow - synced with scale
+                  final shadowOpacity = progress * 0.25;
+                  
+                  return Transform.scale(
+                    scale: scale,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: bgColor,
+                        boxShadow: [
+                          if (shadowOpacity > 0.001)
+                            BoxShadow(
+                              color: theme.colorScheme.primary.withValues(alpha: shadowOpacity),
+                              blurRadius: 6 + progress * 6,
+                              offset: Offset(0, 1 + progress * 2),
+                            ),
+                        ],
+                      ),
+                      child: Text(
+                        suggestion,
+                        style: const TextStyle(fontSize: 13, height: 1.4),
+                      ),
+                    ),
+                  );
+                },
+              )
+            : Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: theme.brightness == Brightness.dark
+                      ? theme.cardColor.withValues(alpha: 0.8)
+                      : theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
+                ),
                 child: Text(
                   suggestion,
                   style: const TextStyle(fontSize: 13, height: 1.4),
                 ),
               ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.arrow_upward,
-                size: 14,
-                color: theme.colorScheme.primary.withValues(
-                  alpha: isActive ? 1.0 : 0.6,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

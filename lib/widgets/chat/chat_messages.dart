@@ -10,8 +10,6 @@ import 'package:gen_ui_chat_ai/widgets/chat/reasoning_message.dart'
 import 'package:gen_ui_chat_ai/widgets/chat/loading_indicator.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/continuation_suggestions.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/welcome_suggestions.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/markdown_navigator_sidebar.dart';
-import 'package:gen_ui_chat_ai/utils/markdown_parser.dart';
 import 'package:gen_ui_chat_ai/utils/markdown_parser_with_keys.dart';
 
 // Initialize logger for this widget
@@ -59,6 +57,10 @@ class ChatMessages extends StatefulWidget {
   final List<String> welcomeSuggestions; // Welcome questions to display
   final bool showWelcomeSuggestions; // Whether to show welcome suggestions
   final VoidCallback? onWelcomeSuggestionsClose; // Callback when welcome suggestions are closed
+  
+  // Navigator callbacks
+  final Function(List<MarkdownHeadingInfoWithKey> headings)? onHeadingsUpdated;
+  final Function()? onToggleNavigator;
 
   const ChatMessages({
     super.key,
@@ -77,6 +79,8 @@ class ChatMessages extends StatefulWidget {
     this.welcomeSuggestions = const [],
     this.showWelcomeSuggestions = false,
     this.onWelcomeSuggestionsClose,
+    this.onHeadingsUpdated,
+    this.onToggleNavigator,
   });
 
   @override
@@ -88,20 +92,18 @@ class ChatMessagesState extends State<ChatMessages> {
   final GlobalKey _loadingIndicatorKey = GlobalKey();
 
   // Navigator state
-  bool _isNavigatorOpen = false;
   List<MarkdownHeadingInfoWithKey> _headings = []; // Store heading info with keys
 
   @override
   void initState() {
     super.initState();
-    print('[DEBUG ChatMessages] initState called, chat: ${widget.chat?.id}, messages: ${widget.chat?.messages.length ?? 0}');
     _logger.logInfo(
       '[ChatMessages] Initializing ChatMessages with chat: ${widget.chat?.id}, messages: ${widget.chat?.messages.length ?? 0}',
     );
 
     // Use external scroll controller if provided, otherwise create new one
     _scrollController = widget.scrollController ?? ScrollController();
-    print('[DEBUG ChatMessages] ScrollController initialized: ${_scrollController.hashCode}');
+    _logger.logInfo('[ChatMessages] ScrollController initialized: ${_scrollController.hashCode}');
     
     // Initialize headings
     _updateHeadings();
@@ -129,8 +131,12 @@ class ChatMessagesState extends State<ChatMessages> {
       _headings = MarkdownParserWithKeys.updateHeadings(_headings, allContent);
     }
     
-    print('[DEBUG ChatMessages] Updated headings: ${_headings.length} total');
     _logger.logInfo('[ChatMessages] Updated headings: ${_headings.length} total');
+    
+    // Notify parent about headings update
+    if (widget.onHeadingsUpdated != null) {
+      widget.onHeadingsUpdated!(_headings);
+    }
   }
 
   @override
@@ -140,78 +146,17 @@ class ChatMessagesState extends State<ChatMessages> {
   }
 
   void _toggleNavigator() {
-    print('[DEBUG ChatMessages] _toggleNavigator called, current state: $_isNavigatorOpen, new state: ${!_isNavigatorOpen}');
-    _logger.logInfo('[ChatMessages] _toggleNavigator called, current state: $_isNavigatorOpen');
-    setState(() {
-      _isNavigatorOpen = !_isNavigatorOpen;
-    });
-    print('[DEBUG ChatMessages] _toggleNavigator completed, new state: $_isNavigatorOpen');
+    _logger.logInfo('[ChatMessages] _toggleNavigator called');
+    
+    // Notify parent about toggle
+    if (widget.onToggleNavigator != null) {
+      widget.onToggleNavigator!();
+    }
   }
 
   // Public method to toggle navigator from parent widgets
   void toggleNavigator() {
-    print('[DEBUG ChatMessages] toggleNavigator() public method called');
     _toggleNavigator();
-  }
-
-  // Public method to check if navigator is open
-  bool get isNavigatorOpen => _isNavigatorOpen;
-
-  void _onHeadingTap(String headingText) {
-    print('[DEBUG HeadingTap] ===== START: Tapped heading: "$headingText" =====');
-    _logger.logInfo('[HeadingTap] ===== START: Tapped heading: $headingText =====');
-    
-    // Find the heading with its key
-    final heading = _headings.firstWhere(
-      (h) => h.text == headingText,
-      orElse: () {
-        print('[DEBUG HeadingTap] ERROR: Heading not found: "$headingText"');
-        _logger.logError('[HeadingTap] Heading not found: $headingText');
-        throw Exception('Heading not found: $headingText');
-      },
-    );
-    
-    print('[DEBUG HeadingTap] Found heading: "${heading.text}" with key: ${heading.key.hashCode}');
-    _logger.logInfo('[HeadingTap] Found heading: ${heading.text} with key: ${heading.key.hashCode}');
-    
-    // Close the navigator FIRST
-    setState(() {
-      _isNavigatorOpen = false;
-    });
-    
-    print('[DEBUG HeadingTap] Navigator closed, waiting for UI update...');
-    _logger.logInfo('[HeadingTap] Navigator closed, waiting for UI update...');
-    
-    // Wait for the navigator to close and UI to update
-    Future.delayed(const Duration(milliseconds: 150), () {
-      print('[DEBUG HeadingTap] After delay, scrolling to widget...');
-      _logger.logInfo('[HeadingTap] After delay, scrolling to widget...');
-      
-      // Get the context of the heading widget
-      final context = heading.key.currentContext;
-      if (context == null) {
-        print('[DEBUG HeadingTap] ❌ ERROR: Heading context is null!');
-        _logger.logError('[HeadingTap] ❌ ERROR: Heading context is null!');
-        return;
-      }
-      
-      // Use Scrollable.ensureVisible to scroll to the widget
-      Scrollable.ensureVisible(
-        context,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-        alignment: 0.15, // 15% from top (below AppBar)
-      ).then((_) {
-        print('[DEBUG HeadingTap] ✅ Scroll to widget completed successfully');
-        _logger.logInfo('[HeadingTap] ✅ Scroll to widget completed successfully');
-      }).catchError((error) {
-        print('[DEBUG HeadingTap] ❌ Scroll error: $error');
-        _logger.logError('[HeadingTap] ❌ Scroll error: $error');
-      });
-      
-      print('[DEBUG HeadingTap] ===== END: Processed heading: "$headingText" =====');
-      _logger.logInfo('[HeadingTap] ===== END: Processed heading: $headingText =====');
-    });
   }
 
 
@@ -268,7 +213,6 @@ class ChatMessagesState extends State<ChatMessages> {
   @override
   @override
   Widget build(BuildContext context) {
-    print('[DEBUG ChatMessages] build() called, navigator open: $_isNavigatorOpen, messages: ${widget.chat?.messages.length ?? 0}');
     final theme = Theme.of(context);
 
     // CRITICAL: Always read from widget.chat, never from local state
@@ -294,27 +238,20 @@ class ChatMessagesState extends State<ChatMessages> {
     // Show welcome suggestions when chat is empty and welcome suggestions are enabled
     final shouldShowWelcome = !hasMessages && widget.showWelcomeSuggestions && widget.welcomeSuggestions.isNotEmpty;
 
-    // Navigator logic
-    final allContent = messages.map((m) => m.content).join('\n\n');
-    final headings = MarkdownParser.parseHeadings(allContent);
-
-    return Stack(
-      children: [
-        // Main chat content
-        Container(
-          color: theme.scaffoldBackgroundColor,
-          child: Column(
-            children: [
-              // Messages List
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: EdgeInsets.only(
-                    left: ChatMessagesConstants.horizontalPadding,
-                    right: ChatMessagesConstants.horizontalPadding,
-                    top: ChatMessagesConstants.verticalPadding,
-                    bottom: ChatMessagesConstants.verticalPadding,
-                  ),
+    return Container(
+      color: theme.scaffoldBackgroundColor,
+      child: Column(
+        children: [
+          // Messages List
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: EdgeInsets.only(
+                left: ChatMessagesConstants.horizontalPadding,
+                right: ChatMessagesConstants.horizontalPadding,
+                top: ChatMessagesConstants.verticalPadding,
+                bottom: ChatMessagesConstants.verticalPadding,
+              ),
               itemCount: messages.length + 
                   (shouldShowWaitingAnimation ? 1 : 0) + 
                   (widget.showSuggestions && widget.continuationSuggestions.isNotEmpty ? 1 : 0) +
@@ -479,18 +416,7 @@ class ChatMessagesState extends State<ChatMessages> {
           ),
         ],
       ),
-    ),
-    
-    // Navigator sidebar
-    if (headings.isNotEmpty)
-      MarkdownNavigatorSidebar(
-        content: allContent,
-        isOpen: _isNavigatorOpen,
-        onClose: _toggleNavigator,
-        onHeadingTap: _onHeadingTap,
-      ),
-  ],
-  );
+    );
   }
 
   Widget _buildWelcomeSuggestions() {
