@@ -6,6 +6,7 @@ class ContinuationSuggestions extends StatefulWidget {
   final List<String> suggestions;
   final Function(String) onSuggestionTap;
   final VoidCallback? onClose;
+  final VoidCallback? onRefresh;
   final bool isLoading;
   final BuildContext? context;
 
@@ -14,6 +15,7 @@ class ContinuationSuggestions extends StatefulWidget {
     required this.suggestions,
     required this.onSuggestionTap,
     this.onClose,
+    this.onRefresh,
     this.isLoading = false,
     this.context,
   });
@@ -40,8 +42,11 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
       duration: const Duration(milliseconds: 400),
     );
 
+    // Limit to 4 suggestions
+    final limitedSuggestions = widget.suggestions.take(4).toList();
+
     // Initialize pulse controllers
-    for (int i = 0; i < widget.suggestions.length; i++) {
+    for (int i = 0; i < limitedSuggestions.length; i++) {
       _pulseControllers.add(
         AnimationController(
           vsync: this,
@@ -53,7 +58,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _animationController.forward().then((_) {
-        if (widget.suggestions.isNotEmpty) {
+        if (limitedSuggestions.isNotEmpty) {
           _startCycle();
         }
       });
@@ -75,12 +80,15 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
     super.didUpdateWidget(oldWidget);
     if (widget.suggestions != oldWidget.suggestions) {
       _stopCycle();
+      // Limit to 4 suggestions
+      final limitedSuggestions = widget.suggestions.take(4).toList();
+      
       // Reinitialize controllers
       for (var c in _pulseControllers) {
         c.dispose();
       }
       _pulseControllers.clear();
-      for (int i = 0; i < widget.suggestions.length; i++) {
+      for (int i = 0; i < limitedSuggestions.length; i++) {
         _pulseControllers.add(
           AnimationController(
             vsync: this,
@@ -96,7 +104,8 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
   }
 
   void _startCycle() {
-    if (!mounted || widget.suggestions.isEmpty) return;
+    final limitedSuggestions = widget.suggestions.take(4).toList();
+    if (!mounted || limitedSuggestions.isEmpty) return;
     _isCycleActive = true;
     _pulseNext(0);
   }
@@ -104,7 +113,8 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
   void _pulseNext(int index) {
     if (!mounted || !_isCycleActive) return;
 
-    if (index >= widget.suggestions.length) {
+    final limitedSuggestions = widget.suggestions.take(4).toList();
+    if (index >= limitedSuggestions.length) {
       _cycleTimer = Timer(const Duration(seconds: 12), () {
         if (!mounted || !_isCycleActive) return;
         _pulseNext(0);
@@ -209,6 +219,22 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
                           ),
                         ),
                       ),
+                      // Refresh button
+                      if (widget.onRefresh != null)
+                        IconButton(
+                          icon: Icon(
+                            Icons.refresh,
+                            size: 16,
+                            color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                          ),
+                          onPressed: () {
+                            _stopCycle();
+                            widget.onRefresh!();
+                          },
+                          tooltip: 'Refresh questions',
+                          splashRadius: 16,
+                        ),
+                      // Close button
                       IconButton(
                         icon: Icon(
                           Icons.close,
@@ -263,9 +289,10 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
 
   Widget _buildSuggestions() {
     final theme = Theme.of(context);
+    final limitedSuggestions = widget.suggestions.take(4).toList();
     
     return Column(
-      children: widget.suggestions.asMap().entries.map((entry) {
+      children: limitedSuggestions.asMap().entries.map((entry) {
         final index = entry.key;
         final suggestion = entry.value;
         final isActive = index == _currentIndex;
@@ -281,7 +308,8 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
   Widget _buildSuggestionItem(String suggestion, bool isActive, ThemeData theme) {
     // Get animation for this suggestion
     Animation<double>? animation;
-    if (isActive && _currentIndex < _pulseControllers.length) {
+    final limitedSuggestions = widget.suggestions.take(4).toList();
+    if (isActive && _currentIndex < _pulseControllers.length && _currentIndex < limitedSuggestions.length) {
       animation = Tween<double>(begin: 1.0, end: 0.96).animate(
         CurvedAnimation(
           parent: _pulseControllers[_currentIndex],

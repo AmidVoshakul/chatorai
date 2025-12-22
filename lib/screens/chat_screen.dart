@@ -1384,6 +1384,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                             _continuationSuggestions.clear();
                           });
                         },
+                        onSuggestionsRefresh: () {
+                          if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
+                            _showContinuationSuggestions(_currentChat!.messages.last);
+                          }
+                        },
                         welcomeSuggestions: _welcomeSuggestions,
                         showWelcomeSuggestions: _showWelcomeSuggestions,
                         onWelcomeSuggestionsClose: () {
@@ -1460,6 +1465,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           _showSuggestions = false;
                           _continuationSuggestions.clear();
                         });
+                      },
+                      onSuggestionsRefresh: () {
+                        if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
+                          _showContinuationSuggestions(_currentChat!.messages.last);
+                        }
                       },
                       welcomeSuggestions: _welcomeSuggestions,
                       showWelcomeSuggestions: _showWelcomeSuggestions,
