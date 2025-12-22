@@ -108,18 +108,24 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   void _selectModel(OpenRouterModel model) async {
     try {
-      // Update model selection in ThemeProvider
-      await _themeProvider.setSelectedModel(model.id);
+      // Update model selection in ThemeProvider (without notifyListeners yet)
+      await _themeProvider.setSelectedModelSilent(model.id);
 
       // Call the callback if provided
       if (widget.onModelSelected != null) {
         widget.onModelSelected!(model.id);
       }
 
-      // Navigate back to chat screen with selected model
+      // Navigate back first
       if (mounted) {
         Navigator.of(context).pop(model);
       }
+
+      // Then notify listeners after navigation to update UI
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Use the regular setter to notify listeners
+        _themeProvider.setSelectedModel(model.id);
+      });
     } catch (e) {
       _logger.logError('[ModelsScreen] Failed to select model: $e');
     }

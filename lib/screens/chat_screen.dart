@@ -98,6 +98,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   bool _isNavigatorVisible = false;
   List<MarkdownHeadingInfoWithKey> _navigatorHeadings = [];
   
+  // Streaming optimization - throttle updates
+  DateTime _lastUpdateTime = DateTime.now();
+  static const Duration _updateThrottle = Duration(milliseconds: 50); // 20 FPS max
+  
   @override
   void initState() {
     super.initState();
@@ -199,15 +203,21 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   // Helper method to update both current chat and chats list
+  // OPTIMIZED: Throttled updates during streaming to prevent lag
   void _updateCurrentChat(Chat updatedChat) {
-    setState(() {
-      _currentChat = updatedChat;
-      // Update the chat in the _chats list
-      final index = _chats.indexWhere((c) => c.id == updatedChat.id);
-      if (index != -1) {
-        _chats[index] = updatedChat;
-      }
-    });
+    _currentChat = updatedChat;
+    // Update the chat in the _chats list
+    final index = _chats.indexWhere((c) => c.id == updatedChat.id);
+    if (index != -1) {
+      _chats[index] = updatedChat;
+    }
+    
+    // Throttle updates during streaming (max 20 FPS)
+    final now = DateTime.now();
+    if (!_isStreaming || now.difference(_lastUpdateTime) >= _updateThrottle) {
+      _lastUpdateTime = now;
+      setState(() {});
+    }
   }
 
   Future<void> _createNewChat() async {
@@ -1033,7 +1043,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             // CRITICAL: setState with NEW objects
             _updateCurrentChat(newChat);
             
-            // Reset streaming state
+            // Reset streaming state and force final rebuild
             setState(() {
               _isStreaming = false;
             });
@@ -1130,6 +1140,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _updateSelectedModel(String modelId, OpenRouterModel? modelObject) {
+    if (!mounted) return;
+    
     setState(() {
       _selectedModel = modelId;
       _selectedModelObject = modelObject;
@@ -1242,8 +1254,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               MaterialPageRoute(
                 builder: (context) => ModelsScreen(
                   onModelSelected: (String modelId) {
+                    // ModelsScreen already handles navigation and ThemeProvider update
+                    // Just update local state
                     _updateSelectedModel(modelId, null);
-                    Navigator.pop(context);
                   },
                   currentModel: _selectedModel,
                 ),
@@ -1298,6 +1311,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       return Stack(
         children: [
           baseLayout,
+          // Navigator overlay with swipe to close
           MarkdownNavigatorSidebar(
             headings: _navigatorHeadings,
             isOpen: _isNavigatorVisible,
@@ -1476,24 +1490,38 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final screenWidth = MediaQuery.of(context).size.width;
     
+    // Wrap with swipe gesture to open navigator (only if headings exist and navigator is closed)
+    Widget content = GestureDetector(
+      onHorizontalDragUpdate: (details) {
+        if (_hasHeadings() && !_isNavigatorVisible) {
+          // Swipe left from right edge to open
+          if (details.primaryDelta! < -10 && 
+              details.globalPosition.dx > screenWidth - 30) {
+            _toggleNavigator();
+          }
+        }
+      },
+      child: child,
+    );
+    
     // Only apply width constraints on desktop (wide screens)
     if (screenWidth >= ChatScreenConstants.mobileBreakpoint) {
       // If wide screen mode is enabled, use full width
       if (themeProvider.wideScreenMode) {
-        return child;
+        return content;
       } else {
         // Use 75% width by default on desktop
         return Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 1200),
             width: screenWidth * 0.75,
-            child: child,
+            child: content,
           ),
         );
       }
     } else {
       // On mobile, always use full width
-      return child;
+      return content;
     }
   }
 

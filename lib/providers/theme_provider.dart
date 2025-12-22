@@ -127,6 +127,22 @@ class ThemeProvider with ChangeNotifier {
     }
   }
 
+  /// Set selected model without notifying listeners immediately
+  /// Useful for navigation scenarios to avoid race conditions
+  Future<void> setSelectedModelSilent(String modelId) async {
+    if (_selectedModelId != modelId) {
+      _selectedModelId = modelId;
+
+      // Find the model object
+      _selectedModelObject = _availableModels.firstWhere(
+        (model) => model.id == modelId,
+        orElse: () => _availableModels.first, // Return first model if not found
+      );
+
+      await saveSettings();
+    }
+  }
+
   /// Check if a model is in favorites
   bool isFavoriteModel(String modelId) {
     return _favoriteModelIds.contains(modelId);
