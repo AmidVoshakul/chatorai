@@ -16,6 +16,7 @@ import 'package:gen_ui_chat_ai/screens/models_screen.dart';
 import 'package:gen_ui_chat_ai/utils/chat_scroll_utils.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
+import 'package:gen_ui_chat_ai/utils/markdown_parser.dart';
 
 // Initialize logger for this screen
 final _logger = LogTags.chatScreen;
@@ -90,6 +91,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   
   // Streaming state
   bool _isStreaming = false;
+  
+  // Navigator state
+  final GlobalKey<ChatMessagesState> _chatMessagesKey = GlobalKey<ChatMessagesState>();
   
   @override
   void initState() {
@@ -348,7 +352,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // Reset scroll lock before sending new message
     // Это единственное место, где сбрасываем флаг для нового user intent
     _chatScrollUtils?.resetAutoScrollLock();
-    print('[CHAT_SCREEN] Auto-scroll lock reset before sending');
     
     // Hide continuation and welcome suggestions when user sends a new message
     if (_showSuggestions || _showWelcomeSuggestions) {
@@ -676,19 +679,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   Future<void> _stopStreaming() async {
     _logger.logInfo('[ChatScreen] Stopping streaming...');
-    print('[DEBUG] [ChatScreen] _stopStreaming called, _isStreaming was: $_isStreaming');
     
     // Set streaming state to false - this will cause streaming callbacks to stop
     setState(() {
       _isStreaming = false;
     });
     
-    print('[DEBUG] [ChatScreen] _isStreaming set to: false');
-    
     // Mark the last message as complete (stopped)
     if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
       final lastMessage = _currentChat!.messages.last;
-      print('[DEBUG] [ChatScreen] Last message isComplete: ${lastMessage.isComplete}, role: ${lastMessage.role}');
       
       if (!lastMessage.isComplete) {
         final stoppedMessage = lastMessage.copyWith(isComplete: true);
@@ -711,13 +710,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           messages: [..._currentChat!.messages.take(_currentChat!.messages.length - 1), stoppedMessage],
           updatedAt: DateTime.now(),
         ));
-        
-        print('[DEBUG] [ChatScreen] Last message marked as complete (stopped)');
       }
     }
     
     _logger.logInfo('[ChatScreen] Streaming stopped successfully');
-    print('[DEBUG] [ChatScreen] _stopStreaming completed');
   }
 
   void _refreshChatMessages() async {
@@ -949,12 +945,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           // Check if streaming was stopped
           if (!isStreamingLocal || !_isStreaming) {
             _logger.logInfo('[ChatScreen] Completion skipped: streaming was stopped');
-            print('[DEBUG] [ChatScreen] onCompletion called but streaming was stopped');
             return;
           }
           
           _logger.logInfo('[ChatScreen] Streaming completed normally');
-          print('[DEBUG] [ChatScreen] onCompletion called, streaming completed normally');
           
           // Final immutable update to mark as complete
           if (mounted && _currentChat != null && _currentChat!.messages.isNotEmpty) {
@@ -1112,6 +1106,24 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     return 2046;
   }
 
+  // Navigator methods
+  void _toggleNavigator() {
+    print('[DEBUG ChatScreen] _toggleNavigator called');
+    _chatMessagesKey.currentState?.toggleNavigator();
+    print('[DEBUG ChatScreen] _toggleNavigator completed');
+  }
+
+  bool _hasHeadings() {
+    if (_currentChat == null || _currentChat!.messages.isEmpty) return false;
+    
+    final allContent = _currentChat!.messages.map((m) => m.content).join('\n\n');
+    return MarkdownParser.hasHeadings(allContent);
+  }
+
+  bool _isNavigatorOpen() {
+    return _chatMessagesKey.currentState?.isNavigatorOpen ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     _logger.logInfo('[ChatScreen] Building ChatScreen, current chat: ${_currentChat?.id}, messages: ${_currentChat?.messages.length ?? 0}');
@@ -1222,32 +1234,41 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 children: [
                   // Chat Messages
                   Expanded(
-                    child: ChatMessages(
-                      openRouterService: _openRouterService,
-                      chatStorageService: _chatStorageService,
-                      chat: _currentChat,
-                      selectedModel: _selectedModel,
-                      onSendMessage: _handleSendMessage,
-                      onMessageDeleted: _refreshChatMessages,
-                      onContinueResponse: (messageId) => _continueAIResponse(messageId),
-                      scrollController: _messageScrollController,
-                      continuationSuggestions: _continuationSuggestions,
-                      showSuggestions: _showSuggestions,
-                      isSuggestionsLoading: _isSuggestionsLoading,
-                      onSuggestionsClose: () {
-                        setState(() {
-                          _showSuggestions = false;
-                          _continuationSuggestions.clear();
-                        });
+                    child: GestureDetector(
+                      onDoubleTap: () {
+                        // Double-tap gesture to toggle navigator on mobile
+                        if (_hasHeadings()) {
+                          _toggleNavigator();
+                        }
                       },
-                      welcomeSuggestions: _welcomeSuggestions,
-                      showWelcomeSuggestions: _showWelcomeSuggestions,
-                      onWelcomeSuggestionsClose: () {
-                        setState(() {
-                          _showWelcomeSuggestions = false;
-                          _welcomeSuggestions.clear();
-                        });
-                      },
+                      child: ChatMessages(
+                        key: _chatMessagesKey,
+                        openRouterService: _openRouterService,
+                        chatStorageService: _chatStorageService,
+                        chat: _currentChat,
+                        selectedModel: _selectedModel,
+                        onSendMessage: _handleSendMessage,
+                        onMessageDeleted: _refreshChatMessages,
+                        onContinueResponse: (messageId) => _continueAIResponse(messageId),
+                        scrollController: _messageScrollController,
+                        continuationSuggestions: _continuationSuggestions,
+                        showSuggestions: _showSuggestions,
+                        isSuggestionsLoading: _isSuggestionsLoading,
+                        onSuggestionsClose: () {
+                          setState(() {
+                            _showSuggestions = false;
+                            _continuationSuggestions.clear();
+                          });
+                        },
+                        welcomeSuggestions: _welcomeSuggestions,
+                        showWelcomeSuggestions: _showWelcomeSuggestions,
+                        onWelcomeSuggestionsClose: () {
+                          setState(() {
+                            _showWelcomeSuggestions = false;
+                            _welcomeSuggestions.clear();
+                          });
+                        },
+                      ),
                     ),
                   ),
                   
@@ -1365,6 +1386,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         },
                         tooltip: 'Navigate to Models',
                       ),
+                      
+                      // Navigator button - only show if there are headings
+                      if (_hasHeadings())
+                        IconButton(
+                          icon: Icon(
+                            _isNavigatorOpen() ? Icons.close : Icons.format_list_bulleted,
+                          ),
+                          onPressed: _toggleNavigator,
+                          tooltip: _isNavigatorOpen() ? 'Close Navigator' : 'Open Navigator',
+                        ),
                     ],
                   ),
                 ),
@@ -1378,6 +1409,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         // Chat Messages
                         Expanded(
                           child: ChatMessages(
+                            key: _chatMessagesKey,
                             openRouterService: _openRouterService,
                             chatStorageService: _chatStorageService,
                             chat: _currentChat,

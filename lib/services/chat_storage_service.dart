@@ -82,10 +82,6 @@ class ChatStorageService {
     _logger.logInfo('[ChatStorageService] Updating message $messageId in chat $chatId');
     _logger.logDebug('[ChatStorageService] Message reasoning before save: "${updatedMessage.reasoning}"');
     
-    // Add print statements for terminal visibility
-    print('[Storage] [ChatStorageService] Updating message $messageId in chat $chatId');
-    print('[Storage] [ChatStorageService] Message reasoning before save: "${updatedMessage.reasoning}"');
-    
     final prefs = await SharedPreferences.getInstance();
     final chats = await _getChatsFromStorage(prefs);
     
@@ -114,10 +110,6 @@ class ChatStorageService {
         
         _logger.logInfo('[ChatStorageService] Message updated successfully');
         _logger.logDebug('[ChatStorageService] Message reasoning after save: "${finalMessage.reasoning}"');
-        
-        // Add print statements for terminal visibility
-        print('[Storage] [ChatStorageService] Message updated successfully');
-        print('[Storage] [ChatStorageService] Message reasoning after save: "${finalMessage.reasoning}"');
       }
     }
   }
@@ -211,7 +203,7 @@ class ChatStorageService {
         for (int j = 0; j < messages.length; j++) {
           final message = messages[j] as Map<String, dynamic>;
           final reasoning = message['reasoning'];
-          _logger.logDebug('[ChatStorageService]   Message $j: reasoning="${reasoning}"');
+          _logger.logDebug('[ChatStorageService]   Message $j: reasoning="$reasoning"');
         }
       }
       
@@ -246,7 +238,7 @@ class ChatStorageService {
       for (int j = 0; j < messages.length; j++) {
         final message = messages[j] as Map<String, dynamic>;
         final reasoning = message['reasoning'];
-        _logger.logDebug('[ChatStorageService]   Message $j: reasoning="${reasoning}"');
+        _logger.logDebug('[ChatStorageService]   Message $j: reasoning="$reasoning"');
       }
     }
     

@@ -1005,10 +1005,6 @@ class OpenRouterService {
   ) async {
     String fullContent = '';
     bool hasReasoning = false;
-    int chunkCount = 0;
-    int reasoningChunkCount = 0;
-
-    print('[DEBUG] [OpenRouter] _processSSEStream START, includeReasoning: $includeReasoning');
 
     try {
       await for (final chunk in stream.stream) {
@@ -1022,7 +1018,6 @@ class OpenRouterService {
             if (dataStr.isEmpty || dataStr == '[DONE]') {
               if (dataStr == '[DONE]') {
                 _logger.logInfo('[OpenRouter] Stream completed');
-                print('[DEBUG] [OpenRouter] Received [DONE]');
               }
               continue;
             }
@@ -1037,29 +1032,23 @@ class OpenRouterService {
 
               if (content != null && content is String) {
                 fullContent += content;
-                chunkCount++;
                 onChunk(content);
                 _logger.logVerbose('[OpenRouter] Content chunk: "$content"');
-                print('[DEBUG] [OpenRouter] Content chunk #$chunkCount: "${content.substring(0, min(20, content.length))}${content.length > 20 ? '...' : ''}"');
               }
 
               if (reasoning != null && reasoning is String) {
                 hasReasoning = true;
-                reasoningChunkCount++;
                 if (onReasoning != null) {
                   onReasoning(reasoning);
                 }
                 _logger.logVerbose('[OpenRouter] Reasoning chunk: "$reasoning"');
-                print('[DEBUG] [OpenRouter] Reasoning chunk #$reasoningChunkCount: "${reasoning.substring(0, min(20, reasoning.length))}${reasoning.length > 20 ? '...' : ''}"');
               }
 
               if (choice?['finish_reason'] != null) {
                 _logger.logInfo('[OpenRouter] Finish reason: ${choice?['finish_reason']}');
-                print('[DEBUG] [OpenRouter] Finish reason: ${choice?['finish_reason']}');
               }
             } catch (e) {
               _logger.logWarning('[OpenRouter] Failed to parse chunk: $e');
-              print('[DEBUG] [OpenRouter] ERROR parsing chunk: $e');
             }
           }
         }
@@ -1067,7 +1056,6 @@ class OpenRouterService {
     } catch (e) {
       if (e is Exception && e.toString().contains('cancelled')) {
         _logger.logInfo('[OpenRouter] Stream cancelled');
-        print('[DEBUG] [OpenRouter] Stream cancelled');
         if (onStopped != null) onStopped();
         return;
       }
@@ -1076,12 +1064,10 @@ class OpenRouterService {
 
     if (includeReasoning && !hasReasoning) {
       _logger.logInfo('[OpenRouter] Reasoning not in stream, will be available after completion');
-      print('[DEBUG] [OpenRouter] No reasoning chunks received');
     }
 
     onCompletion(fullContent);
     _logger.logInfo('[OpenRouter] Streaming completed, total content length: ${fullContent.length}');
-    print('[DEBUG] [OpenRouter] _processSSEStream END, total content: ${fullContent.length}, chunks: $chunkCount, reasoning chunks: $reasoningChunkCount');
   }
 
   /// Simulate streaming response for testing

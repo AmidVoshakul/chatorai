@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
-// Import min function
-import 'dart:math' show min;
-
 enum MessageRole {
   user,
   assistant,
@@ -105,25 +102,11 @@ class Message {
       'reasoning': reasoning,
     };
     
-    // Log reasoning content during serialization
-    if (reasoning != null && reasoning!.isNotEmpty) {
-      print('[Message.toJson] Serializing reasoning: "${reasoning!.substring(0, min(50, reasoning!.length))}..."');
-    } else {
-      print('[Message.toJson] No reasoning to serialize');
-    }
-    
     return json;
   }
 
   static Message fromJson(Map<String, dynamic> json) {
     final reasoning = json['reasoning'];
-    
-    // Log reasoning content during deserialization
-    if (reasoning != null && reasoning is String && reasoning.isNotEmpty) {
-      print('[Message.fromJson] Deserializing reasoning: "${reasoning.substring(0, min(50, reasoning.length))}..."');
-    } else {
-      print('[Message.fromJson] No reasoning found in JSON: $reasoning');
-    }
     
     return Message(
       id: json['id'],
