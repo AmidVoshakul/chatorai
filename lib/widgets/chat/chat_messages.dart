@@ -87,12 +87,16 @@ class ChatMessages extends StatefulWidget {
   State<ChatMessages> createState() => ChatMessagesState();
 }
 
-class ChatMessagesState extends State<ChatMessages> {
+class ChatMessagesState extends State<ChatMessages>
+    with AutomaticKeepAliveClientMixin {
   late ScrollController _scrollController;
   final GlobalKey _loadingIndicatorKey = GlobalKey();
 
   // Navigator state
   List<MarkdownHeadingInfoWithKey> _headings = []; // Store heading info with keys
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -211,8 +215,8 @@ class ChatMessagesState extends State<ChatMessages> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
+    super.build(context); // Needed for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
 
     // CRITICAL: Always read from widget.chat, never from local state

@@ -17,15 +17,13 @@ class ReasoningMessage extends StatefulWidget {
 }
 
 class _ReasoningMessageState extends State<ReasoningMessage>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   static const _shimmerDuration = Duration(milliseconds: 1500);
   static const _chunkTimeout = Duration(milliseconds: 300);
   static const _bubbleWidthRatio = 0.65;
   static const _bubblePadding = 12.0;
   static const _textFontSize = 13.0;
   static const _headerFontSize = 12.0;
-  static const _shimmerAlpha = 0.4;
-  static const _shimmerAlphaMax = 1.0;
 
   bool _isExpanded = false;
   bool _isShimmering = false;
@@ -59,10 +57,12 @@ class _ReasoningMessageState extends State<ReasoningMessage>
   void didUpdateWidget(ReasoningMessage oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    // Only start shimmer if reasoning content changed
     if (widget.reasoning != oldWidget.reasoning) {
       _startShimmer();
     }
 
+    // Only stop shimmer when streaming ends
     if (widget.isStreaming != oldWidget.isStreaming && !widget.isStreaming) {
       _stopShimmer();
     }
@@ -72,9 +72,7 @@ class _ReasoningMessageState extends State<ReasoningMessage>
     _shimmerStopTimer?.cancel();
 
     if (!_isShimmering) {
-      setState(() {
-        _isShimmering = true;
-      });
+      _isShimmering = true;
       _shimmerController.repeat();
     }
 
@@ -88,9 +86,7 @@ class _ReasoningMessageState extends State<ReasoningMessage>
     _shimmerStopTimer = null;
 
     if (_isShimmering) {
-      setState(() {
-        _isShimmering = false;
-      });
+      _isShimmering = false;
       _shimmerController.stop();
     }
   }
@@ -103,22 +99,30 @@ class _ReasoningMessageState extends State<ReasoningMessage>
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context); // Needed for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context);
 
-    final content = _buildContent(theme, localizations);
-
-    if (_isShimmering) {
-      return _buildShimmerWrapper(theme, content);
-    }
-
-    return content;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: FractionallySizedBox(
+        widthFactor: _bubbleWidthRatio,
+        child: Stack(
+          children: [
+            _buildContent(theme, localizations),
+            if (_isShimmering) _buildShimmerOverlay(theme),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildContent(ThemeData theme, AppLocalizations? localizations) {
     return Container(
-      width: MediaQuery.of(context).size.width * _bubbleWidthRatio,
       padding: const EdgeInsets.all(_bubblePadding),
       decoration: BoxDecoration(
         color: theme.colorScheme.secondary.withValues(alpha: 0.1),
@@ -128,6 +132,45 @@ class _ReasoningMessageState extends State<ReasoningMessage>
       child: _isExpanded
           ? _buildExpandedContent(theme, localizations)
           : _buildCollapsedContent(theme, localizations),
+    );
+  }
+
+  Widget _buildShimmerOverlay(ThemeData theme) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _shimmerAnimation,
+          builder: (_, __) {
+            return Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: _buildShimmerGradient(theme),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Gradient _buildShimmerGradient(ThemeData theme) {
+    final shimmerPosition = _shimmerAnimation.value;
+    
+    return LinearGradient(
+      begin: Alignment(-1.0 + shimmerPosition, 0),
+      end: Alignment(shimmerPosition, 0),
+      colors: [
+        Colors.transparent,
+        theme.colorScheme.secondary.withOpacity(0.1),
+        theme.colorScheme.secondary.withOpacity(0.25),
+        theme.colorScheme.secondary.withOpacity(0.4),
+        theme.colorScheme.secondary.withOpacity(0.5),
+        theme.colorScheme.secondary.withOpacity(0.4),
+        theme.colorScheme.secondary.withOpacity(0.25),
+        theme.colorScheme.secondary.withOpacity(0.1),
+        Colors.transparent,
+      ],
+      stops: const [0.0, 0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9, 1.0],
     );
   }
 
@@ -171,48 +214,6 @@ class _ReasoningMessageState extends State<ReasoningMessage>
           ),
       ],
     );
-  }
-
-  Widget _buildShimmerWrapper(ThemeData theme, Widget child) {
-    return AnimatedBuilder(
-      animation: _shimmerAnimation,
-      builder: (_, __) {
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.secondary.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: theme.dividerColor.withValues(alpha: 0.3),
-            ),
-          ),
-          child: ShaderMask(
-            shaderCallback: _buildShimmerGradient(theme),
-            blendMode: BlendMode.srcIn,
-            child: child,
-          ),
-        );
-      },
-    );
-  }
-
-  ShaderCallback _buildShimmerGradient(ThemeData theme) {
-    return (bounds) {
-      final shimmerPosition = _shimmerAnimation.value;
-      final shimmerWidth = 0.3;
-      final beginX = (shimmerPosition - shimmerWidth) * bounds.width;
-      final endX = shimmerPosition * bounds.width;
-
-      return LinearGradient(
-        begin: Alignment(beginX / bounds.width, 0),
-        end: Alignment(endX / bounds.width, 0),
-        colors: [
-          theme.colorScheme.secondary.withValues(alpha: _shimmerAlpha),
-          theme.colorScheme.secondary.withValues(alpha: _shimmerAlphaMax),
-          theme.colorScheme.secondary.withValues(alpha: _shimmerAlpha),
-        ],
-        stops: const [0.0, 0.5, 1.0],
-      ).createShader(bounds);
-    };
   }
 
   Widget _buildHeader(AppLocalizations? localizations, ThemeData theme) {
