@@ -32,12 +32,18 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
   Timer? _cycleTimer;
   bool _isCycleActive = false;
   List<String> _currentSuggestions = [];
+  
+  // Navigation groups
+  int _currentGroup = 0;
+  final int _groupSize = 4;
+  late List<List<String>> _questionGroups;
 
   @override
   void initState() {
     super.initState();
 
     _currentSuggestions = widget.suggestions;
+    _initQuestionGroups();
 
     _animationController = AnimationController(
       vsync: this,
@@ -149,11 +155,20 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
     _rotationController.reverse().then((_) {
       if (!mounted) return;
 
-      // Generate new questions
-      final newQuestions = WelcomeQuestionsData.getRandomQuestions(
-        widget.context ?? context,
-        count: 4,
-      );
+      // Update groups with all questions
+      List<String> newQuestions;
+      if (widget.context != null) {
+        _initQuestionGroups();
+        // Get next group for rotation
+        _currentGroup = (_currentGroup + 1) % _questionGroups.length;
+        newQuestions = _questionGroups[_currentGroup];
+      } else {
+        // Fallback to random questions
+        newQuestions = WelcomeQuestionsData.getRandomQuestions(
+          widget.context ?? context,
+          count: 4,
+        );
+      }
 
       // Dispose old controllers
       for (var c in _pulseControllers) {
@@ -205,6 +220,90 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
 
     setState(() {
       _currentIndex = 0;
+    });
+  }
+
+  void _initQuestionGroups() {
+    final ctx = widget.context ?? context;
+    
+    final allQuestions = WelcomeQuestionsData.getAllQuestions(ctx);
+    _questionGroups = [];
+    
+    for (var i = 0; i < allQuestions.length; i += _groupSize) {
+      final end = (i + _groupSize) < allQuestions.length ? i + _groupSize : allQuestions.length;
+      _questionGroups.add(allQuestions.sublist(i, end));
+    }
+  }
+
+  void _previousGroup() {
+    if (_questionGroups.isEmpty) return;
+    
+    _stopCycle();
+    
+    final newGroup = (_currentGroup - 1 + _questionGroups.length) % _questionGroups.length;
+    
+    _rotationController.reverse().then((_) {
+      if (!mounted) return;
+      
+      final newQuestions = _questionGroups[newGroup];
+      
+      for (var c in _pulseControllers) {
+        c.dispose();
+      }
+      _pulseControllers.clear();
+      
+      setState(() {
+        _currentGroup = newGroup;
+        _currentSuggestions = newQuestions;
+        _currentIndex = 0;
+      });
+      
+      for (int i = 0; i < _currentSuggestions.length; i++) {
+        _pulseControllers.add(
+          AnimationController(
+            vsync: this,
+            duration: const Duration(milliseconds: 800),
+          ),
+        );
+      }
+      
+      _rotationController.forward();
+    });
+  }
+
+  void _nextGroup() {
+    if (_questionGroups.isEmpty) return;
+    
+    _stopCycle();
+    
+    final newGroup = (_currentGroup + 1) % _questionGroups.length;
+    
+    _rotationController.reverse().then((_) {
+      if (!mounted) return;
+      
+      final newQuestions = _questionGroups[newGroup];
+      
+      for (var c in _pulseControllers) {
+        c.dispose();
+      }
+      _pulseControllers.clear();
+      
+      setState(() {
+        _currentGroup = newGroup;
+        _currentSuggestions = newQuestions;
+        _currentIndex = 0;
+      });
+      
+      for (int i = 0; i < _currentSuggestions.length; i++) {
+        _pulseControllers.add(
+          AnimationController(
+            vsync: this,
+            duration: const Duration(milliseconds: 800),
+          ),
+        );
+      }
+      
+      _rotationController.forward();
     });
   }
 
@@ -278,6 +377,11 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
 
                     // Suggestions list
                     _buildSuggestions(),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // Navigation arrows
+                    _buildNavigationArrows(),
                   ],
                 ),
               ),
@@ -363,6 +467,13 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                         borderRadius: BorderRadius.circular(12),
                         color: bgColor,
                         boxShadow: [
+                          // Base shadow for all states
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                          // Animated shadow for active state
                           if (shadowOpacity > 0.001)
                             BoxShadow(
                               color: theme.colorScheme.primary.withValues(alpha: shadowOpacity),
@@ -392,6 +503,13 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                   color: theme.brightness == Brightness.dark
                       ? theme.cardColor.withValues(alpha: 0.8)
                       : theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Text(
                   suggestion,
@@ -405,6 +523,73 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                 ),
               ),
       ),
+    );
+  }
+
+  Widget _buildNavigationArrows() {
+    final theme = Theme.of(context);
+    
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Previous button
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _previousGroup,
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width:36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: theme.brightness == Brightness.dark
+                    ? theme.cardColor.withValues(alpha: 0.6)
+                    : theme.scaffoldBackgroundColor.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Icon(
+                Icons.chevron_left,
+                size: 20,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ),
+        ),
+        
+        const SizedBox(width: 12),
+        
+        // Next button
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _nextGroup,
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: theme.brightness == Brightness.dark
+                    ? theme.cardColor.withValues(alpha: 0.6)
+                    : theme.scaffoldBackgroundColor.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

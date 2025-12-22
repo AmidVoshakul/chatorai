@@ -222,44 +222,56 @@ class _SidebarState extends State<Sidebar> {
           
           // Footer
           if (!widget.isCollapsed)
-            Column(
-              children: [
-                Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: _theme.dividerColor,
-                ),
-                // Settings
-                ListTile(
-                  leading: const Icon(Icons.settings),
-                  title: Text(localizations.settings),
-                  minLeadingWidth: 0,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  onTap: () {
-                    _logger.logInfo('[Sidebar] Attempting to navigate to settings...');
-                    try {
-                      Navigator.pushNamed(context, '/settings');
-                    } catch (e) {
-                      _logger.logError('[Sidebar] Navigation failed: $e');
-                      _logger.logInfo('[Sidebar] Manual navigation to SettingsScreen');
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                      );
-                    }
-                  },
-                ),
-                // App Info
-                ListTile(
-                  leading: const Icon(Icons.info),
-                  title: Text(localizations.appInfo),
-                  minLeadingWidth: 0,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  onTap: () {
-                    _showAppInfo(context, _language, localizations);
-                  },
-                ),
-              ],
+            Container(
+              decoration: BoxDecoration(
+                color: _theme.scaffoldBackgroundColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: _theme.dividerColor,
+                  ),
+                  // Settings
+                  ListTile(
+                    leading: const Icon(Icons.settings),
+                    title: Text(localizations.settings),
+                    minLeadingWidth: 0,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    onTap: () {
+                      _logger.logInfo('[Sidebar] Attempting to navigate to settings...');
+                      try {
+                        Navigator.pushNamed(context, '/settings');
+                      } catch (e) {
+                        _logger.logError('[Sidebar] Navigation failed: $e');
+                        _logger.logInfo('[Sidebar] Manual navigation to SettingsScreen');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                        );
+                      }
+                    },
+                  ),
+                  // App Info
+                  ListTile(
+                    leading: const Icon(Icons.info),
+                    title: Text(localizations.appInfo),
+                    minLeadingWidth: 0,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    onTap: () {
+                      _showAppInfo(context, _language, localizations);
+                    },
+                  ),
+                ],
+              ),
             ),
         ],
       ),

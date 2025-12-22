@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 
 class ChatInput extends StatefulWidget {
   final Function(String) onSendMessage;
@@ -232,7 +233,27 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
           ? const EdgeInsets.only(top: 16)
           : const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isMobile ? const Color(0xFF1A1A1A) : Colors.transparent,
+        color: isMobile
+            ? (theme.brightness == Brightness.dark
+                ? UbuntuColors.inputContainerDark
+                : UbuntuColors.inputContainerLight)
+            : Colors.transparent,
+        border: isMobile
+            ? Border(
+                top: BorderSide(
+                  color: theme.brightness == Brightness.dark
+                      ? UbuntuColors.inputContainerBorderDark
+                      : UbuntuColors.inputContainerBorderLight,
+                  width: 1,
+                ),
+                bottom: BorderSide(
+                  color: theme.brightness == Brightness.dark
+                      ? UbuntuColors.navBarBorderDark
+                      : UbuntuColors.navBarBorderLight,
+                  width: 1,
+                ),
+              )
+            : null,
         boxShadow: isMobile
             ? [
                 // Shadow on top to make it float
@@ -275,7 +296,9 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                   ),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A1A),
+                      color: theme.brightness == Brightness.dark
+                          ? UbuntuColors.inputContainerDark
+                          : UbuntuColors.inputContainerLight,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(24),
                         topRight: Radius.circular(24),
@@ -302,7 +325,9 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                             : null,
                         bgColor: _plusActive
                             ? null
-                            : const Color(0xFF1A1A1A),
+                            : (theme.brightness == Brightness.dark
+                                ? UbuntuColors.inputContainerDark
+                                : UbuntuColors.inputContainerLight),
                         onTap: _showPlusMenu,
                         child: Icon(
                           Icons.add,
@@ -340,7 +365,9 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                                   ],
                                 ),
                           bgColor: _textController.text.trim().isEmpty
-                              ? const Color(0xFF1A1A1A)
+                              ? (theme.brightness == Brightness.dark
+                                  ? UbuntuColors.inputContainerDark
+                                  : UbuntuColors.inputContainerLight)
                               : null,
                           onTap: _textController.text.trim().isEmpty
                               ? _startSpeechToText
@@ -365,9 +392,14 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
               children: [
                 buildActionButton(
                   key: _plusKey,
-                  bgColor: theme.iconTheme.color?.withValues(alpha: 0.1),
+                  bgColor: theme.brightness == Brightness.dark
+                      ? UbuntuColors.inputContainerDark
+                      : UbuntuColors.inputContainerLight,
                   onTap: _showPlusMenu,
-                  child: const Icon(Icons.add),
+                  child: Icon(
+                    Icons.add,
+                    color: theme.iconTheme.color,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -377,8 +409,16 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                     ),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: theme.iconTheme.color?.withValues(alpha: 0.1),
+                        color: theme.brightness == Brightness.dark
+                            ? UbuntuColors.inputContainerDark
+                            : UbuntuColors.inputContainerLight,
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: theme.brightness == Brightness.dark
+                              ? UbuntuColors.inputContainerBorderDark
+                              : UbuntuColors.inputContainerBorderLight,
+                          width: 1,
+                        ),
                       ),
                       child: Focus(
                         onKeyEvent: (node, event) {
@@ -422,7 +462,9 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                             ],
                           ),
                     bgColor: _textController.text.trim().isEmpty
-                        ? theme.iconTheme.color?.withValues(alpha: 0.1)
+                        ? (theme.brightness == Brightness.dark
+                            ? UbuntuColors.inputContainerDark
+                            : UbuntuColors.inputContainerLight)
                         : null,
                     onTap: _textController.text.trim().isEmpty
                         ? _startSpeechToText
