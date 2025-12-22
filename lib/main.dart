@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:gen_ui_chat_ai/screens/chat_screen.dart';
 import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
@@ -11,6 +12,14 @@ void main() {
   // Initialize logger
   LogConfig.enabled = true;
   LogConfig.minimumLevel = LogLevel.debug;
+
+  // Set navigation bar color to match chat input
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      systemNavigationBarColor: Color(0xFF1A1A1A),
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
 
   runApp(
     MultiProvider(
