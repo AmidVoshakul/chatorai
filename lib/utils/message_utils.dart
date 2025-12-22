@@ -346,6 +346,36 @@ class MessageUtils {
     return message.role == chat_models.MessageRole.user;
   }
 
+  /// Проверить, может ли сообщение быть перегенерировано
+  static bool canRegenerateMessage(Message message) {
+    // Можно перегенерировать только AI сообщения
+    return message.role == chat_models.MessageRole.assistant;
+  }
+
+  /// Перегенерировать ответ AI
+  /// 
+  /// Удаляет последнее AI сообщение и вызывает callback для повторной генерации
+  static Future<bool> regenerateMessage({
+    required String chatId,
+    required String messageId,
+    required ChatStorageService chatStorageService,
+    required Function() onRegenerate,
+    BuildContext? context,
+  }) async {
+    try {
+      // Удаляем AI сообщение из базы данных данных
+      await chatStorageService.deleteMessageFromChat(chatId, messageId);
+
+      // Уведомляем родительский компонент
+      onRegenerate();
+
+      return true;
+    } catch (e) {
+      _logger.logError('[MessageUtils] Error regenerating message: $e');
+      return false;
+    }
+  }
+
   /// Получить список доступных действий для сообщения
   static List<MessageAction> getMessageActions(Message message) {
     final List<MessageAction> actions = [];
@@ -367,6 +397,17 @@ class MessageUtils {
         label: 'Edit',
         localizedLabel: {'en': 'Edit', 'ru': 'Редактировать'},
         action: MessageActionType.edit,
+        color: Colors.blue,
+      ));
+    }
+
+    // Перегенерация доступна только для AI сообщений
+    if (canRegenerateMessage(message)) {
+      actions.add(MessageAction(
+        icon: Icons.refresh,
+        label: 'Regenerate',
+        localizedLabel: {'en': 'Regenerate', 'ru': 'Перегенерировать'},
+        action: MessageActionType.regenerate,
         color: Colors.blue,
       ));
     }
@@ -404,6 +445,7 @@ enum MessageActionType {
   copy,
   share,
   copyChat, // Добавляем действие для копирования всего чата
+  regenerate, // Перегенерация ответа AI
 }
 
 /// Результат редактирования сообщения

@@ -469,6 +469,96 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _sendToAI(message);
   }
 
+  /// Перегенерировать ответ AI
+  /// 
+  /// Удаляет последнее AI сообщение и генерирует новый ответ на основе последнего user сообщения
+  Future<void> _regenerateResponse() async {
+    _logger.logInfo('[ChatScreen] Starting regeneration...');
+    
+    if (_currentChat == null || _currentChat!.messages.isEmpty) {
+      _logger.logError('[ChatScreen] Cannot regenerate - no chat or messages');
+      return;
+    }
+
+    // Скрываем вопросы для продолжения
+    setState(() {
+      _showSuggestions = false;
+      _continuationSuggestions.clear();
+    });
+
+    // Находим последнее AI сообщение
+    final lastAIMessageIndex = _currentChat!.messages.lastIndexWhere(
+      (m) => m.role == MessageRole.assistant
+    );
+    
+    if (lastAIMessageIndex == -1) {
+      _logger.logError('[ChatScreen] Cannot regenerate - no AI message found');
+      return;
+    }
+
+    // Находим последнее user сообщение (перед AI)
+    final lastUserMessageIndex = _currentChat!.messages.lastIndexWhere(
+      (m) => m.role == MessageRole.user
+    );
+    
+    if (lastUserMessageIndex == -1) {
+      _logger.logError('[ChatScreen] Cannot regenerate - no user message found');
+      return;
+    }
+
+    final lastUserMessage = _currentChat!.messages[lastUserMessageIndex];
+    final lastAIMessage = _currentChat!.messages[lastAIMessageIndex];
+
+    _logger.logInfo('[ChatScreen] Regenerating response for user message: ${lastUserMessage.id}');
+    _logger.logInfo('[ChatScreen] Deleting AI message: ${lastAIMessage.id}');
+
+    // Удаляем AI сообщение из базы данных
+    await _chatStorageService.deleteMessageFromChat(
+      _currentChat!.id,
+      lastAIMessage.id
+    );
+
+    // Обновляем локальный чат без AI сообщения
+    final updatedMessages = List<Message>.from(_currentChat!.messages);
+    updatedMessages.removeAt(lastAIMessageIndex);
+    
+    final updatedChat = _currentChat!.copyWith(
+      messages: updatedMessages,
+      updatedAt: DateTime.now(),
+    );
+    _updateCurrentChat(updatedChat);
+
+    // Сбрасываем scroll lock
+    _chatScrollUtils?.resetAutoScrollLock();
+
+    // Добавляем новый placeholder для AI
+    final newAssistantMessage = Message(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      role: MessageRole.assistant,
+      content: '',
+      timestamp: DateTime.now(),
+      isComplete: false,
+      model: _selectedModel,
+    );
+    
+    await _chatStorageService.addMessageToChat(_currentChat!.id, newAssistantMessage);
+    
+    // Обновляем локальный чат с новым placeholder
+    final chatWithNewPlaceholder = _currentChat!.copyWith(
+      messages: [...updatedMessages, newAssistantMessage],
+      updatedAt: DateTime.now(),
+    );
+    _updateCurrentChat(chatWithNewPlaceholder);
+
+    // Прокручиваем к индикатору
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _chatScrollUtils?.scrollToIndicator();
+    });
+
+    // Начинаем потоковую передачу с content последнего user сообщения
+    _sendToAI(lastUserMessage.content);
+  }
+
   Future<void> _sendToAI(String userMessage) async {
     _logger.logInfo('[ChatScreen] Starting _sendToAI with message: $userMessage');
     if (_currentChat == null) {
@@ -1374,6 +1464,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                         onSendMessage: _handleSendMessage,
                         onMessageDeleted: _refreshChatMessages,
                         onContinueResponse: (messageId) => _continueAIResponse(messageId),
+                        onRegenerateResponse: _regenerateResponse,
                         scrollController: _messageScrollController,
                         continuationSuggestions: _continuationSuggestions,
                         showSuggestions: _showSuggestions,
@@ -1471,6 +1562,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           _showContinuationSuggestions(_currentChat!.messages.last);
                         }
                       },
+                      onRegenerateResponse: _regenerateResponse,
                       welcomeSuggestions: _welcomeSuggestions,
                       showWelcomeSuggestions: _showWelcomeSuggestions,
                       onWelcomeSuggestionsClose: () {

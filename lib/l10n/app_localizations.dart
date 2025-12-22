@@ -713,6 +713,12 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to delete this message?'**
   String get areYouSureYouWantToDeleteThisMessage;
 
+  /// No description provided for @areYouSureYouWantToRegenerateThisMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to regenerate this message?'**
+  String get areYouSureYouWantToRegenerateThisMessage;
+
   /// No description provided for @messageDeletedSuccessfully.
   ///
   /// In en, this message translates to:
@@ -724,6 +730,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to delete message'**
   String get failedToDeleteMessage;
+
+  /// No description provided for @regenerationStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Regeneration started'**
+  String get regenerationStarted;
+
+  /// No description provided for @failedToRegenerateMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to regenerate message'**
+  String get failedToRegenerateMessage;
 
   /// No description provided for @messageCopied.
   ///
@@ -1564,30 +1582,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Generating suggestions...'**
   String get generatingSuggestions;
-
-  /// No description provided for @tableOfContents.
-  ///
-  /// In en, this message translates to:
-  /// **'Table of Contents'**
-  String get tableOfContents;
-
-  /// No description provided for @noHeadingsFound.
-  ///
-  /// In en, this message translates to:
-  /// **'No headings found'**
-  String get noHeadingsFound;
-
-  /// No description provided for @useMarkdownHeadings.
-  ///
-  /// In en, this message translates to:
-  /// **'Use #, ##, ### in Markdown'**
-  String get useMarkdownHeadings;
-
-  /// No description provided for @totalHeadings.
-  ///
-  /// In en, this message translates to:
-  /// **'Total headings'**
-  String get totalHeadings;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

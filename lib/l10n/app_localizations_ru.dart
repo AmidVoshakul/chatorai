@@ -328,10 +328,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get areYouSureYouWantToDeleteThisMessage => 'Вы уверены, что хотите удалить это сообщение?';
 
   @override
+  String get areYouSureYouWantToRegenerateThisMessage => 'Вы уверены, что хотите перегенерировать это сообщение?';
+
+  @override
   String get messageDeletedSuccessfully => 'Сообщение успешно удалено';
 
   @override
   String get failedToDeleteMessage => 'Не удалось удалить сообщение';
+
+  @override
+  String get regenerationStarted => 'Перегенерация начата';
+
+  @override
+  String get failedToRegenerateMessage => 'Не удалось перегенерировать сообщение';
 
   @override
   String get messageCopied => 'Сообщение скопировано';
@@ -752,16 +761,4 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get generatingSuggestions => 'Генерация предложений...';
-
-  @override
-  String get tableOfContents => 'Содержание';
-
-  @override
-  String get noHeadingsFound => 'Заголовки не найдены';
-
-  @override
-  String get useMarkdownHeadings => 'Используйте #, ##, ### в Markdown';
-
-  @override
-  String get totalHeadings => 'Всего заголовков';
 }
