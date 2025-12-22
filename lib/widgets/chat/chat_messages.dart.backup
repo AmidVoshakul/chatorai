@@ -161,8 +161,14 @@ class ChatMessagesState extends State<ChatMessages> {
     print('[DEBUG HeadingTap] ===== START: Tapped heading: "$headingText" =====');
     _logger.logInfo('[HeadingTap] ===== START: Tapped heading: $headingText =====');
     
-    // Find the heading with its key
-    final heading = _headings.firstWhere(
+    // Find the heading in the parsed list
+    final allContent = (widget.chat?.messages ?? []).map((m) => m.content).join('\n\n');
+    final headings = MarkdownParser.parseHeadings(allContent);
+    
+    print('[DEBUG HeadingTap] Found ${headings.length} headings total');
+    _logger.logInfo('[HeadingTap] Found ${headings.length} headings total');
+    
+    final heading = headings.firstWhere(
       (h) => h.text == headingText,
       orElse: () {
         print('[DEBUG HeadingTap] ERROR: Heading not found: "$headingText"');
@@ -171,8 +177,52 @@ class ChatMessagesState extends State<ChatMessages> {
       },
     );
     
-    print('[DEBUG HeadingTap] Found heading: "${heading.text}" with key: ${heading.key.hashCode}');
-    _logger.logInfo('[HeadingTap] Found heading: ${heading.text} with key: ${heading.key.hashCode}');
+    print('[DEBUG HeadingTap] Found heading at line ${heading.lineIndex}: "${heading.text}"');
+    _logger.logInfo('[HeadingTap] Found heading at line ${heading.lineIndex}: ${heading.text}');
+    
+    // Find which message contains this heading
+    final messages = widget.chat?.messages ?? [];
+    int messageIndex = -1;
+    int linesBeforeMessage = 0;
+    int targetMessageStartLine = 0;
+    
+    print('[DEBUG HeadingTap] Searching through ${messages.length} messages...');
+    print('[DEBUG HeadingTap] Target heading line index: ${heading.lineIndex}');
+    _logger.logInfo('[HeadingTap] Target heading line index: ${heading.lineIndex}');
+    
+    for (int i = 0; i < messages.length; i++) {
+      final msg = messages[i];
+      final messageLines = msg.content.split('\n');
+      final messageStartLine = linesBeforeMessage;
+      final messageEndLine = linesBeforeMessage + messageLines.length - 1;
+      
+      print('[DEBUG HeadingTap] Message $i: lines $messageStartLine-$messageEndLine, content length: ${msg.content.length}, lines in content: ${messageLines.length}');
+      _logger.logInfo('[HeadingTap] Message $i: lines $messageStartLine-$messageEndLine, content length: ${msg.content.length}, lines in content: ${messageLines.length}');
+      
+      if (heading.lineIndex >= messageStartLine && heading.lineIndex <= messageEndLine) {
+        messageIndex = i;
+        targetMessageStartLine = messageStartLine;
+        print('[DEBUG HeadingTap] ✅ Found message containing heading: index $i');
+        _logger.logInfo('[HeadingTap] Found message containing heading: index $i');
+        break;
+      }
+      
+      linesBeforeMessage += messageLines.length + 1; // +1 for the \n between messages
+      print('[DEBUG HeadingTap] Updated linesBeforeMessage to: $linesBeforeMessage');
+    }
+    
+    if (messageIndex == -1) {
+      print('[DEBUG HeadingTap] ❌ Could not find message containing heading: $headingText');
+      _logger.logWarning('Could not find message containing heading: $headingText');
+      return;
+    }
+    
+    print('[DEBUG HeadingTap] Target message index: $messageIndex');
+    print('[DEBUG HeadingTap] Navigator is open: $_isNavigatorOpen');
+    print('[DEBUG HeadingTap] targetMessageStartLine: $targetMessageStartLine');
+    _logger.logInfo('[HeadingTap] Target message index: $messageIndex');
+    _logger.logInfo('[HeadingTap] Navigator is open: $_isNavigatorOpen');
+    _logger.logInfo('[HeadingTap] targetMessageStartLine: $targetMessageStartLine');
     
     // Close the navigator FIRST
     setState(() {
@@ -184,36 +234,176 @@ class ChatMessagesState extends State<ChatMessages> {
     
     // Wait for the navigator to close and UI to update
     Future.delayed(const Duration(milliseconds: 150), () {
-      print('[DEBUG HeadingTap] After delay, scrolling to widget...');
-      _logger.logInfo('[HeadingTap] After delay, scrolling to widget...');
+      print('[DEBUG HeadingTap] After delay, calculating scroll...');
+      _logger.logInfo('[HeadingTap] After delay, calculating scroll...');
       
-      // Get the context of the heading widget
-      final context = heading.key.currentContext;
-      if (context == null) {
-        print('[DEBUG HeadingTap] ❌ ERROR: Heading context is null!');
-        _logger.logError('[HeadingTap] ❌ ERROR: Heading context is null!');
+      // Calculate the scroll offset
+      final hasMessages = messages.isNotEmpty;
+      final shouldShowWelcome = !hasMessages && widget.showWelcomeSuggestions && widget.welcomeSuggestions.isNotEmpty;
+      
+      // Base offset
+      double offset = 0;
+      
+      if (shouldShowWelcome) {
+        offset += 120.0; // Welcome suggestions height (approx)
+        print('[DEBUG HeadingTap] Adding welcome suggestions offset: 120');
+        _logger.logInfo('[HeadingTap] Adding welcome suggestions offset: 120');
+      }
+      
+      print('[DEBUG HeadingTap] Calculating offset for messageIndex=$messageIndex, targetMessageStartLine=$targetMessageStartLine');
+      _logger.logInfo('[HeadingTap] Calculating offset for messageIndex=$messageIndex, targetMessageStartLine=$targetMessageStartLine');
+      
+      // Add height of messages before the target message
+      for (int i = 0; i < messageIndex; i++) {
+        final msg = messages[i];
+        
+        // Skip empty messages
+        if (msg.content.isEmpty && (msg.reasoning == null || msg.reasoning!.isEmpty)) {
+          print('[DEBUG HeadingTap] Skipping empty message $i');
+          _logger.logInfo('[HeadingTap] Skipping empty message $i');
+          continue;
+        }
+        
+        // Calculate actual height for this message
+        double messageHeight = 0;
+        
+        // Add reasoning height if present
+        if (msg.reasoning != null && msg.reasoning!.isNotEmpty) {
+          final reasoningLength = msg.reasoning!.length;
+          final reasoningLines = (reasoningLength / 50).ceil();
+          final reasoningHeight = 40.0 + (reasoningLines * 18.0); // Header + lines
+          messageHeight += reasoningHeight;
+          print('[DEBUG HeadingTap] Message $i has reasoning: length=$reasoningLength, lines=$reasoningLines, height=$reasoningHeight');
+          _logger.logInfo('[HeadingTap] Message $i has reasoning: length=$reasoningLength, lines=$reasoningLines, height=$reasoningHeight');
+          
+          // Add spacing between reasoning and content
+          if (msg.content.isNotEmpty) {
+            messageHeight += ChatMessagesConstants.messageSpacing;
+          }
+        }
+        
+        // Add content height if present
+        if (msg.content.isNotEmpty) {
+          final contentLength = msg.content.length;
+          final contentLines = (contentLength / 50).ceil();
+          final contentHeight = 60.0 + (contentLines * 20.0); // Base + per-line
+          messageHeight += contentHeight;
+          print('[DEBUG HeadingTap] Message $i content: length=$contentLength, lines=$contentLines, height=$contentHeight');
+          _logger.logInfo('[HeadingTap] Message $i content: length=$contentLength, lines=$contentLines, height=$contentHeight');
+        }
+        
+        // Add spacing between messages
+        final spacing = ChatMessagesConstants.messageSpacing;
+        offset += messageHeight + spacing;
+        
+        print('[DEBUG HeadingTap] Message $i: totalHeight=$messageHeight, spacing=$spacing, cumulative=$offset');
+        _logger.logInfo('[HeadingTap] Message $i: totalHeight=$messageHeight, spacing=$spacing, cumulative=$offset');
+      }
+      
+      // Now add partial height for the target message up to the heading
+      print('[DEBUG HeadingTap] About to calculate partial height for message $messageIndex');
+      _logger.logInfo('[HeadingTap] About to calculate partial height for message $messageIndex');
+      
+      final targetMsg = messages[messageIndex];
+      print('[DEBUG HeadingTap] Target message content length: ${targetMsg.content.length}, isEmpty: ${targetMsg.content.isEmpty}');
+      _logger.logInfo('[HeadingTap] Target message content length: ${targetMsg.content.length}, isEmpty: ${targetMsg.content.isEmpty}');
+      
+      if (targetMsg.content.isNotEmpty) {
+        // Calculate how far into the message the heading is
+        final targetLines = targetMsg.content.split('\n');
+        final headingRelativeLine = heading.lineIndex - targetMessageStartLine;
+        
+        // Calculate percentage through the message
+        final percentage = headingRelativeLine / targetLines.length;
+        
+        // Calculate partial height
+        final contentLength = targetMsg.content.length;
+        final contentLines = (contentLength / 50).ceil();
+        final fullContentHeight = 60.0 + (contentLines * 20.0);
+        final partialHeight = fullContentHeight * percentage;
+        
+        offset += partialHeight;
+        
+        print('[DEBUG HeadingTap] Target message $messageIndex: targetMessageStartLine=$targetMessageStartLine, heading.lineIndex=${heading.lineIndex}, relativeLine=$headingRelativeLine of ${targetLines.length} (${(percentage * 100).toStringAsFixed(1)}%), partial height: $partialHeight');
+        _logger.logInfo('[HeadingTap] Target message $messageIndex: targetMessageStartLine=$targetMessageStartLine, heading.lineIndex=${heading.lineIndex}, relativeLine=$headingRelativeLine of ${targetLines.length} (${(percentage * 100).toStringAsFixed(1)}%), partial height: $partialHeight');
+      } else {
+        print('[DEBUG HeadingTap] Target message content is empty, skipping partial height');
+        _logger.logInfo('[HeadingTap] Target message content is empty, skipping partial height');
+      }
+      
+      // Adjust offset so heading appears below AppBar
+      // ScrollController.animateTo(offset) makes offset appear at TOP of screen
+      // We want heading at position: AppBarHeight + gap
+      // So we need to subtract that amount from offset
+      final appBarHeight = 64.0;
+      final gapBelowAppBar = 16.0;
+      final adjustment = appBarHeight + gapBelowAppBar;
+      
+      // If offset is greater than adjustment, subtract it
+      // This makes the heading appear lower on screen
+      if (offset > adjustment) {
+        offset -= adjustment;
+      } else {
+        offset = 0; // Can't go negative
+      }
+      
+      print('[DEBUG HeadingTap] Adjusted for AppBar: subtracted $adjustment, final offset: $offset');
+      _logger.logInfo('[HeadingTap] Adjusted for AppBar: subtracted $adjustment, final offset: $offset');
+      
+      // Check if scroll controller is attached
+      if (!_scrollController.hasClients) {
+        print('[DEBUG HeadingTap] ❌ ERROR: Scroll controller not attached!');
+        _logger.logError('[HeadingTap] ❌ ERROR: Scroll controller not attached!');
+        // Try to scroll after a longer delay
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (_scrollController.hasClients && offset > 0) {
+            print('[DEBUG HeadingTap] Retrying scroll after delay');
+            _logger.logInfo('[HeadingTap] Retrying scroll after delay');
+            _scrollController.animateTo(
+              offset,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+            );
+          }
+        });
         return;
       }
       
-      // Use Scrollable.ensureVisible to scroll to the widget
-      Scrollable.ensureVisible(
-        context,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-        alignment: 0.15, // 15% from top (below AppBar)
-      ).then((_) {
-        print('[DEBUG HeadingTap] ✅ Scroll to widget completed successfully');
-        _logger.logInfo('[HeadingTap] ✅ Scroll to widget completed successfully');
-      }).catchError((error) {
-        print('[DEBUG HeadingTap] ❌ Scroll error: $error');
-        _logger.logError('[HeadingTap] ❌ Scroll error: $error');
-      });
+      final currentPos = _scrollController.position.pixels;
+      final maxPos = _scrollController.position.maxScrollExtent;
+      print('[DEBUG HeadingTap] Scroll controller: current=$currentPos, max=$maxPos, target=$offset');
+      _logger.logInfo('[HeadingTap] Scroll controller: current=$currentPos, max=$maxPos, target=$offset');
+      
+      // Scroll to the position
+      if (offset > 0) {
+        print('[DEBUG HeadingTap] ✅ Executing scroll to offset: $offset');
+        _logger.logInfo('[HeadingTap] ✅ Executing scroll to offset: $offset');
+        _scrollController.animateTo(
+          offset,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        ).then((_) {
+          print('[DEBUG HeadingTap] ✅ Scroll animation completed successfully');
+          _logger.logInfo('[HeadingTap] ✅ Scroll animation completed successfully');
+        }).catchError((error) {
+          print('[DEBUG HeadingTap] ❌ Scroll error: $error');
+          _logger.logError('[HeadingTap] ❌ Scroll error: $error');
+        });
+      } else {
+        print('[DEBUG HeadingTap] ⚠️ Offset is 0, skipping scroll');
+        _logger.logWarning('[HeadingTap] Offset is 0, skipping scroll');
+        // Try scrolling to a small offset as test
+        if (_scrollController.hasClients && _scrollController.position.pixels < 50) {
+          print('[DEBUG HeadingTap] Testing scroll to 50px');
+          _logger.logInfo('[HeadingTap] Testing scroll to 50px');
+          _scrollController.animateTo(50, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+        }
+      }
       
       print('[DEBUG HeadingTap] ===== END: Processed heading: "$headingText" =====');
       _logger.logInfo('[HeadingTap] ===== END: Processed heading: $headingText =====');
     });
   }
-
 
   // Public method to send messages from outside (e.g., from chat input)
   void sendMessage(String content) {
@@ -389,7 +579,6 @@ class ChatMessagesState extends State<ChatMessages> {
                           onMessageUpdated: (newContent) {},
                           onDelete: () {},
                           onContinueResponse: null,
-                          headings: _headings,
                         ),
                       ],
                     );
@@ -439,7 +628,6 @@ class ChatMessagesState extends State<ChatMessages> {
                             message.role == MessageRole.assistant
                             ? () => widget.onContinueResponse?.call(message.id)
                             : null,
-                        headings: _headings,
                       ),
                     ],
                   );
@@ -472,7 +660,6 @@ class ChatMessagesState extends State<ChatMessages> {
                   onContinueResponse: message.role == MessageRole.assistant
                       ? () => widget.onContinueResponse?.call(message.id)
                       : null,
-                  headings: _headings,
                 );
               },
             ),

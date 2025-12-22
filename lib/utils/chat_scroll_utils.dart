@@ -64,8 +64,6 @@ class ChatScrollUtils {
     if (_debugHistory.length > 20) {
       _debugHistory.removeAt(0); // Keep last 20 entries
     }
-    // Выводим в консоль для отладки
-    print('[SCROLL] $message');
     _logger.logInfo('[Scroll] $message');
   }
   

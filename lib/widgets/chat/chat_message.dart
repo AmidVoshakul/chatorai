@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:gen_ui_chat_ai/widgets/chat/code_block.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/scrollable_action_buttons.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/error_message.dart';
@@ -11,6 +12,7 @@ import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
 import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
+import 'package:gen_ui_chat_ai/utils/markdown_parser_with_keys.dart';
 
 // Import min function
 import 'dart:math' show min;
@@ -30,6 +32,7 @@ class ChatMessage extends StatefulWidget {
   final Function(String)? onMessageUpdated; // Callback for when message content is updated
   final VoidCallback? onContinueResponse; // Callback for continuing response
   final bool isLastMessage; // Whether this is the last message in chat
+  final List<MarkdownHeadingInfoWithKey>? headings; // Headings with keys for navigation
 
   const ChatMessage({
     super.key,
@@ -44,6 +47,7 @@ class ChatMessage extends StatefulWidget {
     this.onMessageUpdated,
     this.onContinueResponse,
     this.isLastMessage = false,
+    this.headings,
   });
 
   @override
@@ -476,7 +480,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
 
   Widget _buildMessageContent(BuildContext context) {
     if (widget.message.content.isEmpty) {
-      return Container();
+      return const SizedBox.shrink();
     }
 
     // Режим inline редактирования
@@ -487,6 +491,34 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
     // Check if content contains code blocks that need special handling
     if (widget.message.content.contains('```')) {
       return _buildCustomMarkdownContent(context);
+    }
+
+    // If headings are provided, use MarkdownWithHeadings
+    if (widget.headings != null && widget.headings!.isNotEmpty) {
+      // Filter headings that are in this message
+      final messageHeadings = widget.headings!.where((h) {
+        // Check if heading text is in this message content
+        return widget.message.content.contains(h.text);
+      }).toList();
+      
+      if (messageHeadings.isNotEmpty) {
+        return MarkdownBody(
+          data: widget.message.content,
+          styleSheet: UbuntuMarkdownStyles.getMarkdownStyles(context),
+          selectable: true,
+          builders: {
+            'h1': _HeadingBuilder(messageHeadings, level: 1),
+            'h2': _HeadingBuilder(messageHeadings, level: 2),
+            'h3': _HeadingBuilder(messageHeadings, level: 3),
+            'h4': _HeadingBuilder(messageHeadings, level: 4),
+          },
+          onTapLink: (text, href, title) {
+            if (href != null) {
+              // TODO: Handle link tapping
+            }
+          },
+        );
+      }
     }
 
     return MarkdownBody(
@@ -851,4 +883,35 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   }
 }
 
-// Удаляем эти классы, так как они теперь в loading_indicator.dart
+class _HeadingBuilder extends MarkdownElementBuilder {
+  final List<MarkdownHeadingInfoWithKey> headings;
+  final int level;
+
+  _HeadingBuilder(this.headings, {required this.level});
+
+  @override
+  Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    final text = element.textContent.trim();
+    
+    // Find the matching heading with key
+    final heading = headings.firstWhere(
+      (h) => h.text == text && h.level == level,
+      orElse: () => MarkdownHeadingInfoWithKey(
+        text: text,
+        level: level,
+        lineIndex: 0,
+        rawLine: '',
+        key: GlobalKey(),
+      ),
+    );
+
+    return Container(
+      key: heading.key,
+      padding: const EdgeInsets.only(top: 16, bottom: 8),
+      child: Text(
+        text,
+        style: preferredStyle,
+      ),
+    );
+  }
+}

@@ -752,4 +752,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get generatingSuggestions => 'Генерация предложений...';
+
+  @override
+  String get tableOfContents => 'Содержание';
+
+  @override
+  String get noHeadingsFound => 'Заголовки не найдены';
+
+  @override
+  String get useMarkdownHeadings => 'Используйте #, ##, ### в Markdown';
+
+  @override
+  String get totalHeadings => 'Всего заголовков';
 }

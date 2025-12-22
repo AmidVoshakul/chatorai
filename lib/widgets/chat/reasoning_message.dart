@@ -104,6 +104,11 @@ class _ReasoningMessageState extends State<ReasoningMessage>
 
   @override
   Widget build(BuildContext context) {
+    // Hide if reasoning is empty
+    if (widget.reasoning.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context);
 
@@ -176,7 +181,7 @@ class _ReasoningMessageState extends State<ReasoningMessage>
   Widget _buildShimmerWrapper(ThemeData theme, Widget child) {
     return AnimatedBuilder(
       animation: _shimmerAnimation,
-      builder: (_, __) {
+      builder: (context, child) {
         return Container(
           decoration: BoxDecoration(
             color: theme.colorScheme.secondary.withValues(alpha: 0.15),

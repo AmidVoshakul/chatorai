@@ -1564,6 +1564,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Generating suggestions...'**
   String get generatingSuggestions;
+
+  /// No description provided for @tableOfContents.
+  ///
+  /// In en, this message translates to:
+  /// **'Table of Contents'**
+  String get tableOfContents;
+
+  /// No description provided for @noHeadingsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No headings found'**
+  String get noHeadingsFound;
+
+  /// No description provided for @useMarkdownHeadings.
+  ///
+  /// In en, this message translates to:
+  /// **'Use #, ##, ### in Markdown'**
+  String get useMarkdownHeadings;
+
+  /// No description provided for @totalHeadings.
+  ///
+  /// In en, this message translates to:
+  /// **'Total headings'**
+  String get totalHeadings;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

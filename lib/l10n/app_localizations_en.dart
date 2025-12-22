@@ -752,4 +752,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generatingSuggestions => 'Generating suggestions...';
+
+  @override
+  String get tableOfContents => 'Table of Contents';
+
+  @override
+  String get noHeadingsFound => 'No headings found';
+
+  @override
+  String get useMarkdownHeadings => 'Use #, ##, ### in Markdown';
+
+  @override
+  String get totalHeadings => 'Total headings';
 }

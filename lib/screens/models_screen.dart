@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart' show UbuntuColors;
-import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
 import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -15,11 +14,7 @@ class ModelsScreen extends StatefulWidget {
   final Function(String)? onModelSelected;
   final String? currentModel;
 
-  const ModelsScreen({
-    super.key,
-    this.onModelSelected,
-    this.currentModel,
-  });
+  const ModelsScreen({super.key, this.onModelSelected, this.currentModel});
 
   @override
   State<ModelsScreen> createState() => _ModelsScreenState();
@@ -58,8 +53,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
     final searchQuery = _searchController.text.toLowerCase();
     setState(() {
       // Apply favorites filter first
-      List<OpenRouterModel> models = _showFavoritesOnly 
-          ? _models.where((model) => _themeProvider.isFavoriteModel(model.id)).toList()
+      List<OpenRouterModel> models = _showFavoritesOnly
+          ? _models
+                .where((model) => _themeProvider.isFavoriteModel(model.id))
+                .toList()
           : _models;
 
       // Then apply search filter
@@ -68,9 +65,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
       } else {
         _filteredModels = models.where((model) {
           return model.name.toLowerCase().contains(searchQuery) ||
-                 model.id.toLowerCase().contains(searchQuery) ||
-                 model.description.toLowerCase().contains(searchQuery) ||
-                 (model.provider?.toLowerCase().contains(searchQuery) ?? false);
+              model.id.toLowerCase().contains(searchQuery) ||
+              model.description.toLowerCase().contains(searchQuery) ||
+              (model.provider?.toLowerCase().contains(searchQuery) ?? false);
         }).toList();
       }
     });
@@ -79,8 +76,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
   void _clearSearch() {
     _searchController.clear();
     setState(() {
-      _filteredModels = _showFavoritesOnly 
-          ? _models.where((model) => _themeProvider.isFavoriteModel(model.id)).toList()
+      _filteredModels = _showFavoritesOnly
+          ? _models
+                .where((model) => _themeProvider.isFavoriteModel(model.id))
+                .toList()
           : _models;
     });
   }
@@ -93,26 +92,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
   }
 
   void _toggleFavorite(String modelId) {
-    final isNowFavorite = !_themeProvider.isFavoriteModel(modelId);
     setState(() {
       _themeProvider.toggleFavoriteModel(modelId);
     });
-    
-    // Show notification
-    if (isNowFavorite) {
-      SnackbarUtils.showSuccessSnackBar(
-        context: context,
-        message: 'Added to favorites',
-        icon: Icons.favorite,
-      );
-    } else {
-      SnackbarUtils.showInfoSnackBar(
-        context: context,
-        message: 'Removed from favorites',
-        icon: Icons.favorite_border,
-      );
-    }
-    
+
     // Update filtered list if favorites filter is active
     if (_showFavoritesOnly) {
       _onSearchChanged();
@@ -124,8 +107,6 @@ class _ModelsScreenState extends State<ModelsScreen> {
   // ==============================================
 
   void _selectModel(OpenRouterModel model) async {
-    final localizations = AppLocalizations.of(context)!;
-
     try {
       // Update model selection in ThemeProvider
       await _themeProvider.setSelectedModel(model.id);
@@ -135,26 +116,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
         widget.onModelSelected!(model.id);
       }
 
-      // Show success snackbar
-      SnackbarUtils.showSuccessSnackBar(
-        context: context,
-        message: '${localizations.modelSelected}: ${model.name}',
-        icon: Icons.check_circle,
-      );
-
       // Navigate back to chat screen with selected model
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-          Navigator.of(context).pop(model);
-        }
-      });
+      if (mounted) {
+        Navigator.of(context).pop(model);
+      }
     } catch (e) {
       _logger.logError('[ModelsScreen] Failed to select model: $e');
-      SnackbarUtils.showErrorSnackBar(
-        context: context,
-        message: 'Error selecting model: ${e.toString()}',
-        icon: Icons.error,
-      );
     }
   }
 
@@ -173,11 +140,13 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
       // Get models from ThemeProvider
       _models = _themeProvider.availableModels;
-      
+
       // Preserve current filters and search state
       final searchQuery = _searchController.text.toLowerCase();
-      List<OpenRouterModel> models = _showFavoritesOnly 
-          ? _models.where((model) => _themeProvider.isFavoriteModel(model.id)).toList()
+      List<OpenRouterModel> models = _showFavoritesOnly
+          ? _models
+                .where((model) => _themeProvider.isFavoriteModel(model.id))
+                .toList()
           : _models;
 
       if (searchQuery.isEmpty) {
@@ -185,9 +154,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
       } else {
         _filteredModels = models.where((model) {
           return model.name.toLowerCase().contains(searchQuery) ||
-                 model.id.toLowerCase().contains(searchQuery) ||
-                 model.description.toLowerCase().contains(searchQuery) ||
-                 (model.provider?.toLowerCase().contains(searchQuery) ?? false);
+              model.id.toLowerCase().contains(searchQuery) ||
+              model.description.toLowerCase().contains(searchQuery) ||
+              (model.provider?.toLowerCase().contains(searchQuery) ?? false);
         }).toList();
       }
 
@@ -195,37 +164,17 @@ class _ModelsScreenState extends State<ModelsScreen> {
         _isLoading = false;
       });
 
-      _logger.logInfo('[ModelsScreen] Successfully loaded ${_models.length} models');
+      _logger.logInfo(
+        '[ModelsScreen] Successfully loaded ${_models.length} models',
+      );
     } catch (e) {
       _logger.logError('[ModelsScreen] Failed to load models: $e');
       setState(() {
         _isLoading = false;
       });
 
-      // Show error snackbar with more helpful information
-      final localizations = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${localizations.errorLoadingModels}: $e'),
-              const SizedBox(height: 4),
-              Text(
-                'Please check your OpenRouter API key configuration.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white70,
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 5),
-        ),
-      );
+      // Log error instead of showing snackbar
+      _logger.logError('[ModelsScreen] Failed to load models: $e');
     }
   }
 
@@ -237,9 +186,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       appBar: AppBar(
         title: Text(
           localizations.models,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).canvasColor,
         elevation: 0,
@@ -250,7 +197,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
               color: _showFavoritesOnly ? Colors.red : null,
             ),
             onPressed: _toggleFavoritesFilter,
-            tooltip: _showFavoritesOnly ? 'Show All Models' : 'Show Favorites Only',
+            tooltip: _showFavoritesOnly
+                ? 'Show All Models'
+                : 'Show Favorites Only',
           ),
         ],
       ),
@@ -264,16 +213,20 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: _showFavoritesOnly 
-                        ? 'Search favorites...' 
+                    hintText: _showFavoritesOnly
+                        ? 'Search favorites...'
                         : localizations.searchModels,
                     hintStyle: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600],
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[400]
+                          : Colors.grey[600],
                       fontSize: 16,
                     ),
                     prefixIcon: Icon(
                       Icons.search,
-                      color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[300] : Colors.grey[700],
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[300]
+                          : Colors.grey[700],
                     ),
                     suffixIcon: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -291,7 +244,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
                           IconButton(
                             icon: Icon(
                               Icons.clear,
-                              color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[300] : Colors.grey[700],
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.grey[300]
+                                  : Colors.grey[700],
                             ),
                             onPressed: _clearSearch,
                           ),
@@ -300,16 +257,16 @@ class _ModelsScreenState extends State<ModelsScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
-                        color: Theme.of(context).brightness == Brightness.dark 
-                            ? Colors.grey[700]! 
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[700]!
                             : Colors.grey[400]!,
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
-                        color: Theme.of(context).brightness == Brightness.dark 
-                            ? Colors.grey[700]! 
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[700]!
                             : Colors.grey[400]!,
                         width: 1,
                       ),
@@ -321,10 +278,13 @@ class _ModelsScreenState extends State<ModelsScreen> {
                         width: 2,
                       ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                     filled: true,
-                    fillColor: Theme.of(context).brightness == Brightness.dark 
-                        ? Theme.of(context).cardColor 
+                    fillColor: Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context).cardColor
                         : Colors.white,
                     isDense: true,
                   ),
@@ -344,15 +304,15 @@ class _ModelsScreenState extends State<ModelsScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredModels.isEmpty
-                    ? _buildEmptyState()
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(8.0),
-                        itemCount: _filteredModels.length,
-                        itemBuilder: (context, index) {
-                          final model = _filteredModels[index];
-                          return _buildModelCard(model);
-                        },
-                      ),
+                ? _buildEmptyState()
+                : ListView.builder(
+                    padding: const EdgeInsets.all(8.0),
+                    itemCount: _filteredModels.length,
+                    itemBuilder: (context, index) {
+                      final model = _filteredModels[index];
+                      return _buildModelCard(model);
+                    },
+                  ),
           ),
         ],
       ),
@@ -375,20 +335,15 @@ class _ModelsScreenState extends State<ModelsScreen> {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
       elevation: 2,
-      color: isSelected 
+      color: isSelected
           ? Theme.of(context).cardColor
           : Theme.of(context).cardColor,
       shape: isSelected
           ? RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
-              side: BorderSide(
-                color: Colors.green,
-                width: 2.0,
-              ),
+              side: BorderSide(color: Colors.green, width: 2.0),
             )
-          : RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+          : RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: () {
@@ -410,7 +365,9 @@ class _ModelsScreenState extends State<ModelsScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).textTheme.titleMedium!.color,
+                            color: Theme.of(
+                              context,
+                            ).textTheme.titleMedium!.color,
                           ),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
@@ -431,19 +388,19 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   // Favorite button
                   IconButton(
                     icon: Icon(
-                      _themeProvider.isFavoriteModel(model.id) 
-                          ? Icons.favorite 
+                      _themeProvider.isFavoriteModel(model.id)
+                          ? Icons.favorite
                           : Icons.favorite_border,
-                      color: _themeProvider.isFavoriteModel(model.id) 
-                          ? Colors.red 
+                      color: _themeProvider.isFavoriteModel(model.id)
+                          ? Colors.red
                           : null,
                       size: 24,
                     ),
                     onPressed: () {
                       _toggleFavorite(model.id);
                     },
-                    tooltip: _themeProvider.isFavoriteModel(model.id) 
-                        ? 'Remove from favorites' 
+                    tooltip: _themeProvider.isFavoriteModel(model.id)
+                        ? 'Remove from favorites'
                         : 'Add to favorites',
                   ),
                   // Info button
@@ -460,12 +417,12 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   ),
                 ],
               ),
-const SizedBox(height: 12),
+              const SizedBox(height: 12),
               Divider(
                 height: 1,
                 thickness: 1,
-                color: Theme.of(context).brightness == Brightness.dark 
-                    ? UbuntuColors.darkBorderColor 
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? UbuntuColors.darkBorderColor
                     : UbuntuColors.lightBorderColor,
               ),
               const SizedBox(height: 12),
@@ -512,14 +469,12 @@ const SizedBox(height: 12),
       children: [
         // Free/Paid indicator
         Chip(
-          label: Text(model.isFree 
-              ? localizations.free
-              : localizations.paid),
+          label: Text(model.isFree ? localizations.free : localizations.paid),
           backgroundColor: model.isFree
               ? Colors.green.withValues(alpha: 0.15)
               : Colors.orange.withValues(alpha: 0.15),
           side: BorderSide(
-            color: model.isFree 
+            color: model.isFree
                 ? Colors.green.withValues(alpha: 0.3)
                 : Colors.orange.withValues(alpha: 0.3),
             width: 1.5,
@@ -536,13 +491,16 @@ const SizedBox(height: 12),
             color: model.isFree ? Colors.green : Colors.orange,
           ),
         ),
-        
+
         // Reasoning capability
         if (model.supportsReasoning)
           Chip(
             label: Text(localizations.reasoning),
             backgroundColor: Colors.blue.withValues(alpha: 0.15),
-            side: BorderSide(color: Colors.blue.withValues(alpha: 0.3), width: 1.5),
+            side: BorderSide(
+              color: Colors.blue.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
             labelStyle: const TextStyle(
               color: Colors.blue,
               fontSize: 11,
@@ -551,43 +509,60 @@ const SizedBox(height: 12),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             avatar: const Icon(Icons.psychology, size: 14, color: Colors.blue),
           ),
-        
+
         // Multimodal capability
         if (model.supportsMultimodal)
           Chip(
             label: Text(localizations.multimodal),
             backgroundColor: Colors.purple.withValues(alpha: 0.15),
-            side: BorderSide(color: Colors.purple.withValues(alpha: 0.3), width: 1.5),
+            side: BorderSide(
+              color: Colors.purple.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
             labelStyle: const TextStyle(
               color: Colors.purple,
               fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            avatar: const Icon(Icons.view_in_ar, size: 14, color: Colors.purple),
+            avatar: const Icon(
+              Icons.view_in_ar,
+              size: 14,
+              color: Colors.purple,
+            ),
           ),
-        
+
         // Vision capability
         if (model.capabilities.vision)
           Chip(
             label: Text(localizations.vision),
             backgroundColor: Colors.deepOrange.withValues(alpha: 0.15),
-            side: BorderSide(color: Colors.deepOrange.withValues(alpha: 0.3), width: 1.5),
+            side: BorderSide(
+              color: Colors.deepOrange.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
             labelStyle: const TextStyle(
               color: Colors.deepOrange,
               fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            avatar: const Icon(Icons.visibility, size: 14, color: Colors.deepOrange),
+            avatar: const Icon(
+              Icons.visibility,
+              size: 14,
+              color: Colors.deepOrange,
+            ),
           ),
-        
+
         // Tools capability
         if (model.capabilities.tools)
           Chip(
             label: Text(localizations.tools),
             backgroundColor: Colors.teal.withValues(alpha: 0.15),
-            side: BorderSide(color: Colors.teal.withValues(alpha: 0.3), width: 1.5),
+            side: BorderSide(
+              color: Colors.teal.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
             labelStyle: const TextStyle(
               color: Colors.teal,
               fontSize: 11,
@@ -596,12 +571,15 @@ const SizedBox(height: 12),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             avatar: const Icon(Icons.build, size: 14, color: Colors.teal),
           ),
-        
+
         // Always show availability
         Chip(
           label: Text(localizations.available),
           backgroundColor: Colors.green.withValues(alpha: 0.15),
-          side: BorderSide(color: Colors.green.withValues(alpha: 0.3), width: 1.5),
+          side: BorderSide(
+            color: Colors.green.withValues(alpha: 0.3),
+            width: 1.5,
+          ),
           labelStyle: const TextStyle(
             color: Colors.green,
             fontSize: 11,
@@ -649,18 +627,38 @@ const SizedBox(height: 12),
     }
 
     /// Builds a feature chip with label, color, and icon
-    Widget buildFeatureChip(String label, bool enabled, Color color, IconData icon) {
+    Widget buildFeatureChip(
+      String label,
+      bool enabled,
+      Color color,
+      IconData icon,
+    ) {
       return Container(
         margin: const EdgeInsets.only(bottom: 4),
         child: Chip(
-          label: Text(label, style: TextStyle(color: enabled ? color : Colors.grey[600], fontSize: 12, fontWeight: FontWeight.w500)),
-          backgroundColor: enabled ? color.withValues(alpha: 0.15) : Colors.grey.withValues(alpha: 0.1),
+          label: Text(
+            label,
+            style: TextStyle(
+              color: enabled ? color : Colors.grey[600],
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          backgroundColor: enabled
+              ? color.withValues(alpha: 0.15)
+              : Colors.grey.withValues(alpha: 0.1),
           side: BorderSide(
-            color: enabled ? color.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.3),
+            color: enabled
+                ? color.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.3),
             width: 1.5,
           ),
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          avatar: Icon(icon, size: 14, color: enabled ? color : Colors.grey[600]),
+          avatar: Icon(
+            icon,
+            size: 14,
+            color: enabled ? color : Colors.grey[600],
+          ),
         ),
       );
     }
@@ -707,8 +705,8 @@ const SizedBox(height: 12),
               Divider(
                 height: 1,
                 thickness: 1,
-                color: Theme.of(context).brightness == Brightness.dark 
-                    ? UbuntuColors.darkBorderColor 
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? UbuntuColors.darkBorderColor
                     : UbuntuColors.lightBorderColor,
               ),
               const SizedBox(height: 8),
@@ -732,9 +730,17 @@ const SizedBox(height: 12),
                 ),
               ),
               const SizedBox(height: 12),
-              buildDetailRow(localizations.provider, model.provider!, Icons.account_circle),
+              buildDetailRow(
+                localizations.provider,
+                model.provider!,
+                Icons.account_circle,
+              ),
               if (model.provider != null)
-                buildDetailRow(localizations.context, model.formattedContextLength, Icons.text_fields),
+                buildDetailRow(
+                  localizations.context,
+                  model.formattedContextLength,
+                  Icons.text_fields,
+                ),
 
               buildDetailRow(
                 localizations.inputTokens,
@@ -775,21 +781,39 @@ const SizedBox(height: 12),
                 runSpacing: 8,
                 children: [
                   buildFeatureChip(
-                    model.isFree 
-                      ? localizations.free
-                      : localizations.paid,
+                    model.isFree ? localizations.free : localizations.paid,
                     true,
                     model.isFree ? Colors.green : Colors.orange,
                     model.isFree ? Icons.attach_money : Icons.payment,
                   ),
                   if (model.supportsReasoning)
-                    buildFeatureChip(localizations.reasoning, true, Colors.blue, Icons.psychology),
+                    buildFeatureChip(
+                      localizations.reasoning,
+                      true,
+                      Colors.blue,
+                      Icons.psychology,
+                    ),
                   if (model.supportsMultimodal)
-                    buildFeatureChip(localizations.multimodal, true, Colors.purple, Icons.view_in_ar),
+                    buildFeatureChip(
+                      localizations.multimodal,
+                      true,
+                      Colors.purple,
+                      Icons.view_in_ar,
+                    ),
                   if (model.capabilities.vision)
-                    buildFeatureChip(localizations.vision, true, Colors.deepOrange, Icons.visibility),
+                    buildFeatureChip(
+                      localizations.vision,
+                      true,
+                      Colors.deepOrange,
+                      Icons.visibility,
+                    ),
                   if (model.capabilities.tools)
-                    buildFeatureChip(localizations.tools, true, Colors.teal, Icons.build),
+                    buildFeatureChip(
+                      localizations.tools,
+                      true,
+                      Colors.teal,
+                      Icons.build,
+                    ),
                 ],
               ),
             ],
@@ -808,7 +832,8 @@ const SizedBox(height: 12),
   }
 
   Widget _buildEmptyState() {
-    final isEmptySearch = _searchController.text.isNotEmpty && _filteredModels.isEmpty;
+    final isEmptySearch =
+        _searchController.text.isNotEmpty && _filteredModels.isEmpty;
     final isEmptyFavorites = _showFavoritesOnly && _filteredModels.isEmpty;
     final localizations = AppLocalizations.of(context)!;
 
