@@ -11,7 +11,7 @@ import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
 final _logger = LogTags.modelsScreen;
 
 class ModelsScreen extends StatefulWidget {
-  final Function(String)? onModelSelected;
+  final Function(String, OpenRouterModel?)? onModelSelected;
   final String? currentModel;
 
   const ModelsScreen({super.key, this.onModelSelected, this.currentModel});
@@ -111,9 +111,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
       // Update model selection in ThemeProvider (without notifyListeners yet)
       await _themeProvider.setSelectedModelSilent(model.id);
 
-      // Call the callback if provided
+      // Call the callback with full model object for immediate use
       if (widget.onModelSelected != null) {
-        widget.onModelSelected!(model.id);
+        // Pass both ID and full object
+        widget.onModelSelected!(model.id, model);
       }
 
       // Navigate back first
