@@ -35,9 +35,6 @@ class ChatScreenConstants {
   
   // Token Management
   static const int defaultMaxTokens = 2046;
-  static const int minMaxTokens = 1000;
-  static const int maxMaxTokens = 16000;
-  static const double tokenContextRatio = 0.2; // 20% of context length
   
   // Error Handling
   static const int maxErrorLength = 500;
@@ -981,19 +978,30 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       return ChatScreenConstants.defaultMaxTokens;
     }
     
+    // Use full context length from API with smart ratio
+    // Models with large context (100K+) get 80% to leave room for system messages
+    // Models with smaller context get 90% to maximize usage
     final contextLength = model.contextLength!;
+    double ratio;
     
-    // Use configured ratio of context length as max tokens
-    final maxTokens = (contextLength * ChatScreenConstants.tokenContextRatio).toInt();
-    
-    // Set reasonable bounds
-    if (maxTokens < ChatScreenConstants.minMaxTokens) {
-      return ChatScreenConstants.minMaxTokens;
-    } else if (maxTokens > ChatScreenConstants.maxMaxTokens) {
-      return ChatScreenConstants.maxMaxTokens;
+    if (contextLength >= 100000) {
+      ratio = 0.8; // 80% for very large context (e.g., 200K → 160K)
+    } else if (contextLength >= 50000) {
+      ratio = 0.85; // 85% for large context (e.g., 128K → 109K)
+    } else if (contextLength >= 20000) {
+      ratio = 0.9; // 90% for medium context (e.g., 32K → 29K)
     } else {
-      return maxTokens;
+      ratio = 0.95; // 95% for small context (e.g., 8K → 7.6K)
     }
+    
+    final maxTokens = (contextLength * ratio).toInt();
+    
+    // Ensure minimum for very small models
+    if (maxTokens < 1000) {
+      return 1000;
+    }
+    
+    return maxTokens;
   }
 
   /// Shared method to handle streaming responses (both regular and continuation)
@@ -1247,24 +1255,35 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   // Fallback function to determine max tokens based on model ID pattern
+  // Used when model object is not available
   int _getOptimalMaxTokensFromId(String modelId) {
-    // Models with large context windows
+    // Very large context models (100K+ tokens)
     if (modelId.contains('grok') || 
-        modelId.contains('claude') || 
-        modelId.contains('gpt-4') ||
-        modelId.contains('gemini')) {
-      return 8000; // Higher limit for models with large context
+        modelId.contains('claude-3-5-sonnet') ||
+        modelId.contains('claude-3-opus') ||
+        modelId.contains('gpt-4-turbo') ||
+        modelId.contains('gpt-4o') ||
+        modelId.contains('gemini-1.5')) {
+      return 32000; // Safe fallback for very large context
     }
     
-    // Standard models
+    // Large context models (32K-100K tokens)
+    if (modelId.contains('claude') || 
+        modelId.contains('gpt-4') ||
+        modelId.contains('gemini-1.0')) {
+      return 16000; // Safe fallback for large context
+    }
+    
+    // Standard models (4K-32K tokens)
     if (modelId.contains('gpt-3.5') || 
         modelId.contains('llama') || 
-        modelId.contains('mistral')) {
-      return 4096; // Medium limit for standard models
+        modelId.contains('mistral') ||
+        modelId.contains('mixtral')) {
+      return 8000; // Safe fallback for standard models
     }
     
-    // Default limit
-    return 2046;
+    // Default for unknown models
+    return 4096;
   }
 
   bool _hasHeadings() {
