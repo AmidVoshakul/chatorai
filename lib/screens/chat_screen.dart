@@ -34,7 +34,7 @@ class ChatScreenConstants {
   static const int baseRetryDelaySeconds = 2;
   
   // Token Management
-  static const int defaultMaxTokens = 2046;
+  static const int defaultMaxTokens = 16000;
   
   // Error Handling
   static const int maxErrorLength = 500;
@@ -978,30 +978,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       return ChatScreenConstants.defaultMaxTokens;
     }
     
-    // Use full context length from API with smart ratio
-    // Models with large context (100K+) get 80% to leave room for system messages
-    // Models with smaller context get 90% to maximize usage
+    // Use FULL context length from API - no artificial restrictions!
+    // Models can use their complete context window
     final contextLength = model.contextLength!;
-    double ratio;
     
-    if (contextLength >= 100000) {
-      ratio = 0.8; // 80% for very large context (e.g., 200K → 160K)
-    } else if (contextLength >= 50000) {
-      ratio = 0.85; // 85% for large context (e.g., 128K → 109K)
-    } else if (contextLength >= 20000) {
-      ratio = 0.9; // 90% for medium context (e.g., 32K → 29K)
-    } else {
-      ratio = 0.95; // 95% for small context (e.g., 8K → 7.6K)
-    }
-    
-    final maxTokens = (contextLength * ratio).toInt();
-    
-    // Ensure minimum for very small models
-    if (maxTokens < 1000) {
+    // Only ensure minimum for very small models
+    if (contextLength < 1000) {
       return 1000;
     }
     
-    return maxTokens;
+    return contextLength;
   }
 
   /// Shared method to handle streaming responses (both regular and continuation)
@@ -1240,17 +1226,25 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   void _updateSelectedModel(String modelId, OpenRouterModel? modelObject) {
     if (!mounted) return;
     
+    // If modelObject is null, try to get it from ThemeProvider
+    OpenRouterModel? finalModelObject = modelObject;
+    if (finalModelObject == null && _themeProvider.modelsLoaded) {
+      finalModelObject = _themeProvider.getModelById(modelId);
+    }
+    
     setState(() {
       _selectedModel = modelId;
-      _selectedModelObject = modelObject;
+      _selectedModelObject = finalModelObject;
     });
     
-    if (modelObject != null) {
-      final contextLength = modelObject.contextLength ?? 'unknown';
-      final maxTokens = _getOptimalMaxTokensForModel(modelObject);
-      _logger.logInfo('[ChatScreen] Model updated: ${modelObject.name}');
+    if (finalModelObject != null) {
+      final contextLength = finalModelObject.contextLength ?? 'unknown';
+      final maxTokens = _getOptimalMaxTokensForModel(finalModelObject);
+      _logger.logInfo('[ChatScreen] Model updated: ${finalModelObject.name}');
       _logger.logInfo('[ChatScreen] Context length: $contextLength tokens');
       _logger.logInfo('[ChatScreen] Optimal max_tokens: $maxTokens');
+    } else {
+      _logger.logWarning('[ChatScreen] Model object not available for $modelId');
     }
   }
 
@@ -1264,14 +1258,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         modelId.contains('gpt-4-turbo') ||
         modelId.contains('gpt-4o') ||
         modelId.contains('gemini-1.5')) {
-      return 32000; // Safe fallback for very large context
+      return 128000; // Use 128K as realistic fallback
     }
     
     // Large context models (32K-100K tokens)
     if (modelId.contains('claude') || 
         modelId.contains('gpt-4') ||
         modelId.contains('gemini-1.0')) {
-      return 16000; // Safe fallback for large context
+      return 32000; // Use 32K as realistic fallback
     }
     
     // Standard models (4K-32K tokens)
@@ -1279,7 +1273,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         modelId.contains('llama') || 
         modelId.contains('mistral') ||
         modelId.contains('mixtral')) {
-      return 8000; // Safe fallback for standard models
+      return 8000; // Use 8K as realistic fallback
     }
     
     // Default for unknown models
@@ -1362,10 +1356,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               context,
               MaterialPageRoute(
                 builder: (context) => ModelsScreen(
-                  onModelSelected: (String modelId) {
+                  onModelSelected: (String modelId, OpenRouterModel? modelObject) {
                     // ModelsScreen already handles navigation and ThemeProvider update
-                    // Just update local state
-                    _updateSelectedModel(modelId, null);
+                    // Use the passed model object for immediate use
+                    _updateSelectedModel(modelId, modelObject);
                   },
                   currentModel: _selectedModel,
                 ),
