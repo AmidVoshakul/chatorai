@@ -53,6 +53,9 @@ class MyApp extends StatelessWidget {
             Locale('en'),
             Locale('ru'),
             Locale('uk'),
+            Locale('zh'),
+            Locale('ja'),
+            Locale('ar'),
           ],
           locale: locale,
           theme: theme,
@@ -73,6 +76,15 @@ class MyApp extends StatelessWidget {
                 ),
               );
             });
+            
+            // Apply RTL direction for Arabic and other RTL languages
+            if (themeProvider.isRTL) {
+              return Directionality(
+                textDirection: TextDirection.rtl,
+                child: child!,
+              );
+            }
+            
             return child!;
           },
         );
