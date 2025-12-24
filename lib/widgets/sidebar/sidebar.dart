@@ -113,7 +113,7 @@ class _SidebarState extends State<Sidebar> {
                     if (!widget.isCollapsed)
                       Expanded(
                         child: Text(
-                          'GenUI',
+                          localizations.appShortName,
                           style: _theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: _theme.textTheme.headlineSmall?.color,
@@ -178,7 +178,7 @@ class _SidebarState extends State<Sidebar> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: TextField(
                 decoration: InputDecoration(
-                  hintText: 'Search chats...',
+                  hintText: localizations.searchChats,
                   prefixIcon: const Icon(Icons.search, size: 18),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -403,7 +403,7 @@ class _SidebarState extends State<Sidebar> {
             const SizedBox(height: 16),
             Text(
               hasSearch 
-                  ? 'No chats found for "$_searchQuery"'
+                  ? localizations.noChatsFound(_searchQuery)
                   : localizations.noChatsYet,
               style: TextStyle(
                 fontSize: 16,
@@ -415,7 +415,7 @@ class _SidebarState extends State<Sidebar> {
             const SizedBox(height: 8),
             Text(
               hasSearch 
-                  ? 'Try a different search term'
+                  ? localizations.tryDifferentSearchTerm
                   : localizations.startConversation,
               style: TextStyle(
                 fontSize: 12,
@@ -434,23 +434,17 @@ class _SidebarState extends State<Sidebar> {
     final difference = now.difference(date);
 
     if (difference.inHours < 1) {
-      if (language == 'en') {
-        return difference.inMinutes <= 1 ? localizations.justNow : localizations.minAgo(difference.inMinutes);
-      } else {
-        return difference.inMinutes <= 1 ? localizations.justNow : '${difference.inMinutes} мин назад';
-      }
+      return difference.inMinutes <= 1 
+          ? localizations.justNow 
+          : localizations.minAgo(difference.inMinutes);
     } else if (difference.inHours < 24) {
-      if (language == 'en') {
-        return difference.inHours == 1 ? localizations.onlyOneHourAgo : localizations.hoursAgo(difference.inHours);
-      } else {
-        return difference.inHours == 1 ? localizations.onlyOneHourAgo : '${difference.inHours} часов назад';
-      }
+      return difference.inHours == 1 
+          ? localizations.onlyOneHourAgo 
+          : localizations.hoursAgo(difference.inHours);
     } else if (difference.inDays < 7) {
-      if (language == 'en') {
-        return difference.inDays == 1 ? localizations.onlyOneDayAgo : localizations.daysAgo(difference.inDays);
-      } else {
-        return difference.inDays == 1 ? localizations.onlyOneDayAgo : '${difference.inDays} дней назад';
-      }
+      return difference.inDays == 1 
+          ? localizations.onlyOneDayAgo 
+          : localizations.daysAgo(difference.inDays);
     } else {
       final String pattern = language == 'en' ? 'MMM d' : 'd MMM';
       final formatter = DateFormat(pattern, language == 'en' ? 'en_US' : 'ru_RU');

@@ -9,7 +9,7 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
-  String get appName => 'GenUI Chat AI';
+  String get appName => 'ChatORAI Chat AI';
 
   @override
   String get settings => 'Настройки';
@@ -89,6 +89,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get russian => 'Русский';
 
   @override
+  String get ukrainian => 'Украинский';
+
+  @override
   String get arabic => 'Арабский (RTL)';
 
   @override
@@ -128,7 +131,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get appInfo => 'Информация';
 
   @override
-  String get appDescription => 'Приложение для общения с AI моделями через OpenRouter API.\n\nВозможности:\n• Общение с различными AI моделями\n• Сохранение истории чатов\n• Темная и светлая темы\n• Адаптивный интерфейс\n\nРазработано с ❤️ с использованием Flutter';
+  String get appDescription => 'Приложение для общения с AI моделями через OpenRouter API.\n\nВозможности:\n• Общение с различными AI моделями\n• Сохранение истории чатов\n• Темная и светлая темы\n• Адаптивный интерфейс\n\nВерсия: 1.0.0\n\nРазработано с ❤️ с использованием Flutter';
 
   @override
   String get shareChat => 'Поделиться чатом';
@@ -761,4 +764,42 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get generatingSuggestions => 'Генерация предложений...';
+
+  @override
+  String get searchChats => 'Поиск чатов...';
+
+  @override
+  String noChatsFound(Object query) {
+    return 'Чаты не найдены для \"$query\"';
+  }
+
+  @override
+  String get tryDifferentSearchTerm => 'Попробуйте другой поисковый термин';
+
+  @override
+  String get appShortName => 'ChatORAI';
+
+  @override
+  String get typeYourMessage => 'Введите ваше сообщение...';
+
+  @override
+  String get addImageToFile => '+ добавить изображение в файл';
+
+  @override
+  String get selectLanguage => 'Выберите язык';
+
+  @override
+  String get searchFavorites => 'Поиск избранных...';
+
+  @override
+  String get showAllModels => 'Показать все модели';
+
+  @override
+  String get showFavoritesOnly => 'Показать только избранные';
+
+  @override
+  String get noFavoriteModels => 'Нет избранных моделей';
+
+  @override
+  String get tapHeartToAddFavorites => 'Нажмите на сердечко у моделей, чтобы добавить их в избранные';
 }

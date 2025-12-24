@@ -205,8 +205,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
             ),
             onPressed: _toggleFavoritesFilter,
             tooltip: _showFavoritesOnly
-                ? 'Show All Models'
-                : 'Show Favorites Only',
+                ? localizations.showAllModels
+                : localizations.showFavoritesOnly,
           ),
         ],
       ),
@@ -221,7 +221,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: _showFavoritesOnly
-                        ? 'Search favorites...'
+                        ? localizations.searchFavorites
                         : localizations.searchModels,
                     hintStyle: TextStyle(
                       color: Theme.of(context).brightness == Brightness.dark
@@ -850,8 +850,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
     if (isEmptyFavorites) {
       icon = Icons.favorite_border;
-      message = 'No favorite models';
-      submessage = 'Tap the heart icon on models to add them to your favorites';
+      message = localizations.noFavoriteModels;
+      submessage = localizations.tapHeartToAddFavorites;
     } else if (isEmptySearch) {
       icon = Icons.search_off;
       message = localizations.noModelsFound;

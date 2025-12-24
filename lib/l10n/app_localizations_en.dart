@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appName => 'GenUI Chat AI';
+  String get appName => 'ChatORAI Chat AI';
 
   @override
   String get settings => 'Settings';
@@ -89,6 +89,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get russian => 'Russian';
 
   @override
+  String get ukrainian => 'Ukrainian';
+
+  @override
   String get arabic => 'Arabic (RTL)';
 
   @override
@@ -128,7 +131,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appInfo => 'App Info';
 
   @override
-  String get appDescription => 'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nDeveloped with ❤️ using Flutter';
+  String get appDescription => 'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0\n\nDeveloped with ❤️ using Flutter';
 
   @override
   String get shareChat => 'Share Chat';
@@ -761,4 +764,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generatingSuggestions => 'Generating suggestions...';
+
+  @override
+  String get searchChats => 'Search chats...';
+
+  @override
+  String noChatsFound(Object query) {
+    return 'No chats found for \"$query\"';
+  }
+
+  @override
+  String get tryDifferentSearchTerm => 'Try a different search term';
+
+  @override
+  String get appShortName => 'ChatORAI';
+
+  @override
+  String get typeYourMessage => 'Type your message...';
+
+  @override
+  String get addImageToFile => '+ add image to file';
+
+  @override
+  String get selectLanguage => 'Select language';
+
+  @override
+  String get searchFavorites => 'Search favorites...';
+
+  @override
+  String get showAllModels => 'Show All Models';
+
+  @override
+  String get showFavoritesOnly => 'Show Favorites Only';
+
+  @override
+  String get noFavoriteModels => 'No favorite models';
+
+  @override
+  String get tapHeartToAddFavorites => 'Tap the heart icon on models to add them to your favorites';
 }

@@ -1,4 +1,4 @@
-// Widget tests for GenUI Chat AI
+// Widget tests for ChatORAI Chat AI
 // Run with: flutter test
 
 import 'package:flutter/material.dart';
