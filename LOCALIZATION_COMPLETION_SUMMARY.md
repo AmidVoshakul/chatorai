@@ -1,7 +1,7 @@
 # Localization Completion Summary
 
 ## Overview
-This document summarizes the completion of comprehensive localization support for the ChatORAI Chat AI application, including the addition of Ukrainian language support and fixing all remaining hardcoded text.
+This document summarizes the completion of comprehensive localization support for the ChatORAI application, including the addition of Ukrainian language support and fixing all remaining hardcoded text.
 
 ## What Was Accomplished
 

@@ -100,7 +100,7 @@ abstract class AppLocalizations {
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
-  /// **'ChatORAI Chat AI'**
+  /// **'ChatORAI'**
   String get appName;
 
   /// No description provided for @settings.
