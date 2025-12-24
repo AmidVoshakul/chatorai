@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
 import 'app_localizations_ru.dart';
+import 'app_localizations_uk.dart';
 
 // ignore_for_file: type=lint
 
@@ -92,13 +93,14 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ru')
+    Locale('ru'),
+    Locale('uk')
   ];
 
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
-  /// **'GenUI Chat AI'**
+  /// **'ChatORAI Chat AI'**
   String get appName;
 
   /// No description provided for @settings.
@@ -251,6 +253,12 @@ abstract class AppLocalizations {
   /// **'Russian'**
   String get russian;
 
+  /// No description provided for @ukrainian.
+  ///
+  /// In en, this message translates to:
+  /// **'Ukrainian'**
+  String get ukrainian;
+
   /// No description provided for @arabic.
   ///
   /// In en, this message translates to:
@@ -332,7 +340,7 @@ abstract class AppLocalizations {
   /// No description provided for @appDescription.
   ///
   /// In en, this message translates to:
-  /// **'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nDeveloped with ❤️ using Flutter'**
+  /// **'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0\n\nDeveloped with ❤️ using Flutter'**
   String get appDescription;
 
   /// No description provided for @shareChat.
@@ -1582,6 +1590,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Generating suggestions...'**
   String get generatingSuggestions;
+
+  /// No description provided for @searchChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Search chats...'**
+  String get searchChats;
+
+  /// No description provided for @noChatsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No chats found for \"{query}\"'**
+  String noChatsFound(Object query);
+
+  /// No description provided for @tryDifferentSearchTerm.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different search term'**
+  String get tryDifferentSearchTerm;
+
+  /// No description provided for @appShortName.
+  ///
+  /// In en, this message translates to:
+  /// **'ChatORAI'**
+  String get appShortName;
+
+  /// No description provided for @typeYourMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your message...'**
+  String get typeYourMessage;
+
+  /// No description provided for @addImageToFile.
+  ///
+  /// In en, this message translates to:
+  /// **'+ add image to file'**
+  String get addImageToFile;
+
+  /// No description provided for @selectLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Select language'**
+  String get selectLanguage;
+
+  /// No description provided for @searchFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Search favorites...'**
+  String get searchFavorites;
+
+  /// No description provided for @showAllModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Show All Models'**
+  String get showAllModels;
+
+  /// No description provided for @showFavoritesOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Favorites Only'**
+  String get showFavoritesOnly;
+
+  /// No description provided for @noFavoriteModels.
+  ///
+  /// In en, this message translates to:
+  /// **'No favorite models'**
+  String get noFavoriteModels;
+
+  /// No description provided for @tapHeartToAddFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the heart icon on models to add them to your favorites'**
+  String get tapHeartToAddFavorites;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
@@ -1593,7 +1673,7 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['en', 'ru'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['en', 'ru', 'uk'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1606,6 +1686,7 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'en': return AppLocalizationsEn();
     case 'ru': return AppLocalizationsRu();
+    case 'uk': return AppLocalizationsUk();
   }
 
   throw FlutterError(

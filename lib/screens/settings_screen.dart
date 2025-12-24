@@ -118,6 +118,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 8),
             Card(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[900]
+                  : null,
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
@@ -162,6 +165,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 8),
             Card(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[900]
+                  : null,
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
@@ -207,6 +213,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 8),
             Card(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[900]
+                  : null,
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
@@ -257,38 +266,87 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 8),
             Card(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[900]
+                  : null,
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLanguageOption(
-                      localizations.english,
-                      'en',
-                      localizations.english,
+                    Text(
+                      localizations.selectLanguage,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[400]
+                            : Colors.grey,
+                      ),
                     ),
-                    const Divider(height: 1, thickness: 1),
-                    _buildLanguageOption(
-                      localizations.russian,
-                      'ru',
-                      localizations.russian,
-                    ),
-                    const Divider(height: 1, thickness: 1),
-                    _buildLanguageOption(
-                      'العربية',
-                      'ar',
-                      localizations.arabic,
-                    ),
-                    const Divider(height: 1, thickness: 1),
-                    _buildLanguageOption(
-                      '中文',
-                      'zh',
-                      localizations.chinese,
-                    ),
-                    const Divider(height: 1, thickness: 1),
-                    _buildLanguageOption(
-                      '日本語',
-                      'ja',
-                      localizations.japanese,
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[850]
+                            : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[800]!
+                              : Colors.grey[400]!,
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _themeProvider.selectedLanguage,
+                          isExpanded: true,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          icon: Icon(
+                            Icons.arrow_drop_down,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          dropdownColor: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[850]
+                              : Colors.white,
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              _themeProvider.selectedLanguage = newValue;
+                            }
+                          },
+                          items: <String, String>{
+                            'en': localizations.english,
+                            'ru': localizations.russian,
+                            'uk': localizations.ukrainian,
+                            'ar': localizations.arabic,
+                            'zh': localizations.chinese,
+                            'ja': localizations.japanese,
+                          }.entries.map((entry) {
+                            return DropdownMenuItem<String>(
+                              value: entry.key,
+                              child: Row(
+                                children: [
+                                  Text(
+                                    entry.key.toUpperCase(),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    entry.value,
+                                    style: TextStyle(
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                          ? Colors.white
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -307,24 +365,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 8),
             Card(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey[900]
+                  : null,
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
                   children: [
                     Text(
                       localizations.resetAllSettings,
-                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[400]
+                            : Colors.grey,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: () async {
+                          final local = AppLocalizations.of(context)!;
                           await _themeProvider.resetSettings();
-                          if (mounted) {
+                          if (mounted && context.mounted) {
                             SnackbarUtils.showInfoSnackBar(
                               context: context,
-                              message: localizations.settingsReset
+                              message: local.settingsReset
                             );
                           }
                         },
@@ -343,10 +410,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  if (mounted) {
+                  final local = AppLocalizations.of(context)!;
+                  if (mounted && context.mounted) {
                     SnackbarUtils.showSuccessSnackBar(
                       context: context,
-                      message: localizations.settingsSaved
+                      message: local.settingsSaved
                     );
                   }
                   Navigator.of(context).pop();
@@ -414,60 +482,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildLanguageOption(
-    String title,
-    String languageCode,
-    String description,
-  ) {
-    final isSelected = _themeProvider.selectedLanguage == languageCode;
-
-    return InkWell(
-      onTap: () {
-        _themeProvider.selectedLanguage = languageCode;
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Row(
-          children: [
-            Text(
-              languageCode.toUpperCase(),
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      color: isSelected ? Theme.of(context).colorScheme.primary : null,
-                    ),
-                  ),
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Icon(
-                Icons.check,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }

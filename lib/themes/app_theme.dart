@@ -6,7 +6,7 @@ class UbuntuColors {
   // Primary colors
   static const Color orange = Color(0xFFFF7F00); // Vibrant Ubuntu orange
   static const Color dark = Color(0xFF1A0E00); // Deep dark brown
-  static const Color light = Color(0xFFFFFFFF); // Pure white
+  static const Color light = Color(0xFFEBEBEB); // Pure white
   
   // Grays
   static const Color gray = Color(0xFF555555); // Dark gray for better contrast
@@ -103,7 +103,7 @@ class UbuntuTypography {
     headlineLarge: TextStyle(
       fontSize: 32,
       fontWeight: FontWeight.bold,
-      color: UbuntuColors.light,
+      color: const Color.from(alpha: 1, red: 0.541, green: 0.157, blue: 0.157),
     ),
     headlineMedium: TextStyle(
       fontSize: 24,

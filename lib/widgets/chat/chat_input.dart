@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
+import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 
 class ChatInput extends StatefulWidget {
   final Function(String) onSendMessage;
@@ -94,7 +95,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
     }
   }
 
-  Future<void> _showPlusMenu() async {
+  Future<void> _showPlusMenu(BuildContext context) async {
     setState(() => _plusActive = true);
 
     final RenderBox? box =
@@ -103,6 +104,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
 
     final offset = box.localToGlobal(Offset.zero);
     final size = box.size;
+    final localizations = AppLocalizations.of(context)!;
 
     final selected = await showMenu<String>(
       context: context,
@@ -115,14 +117,14 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      items: const [
+      items: [
         PopupMenuItem(
           value: 'add_image',
           child: Row(
             children: [
               Icon(Icons.image, size: 20),
               SizedBox(width: 8),
-              Text('+ add image to file'),
+              Text(localizations.addImageToFile),
             ],
           ),
         ),
@@ -148,6 +150,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final isMobile = _isMobileLayout(context);
     final maxLines = _computeMaxLines(context);
 
@@ -165,7 +168,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
       maxLines: maxLines,
       decoration: isMobile
           ? InputDecoration(
-              hintText: 'Type your message...',
+              hintText: localizations.typeYourMessage,
               hintStyle: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.textTheme.bodyMedium?.color
                     ?.withValues(alpha: 0.6),
@@ -181,7 +184,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
               ),
             )
           : InputDecoration(
-              hintText: 'Type your message...',
+              hintText: localizations.typeYourMessage,
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
               focusedBorder: InputBorder.none,
@@ -328,7 +331,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                             : (theme.brightness == Brightness.dark
                                 ? UbuntuColors.inputContainerDark
                                 : UbuntuColors.inputContainerLight),
-                        onTap: _showPlusMenu,
+                        onTap: () => _showPlusMenu(context),
                         child: Icon(
                           Icons.add,
                           size: iconSize,
@@ -395,7 +398,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                   bgColor: theme.brightness == Brightness.dark
                       ? UbuntuColors.inputContainerDark
                       : UbuntuColors.inputContainerLight,
-                  onTap: _showPlusMenu,
+                  onTap: () => _showPlusMenu(context),
                   child: Icon(
                     Icons.add,
                     color: theme.iconTheme.color,
