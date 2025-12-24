@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appName => 'ChatORAI Chat AI';
+  String get appName => 'ChatORAI';
 
   @override
   String get settings => 'Settings';
