@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -69,7 +70,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               decoration: InputDecoration(
                 labelText: localizations.apiKey,
                 hintText: localizations.enterApiKey,
-                border: const OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? UbuntuColors.darkInputBorder
+                        : UbuntuColors.inputBorder,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: UbuntuColors.orange,
+                    width: 2,
+                  ),
+                ),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.content_copy),
                   onPressed: () {
@@ -90,10 +105,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Base URL Field
             TextField(
               controller: _baseUrlController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Base URL',
                 hintText: 'https://openrouter.ai/api/v1',
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? UbuntuColors.darkInputBorder
+                        : UbuntuColors.inputBorder,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: UbuntuColors.orange,
+                    width: 2,
+                  ),
+                ),
               ),
               maxLines: 1,
             ),
@@ -132,7 +161,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       localizations.useSystemTheme,
                       AppThemeMode.system,
                     ),
-                    const Divider(height: 1, thickness: 1),
+                    Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? UbuntuColors.darkInputBorder
+                          : UbuntuColors.inputBorder,
+                    ),
                     _buildThemeOption(
                       Icons.wb_sunny,
                       localizations.light,
@@ -140,7 +175,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       localizations.useLightTheme,
                       AppThemeMode.light,
                     ),
-                    const Divider(height: 1, thickness: 1),
+                    Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? UbuntuColors.darkInputBorder
+                          : UbuntuColors.inputBorder,
+                    ),
                     _buildThemeOption(
                       Icons.nightlight,
                       localizations.dark,
@@ -229,7 +270,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: Text(localizations.disableAnimation),
                       activeThumbColor: Theme.of(context).colorScheme.primary,
                     ),
-                    const Divider(height: 1, thickness: 1),
+                    Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? UbuntuColors.darkInputBorder
+                          : UbuntuColors.inputBorder,
+                    ),
                     SwitchListTile(
                       value: _themeProvider.highContrast,
                       onChanged: (value) {
@@ -239,7 +286,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: Text(localizations.increaseContrast),
                       activeThumbColor: Theme.of(context).colorScheme.primary,
                     ),
-                    const Divider(height: 1, thickness: 1),
+                    Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? UbuntuColors.darkInputBorder
+                          : UbuntuColors.inputBorder,
+                    ),
                     SwitchListTile(
                       value: _themeProvider.wideScreenMode,
                       onChanged: (value) {
@@ -292,8 +345,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey[800]!
-                              : Colors.grey[400]!,
+                              ? UbuntuColors.darkInputBorder
+                              : UbuntuColors.inputBorder,
                         ),
                       ),
                       child: DropdownButtonHideUnderline(
@@ -385,6 +438,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? UbuntuColors.darkInputBorder
+                                : UbuntuColors.inputBorder,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                         onPressed: () async {
                           final local = AppLocalizations.of(context)!;
                           await _themeProvider.resetSettings();
@@ -404,24 +467,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
 
             const SizedBox(height: 40),
-
-            // Save Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  final local = AppLocalizations.of(context)!;
-                  if (mounted && context.mounted) {
-                    SnackbarUtils.showSuccessSnackBar(
-                      context: context,
-                      message: local.settingsSaved
-                    );
-                  }
-                  Navigator.of(context).pop();
-                },
-                child: Text(localizations.save),
-              ),
-            ),
           ],
         ),
       ),

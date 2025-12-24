@@ -1,4 +1,4 @@
-// Widget tests for ChatORAI Chat AI
+// Widget tests for ChatORAI
 // Run with: flutter test
 
 import 'package:flutter/material.dart';
