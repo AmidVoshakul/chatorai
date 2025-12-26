@@ -131,7 +131,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appInfo => '应用信息';
 
   @override
-  String get appDescription => '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n版本: 1.0.0.3\n\n使用 Flutter 开发';
+  String get appDescription => '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n版本: 1.0.0.4\n\n使用 Flutter 开发';
 
   @override
   String get shareChat => '分享聊天';
@@ -783,7 +783,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get typeYourMessage => '输入您的消息...';
 
   @override
-  String get addImageToFile => '+ 添加图片到文件';
+  String get addImage => '图片';
+
+  @override
+  String get addCamera => '相机';
+
+  @override
+  String get addFile => '文件';
 
   @override
   String get selectLanguage => '选择语言';

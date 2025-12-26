@@ -131,7 +131,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get appInfo => 'アプリ情報';
 
   @override
-  String get appDescription => 'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nVersion: 1.0.0.3\n\nDeveloped with ❤️ using Flutter';
+  String get appDescription => 'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nVersion: 1.0.0.4\n\nDeveloped with ❤️ using Flutter';
 
   @override
   String get shareChat => 'チャットを共有';
@@ -783,7 +783,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get typeYourMessage => 'メッセージを入力してください...';
 
   @override
-  String get addImageToFile => '+ ファイルに画像を追加';
+  String get addImage => '画像';
+
+  @override
+  String get addCamera => 'カメラ';
+
+  @override
+  String get addFile => 'ファイル';
 
   @override
   String get selectLanguage => '言語を選択';
