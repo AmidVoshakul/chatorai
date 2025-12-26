@@ -63,7 +63,7 @@ class MessageUtils {
       await chatStorageService.deleteMessageFromChat(chatId, messageId);
 
       // Если context предоставлен, показываем уведомление об успешном удалении
-      if (context != null && localizations != null) {
+      if (context != null && context.mounted && localizations != null) {
         SnackbarUtils.showSuccessSnackBar(
           context: context,
           message: localizations.messageDeletedSuccessfully,
@@ -74,7 +74,7 @@ class MessageUtils {
       return true;
     } catch (e) {
       // Показываем уведомление об ошибке
-      if (context != null && localizations != null) {
+      if (context != null && context.mounted && localizations != null) {
         SnackbarUtils.showErrorSnackBar(
           context: context,
           message: localizations.failedToDeleteMessage,
@@ -222,6 +222,7 @@ class MessageUtils {
       await Clipboard.setData(ClipboardData(text: formattedContent));
       
       // Показываем краткое сообщение об успехе
+      if (!context.mounted) return;
       SnackbarUtils.showSuccessSnackBar(
         context: context,
         message: localizations.messageCopied,
@@ -235,6 +236,7 @@ class MessageUtils {
 
       // Сохраняем локализации до асинхронной операции
       final AppLocalizations localizations = AppLocalizations.of(context)!;
+      if (!context.mounted) return;
       SnackbarUtils.showErrorSnackBar(
         context: context,
         message: localizations.failedToCopyMessage,
@@ -254,6 +256,7 @@ class MessageUtils {
     // Здесь должна быть логика分享
     // await Share.share(content);
     
+    if (!context.mounted) return;
     SnackbarUtils.showSuccessSnackBar(
       context: context,
       message: localizations.messageShared,
@@ -304,6 +307,7 @@ class MessageUtils {
       await Clipboard.setData(ClipboardData(text: formattedChat));
       
       // Показываем успешное сообщение
+      if (!context.mounted) return;
       SnackbarUtils.showSuccessSnackBar(
         context: context,
         message: localizations.copyChat,
@@ -316,6 +320,7 @@ class MessageUtils {
 
       // Сохраняем локализации до асинхронной операции
       final AppLocalizations localizations = AppLocalizations.of(context)!;
+      if (!context.mounted) return;
       SnackbarUtils.showErrorSnackBar(
         context: context,
         message: localizations.failedToCopyChat,

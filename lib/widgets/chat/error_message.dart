@@ -208,6 +208,7 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
   Future<void> _copyToClipboard() async {
     try {
       await Clipboard.setData(ClipboardData(text: widget.errorMessage));
+      if (!mounted) return;
       SnackbarUtils.showSuccessSnackBar(
         context: context,
         message: AppLocalizations.of(context)!.copiedToClipboard,
@@ -215,6 +216,7 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
       );
     } catch (e) {
       _logger.logError('[ErrorMessage] Failed to copy to clipboard: $e');
+      if (!mounted) return;
       SnackbarUtils.showErrorSnackBar(
         context: context,
         message: AppLocalizations.of(context)!.failedToCopy,
@@ -230,6 +232,7 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
         widget.messageId,
       );
       widget.onMessageDeleted();
+      if (!mounted) return;
       SnackbarUtils.showSuccessSnackBar(
         context: context,
         message: AppLocalizations.of(context)!.messageDeleted,
@@ -237,6 +240,7 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
       );
     } catch (e) {
       _logger.logError('[ErrorMessage] Failed to delete message: $e');
+      if (!mounted) return;
       SnackbarUtils.showErrorSnackBar(
         context: context,
         message: AppLocalizations.of(context)!.failedToDeleteMessage,

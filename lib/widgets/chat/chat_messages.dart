@@ -40,7 +40,7 @@ class ChatMessagesConstants {
 
 class ChatMessages extends StatefulWidget {
   final Chat? chat;
-  final OpenRouterService openRouterService;
+  final OpenRouterClient openRouterService;
   final ChatStorageService chatStorageService;
   final String? selectedModel;
   final Function(String) onSendMessage; // Add callback for sending messages
