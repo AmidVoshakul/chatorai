@@ -183,12 +183,13 @@ class SlidingAppBarState extends State<SlidingAppBar> {
               const Spacer(),
               
               // Model name (centered, with overflow handling)
+            // Only show if we have a model object
+            if (widget.selectedModelObject != null)
               _buildModelName(
-                widget.selectedModelObject?.name ?? widget.selectedModel, 
+                widget.selectedModelObject!.name, 
                 modelTextColor, 
                 screenWidth
               ),
-              
               // Spacer to push buttons to right
               const Spacer(),
               
@@ -220,13 +221,6 @@ class SlidingAppBarState extends State<SlidingAppBar> {
 
   /// Builds the model name widget with proper styling and overflow handling
   Widget _buildModelName(String name, Color? textColor, double screenWidth) {
-    // Show loading indicator if name is empty
-    if (name.isEmpty) {
-      return widget.isMobile
-          ? SizedBox(width: screenWidth * SlidingAppBarConstants.mobileModelNameWidthFactor)
-          : const SizedBox();
-    }
-    
     if (widget.isMobile) {
       // Mobile: limit width, center text
       return SizedBox(
