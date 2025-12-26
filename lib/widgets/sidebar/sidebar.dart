@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
@@ -9,6 +8,7 @@ import 'package:gen_ui_chat_ai/widgets/sidebar/sidebar_chat_actions_menu.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
 import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+import 'package:gen_ui_chat_ai/utils/format_time.dart';
 
 // Initialize logger for this widget
 final _logger = LogTags.sidebar;
@@ -430,26 +430,7 @@ class _SidebarState extends State<Sidebar> {
   }
 
   String _formatDate(DateTime date, String language, AppLocalizations localizations) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inHours < 1) {
-      return difference.inMinutes <= 1 
-          ? localizations.justNow 
-          : localizations.minAgo(difference.inMinutes);
-    } else if (difference.inHours < 24) {
-      return difference.inHours == 1 
-          ? localizations.onlyOneHourAgo 
-          : localizations.hoursAgo(difference.inHours);
-    } else if (difference.inDays < 7) {
-      return difference.inDays == 1 
-          ? localizations.onlyOneDayAgo 
-          : localizations.daysAgo(difference.inDays);
-    } else {
-      final String pattern = language == 'en' ? 'MMM d' : 'd MMM';
-      final formatter = DateFormat(pattern, language == 'en' ? 'en_US' : 'ru_RU');
-      return formatter.format(date);
-    }
+    return formatSidebarDate(date, context: context);
   }
 
 }

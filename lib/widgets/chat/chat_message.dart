@@ -13,6 +13,7 @@ import 'package:gen_ui_chat_ai/utils/logger.dart';
 import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 import 'package:gen_ui_chat_ai/utils/markdown_parser_with_keys.dart';
+import 'package:gen_ui_chat_ai/utils/format_time.dart';
 
 // Import min function
 import 'dart:math' show min;
@@ -676,27 +677,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   }
 
   String _formatTime(DateTime dateTime) {
-    final localizations = AppLocalizations.of(context)!;
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-    
-    if (difference.inMinutes < 1) {
-      return localizations.justNow;
-    } else if (difference.inHours < 1) {
-      return localizations.minAgo(difference.inMinutes);
-    } else if (difference.inHours < 24) {
-      if (difference.inHours == 1) {
-        return localizations.onlyOneHourAgo;
-      }
-      return localizations.hoursAgo(difference.inHours);
-    } else if (difference.inDays < 7) {
-      if (difference.inDays == 1) {
-        return localizations.onlyOneDayAgo;
-      }
-      return localizations.daysAgo(difference.inDays);
-    } else {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-    }
+    return formatMessageTime(dateTime, context: context);
   }
 
   // ===========================================================================
