@@ -145,62 +145,72 @@ class _SidebarState extends State<Sidebar> {
             ),
           ),
           
-          // New Chat Button
+          // Search field and New Chat button in one row
           if (!widget.isCollapsed)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: widget.onNewChat,
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: _theme.colorScheme.primary, width: 1),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.add, size: 16),
-                      const SizedBox(width: 8),
-                      Text(
-                        localizations.newChat,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
+              child: Row(
+                children: [
+                  // Search field
+                  Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: localizations.searchChats,
+                        prefixIcon: const Icon(Icons.search, size: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(8),
+                            bottomLeft: Radius.circular(8),
+                          ),
+                          borderSide: BorderSide(color: _theme.dividerColor, width: 1),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(8),
+                            bottomLeft: Radius.circular(8),
+                          ),
+                          borderSide: BorderSide(color: _theme.dividerColor, width: 1),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(8),
+                            bottomLeft: Radius.circular(8),
+                          ),
+                          borderSide: BorderSide(color: _theme.colorScheme.primary, width: 1),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        isDense: true,
                       ),
-                    ],
+                      style: const TextStyle(fontSize: 14),
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value;
+                        });
+                      },
+                    ),
                   ),
-                ),
-              ),
-            ),
-          
-          // Search field (only when expanded)
-          if (!widget.isCollapsed)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: localizations.searchChats,
-                  prefixIcon: const Icon(Icons.search, size: 18),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: _theme.dividerColor, width: 1),
+                  // New Chat icon button
+                  Container(
+                    margin: const EdgeInsets.only(left: 4),
+                    child: IconButton(
+                      onPressed: widget.onNewChat,
+                      icon: const Icon(Icons.edit_square),
+                      style: IconButton.styleFrom(
+                        side: BorderSide(color: _theme.dividerColor, width: 1),
+                        padding: const EdgeInsets.all(8),
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.only(
+                            topRight: Radius.circular(8),
+                            bottomRight: Radius.circular(8),
+                          ),
+                        ),
+                        backgroundColor: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[900]
+                            : Colors.white,
+                      ),
+                    ),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: _theme.dividerColor, width: 1),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: _theme.colorScheme.primary, width: 1),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  isDense: true,
-                ),
-                style: const TextStyle(fontSize: 14),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
+                ],
               ),
             ),
           
@@ -258,16 +268,6 @@ class _SidebarState extends State<Sidebar> {
                           MaterialPageRoute(builder: (context) => const SettingsScreen()),
                         );
                       }
-                    },
-                  ),
-                  // App Info
-                  ListTile(
-                    leading: const Icon(Icons.info),
-                    title: Text(localizations.appInfo),
-                    minLeadingWidth: 0,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    onTap: () {
-                      _showAppInfo(context, _language, localizations);
                     },
                   ),
                 ],
@@ -452,25 +452,4 @@ class _SidebarState extends State<Sidebar> {
     }
   }
 
-  void _showAppInfo(BuildContext context, String language, AppLocalizations localizations) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(localizations.appTitle),
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF1A1A1A)
-            : Colors.white,
-        content: Text(
-          localizations.appDescription,
-          style: const TextStyle(height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(localizations.ok),
-          ),
-        ],
-      ),
-    );
-  }
 }

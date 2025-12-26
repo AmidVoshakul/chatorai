@@ -360,7 +360,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                       ),
                     ),
                     const SizedBox(height: 12),
-
+              
                     // Welcome text
                     Text(
                       l10n?.welcomeMessage ?? 'Welcome! How can I help you today?',
@@ -372,9 +372,9 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                         height: 1.3,
                       ),
                     ),
-
+              
                     const SizedBox(height: 16),
-
+              
                     // Suggestions list
                     _buildSuggestions(),
                     

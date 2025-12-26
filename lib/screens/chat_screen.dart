@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
@@ -13,6 +14,7 @@ import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/markdown_navigator_sidebar.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/welcome_questions_data.dart';
+import 'package:gen_ui_chat_ai/widgets/chat/sliding_app_bar.dart';
 import 'package:gen_ui_chat_ai/screens/models_screen.dart';
 import 'package:gen_ui_chat_ai/utils/chat_scroll_utils.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
@@ -34,7 +36,7 @@ class ChatScreenConstants {
   static const int baseRetryDelaySeconds = 2;
   
   // Token Management
-  static const int defaultMaxTokens = 16000;
+  static const int defaultMaxTokens = 8000;
   
   // Error Handling
   static const int maxErrorLength = 500;
@@ -95,6 +97,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   bool _isNavigatorVisible = false;
   List<MarkdownHeadingInfoWithKey> _navigatorHeadings = [];
   
+  // Sliding AppBar state
+  final GlobalKey<SlidingAppBarState> _slidingAppBarKey = GlobalKey<SlidingAppBarState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  
   // Streaming optimization - throttle updates
   DateTime _lastUpdateTime = DateTime.now();
   static const Duration _updateThrottle = Duration(milliseconds: 50); // 20 FPS max
@@ -113,6 +119,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // Initialize scroll controller
     _messageScrollController = ScrollController();
     _logger.logInfo('[ChatScreen] ScrollController initialized');
+    
+    // Add scroll listener for sliding app bar
+    _messageScrollController.addListener(_handleScrollForSlidingAppBar);
+    _logger.logInfo('[ChatScreen] SlidingAppBar scroll listener added');
+    
+    // Ensure sliding app bar is visible on startup
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _slidingAppBarKey.currentState != null) {
+        _slidingAppBarKey.currentState?.show();
+        _logger.logInfo('[ChatScreen] SlidingAppBar shown on startup');
+      }
+    });
     
     // Initialize scroll utilities immediately (no need to wait for frame)
     _chatScrollUtils = ChatScrollUtils(
@@ -143,6 +161,22 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         // This will trigger a rebuild and update the loading indicator
       });
     }
+  }
+
+  // Handle scroll events for sliding app bar
+  void _handleScrollForSlidingAppBar() {
+    if (!_messageScrollController.hasClients) return;
+    
+    final offset = _messageScrollController.offset;
+    
+    // Only apply sliding behavior on mobile
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth >= ChatScreenConstants.mobileBreakpoint) return;
+    
+    // Pass ALL scroll events to sliding app bar
+    // The SlidingAppBar's handleScroll() method has its own logic to determine
+    // when to hide/show based on scroll direction and position
+    _slidingAppBarKey.currentState?.handleScroll(offset);
   }
 
   // Initialize model selection from ThemeProvider
@@ -180,6 +214,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   void dispose() {
     // Remove listener to prevent memory leaks
     _themeProvider.removeListener(_onThemeProviderChange);
+    _messageScrollController.removeListener(_handleScrollForSlidingAppBar);
+    _messageScrollController.dispose();
     _titleController.dispose();
     _chatScrollUtils?.dispose();
     super.dispose();
@@ -229,6 +265,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _chats = [newChat, ..._chats];
     });
     
+    // Reset sliding app bar
+    _slidingAppBarKey.currentState?.reset();
+    
     // Show welcome suggestions for the new empty chat
     _showWelcomeSuggestionsForNewChat();
   }
@@ -271,6 +310,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     
     // Reset scroll state before switching
     _chatScrollUtils?.reset();
+    
+    // Reset sliding app bar
+    _slidingAppBarKey.currentState?.reset();
     
     setState(() {
       _currentChat = chat;
@@ -1248,6 +1290,24 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
+  // Show model selection screen
+  void _showModelSelection() {
+    _logger.logInfo('[ChatScreen] Opening model selection screen');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ModelsScreen(
+          onModelSelected: (String modelId, OpenRouterModel? modelObject) {
+            // ModelsScreen already handles navigation and ThemeProvider update
+            // Use the passed model object for immediate use
+            _updateSelectedModel(modelId, modelObject);
+          },
+          currentModel: _selectedModel,
+        ),
+      ),
+    );
+  }
+
   // Fallback function to determine max tokens based on model ID pattern
   // Used when model object is not available
   int _getOptimalMaxTokensFromId(String modelId) {
@@ -1430,7 +1490,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   Widget _buildMobileLayout(BuildContext context, Widget chatInput) {
     return Scaffold(
-      appBar: _buildAppBar(context),
+      key: _scaffoldKey,
       drawer: Drawer(
         child: Sidebar(
           width: ChatScreenConstants.sidebarWidth,
@@ -1451,69 +1511,98 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           },
         ),
       ),
-      body: Column(
-        children: [
-          // Chat content area with width control
-          Expanded(
-            child: _buildChatContentWrapper(
-              context,
-              child: Column(
-                children: [
-                  // Chat Messages
-                  Expanded(
-                    child: GestureDetector(
-                      onDoubleTap: () {
-                        // Double-tap gesture to toggle navigator on mobile
-                        if (_hasHeadings()) {
-                          _toggleNavigator();
-                        }
-                      },
-                      child: ChatMessages(
-                        key: _chatMessagesKey,
-                        openRouterService: _openRouterService,
-                        chatStorageService: _chatStorageService,
-                        chat: _currentChat,
-                        selectedModel: _selectedModel,
-                        onSendMessage: _handleSendMessage,
-                        onMessageDeleted: _refreshChatMessages,
-                        onContinueResponse: (messageId) => _continueAIResponse(messageId),
-                        onRegenerateResponse: _regenerateResponse,
-                        scrollController: _messageScrollController,
-                        continuationSuggestions: _continuationSuggestions,
-                        showSuggestions: _showSuggestions,
-                        isSuggestionsLoading: _isSuggestionsLoading,
-                        onSuggestionsClose: () {
-                          setState(() {
-                            _showSuggestions = false;
-                            _continuationSuggestions.clear();
-                          });
-                        },
-                        onSuggestionsRefresh: () {
-                          if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
-                            _showContinuationSuggestions(_currentChat!.messages.last);
+      body: GestureDetector(
+        onHorizontalDragStart: (details) {
+          // Swipe from left edge to open drawer
+          if (details.globalPosition.dx < 50) {
+            _scaffoldKey.currentState?.openDrawer();
+          }
+        },
+        child: Column(
+          children: [
+            // Sliding App Bar (only on mobile)
+            SlidingAppBar(
+              key: _slidingAppBarKey,
+              selectedModel: _selectedModel,
+              selectedModelObject: _selectedModelObject,
+              onMenuPressed: () {
+                // Open drawer using scaffold key
+                _scaffoldKey.currentState?.openDrawer();
+              },
+              onModelSelected: () {
+                // Navigate to models screen
+                _showModelSelection();
+              },
+              hasHeadings: _hasHeadings,
+              onNavigatorPressed: () {
+                // Toggle navigator
+                _toggleNavigator();
+              },
+              isMobile: true,
+            ),
+            
+            // Chat content area with width control
+            Expanded(
+              child: _buildChatContentWrapper(
+                context,
+                child: Column(
+                  children: [
+                    // Chat Messages
+                    Expanded(
+                      child: GestureDetector(
+                        onDoubleTap: () {
+                          // Double-tap gesture to toggle navigator on mobile
+                          if (_hasHeadings()) {
+                            _toggleNavigator();
                           }
                         },
-                        welcomeSuggestions: _welcomeSuggestions,
-                        showWelcomeSuggestions: _showWelcomeSuggestions,
-                        onWelcomeSuggestionsClose: () {
-                          setState(() {
-                            _showWelcomeSuggestions = false;
-                            _welcomeSuggestions.clear();
-                          });
-                        },
-                        onHeadingsUpdated: _onHeadingsUpdated,
-                        onToggleNavigator: _toggleNavigator,
+                        child: ChatMessages(
+                          key: _chatMessagesKey,
+                          openRouterService: _openRouterService,
+                          chatStorageService: _chatStorageService,
+                          chat: _currentChat,
+                          selectedModel: _selectedModel,
+                          onSendMessage: _handleSendMessage,
+                          onMessageDeleted: _refreshChatMessages,
+                          onContinueResponse: (messageId) => _continueAIResponse(messageId),
+                          onRegenerateResponse: _regenerateResponse,
+                          scrollController: _messageScrollController,
+                          continuationSuggestions: _continuationSuggestions,
+                          showSuggestions: _showSuggestions,
+                          isSuggestionsLoading: _isSuggestionsLoading,
+                          onSuggestionsClose: () {
+                            setState(() {
+                              _showSuggestions = false;
+                              _continuationSuggestions.clear();
+                            });
+                          },
+                          onSuggestionsRefresh: () {
+                            if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
+                              _showContinuationSuggestions(_currentChat!.messages.last);
+                            }
+                          },
+                          welcomeSuggestions: _welcomeSuggestions,
+                          showWelcomeSuggestions: _showWelcomeSuggestions,
+                          onWelcomeSuggestionsClose: () {
+                            setState(() {
+                              _showWelcomeSuggestions = false;
+                              _welcomeSuggestions.clear();
+                            });
+                          },
+                          onHeadingsUpdated: _onHeadingsUpdated,
+                          onToggleNavigator: _toggleNavigator,
+                        ),
                       ),
                     ),
-                  ),
-                  
-                  // Input Area
-                  chatInput,
-                ],
+                    
+                    // Input Area
+                    chatInput,
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
