@@ -1585,14 +1585,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       ),
       actions: [
         // Current model name - with width limit and overflow
-        if (isMobile)
+        // Only show if we have a model object (don't show ID before object loads)
+        if (_selectedModelObject == null)
+          SizedBox(width: isMobile ? screenWidth * 0.50 : 0)
+        else if (isMobile)
           SizedBox(
             width: screenWidth * 0.50, // 50% of screen width
             child: Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: Center(
                 child: Text(
-                  _selectedModelObject?.name ?? _selectedModel,
+                  _selectedModelObject!.name,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -1609,7 +1612,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: Text(
-              _selectedModelObject?.name ?? _selectedModel,
+              _selectedModelObject!.name,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
