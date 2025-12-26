@@ -160,53 +160,59 @@ class SlidingAppBarState extends State<SlidingAppBar> {
     // Visible AppBar
     return Container(
       color: theme.canvasColor,
-      height: SlidingAppBarConstants.appBarHeight,
+      constraints: const BoxConstraints(minHeight: SlidingAppBarConstants.appBarHeight),
       child: SafeArea(
         top: true,
-        bottom: false,
+        bottom: true,
         left: false,
         right: false,
-        child: Row(
-          children: [
-            // Menu button
-            Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu, size: SlidingAppBarConstants.iconSize),
-                color: UbuntuColors.orange,
-                onPressed: widget.onMenuPressed,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 4.0),
+          child: Row(
+            children: [
+              // Menu button
+              Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, size: SlidingAppBarConstants.iconSize),
+                  color: UbuntuColors.orange,
+                  onPressed: widget.onMenuPressed,
+                ),
               ),
-            ),
-            
-            // Spacer to push model name to center
-            const Spacer(),
-            
-            // Model name (centered, with overflow handling)
-            _buildModelName(widget.selectedModelObject?.name ?? widget.selectedModel, 
-                           modelTextColor, screenWidth),
-            
-            // Spacer to push buttons to right
-            const Spacer(),
-            
-            // Model selection button
-            IconButton(
-              icon: const Icon(Icons.smart_toy, size: SlidingAppBarConstants.iconSize),
-              color: UbuntuColors.orange,
-              onPressed: widget.onModelSelected,
-              tooltip: 'Select Model',
-            ),
-            
-            // Navigator button (only if headings exist)
-            if (widget.hasHeadings())
+              
+              // Spacer to push model name to center
+              const Spacer(),
+              
+              // Model name (centered, with overflow handling)
+              _buildModelName(
+                widget.selectedModelObject?.name ?? widget.selectedModel, 
+                modelTextColor, 
+                screenWidth
+              ),
+              
+              // Spacer to push buttons to right
+              const Spacer(),
+              
+              // Model selection button
               IconButton(
-                icon: const Icon(Icons.format_list_bulleted, size: SlidingAppBarConstants.iconSize),
+                icon: const Icon(Icons.smart_toy, size: SlidingAppBarConstants.iconSize),
                 color: UbuntuColors.orange,
-                onPressed: widget.onNavigatorPressed,
-                tooltip: 'Toggle Navigator',
+                onPressed: widget.onModelSelected,
+                tooltip: 'Select Model',
               ),
-            
-            // Right padding
-            const SizedBox(width: SlidingAppBarConstants.rightPadding),
-          ],
+              
+              // Navigator button (only if headings exist)
+              if (widget.hasHeadings())
+                IconButton(
+                  icon: const Icon(Icons.format_list_bulleted, size: SlidingAppBarConstants.iconSize),
+                  color: UbuntuColors.orange,
+                  onPressed: widget.onNavigatorPressed,
+                  tooltip: 'Toggle Navigator',
+                ),
+              
+              // Right padding
+              const SizedBox(width: SlidingAppBarConstants.rightPadding),
+            ],
+          ),
         ),
       ),
     );
@@ -214,6 +220,13 @@ class SlidingAppBarState extends State<SlidingAppBar> {
 
   /// Builds the model name widget with proper styling and overflow handling
   Widget _buildModelName(String name, Color? textColor, double screenWidth) {
+    // Show loading indicator if name is empty
+    if (name.isEmpty) {
+      return widget.isMobile
+          ? SizedBox(width: screenWidth * SlidingAppBarConstants.mobileModelNameWidthFactor)
+          : const SizedBox();
+    }
+    
     if (widget.isMobile) {
       // Mobile: limit width, center text
       return SizedBox(

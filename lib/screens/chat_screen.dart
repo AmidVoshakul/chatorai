@@ -3,7 +3,6 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
@@ -36,7 +35,7 @@ class ChatScreenConstants {
   static const int baseRetryDelaySeconds = 2;
   
   // Token Management
-  static const int defaultMaxTokens = 8000;
+  static const int defaultMaxTokens = 32000;
   
   // Error Handling
   static const int maxErrorLength = 500;
@@ -56,10 +55,15 @@ class ChatScreenConstants {
 
 class ChatScreen extends StatefulWidget {
   final String? initialModel;
+  // Optional overrides for testing
+  final OpenRouterClient? openRouterService;
+  final ThemeProvider? themeProvider;
 
   const ChatScreen({
     super.key,
     this.initialModel,
+    this.openRouterService,
+    this.themeProvider,
   });
 
   @override
@@ -68,7 +72,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   late ChatStorageService _chatStorageService;
-  late OpenRouterService _openRouterService;
+  late OpenRouterClient _openRouterService;
   late ThemeProvider _themeProvider;
   
   bool _isSidebarCollapsed = false;
@@ -111,10 +115,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _logger.logInfo('[ChatScreen] Initializing ChatScreen services...');
     _chatStorageService = ChatStorageService();
     _logger.logInfo('[ChatScreen] ChatStorageService initialized');
-    _openRouterService = OpenRouterService();
-    _logger.logInfo('[ChatScreen] OpenRouterService initialized');
-    _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    _logger.logInfo('[ChatScreen] ThemeProvider accessed');
+    _openRouterService = widget.openRouterService ?? OpenRouterService();
+    _logger.logInfo('[ChatScreen] OpenRouterService initialized (injected: ${widget.openRouterService != null})');
+    _themeProvider = widget.themeProvider ?? Provider.of<ThemeProvider>(context, listen: false);
+    _logger.logInfo('[ChatScreen] ThemeProvider accessed (injected: ${widget.themeProvider != null})');
     
     // Initialize scroll controller
     _messageScrollController = ScrollController();
@@ -142,10 +146,21 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _logger.logInfo('[ChatScreen] ChatScrollUtils initialized');
 
     // Initialize model selection from ThemeProvider
-    _initializeModelSelection();
+    // Get the saved model ID immediately from ThemeProvider
+    _selectedModel = _themeProvider.selectedModelId;
+    _selectedModelObject = _themeProvider.selectedModelObject;
+    
+    print('DEBUG_PRINT: ChatScreen.initState -> Initial model from ThemeProvider: $_selectedModel, hasObject: ${_selectedModelObject != null}, modelsLoaded: ${_themeProvider.modelsLoaded}, settingsLoaded: ${_themeProvider.settingsLoaded}');
+    _logger.logInfo('[ChatScreen] Initial model from ThemeProvider: $_selectedModel, hasObject: ${_selectedModelObject != null}, modelsLoaded: ${_themeProvider.modelsLoaded}, settingsLoaded: ${_themeProvider.settingsLoaded}');
 
     // Listen to ThemeProvider changes to update loading state
     _themeProvider.addListener(_onThemeProviderChange);
+
+    // If models are already loaded and we have the object, we're done
+    // If not, _onThemeProviderChange will update us when models finish loading
+    if (!_themeProvider.modelsLoaded) {
+      _logger.logInfo('[ChatScreen] Models still loading, will update when ready');
+    }
 
     // Load chats after a short delay to ensure context is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -155,8 +170,27 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   // Listen for ThemeProvider changes to update loading state
   void _onThemeProviderChange() {
+    print('DEBUG_PRINT: ChatScreen._onThemeProviderChange -> modelsLoaded: ${_themeProvider.modelsLoaded}, isLoadingModels: ${_themeProvider.isLoadingModels}, settingsLoaded: ${_themeProvider.settingsLoaded}');
     // Update the loading state when models finish loading
     if (mounted) {
+      final themeModelId = _themeProvider.selectedModelId;
+      final themeModelObject = _themeProvider.selectedModelObject;
+      
+      // Always update from ThemeProvider to ensure we have the latest
+      // This handles both settings loading and model loading
+      if (_selectedModel != themeModelId || _selectedModelObject != themeModelObject) {
+        print('DEBUG_PRINT: ChatScreen._onThemeProviderChange -> Updating model from ThemeProvider: $themeModelId');
+        _logger.logInfo('[ChatScreen] _onThemeProviderChange: Updating model to $themeModelId');
+        
+        _selectedModel = themeModelId;
+        _selectedModelObject = themeModelObject;
+        
+        if (_selectedModelObject != null && _selectedModel.isNotEmpty) {
+          print('DEBUG_PRINT: ChatScreen._onThemeProviderChange -> Updated to: ${_selectedModelObject!.id}, context: ${_selectedModelObject!.contextLength}');
+          _logger.logInfo('[ChatScreen] Updated to: ${_selectedModelObject!.name} with context: ${_selectedModelObject!.contextLength}');
+        }
+      }
+      
       setState(() {
         // This will trigger a rebuild and update the loading indicator
       });
@@ -177,37 +211,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // The SlidingAppBar's handleScroll() method has its own logic to determine
     // when to hide/show based on scroll direction and position
     _slidingAppBarKey.currentState?.handleScroll(offset);
-  }
-
-  // Initialize model selection from ThemeProvider
-  void _initializeModelSelection() {
-    // Set initial model from ThemeProvider
-    _selectedModel = _themeProvider.selectedModelId;
-    _selectedModelObject = _themeProvider.selectedModelObject;
-
-    // If models are already loaded, find the selected model
-    if (_themeProvider.modelsLoaded && _themeProvider.availableModels.isNotEmpty) {
-      _selectedModelObject = _themeProvider.getModelById(_selectedModel);
-      if (_selectedModelObject != null) {
-        _logger.logInfo('[ChatScreen] Using selected model: ${_selectedModelObject!.name}');
-      } else {
-        _logger.logWarning('[ChatScreen] Selected model not found in available models, using first available');
-        _selectedModelObject = _themeProvider.availableModels.first;
-        _selectedModel = _selectedModelObject!.id;
-      }
-    } else if (_themeProvider.isLoadingModels) {
-      // Wait for models to be loaded
-      Future.delayed(ChatScreenConstants.modelLoadWaitTime, () {
-        if (mounted && _themeProvider.modelsLoaded && _themeProvider.availableModels.isNotEmpty) {
-          _selectedModelObject = _themeProvider.getModelById(_selectedModel);
-          if (_selectedModelObject == null) {
-            _selectedModelObject = _themeProvider.availableModels.first;
-            _selectedModel = _selectedModelObject!.id;
-          }
-          setState(() {});
-        }
-      });
-    }
   }
 
   @override
@@ -381,6 +384,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       await _loadChats();
       
       // Show success snackbar
+      if (!mounted) return;
       SnackbarUtils.showSuccessSnackBar(
         context: context,
         message: currentLanguage == 'en' 
@@ -399,6 +403,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _handleSendMessage(String message) async {
+    print('DEBUG_PRINT: ChatScreen._handleSendMessage -> message: "$message"');
+    print('DEBUG_PRINT: ChatScreen._handleSendMessage -> _selectedModel: $_selectedModel, _selectedModelObject: ${_selectedModelObject?.id ?? "null"}');
     _logger.logInfo('[ChatScreen] Received message to send: $message');
     
     // Reset scroll lock before sending new message
@@ -722,6 +728,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _streamAIResponse() async {
+    print('DEBUG_PRINT: ChatScreen._streamAIResponse -> _selectedModel: $_selectedModel, _selectedModelObject: ${_selectedModelObject?.id ?? "null"}');
     _logger.logInfo('[ChatScreen] Starting AI response streaming...');
     if (_currentChat == null) {
       _logger.logError('[ChatScreen] No current chat available');
@@ -729,31 +736,148 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
     _logger.logInfo('[ChatScreen] Current chat available, proceeding...');
 
-    final messages = _currentChat!.messages
+    // Filter out messages marked as error so we don't resend API error payloads
+    final filteredList = _currentChat!.messages.where((m) => !m.isError).toList();
+    final messages = filteredList
         .map((msg) => {
           'role': msg.role.name,
           'content': msg.content
         })
         .toList();
-    
+
     _logger.logInfo('[ChatScreen] Sending ${messages.length} messages to AI service');
     
     final selectedModel = _selectedModel;
-    final optimalMaxTokens = _selectedModelObject != null 
-        ? _getOptimalMaxTokensForModel(_selectedModelObject!)
-        : _getOptimalMaxTokensFromId(selectedModel);
     
-    _logger.logInfo('[ChatScreen] Using model: $selectedModel with max_tokens: $optimalMaxTokens');
+    // Get model context length for precise calculation
+    final modelContextLength = _selectedModelObject?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
+    
+    print('DEBUG_PRINT: ChatScreen._streamAIResponse -> model: $selectedModel, maxTokens: $modelContextLength');
+    _logger.logInfo('[ChatScreen] Using model: $selectedModel with max_tokens: $modelContextLength');
     
     await _handleStreamingResponse(
       messages: messages,
       isContinuation: false,
       modelId: selectedModel,
-      maxTokens: optimalMaxTokens,
+      maxTokens: modelContextLength,
     );
   }
 
 
+
+  /// Try getChatCompletion with adaptive rollback on 400-like errors
+  /// Uses 5% token reduction per attempt before removing messages
+  Future<ChatCompletionResponse> _getChatCompletionWithAdaptiveRollback({
+    required String model,
+    required List<Map<String, String>> messages,
+    int? maxTokens,
+    double? temperature,
+  }) async {
+    // Reuse the same sanitization logic as for streaming
+    List<Map<String, String>> sanitize(List<Map<String, String>> src) {
+      final patterns = [
+        'Exception',
+        'DioException',
+        'This exception was thrown',
+        'Traceback',
+        'stack trace',
+        'status code',
+        'RequestOptions',
+        'Bad Request',
+        'Client error',
+        'SocketException',
+        'HttpException',
+      ];
+
+      const int maxMessageLen = 20000;
+      final out = <Map<String, String>>[];
+
+      for (final m in src) {
+        var content = m['content'] ?? '';
+        final role = m['role'] ?? 'user';
+
+        final hasErrPattern = patterns.any((p) => content.contains(p));
+        if (role == 'assistant' && hasErrPattern) {
+          continue;
+        }
+
+        if (content.length > maxMessageLen) {
+          content = '${content.substring(0, maxMessageLen)}...[truncated]';
+        }
+
+        out.add({'role': role, 'content': content});
+      }
+
+      return out;
+    }
+
+    var attemptMsgs = sanitize(messages);
+
+    // Get model context length for precise calculation
+    final modelObj = _themeProvider.getModelById(model);
+    final modelContextLength = modelObj?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
+    
+    // Mutable max tokens - start with provided or model's full context
+    int currentMaxTokens = maxTokens ?? modelContextLength;
+    
+    // Token reduction state
+    int tokenReductionAttempts = 0;
+    const int maxTokenReductionAttempts = 10; // Allow up to 10 reductions (5% each)
+    const double reductionFactor = 0.97; // 3% reduction per attempt
+    const int minTokens = 8000; // Absolute minimum to prevent too small values
+
+    while (true) {
+      try {
+        final response = await _openRouterService.getChatCompletion(
+          model: model,
+          messages: attemptMsgs,
+          maxTokens: currentMaxTokens,
+          temperature: temperature,
+        );
+
+        return response;
+      } catch (e) {
+        final err = e.toString();
+        final isBadRequest = err.contains('400') || 
+            err.toLowerCase().contains('bad response') || 
+            err.toLowerCase().contains('client error') || 
+            err.toLowerCase().contains('bad request');
+        
+        if (!isBadRequest) rethrow;
+
+        // Token reduction first (5% per attempt)
+        if (tokenReductionAttempts < maxTokenReductionAttempts &&
+            currentMaxTokens > minTokens) {
+          int newTokens = (currentMaxTokens * reductionFactor).floor();
+          
+          if (newTokens < minTokens) {
+            newTokens = minTokens;
+          }
+          
+          if (newTokens < currentMaxTokens) {
+            tokenReductionAttempts++;
+            currentMaxTokens = newTokens;
+            continue; // retry with reduced tokens
+          }
+        }
+
+        // Try to remove oldest non-system message(s)
+        if (attemptMsgs.length <= 1) rethrow;
+
+        final removableIndex = attemptMsgs.indexWhere((m) => m['role'] != 'system');
+        if (removableIndex == -1) rethrow;
+
+        attemptMsgs.removeAt(removableIndex);
+        if (removableIndex < attemptMsgs.length && attemptMsgs[removableIndex]['role'] == 'assistant') {
+          attemptMsgs.removeAt(removableIndex);
+        }
+
+        // Reset token reduction attempts after message removal
+        tokenReductionAttempts = 0;
+        currentMaxTokens = modelContextLength;
+      }
+    }
+  }
 
   // Method to add assistant message from ChatMessages
   Future<void> addAssistantMessage() async {
@@ -913,17 +1037,19 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
     
     // Wait for the navigator to close and UI to update
-    Future.delayed(const Duration(milliseconds: 150), () {
+    Future.delayed(const Duration(milliseconds: 150), () async {
+      if (!mounted) return;
+      
       // Get the context of the heading widget
-      final context = heading.key.currentContext;
-      if (context == null) {
-        _logger.logError('[HeadingTap] Heading context is null!');
+      final headingContext = heading.key.currentContext;
+      if (headingContext == null || !headingContext.mounted) {
+        _logger.logError('[HeadingTap] Heading context is null or not mounted!');
         return;
       }
       
       // Use Scrollable.ensureVisible to scroll to the widget
-      Scrollable.ensureVisible(
-        context,
+      await Scrollable.ensureVisible(
+        headingContext,
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
         alignment: 0.15, // 15% from top (below AppBar)
@@ -1000,35 +1126,34 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       {'role': 'user', 'content': 'Continue from where you left off.'},
     ];
     
-    final optimalMaxTokens = _selectedModelObject != null 
-        ? _getOptimalMaxTokensForModel(_selectedModelObject!)
-        : _getOptimalMaxTokensFromId(_selectedModel);
+    // Get model context length for precise calculation
+    final modelContextLength = _selectedModelObject?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
     
-    _logger.logInfo('[ChatScreen] Using model: $_selectedModel with max_tokens: $optimalMaxTokens for continuation');
+    _logger.logInfo('[ChatScreen] Using model: $_selectedModel with max_tokens: $modelContextLength for continuation');
     
     await _handleStreamingResponse(
       messages: continuationPrompt,
       isContinuation: true,
       modelId: _selectedModel,
-      maxTokens: optimalMaxTokens,
+      maxTokens: modelContextLength,
     );
   }
 
   // Method to get optimal max tokens for different models based on their context length
+  // Returns the full context length of the model
   int _getOptimalMaxTokensForModel(OpenRouterModel model) {
+    // Use model provided context length when available to allow full usage
     if (model.contextLength == null) {
       return ChatScreenConstants.defaultMaxTokens;
     }
-    
-    // Use FULL context length from API - no artificial restrictions!
-    // Models can use their complete context window
+
     final contextLength = model.contextLength!;
-    
+
     // Only ensure minimum for very small models
     if (contextLength < 1000) {
       return 1000;
     }
-    
+
     return contextLength;
   }
 
@@ -1045,6 +1170,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     required String modelId,
     required int maxTokens,
   }) async {
+    // Use a mutable local max tokens so we can reduce it on 400 before removing messages
+    int currentMaxTokens = maxTokens;
     final streamType = isContinuation ? 'Continuation' : 'AI';
     _logger.logInfo('[ChatScreen] Starting $streamType streaming...');
     
@@ -1060,141 +1187,255 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // Create a local flag that can be captured by closures
     bool isStreamingLocal = true;
     
-    try {
-      await _openRouterService.streamChatCompletion(
-        messages: messages,
-        model: modelId,
-        maxTokens: maxTokens,
-        includeReasoning: true,
-        onChunk: (content) {
-          // Check local flag first (fast), then state flag
-          if (!isStreamingLocal || !_isStreaming || content.isEmpty) {
-            if (isStreamingLocal) {
-              _logger.logInfo('[ChatScreen] Chunk skipped: streaming stopped (content: "${content.substring(0, min(20, content.length))}")');
-            }
-            return;
-          }
-          
-          // Accumulate locally
-          accumulatedContent += content;
-          
-          // Update UI on EVERY chunk with IMMUTABLE update
-          if (mounted && _currentChat != null && _currentChat!.messages.isNotEmpty) {
-            final lastMessage = _currentChat!.messages.last;
-            
-            // CRITICAL: Create NEW message object with new content
-            final updatedMessage = lastMessage.copyWith(
-              content: accumulatedContent,
-            );
-            
-            // CRITICAL: Create NEW list with updated message
-            final newMessages = List<Message>.from(_currentChat!.messages);
-            newMessages[newMessages.length - 1] = updatedMessage;
-            
-            // CRITICAL: Create NEW chat object
-            final newChat = _currentChat!.copyWith(
-              messages: newMessages,
-              updatedAt: DateTime.now(),
-            );
-            
-            // CRITICAL: setState with NEW objects
-            _updateCurrentChat(newChat);
-          }
-        },
-        onReasoning: (reasoning) {
-          // Check local flag first (fast), then state flag
-          if (!isStreamingLocal || !_isStreaming || reasoning.isEmpty) {
-            if (isStreamingLocal) {
-              _logger.logInfo('[ChatScreen] Reasoning skipped: streaming stopped (reasoning: "${reasoning.substring(0, min(20, reasoning.length))}")');
-            }
-            return;
-          }
-          
-          // Accumulate locally
-          accumulatedReasoning += reasoning;
-          
-          // Update UI on EVERY reasoning chunk
-          if (mounted && _currentChat != null && _currentChat!.messages.isNotEmpty) {
-            final lastMessage = _currentChat!.messages.last;
-            
-            // CRITICAL: Create NEW message with new reasoning
-            final updatedMessage = lastMessage.copyWith(
-              reasoning: accumulatedReasoning,
-            );
-            
-            // CRITICAL: Create NEW list
-            final newMessages = List<Message>.from(_currentChat!.messages);
-            newMessages[newMessages.length - 1] = updatedMessage;
-            
-            // CRITICAL: Create NEW chat
-            final newChat = _currentChat!.copyWith(
-              messages: newMessages,
-              updatedAt: DateTime.now(),
-            );
-            
-            // CRITICAL: setState with NEW objects
-            _updateCurrentChat(newChat);
-          }
-        },
-        onCompletion: (fullContent) {
-          // Check if streaming was stopped
-          if (!isStreamingLocal || !_isStreaming) {
-            _logger.logInfo('[ChatScreen] Completion skipped: streaming was stopped');
-            return;
-          }
-          
-          _logger.logInfo('[ChatScreen] Streaming completed normally');
-          
-          // Final immutable update to mark as complete
-          if (mounted && _currentChat != null && _currentChat!.messages.isNotEmpty) {
-            final lastMessage = _currentChat!.messages.last;
-            
-            // CRITICAL: Create NEW completed message
-            final completedMessage = lastMessage.copyWith(
-              content: accumulatedContent,
-              reasoning: accumulatedReasoning,
-              isComplete: true,
-            );
-            
-            // CRITICAL: Create NEW list
-            final newMessages = List<Message>.from(_currentChat!.messages);
-            newMessages[newMessages.length - 1] = completedMessage;
-            
-            // CRITICAL: Create NEW chat
-            final newChat = _currentChat!.copyWith(
-              messages: newMessages,
-              updatedAt: DateTime.now(),
-            );
-            
-            // CRITICAL: setState with NEW objects
-            _updateCurrentChat(newChat);
-            
-            // Reset streaming state and force final rebuild
-            setState(() {
-              _isStreaming = false;
-            });
-            
-            // Save to storage (this is OK, it's the final state)
-            _chatStorageService.updateMessageInChat(
-              newChat.id, 
-              completedMessage.id, 
-              completedMessage
-            );
-            
-            // Show continuation suggestions
-            if (!isContinuation) {
-              _showContinuationSuggestions(completedMessage);
-            }
-          }
-        },
-      );
-    } catch (e) {
-      _logger.logError('[ChatScreen] Error in $streamType streaming: $e');
-      setState(() {
-        _isStreaming = false;
-      });
-      await _handleStreamingError(e, isContinuation);
+    // Prepare messages by sanitizing out error-filled assistant messages and truncating huge individual messages
+    List<Map<String, String>> sanitize(List<Map<String, String>> src) {
+      final patterns = [
+        'Exception',
+        'DioException',
+        'This exception was thrown',
+        'Traceback',
+        'stack trace',
+        'status code',
+        'RequestOptions',
+        'Bad Request',
+        'Client error',
+        'SocketException',
+        'HttpException',
+      ];
+
+      const int maxMessageLen = 20000; // per-message soft limit
+
+      final out = <Map<String, String>>[];
+
+      for (final m in src) {
+        var content = m['content'] ?? '';
+        final role = m['role'] ?? 'user';
+
+        final hasErrPattern = patterns.any((p) => content.contains(p));
+        if (role == 'assistant' && hasErrPattern) {
+          continue; // drop this assistant message
+        }
+
+        if (content.length > maxMessageLen) {
+          content = '${content.substring(0, maxMessageLen)}...[truncated]';
+        }
+
+        out.add({'role': role, 'content': content});
+      }
+
+      return out;
     }
+
+    // Adaptive retry: on 400-like errors, use 5% token reduction first,
+    // then progressively remove oldest non-system messages and retry
+    final originalSanitized = sanitize(messages);
+    var attemptMsgs = List<Map<String, String>>.from(originalSanitized);
+
+    // Get model context length for precise calculation
+    final modelObj = _themeProvider.getModelById(modelId);
+    final modelContextLength = modelObj?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
+    
+    // Token reduction state
+    int tokenReductionAttempts = 0;
+    const int maxTokenReductionAttempts = 10; // Allow up to 10 reductions (5% each)
+    const double reductionFactor = 0.95; // 5% reduction per attempt
+    const int minTokens = 8000; // Absolute minimum
+
+    while (true) {
+      try {
+        await _openRouterService.streamChatCompletion(
+          messages: attemptMsgs,
+          model: modelId,
+          maxTokens: currentMaxTokens,
+          includeReasoning: true,
+          onChunk: (content) {
+            // Check local flag first (fast), then state flag
+            if (!isStreamingLocal || !_isStreaming || content.isEmpty) {
+              if (isStreamingLocal) {
+                _logger.logInfo('[ChatScreen] Chunk skipped: streaming stopped (content: "${content.substring(0, min(20, content.length))}")');
+              }
+              return;
+            }
+
+            // Accumulate locally
+            accumulatedContent += content;
+
+            // Update UI on EVERY chunk with IMMUTABLE update
+            if (mounted && _currentChat != null && _currentChat!.messages.isNotEmpty) {
+              final lastMessage = _currentChat!.messages.last;
+
+              // CRITICAL: Create NEW message object with new content
+              final updatedMessage = lastMessage.copyWith(
+                content: accumulatedContent,
+              );
+
+              // CRITICAL: Create NEW list with updated message
+              final newMessages = List<Message>.from(_currentChat!.messages);
+              newMessages[newMessages.length - 1] = updatedMessage;
+
+              // CRITICAL: Create NEW chat object
+              final newChat = _currentChat!.copyWith(
+                messages: newMessages,
+                updatedAt: DateTime.now(),
+              );
+
+              // CRITICAL: setState with NEW objects
+              _updateCurrentChat(newChat);
+            }
+          },
+          onReasoning: (reasoning) {
+            // Check local flag first (fast), then state flag
+            if (!isStreamingLocal || !_isStreaming || reasoning.isEmpty) {
+              if (isStreamingLocal) {
+                _logger.logInfo('[ChatScreen] Reasoning skipped: streaming stopped (reasoning: "${reasoning.substring(0, min(20, reasoning.length))}")');
+              }
+              return;
+            }
+
+            // Accumulate locally
+            accumulatedReasoning += reasoning;
+
+            // Update UI on EVERY reasoning chunk
+            if (mounted && _currentChat != null && _currentChat!.messages.isNotEmpty) {
+              final lastMessage = _currentChat!.messages.last;
+
+              // CRITICAL: Create NEW message with new reasoning
+              final updatedMessage = lastMessage.copyWith(
+                reasoning: accumulatedReasoning,
+              );
+
+              // CRITICAL: Create NEW list
+              final newMessages = List<Message>.from(_currentChat!.messages);
+              newMessages[newMessages.length - 1] = updatedMessage;
+
+              // CRITICAL: Create NEW chat
+              final newChat = _currentChat!.copyWith(
+                messages: newMessages,
+                updatedAt: DateTime.now(),
+              );
+
+              // CRITICAL: setState with NEW objects
+              _updateCurrentChat(newChat);
+            }
+          },
+          onCompletion: (fullContent) {
+            // Check if streaming was stopped
+            if (!isStreamingLocal || !_isStreaming) {
+              _logger.logInfo('[ChatScreen] Completion skipped: streaming was stopped');
+              return;
+            }
+
+            _logger.logInfo('[ChatScreen] Streaming completed normally');
+
+            // Final immutable update to mark as complete
+            if (mounted && _currentChat != null && _currentChat!.messages.isNotEmpty) {
+              final lastMessage = _currentChat!.messages.last;
+
+              // CRITICAL: Create NEW completed message
+              final completedMessage = lastMessage.copyWith(
+                content: accumulatedContent,
+                reasoning: accumulatedReasoning,
+                isComplete: true,
+              );
+
+              // CRITICAL: Create NEW list
+              final newMessages = List<Message>.from(_currentChat!.messages);
+              newMessages[newMessages.length - 1] = completedMessage;
+
+              // CRITICAL: Create NEW chat
+              final newChat = _currentChat!.copyWith(
+                messages: newMessages,
+                updatedAt: DateTime.now(),
+              );
+
+              // CRITICAL: setState with NEW objects
+              _updateCurrentChat(newChat);
+
+              // Reset streaming state and force final rebuild
+              setState(() {
+                _isStreaming = false;
+              });
+
+              // Save to storage (this is OK, it's the final state)
+              _chatStorageService.updateMessageInChat(
+                newChat.id, 
+                completedMessage.id, 
+                completedMessage
+              );
+
+              // Show continuation suggestions
+              if (!isContinuation) {
+                _showContinuationSuggestions(completedMessage);
+              }
+            }
+          },
+        );
+
+        // If we reached here, the streaming started & completed successfully
+        break; // exit retry loop
+      } catch (e) {
+        final err = e.toString();
+        _logger.logError('[ChatScreen] Error in $streamType streaming: $err');
+
+        // Detect 400/bad request cases - adaptive rollback
+        final isBadRequest = err.contains('400') || err.toLowerCase().contains('bad response') || err.toLowerCase().contains('client error') || err.toLowerCase().contains('bad request');
+        if (!isBadRequest) {
+          setState(() {
+            _isStreaming = false;
+          });
+          await _handleStreamingError(e, isContinuation);
+          break;
+        }
+
+        // Token reduction first (5% per attempt)
+        if (tokenReductionAttempts < maxTokenReductionAttempts &&
+            currentMaxTokens > minTokens) {
+          int newTokens = (currentMaxTokens * reductionFactor).floor();
+          
+          if (newTokens < minTokens) {
+            newTokens = minTokens;
+          }
+          
+          if (newTokens < currentMaxTokens) {
+            tokenReductionAttempts++;
+            currentMaxTokens = newTokens;
+            continue; // retry with reduced tokens
+          }
+        }
+
+        // If token reductions exhausted or not helpful, fall back to removing oldest non-system message(s) and retry
+        if (attemptMsgs.length <= 1) {
+          setState(() {
+            _isStreaming = false;
+          });
+          await _handleStreamingError(e, isContinuation);
+          break;
+        }
+
+        // Find first removable index (skip system messages)
+        final removableIndex = attemptMsgs.indexWhere((m) => m['role'] != 'system');
+        if (removableIndex == -1) {
+          setState(() {
+            _isStreaming = false;
+          });
+          await _handleStreamingError(e, isContinuation);
+          break;
+        }
+
+        // Remove the oldest user/assistant pair if possible
+        attemptMsgs.removeAt(removableIndex);
+        if (removableIndex < attemptMsgs.length && attemptMsgs[removableIndex]['role'] == 'assistant') {
+          attemptMsgs.removeAt(removableIndex);
+        }
+
+        // Reset token reduction attempts after message removal
+        tokenReductionAttempts = 0;
+        currentMaxTokens = modelContextLength;
+        
+        // Loop continues and retries
+      }
+    }
+
   }
 
   /// Handle streaming errors with proper error message display
@@ -1267,17 +1508,20 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   void _updateSelectedModel(String modelId, OpenRouterModel? modelObject) {
     if (!mounted) return;
+    print('DEBUG_PRINT: ChatScreen._updateSelectedModel -> modelId: $modelId, modelObject: ${modelObject?.id ?? "null"}');
     
     // If modelObject is null, try to get it from ThemeProvider
     OpenRouterModel? finalModelObject = modelObject;
     if (finalModelObject == null && _themeProvider.modelsLoaded) {
       finalModelObject = _themeProvider.getModelById(modelId);
+      print('DEBUG_PRINT: ChatScreen._updateSelectedModel -> Got from ThemeProvider: ${finalModelObject?.id ?? "null"}');
     }
     
     setState(() {
       _selectedModel = modelId;
       _selectedModelObject = finalModelObject;
     });
+    print('DEBUG_PRINT: ChatScreen._updateSelectedModel -> Set _selectedModel: $_selectedModel, _selectedModelObject: ${_selectedModelObject?.id ?? "null"}');
     
     if (finalModelObject != null) {
       final contextLength = finalModelObject.contextLength ?? 'unknown';
@@ -1306,38 +1550,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         ),
       ),
     );
-  }
-
-  // Fallback function to determine max tokens based on model ID pattern
-  // Used when model object is not available
-  int _getOptimalMaxTokensFromId(String modelId) {
-    // Very large context models (100K+ tokens)
-    if (modelId.contains('grok') || 
-        modelId.contains('claude-3-5-sonnet') ||
-        modelId.contains('claude-3-opus') ||
-        modelId.contains('gpt-4-turbo') ||
-        modelId.contains('gpt-4o') ||
-        modelId.contains('gemini-1.5')) {
-      return 128000; // Use 128K as realistic fallback
-    }
-    
-    // Large context models (32K-100K tokens)
-    if (modelId.contains('claude') || 
-        modelId.contains('gpt-4') ||
-        modelId.contains('gemini-1.0')) {
-      return 32000; // Use 32K as realistic fallback
-    }
-    
-    // Standard models (4K-32K tokens)
-    if (modelId.contains('gpt-3.5') || 
-        modelId.contains('llama') || 
-        modelId.contains('mistral') ||
-        modelId.contains('mixtral')) {
-      return 8000; // Use 8K as realistic fallback
-    }
-    
-    // Default for unknown models
-    return 4096;
   }
 
   bool _hasHeadings() {
@@ -1875,7 +2087,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         },
       ];
       
-      final response = await _openRouterService.getChatCompletion(
+      final response = await _getChatCompletionWithAdaptiveRollback(
         model: _selectedModel,
         messages: suggestionPrompt,
         maxTokens: 500,

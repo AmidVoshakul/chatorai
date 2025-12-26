@@ -33,12 +33,13 @@ class ThemeProvider with ChangeNotifier {
   bool _wideScreenMode = false; // New setting for wide screen mode
   bool _isRTL = false;
   String _selectedLanguage = 'en';
-  String _selectedModelId = 'nvidia/nemotron-3-nano-30b-a3b:free'; // Default model ID
+  String _selectedModelId = ''; // Will be set after settings load
   OpenRouterModel? _selectedModelObject;
   List<OpenRouterModel> _availableModels = [];
   List<String> _favoriteModelIds = [];
   bool _modelsLoaded = false;
   bool _isLoadingModels = false;
+  bool _settingsLoaded = false;
 
   // Computed property for dark mode based on theme mode
   bool get isDarkMode => _themeMode == AppThemeMode.dark || 
@@ -58,6 +59,7 @@ class ThemeProvider with ChangeNotifier {
   List<String> get favoriteModelIds => _favoriteModelIds;
   bool get modelsLoaded => _modelsLoaded;
   bool get isLoadingModels => _isLoadingModels;
+  bool get settingsLoaded => _settingsLoaded;
 
   ThemeProvider() {
     loadSettings();
@@ -113,6 +115,7 @@ class ThemeProvider with ChangeNotifier {
 
   /// Set selected model by ID
   Future<void> setSelectedModel(String modelId) async {
+    print('DEBUG_PRINT: ThemeProvider.setSelectedModel called with modelId: $modelId (current: $_selectedModelId)');
     if (_selectedModelId != modelId) {
       _selectedModelId = modelId;
 
@@ -121,6 +124,8 @@ class ThemeProvider with ChangeNotifier {
         (model) => model.id == modelId,
         orElse: () => _availableModels.first, // Return first model if not found
       );
+
+      print('DEBUG_PRINT: ThemeProvider.setSelectedModel -> selectedModelObject: ${_selectedModelObject?.id}');
 
       saveSettings();
       notifyListeners();
@@ -130,6 +135,7 @@ class ThemeProvider with ChangeNotifier {
   /// Set selected model without notifying listeners immediately
   /// Useful for navigation scenarios to avoid race conditions
   Future<void> setSelectedModelSilent(String modelId) async {
+    print('DEBUG_PRINT: ThemeProvider.setSelectedModelSilent called with modelId: $modelId (current: $_selectedModelId)');
     if (_selectedModelId != modelId) {
       _selectedModelId = modelId;
 
@@ -138,6 +144,8 @@ class ThemeProvider with ChangeNotifier {
         (model) => model.id == modelId,
         orElse: () => _availableModels.first, // Return first model if not found
       );
+
+      print('DEBUG_PRINT: ThemeProvider.setSelectedModelSilent -> selectedModelObject: ${_selectedModelObject?.id}');
 
       await saveSettings();
     }
@@ -203,14 +211,36 @@ class ThemeProvider with ChangeNotifier {
       _availableModels = _deduplicateModels(models);
       _modelsLoaded = true;
 
-      // Set default model if current selection is not available
-      if (_selectedModelObject == null ||
-          !_availableModels.any((m) => m.id == _selectedModelId)) {
-        // Try to find the default model
-        final defaultModel = _availableModels.firstWhere(
-          (model) => model.id == _selectedModelId,
-          orElse: () => _availableModels.first,
-        );
+      print('DEBUG_PRINT: ThemeProvider._loadModelsAsync -> loaded ${_availableModels.length} models. SelectedModelId: $_selectedModelId. ExistsInAvailable: ${_availableModels.any((m) => m.id == _selectedModelId)}');
+
+      // Set the selected model object from saved ID
+      if (_selectedModelObject == null) {
+        // If no model ID is saved, use the first available model
+        if (_selectedModelId.isEmpty) {
+          _selectedModelId = _availableModels.first.id;
+          _selectedModelObject = _availableModels.first;
+          await saveSettings();
+          print('DEBUG_PRINT: ThemeProvider._loadModelsAsync -> No saved model, using first available: ${_selectedModelObject!.id}, context: ${_selectedModelObject!.contextLength}');
+        } else {
+          // Find the model object for the saved ID
+          final modelObject = _availableModels.firstWhere(
+            (model) => model.id == _selectedModelId,
+            orElse: () => _availableModels.first,
+          );
+          _selectedModelObject = modelObject;
+          // Update ID if we fell back to first available
+          if (modelObject.id != _selectedModelId) {
+            _selectedModelId = modelObject.id;
+            await saveSettings();
+          }
+          print('DEBUG_PRINT: ThemeProvider._loadModelsAsync -> Set model object: ${_selectedModelObject!.id}, context: ${_selectedModelObject!.contextLength}');
+        }
+        // Notify listeners about the model change
+        notifyListeners();
+      } else if (!_availableModels.any((m) => m.id == _selectedModelId)) {
+        print('DEBUG_PRINT: ThemeProvider._loadModelsAsync -> Current model not available, finding replacement');
+        // Current selection is not available, find a replacement
+        final defaultModel = _availableModels.first;
         await setSelectedModel(defaultModel.id);
       }
 
@@ -230,12 +260,19 @@ class ThemeProvider with ChangeNotifier {
         _availableModels = _deduplicateModels(models);
         _modelsLoaded = true;
 
-        if (_selectedModelObject == null ||
-            !_availableModels.any((m) => m.id == _selectedModelId)) {
-          final defaultModel = _availableModels.firstWhere(
+        if (_selectedModelObject == null) {
+          final modelObject = _availableModels.firstWhere(
             (model) => model.id == _selectedModelId,
             orElse: () => _availableModels.first,
           );
+          _selectedModelObject = modelObject;
+          if (modelObject.id != _selectedModelId) {
+            _selectedModelId = modelObject.id;
+            await saveSettings();
+          }
+          notifyListeners();
+        } else if (!_availableModels.any((m) => m.id == _selectedModelId)) {
+          final defaultModel = _availableModels.first;
           await setSelectedModel(defaultModel.id);
         }
 
@@ -285,7 +322,9 @@ class ThemeProvider with ChangeNotifier {
       _highContrast = prefs.getBool(_highContrastKey) ?? false;
       _wideScreenMode = prefs.getBool(_wideScreenModeKey) ?? false;
       _selectedLanguage = prefs.getString(_languageKey) ?? 'en';
-      _selectedModelId = prefs.getString(_selectedModelKey) ?? 'nvidia/nemotron-3-nano-30b-a3b:free';
+      _selectedModelId = prefs.getString(_selectedModelKey) ?? '';
+
+      print('DEBUG_PRINT: ThemeProvider.loadSettings -> loaded selectedModelId: $_selectedModelId');
       
       // Load favorite models
       final favoriteModelsString = prefs.getStringList(_favoriteModelsKey) ?? [];
@@ -296,12 +335,22 @@ class ThemeProvider with ChangeNotifier {
       
       // Initialize selected model object if models are already loaded
       if (_modelsLoaded && _availableModels.isNotEmpty) {
-        _selectedModelObject = _availableModels.firstWhere(
-          (model) => model.id == _selectedModelId,
-          orElse: () => _availableModels.first,
-        );
+        if (_selectedModelId.isEmpty) {
+          _selectedModelId = _availableModels.first.id;
+          _selectedModelObject = _availableModels.first;
+        } else {
+          _selectedModelObject = _availableModels.firstWhere(
+            (model) => model.id == _selectedModelId,
+            orElse: () => _availableModels.first,
+          );
+          // Update ID if we fell back to first available
+          if (_selectedModelObject!.id != _selectedModelId) {
+            _selectedModelId = _selectedModelObject!.id;
+          }
+        }
       }
 
+      _settingsLoaded = true;
       notifyListeners();
     } catch (e) {
       _logger.logError('[Settings] Error loading settings: $e');
@@ -334,7 +383,7 @@ class ThemeProvider with ChangeNotifier {
     _highContrast = false;
     _wideScreenMode = false;
     _selectedLanguage = 'en';
-    _selectedModelId = 'nvidia/nemotron-3-nano-30b-a3b:free';
+    _selectedModelId = '';
     _isRTL = false;
     _selectedModelObject = null;
     _availableModels.clear();
