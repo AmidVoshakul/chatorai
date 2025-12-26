@@ -110,29 +110,53 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
       context: context,
       position: RelativeRect.fromLTRB(
         offset.dx,
-        offset.dy - 80,
+        offset.dy - 170, // Подняли выше, чтобы меню было над кнопкой
         offset.dx + size.width,
-        offset.dy,
+        offset.dy - 40, // Нижняя граница выше кнопки
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       items: [
         PopupMenuItem(
+          value: 'add_camera',
+          child: Row(
+            children: [
+              Icon(Icons.camera_alt, size: 20),
+              SizedBox(width: 8),
+              Text(localizations.addCamera),
+            ],
+          ),
+        ),
+        PopupMenuItem(
           value: 'add_image',
           child: Row(
             children: [
               Icon(Icons.image, size: 20),
               SizedBox(width: 8),
-              Text(localizations.addImageToFile),
+              Text(localizations.addImage),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'add_file',
+          child: Row(
+            children: [
+              Icon(Icons.attach_file, size: 20),
+              SizedBox(width: 8),
+              Text(localizations.addFile),
             ],
           ),
         ),
       ],
     );
 
-    if (selected == 'add_image') {
-      // TODO
+    if (selected == 'add_camera') {
+      // TODO: Add camera functionality
+    } else if (selected == 'add_image') {
+      // TODO: Add image functionality
+    } else if (selected == 'add_file') {
+      // TODO: Add file functionality
     }
 
     setState(() => _plusActive = false);
