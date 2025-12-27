@@ -346,7 +346,7 @@ abstract class AppLocalizations {
   /// No description provided for @appDescription.
   ///
   /// In en, this message translates to:
-  /// **'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0.5\n\nDeveloped with ❤️ using Flutter'**
+  /// **'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0.7\n\nDeveloped with ❤️ using Flutter'**
   String get appDescription;
 
   /// No description provided for @shareChat.
@@ -1680,6 +1680,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap the heart icon on models to add them to your favorites'**
   String get tapHeartToAddFavorites;
+
+  /// No description provided for @startListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Start voice input'**
+  String get startListening;
+
+  /// No description provided for @stopListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop voice input'**
+  String get stopListening;
+
+  /// No description provided for @listening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening...'**
+  String get listening;
+
+  /// No description provided for @micUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone unavailable'**
+  String get micUnavailable;
+
+  /// No description provided for @sendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Send message'**
+  String get sendMessage;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

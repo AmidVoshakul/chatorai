@@ -131,7 +131,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get appInfo => 'アプリ情報';
 
   @override
-  String get appDescription => 'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nVersion: 1.0.0.5\n\nDeveloped with ❤️ using Flutter';
+  String get appDescription => 'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nVersion: 1.0.0.7\n\nDeveloped with ❤️ using Flutter';
 
   @override
   String get shareChat => 'チャットを共有';
@@ -808,4 +808,19 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tapHeartToAddFavorites => 'モデルの心臓アイコンをタップしてお気に入りに追加';
+
+  @override
+  String get startListening => 'Start voice input';
+
+  @override
+  String get stopListening => 'Stop voice input';
+
+  @override
+  String get listening => 'Listening...';
+
+  @override
+  String get micUnavailable => 'Microphone unavailable';
+
+  @override
+  String get sendMessage => 'Send message';
 }

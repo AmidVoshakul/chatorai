@@ -2,10 +2,11 @@ import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 import 'package:gen_ui_chat_ai/utils/image_utils.dart';
+import 'package:gen_ui_chat_ai/services/speech_to_text_service.dart';
+import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
 
 /// Data class for sending messages with optional media
 class MessageData {
@@ -44,7 +45,7 @@ class ChatInput extends StatefulWidget {
 
 class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixin {
   final TextEditingController _textController = TextEditingController();
-  final SpeechToText _speechToText = SpeechToText();
+  SpeechToTextService? _speechService;
   bool _isListening = false;
   bool _isSending = false;
   bool _plusActive = false;
@@ -66,12 +67,50 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
     super.initState();
     // Restore text from controller if it was preserved
     updateKeepAlive();
+    _initSpeechService();
+  }
+
+  void _initSpeechService() {
+    _speechService = SpeechToTextService(
+      onResult: (text) {
+        setState(() {
+          _textController.text = text;
+        });
+      },
+      onError: (error) {
+        setState(() {
+          _isListening = false;
+        });
+        // Show error via Snackbar
+        if (mounted) {
+          SnackbarUtils.showErrorSnackBar(
+            context: context,
+            message: error,
+            icon: Icons.mic_off,
+            duration: Duration(seconds: 4),
+          );
+        }
+      },
+      onListeningChanged: (isListening) {
+        setState(() {
+          _isListening = isListening;
+        });
+      },
+    );
+    
+    // Проверяем доступность микрофона при инициализации
+    _speechService?.checkAvailability().then((available) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
     _textController.dispose();
     _plusTimer?.cancel();
+    _speechService?.dispose();
     super.dispose();
   }
 
@@ -85,27 +124,39 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   }
 
   Future<void> _startSpeechToText() async {
-    if (!_speechToText.isAvailable) {
-      await _speechToText.initialize();
-    }
-
-    if (_speechToText.isListening) {
-      await _speechToText.cancel();
+    if (_isListening) {
+      await _speechService?.stopListening();
       return;
     }
 
-    setState(() => _isListening = true);
+    // Проверяем доступность микрофона
+    final available = await _speechService?.checkAvailability() ?? false;
+    
+    if (!available) {
+      // Показываем уведомление о необходимости разрешения
+      if (mounted && context.mounted) {
+        SnackbarUtils.showErrorSnackBar(
+          context: context,
+          message: 'Микрофон недоступен. Проверьте разрешения в настройках системы.',
+          icon: Icons.mic_off,
+          duration: Duration(seconds: 4),
+        );
+      }
+      return;
+    }
 
-    await _speechToText.listen(
-      onResult: (result) {
-        setState(() {
-          _textController.text = result.recognizedWords;
-          _isListening = false;
-        });
-      },
-      listenFor: const Duration(seconds: 30),
+    final started = await _speechService?.startListening(
+      timeout: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 5),
-    );
+    ) ?? false;
+
+    if (!started && mounted && context.mounted) {
+      SnackbarUtils.showErrorSnackBar(
+        context: context,
+        message: 'Не удалось запустить микрофон',
+        icon: Icons.mic_off,
+      );
+    }
   }
 
   void _handleStopStreaming() {
@@ -131,7 +182,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
         _attachedBase64Data = base64Data;
       });
     } catch (e) {
-      print('DEBUG_PRINT: Camera error: $e');
+      // Camera error handled
     }
   }
 
@@ -152,7 +203,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
         _attachedBase64Data = base64Data;
       });
     } catch (e) {
-      print('DEBUG_PRINT: Image picker error: $e');
+      // Image picker error handled
     }
   }
 
@@ -185,7 +236,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
         });
       }
     } catch (e) {
-      print('DEBUG_PRINT: File picker error: $e');
+      // File picker error handled
     }
   }
 
@@ -193,6 +244,11 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
     if (_textController.text.trim().isEmpty && _attachedFilePath == null) return;
 
     setState(() => _isSending = true);
+
+    // Останавливаем микрофон, если он активен
+    if (_isListening) {
+      await _speechService?.stopListening();
+    }
 
     final messageData = MessageData(
       text: _textController.text.trim(),
@@ -206,7 +262,9 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
     _textController.clear();
     _clearAttachedFile();
 
-    setState(() => _isSending = false);
+    setState(() {
+      _isSending = false;
+    });
   }
 
   Future<void> _showPlusMenu(BuildContext context) async {
@@ -351,6 +409,76 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
         ],
       ),
     );
+  }
+
+  IconData _getActionIcon() {
+    if (_isSending) return Icons.autorenew;
+    if (_textController.text.trim().isNotEmpty || _attachedFilePath != null) return Icons.send;
+    if (_speechService?.isAvailable ?? false) {
+      return _isListening ? Icons.stop : Icons.mic;
+    }
+    return Icons.mic_off;
+  }
+
+  Color _getActionColor(ThemeData theme) {
+    if (_isSending) return Colors.white;
+    if (_textController.text.trim().isNotEmpty || _attachedFilePath != null) return Colors.white;
+    if (_speechService?.isAvailable ?? false) {
+      return _isListening ? Colors.red : theme.iconTheme.color ?? Colors.black;
+    }
+    return Colors.red;
+  }
+
+  Future<void> _handleMicrophoneAction() async {
+    // If microphone is available, start/stop listening
+    if (_speechService?.isAvailable ?? false) {
+      await _startSpeechToText();
+      return;
+    }
+
+    // If microphone is not available, try to initialize and request permission
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
+    // Show loading state
+    setState(() {
+      _isSending = true;
+    });
+
+    try {
+      final available = await _speechService?.checkAvailability() ?? false;
+      
+      if (available && mounted && context.mounted) {
+        // Permission granted, start listening
+        setState(() {
+          _isSending = false;
+        });
+        await _startSpeechToText();
+      } else if (mounted && context.mounted) {
+        // Permission denied
+        setState(() {
+          _isSending = false;
+        });
+        SnackbarUtils.showErrorSnackBar(
+          context: context,
+          message: localizations.micUnavailable,
+          icon: Icons.mic_off,
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      if (mounted && context.mounted) {
+        setState(() {
+          _isSending = false;
+        });
+        SnackbarUtils.showErrorSnackBar(
+          context: context,
+          message: 'Ошибка доступа к микрофону',
+          icon: Icons.mic_off,
+          duration: const Duration(seconds: 3),
+        );
+      }
+    }
   }
 
   @override
@@ -526,7 +654,6 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                     child: textField,
                   ),
                 ),
-                const SizedBox(height: 4),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
                       sidePadding, 0, sidePadding, bottomPadding),
@@ -589,16 +716,12 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                                   : UbuntuColors.inputContainerLight)
                               : null,
                           onTap: _textController.text.trim().isEmpty && _attachedFilePath == null
-                              ? _startSpeechToText
+                              ? _handleMicrophoneAction
                               : _sendMessage,
                           child: Icon(
-                            _textController.text.trim().isEmpty && _attachedFilePath == null
-                                ? (_isListening ? Icons.stop : Icons.mic)
-                                : (_isSending ? Icons.autorenew : Icons.send),
+                            _getActionIcon(),
                             size: iconSize,
-                            color: _textController.text.trim().isEmpty && _attachedFilePath == null
-                                ? theme.iconTheme.color
-                                : Colors.white,
+                            color: _getActionColor(theme),
                           ),
                         ),
                     ],
@@ -688,7 +811,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                   )
                 else
                   buildActionButton(
-                    gradient: _textController.text.trim().isEmpty
+                    gradient: _textController.text.trim().isEmpty && _attachedFilePath == null
                         ? null
                         : LinearGradient(
                             colors: [
@@ -696,21 +819,17 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                               theme.colorScheme.primary.withValues(alpha: 0.8),
                             ],
                           ),
-                    bgColor: _textController.text.trim().isEmpty
+                    bgColor: _textController.text.trim().isEmpty && _attachedFilePath == null
                         ? (theme.brightness == Brightness.dark
                             ? UbuntuColors.inputContainerDark
                             : UbuntuColors.inputContainerLight)
                         : null,
                     onTap: _textController.text.trim().isEmpty && _attachedFilePath == null
-                        ? _startSpeechToText
+                        ? _handleMicrophoneAction
                         : _sendMessage,
                     child: Icon(
-                      _textController.text.trim().isEmpty && _attachedFilePath == null
-                          ? (_isListening ? Icons.stop : Icons.mic)
-                          : Icons.send,
-                      color: _textController.text.trim().isEmpty && _attachedFilePath == null
-                          ? theme.iconTheme.color
-                          : Colors.white,
+                      _getActionIcon(),
+                      color: _getActionColor(theme),
                     ),
                   ),
               ],

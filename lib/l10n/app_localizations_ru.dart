@@ -131,7 +131,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get appInfo => 'Информация';
 
   @override
-  String get appDescription => 'Приложение для общения с AI моделями через OpenRouter API.\n\nВозможности:\n• Общение с различными AI моделями\n• Сохранение истории чатов\n• Темная и светлая темы\n• Адаптивный интерфейс\n\nВерсия: 1.0.0.5\n\nРазработано с ❤️ с использованием Flutter';
+  String get appDescription => 'Приложение для общения с AI моделями через OpenRouter API.\n\nВозможности:\n• Общение с различными AI моделями\n• Сохранение истории чатов\n• Темная и светлая темы\n• Адаптивный интерфейс\n\nВерсия: 1.0.0.7\n\nРазработано с ❤️ с использованием Flutter';
 
   @override
   String get shareChat => 'Поделиться чатом';
@@ -808,4 +808,19 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get tapHeartToAddFavorites => 'Нажмите на сердечко у моделей, чтобы добавить их в избранные';
+
+  @override
+  String get startListening => 'Начать голосовой ввод';
+
+  @override
+  String get stopListening => 'Остановить голосовой ввод';
+
+  @override
+  String get listening => 'Говорите...';
+
+  @override
+  String get micUnavailable => 'Микрофон недоступен';
+
+  @override
+  String get sendMessage => 'Отправить сообщение';
 }
