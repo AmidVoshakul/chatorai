@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:gen_ui_chat_ai/screens/chat_screen.dart';
 import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
+import 'package:gen_ui_chat_ai/providers/model_settings_provider.dart';
 import 'package:gen_ui_chat_ai/utils/logger.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +19,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ModelSettingsProvider()),
       ],
       child: const MyApp(),
     ),

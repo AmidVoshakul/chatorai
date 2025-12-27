@@ -131,7 +131,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get appInfo => 'Інформація';
 
   @override
-  String get appDescription => 'Додаток для спілкування з AI моделями через OpenRouter API.\n\nМожливості:\n• Спілкування з різними AI моделями\n• Збереження історії чатів\n• Темна та світла теми\n• Адаптивний інтерфейс\n\nВерсія: 1.0.0.7\n\nРозроблено з ❤️ з використанням Flutter';
+  String get appDescription => 'Додаток для спілкування з AI моделями через OpenRouter API.\n\nМожливості:\n• Спілкування з різними AI моделями\n• Збереження історії чатів\n• Темна та світла теми\n• Адаптивний інтерфейс\n\nВерсія: 1.0.0.8\n\nРозроблено з ❤️ з використанням Flutter';
 
   @override
   String get shareChat => 'Поділитися чатом';
@@ -810,17 +810,96 @@ class AppLocalizationsUk extends AppLocalizations {
   String get tapHeartToAddFavorites => 'Натисніть на сердечко біля моделей, щоб додати їх до вибраних';
 
   @override
-  String get startListening => 'Start voice input';
+  String get startListening => 'Почати голосовий ввід';
 
   @override
-  String get stopListening => 'Stop voice input';
+  String get stopListening => 'Зупинити голосовий ввід';
 
   @override
-  String get listening => 'Listening...';
+  String get listening => 'Говоріть...';
 
   @override
-  String get micUnavailable => 'Microphone unavailable';
+  String get micUnavailable => 'Мікрофон недоступний';
 
   @override
-  String get sendMessage => 'Send message';
+  String get sendMessage => 'Надіслати повідомлення';
+
+  @override
+  String get modelSettings => 'Налаштування моделі';
+
+  @override
+  String get temperature => 'Температура';
+
+  @override
+  String get temperatureDescription => 'Контролює випадковість: нижче = більш зосереджено, вище = більш креативно';
+
+  @override
+  String get maxTokens => 'Макс. токенів';
+
+  @override
+  String get maxTokensDescription => 'Максимальна довжина згенерованої відповіді';
+
+  @override
+  String get topP => 'Top P';
+
+  @override
+  String get topPDescription => 'Ядерна вибірка: нижче = більш зосереджено, вище = більш різноманітно';
+
+  @override
+  String get frequencyPenalty => 'Штраф за частоту';
+
+  @override
+  String get frequencyPenaltyDescription => 'Зменшує повторення схожих токенів';
+
+  @override
+  String get presencePenalty => 'Штраф за присутність';
+
+  @override
+  String get presencePenaltyDescription => 'Заохочує нові теми';
+
+  @override
+  String get systemPrompt => 'Системний промпт';
+
+  @override
+  String get systemPromptDescription => 'Інструкції для AI-асистента';
+
+  @override
+  String get streamResponse => 'Потокова відповідь';
+
+  @override
+  String get streamResponseDescription => 'Отримувати відповіді в реальному часі';
+
+  @override
+  String get resetToDefaults => 'Скинути до стандартних';
+
+  @override
+  String get applySettings => 'Застосувати налаштування';
+
+  @override
+  String get modelParameters => 'Параметри моделі';
+
+  @override
+  String get activeModel => 'Активна модель';
+
+  @override
+  String get noModelSelected => 'Модель не вибрана';
+
+  @override
+  String get settingsApplied => 'Налаштування успішно застосовано';
+
+  @override
+  String get enableReasoning => 'Увімкнути міркування';
+
+  @override
+  String get enableReasoningDescription => 'Включати міркування/думки моделі у відповіді';
+
+  @override
+  String apiLimitExceeded(Object limit) {
+    return 'Перевищено ліміт API: $limit';
+  }
+
+  @override
+  String valueExceedsApiLimit(Object limit) {
+    return 'Значення перевищує ліміт API ($limit). Буде використано максимальне значення.';
+  }
 }

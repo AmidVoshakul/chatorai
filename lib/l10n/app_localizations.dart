@@ -346,7 +346,7 @@ abstract class AppLocalizations {
   /// No description provided for @appDescription.
   ///
   /// In en, this message translates to:
-  /// **'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0.7\n\nDeveloped with ❤️ using Flutter'**
+  /// **'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0.8\n\nDeveloped with ❤️ using Flutter'**
   String get appDescription;
 
   /// No description provided for @shareChat.
@@ -1710,6 +1710,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send message'**
   String get sendMessage;
+
+  /// No description provided for @modelSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Settings'**
+  String get modelSettings;
+
+  /// No description provided for @temperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get temperature;
+
+  /// No description provided for @temperatureDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Controls randomness: lower = more focused, higher = more creative'**
+  String get temperatureDescription;
+
+  /// No description provided for @maxTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Tokens'**
+  String get maxTokens;
+
+  /// No description provided for @maxTokensDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum length of generated response'**
+  String get maxTokensDescription;
+
+  /// No description provided for @topP.
+  ///
+  /// In en, this message translates to:
+  /// **'Top P'**
+  String get topP;
+
+  /// No description provided for @topPDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Nucleus sampling: lower = more focused, higher = more diverse'**
+  String get topPDescription;
+
+  /// No description provided for @frequencyPenalty.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequency Penalty'**
+  String get frequencyPenalty;
+
+  /// No description provided for @frequencyPenaltyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduces repetition of similar tokens'**
+  String get frequencyPenaltyDescription;
+
+  /// No description provided for @presencePenalty.
+  ///
+  /// In en, this message translates to:
+  /// **'Presence Penalty'**
+  String get presencePenalty;
+
+  /// No description provided for @presencePenaltyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Encourages new topics'**
+  String get presencePenaltyDescription;
+
+  /// No description provided for @systemPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'System Prompt'**
+  String get systemPrompt;
+
+  /// No description provided for @systemPromptDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions for the AI assistant'**
+  String get systemPromptDescription;
+
+  /// No description provided for @streamResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Stream Response'**
+  String get streamResponse;
+
+  /// No description provided for @streamResponseDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive responses in real-time'**
+  String get streamResponseDescription;
+
+  /// No description provided for @resetToDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to Defaults'**
+  String get resetToDefaults;
+
+  /// No description provided for @applySettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Settings'**
+  String get applySettings;
+
+  /// No description provided for @modelParameters.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Parameters'**
+  String get modelParameters;
+
+  /// No description provided for @activeModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Model'**
+  String get activeModel;
+
+  /// No description provided for @noModelSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No model selected'**
+  String get noModelSelected;
+
+  /// No description provided for @settingsApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings applied successfully'**
+  String get settingsApplied;
+
+  /// No description provided for @enableReasoning.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Reasoning'**
+  String get enableReasoning;
+
+  /// No description provided for @enableReasoningDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Include model reasoning/thoughts in responses'**
+  String get enableReasoningDescription;
+
+  /// No description provided for @apiLimitExceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'API limit exceeded: {limit}'**
+  String apiLimitExceeded(Object limit);
+
+  /// No description provided for @valueExceedsApiLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Value exceeds API limit ({limit}). Maximum value will be used.'**
+  String valueExceedsApiLimit(Object limit);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

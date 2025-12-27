@@ -413,7 +413,11 @@ abstract class OpenRouterClient {
     required List<Map<String, dynamic>> messages,
     int? maxTokens,
     double? temperature,
+    double? topP,
+    double? frequencyPenalty,
+    double? presencePenalty,
     String? reason,
+    bool includeReasoning = false,
   });
 
   Future<void> streamChatCompletion({
@@ -421,6 +425,9 @@ abstract class OpenRouterClient {
     required String model,
     int? maxTokens,
     double? temperature,
+    double? topP,
+    double? frequencyPenalty,
+    double? presencePenalty,
     bool includeReasoning = false,
     required Function(String) onChunk,
     required Function(String) onCompletion,
@@ -721,7 +728,11 @@ class OpenRouterService implements OpenRouterClient {
     required List<Map<String, dynamic>> messages,
     int? maxTokens,
     double? temperature,
+    double? topP,
+    double? frequencyPenalty,
+    double? presencePenalty,
     String? reason,
+    bool includeReasoning = false,
   }) async {
     if (_apiKey == null || _apiKey!.isEmpty) {
       throw Exception('OpenRouter API key not configured');
@@ -736,11 +747,16 @@ class OpenRouterService implements OpenRouterClient {
     return _retryWithBackoff(
       operationName: 'getChatCompletion',
       operation: () async {
+        // Build request data with all parameters
         final data = {
           'model': model,
           'messages': messages,
-          'max_tokens': maxTokens ?? 8000,
-          'temperature': temperature ?? 0.7,
+          if (maxTokens != null) 'max_tokens': maxTokens,
+          if (temperature != null) 'temperature': temperature,
+          if (topP != null) 'top_p': topP,
+          if (frequencyPenalty != null) 'frequency_penalty': frequencyPenalty,
+          if (presencePenalty != null) 'presence_penalty': presencePenalty,
+          if (includeReasoning) 'include_reasoning': true,
         };
 
         if (reason != null) {
@@ -837,6 +853,9 @@ class OpenRouterService implements OpenRouterClient {
     required String model,
     int? maxTokens,
     double? temperature,
+    double? topP,
+    double? frequencyPenalty,
+    double? presencePenalty,
     bool includeReasoning = false,
     required Function(String) onChunk,
     required Function(String) onCompletion,
@@ -859,12 +878,16 @@ class OpenRouterService implements OpenRouterClient {
     return _retryWithBackoff(
       operationName: 'streamChatCompletion',
       operation: () async {
+        // Build request data with all parameters
         final data = {
           'model': model,
           'messages': messages,
           'stream': true,
           if (maxTokens != null) 'max_tokens': maxTokens,
           if (temperature != null) 'temperature': temperature,
+          if (topP != null) 'top_p': topP,
+          if (frequencyPenalty != null) 'frequency_penalty': frequencyPenalty,
+          if (presencePenalty != null) 'presence_penalty': presencePenalty,
           if (includeReasoning) 'include_reasoning': true,
         };
 

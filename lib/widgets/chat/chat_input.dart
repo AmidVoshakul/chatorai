@@ -2,11 +2,15 @@ import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 import 'package:gen_ui_chat_ai/utils/image_utils.dart';
 import 'package:gen_ui_chat_ai/services/speech_to_text_service.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
+import 'package:gen_ui_chat_ai/providers/model_settings_provider.dart';
+import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
+import 'package:gen_ui_chat_ai/widgets/chat/model_settings_sheet.dart';
 
 /// Data class for sending messages with optional media
 class MessageData {
@@ -58,6 +62,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   String? _attachedBase64Data;
 
   final GlobalKey _plusKey = GlobalKey();
+  final GlobalKey _settingsKey = GlobalKey();
 
   @override
   bool get wantKeepAlive => true;
@@ -481,6 +486,48 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
     }
   }
 
+  Future<void> _handleModelSettings() async {
+    final themeProvider = context.read<ThemeProvider>();
+    final settingsProvider = context.read<ModelSettingsProvider>();
+    final localizations = AppLocalizations.of(context)!;
+
+    // Check if a model is selected
+    if (themeProvider.selectedModelId.isEmpty) {
+      SnackbarUtils.showErrorSnackBar(
+        context: context,
+        message: localizations.noModelSelected,
+        icon: Icons.error,
+      );
+      return;
+    }
+
+    // Ensure settings provider has the active model set
+    if (settingsProvider.activeSettings?.modelId != themeProvider.selectedModelId) {
+      await settingsProvider.setActiveModel(themeProvider.selectedModelId, context);
+    }
+
+    // Show the settings sheet
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: const ModelSettingsSheet(),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
@@ -683,6 +730,20 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                               : theme.iconTheme.color,
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      // Settings button
+                      buildActionButton(
+                        key: _settingsKey,
+                        bgColor: theme.brightness == Brightness.dark
+                            ? UbuntuColors.inputContainerDark
+                            : UbuntuColors.inputContainerLight,
+                        onTap: _handleModelSettings,
+                        child: Icon(
+                          Icons.settings_input_component_outlined,
+                          size: iconSize,
+                          color: theme.iconTheme.color,
+                        ),
+                      ),
                       const Spacer(),
                       // Show stop button when streaming
                       if (widget.isStreaming)
@@ -740,6 +801,19 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                   onTap: () => _showPlusMenu(context),
                   child: Icon(
                     Icons.add,
+                    color: theme.iconTheme.color,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Settings button
+                buildActionButton(
+                  key: _settingsKey,
+                  bgColor: theme.brightness == Brightness.dark
+                      ? UbuntuColors.inputContainerDark
+                      : UbuntuColors.inputContainerLight,
+                  onTap: _handleModelSettings,
+                  child: Icon(
+                    Icons.settings_input_component_outlined,
                     color: theme.iconTheme.color,
                   ),
                 ),

@@ -5,9 +5,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
+import 'package:gen_ui_chat_ai/providers/model_settings_provider.dart';
 import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
 import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
 import 'package:gen_ui_chat_ai/models/chat_models.dart';
+import 'package:gen_ui_chat_ai/models/model_settings.dart';
 import 'package:gen_ui_chat_ai/widgets/sidebar/sidebar.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
@@ -814,17 +816,28 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     
     final selectedModel = _selectedModel;
     
-    // Get model context length for precise calculation
-    final modelContextLength = _selectedModelObject?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
+    // Get model settings
+    final modelSettingsProvider = context.read<ModelSettingsProvider>();
+    final modelSettings = await modelSettingsProvider.getSettings(selectedModel, context);
     
-    print('DEBUG_PRINT: ChatScreen._streamAIResponse -> model: $selectedModel, maxTokens: $modelContextLength');
-    _logger.logInfo('[ChatScreen] Using model: $selectedModel with max_tokens: $modelContextLength');
+    // Add system prompt if it exists and this is the first message
+    if (modelSettings.systemPrompt != null && messages.isNotEmpty) {
+      // Insert system prompt at the beginning
+      messages.insert(0, {
+        'role': 'system',
+        'content': modelSettings.systemPrompt!
+      });
+      _logger.logInfo('[ChatScreen] Added system prompt to messages');
+    }
+    
+    print('DEBUG_PRINT: ChatScreen._streamAIResponse -> model: $selectedModel, settings: $modelSettings');
+    _logger.logInfo('[ChatScreen] Using model: $selectedModel with settings: $modelSettings');
     
     await _handleStreamingResponse(
       messages: messages,
       isContinuation: false,
       modelId: selectedModel,
-      maxTokens: modelContextLength,
+      modelSettings: modelSettings,
     );
   }
 
@@ -835,8 +848,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   Future<ChatCompletionResponse> _getChatCompletionWithAdaptiveRollback({
     required String model,
     required List<Map<String, String>> messages,
-    int? maxTokens,
-    double? temperature,
+    required ModelSettings modelSettings,
   }) async {
     // Reuse the same sanitization logic as for streaming
     List<Map<String, dynamic>> sanitize(List<Map<String, dynamic>> src) {
@@ -890,7 +902,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final modelContextLength = modelObj?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
     
     // Mutable max tokens - start with provided or model's full context
-    int currentMaxTokens = maxTokens ?? modelContextLength;
+    int currentMaxTokens = modelSettings.maxTokens;
     
     // Token reduction state
     int tokenReductionAttempts = 0;
@@ -904,7 +916,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           model: model,
           messages: attemptMsgs,
           maxTokens: currentMaxTokens,
-          temperature: temperature,
+          temperature: modelSettings.temperature,
+          topP: modelSettings.topP,
+          frequencyPenalty: modelSettings.frequencyPenalty,
+          presencePenalty: modelSettings.presencePenalty,
+          includeReasoning: modelSettings.reasoningEnabled,
         );
 
         return response;
@@ -1198,16 +1214,25 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       {'role': 'user', 'content': 'Continue from where you left off.'},
     ];
     
-    // Get model context length for precise calculation
-    final modelContextLength = _selectedModelObject?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
+    // Get model settings for continuation
+    final modelSettingsProvider = context.read<ModelSettingsProvider>();
+    final modelSettings = await modelSettingsProvider.getSettings(_selectedModel, context);
     
-    _logger.logInfo('[ChatScreen] Using model: $_selectedModel with max_tokens: $modelContextLength for continuation');
+    // Add system prompt if it exists
+    if (modelSettings.systemPrompt != null) {
+      continuationPrompt.insert(0, {
+        'role': 'system',
+        'content': modelSettings.systemPrompt!
+      });
+    }
+    
+    _logger.logInfo('[ChatScreen] Using model: $_selectedModel with settings: $modelSettings for continuation');
     
     await _handleStreamingResponse(
       messages: continuationPrompt,
       isContinuation: true,
       modelId: _selectedModel,
-      maxTokens: modelContextLength,
+      modelSettings: modelSettings,
     );
   }
 
@@ -1240,10 +1265,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     required List<Map<String, dynamic>> messages,
     required bool isContinuation,
     required String modelId,
-    required int maxTokens,
+    required ModelSettings modelSettings,
   }) async {
     // Use a mutable local max tokens so we can reduce it on 400 before removing messages
-    int currentMaxTokens = maxTokens;
+    int currentMaxTokens = modelSettings.maxTokens;
     final streamType = isContinuation ? 'Continuation' : 'AI';
     _logger.logInfo('[ChatScreen] Starting $streamType streaming...');
     
@@ -1326,7 +1351,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           messages: attemptMsgs,
           model: modelId,
           maxTokens: currentMaxTokens,
-          includeReasoning: true,
+          temperature: modelSettings.temperature,
+          topP: modelSettings.topP,
+          frequencyPenalty: modelSettings.frequencyPenalty,
+          presencePenalty: modelSettings.presencePenalty,
+          includeReasoning: modelSettings.reasoningEnabled,
           onChunk: (content) {
             // Check local flag first (fast), then state flag
             if (!isStreamingLocal || !_isStreaming || content.isEmpty) {
@@ -2170,11 +2199,28 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         },
       ];
       
+      // Get model settings for suggestions
+      final modelSettingsProvider = context.read<ModelSettingsProvider>();
+      final modelSettings = await modelSettingsProvider.getSettings(_selectedModel, context);
+      
+      // Override maxTokens for suggestions to be smaller
+      final suggestionSettings = modelSettings.copyWith(
+        maxTokens: 500,
+        temperature: 0.7,
+      );
+      
+      // Add system prompt if it exists
+      if (suggestionSettings.systemPrompt != null) {
+        suggestionPrompt.insert(0, {
+          'role': 'system',
+          'content': suggestionSettings.systemPrompt!
+        });
+      }
+      
       final response = await _getChatCompletionWithAdaptiveRollback(
         model: _selectedModel,
         messages: suggestionPrompt,
-        maxTokens: 500,
-        temperature: 0.7,
+        modelSettings: suggestionSettings,
       );
       
       // Parse suggestions from response

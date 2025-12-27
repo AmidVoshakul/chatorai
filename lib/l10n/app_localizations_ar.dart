@@ -131,7 +131,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appInfo => 'معلومات التطبيق';
 
   @override
-  String get appDescription => 'تطبيق دردشة مع نماذج الذكاء الاصطناعي عبر OpenRouter API.\n\nالميزات:\n• الدردشة مع نماذج ذكاء اصطناعي مختلفة\n• تخزين سجل الدردشة\n• السمات الداكنة والفاتحة\n• واجهة تكيفية\n\nالإصدار: 1.0.0.7\n\nتم التطوير ب ❤️ باستخدام Flutter';
+  String get appDescription => 'تطبيق دردشة مع نماذج الذكاء الاصطناعي عبر OpenRouter API.\n\nالميزات:\n• الدردشة مع نماذج ذكاء اصطناعي مختلفة\n• تخزين سجل الدردشة\n• السمات الداكنة والفاتحة\n• واجهة تكيفية\n\nالإصدار: 1.0.0.8\n\nتم التطوير ب ❤️ باستخدام Flutter';
 
   @override
   String get shareChat => 'مشاركة الدردشة';
@@ -810,17 +810,96 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tapHeartToAddFavorites => 'اضغط على أيقونة القلب على النماذج لإضافتها إلى المفضلة';
 
   @override
-  String get startListening => 'Start voice input';
+  String get startListening => 'بدء الإدخال الصوتي';
 
   @override
-  String get stopListening => 'Stop voice input';
+  String get stopListening => 'إيقاف الإدخال الصوتي';
 
   @override
-  String get listening => 'Listening...';
+  String get listening => 'تحدث الآن...';
 
   @override
-  String get micUnavailable => 'Microphone unavailable';
+  String get micUnavailable => 'الميكروفون غير متاح';
 
   @override
-  String get sendMessage => 'Send message';
+  String get sendMessage => 'إرسال الرسالة';
+
+  @override
+  String get modelSettings => 'إعدادات النموذج';
+
+  @override
+  String get temperature => 'درجة الحرارة';
+
+  @override
+  String get temperatureDescription => 'التحكم في العشوائية: أقل = أكثر تركيزًا، أعلى = أكثر إبداعًا';
+
+  @override
+  String get maxTokens => 'الحد الأقصى للرموز';
+
+  @override
+  String get maxTokensDescription => 'الحد الأقصى لطول الاستجابة المولدة';
+
+  @override
+  String get topP => 'Top P';
+
+  @override
+  String get topPDescription => 'العينة النواة: أقل = أكثر تركيزًا، أعلى = أكثر تنوعًا';
+
+  @override
+  String get frequencyPenalty => 'عقوبة التكرار';
+
+  @override
+  String get frequencyPenaltyDescription => 'يقلل من تكرار الرموز المتشابهة';
+
+  @override
+  String get presencePenalty => 'عقوبة الوجود';
+
+  @override
+  String get presencePenaltyDescription => 'يشجع على المواضيع الجديدة';
+
+  @override
+  String get systemPrompt => 'موجه النظام';
+
+  @override
+  String get systemPromptDescription => 'تعليمات مساعد الذكاء الاصطناعي';
+
+  @override
+  String get streamResponse => 'استجابة تدفق';
+
+  @override
+  String get streamResponseDescription => 'تلقى الاستجابات في الوقت الفعلي';
+
+  @override
+  String get resetToDefaults => 'إعادة تعيين إلى الافتراضي';
+
+  @override
+  String get applySettings => 'تطبيق الإعدادات';
+
+  @override
+  String get modelParameters => 'معلمات النموذج';
+
+  @override
+  String get activeModel => 'النموذج النشط';
+
+  @override
+  String get noModelSelected => 'لم يتم اختيار نموذج';
+
+  @override
+  String get settingsApplied => 'تم تطبيق الإعدادات بنجاح';
+
+  @override
+  String get enableReasoning => 'تمكين التفكير';
+
+  @override
+  String get enableReasoningDescription => 'تضمين تفكير/استدلال النموذج في الردود';
+
+  @override
+  String apiLimitExceeded(Object limit) {
+    return 'تم تجاوز حد API: $limit';
+  }
+
+  @override
+  String valueExceedsApiLimit(Object limit) {
+    return 'القيمة تتجاوز حد API ($limit). سيتم استخدام القيمة القصوى.';
+  }
 }

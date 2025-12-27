@@ -131,7 +131,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get appInfo => 'アプリ情報';
 
   @override
-  String get appDescription => 'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nVersion: 1.0.0.7\n\nDeveloped with ❤️ using Flutter';
+  String get appDescription => 'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nVersion: 1.0.0.8\n\nDeveloped with ❤️ using Flutter';
 
   @override
   String get shareChat => 'チャットを共有';
@@ -810,17 +810,96 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tapHeartToAddFavorites => 'モデルの心臓アイコンをタップしてお気に入りに追加';
 
   @override
-  String get startListening => 'Start voice input';
+  String get startListening => '音声入力を開始';
 
   @override
-  String get stopListening => 'Stop voice input';
+  String get stopListening => '音声入力を停止';
 
   @override
-  String get listening => 'Listening...';
+  String get listening => '話してください...';
 
   @override
-  String get micUnavailable => 'Microphone unavailable';
+  String get micUnavailable => 'マイクが利用できません';
 
   @override
-  String get sendMessage => 'Send message';
+  String get sendMessage => 'メッセージを送信';
+
+  @override
+  String get modelSettings => 'モデル設定';
+
+  @override
+  String get temperature => '温度';
+
+  @override
+  String get temperatureDescription => 'ランダム性を制御: 低=より集中、高=より創造的';
+
+  @override
+  String get maxTokens => '最大トークン数';
+
+  @override
+  String get maxTokensDescription => '生成される応答の最大長';
+
+  @override
+  String get topP => 'Top P';
+
+  @override
+  String get topPDescription => '核サンプリング: 低=より集中、高=より多様';
+
+  @override
+  String get frequencyPenalty => '頻度ペナルティ';
+
+  @override
+  String get frequencyPenaltyDescription => '類似トークンの繰り返しを減らす';
+
+  @override
+  String get presencePenalty => '存在ペナルティ';
+
+  @override
+  String get presencePenaltyDescription => '新しいトピックを促進';
+
+  @override
+  String get systemPrompt => 'システムプロンプト';
+
+  @override
+  String get systemPromptDescription => 'AIアシスタントへの指示';
+
+  @override
+  String get streamResponse => 'ストリーミング応答';
+
+  @override
+  String get streamResponseDescription => 'リアルタイムで応答を受信';
+
+  @override
+  String get resetToDefaults => 'デフォルトにリセット';
+
+  @override
+  String get applySettings => '設定を適用';
+
+  @override
+  String get modelParameters => 'モデルパラメータ';
+
+  @override
+  String get activeModel => 'アクティブなモデル';
+
+  @override
+  String get noModelSelected => 'モデルが選択されていません';
+
+  @override
+  String get settingsApplied => '設定が正常に適用されました';
+
+  @override
+  String get enableReasoning => '推論を有効にする';
+
+  @override
+  String get enableReasoningDescription => 'モデルの推論/思考をレスポンスに含める';
+
+  @override
+  String apiLimitExceeded(Object limit) {
+    return 'API制限超過: $limit';
+  }
+
+  @override
+  String valueExceedsApiLimit(Object limit) {
+    return '値がAPI制限 ($limit) を超えています。最大値を使用します。';
+  }
 }
