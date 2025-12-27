@@ -1943,6 +1943,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       selectedModel: _selectedModel,
                       onSendMessage: _handleSendMessage,
                       onMessageDeleted: _refreshChatMessages,
+                      onContinueResponse: (messageId) => _continueAIResponse(messageId),
                       scrollController: _messageScrollController,
                       continuationSuggestions: _continuationSuggestions,
                       showSuggestions: _showSuggestions,
