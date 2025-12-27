@@ -1,28 +1,46 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart';
+import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 
 void main() {
   group('ChatInput Widget Tests', () {
-    late String lastSentMessage;
+    late MessageData? lastSentMessage;
 
     setUp(() {
-      lastSentMessage = '';
+      lastSentMessage = null;
     });
+
+    // Helper to create test widget with localizations
+    Widget createTestWidget(Widget child) {
+      return MaterialApp(
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'),
+        ],
+        home: Scaffold(
+          body: child,
+        ),
+      );
+    }
 
     // Test 1: Basic widget rendering
     testWidgets('renders chat input correctly', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChatInput(
-              onSendMessage: (message) {
-                lastSentMessage = message;
-              },
-              onToggleStreaming: (isStreaming) {
-              },
-              focusNode: FocusNode(),
-            ),
+        createTestWidget(
+          ChatInput(
+            onSendMessage: (message) {
+              lastSentMessage = message;
+            },
+            onToggleStreaming: (isStreaming) {
+            },
+            focusNode: FocusNode(),
           ),
         ),
       );
@@ -37,16 +55,14 @@ void main() {
     // Test 2: Message sending functionality
     testWidgets('sends message when send button is tapped', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChatInput(
-              onSendMessage: (message) {
-                lastSentMessage = message;
-              },
-              onToggleStreaming: (isStreaming) {
-              },
-              focusNode: FocusNode(),
-            ),
+        createTestWidget(
+          ChatInput(
+            onSendMessage: (message) {
+              lastSentMessage = message;
+            },
+            onToggleStreaming: (isStreaming) {
+            },
+            focusNode: FocusNode(),
           ),
         ),
       );
@@ -62,22 +78,20 @@ void main() {
       await tester.pump();
 
       // Verify message was sent
-      expect(lastSentMessage, 'Test message');
+      expect(lastSentMessage?.text, 'Test message');
     });
 
     // Test 3: Empty message handling
     testWidgets('does not send empty messages', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChatInput(
-              onSendMessage: (message) {
-                lastSentMessage = message;
-              },
-              onToggleStreaming: (isStreaming) {
-              },
-              focusNode: FocusNode(),
-            ),
+        createTestWidget(
+          ChatInput(
+            onSendMessage: (message) {
+              lastSentMessage = message;
+            },
+            onToggleStreaming: (isStreaming) {
+            },
+            focusNode: FocusNode(),
           ),
         ),
       );
@@ -93,22 +107,20 @@ void main() {
       await tester.pump();
 
       // Verify no message was sent
-      expect(lastSentMessage, '');
+      expect(lastSentMessage, isNull);
     });
 
     // Test 4: Input field placeholder text
     testWidgets('shows correct placeholder text', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChatInput(
-              onSendMessage: (message) {
-                lastSentMessage = message;
-              },
-              onToggleStreaming: (isStreaming) {
-              },
-              focusNode: FocusNode(),
-            ),
+        createTestWidget(
+          ChatInput(
+            onSendMessage: (message) {
+              lastSentMessage = message;
+            },
+            onToggleStreaming: (isStreaming) {
+            },
+            focusNode: FocusNode(),
           ),
         ),
       );
@@ -123,16 +135,14 @@ void main() {
       final focusNode = FocusNode();
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChatInput(
-              onSendMessage: (message) {
-                lastSentMessage = message;
-              },
-              onToggleStreaming: (isStreaming) {
-              },
-              focusNode: focusNode,
-            ),
+        createTestWidget(
+          ChatInput(
+            onSendMessage: (message) {
+              lastSentMessage = message;
+            },
+            onToggleStreaming: (isStreaming) {
+            },
+            focusNode: focusNode,
           ),
         ),
       );
@@ -144,16 +154,14 @@ void main() {
     // Test 6: Visual appearance
     testWidgets('has correct visual appearance', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChatInput(
-              onSendMessage: (message) {
-                lastSentMessage = message;
-              },
-              onToggleStreaming: (isStreaming) {
-              },
-              focusNode: FocusNode(),
-            ),
+        createTestWidget(
+          ChatInput(
+            onSendMessage: (message) {
+              lastSentMessage = message;
+            },
+            onToggleStreaming: (isStreaming) {
+            },
+            focusNode: FocusNode(),
           ),
         ),
       );
@@ -167,13 +175,11 @@ void main() {
     // Test 7: Error handling
     testWidgets('handles callbacks gracefully', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChatInput(
-              onSendMessage: (message) {},
-              onToggleStreaming: (isStreaming) {},
-              focusNode: FocusNode(),
-            ),
+        createTestWidget(
+          ChatInput(
+            onSendMessage: (message) {},
+            onToggleStreaming: (isStreaming) {},
+            focusNode: FocusNode(),
           ),
         ),
       );
@@ -185,16 +191,14 @@ void main() {
     // Test 8: Keyboard input handling
     testWidgets('handles keyboard input correctly', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChatInput(
-              onSendMessage: (message) {
-                lastSentMessage = message;
-              },
-              onToggleStreaming: (isStreaming) {
-              },
-              focusNode: FocusNode(),
-            ),
+        createTestWidget(
+          ChatInput(
+            onSendMessage: (message) {
+              lastSentMessage = message;
+            },
+            onToggleStreaming: (isStreaming) {
+            },
+            focusNode: FocusNode(),
           ),
         ),
       );
@@ -213,17 +217,15 @@ void main() {
       var key = GlobalKey();
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChatInput(
-              key: key,
-              onSendMessage: (message) {
-                lastSentMessage = message;
-              },
-              onToggleStreaming: (isStreaming) {
-              },
-              focusNode: FocusNode(),
-            ),
+        createTestWidget(
+          ChatInput(
+            key: key,
+            onSendMessage: (message) {
+              lastSentMessage = message;
+            },
+            onToggleStreaming: (isStreaming) {
+            },
+            focusNode: FocusNode(),
           ),
         ),
       );
@@ -235,17 +237,15 @@ void main() {
 
       // Rebuild widget
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChatInput(
-              key: key,
-              onSendMessage: (message) {
-                lastSentMessage = message;
-              },
-              onToggleStreaming: (isStreaming) {
-              },
-              focusNode: FocusNode(),
-            ),
+        createTestWidget(
+          ChatInput(
+            key: key,
+            onSendMessage: (message) {
+              lastSentMessage = message;
+            },
+            onToggleStreaming: (isStreaming) {
+            },
+            focusNode: FocusNode(),
           ),
         ),
       );

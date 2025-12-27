@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-</dict>
-</plist>
+        
+        <!-- Разрешения для камеры -->
+        <key>NSCameraUsageDescription</key>
+        <string>Это приложение использует камеру для съемки фотографий, которые можно отправить в чат.</string>
+        <key>NSPhotoLibraryUsageDescription</key>
+        <string>Это приложение использует галерею для выбора фотографий, которые можно отправить в чат.</string>
+        <key>NSMicrophoneUsageDescription</key>
+        <string>Это приложение использует микрофон для записи аудио.</string>

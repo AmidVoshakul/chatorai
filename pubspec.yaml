@@ -40,6 +40,10 @@ dependencies:
   # Speech to Text
   speech_to_text: ^7.3.0
   
+  # Camera and Image Picker
+  image_picker: ^1.1.2
+  camera: ^0.10.5+9
+  
   # HTTP and Networking
   dio: ^5.9.0
   
