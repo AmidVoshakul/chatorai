@@ -131,7 +131,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appInfo => 'App Info';
 
   @override
-  String get appDescription => 'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0.7\n\nDeveloped with ❤️ using Flutter';
+  String get appDescription => 'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0.8\n\nDeveloped with ❤️ using Flutter';
 
   @override
   String get shareChat => 'Share Chat';
@@ -823,4 +823,83 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendMessage => 'Send message';
+
+  @override
+  String get modelSettings => 'Model Settings';
+
+  @override
+  String get temperature => 'Temperature';
+
+  @override
+  String get temperatureDescription => 'Controls randomness: lower = more focused, higher = more creative';
+
+  @override
+  String get maxTokens => 'Max Tokens';
+
+  @override
+  String get maxTokensDescription => 'Maximum length of generated response';
+
+  @override
+  String get topP => 'Top P';
+
+  @override
+  String get topPDescription => 'Nucleus sampling: lower = more focused, higher = more diverse';
+
+  @override
+  String get frequencyPenalty => 'Frequency Penalty';
+
+  @override
+  String get frequencyPenaltyDescription => 'Reduces repetition of similar tokens';
+
+  @override
+  String get presencePenalty => 'Presence Penalty';
+
+  @override
+  String get presencePenaltyDescription => 'Encourages new topics';
+
+  @override
+  String get systemPrompt => 'System Prompt';
+
+  @override
+  String get systemPromptDescription => 'Instructions for the AI assistant';
+
+  @override
+  String get streamResponse => 'Stream Response';
+
+  @override
+  String get streamResponseDescription => 'Receive responses in real-time';
+
+  @override
+  String get resetToDefaults => 'Reset to Defaults';
+
+  @override
+  String get applySettings => 'Apply Settings';
+
+  @override
+  String get modelParameters => 'Model Parameters';
+
+  @override
+  String get activeModel => 'Active Model';
+
+  @override
+  String get noModelSelected => 'No model selected';
+
+  @override
+  String get settingsApplied => 'Settings applied successfully';
+
+  @override
+  String get enableReasoning => 'Enable Reasoning';
+
+  @override
+  String get enableReasoningDescription => 'Include model reasoning/thoughts in responses';
+
+  @override
+  String apiLimitExceeded(Object limit) {
+    return 'API limit exceeded: $limit';
+  }
+
+  @override
+  String valueExceedsApiLimit(Object limit) {
+    return 'Value exceeds API limit ($limit). Maximum value will be used.';
+  }
 }

@@ -27,7 +27,7 @@ All 6 languages have exactly 261 keys, ensuring complete coverage.
 Arabic language has proper RTL (Right-to-Left) text direction support.
 
 ### ✅ Version Information
-App info dialog shows "Version: 1.0.0.7" in all languages.
+App info dialog shows "Version: 1.0.0.8" in all languages.
 
 ### ✅ Settings Screen
 - Modern dropdown for language selection
@@ -81,7 +81,7 @@ App info dialog shows "Version: 1.0.0.7" in all languages.
 
 ### 3. App Version Display
 **Problem**: No version information in app info dialog
-**Solution**: Added "Version: 1.0.0.7" to `appDescription` in all languages
+**Solution**: Added "Version: 1.0.0.8" to `appDescription` in all languages
 
 ### 4. Border Color Inconsistency
 **Problem**: Different border colors in dark theme across settings screen
@@ -137,7 +137,7 @@ Text(localizations.chatRenamedTo(title: newTitle))
 {
   "searchModels": "Search models",
   "chatRenamedTo": "Chat renamed to: {title}",
-  "appDescription": "Chat application...\n\nVersion: 1.0.0.7\n\nDeveloped with ❤️ using Flutter"
+  "appDescription": "Chat application...\n\nVersion: 1.0.0.8\n\nDeveloped with ❤️ using Flutter"
 }
 ```
 

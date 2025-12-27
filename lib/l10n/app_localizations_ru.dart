@@ -131,7 +131,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get appInfo => 'Информация';
 
   @override
-  String get appDescription => 'Приложение для общения с AI моделями через OpenRouter API.\n\nВозможности:\n• Общение с различными AI моделями\n• Сохранение истории чатов\n• Темная и светлая темы\n• Адаптивный интерфейс\n\nВерсия: 1.0.0.7\n\nРазработано с ❤️ с использованием Flutter';
+  String get appDescription => 'Приложение для общения с AI моделями через OpenRouter API.\n\nВозможности:\n• Общение с различными AI моделями\n• Сохранение истории чатов\n• Темная и светлая темы\n• Адаптивный интерфейс\n\nВерсия: 1.0.0.8\n\nРазработано с ❤️ с использованием Flutter';
 
   @override
   String get shareChat => 'Поделиться чатом';
@@ -823,4 +823,83 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sendMessage => 'Отправить сообщение';
+
+  @override
+  String get modelSettings => 'Настройки модели';
+
+  @override
+  String get temperature => 'Temperature';
+
+  @override
+  String get temperatureDescription => 'Контролирует случайность: ниже = более сфокусировано, выше = более креативно';
+
+  @override
+  String get maxTokens => 'Макс. токенов';
+
+  @override
+  String get maxTokensDescription => 'Максимальная длина генерируемого ответа';
+
+  @override
+  String get topP => 'Top P';
+
+  @override
+  String get topPDescription => 'Ядерная выборка: ниже = более сфокусировано, выше = более разнообразно';
+
+  @override
+  String get frequencyPenalty => 'Штраф за частоту';
+
+  @override
+  String get frequencyPenaltyDescription => 'Уменьшает повторение похожих токенов';
+
+  @override
+  String get presencePenalty => 'Штраф за присутствие';
+
+  @override
+  String get presencePenaltyDescription => 'Поощряет новые темы';
+
+  @override
+  String get systemPrompt => 'Системный промпт';
+
+  @override
+  String get systemPromptDescription => 'Инструкции для AI-ассистента';
+
+  @override
+  String get streamResponse => 'Потоковый ответ';
+
+  @override
+  String get streamResponseDescription => 'Получать ответы в реальном времени';
+
+  @override
+  String get resetToDefaults => 'Сбросить к настройкам по умолчанию';
+
+  @override
+  String get applySettings => 'Применить настройки';
+
+  @override
+  String get modelParameters => 'Параметры модели';
+
+  @override
+  String get activeModel => 'Активная модель';
+
+  @override
+  String get noModelSelected => 'Модель не выбрана';
+
+  @override
+  String get settingsApplied => 'Настройки успешно применены';
+
+  @override
+  String get enableReasoning => 'Включить рассуждения';
+
+  @override
+  String get enableReasoningDescription => 'Включать рассуждения/мысли модели в ответы';
+
+  @override
+  String apiLimitExceeded(Object limit) {
+    return 'Превышен лимит API: $limit';
+  }
+
+  @override
+  String valueExceedsApiLimit(Object limit) {
+    return 'Значение превышает лимит API ($limit). Будет использовано максимальное значение.';
+  }
 }

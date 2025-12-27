@@ -131,7 +131,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appInfo => '应用信息';
 
   @override
-  String get appDescription => '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n版本: 1.0.0.7\n\n使用 Flutter 开发';
+  String get appDescription => '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n版本: 1.0.0.8\n\n使用 Flutter 开发';
 
   @override
   String get shareChat => '分享聊天';
@@ -810,17 +810,96 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tapHeartToAddFavorites => '点击模型上的爱心图标将其添加到收藏';
 
   @override
-  String get startListening => 'Start voice input';
+  String get startListening => '开始语音输入';
 
   @override
-  String get stopListening => 'Stop voice input';
+  String get stopListening => '停止语音输入';
 
   @override
-  String get listening => 'Listening...';
+  String get listening => '请说话...';
 
   @override
-  String get micUnavailable => 'Microphone unavailable';
+  String get micUnavailable => '麦克风不可用';
 
   @override
-  String get sendMessage => 'Send message';
+  String get sendMessage => '发送消息';
+
+  @override
+  String get modelSettings => '模型设置';
+
+  @override
+  String get temperature => '温度';
+
+  @override
+  String get temperatureDescription => '控制随机性: 低=更集中, 高=更具创造性';
+
+  @override
+  String get maxTokens => '最大令牌数';
+
+  @override
+  String get maxTokensDescription => '生成响应的最大长度';
+
+  @override
+  String get topP => 'Top P';
+
+  @override
+  String get topPDescription => '核心采样: 低=更集中, 高=更多样化';
+
+  @override
+  String get frequencyPenalty => '频率惩罚';
+
+  @override
+  String get frequencyPenaltyDescription => '减少相似令牌的重复';
+
+  @override
+  String get presencePenalty => '存在惩罚';
+
+  @override
+  String get presencePenaltyDescription => '鼓励新主题';
+
+  @override
+  String get systemPrompt => '系统提示';
+
+  @override
+  String get systemPromptDescription => 'AI助手的指令';
+
+  @override
+  String get streamResponse => '流式响应';
+
+  @override
+  String get streamResponseDescription => '实时接收响应';
+
+  @override
+  String get resetToDefaults => '重置为默认值';
+
+  @override
+  String get applySettings => '应用设置';
+
+  @override
+  String get modelParameters => '模型参数';
+
+  @override
+  String get activeModel => '活动模型';
+
+  @override
+  String get noModelSelected => '未选择模型';
+
+  @override
+  String get settingsApplied => '设置应用成功';
+
+  @override
+  String get enableReasoning => '启用推理';
+
+  @override
+  String get enableReasoningDescription => '在响应中包含模型推理/思考';
+
+  @override
+  String apiLimitExceeded(Object limit) {
+    return 'API限制已超出: $limit';
+  }
+
+  @override
+  String valueExceedsApiLimit(Object limit) {
+    return '值超出API限制 ($limit)。将使用最大值。';
+  }
 }
