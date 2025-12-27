@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:math' show min;
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
@@ -14,9 +16,6 @@ import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
 import 'package:gen_ui_chat_ai/themes/app_theme.dart';
 import 'package:gen_ui_chat_ai/utils/markdown_parser_with_keys.dart';
 import 'package:gen_ui_chat_ai/utils/format_time.dart';
-
-// Import min function
-import 'dart:math' show min;
 
 // Initialize logger for this widget
 final _logger = LogTags.message;
@@ -215,6 +214,10 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Image Preview (if message has image)
+                            if (widget.message.imageData != null)
+                              _buildImagePreview(),
+                            
                             // Message Content
                             _buildMessageContent(context),
                             
@@ -280,6 +283,10 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                           ),
                           
                           const SizedBox(height: 8),
+                          
+                          // Image Preview (if message has image)
+                          if (widget.message.imageData != null)
+                            _buildImagePreview(),
                           
                           // Message Content
                           _buildMessageContent(context),
@@ -488,6 +495,36 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   // ===========================================================================
   // UI BUILDERS
   // ===========================================================================
+
+  Widget _buildImagePreview() {
+    if (widget.message.imageData == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.blue.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxHeight: 200,
+          ),
+          child: Image.memory(
+            base64Decode(widget.message.imageData!),
+            fit: BoxFit.contain,
+            width: double.infinity,
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildMessageContent(BuildContext context) {
     if (widget.message.content.isEmpty) {

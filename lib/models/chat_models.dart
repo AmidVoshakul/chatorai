@@ -38,6 +38,8 @@ class Message {
   final bool isError;
   final String? model; // Model used for assistant messages
   final String? reasoning; // Model's reasoning/thoughts
+  final String? imageData; // Base64 encoded image data
+  final String? imageType; // Image MIME type (e.g., 'image/jpeg')
 
   Message({
     String? id,
@@ -48,6 +50,8 @@ class Message {
     this.isError = false,
     this.model,
     this.reasoning,
+    this.imageData,
+    this.imageType,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
   Message copyWith({
@@ -59,6 +63,8 @@ class Message {
     bool? isError,
     String? model,
     String? reasoning,
+    String? imageData,
+    String? imageType,
   }) {
     return Message(
       id: id ?? this.id,
@@ -68,7 +74,9 @@ class Message {
       isComplete: isComplete ?? this.isComplete,
       isError: isError ?? this.isError,
       model: model ?? this.model,
-      reasoning: reasoning ?? this.reasoning, // Preserve current reasoning if not provided
+      reasoning: reasoning ?? this.reasoning,
+      imageData: imageData ?? this.imageData,
+      imageType: imageType ?? this.imageType,
     );
   }
 
@@ -100,6 +108,8 @@ class Message {
       'isError': isError,
       'model': model,
       'reasoning': reasoning,
+      'imageData': imageData,
+      'imageType': imageType,
     };
     
     return json;
@@ -107,6 +117,8 @@ class Message {
 
   static Message fromJson(Map<String, dynamic> json) {
     final reasoning = json['reasoning'];
+    final imageData = json['imageData'];
+    final imageType = json['imageType'];
     
     return Message(
       id: json['id'],
@@ -117,6 +129,8 @@ class Message {
       isError: json['isError'] ?? false,
       model: json['model'],
       reasoning: reasoning,
+      imageData: imageData,
+      imageType: imageType,
     );
   }
 }

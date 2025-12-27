@@ -308,6 +308,21 @@ class SnackbarUtils {
     );
   }
 
+  /// Предупреждение о том, что модель не поддерживает изображения/файлы (оранжевый)
+  static void showModelNotSupportsMediaSnackBar({
+    required BuildContext context,
+    required String modelName,
+    Duration? duration,
+  }) {
+    _showStyledSnackBar(
+      context: context,
+      message: 'Модель $modelName не поддерживает изображения и файлы',
+      icon: Icons.image_not_supported,
+      backgroundColor: Colors.orange,
+      duration: duration ?? const Duration(seconds: 4),
+    );
+  }
+
   /// Приватный метод для создания стилизованного SnackBar
   static void _showStyledSnackBar({
     required BuildContext context,

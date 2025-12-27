@@ -402,10 +402,28 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _handleSendMessage(String message) async {
-    print('DEBUG_PRINT: ChatScreen._handleSendMessage -> message: "$message"');
+  void _handleSendMessage(MessageData messageData) async {
+    print('DEBUG_PRINT: ChatScreen._handleSendMessage -> message: "${messageData.text}"');
+    print('DEBUG_PRINT: ChatScreen._handleSendMessage -> imagePath: ${messageData.imagePath}');
     print('DEBUG_PRINT: ChatScreen._handleSendMessage -> _selectedModel: $_selectedModel, _selectedModelObject: ${_selectedModelObject?.id ?? "null"}');
-    _logger.logInfo('[ChatScreen] Received message to send: $message');
+    _logger.logInfo('[ChatScreen] Received message to send: ${messageData.text}');
+    
+    // Check if message has image and model supports it
+    if (messageData.imagePath != null && messageData.base64Data != null) {
+      final modelId = _selectedModel;
+      final supportsImages = _checkModelSupportsImages(modelId);
+      
+      if (!supportsImages) {
+        // Show error snackbar
+        if (context.mounted) {
+          SnackbarUtils.showModelNotSupportsMediaSnackBar(
+            context: context,
+            modelName: modelId,
+          );
+        }
+        return; // Don't send the message
+      }
+    }
     
     // Reset scroll lock before sending new message
     // Это единственное место, где сбрасываем флаг для нового user intent
@@ -455,9 +473,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final userMessage = Message(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       role: MessageRole.user,
-      content: message,
+      content: messageData.text,
       timestamp: DateTime.now(),
       isComplete: true,
+      imageData: messageData.imagePath != null ? messageData.base64Data : null,
+      imageType: messageData.imageType,
     );
 
     _logger.logInfo('[ChatScreen] Created user message: ${userMessage.id}');
@@ -511,7 +531,30 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
 
     // Start streaming
-    _sendToAI(message);
+    _sendToAI(messageData.text);
+  }
+
+  /// Check if a model supports images based on model name
+  bool _checkModelSupportsImages(String modelId) {
+    // Models that support images (OpenRouter multimodal models)
+    // This is a simplified check - in production, you might want to query the API
+    final imageModels = [
+      'gpt-4o',
+      'gpt-4-turbo',
+      'claude-3',
+      'claude-3-5-sonnet',
+      'gemini-pro-vision',
+      'gemini-1.5-pro',
+      'llava',
+      'qwen-vl',
+      'yi-vl',
+      'minicpm-v',
+      'mimo-v2',
+    ];
+
+    // Check if model ID contains any of the image-supporting model names
+    final lowerModelId = modelId.toLowerCase();
+    return imageModels.any((model) => lowerModelId.contains(model));
   }
 
   /// Перегенерировать ответ AI
@@ -727,6 +770,31 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     }
   }
 
+  /// Convert Message to OpenRouter format with support for images
+  Map<String, dynamic> _convertMessageToOpenRouterFormat(Message msg) {
+    // If message has an image, use multimodal format
+    if (msg.imageData != null && msg.imageType != null) {
+      return {
+        'role': msg.role.name,
+        'content': [
+          {'type': 'text', 'text': msg.content},
+          {
+            'type': 'image_url',
+            'image_url': {
+              'url': 'data:${msg.imageType};base64,${msg.imageData}'
+            }
+          }
+        ]
+      };
+    }
+    
+    // Standard text message
+    return {
+      'role': msg.role.name,
+      'content': msg.content
+    };
+  }
+
   Future<void> _streamAIResponse() async {
     print('DEBUG_PRINT: ChatScreen._streamAIResponse -> _selectedModel: $_selectedModel, _selectedModelObject: ${_selectedModelObject?.id ?? "null"}');
     _logger.logInfo('[ChatScreen] Starting AI response streaming...');
@@ -739,10 +807,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // Filter out messages marked as error so we don't resend API error payloads
     final filteredList = _currentChat!.messages.where((m) => !m.isError).toList();
     final messages = filteredList
-        .map((msg) => {
-          'role': msg.role.name,
-          'content': msg.content
-        })
+        .map((msg) => _convertMessageToOpenRouterFormat(msg))
         .toList();
 
     _logger.logInfo('[ChatScreen] Sending ${messages.length} messages to AI service');
@@ -774,7 +839,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     double? temperature,
   }) async {
     // Reuse the same sanitization logic as for streaming
-    List<Map<String, String>> sanitize(List<Map<String, String>> src) {
+    List<Map<String, dynamic>> sanitize(List<Map<String, dynamic>> src) {
       final patterns = [
         'Exception',
         'DioException',
@@ -790,7 +855,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       ];
 
       const int maxMessageLen = 20000;
-      final out = <Map<String, String>>[];
+      final out = <Map<String, dynamic>>[];
 
       for (final m in src) {
         var content = m['content'] ?? '';
@@ -805,7 +870,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           content = '${content.substring(0, maxMessageLen)}...[truncated]';
         }
 
-        out.add({'role': role, 'content': content});
+        // Preserve the full message structure (including images if present)
+        if (m.containsKey('content') && m['content'] is List) {
+          // Multimodal message
+          out.add(m);
+        } else {
+          // Text message
+          out.add({'role': role, 'content': content});
+        }
       }
 
       return out;
@@ -1165,7 +1237,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   /// 3. setState() is called on every chunk
   /// 4. No mutation of existing objects
   Future<void> _handleStreamingResponse({
-    required List<Map<String, String>> messages,
+    required List<Map<String, dynamic>> messages,
     required bool isContinuation,
     required String modelId,
     required int maxTokens,
@@ -1188,7 +1260,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     bool isStreamingLocal = true;
     
     // Prepare messages by sanitizing out error-filled assistant messages and truncating huge individual messages
-    List<Map<String, String>> sanitize(List<Map<String, String>> src) {
+    List<Map<String, dynamic>> sanitize(List<Map<String, dynamic>> src) {
       final patterns = [
         'Exception',
         'DioException',
@@ -1205,7 +1277,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
       const int maxMessageLen = 20000; // per-message soft limit
 
-      final out = <Map<String, String>>[];
+      final out = <Map<String, dynamic>>[];
 
       for (final m in src) {
         var content = m['content'] ?? '';
@@ -1220,7 +1292,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           content = '${content.substring(0, maxMessageLen)}...[truncated]';
         }
 
-        out.add({'role': role, 'content': content});
+        // Preserve the full message structure (including images if present)
+        if (m.containsKey('content') && m['content'] is List) {
+          // Multimodal message
+          out.add(m);
+        } else {
+          // Text message
+          out.add({'role': role, 'content': content});
+        }
       }
 
       return out;
@@ -1229,7 +1308,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // Adaptive retry: on 400-like errors, use 5% token reduction first,
     // then progressively remove oldest non-system messages and retry
     final originalSanitized = sanitize(messages);
-    var attemptMsgs = List<Map<String, String>>.from(originalSanitized);
+    var attemptMsgs = List<Map<String, dynamic>>.from(originalSanitized);
 
     // Get model context length for precise calculation
     final modelObj = _themeProvider.getModelById(modelId);
@@ -1933,7 +2012,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         return Center(
           child: Container(
             constraints: const BoxConstraints(maxWidth: 1200),
-            width: screenWidth * 0.75,
+            width: screenWidth * 0.65,
             child: content,
           ),
         );

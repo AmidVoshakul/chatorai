@@ -11,6 +11,7 @@ import 'package:gen_ui_chat_ai/widgets/chat/loading_indicator.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/continuation_suggestions.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/welcome_suggestions.dart';
 import 'package:gen_ui_chat_ai/utils/markdown_parser_with_keys.dart';
+import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart' show MessageData;
 
 // Initialize logger for this widget
 final _logger = LogTags.chatService;
@@ -43,7 +44,7 @@ class ChatMessages extends StatefulWidget {
   final OpenRouterClient openRouterService;
   final ChatStorageService chatStorageService;
   final String? selectedModel;
-  final Function(String) onSendMessage; // Add callback for sending messages
+  final Function(MessageData) onSendMessage; // Add callback for sending messages
   final Function() onMessageDeleted; // Add callback for message deletion
   final Function(String)? onContinueResponse; // Add callback for continuing response
   final VoidCallback? onRegenerateResponse; // Add callback for regenerating response
@@ -168,10 +169,10 @@ class ChatMessagesState extends State<ChatMessages>
 
 
   // Public method to send messages from outside (e.g., from chat input)
-  void sendMessage(String content) {
-    _logger.logInfo('[ChatMessages] sendMessage called: $content');
+  void sendMessage(MessageData messageData) {
+    _logger.logInfo('[ChatMessages] sendMessage called: ${messageData.text}');
     // Notify parent to handle AI response
-    widget.onSendMessage(content);
+    widget.onSendMessage(messageData);
   }
 
   void selectModel(String modelId) {
@@ -371,7 +372,14 @@ class ChatMessagesState extends State<ChatMessages>
                         isLastMessage: isLastMessage,
                         onRetry: () {
                           if (message.role == MessageRole.user) {
-                            widget.onSendMessage(message.content);
+                            widget.onSendMessage(
+                              MessageData(
+                                text: message.content,
+                                imagePath: null,
+                                imageType: message.imageType,
+                                base64Data: message.imageData,
+                              ),
+                            );
                           }
                         },
                         chatId: widget.chat?.id ?? '',
@@ -407,7 +415,14 @@ class ChatMessagesState extends State<ChatMessages>
                   isLastMessage: isLastMessage,
                   onRetry: () {
                     if (message.role == MessageRole.user) {
-                      widget.onSendMessage(message.content);
+                      widget.onSendMessage(
+                        MessageData(
+                          text: message.content,
+                          imagePath: null,
+                          imageType: message.imageType,
+                          base64Data: message.imageData,
+                        ),
+                      );
                     }
                   },
                   chatId: widget.chat?.id ?? '',
@@ -440,7 +455,7 @@ class ChatMessagesState extends State<ChatMessages>
       context: context,
       onSuggestionTap: (suggestion) {
         // Send the suggestion through the parent callback
-        widget.onSendMessage(suggestion);
+        widget.onSendMessage(MessageData(text: suggestion));
       },
       onClose: widget.onWelcomeSuggestionsClose,
     );
@@ -453,7 +468,7 @@ class ChatMessagesState extends State<ChatMessages>
       context: context,
       onSuggestionTap: (suggestion) {
         // Send the suggestion through the parent callback
-        widget.onSendMessage(suggestion);
+        widget.onSendMessage(MessageData(text: suggestion));
       },
       onClose: widget.onSuggestionsClose,
       onRefresh: widget.onSuggestionsRefresh,
