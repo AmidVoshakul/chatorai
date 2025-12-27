@@ -131,7 +131,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appInfo => 'معلومات التطبيق';
 
   @override
-  String get appDescription => 'تطبيق دردشة مع نماذج الذكاء الاصطناعي عبر OpenRouter API.\n\nالميزات:\n• الدردشة مع نماذج ذكاء اصطناعي مختلفة\n• تخزين سجل الدردشة\n• السمات الداكنة والفاتحة\n• واجهة تكيفية\n\nالإصدار: 1.0.0.8\n\nتم التطوير ب ❤️ باستخدام Flutter';
+  String get appDescription => 'تطبيق دردشة مع نماذج الذكاء الاصطناعي عبر OpenRouter API.\n\nالميزات:\n• الدردشة مع نماذج ذكاء اصطناعي مختلفة\n• تخزين سجل الدردشة\n• السمات الداكنة والفاتحة\n• واجهة تكيفية\n\nالإصدار: 1.0.0.9\n\nتم التطوير ب ❤️ باستخدام Flutter';
 
   @override
   String get shareChat => 'مشاركة الدردشة';
@@ -901,5 +901,55 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String valueExceedsApiLimit(Object limit) {
     return 'القيمة تتجاوز حد API ($limit). سيتم استخدام القيمة القصوى.';
+  }
+
+  @override
+  String get micStartFailed => 'فشل تشغيل الميكروفون';
+
+  @override
+  String get micStopFailed => 'فشل إيقاف الميكروفون';
+
+  @override
+  String get speechErrorNoMatch => 'تعذر التعرف على الكلام. حاول مرة أخرى.';
+
+  @override
+  String get speechErrorTimeout => 'انتهت مهلة الاستماع. لم يتم سماع أي شيء.';
+
+  @override
+  String get speechErrorNetwork => 'خطأ في الشبكة. تحقق من اتصال الإنترنت.';
+
+  @override
+  String get speechErrorNotAuthorized => 'لا يوجد وصول إلى الميكروفون. تحقق من الأذونات في الإعدادات.';
+
+  @override
+  String get speechErrorServer => 'خطأ في خادم التعرف. حاول مرة أخرى لاحقًا.';
+
+  @override
+  String get speechErrorTooManyRequests => 'الطلبات كثيرة جدًا. حاول مرة أخرى لاحقًا.';
+
+  @override
+  String get speechErrorUnknown => 'خطأ التعرف على الكلام';
+
+  @override
+  String get speechPreparing => 'جاري التحضير...';
+
+  @override
+  String get speechListening => 'تحدث الآن...';
+
+  @override
+  String get speechProcessing => 'جاري المعالجة...';
+
+  @override
+  String get micNoSpeechDetected => 'لم أسمعك. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get micAutoRestart => 'إعادة المحاولة...';
+
+  @override
+  String get speechPhase2 => 'لا أسمعك...تحدث بصوت أعلى';
+
+  @override
+  String speechStartError(Object error) {
+    return 'خطأ في البدء: $error';
   }
 }

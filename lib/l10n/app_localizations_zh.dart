@@ -131,7 +131,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appInfo => '应用信息';
 
   @override
-  String get appDescription => '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n版本: 1.0.0.8\n\n使用 Flutter 开发';
+  String get appDescription => '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n版本: 1.0.0.9\n\n使用 Flutter 开发';
 
   @override
   String get shareChat => '分享聊天';
@@ -901,5 +901,55 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String valueExceedsApiLimit(Object limit) {
     return '值超出API限制 ($limit)。将使用最大值。';
+  }
+
+  @override
+  String get micStartFailed => '无法启动麦克风';
+
+  @override
+  String get micStopFailed => '无法停止麦克风';
+
+  @override
+  String get speechErrorNoMatch => '无法识别语音。请重试。';
+
+  @override
+  String get speechErrorTimeout => '监听超时。未听到任何内容。';
+
+  @override
+  String get speechErrorNetwork => '网络错误。检查您的互联网连接。';
+
+  @override
+  String get speechErrorNotAuthorized => '无麦克风访问权限。检查设置中的权限。';
+
+  @override
+  String get speechErrorServer => '识别服务器错误。请稍后再试。';
+
+  @override
+  String get speechErrorTooManyRequests => '请求过多。请稍后再试。';
+
+  @override
+  String get speechErrorUnknown => '语音识别错误';
+
+  @override
+  String get speechPreparing => '准备中...';
+
+  @override
+  String get speechListening => '请说话...';
+
+  @override
+  String get speechProcessing => '处理中...';
+
+  @override
+  String get micNoSpeechDetected => '我没听到您的声音，请再试一次。';
+
+  @override
+  String get micAutoRestart => '重试中...';
+
+  @override
+  String get speechPhase2 => '我听不到您...请大声一点';
+
+  @override
+  String speechStartError(Object error) {
+    return '启动错误: $error';
   }
 }

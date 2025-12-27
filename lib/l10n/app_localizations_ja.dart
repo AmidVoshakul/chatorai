@@ -131,7 +131,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get appInfo => 'アプリ情報';
 
   @override
-  String get appDescription => 'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nVersion: 1.0.0.8\n\nDeveloped with ❤️ using Flutter';
+  String get appDescription => 'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nVersion: 1.0.0.9\n\nDeveloped with ❤️ using Flutter';
 
   @override
   String get shareChat => 'チャットを共有';
@@ -901,5 +901,55 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String valueExceedsApiLimit(Object limit) {
     return '値がAPI制限 ($limit) を超えています。最大値を使用します。';
+  }
+
+  @override
+  String get micStartFailed => 'マイクの起動に失敗しました';
+
+  @override
+  String get micStopFailed => 'マイクの停止に失敗しました';
+
+  @override
+  String get speechErrorNoMatch => '音声を認識できませんでした。もう一度お試しください。';
+
+  @override
+  String get speechErrorTimeout => 'リスニングがタイムアウトしました。何も聞こえませんでした。';
+
+  @override
+  String get speechErrorNetwork => 'ネットワークエラー。インターネット接続を確認してください。';
+
+  @override
+  String get speechErrorNotAuthorized => 'マイクへのアクセス権がありません。設定で権限を確認してください。';
+
+  @override
+  String get speechErrorServer => '認識サーバーエラー。後でもう一度お試しください。';
+
+  @override
+  String get speechErrorTooManyRequests => 'リクエストが多すぎます。後でもう一度お試しください。';
+
+  @override
+  String get speechErrorUnknown => '音声認識エラー';
+
+  @override
+  String get speechPreparing => '準備中...';
+
+  @override
+  String get speechListening => '話してください...';
+
+  @override
+  String get speechProcessing => '処理中...';
+
+  @override
+  String get micNoSpeechDetected => '聞こえませんでした。もう一度お試しくください。';
+
+  @override
+  String get micAutoRestart => '再試行中...';
+
+  @override
+  String get speechPhase2 => '聞こえません...もう少し大きな声で';
+
+  @override
+  String speechStartError(Object error) {
+    return '開始エラー: $error';
   }
 }
