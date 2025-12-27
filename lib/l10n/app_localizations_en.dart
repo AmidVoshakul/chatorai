@@ -131,7 +131,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appInfo => 'App Info';
 
   @override
-  String get appDescription => 'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0.5\n\nDeveloped with ❤️ using Flutter';
+  String get appDescription => 'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0.7\n\nDeveloped with ❤️ using Flutter';
 
   @override
   String get shareChat => 'Share Chat';
@@ -808,4 +808,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tapHeartToAddFavorites => 'Tap the heart icon on models to add them to your favorites';
+
+  @override
+  String get startListening => 'Start voice input';
+
+  @override
+  String get stopListening => 'Stop voice input';
+
+  @override
+  String get listening => 'Listening...';
+
+  @override
+  String get micUnavailable => 'Microphone unavailable';
+
+  @override
+  String get sendMessage => 'Send message';
 }

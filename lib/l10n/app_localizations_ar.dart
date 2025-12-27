@@ -131,7 +131,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appInfo => 'معلومات التطبيق';
 
   @override
-  String get appDescription => 'تطبيق دردشة مع نماذج الذكاء الاصطناعي عبر OpenRouter API.\n\nالميزات:\n• الدردشة مع نماذج ذكاء اصطناعي مختلفة\n• تخزين سجل الدردشة\n• السمات الداكنة والفاتحة\n• واجهة تكيفية\n\nالإصدار: 1.0.0.5\n\nتم التطوير ب ❤️ باستخدام Flutter';
+  String get appDescription => 'تطبيق دردشة مع نماذج الذكاء الاصطناعي عبر OpenRouter API.\n\nالميزات:\n• الدردشة مع نماذج ذكاء اصطناعي مختلفة\n• تخزين سجل الدردشة\n• السمات الداكنة والفاتحة\n• واجهة تكيفية\n\nالإصدار: 1.0.0.7\n\nتم التطوير ب ❤️ باستخدام Flutter';
 
   @override
   String get shareChat => 'مشاركة الدردشة';
@@ -808,4 +808,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tapHeartToAddFavorites => 'اضغط على أيقونة القلب على النماذج لإضافتها إلى المفضلة';
+
+  @override
+  String get startListening => 'Start voice input';
+
+  @override
+  String get stopListening => 'Stop voice input';
+
+  @override
+  String get listening => 'Listening...';
+
+  @override
+  String get micUnavailable => 'Microphone unavailable';
+
+  @override
+  String get sendMessage => 'Send message';
 }
