@@ -131,7 +131,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appInfo => 'App Info';
 
   @override
-  String get appDescription => 'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0.8\n\nDeveloped with ❤️ using Flutter';
+  String get appDescription => 'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0.9\n\nDeveloped with ❤️ using Flutter';
 
   @override
   String get shareChat => 'Share Chat';
@@ -901,5 +901,55 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String valueExceedsApiLimit(Object limit) {
     return 'Value exceeds API limit ($limit). Maximum value will be used.';
+  }
+
+  @override
+  String get micStartFailed => 'Failed to start microphone';
+
+  @override
+  String get micStopFailed => 'Failed to stop microphone';
+
+  @override
+  String get speechErrorNoMatch => 'Could not recognize speech. Please try again.';
+
+  @override
+  String get speechErrorTimeout => 'Listening timeout. Nothing heard.';
+
+  @override
+  String get speechErrorNetwork => 'Network error. Check your internet connection.';
+
+  @override
+  String get speechErrorNotAuthorized => 'No microphone access. Check permissions in settings.';
+
+  @override
+  String get speechErrorServer => 'Recognition server error. Please try again later.';
+
+  @override
+  String get speechErrorTooManyRequests => 'Too many requests. Please try again later.';
+
+  @override
+  String get speechErrorUnknown => 'Speech recognition error';
+
+  @override
+  String get speechPreparing => 'Preparing...';
+
+  @override
+  String get speechListening => 'Speak now...';
+
+  @override
+  String get speechProcessing => 'Processing...';
+
+  @override
+  String get micNoSpeechDetected => 'I didn\'t hear you. Please try again.';
+
+  @override
+  String get micAutoRestart => 'Retrying...';
+
+  @override
+  String get speechPhase2 => 'I can\'t hear you...speak louder';
+
+  @override
+  String speechStartError(Object error) {
+    return 'Start error: $error';
   }
 }

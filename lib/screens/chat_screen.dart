@@ -16,6 +16,8 @@ import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/markdown_navigator_sidebar.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/welcome_questions_data.dart';
 import 'package:gen_ui_chat_ai/widgets/chat/sliding_app_bar.dart';
+import 'package:gen_ui_chat_ai/widgets/chat/speech_overlay.dart';
+import 'package:gen_ui_chat_ai/services/speech_to_text_service.dart';
 import 'package:gen_ui_chat_ai/screens/models_screen.dart';
 import 'package:gen_ui_chat_ai/utils/chat_scroll_utils.dart';
 import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
@@ -106,6 +108,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   // Sliding AppBar state
   final GlobalKey<SlidingAppBarState> _slidingAppBarKey = GlobalKey<SlidingAppBarState>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  
+  // Speech overlay state
+  SpeechUiState _speechUiState = SpeechUiState.idle;
+  String _speechStatusMessage = '';
   
   // Streaming optimization - throttle updates
   DateTime _lastUpdateTime = DateTime.now();
@@ -1782,6 +1788,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       onStopStreaming: _stopStreaming,
       isStreaming: _isStreaming,
       focusNode: _chatInputFocusNode,
+      onSpeechStateChanged: (state, message) {
+        if (mounted) {
+          setState(() {
+            _speechUiState = state;
+            _speechStatusMessage = message;
+          });
+        }
+      },
     );
 
     // Build the base layout
@@ -2029,7 +2043,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           }
         }
       },
-      child: child,
+      child: Stack(
+        children: [
+          child,
+          // Speech overlay
+          if (_speechUiState != SpeechUiState.idle)
+            SpeechOverlayWidget(
+              state: _speechUiState,
+              message: _speechStatusMessage,
+            ),
+        ],
+      ),
     );
     
     // Only apply width constraints on desktop (wide screens)

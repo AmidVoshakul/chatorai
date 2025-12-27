@@ -20,7 +20,7 @@ Total: 1,566 localized strings across all languages
 
 ✅ Zero hardcoded text in UI
 ✅ All ARB files cleaned (no duplicates)
-✅ Version 1.0.0.8 added to app info
+✅ Version 1.0.0.9 added to app info
 ✅ RTL support for Arabic
 ✅ Modern settings dropdown
 ✅ Unified border colors in dark theme

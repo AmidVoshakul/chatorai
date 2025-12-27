@@ -33,6 +33,7 @@ class ChatInput extends StatefulWidget {
   final VoidCallback? onStopStreaming;
   final bool isStreaming;
   final FocusNode? focusNode;
+  final Function(SpeechUiState, String)? onSpeechStateChanged; // Callback for speech state
 
   const ChatInput({
     super.key,
@@ -41,6 +42,7 @@ class ChatInput extends StatefulWidget {
     this.onStopStreaming,
     this.isStreaming = false,
     this.focusNode,
+    this.onSpeechStateChanged,
   });
 
   @override
@@ -50,7 +52,8 @@ class ChatInput extends StatefulWidget {
 class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixin {
   final TextEditingController _textController = TextEditingController();
   SpeechToTextService? _speechService;
-  bool _isListening = false;
+  SpeechUiState _speechUiState = SpeechUiState.idle;
+  String _speechStatusMessage = ''; // Для оверлея
   bool _isSending = false;
   bool _plusActive = false;
   Timer? _plusTimer;
@@ -72,43 +75,79 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
     super.initState();
     // Restore text from controller if it was preserved
     updateKeepAlive();
-    _initSpeechService();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize speech service after context is available
+    if (_speechService == null) {
+      _initSpeechService();
+    }
   }
 
   void _initSpeechService() {
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
+
     _speechService = SpeechToTextService(
       onResult: (text) {
-        setState(() {
-          _textController.text = text;
-        });
-      },
-      onError: (error) {
-        setState(() {
-          _isListening = false;
-        });
-        // Show error via Snackbar
         if (mounted) {
-          SnackbarUtils.showErrorSnackBar(
-            context: context,
-            message: error,
-            icon: Icons.mic_off,
-            duration: Duration(seconds: 4),
-          );
+          setState(() {
+            _textController.text = text;
+          });
         }
       },
-      onListeningChanged: (isListening) {
-        setState(() {
-          _isListening = isListening;
-        });
+      onPartialResult: (text) {
+        if (mounted) {
+          setState(() {
+            // Плавное обновление текста с debounce
+            _textController.text = text;
+          });
+        }
       },
+      onStatusMessage: (message) {
+        if (mounted) {
+          setState(() {
+            _speechStatusMessage = message; // Для оверлея
+          });
+          // Pass state up to parent
+          if (widget.onSpeechStateChanged != null) {
+            widget.onSpeechStateChanged!(_speechUiState, message);
+          }
+        }
+      },
+      onStateChanged: (state) {
+        if (mounted) {
+          // Всегда обновляем состояние, даже если значение не изменилось
+          // Это гарантирует сброс UI
+          setState(() {
+            _speechUiState = state;
+            if (state == SpeechUiState.idle) {
+              _speechStatusMessage = '';
+            }
+          });
+          // Pass state up to parent
+          if (widget.onSpeechStateChanged != null) {
+            widget.onSpeechStateChanged!(state, _speechStatusMessage);
+          }
+        }
+      },
+      msgListening: localizations.speechListening,
+      msgPhase2: localizations.speechPhase2,
+      msgProcessing: localizations.speechProcessing,
+      msgPreparing: localizations.speechPreparing,
+      msgNoSpeech: localizations.micNoSpeechDetected,
+      msgStartError: localizations.speechStartError,
+      msgErrorNoMatch: localizations.speechErrorNoMatch,
+      msgErrorTimeout: localizations.speechErrorTimeout,
+      msgErrorNetwork: localizations.speechErrorNetwork,
+      msgErrorNotAuthorized: localizations.speechErrorNotAuthorized,
+      msgErrorServer: localizations.speechErrorServer,
+      msgErrorTooManyRequests: localizations.speechErrorTooManyRequests,
+      msgErrorUnknown: localizations.speechErrorUnknown,
+      msgAutoRestart: localizations.micAutoRestart,
     );
-    
-    // Проверяем доступность микрофона при инициализации
-    _speechService?.checkAvailability().then((available) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
   }
 
   @override
@@ -129,10 +168,13 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   }
 
   Future<void> _startSpeechToText() async {
-    if (_isListening) {
+    if (_speechUiState == SpeechUiState.listening || _speechUiState == SpeechUiState.preparing) {
       await _speechService?.stopListening();
       return;
     }
+
+    final localizations = AppLocalizations.of(context);
+    if (localizations == null) return;
 
     // Проверяем доступность микрофона
     final available = await _speechService?.checkAvailability() ?? false;
@@ -142,26 +184,19 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
       if (mounted && context.mounted) {
         SnackbarUtils.showErrorSnackBar(
           context: context,
-          message: 'Микрофон недоступен. Проверьте разрешения в настройках системы.',
+          message: localizations.micUnavailable,
           icon: Icons.mic_off,
-          duration: Duration(seconds: 4),
+          duration: const Duration(seconds: 4),
         );
       }
       return;
     }
 
-    final started = await _speechService?.startListening(
+    await _speechService?.startListening(
       timeout: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 5),
-    ) ?? false;
-
-    if (!started && mounted && context.mounted) {
-      SnackbarUtils.showErrorSnackBar(
-        context: context,
-        message: 'Не удалось запустить микрофон',
-        icon: Icons.mic_off,
-      );
-    }
+      waitForSpeech: const Duration(seconds: 10),
+    );
   }
 
   void _handleStopStreaming() {
@@ -251,7 +286,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
     setState(() => _isSending = true);
 
     // Останавливаем микрофон, если он активен
-    if (_isListening) {
+    if (_speechUiState == SpeechUiState.listening || _speechUiState == SpeechUiState.preparing) {
       await _speechService?.stopListening();
     }
 
@@ -419,29 +454,32 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   IconData _getActionIcon() {
     if (_isSending) return Icons.autorenew;
     if (_textController.text.trim().isNotEmpty || _attachedFilePath != null) return Icons.send;
-    if (_speechService?.isAvailable ?? false) {
-      return _isListening ? Icons.stop : Icons.mic;
-    }
-    return Icons.mic_off;
+    if (_speechUiState == SpeechUiState.listening || _speechUiState == SpeechUiState.preparing) return Icons.stop;
+    return Icons.mic;
   }
 
   Color _getActionColor(ThemeData theme) {
     if (_isSending) return Colors.white;
     if (_textController.text.trim().isNotEmpty || _attachedFilePath != null) return Colors.white;
-    if (_speechService?.isAvailable ?? false) {
-      return _isListening ? Colors.red : theme.iconTheme.color ?? Colors.black;
-    }
-    return Colors.red;
+    if (_speechUiState == SpeechUiState.listening || _speechUiState == SpeechUiState.preparing) return Colors.red;
+    if (_speechUiState == SpeechUiState.error || _speechUiState == SpeechUiState.noSpeech) return Colors.red;
+    return theme.iconTheme.color ?? Colors.black;
   }
 
   Future<void> _handleMicrophoneAction() async {
-    // If microphone is available, start/stop listening
-    if (_speechService?.isAvailable ?? false) {
+    // If currently listening or preparing, stop
+    if (_speechUiState == SpeechUiState.listening || _speechUiState == SpeechUiState.preparing) {
+      await _speechService?.stopListening();
+      return;
+    }
+
+    // If in error state, restart
+    if (_speechUiState == SpeechUiState.error || _speechUiState == SpeechUiState.noSpeech) {
       await _startSpeechToText();
       return;
     }
 
-    // If microphone is not available, try to initialize and request permission
+    // If microphone is available, start listening
     final localizations = AppLocalizations.of(context);
     if (localizations == null) return;
 
@@ -464,24 +502,32 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
         setState(() {
           _isSending = false;
         });
-        SnackbarUtils.showErrorSnackBar(
-          context: context,
-          message: localizations.micUnavailable,
-          icon: Icons.mic_off,
-          duration: const Duration(seconds: 3),
-        );
+        // Service will show its own error via onStatusMessage
+        // Only show snackbar if service couldn't start
+        if (_speechUiState == SpeechUiState.idle) {
+          SnackbarUtils.showErrorSnackBar(
+            context: context,
+            message: localizations.micUnavailable,
+            icon: Icons.mic_off,
+            duration: const Duration(seconds: 3),
+          );
+        }
       }
     } catch (e) {
       if (mounted && context.mounted) {
         setState(() {
           _isSending = false;
         });
-        SnackbarUtils.showErrorSnackBar(
-          context: context,
-          message: 'Ошибка доступа к микрофону',
-          icon: Icons.mic_off,
-          duration: const Duration(seconds: 3),
-        );
+        // Service handles errors via onStatusMessage
+        // Only show snackbar for unexpected errors
+        if (_speechUiState == SpeechUiState.idle) {
+          SnackbarUtils.showErrorSnackBar(
+            context: context,
+            message: localizations.micStartFailed,
+            icon: Icons.mic_off,
+            duration: const Duration(seconds: 3),
+          );
+        }
       }
     }
   }
@@ -507,6 +553,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
     }
 
     // Show the settings sheet
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -615,299 +662,303 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
       );
     }
 
-    return Container(
-      padding: isMobile
-          ? const EdgeInsets.only(top: 16)
-          : const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isMobile
-            ? (theme.brightness == Brightness.dark
-                ? UbuntuColors.inputContainerDark
-                : UbuntuColors.inputContainerLight)
-            : Colors.transparent,
-        border: isMobile
-            ? Border(
-                top: BorderSide(
-                  color: theme.brightness == Brightness.dark
-                      ? UbuntuColors.inputContainerBorderDark
-                      : UbuntuColors.inputContainerBorderLight,
-                  width: 1,
-                ),
-                bottom: BorderSide(
-                  color: theme.brightness == Brightness.dark
-                      ? UbuntuColors.navBarBorderDark
-                      : UbuntuColors.navBarBorderLight,
-                  width: 1,
-                ),
-              )
-            : null,
-        boxShadow: isMobile
-            ? [
-                // Shadow on top to make it float
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, -4),
-                  spreadRadius: 0,
-                ),
-                // Subtle shadow on sides
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                  spreadRadius: 0,
-                ),
-              ]
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-        borderRadius: isMobile
-            ? const BorderRadius.only(
-                topLeft: Radius.circular(24),
-                topRight: Radius.circular(24),
-              )
-            : BorderRadius.circular(0),
-      ),
-      child: isMobile
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_attachedFilePath != null) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildAttachedFilePreview(),
-                  ),
-                ],
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: 48,
-                    maxHeight: MediaQuery.of(context).size.height * 0.4,
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
+    return Stack(
+      children: [
+        // Основной контейнер ввода
+        Container(
+          padding: isMobile
+              ? const EdgeInsets.only(top: 16)
+              : const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isMobile
+                ? (theme.brightness == Brightness.dark
+                    ? UbuntuColors.inputContainerDark
+                    : UbuntuColors.inputContainerLight)
+                : Colors.transparent,
+            border: isMobile
+                ? Border(
+                    top: BorderSide(
                       color: theme.brightness == Brightness.dark
-                          ? UbuntuColors.inputContainerDark
-                          : UbuntuColors.inputContainerLight,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        topRight: Radius.circular(24),
+                          ? UbuntuColors.inputContainerBorderDark
+                          : UbuntuColors.inputContainerBorderLight,
+                      width: 1,
+                    ),
+                    bottom: BorderSide(
+                      color: theme.brightness == Brightness.dark
+                          ? UbuntuColors.navBarBorderDark
+                          : UbuntuColors.navBarBorderLight,
+                      width: 1,
+                    ),
+                  )
+                : null,
+            boxShadow: isMobile
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, -4),
+                      spreadRadius: 0,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                      spreadRadius: 0,
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+            borderRadius: isMobile
+                ? const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  )
+                : BorderRadius.circular(0),
+          ),
+          child: isMobile
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // УБРАЛИ inline статус микрофона
+                    if (_attachedFilePath != null) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _buildAttachedFilePreview(),
+                      ),
+                    ],
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: 48,
+                        maxHeight: MediaQuery.of(context).size.height * 0.4,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: theme.brightness == Brightness.dark
+                              ? UbuntuColors.inputContainerDark
+                              : UbuntuColors.inputContainerLight,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(24),
+                            topRight: Radius.circular(24),
+                          ),
+                        ),
+                        child: textField,
                       ),
                     ),
-                    child: textField,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                      sidePadding, 0, sidePadding, bottomPadding),
-                  child: Row(
-                    children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                          sidePadding, 0, sidePadding, bottomPadding),
+                      child: Row(
+                        children: [
+                          buildActionButton(
+                            key: _plusKey,
+                            gradient: _plusActive
+                                ? LinearGradient(
+                                    colors: [
+                                      theme.colorScheme.primary,
+                                      theme.colorScheme.primary.withValues(alpha: 0.8),
+                                    ],
+                                  )
+                                : null,
+                            bgColor: _plusActive
+                                ? null
+                                : (theme.brightness == Brightness.dark
+                                    ? UbuntuColors.inputContainerDark
+                                    : UbuntuColors.inputContainerLight),
+                            onTap: () => _showPlusMenu(context),
+                            child: Icon(
+                              Icons.add,
+                              size: iconSize,
+                              color: _plusActive
+                                  ? Colors.white
+                                  : theme.iconTheme.color,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Settings button
+                          buildActionButton(
+                            key: _settingsKey,
+                            bgColor: theme.brightness == Brightness.dark
+                                ? UbuntuColors.inputContainerDark
+                                : UbuntuColors.inputContainerLight,
+                            onTap: _handleModelSettings,
+                            child: Icon(
+                              Icons.settings_input_component_outlined,
+                              size: iconSize,
+                              color: theme.iconTheme.color,
+                            ),
+                          ),
+                          const Spacer(),
+                          // Show stop button when streaming
+                          if (widget.isStreaming)
+                            buildActionButton(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.red,
+                                  Colors.red.withValues(alpha: 0.8),
+                                ],
+                              ),
+                              onTap: _handleStopStreaming,
+                              child: Icon(
+                                Icons.stop,
+                                size: iconSize,
+                                color: Colors.white,
+                              ),
+                            )
+                          else
+                            buildActionButton(
+                              gradient: _textController.text.trim().isEmpty && _attachedFilePath == null && _speechUiState == SpeechUiState.idle
+                                  ? null
+                                  : LinearGradient(
+                                      colors: [
+                                        theme.colorScheme.primary,
+                                        theme.colorScheme.primary.withValues(alpha: 0.8),
+                                      ],
+                                    ),
+                              bgColor: _textController.text.trim().isEmpty && _attachedFilePath == null && _speechUiState == SpeechUiState.idle
+                                  ? (theme.brightness == Brightness.dark
+                                      ? UbuntuColors.inputContainerDark
+                                      : UbuntuColors.inputContainerLight)
+                                  : null,
+                              onTap: _textController.text.trim().isEmpty && _attachedFilePath == null
+                                  ? _handleMicrophoneAction
+                                  : _sendMessage,
+                              child: Icon(
+                                _getActionIcon(),
+                                size: iconSize,
+                                color: _getActionColor(theme),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    buildActionButton(
+                      key: _plusKey,
+                      bgColor: theme.brightness == Brightness.dark
+                          ? UbuntuColors.inputContainerDark
+                          : UbuntuColors.inputContainerLight,
+                      onTap: () => _showPlusMenu(context),
+                      child: Icon(
+                        Icons.add,
+                        color: theme.iconTheme.color,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Settings button
+                    buildActionButton(
+                      key: _settingsKey,
+                      bgColor: theme.brightness == Brightness.dark
+                          ? UbuntuColors.inputContainerDark
+                          : UbuntuColors.inputContainerLight,
+                      onTap: _handleModelSettings,
+                      child: Icon(
+                        Icons.settings_input_component_outlined,
+                        color: theme.iconTheme.color,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_attachedFilePath != null) ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 300),
+                                child: _buildAttachedFilePreview(),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight: MediaQuery.of(context).size.height * 0.4,
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: theme.brightness == Brightness.dark
+                                    ? UbuntuColors.inputContainerDark
+                                    : UbuntuColors.inputContainerLight,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: theme.brightness == Brightness.dark
+                                      ? UbuntuColors.inputContainerBorderDark
+                                      : UbuntuColors.inputContainerBorderLight,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Focus(
+                                onKeyEvent: (node, event) {
+                                  if (event is KeyDownEvent &&
+                                      event.logicalKey == LogicalKeyboardKey.enter &&
+                                      !HardwareKeyboard.instance.isShiftPressed) {
+                                    _sendMessage();
+                                    return KeyEventResult.handled;
+                                  }
+                                  return KeyEventResult.ignored;
+                                },
+                                child: textField,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Show stop button when streaming
+                    if (widget.isStreaming)
                       buildActionButton(
-                        key: _plusKey,
-                        gradient: _plusActive
-                            ? LinearGradient(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.red,
+                            Colors.red.withValues(alpha: 0.8),
+                          ],
+                        ),
+                        onTap: _handleStopStreaming,
+                        child: Icon(
+                          Icons.stop,
+                          color: Colors.white,
+                        ),
+                      )
+                    else
+                      buildActionButton(
+                        gradient: _textController.text.trim().isEmpty && _attachedFilePath == null && _speechUiState == SpeechUiState.idle
+                            ? null
+                            : LinearGradient(
                                 colors: [
                                   theme.colorScheme.primary,
                                   theme.colorScheme.primary.withValues(alpha: 0.8),
                                 ],
-                              )
+                              ),
+                        bgColor: _textController.text.trim().isEmpty && _attachedFilePath == null && _speechUiState == SpeechUiState.idle
+                            ? (theme.brightness == Brightness.dark
+                                ? UbuntuColors.inputContainerDark
+                                : UbuntuColors.inputContainerLight)
                             : null,
-                        bgColor: _plusActive
-                            ? null
-                            : (theme.brightness == Brightness.dark
-                                ? UbuntuColors.inputContainerDark
-                                : UbuntuColors.inputContainerLight),
-                        onTap: () => _showPlusMenu(context),
+                        onTap: _textController.text.trim().isEmpty && _attachedFilePath == null
+                            ? _handleMicrophoneAction
+                            : _sendMessage,
                         child: Icon(
-                          Icons.add,
-                          size: iconSize,
-                          color: _plusActive
-                              ? Colors.white
-                              : theme.iconTheme.color,
+                          _getActionIcon(),
+                          color: _getActionColor(theme),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      // Settings button
-                      buildActionButton(
-                        key: _settingsKey,
-                        bgColor: theme.brightness == Brightness.dark
-                            ? UbuntuColors.inputContainerDark
-                            : UbuntuColors.inputContainerLight,
-                        onTap: _handleModelSettings,
-                        child: Icon(
-                          Icons.settings_input_component_outlined,
-                          size: iconSize,
-                          color: theme.iconTheme.color,
-                        ),
-                      ),
-                      const Spacer(),
-                      // Show stop button when streaming
-                      if (widget.isStreaming)
-                        buildActionButton(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.red,
-                              Colors.red.withValues(alpha: 0.8),
-                            ],
-                          ),
-                          onTap: _handleStopStreaming,
-                          child: Icon(
-                            Icons.stop,
-                            size: iconSize,
-                            color: Colors.white,
-                          ),
-                        )
-                      else
-                        buildActionButton(
-                          gradient: _textController.text.trim().isEmpty && _attachedFilePath == null
-                              ? null
-                              : LinearGradient(
-                                  colors: [
-                                    theme.colorScheme.primary,
-                                    theme.colorScheme.primary.withValues(alpha: 0.8),
-                                  ],
-                                ),
-                          bgColor: _textController.text.trim().isEmpty && _attachedFilePath == null
-                              ? (theme.brightness == Brightness.dark
-                                  ? UbuntuColors.inputContainerDark
-                                  : UbuntuColors.inputContainerLight)
-                              : null,
-                          onTap: _textController.text.trim().isEmpty && _attachedFilePath == null
-                              ? _handleMicrophoneAction
-                              : _sendMessage,
-                          child: Icon(
-                            _getActionIcon(),
-                            size: iconSize,
-                            color: _getActionColor(theme),
-                          ),
-                        ),
-                    ],
-                  ),
+                  ],
                 ),
-              ],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                buildActionButton(
-                  key: _plusKey,
-                  bgColor: theme.brightness == Brightness.dark
-                      ? UbuntuColors.inputContainerDark
-                      : UbuntuColors.inputContainerLight,
-                  onTap: () => _showPlusMenu(context),
-                  child: Icon(
-                    Icons.add,
-                    color: theme.iconTheme.color,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Settings button
-                buildActionButton(
-                  key: _settingsKey,
-                  bgColor: theme.brightness == Brightness.dark
-                      ? UbuntuColors.inputContainerDark
-                      : UbuntuColors.inputContainerLight,
-                  onTap: _handleModelSettings,
-                  child: Icon(
-                    Icons.settings_input_component_outlined,
-                    color: theme.iconTheme.color,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_attachedFilePath != null) ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 300),
-                            child: _buildAttachedFilePreview(),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                      ],
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxHeight: MediaQuery.of(context).size.height * 0.4,
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: theme.brightness == Brightness.dark
-                                ? UbuntuColors.inputContainerDark
-                                : UbuntuColors.inputContainerLight,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: theme.brightness == Brightness.dark
-                                  ? UbuntuColors.inputContainerBorderDark
-                                  : UbuntuColors.inputContainerBorderLight,
-                              width: 1,
-                            ),
-                          ),
-                          child: Focus(
-                            onKeyEvent: (node, event) {
-                              if (event is KeyDownEvent &&
-                                  event.logicalKey == LogicalKeyboardKey.enter &&
-                                  !HardwareKeyboard.instance.isShiftPressed) {
-                                _sendMessage();
-                                return KeyEventResult.handled;
-                              }
-                              return KeyEventResult.ignored;
-                            },
-                            child: textField,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Show stop button when streaming
-                if (widget.isStreaming)
-                  buildActionButton(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.red,
-                        Colors.red.withValues(alpha: 0.8),
-                      ],
-                    ),
-                    onTap: _handleStopStreaming,
-                    child: Icon(
-                      Icons.stop,
-                      color: Colors.white,
-                    ),
-                  )
-                else
-                  buildActionButton(
-                    gradient: _textController.text.trim().isEmpty && _attachedFilePath == null
-                        ? null
-                        : LinearGradient(
-                            colors: [
-                              theme.colorScheme.primary,
-                              theme.colorScheme.primary.withValues(alpha: 0.8),
-                            ],
-                          ),
-                    bgColor: _textController.text.trim().isEmpty && _attachedFilePath == null
-                        ? (theme.brightness == Brightness.dark
-                            ? UbuntuColors.inputContainerDark
-                            : UbuntuColors.inputContainerLight)
-                        : null,
-                    onTap: _textController.text.trim().isEmpty && _attachedFilePath == null
-                        ? _handleMicrophoneAction
-                        : _sendMessage,
-                    child: Icon(
-                      _getActionIcon(),
-                      color: _getActionColor(theme),
-                    ),
-                  ),
-              ],
-            ),
+        ),
+      ],
     );
   }
 }

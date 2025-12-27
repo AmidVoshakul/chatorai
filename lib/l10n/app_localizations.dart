@@ -346,7 +346,7 @@ abstract class AppLocalizations {
   /// No description provided for @appDescription.
   ///
   /// In en, this message translates to:
-  /// **'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0.8\n\nDeveloped with ❤️ using Flutter'**
+  /// **'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nVersion: 1.0.0.9\n\nDeveloped with ❤️ using Flutter'**
   String get appDescription;
 
   /// No description provided for @shareChat.
@@ -1860,6 +1860,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Value exceeds API limit ({limit}). Maximum value will be used.'**
   String valueExceedsApiLimit(Object limit);
+
+  /// No description provided for @micStartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start microphone'**
+  String get micStartFailed;
+
+  /// No description provided for @micStopFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to stop microphone'**
+  String get micStopFailed;
+
+  /// No description provided for @speechErrorNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not recognize speech. Please try again.'**
+  String get speechErrorNoMatch;
+
+  /// No description provided for @speechErrorTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening timeout. Nothing heard.'**
+  String get speechErrorTimeout;
+
+  /// No description provided for @speechErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Check your internet connection.'**
+  String get speechErrorNetwork;
+
+  /// No description provided for @speechErrorNotAuthorized.
+  ///
+  /// In en, this message translates to:
+  /// **'No microphone access. Check permissions in settings.'**
+  String get speechErrorNotAuthorized;
+
+  /// No description provided for @speechErrorServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognition server error. Please try again later.'**
+  String get speechErrorServer;
+
+  /// No description provided for @speechErrorTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests. Please try again later.'**
+  String get speechErrorTooManyRequests;
+
+  /// No description provided for @speechErrorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech recognition error'**
+  String get speechErrorUnknown;
+
+  /// No description provided for @speechPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing...'**
+  String get speechPreparing;
+
+  /// No description provided for @speechListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Speak now...'**
+  String get speechListening;
+
+  /// No description provided for @speechProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing...'**
+  String get speechProcessing;
+
+  /// No description provided for @micNoSpeechDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'I didn\'t hear you. Please try again.'**
+  String get micNoSpeechDetected;
+
+  /// No description provided for @micAutoRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying...'**
+  String get micAutoRestart;
+
+  /// No description provided for @speechPhase2.
+  ///
+  /// In en, this message translates to:
+  /// **'I can\'t hear you...speak louder'**
+  String get speechPhase2;
+
+  /// No description provided for @speechStartError.
+  ///
+  /// In en, this message translates to:
+  /// **'Start error: {error}'**
+  String speechStartError(Object error);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

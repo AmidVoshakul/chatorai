@@ -131,7 +131,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get appInfo => 'Информация';
 
   @override
-  String get appDescription => 'Приложение для общения с AI моделями через OpenRouter API.\n\nВозможности:\n• Общение с различными AI моделями\n• Сохранение истории чатов\n• Темная и светлая темы\n• Адаптивный интерфейс\n\nВерсия: 1.0.0.8\n\nРазработано с ❤️ с использованием Flutter';
+  String get appDescription => 'Приложение для общения с AI моделями через OpenRouter API.\n\nВозможности:\n• Общение с различными AI моделями\n• Сохранение истории чатов\n• Темная и светлая темы\n• Адаптивный интерфейс\n\nВерсия: 1.0.0.9\n\nРазработано с ❤️ с использованием Flutter';
 
   @override
   String get shareChat => 'Поделиться чатом';
@@ -901,5 +901,55 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String valueExceedsApiLimit(Object limit) {
     return 'Значение превышает лимит API ($limit). Будет использовано максимальное значение.';
+  }
+
+  @override
+  String get micStartFailed => 'Не удалось запустить микрофон';
+
+  @override
+  String get micStopFailed => 'Не удалось остановить микрофон';
+
+  @override
+  String get speechErrorNoMatch => 'Не удалось распознать речь. Попробуйте еще раз.';
+
+  @override
+  String get speechErrorTimeout => 'Время ожидания истекло. Ничего не услышали.';
+
+  @override
+  String get speechErrorNetwork => 'Ошибка сети. Проверьте подключение к интернету.';
+
+  @override
+  String get speechErrorNotAuthorized => 'Нет доступа к микрофону. Проверьте разрешения в настройках.';
+
+  @override
+  String get speechErrorServer => 'Ошибка сервера распознавания. Попробуйте позже.';
+
+  @override
+  String get speechErrorTooManyRequests => 'Слишком много запросов. Попробуйте позже.';
+
+  @override
+  String get speechErrorUnknown => 'Ошибка распознавания речи';
+
+  @override
+  String get speechPreparing => 'Подготовка...';
+
+  @override
+  String get speechListening => 'Говорите...';
+
+  @override
+  String get speechProcessing => 'Обрабатываю...';
+
+  @override
+  String get micNoSpeechDetected => 'Я вас не услышал. Попробуйте еще раз.';
+
+  @override
+  String get micAutoRestart => 'Повторная попытка...';
+
+  @override
+  String get speechPhase2 => 'Я вас не слышу...говорите громче';
+
+  @override
+  String speechStartError(Object error) {
+    return 'Ошибка запуска: $error';
   }
 }
