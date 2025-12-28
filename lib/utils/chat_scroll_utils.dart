@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
-import 'package:gen_ui_chat_ai/utils/logger.dart';
+import 'package:chatorai/utils/logger.dart';
 
 final _logger = LogTags.scroll;
 

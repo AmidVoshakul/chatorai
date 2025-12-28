@@ -1,4 +1,4 @@
-import 'package:gen_ui_chat_ai/models/chat_models.dart';
+import 'package:chatorai/models/chat_models.dart';
 import '../utils/logger.dart';
 
 // Initialize logger for this service

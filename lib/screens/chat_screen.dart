@@ -4,25 +4,25 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
-import 'package:gen_ui_chat_ai/providers/model_settings_provider.dart';
-import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
-import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
-import 'package:gen_ui_chat_ai/models/chat_models.dart';
-import 'package:gen_ui_chat_ai/models/model_settings.dart';
-import 'package:gen_ui_chat_ai/widgets/sidebar/sidebar.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/chat_messages.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/markdown_navigator_sidebar.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/welcome_questions_data.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/sliding_app_bar.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/speech_overlay.dart';
-import 'package:gen_ui_chat_ai/services/speech_to_text_service.dart';
-import 'package:gen_ui_chat_ai/screens/models_screen.dart';
-import 'package:gen_ui_chat_ai/utils/chat_scroll_utils.dart';
-import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
-import 'package:gen_ui_chat_ai/utils/logger.dart';
-import 'package:gen_ui_chat_ai/utils/markdown_parser_with_keys.dart';
+import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/providers/model_settings_provider.dart';
+import 'package:chatorai/services/chat_storage_service.dart';
+import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/models/chat_models.dart';
+import 'package:chatorai/models/model_settings.dart';
+import 'package:chatorai/widgets/sidebar/sidebar.dart';
+import 'package:chatorai/widgets/chat/chat_input.dart';
+import 'package:chatorai/widgets/chat/chat_messages.dart';
+import 'package:chatorai/widgets/chat/markdown_navigator_sidebar.dart';
+import 'package:chatorai/widgets/chat/welcome_questions_data.dart';
+import 'package:chatorai/widgets/chat/sliding_app_bar.dart';
+import 'package:chatorai/widgets/chat/speech_overlay.dart';
+import 'package:chatorai/services/speech_to_text_service.dart';
+import 'package:chatorai/screens/models_screen.dart';
+import 'package:chatorai/utils/chat_scroll_utils.dart';
+import 'package:chatorai/utils/snackbar_utils.dart';
+import 'package:chatorai/utils/logger.dart';
+import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 
 // Initialize logger for this screen
 final _logger = LogTags.chatScreen;
@@ -158,7 +158,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _selectedModel = _themeProvider.selectedModelId;
     _selectedModelObject = _themeProvider.selectedModelObject;
     
-    print('DEBUG_PRINT: ChatScreen.initState -> Initial model from ThemeProvider: $_selectedModel, hasObject: ${_selectedModelObject != null}, modelsLoaded: ${_themeProvider.modelsLoaded}, settingsLoaded: ${_themeProvider.settingsLoaded}');
     _logger.logInfo('[ChatScreen] Initial model from ThemeProvider: $_selectedModel, hasObject: ${_selectedModelObject != null}, modelsLoaded: ${_themeProvider.modelsLoaded}, settingsLoaded: ${_themeProvider.settingsLoaded}');
 
     // Listen to ThemeProvider changes to update loading state
@@ -178,7 +177,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   // Listen for ThemeProvider changes to update loading state
   void _onThemeProviderChange() {
-    print('DEBUG_PRINT: ChatScreen._onThemeProviderChange -> modelsLoaded: ${_themeProvider.modelsLoaded}, isLoadingModels: ${_themeProvider.isLoadingModels}, settingsLoaded: ${_themeProvider.settingsLoaded}');
     // Update the loading state when models finish loading
     if (mounted) {
       final themeModelId = _themeProvider.selectedModelId;
@@ -187,14 +185,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       // Always update from ThemeProvider to ensure we have the latest
       // This handles both settings loading and model loading
       if (_selectedModel != themeModelId || _selectedModelObject != themeModelObject) {
-        print('DEBUG_PRINT: ChatScreen._onThemeProviderChange -> Updating model from ThemeProvider: $themeModelId');
         _logger.logInfo('[ChatScreen] _onThemeProviderChange: Updating model to $themeModelId');
         
         _selectedModel = themeModelId;
         _selectedModelObject = themeModelObject;
         
         if (_selectedModelObject != null && _selectedModel.isNotEmpty) {
-          print('DEBUG_PRINT: ChatScreen._onThemeProviderChange -> Updated to: ${_selectedModelObject!.id}, context: ${_selectedModelObject!.contextLength}');
           _logger.logInfo('[ChatScreen] Updated to: ${_selectedModelObject!.name} with context: ${_selectedModelObject!.contextLength}');
         }
       }
@@ -411,9 +407,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _handleSendMessage(MessageData messageData) async {
-    print('DEBUG_PRINT: ChatScreen._handleSendMessage -> message: "${messageData.text}"');
-    print('DEBUG_PRINT: ChatScreen._handleSendMessage -> imagePath: ${messageData.imagePath}');
-    print('DEBUG_PRINT: ChatScreen._handleSendMessage -> _selectedModel: $_selectedModel, _selectedModelObject: ${_selectedModelObject?.id ?? "null"}');
     _logger.logInfo('[ChatScreen] Received message to send: ${messageData.text}');
     
     // Check if message has image and model supports it
@@ -804,7 +797,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _streamAIResponse() async {
-    print('DEBUG_PRINT: ChatScreen._streamAIResponse -> _selectedModel: $_selectedModel, _selectedModelObject: ${_selectedModelObject?.id ?? "null"}');
     _logger.logInfo('[ChatScreen] Starting AI response streaming...');
     if (_currentChat == null) {
       _logger.logError('[ChatScreen] No current chat available');
@@ -836,7 +828,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _logger.logInfo('[ChatScreen] Added system prompt to messages');
     }
     
-    print('DEBUG_PRINT: ChatScreen._streamAIResponse -> model: $selectedModel, settings: $modelSettings');
     _logger.logInfo('[ChatScreen] Using model: $selectedModel with settings: $modelSettings');
     
     await _handleStreamingResponse(
@@ -1622,20 +1613,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   void _updateSelectedModel(String modelId, OpenRouterModel? modelObject) {
     if (!mounted) return;
-    print('DEBUG_PRINT: ChatScreen._updateSelectedModel -> modelId: $modelId, modelObject: ${modelObject?.id ?? "null"}');
     
     // If modelObject is null, try to get it from ThemeProvider
     OpenRouterModel? finalModelObject = modelObject;
     if (finalModelObject == null && _themeProvider.modelsLoaded) {
       finalModelObject = _themeProvider.getModelById(modelId);
-      print('DEBUG_PRINT: ChatScreen._updateSelectedModel -> Got from ThemeProvider: ${finalModelObject?.id ?? "null"}');
     }
     
     setState(() {
       _selectedModel = modelId;
       _selectedModelObject = finalModelObject;
     });
-    print('DEBUG_PRINT: ChatScreen._updateSelectedModel -> Set _selectedModel: $_selectedModel, _selectedModelObject: ${_selectedModelObject?.id ?? "null"}');
     
     if (finalModelObject != null) {
       final contextLength = finalModelObject.contextLength ?? 'unknown';

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
-import 'package:gen_ui_chat_ai/models/chat_models.dart';
-import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
-import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
-import 'package:gen_ui_chat_ai/widgets/sidebar/sidebar_chat_actions_menu.dart';
-import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
-import 'package:gen_ui_chat_ai/utils/logger.dart';
-import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
-import 'package:gen_ui_chat_ai/utils/format_time.dart';
+import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/models/chat_models.dart';
+import 'package:chatorai/services/chat_storage_service.dart';
+import 'package:chatorai/screens/settings_screen.dart';
+import 'package:chatorai/widgets/sidebar/sidebar_chat_actions_menu.dart';
+import 'package:chatorai/utils/snackbar_utils.dart';
+import 'package:chatorai/utils/logger.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/utils/format_time.dart';
 
 // Initialize logger for this widget
 final _logger = LogTags.sidebar;

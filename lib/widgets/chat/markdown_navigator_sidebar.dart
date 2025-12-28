@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:gen_ui_chat_ai/utils/markdown_parser_with_keys.dart';
+import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 
 /// Сайдбар для навигации по заголовкам Markdown в чате
 /// Открывается слайдом с правого края экрана влево

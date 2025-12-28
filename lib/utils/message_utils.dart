@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gen_ui_chat_ai/models/chat_models.dart';
-import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
-import 'package:gen_ui_chat_ai/models/chat_models.dart' as chat_models;
-import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
-import 'package:gen_ui_chat_ai/utils/logger.dart';
-import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+import 'package:chatorai/models/chat_models.dart';
+import 'package:chatorai/services/chat_storage_service.dart';
+import 'package:chatorai/models/chat_models.dart' as chat_models;
+import 'package:chatorai/utils/snackbar_utils.dart';
+import 'package:chatorai/utils/logger.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 
 
 // Initialize logger for this utility

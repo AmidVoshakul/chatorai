@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/welcome_questions_data.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/widgets/chat/welcome_questions_data.dart';
 
 class WelcomeSuggestions extends StatefulWidget {
   final List<String> suggestions;

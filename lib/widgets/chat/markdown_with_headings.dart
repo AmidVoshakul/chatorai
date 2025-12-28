@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
-import 'package:gen_ui_chat_ai/utils/markdown_parser_with_keys.dart';
-import 'package:gen_ui_chat_ai/themes/app_theme.dart';
+import 'package:chatorai/utils/markdown_parser_with_keys.dart';
+import 'package:chatorai/themes/app_theme.dart';
 
 /// Виджет Markdown с поддержкой ключей для заголовков
 class MarkdownWithHeadings extends StatelessWidget {

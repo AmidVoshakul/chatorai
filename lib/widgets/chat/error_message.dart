@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
-import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
-import 'package:gen_ui_chat_ai/utils/logger.dart';
-import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/loading_indicator.dart';
+import 'package:chatorai/utils/snackbar_utils.dart';
+import 'package:chatorai/services/chat_storage_service.dart';
+import 'package:chatorai/utils/logger.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/widgets/chat/loading_indicator.dart';
 import 'dart:convert';
 
 // =============================================================================

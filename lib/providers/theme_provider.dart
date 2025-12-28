@@ -3,9 +3,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:gen_ui_chat_ai/themes/app_theme.dart';
-import 'package:gen_ui_chat_ai/utils/logger.dart';
-import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
+import 'package:chatorai/themes/app_theme.dart';
+import 'package:chatorai/utils/logger.dart';
+import 'package:chatorai/services/openrouter_service.dart';
 
 // Initialize logger for this provider
 final _logger = LogTags.settings;
@@ -115,7 +115,6 @@ class ThemeProvider with ChangeNotifier {
 
   /// Set selected model by ID
   Future<void> setSelectedModel(String modelId) async {
-    print('DEBUG_PRINT: ThemeProvider.setSelectedModel called with modelId: $modelId (current: $_selectedModelId)');
     if (_selectedModelId != modelId) {
       _selectedModelId = modelId;
 
@@ -125,7 +124,6 @@ class ThemeProvider with ChangeNotifier {
         orElse: () => _availableModels.first, // Return first model if not found
       );
 
-      print('DEBUG_PRINT: ThemeProvider.setSelectedModel -> selectedModelObject: ${_selectedModelObject?.id}');
 
       saveSettings();
       notifyListeners();
@@ -135,7 +133,6 @@ class ThemeProvider with ChangeNotifier {
   /// Set selected model without notifying listeners immediately
   /// Useful for navigation scenarios to avoid race conditions
   Future<void> setSelectedModelSilent(String modelId) async {
-    print('DEBUG_PRINT: ThemeProvider.setSelectedModelSilent called with modelId: $modelId (current: $_selectedModelId)');
     if (_selectedModelId != modelId) {
       _selectedModelId = modelId;
 
@@ -145,7 +142,6 @@ class ThemeProvider with ChangeNotifier {
         orElse: () => _availableModels.first, // Return first model if not found
       );
 
-      print('DEBUG_PRINT: ThemeProvider.setSelectedModelSilent -> selectedModelObject: ${_selectedModelObject?.id}');
 
       await saveSettings();
     }
@@ -211,7 +207,6 @@ class ThemeProvider with ChangeNotifier {
       _availableModels = _deduplicateModels(models);
       _modelsLoaded = true;
 
-      print('DEBUG_PRINT: ThemeProvider._loadModelsAsync -> loaded ${_availableModels.length} models. SelectedModelId: $_selectedModelId. ExistsInAvailable: ${_availableModels.any((m) => m.id == _selectedModelId)}');
 
       // Set the selected model object from saved ID
       if (_selectedModelObject == null) {
@@ -220,8 +215,7 @@ class ThemeProvider with ChangeNotifier {
           _selectedModelId = _availableModels.first.id;
           _selectedModelObject = _availableModels.first;
           await saveSettings();
-          print('DEBUG_PRINT: ThemeProvider._loadModelsAsync -> No saved model, using first available: ${_selectedModelObject!.id}, context: ${_selectedModelObject!.contextLength}');
-        } else {
+       } else {
           // Find the model object for the saved ID
           final modelObject = _availableModels.firstWhere(
             (model) => model.id == _selectedModelId,
@@ -233,12 +227,10 @@ class ThemeProvider with ChangeNotifier {
             _selectedModelId = modelObject.id;
             await saveSettings();
           }
-          print('DEBUG_PRINT: ThemeProvider._loadModelsAsync -> Set model object: ${_selectedModelObject!.id}, context: ${_selectedModelObject!.contextLength}');
         }
         // Notify listeners about the model change
         notifyListeners();
       } else if (!_availableModels.any((m) => m.id == _selectedModelId)) {
-        print('DEBUG_PRINT: ThemeProvider._loadModelsAsync -> Current model not available, finding replacement');
         // Current selection is not available, find a replacement
         final defaultModel = _availableModels.first;
         await setSelectedModel(defaultModel.id);
@@ -324,7 +316,6 @@ class ThemeProvider with ChangeNotifier {
       _selectedLanguage = prefs.getString(_languageKey) ?? 'en';
       _selectedModelId = prefs.getString(_selectedModelKey) ?? '';
 
-      print('DEBUG_PRINT: ThemeProvider.loadSettings -> loaded selectedModelId: $_selectedModelId');
       
       // Load favorite models
       final favoriteModelsString = prefs.getStringList(_favoriteModelsKey) ?? [];

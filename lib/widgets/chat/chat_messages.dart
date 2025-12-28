@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:gen_ui_chat_ai/models/chat_models.dart';
-import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
-import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
-import 'package:gen_ui_chat_ai/utils/message_utils.dart';
-import 'package:gen_ui_chat_ai/utils/logger.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/chat_message.dart' as chat_msg;
-import 'package:gen_ui_chat_ai/widgets/chat/reasoning_message.dart'
+import 'package:chatorai/models/chat_models.dart';
+import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/services/chat_storage_service.dart';
+import 'package:chatorai/utils/message_utils.dart';
+import 'package:chatorai/utils/logger.dart';
+import 'package:chatorai/widgets/chat/chat_message.dart' as chat_msg;
+import 'package:chatorai/widgets/chat/reasoning_message.dart'
     as reasoning_msg;
-import 'package:gen_ui_chat_ai/widgets/chat/loading_indicator.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/continuation_suggestions.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/welcome_suggestions.dart';
-import 'package:gen_ui_chat_ai/utils/markdown_parser_with_keys.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart' show MessageData;
+import 'package:chatorai/widgets/chat/loading_indicator.dart';
+import 'package:chatorai/widgets/chat/continuation_suggestions.dart';
+import 'package:chatorai/widgets/chat/welcome_suggestions.dart';
+import 'package:chatorai/utils/markdown_parser_with_keys.dart';
+import 'package:chatorai/widgets/chat/chat_input.dart' show MessageData;
 
 // Initialize logger for this widget
 final _logger = LogTags.chatService;

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:gen_ui_chat_ai/themes/app_theme.dart';
-import 'package:gen_ui_chat_ai/themes/app_theme.dart' show UbuntuColors;
-import 'package:gen_ui_chat_ai/utils/logger.dart';
-import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+import 'package:chatorai/themes/app_theme.dart';
+import 'package:chatorai/themes/app_theme.dart' show UbuntuColors;
+import 'package:chatorai/utils/logger.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
-import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
+import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/services/openrouter_service.dart';
 
 // Initialize logger for this screen
 final _logger = LogTags.modelsScreen;

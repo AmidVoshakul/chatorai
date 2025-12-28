@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
-import 'package:gen_ui_chat_ai/themes/app_theme.dart';
+import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/themes/app_theme.dart';
 
 /// Constants for SlidingAppBar behavior
 class SlidingAppBarConstants {

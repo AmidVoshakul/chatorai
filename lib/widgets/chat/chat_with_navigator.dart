@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/markdown_navigator_sidebar.dart';
-import 'package:gen_ui_chat_ai/utils/markdown_parser_with_keys.dart';
+import 'package:chatorai/widgets/chat/markdown_navigator_sidebar.dart';
+import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 
 /// Пример виджета чата с интегрированным навигатором по Markdown
 /// Устаревший файл, используется для тестирования. Основная логика в ChatMessages.

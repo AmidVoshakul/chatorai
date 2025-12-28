@@ -4,10 +4,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:gen_ui_chat_ai/models/model_settings.dart';
-import 'package:gen_ui_chat_ai/utils/logger.dart';
-import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
-import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
+import 'package:chatorai/models/model_settings.dart';
+import 'package:chatorai/utils/logger.dart';
+import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/providers/theme_provider.dart';
 
 // Initialize logger for this provider
 final _logger = LogTags.settings;

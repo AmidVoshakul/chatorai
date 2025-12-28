@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 
 class ContinuationSuggestions extends StatefulWidget {
   final List<String> suggestions;

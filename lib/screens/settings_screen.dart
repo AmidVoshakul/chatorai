@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
-import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
-import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
-import 'package:gen_ui_chat_ai/themes/app_theme.dart';
+import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/utils/snackbar_utils.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/themes/app_theme.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
