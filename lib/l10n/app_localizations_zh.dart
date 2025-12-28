@@ -131,7 +131,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appInfo => '应用信息';
 
   @override
-  String get appDescription => '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n版本: 1.0.0.9\n\n使用 Flutter 开发';
+  String get appDescription => '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n版本: 1.0.1.0\n\n使用 Flutter 开发';
 
   @override
   String get shareChat => '分享聊天';
@@ -184,7 +184,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get appTitle => 'Chat AI';
+  String get appTitle => 'Chat ORAI';
 
   @override
   String get justNow => '刚刚';

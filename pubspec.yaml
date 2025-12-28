@@ -1,5 +1,5 @@
-name: gen_ui_chat_ai
-description: "A new Flutter project."
+name: chatorai
+description: "ChatORAI - AI Chat Application"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -42,7 +42,6 @@ dependencies:
   
   # Camera and Image Picker
   image_picker: ^1.1.2
-  camera: ^0.10.5+9
   
   # HTTP and Networking
   dio: ^5.9.0
@@ -77,6 +76,9 @@ dependencies:
   
   # Platform detection
   platform: ^3.1.4
+  
+  # Permissions
+  permission_handler: ^11.0.1
 
 dev_dependencies:
   flutter_test:
@@ -84,6 +86,7 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
   test: ^1.26.3
+  flutter_launcher_icons: ^0.14.1
 
 flutter:
   uses-material-design: true
@@ -91,6 +94,15 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - .env
+    - assets/chatorai_logo.png
+
+# Flutter Launcher Icons configuration
+flutter_launcher_icons:
+  image_path: "assets/chatorai_logo.png"
+  android: true
+  ios: true
+  adaptive_icon_background: "#1a1a1a"
+  adaptive_icon_foreground: "assets/chatorai_logo.png"
   #  - assets/icons/
   #  - assets/images/
 

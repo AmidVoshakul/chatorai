@@ -3,14 +3,14 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:gen_ui_chat_ai/themes/app_theme.dart';
-import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
-import 'package:gen_ui_chat_ai/utils/image_utils.dart';
-import 'package:gen_ui_chat_ai/services/speech_to_text_service.dart';
-import 'package:gen_ui_chat_ai/utils/snackbar_utils.dart';
-import 'package:gen_ui_chat_ai/providers/model_settings_provider.dart';
-import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/model_settings_sheet.dart';
+import 'package:chatorai/themes/app_theme.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/utils/image_utils.dart';
+import 'package:chatorai/services/speech_to_text_service.dart';
+import 'package:chatorai/utils/snackbar_utils.dart';
+import 'package:chatorai/providers/model_settings_provider.dart';
+import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/widgets/chat/model_settings_sheet.dart';
 
 /// Data class for sending messages with optional media
 class MessageData {
@@ -222,7 +222,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
         _attachedBase64Data = base64Data;
       });
     } catch (e) {
-      // Camera error handled
+      // Camera error handled by ImageUtils
     }
   }
 
@@ -249,7 +249,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
 
   Future<void> _handleFile() async {
     try {
-      final file = await ImageUtils.pickFile();
+      final file = await ImageUtils.pickImageFromGallery();
       if (file == null) return;
 
       if (ImageUtils.isImageFile(file.path)) {

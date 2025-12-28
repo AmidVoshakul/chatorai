@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 
 /// Welcome questions data for new chats
 /// 

@@ -1,11 +1,11 @@
 {
-    "name": "gen_ui_chat_ai",
-    "short_name": "gen_ui_chat_ai",
+    "name": "ChatORAI",
+    "short_name": "ChatORAI",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "ChatORAI - AI Chat Application",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

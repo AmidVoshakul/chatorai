@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:gen_ui_chat_ai/screens/chat_screen.dart';
-import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
-import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
-import 'package:gen_ui_chat_ai/providers/model_settings_provider.dart';
-import 'package:gen_ui_chat_ai/utils/logger.dart';
-import 'package:gen_ui_chat_ai/themes/app_theme.dart';
+import 'package:chatorai/screens/chat_screen.dart';
+import 'package:chatorai/screens/settings_screen.dart';
+import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/providers/model_settings_provider.dart';
+import 'package:chatorai/utils/logger.dart';
+import 'package:chatorai/themes/app_theme.dart';
 import 'package:provider/provider.dart';
-import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 
 void main() {
   // Initialize logger
@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
         final navBarIconBrightness = isDark ? Brightness.light : Brightness.dark;
 
         return MaterialApp(
-          title: 'ORAI',
+          title: 'ChatORAI',
           localizationsDelegates: [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:flutter_highlight/themes/monokai-sublime.dart';
-import 'package:gen_ui_chat_ai/utils/message_utils.dart';
+import 'package:chatorai/utils/message_utils.dart';
 
 class CodeBlock extends StatefulWidget {
   final String code;

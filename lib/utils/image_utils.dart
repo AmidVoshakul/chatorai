@@ -1,14 +1,39 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
-import 'package:camera/camera.dart';
-import 'package:gen_ui_chat_ai/utils/logger.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:chatorai/utils/logger.dart';
 
 final _logger = LogTags.ui;
 
 /// Утилита для работы с изображениями и камерой
 class ImageUtils {
   static final ImagePicker _picker = ImagePicker();
+
+  /// Запрос разрешения на камеру
+  static Future<bool> _requestCameraPermission() async {
+    try {
+      _logger.logInfo('[ImageUtils] Requesting camera permission...');
+      final status = await Permission.camera.request();
+      
+      if (status.isGranted) {
+        _logger.logInfo('[ImageUtils] Camera permission: granted');
+        return true;
+      }
+      
+      if (status.isPermanentlyDenied) {
+        _logger.logError('[ImageUtils] Camera permanently denied');
+        await openAppSettings();
+        return false;
+      }
+      
+      _logger.logInfo('[ImageUtils] Camera permission: denied');
+      return false;
+    } catch (e) {
+      _logger.logError('[ImageUtils] Error requesting camera permission: $e');
+      return false;
+    }
+  }
 
   /// Выбрать изображение из галереи
   static Future<File?> pickImageFromGallery() async {
@@ -29,61 +54,40 @@ class ImageUtils {
     }
   }
 
-  /// Сделать фото камерой
+  /// Сделать фото камерой (ИСПРАВЛЕННАЯ ВЕРСИЯ)
   static Future<File?> takePhotoWithCamera() async {
     try {
       _logger.logInfo('[ImageUtils] Taking photo with camera...');
       
-      // Получаем список камер
-      final cameras = await availableCameras();
-      if (cameras.isEmpty) {
-        _logger.logError('[ImageUtils] No cameras available');
+      // 1. Запрашиваем разрешение
+      if (!await _requestCameraPermission()) {
+        _logger.logError('[ImageUtils] Camera permission denied');
         return null;
       }
 
-      // Запускаем камеру
-      final firstCamera = cameras.first;
-      final CameraController controller = CameraController(
-        firstCamera,
-        ResolutionPreset.medium,
+      // 2. Открываем камеру через image_picker (без camera package!)
+      _logger.logInfo('[ImageUtils] Opening camera with image_picker...');
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+        maxWidth: 1920,
       );
 
-      await controller.initialize();
-      if (!controller.value.isInitialized) {
-        _logger.logError('[ImageUtils] Camera controller not initialized');
+      if (photo == null) {
+        _logger.logInfo('[ImageUtils] User canceled camera');
         return null;
       }
 
-      // Делаем снимок
-      final XFile picture = await controller.takePicture();
-      await controller.dispose();
-      
-      _logger.logInfo('[ImageUtils] Photo taken: ${picture.path}');
-      return File(picture.path);
+      _logger.logInfo('[ImageUtils] Photo taken: ${photo.path}');
+      return File(photo.path);
+
     } catch (e) {
-      _logger.logError('[ImageUtils] Error taking photo: $e');
+      _logger.logError('[ImageUtils] Camera error: $e');
       return null;
     }
   }
 
-  /// Выбрать файл (изображение или другой файл)
-  static Future<File?> pickFile() async {
-    try {
-      _logger.logInfo('[ImageUtils] Picking file...');
-      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-      
-      if (pickedFile != null) {
-        _logger.logInfo('[ImageUtils] File picked: ${pickedFile.path}');
-        return File(pickedFile.path);
-      }
-      
-      _logger.logInfo('[ImageUtils] No file selected');
-      return null;
-    } catch (e) {
-      _logger.logError('[ImageUtils] Error picking file: $e');
-      return null;
-    }
-  }
+
 
   /// Конвертировать файл в base64
   static Future<String?> fileToBase64(File file) async {

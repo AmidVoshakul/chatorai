@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:gen_ui_chat_ai/services/speech_to_text_service.dart';
+import 'package:chatorai/services/speech_to_text_service.dart';
 
 /// Оверлей для отображения статуса голосового ввода
 /// Появляется поверх чата с затемнением и шиммер-эффектом на тексте

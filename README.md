@@ -1,11 +1,12 @@
-# Gen UI Chat AI
+# ChatORAI
 
-A modern AI chat interface with support for multiple models and voice input.
+A modern AI chat interface with support for multiple models, voice input, and camera functionality.
 
 ## 🌟 Features
 
 - **Multiple AI Models** - Support for various models via OpenRouter
 - **Voice Input** - Speech-to-text integration
+- **Camera & Images** - Take photos and attach to messages
 - **Markdown & Code** - Advanced rendering with syntax highlighting
 - **Dark/Light Themes** - Adaptive UI with Ubuntu design
 - **Multi-language** - RTL support and localization
@@ -43,35 +44,35 @@ sudo ./install_app.sh
 ```
 
 This installs:
-- App to `/usr/local/lib/gen-ui-chat-ai/`
+- App to `/usr/local/lib/chatorai/`
 - Desktop entry and icon
-- `gen-ui-chat-ai` command
+- `chatorai` command
 
 ### Manual
 
 ```bash
-sudo cp -r build/linux/x64/release/bundle/* /usr/local/lib/gen-ui-chat-ai/
-sudo ln -sf /usr/local/lib/gen-ui-chat-ai/gen_ui_chat_ai /usr/local/bin/gen-ui-chat-ai
+sudo cp -r build/linux/x64/release/bundle/* /usr/local/lib/chatorai/
+sudo ln -sf /usr/local/lib/chatorai/chatorai /usr/local/bin/chatorai
 ```
 
 ### Run After Install
 
-- **Menu**: Find "Gen UI Chat AI"
-- **Terminal**: `gen-ui-chat-ai`
+- **Menu**: Find "ChatORAI"
+- **Terminal**: `chatorai`
 
 ### Uninstall
 
 ```bash
-sudo rm -rf /usr/local/lib/gen-ui-chat-ai
-sudo rm /usr/local/bin/gen-ui-chat-ai
-sudo rm /usr/share/applications/gen-ui-chat-ai.desktop
-sudo rm /usr/share/icons/hicolor/256x256/apps/gen-ui-chat-ai.png
+sudo rm -rf /usr/local/lib/chatorai
+sudo rm /usr/local/bin/chatorai
+sudo rm /usr/share/applications/chatorai.desktop
+sudo rm /usr/share/icons/hicolor/256x256/apps/chatorai.png
 ```
 
 ## 🔧 Building for Other Platforms
 
 ```bash
-# Android
+# Android (with camera support)
 flutter build apk --release
 
 # iOS (macOS required)
@@ -85,11 +86,12 @@ flutter build web
 
 - `provider` - State management
 - `speech_to_text` - Voice input
+- `image_picker` - Camera and gallery access
+- `permission_handler` - Runtime permissions
 - `flutter_markdown_plus` - Markdown rendering
 - `dio` - HTTP client
 - `shared_preferences` - Local storage
-- `image_picker` - Image selection
-- `camera` - Camera access
+- `flutter_launcher_icons` - Icon generation
 
 ## 🛠️ Development
 
@@ -102,17 +104,29 @@ flutter run --hot-reload
 
 # Analyze
 flutter analyze
+
+# Generate icons
+flutter pub run flutter_launcher_icons:main
 ```
 
 ## 🐛 Troubleshooting
 
+### Camera not working
+```bash
+# Check Android permissions
+grep CAMERA android/app/src/main/AndroidManifest.xml
+
+# Check iOS permissions
+grep NSCameraUsageDescription ios/Runner/Info.plist
+```
+
 ### Menu launch issues
 ```bash
 # Test terminal launch
-gen-ui-chat-ai
+chatorai
 
 # Check installation
-ls -la /usr/local/lib/gen-ui-chat-ai/
+ls -la /usr/local/lib/chatorai/
 ```
 
 ### Missing dependencies (Ubuntu/Debian)

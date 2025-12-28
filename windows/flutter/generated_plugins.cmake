@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
   file_selector_windows
   irondash_engine_context
+  permission_handler_windows
   speech_to_text_windows
   super_native_extensions
 )

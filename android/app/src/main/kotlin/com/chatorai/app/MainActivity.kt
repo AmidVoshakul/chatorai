@@ -1,4 +1,4 @@
-package com.ChatORAI.chat.gen_ui_chat_ai
+package com.chatorai.app
 
 import io.flutter.embedding.android.FlutterActivity
 
