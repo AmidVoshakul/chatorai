@@ -2,6 +2,8 @@
 
 A modern AI chat interface with support for multiple models, voice input, and camera functionality.
 
+**🇷🇺 Русская версия**: [README_RU.md](README_RU.md)
+
 ## 🌟 Features
 
 - **Multiple AI Models** - Support for various models via OpenRouter
@@ -69,9 +71,101 @@ sudo rm /usr/share/applications/chatorai.desktop
 sudo rm /usr/share/icons/hicolor/256x256/apps/chatorai.png
 ```
 
+## 🪟 Windows Installation
+
+### Automatic (Recommended)
+
+1. **Build the application**:
+```bash
+flutter build windows --release
+```
+
+2. **Run the installer**:
+   - **PowerShell** (recommended):
+     ```powershell
+     # Run as Administrator
+     PowerShell -ExecutionPolicy Bypass -File ".\install_app.ps1"
+     ```
+   - **Command Prompt**:
+     ```cmd
+     # Run as Administrator
+     install_app.bat
+     ```
+
+The installer will:
+- Copy files to `C:\Program Files\ChatORAI\`
+- Create Start Menu shortcut
+- Optionally add to PATH
+- Create uninstaller
+
+### Manual Installation
+
+1. **Build the app**:
+```bash
+flutter build windows --release
+```
+
+2. **Copy files**:
+   - Navigate to `build\windows\runner\Release\`
+   - Copy all files to your desired location (e.g., `C:\Program Files\ChatORAI\`)
+
+3. **Create shortcut**:
+   - Right-click `chatorai.exe`
+   - Send to → Desktop (create shortcut)
+   - Or pin to Start Menu
+
+### Run After Install
+
+- **Start Menu**: Search for "ChatORAI"
+- **Desktop**: Double-click the shortcut
+- **Command Prompt**: `C:\Program Files\ChatORAI\chatorai.exe`
+
+### Uninstall
+
+1. **Delete installation folder**:
+```powershell
+Remove-Item -Path "C:\Program Files\ChatORAI" -Recurse -Force
+```
+
+2. **Delete shortcuts**:
+```powershell
+Remove-Item -Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\ChatORAI.lnk" -Force
+Remove-Item -Path "$env:USERPROFILE\Desktop\ChatORAI.lnk" -Force
+```
+
+### Requirements for Building on Windows
+
+- **Flutter SDK** installed and in PATH
+- **Visual Studio 2019 or later** with:
+  - Desktop development with C++
+  - Windows 10/11 SDK
+- **Git** for dependency management
+
+**Detailed setup guide**: See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for complete development setup instructions.
+
+### Windows Troubleshooting
+
+**Missing DLL errors**:
+- Install [Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe)
+- Or build in Release mode: `flutter build windows --release`
+
+**Firewall warnings**:
+- The app needs internet access for API calls
+- Allow through Windows Defender Firewall if prompted
+
+**Path too long errors**:
+- Move project to shorter path: `C:\dev\chatorai\`
+- Or use: `flutter build windows --release --verbose`
+
 ## 🔧 Building for Other Platforms
 
 ```bash
+# Windows
+flutter build windows --release
+
+# Linux
+flutter build linux --release
+
 # Android (with camera support)
 flutter build apk --release
 
@@ -80,6 +174,31 @@ flutter build ios
 
 # Web
 flutter build web
+```
+
+### Quick Build Commands
+
+**Windows (PowerShell)**:
+```powershell
+# Build
+flutter build windows --release
+
+# Run directly
+flutter run -d windows
+
+# Run in debug mode
+flutter run -d windows --debug
+```
+
+**Linux/Windows (Terminal)**:
+```bash
+# Build release
+flutter build windows --release  # Windows
+flutter build linux --release    # Linux
+
+# Run directly
+flutter run -d windows          # Windows
+flutter run -d linux            # Linux
 ```
 
 ## 📦 Supported File Types
@@ -178,7 +297,7 @@ grep CAMERA android/app/src/main/AndroidManifest.xml
 grep NSCameraUsageDescription ios/Runner/Info.plist
 ```
 
-### Menu launch issues
+### Menu launch issues (Linux)
 ```bash
 # Test terminal launch
 chatorai
@@ -191,6 +310,33 @@ ls -la /usr/local/lib/chatorai/
 ```bash
 sudo apt install libgtk-3-0 libgdk-pixbuf-2.0-0 libpango-1.0-0 libcairo2
 ```
+
+### Windows-specific Issues
+
+**"The code execution cannot proceed because..." errors**:
+```powershell
+# Install Visual C++ Redistributable
+# Download from: https://aka.ms/vs/17/release/vc_redist.x64.exe
+```
+
+**"Flutter is not recognized as an internal or external command"**:
+```powershell
+# Add Flutter to PATH
+# System Properties → Environment Variables → Path → Add Flutter bin directory
+```
+
+**Windows Defender SmartScreen blocks app**:
+- Click "More info" → "Run anyway"
+- Or sign the executable with a code signing certificate
+
+**File picker doesn't open**:
+- Check Windows file associations
+- Run as Administrator once to test
+- Check Windows Event Viewer for errors
+
+**Build fails with "CMake not found"**:
+- Install Visual Studio with C++ workload
+- Or install CMake manually: https://cmake.org/download/
 
 ## 📄 License
 
