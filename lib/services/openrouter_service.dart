@@ -549,12 +549,8 @@ class OpenRouterService implements OpenRouterClient {
     String errorMessage = 'Unknown error';
     
     if (e.response?.data == null) {
-      print('DEBUG_PRINT: OpenRouter _extractErrorMessage -> no response data, status: ${e.response?.statusCode}');
       return errorMessage;
     }
-
-    // DEBUG: print raw response for investigation
-    print('DEBUG_PRINT: OpenRouter _extractErrorMessage -> response status: ${e.response?.statusCode}, data: ${e.response?.data}');
 
     try {
       if (e.response!.data is String) {
@@ -763,19 +759,10 @@ class OpenRouterService implements OpenRouterClient {
           data['reason'] = reason;
         }
 
-        // DEBUG prints (temporary) - inspect request payload and headers
-        print('DEBUG_PRINT: OpenRouter getChatCompletion -> model: $model');
-        print('DEBUG_PRINT: OpenRouter getChatCompletion -> data: ${jsonEncode(data)}');
-        print('DEBUG_PRINT: OpenRouter getChatCompletion -> headers: ${_dio?.options.headers}');
-
         final response = await _dio!.post(
           OpenRouterConstants.completionsEndpoint,
           data: data,
         );
-
-        // DEBUG prints (temporary) - inspect raw response
-        print('DEBUG_PRINT: OpenRouter getChatCompletion -> response status: ${response.statusCode}');
-        print('DEBUG_PRINT: OpenRouter getChatCompletion -> response data: ${response.data}');
 
         if (response.statusCode == 200) {
           _logger.logInfo('[OpenRouter] Chat completion successful!');
@@ -894,28 +881,11 @@ class OpenRouterService implements OpenRouterClient {
         _logger.logInfo('[OpenRouter] Making API request to OpenRouter...');
         _logger.logVerbose('[OpenRouter] Request data: ${jsonEncode(data)}');
 
-        // DEBUG prints (temporary) - inspect request payload and headers
-        print('DEBUG_PRINT: OpenRouter streamChatCompletion -> model: $model');
-        print('DEBUG_PRINT: OpenRouter streamChatCompletion -> data: ${jsonEncode(data)}');
-        print('DEBUG_PRINT: OpenRouter streamChatCompletion -> headers: ${_dio?.options.headers}');
-
         final response = await _dio!.post(
           OpenRouterConstants.completionsEndpoint,
           data: data,
           options: Options(responseType: ResponseType.stream),
         );
-
-        // DEBUG prints (temporary) - inspect response status and truncated body
-        print('DEBUG_PRINT: OpenRouter streamChatCompletion -> response status: ${response.statusCode}');
-        try {
-          if (response.data is String) {
-            print('DEBUG_PRINT: OpenRouter streamChatCompletion -> response data (truncated): ${response.data.substring(0, min(200, (response.data as String).length))}');
-          } else {
-            print('DEBUG_PRINT: OpenRouter streamChatCompletion -> response data type: ${response.data.runtimeType}');
-          }
-        } catch (e) {
-          print('DEBUG_PRINT: OpenRouter streamChatCompletion -> response data print failed: $e');
-        }
 
         if (response.statusCode != 200) {
           final errorMessage = await _extractErrorMessage(

@@ -2,6 +2,7 @@
 
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:meta/meta.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/utils/logger.dart';
@@ -298,6 +299,64 @@ class ThemeProvider with ChangeNotifier {
     }
   }
 
+  /// Check if a model supports images using API data
+  /// Returns true if model supports images, false otherwise
+  /// Uses API data from architecture.input_modalities
+  bool modelSupportsImages(String modelId) {
+    // Try to get model from loaded models
+    final model = getModelById(modelId);
+    
+    if (model == null) {
+      _logger.logWarning('[ThemeProvider] Model $modelId not found in available models, returning false');
+      return false; // Conservative: assume no support if model not found
+    }
+    
+    // Check if model has multimodal capabilities from API
+    // The OpenRouterModel.fromJson() already parses architecture.input_modalities
+    // and sets capabilities.multimodal and capabilities.vision
+    
+    // Use the multimodal flag which is already parsed from API
+    final supportsMultimodal = model.capabilities.multimodal;
+    final supportsVision = model.capabilities.vision;
+    
+    if (supportsMultimodal || supportsVision) {
+      _logger.logInfo('[ThemeProvider] Model $modelId supports images (API: multimodal=$supportsMultimodal, vision=$supportsVision)');
+      return true;
+    }
+    
+    _logger.logInfo('[ThemeProvider] Model $modelId does not support images (API data)');
+    return false;
+  }
+
+  /// Check if the currently selected model supports images
+  /// Returns true if model supports images, false otherwise
+  /// This is a convenience method for checking the selected model without passing modelId
+  bool modelSupportsImagesSelected() {
+    if (_selectedModelId.isEmpty) {
+      _logger.logWarning('[ThemeProvider] No selected model ID');
+      return false;
+    }
+    return modelSupportsImages(_selectedModelId);
+  }
+
+  /// Check if a model supports images with fallback
+  /// This is used for backward compatibility and API fallback scenarios
+  bool checkModelSupportsImages(String modelId) {
+    // Try API-based check first
+    final apiSupport = modelSupportsImages(modelId);
+    if (apiSupport) return true;
+    
+    // Fallback: check if model is loaded
+    // If models aren't loaded yet, be conservative and return false
+    if (!_modelsLoaded) {
+      _logger.logWarning('[ThemeProvider] Models not loaded yet, returning false for $modelId');
+      return false;
+    }
+    
+    // If model exists but doesn't support images, return false
+    return false;
+  }
+
   /// Load settings from SharedPreferences
   Future<void> loadSettings() async {
     try {
@@ -433,5 +492,35 @@ class ThemeProvider with ChangeNotifier {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
     stopwatch.stop();
+  }
+
+  // ==================== TEST HELPER METHODS ====================
+  // These methods are only for unit testing and should not be used in production
+
+  /// Test helper: Add a model to available models for testing
+  @visibleForTesting
+  void addModelForTesting(OpenRouterModel model) {
+    _availableModels.add(model);
+    _modelsLoaded = true;
+  }
+
+  /// Test helper: Set selected model directly for testing
+  @visibleForTesting
+  void updateSelectedModel(String modelId, OpenRouterModel model) {
+    _selectedModelId = modelId;
+    _selectedModelObject = model;
+    // Also add to available models if not already there
+    if (!_availableModels.any((m) => m.id == modelId)) {
+      _availableModels.add(model);
+    }
+  }
+
+  /// Test helper: Reset state for testing
+  @visibleForTesting
+  void resetForTesting() {
+    _selectedModelId = '';
+    _selectedModelObject = null;
+    _availableModels.clear();
+    _modelsLoaded = false;
   }
 }

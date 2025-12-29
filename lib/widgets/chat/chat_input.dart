@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, File;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -27,6 +28,37 @@ class MessageData {
   });
 }
 
+/// Helper function to extract file name from file
+/// Works for both File and WebFile
+String _getFileName(dynamic file) {
+  String path;
+  
+  if (file is WebFile) {
+    path = file.path;
+  } else if (file is File) {
+    path = file.path;
+  } else {
+    return 'unknown';
+  }
+  
+  if (kIsWeb) {
+    // On web, the path is just the file name
+    return path;
+  }
+  // On native platforms, split by path separator
+  return path.split(Platform.pathSeparator).last;
+}
+
+/// Helper function to get path from File or WebFile
+String _getFilePath(dynamic file) {
+  if (file is WebFile) {
+    return file.path;
+  } else if (file is File) {
+    return file.path;
+  }
+  return 'unknown';
+}
+
 class ChatInput extends StatefulWidget {
   final Function(MessageData) onSendMessage;
   final Function(bool) onToggleStreaming;
@@ -34,6 +66,7 @@ class ChatInput extends StatefulWidget {
   final bool isStreaming;
   final FocusNode? focusNode;
   final Function(SpeechUiState, String)? onSpeechStateChanged; // Callback for speech state
+  final bool Function(String)? checkModelSupportsImages; // Callback to check model support
 
   const ChatInput({
     super.key,
@@ -43,6 +76,7 @@ class ChatInput extends StatefulWidget {
     this.isStreaming = false,
     this.focusNode,
     this.onSpeechStateChanged,
+    this.checkModelSupportsImages,
   });
 
   @override
@@ -206,6 +240,25 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   }
 
   Future<void> _handleCamera() async {
+    // Check model support BEFORE picking file
+    if (widget.checkModelSupportsImages != null) {
+      final modelId = context.read<ThemeProvider>().selectedModelId;
+      final supportsImages = widget.checkModelSupportsImages!(modelId);
+      
+      if (!supportsImages) {
+        // Show error but don't prevent camera use - user might want to type text first
+        if (mounted && context.mounted) {
+          SnackbarUtils.showErrorSnackBar(
+            context: context,
+            message: 'Модель $modelId не поддерживает изображения. Вы можете прикрепить фото, но отправка не сработает.',
+            icon: Icons.image_not_supported,
+            duration: const Duration(seconds: 4),
+          );
+        }
+        // Still allow picking - user can see what they're trying to do
+      }
+    }
+
     try {
       final file = await ImageUtils.takePhotoWithCamera();
       if (file == null) return;
@@ -213,11 +266,13 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
       final base64Data = await ImageUtils.fileToBase64(file);
       if (base64Data == null) return;
 
-      final imageType = ImageUtils.getMimeType(file.path);
+      final imageType = ImageUtils.getMimeType(file);
+      final fileName = _getFileName(file);
+      final filePath = _getFilePath(file);
 
       setState(() {
-        _attachedFilePath = file.path;
-        _attachedFileName = file.path.split('/').last;
+        _attachedFilePath = filePath;
+        _attachedFileName = fileName;
         _attachedImageType = imageType;
         _attachedBase64Data = base64Data;
       });
@@ -227,6 +282,25 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   }
 
   Future<void> _handleImage() async {
+    // Check model support BEFORE picking file
+    if (widget.checkModelSupportsImages != null) {
+      final modelId = context.read<ThemeProvider>().selectedModelId;
+      final supportsImages = widget.checkModelSupportsImages!(modelId);
+      
+      if (!supportsImages) {
+        // Show error but don't prevent image pick - user might want to type text first
+        if (mounted && context.mounted) {
+          SnackbarUtils.showErrorSnackBar(
+            context: context,
+            message: 'Модель $modelId не поддерживает изображения. Вы можете прикрепить фото, но отправка не сработает.',
+            icon: Icons.image_not_supported,
+            duration: const Duration(seconds: 4),
+          );
+        }
+        // Still allow picking
+      }
+    }
+
     try {
       final file = await ImageUtils.pickImageFromGallery();
       if (file == null) return;
@@ -234,11 +308,13 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
       final base64Data = await ImageUtils.fileToBase64(file);
       if (base64Data == null) return;
 
-      final imageType = ImageUtils.getMimeType(file.path);
+      final imageType = ImageUtils.getMimeType(file);
+      final fileName = _getFileName(file);
+      final filePath = _getFilePath(file);
 
       setState(() {
-        _attachedFilePath = file.path;
-        _attachedFileName = file.path.split('/').last;
+        _attachedFilePath = filePath;
+        _attachedFileName = fileName;
         _attachedImageType = imageType;
         _attachedBase64Data = base64Data;
       });
@@ -248,33 +324,44 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   }
 
   Future<void> _handleFile() async {
+    // Check model support BEFORE picking file
+    if (widget.checkModelSupportsImages != null) {
+      final modelId = context.read<ThemeProvider>().selectedModelId;
+      final supportsImages = widget.checkModelSupportsImages!(modelId);
+      
+      if (!supportsImages) {
+        // Show error but don't prevent file pick - user might want to type text first
+        if (mounted && context.mounted) {
+          SnackbarUtils.showErrorSnackBar(
+            context: context,
+            message: 'Модель $modelId не поддерживает файлы. Вы можете прикрепить файл, но отправка не сработает.',
+            icon: Icons.attach_file,
+            duration: const Duration(seconds: 4),
+          );
+        }
+        // Still allow picking
+      }
+    }
+
     try {
-      final file = await ImageUtils.pickImageFromGallery();
+      final file = await ImageUtils.pickFile();
       if (file == null) return;
 
-      if (ImageUtils.isImageFile(file.path)) {
-        // Handle as image
-        final base64Data = await ImageUtils.fileToBase64(file);
-        if (base64Data == null) return;
+      // Get file name (works for both native and web platforms)
+      final fileName = _getFileName(file);
+      final fileType = ImageUtils.getMimeType(file);
+      final filePath = _getFilePath(file);
 
-        final imageType = ImageUtils.getMimeType(file.path);
+      // Convert to base64
+      final base64Data = await ImageUtils.fileToBase64(file);
+      if (base64Data == null) return;
 
-        setState(() {
-          _attachedFilePath = file.path;
-          _attachedFileName = file.path.split('/').last;
-          _attachedImageType = imageType;
-          _attachedBase64Data = base64Data;
-        });
-      } else {
-        // Handle as regular file (for future implementation)
-        // For now, just show the file name
-        setState(() {
-          _attachedFilePath = file.path;
-          _attachedFileName = file.path.split('/').last;
-          _attachedImageType = null;
-          _attachedBase64Data = null;
-        });
-      }
+      setState(() {
+        _attachedFilePath = filePath;
+        _attachedFileName = fileName;
+        _attachedImageType = fileType;
+        _attachedBase64Data = base64Data;
+      });
     } catch (e) {
       // File picker error handled
     }
@@ -282,6 +369,28 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
 
   Future<void> _sendMessage() async {
     if (_textController.text.trim().isEmpty && _attachedFilePath == null) return;
+
+    // Check model support BEFORE sending if there's an attached file
+    if (_attachedFilePath != null && _attachedBase64Data != null) {
+      if (widget.checkModelSupportsImages != null) {
+        final modelId = context.read<ThemeProvider>().selectedModelId;
+        final supportsImages = widget.checkModelSupportsImages!(modelId);
+        
+        if (!supportsImages) {
+          // Show error but DON'T clear data - user can switch model or remove file
+          if (mounted && context.mounted) {
+            SnackbarUtils.showErrorSnackBar(
+              context: context,
+              message: 'Модель $modelId не поддерживает файлы. Удалите файл или выберите другую модель.',
+              icon: Icons.image_not_supported,
+              duration: const Duration(seconds: 5),
+            );
+          }
+          setState(() => _isSending = false);
+          return; // Don't send, but keep data
+        }
+      }
+    }
 
     setState(() => _isSending = true);
 
@@ -320,7 +429,8 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
 
     // Check if running on mobile platform (Android, iOS)
     // Camera is only available on mobile devices
-    final isMobile = Platform.isAndroid || Platform.isIOS;
+    // Use kIsWeb for web detection, Platform for native platforms
+    final isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
     // Build menu items based on platform
     final menuItems = <PopupMenuEntry<String>>[
@@ -770,7 +880,9 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                                 : (theme.brightness == Brightness.dark
                                     ? UbuntuColors.inputContainerDark
                                     : UbuntuColors.inputContainerLight),
-                            onTap: () => _showPlusMenu(context),
+                            onTap: () {
+                              _showPlusMenu(context);
+                            },
                             child: Icon(
                               Icons.add,
                               size: iconSize,
