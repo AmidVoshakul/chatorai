@@ -82,11 +82,69 @@ flutter build ios
 flutter build web
 ```
 
+## 📦 Supported File Types
+
+### Images
+- PNG, JPG, JPEG, GIF, WebP, HEIC, SVG
+
+### Text Files
+- TXT, MD, RTF, CSV, HTML, XML, JSON, YAML
+
+### Documents
+- PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX
+
+### Archives
+- ZIP, RAR, 7Z, TAR, GZ
+
+### Code Files
+- Dart, JavaScript, TypeScript, Python, Java, C/C++, C#, Go, Rust, PHP, Ruby, Swift
+
+### Audio
+- MP3, WAV, OGG, M4A
+
+### Video
+- MP4, AVI, MOV, MKV, WebM
+
+## 📤 File Upload Workflow
+
+### Step 1: Check Model Support
+When you click the 📎 button:
+- App checks if current model supports files
+- Shows warning if not supported
+- **Still allows file selection** (you can type text first)
+
+### Step 2: Select File
+- **Desktop/Mobile**: Native file picker opens
+- **Web**: Browser file picker opens
+- **Camera**: Camera app opens (mobile only)
+
+### Step 3: Attach & Review
+- File is attached to message
+- File name and type displayed
+- You can continue typing
+
+### Step 4: Send Message
+- App checks model support again
+- If unsupported: Shows error, **keeps your data**
+- If supported: Sends message with file
+
+### Data Loss Prevention
+```
+❌ Old behavior: Model doesn't support files → Clear everything
+✅ New behavior: Model doesn't support files → Show error, keep text + file
+```
+
+You can then:
+- Switch to a model that supports files
+- Remove the file and send text only
+- Try again with different model
+
 ## 📋 Dependencies
 
 - `provider` - State management
 - `speech_to_text` - Voice input
 - `image_picker` - Camera and gallery access
+- `file_picker` - File selection
 - `permission_handler` - Runtime permissions
 - `flutter_markdown_plus` - Markdown rendering
 - `dio` - HTTP client

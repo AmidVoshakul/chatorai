@@ -409,22 +409,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   void _handleSendMessage(MessageData messageData) async {
     _logger.logInfo('[ChatScreen] Received message to send: ${messageData.text}');
     
-    // Check if message has image and model supports it
-    if (messageData.imagePath != null && messageData.base64Data != null) {
-      final modelId = _selectedModel;
-      final supportsImages = _checkModelSupportsImages(modelId);
-      
-      if (!supportsImages) {
-        // Show error snackbar
-        if (context.mounted) {
-          SnackbarUtils.showModelNotSupportsMediaSnackBar(
-            context: context,
-            modelName: modelId,
-          );
-        }
-        return; // Don't send the message
-      }
-    }
+    // NOTE: Model support check is now done in ChatInput before calling this method
+    // This prevents data loss if model doesn't support media
     
     // Reset scroll lock before sending new message
     // Это единственное место, где сбрасываем флаг для нового user intent
@@ -533,29 +519,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
     // Start streaming
     _sendToAI(messageData.text);
-  }
-
-  /// Check if a model supports images based on model name
-  bool _checkModelSupportsImages(String modelId) {
-    // Models that support images (OpenRouter multimodal models)
-    // This is a simplified check - in production, you might want to query the API
-    final imageModels = [
-      'gpt-4o',
-      'gpt-4-turbo',
-      'claude-3',
-      'claude-3-5-sonnet',
-      'gemini-pro-vision',
-      'gemini-1.5-pro',
-      'llava',
-      'qwen-vl',
-      'yi-vl',
-      'minicpm-v',
-      'mimo-v2',
-    ];
-
-    // Check if model ID contains any of the image-supporting model names
-    final lowerModelId = modelId.toLowerCase();
-    return imageModels.any((model) => lowerModelId.contains(model));
   }
 
   /// Перегенерировать ответ AI
@@ -1783,6 +1746,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             _speechStatusMessage = message;
           });
         }
+      },
+      checkModelSupportsImages: (modelId) {
+        // Use ThemeProvider's synchronous check for currently selected model
+        return _themeProvider.modelSupportsImagesSelected();
       },
     );
 
