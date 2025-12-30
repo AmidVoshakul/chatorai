@@ -22,8 +22,7 @@ class _AnimatedSnackbar extends StatefulWidget {
 
 class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+  late Animation<double> _animation;
 
   @override
   void initState() {
@@ -31,36 +30,21 @@ class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerP
     
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
-      reverseDuration: const Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 300),
     );
     
-    // Smooth fade with slight bounce
-    _fadeAnimation = CurvedAnimation(
+    _animation = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
     );
     
-    // Slide with subtle bounce effect
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, -1.2),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.elasticOut,
-    ));
-    
-    // Start animation
     _controller.forward();
     
-    // Auto-dismiss
     Future.delayed(widget.duration, () {
-      if (mounted) {
-        _controller.reverse().then((_) {
-          widget.onDismiss();
-        });
-      }
+      if (!mounted) return;
+      _controller.reverse().then((_) {
+        if (mounted) widget.onDismiss();
+      });
     });
   }
 
@@ -77,7 +61,6 @@ class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerP
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 800;
     
-    // Glass effect colors based on theme
     final glassColor = isDark 
         ? Colors.black.withValues(alpha: 0.7)
         : Colors.white.withValues(alpha: 0.85);
@@ -86,108 +69,105 @@ class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerP
         ? Colors.white.withValues(alpha: 0.1)
         : Colors.black.withValues(alpha: 0.1);
     
-    // Adjust padding and icon size for desktop
     final padding = isDesktop 
         ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
         : const EdgeInsets.symmetric(horizontal: 16, vertical: 14);
     
     final iconSize = isDesktop ? 18.0 : 20.0;
-    final fontSize = isDesktop ? 13.0 : 14.0;
+    final fontSize = isDesktop ? 11.0 : 12.0;
     final borderRadius = isDesktop ? 12.0 : 16.0;
     
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            // Glass effect background
-            color: glassColor,
-            // Blur effect
-            backgroundBlendMode: BlendMode.luminosity,
-            // Rounded corners (smaller for desktop)
-            borderRadius: BorderRadius.circular(borderRadius),
-            // Border for glass effect
-            border: Border.all(
-              color: borderColor,
-              width: 1,
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, -20 * (1 - _animation.value)),
+          child: Opacity(
+            opacity: _animation.value,
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        padding: padding,
+        decoration: BoxDecoration(
+          color: glassColor,
+          backgroundBlendMode: BlendMode.luminosity,
+          borderRadius: BorderRadius.circular(borderRadius),
+          border: Border.all(
+            color: borderColor,
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: isDesktop ? 8 : 12,
+              offset: const Offset(0, 4),
+              spreadRadius: 1,
             ),
-            // Multiple shadow layers for depth
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: isDesktop ? 8 : 12,
-                offset: const Offset(0, 4),
-                spreadRadius: 1,
+            BoxShadow(
+              color: widget.backgroundColor.withValues(alpha: 0.3),
+              blurRadius: isDesktop ? 12 : 20,
+              offset: const Offset(0, 0),
+              spreadRadius: -5,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: widget.backgroundColor.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(6),
               ),
-              BoxShadow(
-                color: widget.backgroundColor.withValues(alpha: 0.3),
-                blurRadius: isDesktop ? 12 : 20,
-                offset: const Offset(0, 0),
-                spreadRadius: -5,
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Icon with glow effect
-              Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: widget.backgroundColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(
-                  widget.icon,
-                  color: widget.backgroundColor,
-                  size: iconSize,
-                  shadows: [
-                    Shadow(
-                      color: widget.backgroundColor.withValues(alpha: 0.5),
-                      blurRadius: 3,
-                      offset: const Offset(0, 0),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Message text
-              Expanded(
-                child: Text(
-                  widget.message,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black87,
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
+              child: Icon(
+                widget.icon,
+                color: widget.backgroundColor,
+                size: iconSize,
+                shadows: [
+                  Shadow(
+                    color: widget.backgroundColor.withValues(alpha: 0.5),
+                    blurRadius: 3,
+                    offset: const Offset(0, 0),
                   ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: isDesktop ? 1 : 2, // Single line on desktop
-                ),
+                ],
               ),
-              // Close button (smaller on desktop)
-              IconButton(
-                icon: Icon(
-                  Icons.close,
-                  size: isDesktop ? 14 : 16,
-                  color: isDark ? Colors.white70 : Colors.black54,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                widget.message,
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
                 ),
-                onPressed: () {
-                  _controller.reverse().then((_) {
-                    widget.onDismiss();
-                  });
-                },
-                padding: EdgeInsets.zero,
-                constraints: BoxConstraints(
-                  minWidth: isDesktop ? 20 : 24,
-                  minHeight: isDesktop ? 20 : 24,
-                ),
-                splashRadius: isDesktop ? 10 : 12,
+                overflow: TextOverflow.ellipsis,
+                maxLines: isDesktop ? 1 : 2,
               ),
-            ],
-          ),
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.close,
+                size: isDesktop ? 14 : 16,
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+              onPressed: () {
+                _controller.reverse().then((_) {
+                  widget.onDismiss();
+                });
+              },
+              padding: EdgeInsets.zero,
+              constraints: BoxConstraints(
+                minWidth: isDesktop ? 20 : 24,
+                minHeight: isDesktop ? 20 : 24,
+              ),
+              splashRadius: isDesktop ? 10 : 12,
+            ),
+          ],
         ),
       ),
     );
@@ -208,7 +188,7 @@ class SnackbarUtils {
       message: message,
       icon: icon ?? Icons.check_circle,
       backgroundColor: Colors.green,
-      duration: duration,
+      duration: duration ?? const Duration(seconds: 6),
     );
   }
 
@@ -224,7 +204,7 @@ class SnackbarUtils {
       message: message,
       icon: icon ?? Icons.error,
       backgroundColor: Colors.red,
-      duration: duration,
+      duration: duration ?? const Duration(seconds: 6),
     );
   }
 
@@ -240,7 +220,7 @@ class SnackbarUtils {
       message: message,
       icon: icon ?? Icons.warning,
       backgroundColor: Colors.orange,
-      duration: duration,
+      duration: duration ?? const Duration(seconds: 6),
     );
   }
 
@@ -256,7 +236,7 @@ class SnackbarUtils {
       message: message,
       icon: icon ?? Icons.info,
       backgroundColor: Colors.blue,
-      duration: duration,
+      duration: duration ?? const Duration(seconds: 6),
     );
   }
 
@@ -272,7 +252,7 @@ class SnackbarUtils {
       message: message,
       icon: icon ?? Icons.circle,
       backgroundColor: Colors.purple,
-      duration: duration,
+      duration: duration ?? const Duration(seconds: 6),
     );
   }
 
@@ -288,7 +268,7 @@ class SnackbarUtils {
       message: message,
       icon: icon ?? Icons.copy,
       backgroundColor: Colors.grey[700]!,
-      duration: duration ?? const Duration(seconds: 2),
+      duration: duration ?? const Duration(seconds: 6),
     );
   }
 
@@ -304,7 +284,7 @@ class SnackbarUtils {
       message: message,
       icon: icon ?? Icons.link,
       backgroundColor: Colors.blue[600]!,
-      duration: duration ?? const Duration(seconds: 3),
+      duration: duration ?? const Duration(seconds: 6),
     );
   }
 
@@ -319,7 +299,7 @@ class SnackbarUtils {
       message: 'Модель $modelName не поддерживает изображения и файлы',
       icon: Icons.image_not_supported,
       backgroundColor: Colors.orange,
-      duration: duration ?? const Duration(seconds: 4),
+      duration: duration ?? const Duration(seconds: 6),
     );
   }
 
@@ -329,50 +309,39 @@ class SnackbarUtils {
     required String message,
     required IconData icon,
     required Color backgroundColor,
-    Duration? duration,
+    required Duration duration,
   }) {
-    // Remove any existing overlays first
     _removeExistingOverlay(context);
     
-    // Get screen dimensions
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 800;
     
-    // Create overlay entry
     final overlayState = Overlay.of(context);
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
-        top: 80, // Position below app bar
-        right: isDesktop ? 40 : 20, // Closer to right edge for desktop
-        left: isDesktop ? null : 20, // No left constraint for desktop
+        top: 80,
+        right: isDesktop ? 40 : 20,
+        left: isDesktop ? null : 20,
         child: Material(
           color: Colors.transparent,
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: isDesktop ? 400 : screenWidth - 40, // Max width for desktop
+              maxWidth: isDesktop ? 400 : screenWidth - 40,
             ),
             child: _AnimatedSnackbar(
               message: message,
               icon: icon,
               backgroundColor: backgroundColor,
-              duration: duration ?? const Duration(seconds: 2),
-              onDismiss: () {
-                _removeExistingOverlay(context);
-              },
+              duration: duration,
+              onDismiss: () => _removeExistingOverlay(context),
             ),
           ),
         ),
       ),
     );
     
-    // Store the entry for removal
     _currentOverlayEntry = overlayEntry;
     overlayState.insert(overlayEntry);
-    
-    // Auto-remove after duration
-    Future.delayed(duration ?? const Duration(seconds: 2), () {
-      _removeExistingOverlay(context);
-    });
   }
 
   static OverlayEntry? _currentOverlayEntry;

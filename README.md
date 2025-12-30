@@ -1,5 +1,7 @@
 # ChatORAI
 
+![Screenshot of ChatORAI interface](https://github.com/AmidVoshakul/chatorai/blob/main/screenshots/Screenshot_2025-12-30_01-04-32.png)
+
 A modern AI chat interface with support for multiple models, voice input, and camera functionality.
 
 **🇷🇺 Русская версия**: [README_RU.md](README_RU.md)

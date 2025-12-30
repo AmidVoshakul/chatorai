@@ -6,7 +6,8 @@ import 'package:chatorai/themes/app_theme.dart';
 class SlidingAppBarConstants {
   static const double hideThreshold = 100.0;
   static const double showThreshold = 50.0;
-  static const Duration animationDuration = Duration(milliseconds: 300);
+  static const Duration animationDuration = Duration(milliseconds: 350);
+  static const Curve animationCurve = Curves.easeInOutCubic;
   static const double mobileModelNameWidthFactor = 0.50;
   static const double mobileModelNameFontSize = 12.0;
   static const double desktopModelNameFontSize = 14.0;
@@ -71,10 +72,10 @@ class SlidingAppBar extends StatefulWidget implements PreferredSizeWidget {
 
 class SlidingAppBarState extends State<SlidingAppBar> {
   double _lastScrollOffset = 0;
-  bool _isHidden = false;
+  double _hideProgress = 0.0; // 0.0 = fully visible, 1.0 = fully hidden
 
   // Public getter for debugging
-  bool get isHidden => _isHidden;
+  bool get isHidden => _hideProgress >= 1.0;
 
   @override
   void initState() {
@@ -86,7 +87,7 @@ class SlidingAppBarState extends State<SlidingAppBar> {
     super.dispose();
   }
 
-  /// Handles scroll events to show/hide the app bar
+  /// Handles scroll events to show/hide the app bar with smooth animation
   /// 
   /// Call this method from the scroll controller listener:
   /// ```dart
@@ -95,25 +96,35 @@ class SlidingAppBarState extends State<SlidingAppBar> {
   /// });
   /// ```
   void handleScroll(double scrollOffset) {
-    // Hide when scrolling down past threshold
+    final delta = scrollOffset - _lastScrollOffset;
+    
+    // Calculate progress based on scroll direction and distance
     if (scrollOffset > _lastScrollOffset && 
         scrollOffset > SlidingAppBarConstants.hideThreshold) {
-      if (!_isHidden) {
-        setState(() {
-          _isHidden = true;
-        });
-      }
+      // Scrolling down - hide with smooth acceleration
+      final normalizedDelta = delta / SlidingAppBarConstants.hideThreshold;
+      final newProgress = _hideProgress + (normalizedDelta * 0.8); // Slightly slower for smoothness
+      _updateHideProgress(newProgress);
+    } else if (scrollOffset < _lastScrollOffset || 
+               scrollOffset < SlidingAppBarConstants.showThreshold) {
+      // Scrolling up or at top - show with smooth deceleration
+      final normalizedDelta = delta.abs() / SlidingAppBarConstants.showThreshold;
+      final newProgress = _hideProgress - (normalizedDelta * 0.6); // More responsive for showing
+      _updateHideProgress(newProgress);
     }
-    // Show when scrolling up or at top
-    else if (scrollOffset < _lastScrollOffset || 
-             scrollOffset < SlidingAppBarConstants.showThreshold) {
-      if (_isHidden) {
-        setState(() {
-          _isHidden = false;
-        });
-      }
-    }
+    
     _lastScrollOffset = scrollOffset;
+  }
+
+  /// Updates the hide progress with clamping and smooth animation
+  void _updateHideProgress(double newProgress) {
+    final clampedProgress = newProgress.clamp(0.0, 1.0);
+    
+    if (clampedProgress != _hideProgress) {
+      setState(() {
+        _hideProgress = clampedProgress;
+      });
+    }
   }
 
   /// Force show the app bar (resets to visible state)
@@ -124,9 +135,9 @@ class SlidingAppBarState extends State<SlidingAppBar> {
   /// - Model changes
   /// - Navigator actions
   void show() {
-    if (_isHidden) {
+    if (_hideProgress > 0) {
       setState(() {
-        _isHidden = false;
+        _hideProgress = 0.0;
       });
     }
   }
@@ -139,7 +150,7 @@ class SlidingAppBarState extends State<SlidingAppBar> {
   /// - Any action that should reset the UI state
   void reset() {
     _lastScrollOffset = 0;
-    _isHidden = false;
+    _hideProgress = 0.0;
   }
 
   @override
@@ -152,67 +163,79 @@ class SlidingAppBarState extends State<SlidingAppBar> {
         ? Colors.grey[700]
         : theme.iconTheme.color;
 
-    // Completely hide the AppBar by returning empty container when hidden
-    if (_isHidden) {
+    // Completely hide the entire widget when fully hidden
+    if (_hideProgress >= 1.0) {
       return const SizedBox.shrink();
     }
 
-    // Visible AppBar
-    return Container(
-      color: theme.canvasColor,
-      constraints: const BoxConstraints(minHeight: SlidingAppBarConstants.appBarHeight),
-      child: SafeArea(
-        top: true,
-        bottom: true,
-        left: false,
-        right: false,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 4.0),
-          child: Row(
-            children: [
-              // Menu button
-              Builder(
-                builder: (context) => IconButton(
-                  icon: const Icon(Icons.menu, size: SlidingAppBarConstants.iconSize),
-                  color: UbuntuColors.orange,
-                  onPressed: widget.onMenuPressed,
+    // Smooth slide animation for partial hiding with enhanced curves
+    final easedProgress = SlidingAppBarConstants.animationCurve.transform(_hideProgress);
+    
+    return SizedBox(
+      height: SlidingAppBarConstants.appBarHeight * (1.0 - easedProgress),
+      child: OverflowBox(
+        maxHeight: SlidingAppBarConstants.appBarHeight,
+        child: Container(
+          color: theme.canvasColor,
+          child: AnimatedOpacity(
+            opacity: 1.0 - easedProgress,
+            duration: SlidingAppBarConstants.animationDuration,
+            curve: SlidingAppBarConstants.animationCurve,
+            child: SafeArea(
+              top: true,
+              bottom: true,
+              left: false,
+              right: false,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 4.0),
+                child: Row(
+                  children: [
+                    // Menu button
+                    Builder(
+                      builder: (context) => IconButton(
+                        icon: const Icon(Icons.menu, size: SlidingAppBarConstants.iconSize),
+                        color: UbuntuColors.orange,
+                        onPressed: widget.onMenuPressed,
+                      ),
+                    ),
+                    
+                    // Spacer to push model name to center
+                    const Spacer(),
+                    
+                    // Model name (centered, with overflow handling)
+                    // Only show if we have a model object
+                    if (widget.selectedModelObject != null)
+                      _buildModelName(
+                        widget.selectedModelObject!.name, 
+                        modelTextColor, 
+                        screenWidth
+                      ),
+                    // Spacer to push buttons to right
+                    const Spacer(),
+                    
+                    // Model selection button
+                    IconButton(
+                      icon: const Icon(Icons.smart_toy, size: SlidingAppBarConstants.iconSize),
+                      color: UbuntuColors.orange,
+                      onPressed: widget.onModelSelected,
+                      tooltip: 'Select Model',
+                    ),
+                    
+                    // Navigator button (only if headings exist)
+                    if (widget.hasHeadings())
+                      IconButton(
+                        icon: const Icon(Icons.format_list_bulleted, size: SlidingAppBarConstants.iconSize),
+                        color: UbuntuColors.orange,
+                        onPressed: widget.onNavigatorPressed,
+                        tooltip: 'Toggle Navigator',
+                      ),
+                    
+                    // Right padding
+                    const SizedBox(width: SlidingAppBarConstants.rightPadding),
+                  ],
                 ),
               ),
-              
-              // Spacer to push model name to center
-              const Spacer(),
-              
-              // Model name (centered, with overflow handling)
-            // Only show if we have a model object
-            if (widget.selectedModelObject != null)
-              _buildModelName(
-                widget.selectedModelObject!.name, 
-                modelTextColor, 
-                screenWidth
-              ),
-              // Spacer to push buttons to right
-              const Spacer(),
-              
-              // Model selection button
-              IconButton(
-                icon: const Icon(Icons.smart_toy, size: SlidingAppBarConstants.iconSize),
-                color: UbuntuColors.orange,
-                onPressed: widget.onModelSelected,
-                tooltip: 'Select Model',
-              ),
-              
-              // Navigator button (only if headings exist)
-              if (widget.hasHeadings())
-                IconButton(
-                  icon: const Icon(Icons.format_list_bulleted, size: SlidingAppBarConstants.iconSize),
-                  color: UbuntuColors.orange,
-                  onPressed: widget.onNavigatorPressed,
-                  tooltip: 'Toggle Navigator',
-                ),
-              
-              // Right padding
-              const SizedBox(width: SlidingAppBarConstants.rightPadding),
-            ],
+            ),
           ),
         ),
       ),
