@@ -155,19 +155,22 @@ class _ReasoningMessageState extends State<ReasoningMessage>
 
   Gradient _buildShimmerGradient(ThemeData theme) {
     final shimmerPosition = _shimmerAnimation.value;
+    final double normalizedPosition = shimmerPosition <= 0.5 
+        ? shimmerPosition * 2 
+        : (1.0 - shimmerPosition) * 2;
     
     return LinearGradient(
-      begin: Alignment(-1.0 + shimmerPosition, 0),
-      end: Alignment(shimmerPosition, 0),
+      begin: Alignment(-1.0 + normalizedPosition, 0),
+      end: Alignment(normalizedPosition, 0),
       colors: [
         Colors.transparent,
-        theme.colorScheme.secondary.withOpacity(0.1),
-        theme.colorScheme.secondary.withOpacity(0.25),
-        theme.colorScheme.secondary.withOpacity(0.4),
-        theme.colorScheme.secondary.withOpacity(0.5),
-        theme.colorScheme.secondary.withOpacity(0.4),
-        theme.colorScheme.secondary.withOpacity(0.25),
-        theme.colorScheme.secondary.withOpacity(0.1),
+        theme.colorScheme.secondary.withValues(alpha: 0.1),
+        theme.colorScheme.secondary.withValues(alpha: 0.25),
+        theme.colorScheme.secondary.withValues(alpha: 0.4),
+        theme.colorScheme.secondary.withValues(alpha: 0.5),
+        theme.colorScheme.secondary.withValues(alpha: 0.4),
+        theme.colorScheme.secondary.withValues(alpha: 0.25),
+        theme.colorScheme.secondary.withValues(alpha: 0.1),
         Colors.transparent,
       ],
       stops: const [0.0, 0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9, 1.0],
