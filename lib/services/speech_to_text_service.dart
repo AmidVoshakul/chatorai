@@ -75,6 +75,8 @@ class SpeechToTextService {
   /// Проверка доступности микрофона
   Future<bool> checkAvailability() async {
     try {
+      // Всегда пытаемся инициализировать, если еще не инициализировано
+      // или если было отказано в разрешении ранее
       if (!_isInitialized) {
         _isInitialized = await _speech.initialize(
           onStatus: (status) {
@@ -188,10 +190,24 @@ class SpeechToTextService {
             _handleError(error);
           },
         );
+        
+        // Если инициализация не удалась (пользователь отказал в разрешении)
+        if (!_isInitialized) {
+          _logger.logWarning('Microphone permission denied');
+          onStatusMessage(msgErrorNotAuthorized);
+          onStateChanged(SpeechUiState.error);
+          // Сброс через 2 сек
+          Future.delayed(const Duration(seconds: 2), () {
+            onStateChanged(SpeechUiState.idle);
+            onStatusMessage('');
+          });
+          return false;
+        }
       }
       return _isInitialized;
     } catch (e) {
       _logger.logError('Error checking availability: $e');
+      _isInitialized = false; // Сброс при ошибке
       return false;
     }
   }

@@ -131,7 +131,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appInfo => 'معلومات التطبيق';
 
   @override
-  String get appDescription => 'تطبيق دردشة مع نماذج الذكاء الاصطناعي عبر OpenRouter API.\n\nالميزات:\n• الدردشة مع نماذج ذكاء اصطناعي مختلفة\n• تخزين سجل الدردشة\n• السمات الداكنة والفاتحة\n• واجهة تكيفية\n\nالإصدار: 1.0.1.0\n\nتم التطوير ب ❤️ باستخدام Flutter';
+  String get appDescription => 'تطبيق دردشة مع نماذج الذكاء الاصطناعي عبر OpenRouter API.\n\nالميزات:\n• الدردشة مع نماذج ذكاء اصطناعي مختلفة\n• تخزين سجل الدردشة\n• السمات الداكنة والفاتحة\n• واجهة تكيفية\n\nالإصدار: 1.0.1.1\n\nتم التطوير ب ❤️ باستخدام Flutter';
 
   @override
   String get shareChat => 'مشاركة الدردشة';
