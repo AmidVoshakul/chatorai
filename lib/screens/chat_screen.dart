@@ -1679,7 +1679,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             child: Text(
               _selectedModelObject!.name,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: modelTextColor,
               ),
