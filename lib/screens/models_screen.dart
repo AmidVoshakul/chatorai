@@ -312,14 +312,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredModels.isEmpty
                 ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(8.0),
-                    itemCount: _filteredModels.length,
-                    itemBuilder: (context, index) {
-                      final model = _filteredModels[index];
-                      return _buildModelCard(model);
-                    },
-                  ),
+                : _buildModelsList(),
           ),
         ],
       ),
@@ -334,6 +327,39 @@ class _ModelsScreenState extends State<ModelsScreen> {
   // ==============================================
   // UI Components
   // ==============================================
+
+  Widget _buildModelsList() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth >= 1200; // Ширина для двух колонок
+    
+    if (isWideScreen) {
+      // Двухколоночный режим для широких экранов
+      return GridView.builder(
+        padding: const EdgeInsets.all(12.0),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 2.2, // Соотношение сторон карточки
+        ),
+        itemCount: _filteredModels.length,
+        itemBuilder: (context, index) {
+          final model = _filteredModels[index];
+          return _buildModelCard(model);
+        },
+      );
+    } else {
+      // Одноколоночный режим для мобильных
+      return ListView.builder(
+        padding: const EdgeInsets.all(8.0),
+        itemCount: _filteredModels.length,
+        itemBuilder: (context, index) {
+          final model = _filteredModels[index];
+          return _buildModelCard(model);
+        },
+      );
+    }
+  }
 
   Widget _buildModelCard(OpenRouterModel model) {
     final isSelected = widget.currentModel == model.id;
