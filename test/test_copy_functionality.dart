@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gen_ui_chat_ai/utils/message_utils.dart';
-import 'package:gen_ui_chat_ai/models/chat_models.dart';
+import 'package:chatorai/utils/message_utils.dart';
+import 'package:chatorai/models/chat_models.dart';
 
 void main() {
   group('MessageUtils Copy Functionality', () {

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gen_ui_chat_ai/services/speech_to_text_service.dart';
-import 'package:gen_ui_chat_ai/utils/speech_utils.dart';
+import 'package:chatorai/services/speech_to_text_service.dart';
+import 'package:chatorai/utils/speech_utils.dart';
 import 'package:flutter/material.dart';
 
 void main() {

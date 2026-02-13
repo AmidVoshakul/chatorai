@@ -5,18 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "gen_ui_chat_ai",
+            "name": "chatorai",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "gen_ui_chat_ai (profile mode)",
+            "name": "chatorai (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "gen_ui_chat_ai (release mode)",
+            "name": "chatorai (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

@@ -47,7 +47,7 @@ You should see:
 
 ```powershell
 # Clone or navigate to project
-cd "C:\path\to\gen_ui_chat_ai"
+cd "C:\path\to\chatorai"
 
 # Get dependencies
 flutter pub get

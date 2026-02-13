@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
+import 'package:chatorai/services/openrouter_service.dart';
 import 'package:flutter/foundation.dart' show VoidCallback;
 
 /// Fake OpenRouterClient that simulates 400 errors when maxTokens > threshold.

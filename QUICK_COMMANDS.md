@@ -321,7 +321,7 @@ flutter run
 ## 📝 File Structure
 
 ```
-gen_ui_chat_ai/
+chatorai/
 ├── lib/
 │   ├── main.dart
 │   ├── models/

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gen_ui_chat_ai/models/chat_models.dart';
-import 'package:gen_ui_chat_ai/services/chat_storage_service.dart';
+import 'package:chatorai/models/chat_models.dart';
+import 'package:chatorai/services/chat_storage_service.dart';
 
 // Mock ChatStorageService for testing
 class MockChatStorageService extends ChatStorageService {

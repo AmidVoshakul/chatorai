@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gen_ui_chat_ai/models/chat_models.dart';
+import 'package:chatorai/models/chat_models.dart';
 
 void main() {
   // Simple test to verify message models work correctly

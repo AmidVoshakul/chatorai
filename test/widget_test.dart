@@ -4,9 +4,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:gen_ui_chat_ai/main.dart';
-import 'package:gen_ui_chat_ai/screens/chat_screen.dart';
-import 'package:gen_ui_chat_ai/screens/settings_screen.dart';
+import 'package:chatorai/main.dart';
+import 'package:chatorai/screens/chat_screen.dart';
+import 'package:chatorai/screens/settings_screen.dart';
 
 void main() {
   group('App Widget Tests', () {

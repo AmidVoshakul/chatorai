@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:gen_ui_chat_ai/models/model_settings.dart';
-import 'package:gen_ui_chat_ai/providers/model_settings_provider.dart';
+import 'package:chatorai/models/model_settings.dart';
+import 'package:chatorai/providers/model_settings_provider.dart';
 
 void main() {
   // Initialize Flutter binding for tests that use SharedPreferences

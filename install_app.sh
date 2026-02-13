@@ -1,148 +1,170 @@
 #!/bin/bash
-
-# Installation script for ChatORAI
 set -e
 
 echo "Installing ChatORAI..."
 
-# Check if running as root
+# Require sudo
 if [ "$EUID" -ne 0 ]; then
     echo "Please run with sudo"
     exit 1
 fi
 
-# Build the application first
-echo "Step 1: Building application..."
-cd "$(dirname "$0")"
-export PATH="/opt/flutter/bin:$PATH"
-flutter build linux --release
+# ---------------------------------------------------------
+# 1. Find flutter reliably
+# ---------------------------------------------------------
 
-if [ $? -ne 0 ]; then
-    echo "❌ Build failed"
+# Try from sudo user
+if [ -n "$SUDO_USER" ]; then
+    FLUTTER_BIN=$(sudo -u "$SUDO_USER" bash -c 'which flutter' 2>/dev/null || true)
+fi
+
+# Try root PATH
+if [ -z "$FLUTTER_BIN" ]; then
+    FLUTTER_BIN=$(which flutter 2>/dev/null || true)
+fi
+
+# Try common install locations
+if [ -z "$FLUTTER_BIN" ]; then
+    for p in \
+        "/home/$SUDO_USER/Soft/flutter/bin/flutter" \
+        "/home/$SUDO_USER/flutter/bin/flutter" \
+        "/opt/flutter/bin/flutter" \
+        "/usr/local/flutter/bin/flutter"
+    do
+        if [ -x "$p" ]; then
+            FLUTTER_BIN="$p"
+            break
+        fi
+    done
+fi
+
+# Final check
+if [ -z "$FLUTTER_BIN" ]; then
+    echo "❌ Flutter not found."
+    echo "Make sure flutter works when you run: which flutter"
     exit 1
 fi
 
-# Create directories
-echo "Step 2: Creating directories..."
-mkdir -p /usr/local/lib/chatorai
-mkdir -p /usr/local/bin
+export PATH="$(dirname "$FLUTTER_BIN"):$PATH"
+echo "Using Flutter: $FLUTTER_BIN"
 
-# Copy application files
-echo "Step 3: Copying files..."
+# ---------------------------------------------------------
+# 2. Build application
+# ---------------------------------------------------------
+echo "Step 1: Building application..."
+cd "$(dirname "$0")"
+
+flutter build linux --release
+
+echo "Build OK"
+
+# ---------------------------------------------------------
+# 3. Install files
+# ---------------------------------------------------------
+echo "Step 2: Installing files..."
+
+install -d /usr/local/lib/chatorai
+install -d /usr/local/bin
+
 cp -r build/linux/x64/release/bundle/* /usr/local/lib/chatorai/
 
-# Copy icon if exists
-echo "Step 3b: Copying icon..."
-if [ -f "assets/chatorai_logo.png" ]; then
-    cp assets/chatorai_logo.png /usr/local/lib/chatorai/chatorai.png
-    echo "✅ Custom icon copied"
-else
-    echo "⚠️  Custom icon not found, using default"
-fi
+# ---------------------------------------------------------
+# 4. Install icon
+# ---------------------------------------------------------
+echo "Step 3: Installing icon..."
 
-# Also copy to system icons
-if [ -f "assets/chatorai_logo.png" ]; then
-    # Convert to proper format if ImageMagick available
-    if command -v convert &> /dev/null; then
-        convert assets/chatorai_logo.png -resize 256x256 /usr/share/icons/hicolor/256x256/apps/chatorai.png 2>/dev/null || cp assets/chatorai_logo.png /usr/share/icons/hicolor/256x256/apps/chatorai.png
+ICON_SRC="assets/chatorai_logo.png"
+ICON_DST="/usr/share/icons/hicolor/256x256/apps/chatorai.png"
+
+mkdir -p "$(dirname "$ICON_DST")"
+
+if [ -f "$ICON_SRC" ]; then
+    if command -v convert &>/dev/null; then
+        convert "$ICON_SRC" -resize 256x256 "$ICON_DST" || cp "$ICON_SRC" "$ICON_DST"
     else
-        cp assets/chatorai_logo.png /usr/share/icons/hicolor/256x256/apps/chatorai.png
+        cp "$ICON_SRC" "$ICON_DST"
     fi
+else
+    echo "⚠️ Icon not found, creating placeholder"
+    echo "AI" > "$ICON_DST"
 fi
 
-# Create wrapper script
-echo "Step 4: Creating launcher..."
+# ---------------------------------------------------------
+# 5. Test OpenGL compatibility
+# ---------------------------------------------------------
+echo "Step 4: Testing OpenGL compatibility..."
+
+APP_PATH="/usr/local/lib/chatorai/chatorai"
+
+USE_SOFT_GL=0
+
+if ! "$APP_PATH" --version >/dev/null 2>&1; then
+    echo "⚠️ Hardware OpenGL failed, enabling software rendering"
+    USE_SOFT_GL=1
+fi
+
+# Create flag file if needed
+if [ "$USE_SOFT_GL" -eq 1 ]; then
+    touch /usr/local/lib/chatorai/.force_soft_gl
+else
+    rm -f /usr/local/lib/chatorai/.force_soft_gl
+fi
+
+# ---------------------------------------------------------
+# 6. Create launcher
+# ---------------------------------------------------------
+echo "Step 5: Creating launcher..."
+
 cat > /usr/local/bin/chatorai << 'EOF'
 #!/bin/bash
-export PATH="/opt/flutter/bin:$PATH"
-export LD_LIBRARY_PATH="/usr/local/lib/chatorai/lib:$LD_LIBRARY_PATH"
-export DISPLAY=${DISPLAY:-:0}
-export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/tmp/runtime-$(whoami)}
-export HOME=${HOME:-/home/$(whoami)}
-export USER=${USER:-$(whoami)}
-
-# Fix for OpenGL issues
-export MESA_GL_VERSION_OVERRIDE=3.3
-export LIBGL_ALWAYS_SOFTWARE=1
-export GALLIUM_DRIVER=llvmpipe
-
 cd /usr/local/lib/chatorai
+
+# Auto-switch to software rendering if needed
+if [ -f ".force_soft_gl" ]; then
+    export LIBGL_ALWAYS_SOFTWARE=1
+    export GALLIUM_DRIVER=llvmpipe
+fi
+
 exec ./chatorai "$@"
 EOF
 
 chmod +x /usr/local/bin/chatorai
 
-# Create desktop launcher
-cat > /usr/local/lib/chatorai/chatorai-launcher << 'EOF'
-#!/bin/bash
-export PATH="/opt/flutter/bin:$PATH"
-export LD_LIBRARY_PATH="/usr/local/lib/chatorai/lib:$LD_LIBRARY_PATH"
-export DISPLAY=${DISPLAY:-:0}
-export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/tmp/runtime-$(whoami)}
-export HOME=${HOME:-/home/$(whoami)}
-export USER=${USER:-$(whoami)}
+# ---------------------------------------------------------
+# 7. Desktop entry
+# ---------------------------------------------------------
+echo "Step 6: Creating desktop entry..."
 
-export MESA_GL_VERSION_OVERRIDE=3.3
-export LIBGL_ALWAYS_SOFTWARE=1
-export GALLIUM_DRIVER=llvmpipe
-
-cd /usr/local/lib/chatorai
-exec ./chatorai
-EOF
-
-chmod +x /usr/local/lib/chatorai/chatorai-launcher
-
-# Create desktop file
-echo "Step 5: Creating desktop entry..."
 cat > /usr/share/applications/chatorai.desktop << 'EOF'
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=ChatORAI
 Comment=AI Chat Application
-Exec=/usr/local/lib/chatorai/chatorai-launcher
-Icon=/usr/share/icons/hicolor/256x256/apps/chatorai.png
+Exec=/usr/local/bin/chatorai
+Icon=chatorai
 Terminal=false
 Categories=Utility;Network;Chat;
 Keywords=AI;Chat;Assistant;OpenRouter;
 StartupNotify=true
 EOF
 
-# Install icon
-echo "Step 6: Installing icon..."
-if [ -f "assets/chatorai_logo.png" ]; then
-    # Create icons directory if needed
-    mkdir -p /usr/share/icons/hicolor/256x256/apps/
-    
-    # Copy and resize if possible
-    if command -v convert &> /dev/null; then
-        convert assets/chatorai_logo.png -resize 256x256 /usr/share/icons/hicolor/256x256/apps/chatorai.png 2>/dev/null || cp assets/chatorai_logo.png /usr/share/icons/hicolor/256x256/apps/chatorai.png
-    else
-        cp assets/chatorai_logo.png /usr/share/icons/hicolor/256x256/apps/chatorai.png
-    fi
-    echo "✅ Icon installed"
-else
-    # Create placeholder icon
-    echo "⚠️  Creating placeholder icon"
-    mkdir -p /usr/share/icons/hicolor/256x256/apps/
-    echo "AI" > /usr/share/icons/hicolor/256x256/apps/chatorai.png
-fi
+# ---------------------------------------------------------
+# 8. Update icon cache
+# ---------------------------------------------------------
+echo "Step 7: Updating icon cache..."
 
-# Update databases
-echo "Step 7: Updating system databases..."
 update-desktop-database /usr/share/applications 2>/dev/null || true
 gtk-update-icon-cache /usr/share/icons/hicolor 2>/dev/null || true
 
 echo ""
 echo "✅ Installation complete!"
 echo ""
-echo "You can now:"
-echo "  - Run from terminal: chatorai"
-echo "  - Find in applications menu: 'ChatORAI'"
-echo "  - Or run: /usr/local/lib/chatorai/chatorai"
+echo "Run: chatorai"
 echo ""
 echo "To uninstall:"
 echo "  sudo rm -rf /usr/local/lib/chatorai"
 echo "  sudo rm /usr/local/bin/chatorai"
 echo "  sudo rm /usr/share/applications/chatorai.desktop"
 echo "  sudo rm /usr/share/icons/hicolor/256x256/apps/chatorai.png"
+echo ""
