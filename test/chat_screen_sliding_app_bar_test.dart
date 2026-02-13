@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/sliding_app_bar.dart';
-import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
+import 'package:chatorai/widgets/chat/sliding_app_bar.dart';
+import 'package:chatorai/services/openrouter_service.dart';
 
 // Helper to create test model
 OpenRouterModel _createTestModel() {

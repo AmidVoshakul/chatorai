@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
-import 'package:gen_ui_chat_ai/models/chat_models.dart';
+import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/models/chat_models.dart';
 
 // Mock logger for testing
 class MockLogger {

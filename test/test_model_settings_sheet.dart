@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/model_settings_sheet.dart';
-import 'package:gen_ui_chat_ai/providers/model_settings_provider.dart';
-import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
-import 'package:gen_ui_chat_ai/models/model_settings.dart';
-import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+import 'package:chatorai/widgets/chat/model_settings_sheet.dart';
+import 'package:chatorai/providers/model_settings_provider.dart';
+import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/models/model_settings.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {

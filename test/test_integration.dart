@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:gen_ui_chat_ai/providers/theme_provider.dart';
-import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
-import 'package:gen_ui_chat_ai/services/openrouter_service.dart';
+import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/services/openrouter_service.dart';
 
 void main() {
   group('Integration Tests - ThemeProvider Model Management', () {

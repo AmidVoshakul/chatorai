@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:gen_ui_chat_ai/widgets/chat/chat_input.dart';
-import 'package:gen_ui_chat_ai/l10n/app_localizations.dart';
+import 'package:chatorai/widgets/chat/chat_input.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 
 void main() {
   group('ChatInput Widget Tests', () {
