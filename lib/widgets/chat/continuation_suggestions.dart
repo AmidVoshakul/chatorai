@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
 class ContinuationSuggestions extends StatefulWidget {
@@ -231,7 +232,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
                             _stopCycle();
                             widget.onRefresh!();
                           },
-                          tooltip: 'Refresh questions',
+                          tooltip: l10n.refreshQuestions,
                           splashRadius: 16,
                         ),
                       // Close button
@@ -366,9 +367,11 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
                             ),
                         ],
                       ),
-                      child: Text(
-                        suggestion,
-                        style: const TextStyle(fontSize: 13, height: 1.4),
+                      child: MarkdownBody(
+                        data: suggestion,
+                        styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                          p: const TextStyle(fontSize: 13, height: 1.4),
+                        ),
                       ),
                     ),
                   );
@@ -382,9 +385,11 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
                       ? theme.cardColor.withValues(alpha: 0.8)
                       : theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
                 ),
-                child: Text(
-                  suggestion,
-                  style: const TextStyle(fontSize: 13, height: 1.4),
+                child: MarkdownBody(
+                  data: suggestion,
+                  styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                    p: const TextStyle(fontSize: 13, height: 1.4),
+                  ),
                 ),
               ),
       ),
