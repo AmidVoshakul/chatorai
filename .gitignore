@@ -46,3 +46,7 @@ app.*.map.json
 lib/widgets/sidebar/sidebar.dart
 
 .env
+<<<<<<< HEAD
+=======
+.vscode/
+>>>>>>> dev
