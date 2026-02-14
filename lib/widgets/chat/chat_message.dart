@@ -798,37 +798,87 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
         
         // Кнопки действий
         Row(
-          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            // Отмена
-            TextButton(
-              onPressed: _cancelEditing,
-              child: Text(
-                localizations.cancel,
-                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+            // Кнопка отмены/крестик - всегда слева
+            if (MediaQuery.of(context).size.width < 800) ...[
+              // Мобильная иконка отмены (красный крестик)
+              IconButton(
+                icon: Icon(
+                  Icons.close,
+                  size: 20,
+                  color: Colors.red,
+                ),
+                onPressed: _cancelEditing,
+                tooltip: localizations.cancel,
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(),
               ),
-            ),
+            ] else ...[
+              // Десктоп текстовая отмена
+              TextButton(
+                onPressed: _cancelEditing,
+                child: Text(
+                  localizations.cancel,
+                  style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+                ),
+              ),
+            ],
             
-            // Сохранить
-            TextButton(
-              onPressed: _saveEditing,
-              child: Text(
-                localizations.save,
-                style: TextStyle(color: theme.primaryColor),
-              ),
-            ),
+            // Spacer чтобы отодвинуть остальные кнопки вправо
+            const Spacer(),
             
-            // Сохранить и отправить
-            ElevatedButton(
-              onPressed: _saveAndSend,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.primaryColor,
-                foregroundColor: theme.colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            // Остальные кнопки (сохранить, сохранить и отправить) - справа
+            if (MediaQuery.of(context).size.width < 800) ...[
+              // Мобильные иконки
+              // Сохранить (зеленая галочка)
+              IconButton(
+                icon: Icon(
+                  Icons.check,
+                  size: 20,
+                  color: Colors.green,
+                ),
+                onPressed: _saveEditing,
+                tooltip: localizations.save,
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(),
               ),
-              child: Text(localizations.saveAndSend),
-            ),
+              const SizedBox(width: 8),
+              
+              // Сохранить и отправить (оранжевый самолетик)
+              IconButton(
+                icon: Icon(
+                  Icons.send,
+                  size: 20,
+                  color: theme.primaryColor,
+                ),
+                onPressed: _saveAndSend,
+                tooltip: localizations.saveAndSend,
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(),
+              ),
+            ] else ...[
+              // Десктоп текстовые кнопки
+              // Сохранить
+              TextButton(
+                onPressed: _saveEditing,
+                child: Text(
+                  localizations.save,
+                  style: TextStyle(color: theme.primaryColor),
+                ),
+              ),
+              
+              // Сохранить и отправить
+              ElevatedButton(
+                onPressed: _saveAndSend,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.primaryColor,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+                child: Text(localizations.saveAndSend),
+              ),
+            ],
           ],
         ),
       ],
