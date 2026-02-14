@@ -8,7 +8,6 @@ import 'package:chatorai/widgets/chat/scrollable_action_buttons.dart';
 import 'package:chatorai/widgets/chat/error_message.dart';
 import 'package:chatorai/widgets/chat/loading_indicator.dart';
 import 'package:chatorai/utils/message_utils.dart';
-import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/utils/logger.dart';
@@ -28,8 +27,9 @@ class ChatMessage extends StatefulWidget {
   final ChatStorageService chatStorageService;
   final VoidCallback onMessageDeleted; // Callback for when message is deleted
   final VoidCallback? onDelete;
-  final VoidCallback? onMessageEdited;
-  final Function(String)? onMessageUpdated; // Callback for when message content is updated
+  final Function(String, String)? onMessageEdited; // Callback for message edit (messageId, newContent)
+  final Function(String)? onMessageUpdated; // Callback for when message content is updated (just edit) - legacy
+  final Function(String, String)? onMessageEditAndSend; // Callback for edit + regenerate (messageId, newContent)
   final VoidCallback? onContinueResponse; // Callback for continuing response
   final bool isLastMessage; // Whether this is the last message in chat
   final List<MarkdownHeadingInfoWithKey>? headings; // Headings with keys for navigation
@@ -45,6 +45,7 @@ class ChatMessage extends StatefulWidget {
     this.onDelete,
     this.onMessageEdited,
     this.onMessageUpdated,
+    this.onMessageEditAndSend,
     this.onContinueResponse,
     this.isLastMessage = false,
     this.headings,
@@ -834,80 +835,43 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
     );
   }
 
-  /// Обработка редактирования сообщения
+  /// Обработка редактирования сообщения (только уведомление родителя)
   Future<void> _handleEditMessage(String newContent) async {
-    final localizations = AppLocalizations.of(context)!;
-    try {
-      // Создаем обновленное сообщение
-      final updatedMessage = widget.message.copyWith(content: newContent);
-      
-      // Сохраняем изменения в базе данных
-      await widget.chatStorageService.updateMessageInChat(
-        widget.chatId,
-        widget.message.id,
-        updatedMessage,
-      );
-      
-      // Обновляем текст в контроллере
-      _textController.text = newContent;
-      
-      // Уведомляем родительский компонент об изменении
-      if (widget.onMessageUpdated != null) {
-        widget.onMessageUpdated!(newContent);
-      }
-      
-      // Показываем уведомление об успешном редактировании
-      SnackbarUtils.showSuccessSnackBar(
-        context: context,
-        message: localizations.messageEditedSuccessfully,
-        icon: Icons.edit,
-      );
-    } catch (e) {
-      SnackbarUtils.showErrorSnackBar(
-        context: context,
-        message: localizations.failedToEditMessage,
-        icon: Icons.error,
-      );
+    // Просто уведомляем родительский компонент об изменении
+    // Сохранение и обновление UI будет в ChatScreen
+    if (widget.onMessageEdited != null) {
+      widget.onMessageEdited!(widget.message.id, newContent);
+    } else if (widget.onMessageUpdated != null) {
+      widget.onMessageUpdated!(newContent);
     }
+    
+    // Обновляем текст в контроллере
+    _textController.text = newContent;
+    
+    // Выходим из режима редактирования
+    setState(() {
+      _isEditing = false;
+    });
   }
 
   /// Обработка редактирования и отправки сообщения
   Future<void> _handleEditAndSend(String newContent) async {
-    final localizations = AppLocalizations.of(context)!;
-    try {
-      // Создаем обновленое сообщение
-      final updatedMessage = widget.message.copyWith(content: newContent);
-      
-      // Сохраняем изменения в базе данных
-      await widget.chatStorageService.updateMessageInChat(
-        widget.chatId,
-        widget.message.id,
-        updatedMessage,
-      );
-      
-      // Обновляем текст в контроллере
-      _textController.text = newContent;
-      
-      // Уведомляем родительский компонент об изменении
-      if (widget.onMessageUpdated != null) {
-        widget.onMessageUpdated!(newContent);
-      }
-      
-      // TODO: Здесь должна быть логика удаления последующих сообщений и генерации нового ответа
-      
-      // Показываем уведомление
-      SnackbarUtils.showSuccessSnackBar(
-        context: context,
-        message: localizations.messageEditedAndResponseRegenerated,
-        icon: Icons.refresh,
-      );
-    } catch (e) {
-      SnackbarUtils.showErrorSnackBar(
-        context: context,
-        message: localizations.failedToEditAndSendMessage,
-        icon: Icons.error,
-      );
+    // Уведомляем родительский компонент об изменении и необходимости regeneration
+    // Вся логика (сохранение, удаление ответов, генерация) будет в ChatScreen
+    if (widget.onMessageEditAndSend != null) {
+      await widget.onMessageEditAndSend!(widget.message.id, newContent);
+    } else if (widget.onMessageUpdated != null) {
+      // Fallback для совместимости
+      widget.onMessageUpdated!(newContent);
     }
+    
+    // Обновляем текст в контроллере
+    _textController.text = newContent;
+    
+    // Выходим из режима редактирования
+    setState(() {
+      _isEditing = false;
+    });
   }
 }
 

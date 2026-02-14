@@ -46,6 +46,8 @@ class ChatMessages extends StatefulWidget {
   final String? selectedModel;
   final Function(MessageData) onSendMessage; // Add callback for sending messages
   final Function() onMessageDeleted; // Add callback for message deletion
+  final Function(String, String)? onMessageEdited; // Callback for message edit (messageId, newContent)
+  final Function(String, String)? onMessageEditAndSend; // Callback for edit + regenerate (messageId, newContent)
   final Function(String)? onContinueResponse; // Add callback for continuing response
   final VoidCallback? onRegenerateResponse; // Add callback for regenerating response
   final ScrollController? scrollController; // External scroll controller
@@ -72,6 +74,8 @@ class ChatMessages extends StatefulWidget {
     this.selectedModel,
     required this.onSendMessage,
     required this.onMessageDeleted,
+    this.onMessageEdited,
+    this.onMessageEditAndSend,
     this.onContinueResponse,
     this.onRegenerateResponse,
     this.scrollController,
@@ -331,6 +335,12 @@ class ChatMessagesState extends State<ChatMessages>
                           chatId: widget.chat?.id ?? '',
                           chatStorageService: widget.chatStorageService,
                           onMessageDeleted: widget.onMessageDeleted,
+                          onMessageEdited: (String messageId, String newContent) {
+                            widget.onMessageEdited?.call(messageId, newContent);
+                          },
+                          onMessageEditAndSend: (String messageId, String newContent) {
+                            widget.onMessageEditAndSend?.call(messageId, newContent);
+                          },
                           onMessageUpdated: (newContent) {
                             if (newContent == 'REGENERATE') {
                               widget.onRegenerateResponse?.call();
@@ -385,6 +395,12 @@ class ChatMessagesState extends State<ChatMessages>
                         chatId: widget.chat?.id ?? '',
                         chatStorageService: widget.chatStorageService,
                         onMessageDeleted: widget.onMessageDeleted,
+                        onMessageEdited: (String messageId, String newContent) {
+                          widget.onMessageEdited?.call(messageId, newContent);
+                        },
+                        onMessageEditAndSend: (String messageId, String newContent) {
+                          widget.onMessageEditAndSend?.call(messageId, newContent);
+                        },
                         onMessageUpdated: (newContent) {
                           if (newContent == 'REGENERATE') {
                             widget.onRegenerateResponse?.call();
@@ -428,6 +444,12 @@ class ChatMessagesState extends State<ChatMessages>
                   chatId: widget.chat?.id ?? '',
                   chatStorageService: widget.chatStorageService,
                   onMessageDeleted: widget.onMessageDeleted,
+                  onMessageEdited: (String messageId, String newContent) {
+                    widget.onMessageEdited?.call(messageId, newContent);
+                  },
+                  onMessageEditAndSend: (String messageId, String newContent) {
+                    widget.onMessageEditAndSend?.call(messageId, newContent);
+                  },
                   onMessageUpdated: (newContent) {
                     if (newContent == 'REGENERATE') {
                       widget.onRegenerateResponse?.call();

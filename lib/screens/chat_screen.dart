@@ -113,10 +113,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   SpeechUiState _speechUiState = SpeechUiState.idle;
   String _speechStatusMessage = '';
   
-  // Streaming optimization - throttle updates
-  DateTime _lastUpdateTime = DateTime.now();
-  static const Duration _updateThrottle = Duration(milliseconds: 50); // 20 FPS max
-  
   @override
   void initState() {
     super.initState();
@@ -243,7 +239,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   // Helper method to update both current chat and chats list
-  // OPTIMIZED: Throttled updates during streaming to prevent lag
   void _updateCurrentChat(Chat updatedChat) {
     _currentChat = updatedChat;
     // Update the chat in the _chats list
@@ -252,12 +247,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _chats[index] = updatedChat;
     }
     
-    // Throttle updates during streaming (max 20 FPS)
-    final now = DateTime.now();
-    if (!_isStreaming || now.difference(_lastUpdateTime) >= _updateThrottle) {
-      _lastUpdateTime = now;
-      setState(() {});
-    }
+    // Просто вызываем setState без throttling
+    setState(() {});
   }
 
   Future<void> _createNewChat() async {
@@ -1045,6 +1036,163 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         }
       } catch (e) {
         _logger.logError('[ChatScreen] Error refreshing chat messages: $e');
+      }
+    }
+  }
+
+  /// Обработка редактирования сообщения (просто сохранение)
+  Future<void> _handleMessageEdited(String messageId, String newContent) async {
+    _logger.logInfo('[ChatScreen] Message edited: $messageId, new content: ${newContent.substring(0, min(newContent.length, 50))}...');
+    
+    if (_currentChat == null) {
+      _logger.logError('[ChatScreen] Cannot edit message - no current chat');
+      return;
+    }
+
+    try {
+      // Update the message in storage
+      final messages = _currentChat!.messages;
+      final messageIndex = messages.indexWhere((m) => m.id == messageId);
+      
+      if (messageIndex != -1) {
+        final editedMessage = messages[messageIndex].copyWith(content: newContent);
+        await _chatStorageService.updateMessageInChat(
+          _currentChat!.id,
+          messageId,
+          editedMessage,
+        );
+        
+        // Update local state
+        final updatedMessages = List<Message>.from(messages);
+        updatedMessages[messageIndex] = editedMessage;
+        
+        final updatedChat = _currentChat!.copyWith(
+          messages: updatedMessages,
+          updatedAt: DateTime.now(),
+        );
+        
+        _updateCurrentChat(updatedChat);
+        _logger.logInfo('[ChatScreen] Chat state updated with edited message');
+        
+        // Показываем уведомление об успешном редактировании
+        if (mounted) {
+          SnackbarUtils.showSuccessSnackBar(
+            context: context,
+            message: 'Сообщение отредактировано',
+            icon: Icons.edit,
+          );
+        }
+      } else {
+        _logger.logError('[ChatScreen] Message $messageId not found in current chat');
+        if (mounted) {
+          SnackbarUtils.showErrorSnackBar(
+            context: context,
+            message: 'Сообщение не найдено',
+            icon: Icons.error,
+          );
+        }
+      }
+    } catch (e) {
+      _logger.logError('[ChatScreen] Error handling message edit: $e');
+      if (mounted) {
+        SnackbarUtils.showErrorSnackBar(
+          context: context,
+          message: 'Ошибка при редактировании сообщения',
+          icon: Icons.error,
+        );
+      }
+    }
+  }
+
+  /// Обработка редактирования сообщения и отправки (regenerate)
+  Future<void> _handleMessageEditAndSend(String messageId, String newContent) async {
+    _logger.logInfo('[ChatScreen] Edit and send for message $messageId, new content: ${newContent.substring(0, min(newContent.length, 50))}...');
+    
+    if (_currentChat == null) {
+      _logger.logError('[ChatScreen] Cannot edit and send - no current chat');
+      return;
+    }
+
+    try {
+      // 1. Обновляем сообщение пользователя
+      final messages = _currentChat!.messages;
+      final messageIndex = messages.indexWhere((m) => m.id == messageId);
+      
+      if (messageIndex == -1) {
+        _logger.logError('[ChatScreen] Message $messageId not found');
+        return;
+      }
+
+      // Обновляем сообщение пользователя
+      final editedUserMessage = messages[messageIndex].copyWith(content: newContent);
+      await _chatStorageService.updateMessageInChat(
+        _currentChat!.id,
+        messageId,
+        editedUserMessage,
+      );
+
+      // 2. Удаляем все последующие сообщения (ответы AI и т.д.)
+      final messagesAfterEdit = messages.sublist(0, messageIndex + 1);
+      
+      // Удаляем сообщения из storage, начиная с последнего
+      for (int i = messages.length - 1; i > messageIndex; i--) {
+        await _chatStorageService.deleteMessageFromChat(_currentChat!.id, messages[i].id);
+      }
+
+      // 3. Создаём новый chat с обновлённым сообщением пользователя и без последующих сообщений
+      final updatedChat = _currentChat!.copyWith(
+        messages: messagesAfterEdit,
+        updatedAt: DateTime.now(),
+      );
+      
+      _updateCurrentChat(updatedChat);
+      
+      // 4. Добавляем placeholder для AI ответа
+      final assistantMessage = Message(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        role: MessageRole.assistant,
+        content: '',
+        timestamp: DateTime.now(),
+        isComplete: false,
+        model: _selectedModel,
+      );
+      
+      await _chatStorageService.addMessageToChat(_currentChat!.id, assistantMessage);
+      
+      // Обновляем локальный чат с новым placeholder
+      final chatWithAssistant = updatedChat.copyWith(
+        messages: [...messagesAfterEdit, assistantMessage],
+        updatedAt: DateTime.now(),
+      );
+      _updateCurrentChat(chatWithAssistant);
+
+      // 5. Прокручиваем к индикатору
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _chatScrollUtils?.scrollToIndicator();
+      });
+
+      // 6. Отправляем запрос к AI с обновлённым контентом
+      _sendToAI(newContent);
+      
+      _logger.logInfo('[ChatScreen] Message edited and new response requested');
+      
+      // Показываем уведомление об успешном редактировании и отправке
+      if (mounted) {
+        SnackbarUtils.showSuccessSnackBar(
+          context: context,
+          message: 'Сообщение отредактировано, генерирую новый ответ...',
+          icon: Icons.refresh,
+        );
+      }
+    } catch (e) {
+      _logger.logError('[ChatScreen] Error in edit and send: $e');
+      // Показываем ошибку пользователю
+      if (mounted) {
+        SnackbarUtils.showErrorSnackBar(
+          context: context,
+          message: 'Ошибка при редактировании и отправке сообщения',
+          icon: Icons.error,
+        );
       }
     }
   }
@@ -1856,6 +2004,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                           selectedModel: _selectedModel,
                           onSendMessage: _handleSendMessage,
                           onMessageDeleted: _refreshChatMessages,
+                          onMessageEdited: _handleMessageEdited,
+                          onMessageEditAndSend: _handleMessageEditAndSend,
                           onContinueResponse: (messageId) => _continueAIResponse(messageId),
                           onRegenerateResponse: _regenerateResponse,
                           scrollController: _messageScrollController,
@@ -1941,6 +2091,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                       selectedModel: _selectedModel,
                       onSendMessage: _handleSendMessage,
                       onMessageDeleted: _refreshChatMessages,
+                      onMessageEdited: _handleMessageEdited,
+                      onMessageEditAndSend: _handleMessageEditAndSend,
                       onContinueResponse: (messageId) => _continueAIResponse(messageId),
                       scrollController: _messageScrollController,
                       continuationSuggestions: _continuationSuggestions,
