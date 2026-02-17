@@ -766,6 +766,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get generatingSuggestions => '提案を生成中...';
 
   @override
+  String get refreshQuestions => '質問を更新';
+
+  @override
   String get searchChats => 'チャットを検索...';
 
   @override

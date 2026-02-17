@@ -766,6 +766,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get generatingSuggestions => 'جاري إنشاء الاقتراحات...';
 
   @override
+  String get refreshQuestions => 'تحديث الأسئلة';
+
+  @override
   String get searchChats => 'البحث في الدردشات...';
 
   @override

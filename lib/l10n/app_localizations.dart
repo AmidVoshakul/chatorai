@@ -1597,6 +1597,12 @@ abstract class AppLocalizations {
   /// **'Generating suggestions...'**
   String get generatingSuggestions;
 
+  /// No description provided for @refreshQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh questions'**
+  String get refreshQuestions;
+
   /// No description provided for @searchChats.
   ///
   /// In en, this message translates to:

@@ -766,6 +766,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get generatingSuggestions => 'Генерація пропозицій...';
 
   @override
+  String get refreshQuestions => 'Оновити питання';
+
+  @override
   String get searchChats => 'Пошук чатів...';
 
   @override
