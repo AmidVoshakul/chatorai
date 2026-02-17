@@ -766,6 +766,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get generatingSuggestions => 'Генерация предложений...';
 
   @override
+  String get refreshQuestions => 'Обновить вопросы';
+
+  @override
   String get searchChats => 'Поиск чатов...';
 
   @override

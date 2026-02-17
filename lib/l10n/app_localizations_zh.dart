@@ -766,6 +766,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get generatingSuggestions => '生成建议中...';
 
   @override
+  String get refreshQuestions => '刷新问题';
+
+  @override
   String get searchChats => '搜索聊天...';
 
   @override

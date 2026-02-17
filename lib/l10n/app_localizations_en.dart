@@ -766,6 +766,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generatingSuggestions => 'Generating suggestions...';
 
   @override
+  String get refreshQuestions => 'Refresh questions';
+
+  @override
   String get searchChats => 'Search chats...';
 
   @override
