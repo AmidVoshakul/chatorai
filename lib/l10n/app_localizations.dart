@@ -1597,12 +1597,6 @@ abstract class AppLocalizations {
   /// **'Generating suggestions...'**
   String get generatingSuggestions;
 
-  /// No description provided for @refreshQuestions.
-  ///
-  /// In en, this message translates to:
-  /// **'Refresh questions'**
-  String get refreshQuestions;
-
   /// No description provided for @searchChats.
   ///
   /// In en, this message translates to:
@@ -1962,6 +1956,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start error: {error}'**
   String speechStartError(Object error);
+
+  /// No description provided for @errorProcessingRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorry, I encountered an error while processing your request. Please try again.'**
+  String get errorProcessingRequest;
+
+  /// No description provided for @rateLimitRetryMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate limit exceeded. Retrying in {seconds} seconds...'**
+  String rateLimitRetryMessage(Object seconds);
+
+  /// No description provided for @messageNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Message not found'**
+  String get messageNotFound;
+
+  /// No description provided for @errorEditingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error editing message'**
+  String get errorEditingMessage;
+
+  /// No description provided for @errorEditAndSendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error editing and sending message'**
+  String get errorEditAndSendMessage;
+
+  /// No description provided for @generatingSuggestionsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to generate suggestions: {error}'**
+  String generatingSuggestionsFailed(Object error);
+
+  /// No description provided for @selectModelTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Model'**
+  String get selectModelTooltip;
+
+  /// No description provided for @toggleNavigatorTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle Navigator'**
+  String get toggleNavigatorTooltip;
+
+  /// No description provided for @defaultSuggestion1.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell me more about this topic'**
+  String get defaultSuggestion1;
+
+  /// No description provided for @defaultSuggestion2.
+  ///
+  /// In en, this message translates to:
+  /// **'Can you provide examples?'**
+  String get defaultSuggestion2;
+
+  /// No description provided for @defaultSuggestion3.
+  ///
+  /// In en, this message translates to:
+  /// **'What are the alternatives?'**
+  String get defaultSuggestion3;
+
+  /// No description provided for @defaultSuggestion4.
+  ///
+  /// In en, this message translates to:
+  /// **'How does this apply in practice?'**
+  String get defaultSuggestion4;
+
+  /// No description provided for @systemPromptSuggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'You are a helpful assistant. Continue the conversation by providing 3 specific and logical continuations of the last message. Respond in the same language as the user.'**
+  String get systemPromptSuggestion;
+
+  /// No description provided for @userPromptSuggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Provide 3 specific and logical continuations for this message. Answer only with the list, no additional text.'**
+  String get userPromptSuggestion;
+
+  /// No description provided for @refreshQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh questions'**
+  String get refreshQuestions;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

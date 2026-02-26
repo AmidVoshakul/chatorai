@@ -766,9 +766,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get generatingSuggestions => '提案を生成中...';
 
   @override
-  String get refreshQuestions => '質問を更新';
-
-  @override
   String get searchChats => 'チャットを検索...';
 
   @override
@@ -955,4 +952,53 @@ class AppLocalizationsJa extends AppLocalizations {
   String speechStartError(Object error) {
     return '開始エラー: $error';
   }
+
+  @override
+  String get errorProcessingRequest => '申し訳ありません。リクエストの処理中にエラーが発生しました。もう一度お試しください。';
+
+  @override
+  String rateLimitRetryMessage(Object seconds) {
+    return 'レート制限に達しました。$seconds秒後に再試行します...';
+  }
+
+  @override
+  String get messageNotFound => 'メッセージが見つかりません';
+
+  @override
+  String get errorEditingMessage => 'メッセージの編集エラー';
+
+  @override
+  String get errorEditAndSendMessage => 'メッセージの編集と送信エラー';
+
+  @override
+  String generatingSuggestionsFailed(Object error) {
+    return '提案の生成に失敗しました: $error';
+  }
+
+  @override
+  String get selectModelTooltip => 'モデルを選択';
+
+  @override
+  String get toggleNavigatorTooltip => 'ナビゲーターを切り替え';
+
+  @override
+  String get defaultSuggestion1 => 'このトピックについて詳しく教えてください';
+
+  @override
+  String get defaultSuggestion2 => '例を挙げていただけますか？';
+
+  @override
+  String get defaultSuggestion3 => '代替案はありますか？';
+
+  @override
+  String get defaultSuggestion4 => 'これは実際にどのように適用されますか？';
+
+  @override
+  String get systemPromptSuggestion => 'あなたは有用なアシスタントです。会話を続け、最後のメッセージに対して3つの具体的で論理的な続きを提案してください。ユーザーと同じ言語で回答してください。';
+
+  @override
+  String get userPromptSuggestion => 'このメッセージに対して3つの具体的で論理的な続きを提案してください。リストのみで回答し、追加テキストは含めないでください。';
+
+  @override
+  String get refreshQuestions => '質問を更新';
 }

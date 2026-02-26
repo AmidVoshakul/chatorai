@@ -307,5 +307,22 @@
 "micNoSpeechDetected": "我没听到您的声音，请再试一次。",
 "micAutoRestart": "重试中...",
 "speechPhase2": "我听不到您...请大声一点",
-"speechStartError": "启动错误: {error}"
+"speechStartError": "启动错误: {error}",
+"errorProcessingRequest": "抱歉，处理您的请求时发生错误。请重试。",
+"rateLimitRetryMessage": "已达到速率限制。{seconds}秒后重试...",
+"messageNotFound": "未找到消息",
+"errorEditingMessage": "编辑消息错误",
+"errorEditAndSendMessage": "编辑和发送消息错误",
+"generatingSuggestionsFailed": "生成建议失败: {error}",
+"selectModelTooltip": "选择模型",
+"toggleNavigatorTooltip": "切换导航器",
+"defaultSuggestion1": "请告诉我更多关于这个主题",
+"defaultSuggestion2": "你能提供例子吗？",
+"defaultSuggestion3": "有什么替代方案？",
+"defaultSuggestion4": "这在实践中如何应用？",
+"systemPromptSuggestion": "你是一个有用的助手。继续对话，为最后一条消息提供3个具体且合乎逻辑的延续。用中文回答。",
+"userPromptSuggestion": "为这条消息提供3个具体且合乎逻辑的延续。只回答列表，不要额外文本。",
+"selectModelTooltip": "选择模型",
+"toggleNavigatorTooltip": "切换导航器",
+"refreshQuestions": "刷新问题"
 }

@@ -307,5 +307,22 @@
 "micNoSpeechDetected": "لم أسمعك. يرجى المحاولة مرة أخرى.",
 "micAutoRestart": "إعادة المحاولة...",
 "speechPhase2": "لا أسمعك...تحدث بصوت أعلى",
-"speechStartError": "خطأ في البدء: {error}"
+"speechStartError": "خطأ في البدء: {error}",
+"errorProcessingRequest": "عذرًا، حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.",
+"rateLimitRetryMessage": "تم تجاوز حد المعدل. إعادة المحاولة خلال {seconds} ثوانٍ...",
+"messageNotFound": "الرسالة غير موجودة",
+"errorEditingMessage": "خطأ في تعديل الرسالة",
+"errorEditAndSendMessage": "خطأ في تعديل وإرسال الرسالة",
+"generatingSuggestionsFailed": "فشل في إنشاء الاقتراحات: {error}",
+"selectModelTooltip": "اختيار النموذج",
+"toggleNavigatorTooltip": "تبديل الملاحة",
+"defaultSuggestion1": "أخبرني المزيد عن هذا الموضوع",
+"defaultSuggestion2": "هل يمكنك تقديم أمثلة؟",
+"defaultSuggestion3": "ما هي البدائل؟",
+"defaultSuggestion4": "كيف يتم تطبيق هذا في الممارسة العملية؟",
+"systemPromptSuggestion": "أنت مساعد مفيد. استمر في المحادثة من خلال تقديم 3 استمرارات محددة ومنطقية لآخر رسالة. رد باللغة نفسها التي يستخدمها المستخدم.",
+"userPromptSuggestion": "قدم 3 استمرارات محددة ومنطقية لهذه الرسالة. أجب بالقائمة فقط، بدون نص إضافي.",
+"selectModelTooltip": "اختيار النموذج",
+"toggleNavigatorTooltip": "تبديل الملاحة",
+"refreshQuestions": "تحديث الأسئلة"
 }

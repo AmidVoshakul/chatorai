@@ -766,9 +766,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generatingSuggestions => 'Generating suggestions...';
 
   @override
-  String get refreshQuestions => 'Refresh questions';
-
-  @override
   String get searchChats => 'Search chats...';
 
   @override
@@ -955,4 +952,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String speechStartError(Object error) {
     return 'Start error: $error';
   }
+
+  @override
+  String get errorProcessingRequest => 'Sorry, I encountered an error while processing your request. Please try again.';
+
+  @override
+  String rateLimitRetryMessage(Object seconds) {
+    return 'Rate limit exceeded. Retrying in $seconds seconds...';
+  }
+
+  @override
+  String get messageNotFound => 'Message not found';
+
+  @override
+  String get errorEditingMessage => 'Error editing message';
+
+  @override
+  String get errorEditAndSendMessage => 'Error editing and sending message';
+
+  @override
+  String generatingSuggestionsFailed(Object error) {
+    return 'Failed to generate suggestions: $error';
+  }
+
+  @override
+  String get selectModelTooltip => 'Select Model';
+
+  @override
+  String get toggleNavigatorTooltip => 'Toggle Navigator';
+
+  @override
+  String get defaultSuggestion1 => 'Tell me more about this topic';
+
+  @override
+  String get defaultSuggestion2 => 'Can you provide examples?';
+
+  @override
+  String get defaultSuggestion3 => 'What are the alternatives?';
+
+  @override
+  String get defaultSuggestion4 => 'How does this apply in practice?';
+
+  @override
+  String get systemPromptSuggestion => 'You are a helpful assistant. Continue the conversation by providing 3 specific and logical continuations of the last message. Respond in the same language as the user.';
+
+  @override
+  String get userPromptSuggestion => 'Provide 3 specific and logical continuations for this message. Answer only with the list, no additional text.';
+
+  @override
+  String get refreshQuestions => 'Refresh questions';
 }

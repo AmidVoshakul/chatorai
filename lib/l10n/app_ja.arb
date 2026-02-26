@@ -307,5 +307,22 @@
 "micNoSpeechDetected": "聞こえませんでした。もう一度お試しくください。",
 "micAutoRestart": "再試行中...",
 "speechPhase2": "聞こえません...もう少し大きな声で",
-"speechStartError": "開始エラー: {error}"
+"speechStartError": "開始エラー: {error}",
+"errorProcessingRequest": "申し訳ありません。リクエストの処理中にエラーが発生しました。もう一度お試しください。",
+"rateLimitRetryMessage": "レート制限に達しました。{seconds}秒後に再試行します...",
+"messageNotFound": "メッセージが見つかりません",
+"errorEditingMessage": "メッセージの編集エラー",
+"errorEditAndSendMessage": "メッセージの編集と送信エラー",
+"generatingSuggestionsFailed": "提案の生成に失敗しました: {error}",
+"selectModelTooltip": "モデルを選択",
+"toggleNavigatorTooltip": "ナビゲーターを切り替え",
+"defaultSuggestion1": "このトピックについて詳しく教えてください",
+"defaultSuggestion2": "例を挙げていただけますか？",
+"defaultSuggestion3": "代替案はありますか？",
+"defaultSuggestion4": "これは実際にどのように適用されますか？",
+"systemPromptSuggestion": "あなたは有用なアシスタントです。会話を続け、最後のメッセージに対して3つの具体的で論理的な続きを提案してください。ユーザーと同じ言語で回答してください。",
+"userPromptSuggestion": "このメッセージに対して3つの具体的で論理的な続きを提案してください。リストのみで回答し、追加テキストは含めないでください。",
+"selectModelTooltip": "モデルを選択",
+"toggleNavigatorTooltip": "ナビゲーターを切り替え",
+"refreshQuestions": "質問を更新"
 }

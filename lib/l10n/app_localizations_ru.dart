@@ -766,9 +766,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get generatingSuggestions => 'Генерация предложений...';
 
   @override
-  String get refreshQuestions => 'Обновить вопросы';
-
-  @override
   String get searchChats => 'Поиск чатов...';
 
   @override
@@ -955,4 +952,53 @@ class AppLocalizationsRu extends AppLocalizations {
   String speechStartError(Object error) {
     return 'Ошибка запуска: $error';
   }
+
+  @override
+  String get errorProcessingRequest => 'Извините, произошла ошибка при обработке вашего запроса. Пожалуйста, попробуйте еще раз.';
+
+  @override
+  String rateLimitRetryMessage(Object seconds) {
+    return 'Превышен лимит запросов. Повторная попытка через $seconds секунд...';
+  }
+
+  @override
+  String get messageNotFound => 'Сообщение не найдено';
+
+  @override
+  String get errorEditingMessage => 'Ошибка редактирования сообщения';
+
+  @override
+  String get errorEditAndSendMessage => 'Ошибка редактирования и отправки сообщения';
+
+  @override
+  String generatingSuggestionsFailed(Object error) {
+    return 'Не удалось сгенерировать предложения: $error';
+  }
+
+  @override
+  String get selectModelTooltip => 'Выбрать модель';
+
+  @override
+  String get toggleNavigatorTooltip => 'Переключить навигатор';
+
+  @override
+  String get defaultSuggestion1 => 'Расскажите подробнее об этой теме';
+
+  @override
+  String get defaultSuggestion2 => 'Можете привести примеры?';
+
+  @override
+  String get defaultSuggestion3 => 'Какие есть альтернативы?';
+
+  @override
+  String get defaultSuggestion4 => 'Как это применяется на практике?';
+
+  @override
+  String get systemPromptSuggestion => 'Ты — полезный ассистент. Продолжи диалог, предложив 3 конкретных и логичных продолжения последнего сообщения. Отвечай на русском языке.';
+
+  @override
+  String get userPromptSuggestion => 'Предложи 3 конкретных и логичных продолжения для этого сообщения. Отвечай только списком, без дополнительного текста.';
+
+  @override
+  String get refreshQuestions => 'Обновить вопросы';
 }
