@@ -766,9 +766,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get generatingSuggestions => '生成建议中...';
 
   @override
-  String get refreshQuestions => '刷新问题';
-
-  @override
   String get searchChats => '搜索聊天...';
 
   @override
@@ -955,4 +952,53 @@ class AppLocalizationsZh extends AppLocalizations {
   String speechStartError(Object error) {
     return '启动错误: $error';
   }
+
+  @override
+  String get errorProcessingRequest => '抱歉，处理您的请求时发生错误。请重试。';
+
+  @override
+  String rateLimitRetryMessage(Object seconds) {
+    return '已达到速率限制。$seconds秒后重试...';
+  }
+
+  @override
+  String get messageNotFound => '未找到消息';
+
+  @override
+  String get errorEditingMessage => '编辑消息错误';
+
+  @override
+  String get errorEditAndSendMessage => '编辑和发送消息错误';
+
+  @override
+  String generatingSuggestionsFailed(Object error) {
+    return '生成建议失败: $error';
+  }
+
+  @override
+  String get selectModelTooltip => '选择模型';
+
+  @override
+  String get toggleNavigatorTooltip => '切换导航器';
+
+  @override
+  String get defaultSuggestion1 => '请告诉我更多关于这个主题';
+
+  @override
+  String get defaultSuggestion2 => '你能提供例子吗？';
+
+  @override
+  String get defaultSuggestion3 => '有什么替代方案？';
+
+  @override
+  String get defaultSuggestion4 => '这在实践中如何应用？';
+
+  @override
+  String get systemPromptSuggestion => '你是一个有用的助手。继续对话，为最后一条消息提供3个具体且合乎逻辑的延续。用中文回答。';
+
+  @override
+  String get userPromptSuggestion => '为这条消息提供3个具体且合乎逻辑的延续。只回答列表，不要额外文本。';
+
+  @override
+  String get refreshQuestions => '刷新问题';
 }

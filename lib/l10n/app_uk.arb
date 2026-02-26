@@ -307,5 +307,22 @@
 "micNoSpeechDetected": "Я вас не почув. Спробуйте ще раз.",
 "micAutoRestart": "Повторна спроба...",
 "speechPhase2": "Я вас не чую...говоріть голосніше",
-"speechStartError": "Помилка запуску: {error}"
+"speechStartError": "Помилка запуску: {error}",
+"errorProcessingRequest": "Вибачте, сталася помилка при обробці вашого запиту. Будь ласка, спробуйте ще раз.",
+"rateLimitRetryMessage": "Перевищено ліміт запитів. Повторна спроба через {seconds} секунд...",
+"messageNotFound": "Повідомлення не знайдено",
+"errorEditingMessage": "Помилка редагування повідомлення",
+"errorEditAndSendMessage": "Помилка редагування та відправлення повідомлення",
+"generatingSuggestionsFailed": "Не вдалося згенерувати пропозиції: {error}",
+"selectModelTooltip": "Вибрати модель",
+"toggleNavigatorTooltip": "Перемкнути навігатор",
+"defaultSuggestion1": "Розкажіть більше про цю тему",
+"defaultSuggestion2": "Чи можете навести приклади?",
+"defaultSuggestion3": "Які є альтернативи?",
+"defaultSuggestion4": "Як це застосовується на практиці?",
+"systemPromptSuggestion": "Ви — корисний асистент. Продовжте діалог, запропонувавши 3 конкретні та логічні продовження останнього повідомлення. Відповідайте українською мовою.",
+"userPromptSuggestion": "Запропонуйте 3 конкретні та логічні продовження для цього повідомлення. Відповідайте тільки списком, без додаткового тексту.",
+"selectModelTooltip": "Вибрати модель",
+"toggleNavigatorTooltip": "Перемкнути навігатор",
+"refreshQuestions": "Оновити питання"
 }

@@ -766,9 +766,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get generatingSuggestions => 'جاري إنشاء الاقتراحات...';
 
   @override
-  String get refreshQuestions => 'تحديث الأسئلة';
-
-  @override
   String get searchChats => 'البحث في الدردشات...';
 
   @override
@@ -955,4 +952,53 @@ class AppLocalizationsAr extends AppLocalizations {
   String speechStartError(Object error) {
     return 'خطأ في البدء: $error';
   }
+
+  @override
+  String get errorProcessingRequest => 'عذرًا، حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String rateLimitRetryMessage(Object seconds) {
+    return 'تم تجاوز حد المعدل. إعادة المحاولة خلال $seconds ثوانٍ...';
+  }
+
+  @override
+  String get messageNotFound => 'الرسالة غير موجودة';
+
+  @override
+  String get errorEditingMessage => 'خطأ في تعديل الرسالة';
+
+  @override
+  String get errorEditAndSendMessage => 'خطأ في تعديل وإرسال الرسالة';
+
+  @override
+  String generatingSuggestionsFailed(Object error) {
+    return 'فشل في إنشاء الاقتراحات: $error';
+  }
+
+  @override
+  String get selectModelTooltip => 'اختيار النموذج';
+
+  @override
+  String get toggleNavigatorTooltip => 'تبديل الملاحة';
+
+  @override
+  String get defaultSuggestion1 => 'أخبرني المزيد عن هذا الموضوع';
+
+  @override
+  String get defaultSuggestion2 => 'هل يمكنك تقديم أمثلة؟';
+
+  @override
+  String get defaultSuggestion3 => 'ما هي البدائل؟';
+
+  @override
+  String get defaultSuggestion4 => 'كيف يتم تطبيق هذا في الممارسة العملية؟';
+
+  @override
+  String get systemPromptSuggestion => 'أنت مساعد مفيد. استمر في المحادثة من خلال تقديم 3 استمرارات محددة ومنطقية لآخر رسالة. رد باللغة نفسها التي يستخدمها المستخدم.';
+
+  @override
+  String get userPromptSuggestion => 'قدم 3 استمرارات محددة ومنطقية لهذه الرسالة. أجب بالقائمة فقط، بدون نص إضافي.';
+
+  @override
+  String get refreshQuestions => 'تحديث الأسئلة';
 }

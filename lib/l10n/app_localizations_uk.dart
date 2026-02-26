@@ -766,9 +766,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get generatingSuggestions => 'Генерація пропозицій...';
 
   @override
-  String get refreshQuestions => 'Оновити питання';
-
-  @override
   String get searchChats => 'Пошук чатів...';
 
   @override
@@ -955,4 +952,53 @@ class AppLocalizationsUk extends AppLocalizations {
   String speechStartError(Object error) {
     return 'Помилка запуску: $error';
   }
+
+  @override
+  String get errorProcessingRequest => 'Вибачте, сталася помилка при обробці вашого запиту. Будь ласка, спробуйте ще раз.';
+
+  @override
+  String rateLimitRetryMessage(Object seconds) {
+    return 'Перевищено ліміт запитів. Повторна спроба через $seconds секунд...';
+  }
+
+  @override
+  String get messageNotFound => 'Повідомлення не знайдено';
+
+  @override
+  String get errorEditingMessage => 'Помилка редагування повідомлення';
+
+  @override
+  String get errorEditAndSendMessage => 'Помилка редагування та відправлення повідомлення';
+
+  @override
+  String generatingSuggestionsFailed(Object error) {
+    return 'Не вдалося згенерувати пропозиції: $error';
+  }
+
+  @override
+  String get selectModelTooltip => 'Вибрати модель';
+
+  @override
+  String get toggleNavigatorTooltip => 'Перемкнути навігатор';
+
+  @override
+  String get defaultSuggestion1 => 'Розкажіть більше про цю тему';
+
+  @override
+  String get defaultSuggestion2 => 'Чи можете навести приклади?';
+
+  @override
+  String get defaultSuggestion3 => 'Які є альтернативи?';
+
+  @override
+  String get defaultSuggestion4 => 'Як це застосовується на практиці?';
+
+  @override
+  String get systemPromptSuggestion => 'Ви — корисний асистент. Продовжте діалог, запропонувавши 3 конкретні та логічні продовження останнього повідомлення. Відповідайте українською мовою.';
+
+  @override
+  String get userPromptSuggestion => 'Запропонуйте 3 конкретні та логічні продовження для цього повідомлення. Відповідайте тільки списком, без додаткового тексту.';
+
+  @override
+  String get refreshQuestions => 'Оновити питання';
 }

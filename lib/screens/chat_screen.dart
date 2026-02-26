@@ -23,6 +23,7 @@ import 'package:chatorai/utils/chat_scroll_utils.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 
 // Initialize logger for this screen
 final _logger = LogTags.chatScreen;
@@ -43,8 +44,10 @@ class ChatScreenConstants {
   
   // Error Handling
   static const int maxErrorLength = 500;
-  static const String defaultErrorMessage = 'Sorry, I encountered an error while processing your request. Please try again.';
-  static const String rateLimitMessage = 'Sorry, the service is currently at capacity. Please try again in a few minutes.';
+  // These messages are now localized via AppLocalizations
+  // Kept as empty strings for backward compatibility
+  static const String defaultErrorMessage = '';
+  static const String rateLimitMessage = '';
   
   // Scroll & Animation
   static const Duration scrollAnimationDuration = Duration(milliseconds: 300);
@@ -656,10 +659,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           _logger.logWarning('[ChatScreen] Rate limit hit, retrying in ${delay.inSeconds} seconds... (attempt ${retryCount + 1}/${ChatScreenConstants.maxRetryAttempts})');
 
           // Show retry message to user
+          final localizations = AppLocalizations.of(context);
+          final retryMessageContent = localizations != null
+              ? localizations.rateLimitRetryMessage(delay.inSeconds)
+              : 'Rate limit exceeded. Retrying in ${delay.inSeconds} seconds...';
           final retryMessage = Message(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
             role: MessageRole.assistant,
-            content: 'Rate limit exceeded. Retrying in ${delay.inSeconds} seconds...',
+            content: retryMessageContent,
             timestamp: DateTime.now(),
             isComplete: true,
           );
@@ -1076,18 +1083,26 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         
         // Показываем уведомление об успешном редактировании
         if (mounted) {
+          final localizations = AppLocalizations.of(context);
+          final successMessage = localizations != null
+              ? localizations.messageEditedSuccessfully
+              : 'Message edited successfully';
           SnackbarUtils.showSuccessSnackBar(
             context: context,
-            message: 'Сообщение отредактировано',
+            message: successMessage,
             icon: Icons.edit,
           );
         }
       } else {
         _logger.logError('[ChatScreen] Message $messageId not found in current chat');
         if (mounted) {
+          final localizations = AppLocalizations.of(context);
+          final errorMessage = localizations != null
+              ? localizations.messageNotFound
+              : 'Message not found';
           SnackbarUtils.showErrorSnackBar(
             context: context,
-            message: 'Сообщение не найдено',
+            message: errorMessage,
             icon: Icons.error,
           );
         }
@@ -1095,9 +1110,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     } catch (e) {
       _logger.logError('[ChatScreen] Error handling message edit: $e');
       if (mounted) {
+        final localizations = AppLocalizations.of(context);
+        final errorMessage = localizations != null
+            ? localizations.errorEditingMessage
+            : 'Error editing message';
         SnackbarUtils.showErrorSnackBar(
           context: context,
-          message: 'Ошибка при редактировании сообщения',
+          message: errorMessage,
           icon: Icons.error,
         );
       }
@@ -1178,9 +1197,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       
       // Показываем уведомление об успешном редактировании и отправке
       if (mounted) {
+        final localizations = AppLocalizations.of(context);
+        final successMessage = localizations?.messageEditedAndResponseRegenerated ??
+            'Message edited and response regenerated';
         SnackbarUtils.showSuccessSnackBar(
           context: context,
-          message: 'Сообщение отредактировано, генерирую новый ответ...',
+          message: successMessage,
           icon: Icons.refresh,
         );
       }
@@ -1188,9 +1210,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       _logger.logError('[ChatScreen] Error in edit and send: $e');
       // Показываем ошибку пользователю
       if (mounted) {
+        final localizations = AppLocalizations.of(context);
+        final errorMessage = localizations?.errorEditAndSendMessage ??
+            'Error editing and sending message';
         SnackbarUtils.showErrorSnackBar(
           context: context,
-          message: 'Ошибка при редактировании и отправке сообщения',
+          message: errorMessage,
           icon: Icons.error,
         );
       }
@@ -1854,7 +1879,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               ),
             );
           },
-          tooltip: 'Select Model',
+          tooltip: AppLocalizations.of(context)?.selectModelTooltip ?? 'Select Model',
         ),
         
         // Navigator button - only show if there are headings
@@ -1864,7 +1889,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             child: IconButton(
               icon: const Icon(Icons.format_list_bulleted, size: 20),
               onPressed: _toggleNavigator,
-              tooltip: 'Toggle Navigator',
+              tooltip: AppLocalizations.of(context)?.toggleNavigatorTooltip ?? 'Toggle Navigator',
             ),
           ),
       ],
@@ -2244,14 +2269,20 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
       // Show a snackbar to notify the user
       if (mounted) {
-        const maxLength = 100;
-        final displayMessage = errorMessage.length > maxLength 
-            ? '${errorMessage.substring(0, maxLength)}...' 
-            : errorMessage;
+        final localizations = AppLocalizations.of(context);
+        String displayMessage;
+        if (localizations != null) {
+          final errorShort = errorMessage.length > 100
+              ? '${errorMessage.substring(0, 100)}...'
+              : errorMessage;
+          displayMessage = localizations.generatingSuggestionsFailed(errorShort);
+        } else {
+          displayMessage = 'Failed to generate suggestions: ${errorMessage.length > 100 ? '${errorMessage.substring(0, 100)}...' : errorMessage}';
+        }
             
         SnackbarUtils.showErrorSnackBar(
           context: context,
-          message: 'Failed to generate suggestions: $displayMessage',
+          message: displayMessage,
           icon: Icons.error,
         );
       }
@@ -2279,41 +2310,54 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   // Method to get localized system prompt based on language
-  String _getLocalizedSystemPrompt(String language) {
+  String _getLocalizedSystemPrompt(AppLocalizations localizations, String language) {
     switch (language) {
       case 'ru':
-        return 'Ты — полезный ассистент. Продолжи диалог, предложив 3 конкретных и логичных продолжения последнего сообщения. Отвечай на русском языке.';
+        return localizations.systemPromptSuggestion;
       case 'zh':
-        return '你是一个有用的助手。继续对话，为最后一条消息提供3个具体且合乎逻辑的延续。用中文回答。';
+        return localizations.systemPromptSuggestion;
       case 'ja':
-        return 'あなたは有用なアシスタントです。会話を続け、最後のメッセージに対して3つの具体的で論理的な続きを提案してください。日本語で回答してください。';
+        return localizations.systemPromptSuggestion;
+      case 'ar':
+        return localizations.systemPromptSuggestion;
+      case 'uk':
+        return localizations.systemPromptSuggestion;
       default:
-        return 'You are a helpful assistant. Continue the conversation by providing 3 specific and logical continuations of the last message. Respond in the same language as the user.';
+        return localizations.systemPromptSuggestion;
     }
   }
 
   // Method to get localized user prompt based on language
-  String _getLocalizedUserPrompt(String language) {
+  String _getLocalizedUserPrompt(AppLocalizations localizations, String language) {
     switch (language) {
       case 'ru':
-        return 'Предложи 3 конкретных и логичных продолжения для этого сообщения. Отвечай только списком, без дополнительного текста.';
+        return localizations.userPromptSuggestion;
       case 'zh':
-        return '为这条消息提供3个具体且合乎逻辑的延续。只回答列表，不要额外文本。';
+        return localizations.userPromptSuggestion;
       case 'ja':
-        return 'このメッセージに対して3つの具体的で論理的な続きを提案してください。リストのみで回答し、追加テキストは含めないでください。';
+        return localizations.userPromptSuggestion;
+      case 'ar':
+        return localizations.userPromptSuggestion;
+      case 'uk':
+        return localizations.userPromptSuggestion;
       default:
-        return 'Provide 3 specific and logical continuations for this message. Answer only with the list, no additional text.';
+        return localizations.userPromptSuggestion;
     }
   }
 
-  // Method to get continuation suggestions from AI
+  // Method to get continuation suggestions from AI with adaptive rollback
   Future<List<String>> _getContinuationSuggestions(String lastMessageContent, String language) async {
     try {
       _logger.logInfo('[ChatScreen] Generating continuation suggestions in $language...');
       
       // Get language-specific system prompt
-      final systemPrompt = _getLocalizedSystemPrompt(language);
-      final userPrompt = _getLocalizedUserPrompt(language);
+      final localizations = AppLocalizations.of(context);
+      final systemPrompt = localizations != null
+          ? _getLocalizedSystemPrompt(localizations, language)
+          : 'You are a helpful assistant. Continue the conversation by providing 3 specific and logical continuations of the last message. Respond in the same language as the user.';
+      final userPrompt = localizations != null
+          ? _getLocalizedUserPrompt(localizations, language)
+          : 'Provide 3 specific and logical continuations for this message. Answer only with the list, no additional text.';
       
       final suggestionPrompt = [
         {
@@ -2370,12 +2414,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       
     } catch (e) {
       _logger.logError('[ChatScreen] Error generating suggestions: $e');
-      // Return default suggestions
+      // Return default suggestions from localization
+      final localizations = AppLocalizations.of(context);
       return [
-        'Tell me more about this topic',
-        'Can you provide examples?',
-        'What are the alternatives?',
-        'How does this apply in practice?'
+        localizations?.defaultSuggestion1 ?? 'Tell me more about this topic',
+        localizations?.defaultSuggestion2 ?? 'Can you provide examples?',
+        localizations?.defaultSuggestion3 ?? 'What are the alternatives?',
+        localizations?.defaultSuggestion4 ?? 'How does this apply in practice?'
       ];
     }
   }
@@ -2393,7 +2438,11 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           if (errorData is Map<String, dynamic>) {
             final message = errorData['message'] ?? 'Unknown error';
             final code = errorData['code'] ?? '';
-            return 'Error $code: $message';
+            final localizations = AppLocalizations.of(context);
+      final errorPrefix = localizations != null
+          ? localizations.errorMessage
+          : 'Error';
+      return '$errorPrefix $code: $message';
           }
         }
       } catch (_) {

@@ -307,5 +307,22 @@
 "micNoSpeechDetected": "I didn't hear you. Please try again.",
 "micAutoRestart": "Retrying...",
 "speechPhase2": "I can't hear you...speak louder",
-"speechStartError": "Start error: {error}"
+"speechStartError": "Start error: {error}",
+"errorProcessingRequest": "Sorry, I encountered an error while processing your request. Please try again.",
+"rateLimitRetryMessage": "Rate limit exceeded. Retrying in {seconds} seconds...",
+"messageNotFound": "Message not found",
+"errorEditingMessage": "Error editing message",
+"errorEditAndSendMessage": "Error editing and sending message",
+"generatingSuggestionsFailed": "Failed to generate suggestions: {error}",
+"selectModelTooltip": "Select Model",
+"toggleNavigatorTooltip": "Toggle Navigator",
+"defaultSuggestion1": "Tell me more about this topic",
+"defaultSuggestion2": "Can you provide examples?",
+"defaultSuggestion3": "What are the alternatives?",
+"defaultSuggestion4": "How does this apply in practice?",
+"systemPromptSuggestion": "You are a helpful assistant. Continue the conversation by providing 3 specific and logical continuations of the last message. Respond in the same language as the user.",
+"userPromptSuggestion": "Provide 3 specific and logical continuations for this message. Answer only with the list, no additional text.",
+"selectModelTooltip": "Select Model",
+"toggleNavigatorTooltip": "Toggle Navigator",
+"refreshQuestions": "Refresh questions"
 }
