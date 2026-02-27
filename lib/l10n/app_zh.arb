@@ -324,5 +324,6 @@
 "userPromptSuggestion": "为这条消息提供3个具体且合乎逻辑的延续。只回答列表，不要额外文本。",
 "selectModelTooltip": "选择模型",
 "toggleNavigatorTooltip": "切换导航器",
-"refreshQuestions": "刷新问题"
+"refreshQuestions": "刷新问题",
+"noInternetConnection": "无网络连接"
 }

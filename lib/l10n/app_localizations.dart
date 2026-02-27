@@ -2046,6 +2046,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refresh questions'**
   String get refreshQuestions;
+
+  /// No description provided for @noInternetConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection'**
+  String get noInternetConnection;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

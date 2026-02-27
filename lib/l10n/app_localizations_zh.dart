@@ -1001,4 +1001,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get refreshQuestions => '刷新问题';
+
+  @override
+  String get noInternetConnection => '无网络连接';
 }

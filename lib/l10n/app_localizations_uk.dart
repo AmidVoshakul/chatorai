@@ -1001,4 +1001,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get refreshQuestions => 'Оновити питання';
+
+  @override
+  String get noInternetConnection => 'Немає підключення до інтернету';
 }

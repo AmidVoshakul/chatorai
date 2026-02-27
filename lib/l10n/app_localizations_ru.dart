@@ -1001,4 +1001,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get refreshQuestions => 'Обновить вопросы';
+
+  @override
+  String get noInternetConnection => 'Нет подключения к интернету';
 }

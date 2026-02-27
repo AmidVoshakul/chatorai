@@ -324,5 +324,6 @@
 "userPromptSuggestion": "このメッセージに対して3つの具体的で論理的な続きを提案してください。リストのみで回答し、追加テキストは含めないでください。",
 "selectModelTooltip": "モデルを選択",
 "toggleNavigatorTooltip": "ナビゲーターを切り替え",
-"refreshQuestions": "質問を更新"
+"refreshQuestions": "質問を更新",
+"noInternetConnection": "インターネット接続がありません"
 }

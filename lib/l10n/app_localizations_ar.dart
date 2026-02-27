@@ -1001,4 +1001,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get refreshQuestions => 'تحديث الأسئلة';
+
+  @override
+  String get noInternetConnection => 'لا يوجد اتصال بالإنترنت';
 }
