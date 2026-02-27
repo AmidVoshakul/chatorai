@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math' show min;
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
@@ -81,8 +80,6 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
     super.initState();
     final previewLength = widget.message.content.length > 30 ? 30 : widget.message.content.length;
     _logger.logInfo('Initializing message widget for: ${widget.message.role} - ${widget.message.content.substring(0, previewLength)}...');
-    _logger.logDebug('Message reasoning content length: ${widget.message.reasoning?.length ?? 0}');
-    _logger.logDebug('Message isStreaming: ${widget.isStreaming}');
     
     // Инициализируем контроллер для редактирования
     _textController = TextEditingController(text: widget.message.content);
@@ -164,8 +161,6 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
     // Но только если это не уже обрабатывается родительским компонентом
     if (widget.message.reasoning != null && widget.message.reasoning!.isNotEmpty) {
       _logger.logInfo('[ChatMessage] Message has reasoning content, but should be handled by parent. Showing regular message content instead.');
-      _logger.logDebug('[ChatMessage] Reasoning content: "${widget.message.reasoning!.substring(0, min(widget.message.reasoning!.length, 100))}${widget.message.reasoning!.length > 100 ? '...' : ''}"');
-      _logger.logDebug('[ChatMessage] isStreaming: ${widget.isStreaming}');
       // Don't return ReasoningMessage here - it should be handled by parent ChatMessages widget
       // Just continue to show the regular message content
     }

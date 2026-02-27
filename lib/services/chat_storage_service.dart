@@ -80,7 +80,6 @@ class ChatStorageService {
   /// Update message in chat
   Future<void> updateMessageInChat(String chatId, String messageId, Message updatedMessage) async {
     _logger.logInfo('[ChatStorageService] Updating message $messageId in chat $chatId');
-    _logger.logDebug('[ChatStorageService] Message reasoning before save: "${updatedMessage.reasoning}"');
     
     final prefs = await SharedPreferences.getInstance();
     final chats = await _getChatsFromStorage(prefs);
@@ -109,7 +108,6 @@ class ChatStorageService {
         await _saveChatsToStorage(prefs, chats);
         
         _logger.logInfo('[ChatStorageService] Message updated successfully');
-        _logger.logDebug('[ChatStorageService] Message reasoning after save: "${finalMessage.reasoning}"');
       }
     }
   }
@@ -191,33 +189,13 @@ class ChatStorageService {
     }
     
     try {
-      _logger.logDebug('[ChatStorageService] Raw JSON from storage: $chatsJson');
       final List<dynamic> chatsData = json.decode(chatsJson);
       _logger.logDebug('[ChatStorageService] Loading ${chatsData.length} chats from storage');
       
-      // Log reasoning content in JSON before deserialization
-      for (int i = 0; i < chatsData.length; i++) {
-        final chatData = chatsData[i] as Map<String, dynamic>;
-        final messages = chatData['messages'] as List;
-        _logger.logDebug('[ChatStorageService] Loading chat $i with ${messages.length} messages');
-        for (int j = 0; j < messages.length; j++) {
-          final message = messages[j] as Map<String, dynamic>;
-          final reasoning = message['reasoning'];
-          _logger.logDebug('[ChatStorageService]   Message $j: reasoning="$reasoning"');
-        }
-      }
-      
       final chats = chatsData.map((data) => Chat.fromJson(data)).toList();
       
-      // Log reasoning content for debugging
-      for (int i = 0; i < chats.length; i++) {
-        final chat = chats[i];
-        _logger.logDebug('[ChatStorageService] Chat $i (${chat.id}): ${chat.messages.length} messages');
-        for (int j = 0; j < chat.messages.length; j++) {
-          final message = chat.messages[j];
-          _logger.logDebug('[ChatStorageService]   Message $j: role=${message.role}, reasoning="${message.reasoning}"');
-        }
-      }
+      // Log summary only
+      _logger.logDebug('[ChatStorageService] Loaded ${chats.length} chats with total ${chats.fold<int>(0, (sum, chat) => sum + chat.messages.length)} messages');
       
       return chats;
     } catch (e) {
@@ -230,17 +208,8 @@ class ChatStorageService {
   Future<void> _saveChatsToStorage(SharedPreferences prefs, List<Chat> chats) async {
     final chatsData = chats.map((chat) => chat.toJson()).toList();
     
-    // Log reasoning content in JSON before saving
-    for (int i = 0; i < chatsData.length; i++) {
-      final chatData = chatsData[i];
-      final messages = chatData['messages'] as List;
-      _logger.logDebug('[ChatStorageService] Saving chat $i with ${messages.length} messages');
-      for (int j = 0; j < messages.length; j++) {
-        final message = messages[j] as Map<String, dynamic>;
-        final reasoning = message['reasoning'];
-        _logger.logDebug('[ChatStorageService]   Message $j: reasoning="$reasoning"');
-      }
-    }
+    // Log summary only
+    _logger.logDebug('[ChatStorageService] Saving ${chats.length} chats with total ${chats.fold<int>(0, (sum, chat) => sum + chat.messages.length)} messages');
     
     final chatsJson = json.encode(chatsData);
     await prefs.setString(_chatsKey, chatsJson);
