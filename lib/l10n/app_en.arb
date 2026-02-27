@@ -324,5 +324,6 @@
 "userPromptSuggestion": "Provide 3 specific and logical continuations for this message. Answer only with the list, no additional text.",
 "selectModelTooltip": "Select Model",
 "toggleNavigatorTooltip": "Toggle Navigator",
-"refreshQuestions": "Refresh questions"
+"refreshQuestions": "Refresh questions",
+"noInternetConnection": "No internet connection"
 }

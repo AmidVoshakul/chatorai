@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../utils/logger.dart';
+import 'network_service.dart';
 
 // Initialize logger for this service
 final _logger = LogTags.openRouter;
@@ -642,6 +643,13 @@ class OpenRouterService implements OpenRouterClient {
       throw Exception('OpenRouter API key not configured');
     }
 
+    // Проверка наличия интернет-соединения
+    final networkService = NetworkService();
+    if (!networkService.isConnected) {
+      _logger.logWarning('[OpenRouter] No internet connection, aborting models fetch');
+      throw Exception('No internet connection');
+    }
+
     await _waitForInitialization();
 
     // Check cache first
@@ -790,6 +798,13 @@ class OpenRouterService implements OpenRouterClient {
       throw Exception('OpenRouter API key not configured');
     }
 
+    // Проверка наличия интернет-соединения
+    final networkService = NetworkService();
+    if (!networkService.isConnected) {
+      _logger.logWarning('[OpenRouter] No internet connection, aborting file upload');
+      throw Exception('No internet connection');
+    }
+
     await _waitForInitialization();
 
     _logger.logInfo('[OpenRouter] Uploading file: $filePath');
@@ -853,6 +868,13 @@ class OpenRouterService implements OpenRouterClient {
     _logger.logDebug('[OpenRouter] Model: $model');
     _logger.logDebug('[OpenRouter] Messages: ${messages.length} messages');
     _logger.logDebug('[OpenRouter] Include reasoning: $includeReasoning');
+
+    // Проверка наличия интернет-соединения
+    final networkService = NetworkService();
+    if (!networkService.isConnected) {
+      _logger.logWarning('[OpenRouter] No internet connection, aborting request');
+      throw Exception('No internet connection');
+    }
 
     if (_apiKey == null || _apiKey!.isEmpty) {
       _logger.logError('[OpenRouter] API key not configured');
@@ -937,6 +959,13 @@ class OpenRouterService implements OpenRouterClient {
 
   /// Get service health status
   Future<bool> isHealthy() async {
+    // Проверка наличия интернет-соединения
+    final networkService = NetworkService();
+    if (!networkService.isConnected) {
+      _logger.logWarning('[OpenRouter] No internet connection, health check failed');
+      return false;
+    }
+
     await _waitForInitialization();
 
     try {
@@ -963,6 +992,13 @@ class OpenRouterService implements OpenRouterClient {
   Future<void> testProviderStructure() async {
     if (_apiKey == null || _apiKey!.isEmpty) {
       throw Exception('OpenRouter API key not configured');
+    }
+
+    // Проверка наличия интернет-соединения
+    final networkService = NetworkService();
+    if (!networkService.isConnected) {
+      _logger.logWarning('[OpenRouter] No internet connection, aborting provider structure test');
+      throw Exception('No internet connection');
     }
 
     await _waitForInitialization();

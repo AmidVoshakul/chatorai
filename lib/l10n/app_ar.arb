@@ -324,5 +324,6 @@
 "userPromptSuggestion": "قدم 3 استمرارات محددة ومنطقية لهذه الرسالة. أجب بالقائمة فقط، بدون نص إضافي.",
 "selectModelTooltip": "اختيار النموذج",
 "toggleNavigatorTooltip": "تبديل الملاحة",
-"refreshQuestions": "تحديث الأسئلة"
+"refreshQuestions": "تحديث الأسئلة",
+"noInternetConnection": "لا يوجد اتصال بالإنترنت"
 }

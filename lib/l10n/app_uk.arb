@@ -324,5 +324,6 @@
 "userPromptSuggestion": "Запропонуйте 3 конкретні та логічні продовження для цього повідомлення. Відповідайте тільки списком, без додаткового тексту.",
 "selectModelTooltip": "Вибрати модель",
 "toggleNavigatorTooltip": "Перемкнути навігатор",
-"refreshQuestions": "Оновити питання"
+"refreshQuestions": "Оновити питання",
+"noInternetConnection": "Немає підключення до інтернету"
 }

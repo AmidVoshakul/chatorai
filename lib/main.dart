@@ -5,6 +5,8 @@ import 'package:chatorai/screens/chat_screen.dart';
 import 'package:chatorai/screens/settings_screen.dart';
 import 'package:chatorai/providers/theme_provider.dart';
 import 'package:chatorai/providers/model_settings_provider.dart';
+import 'package:chatorai/services/network_service.dart';
+import 'package:chatorai/widgets/network_aware_widget.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/themes/app_theme.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +22,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => ModelSettingsProvider()),
+        ChangeNotifierProvider(create: (_) => NetworkService()),
       ],
       child: const MyApp(),
     ),
@@ -62,7 +65,9 @@ class MyApp extends StatelessWidget {
           locale: locale,
           theme: theme,
           debugShowCheckedModeBanner: false,
-          home: const ChatScreen(),
+          home: const NetworkAwareWidget(
+            child: ChatScreen(),
+          ),
           routes: {
             '/settings': (context) => const SettingsScreen(),
           },
