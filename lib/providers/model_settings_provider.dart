@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -105,15 +106,14 @@ class ModelSettingsProvider with ChangeNotifier {
           if (model != null) {
             _logger.logInfo('[ModelSettingsProvider] Got model info from ThemeProvider: ${model.name}, context: ${model.contextLength}');
             
-            // Use the model's context length for maxTokens
-            final maxTokens = model.contextLength != null 
-                ? model.contextLength! 
-                : 4096;
+            // Calculate safe maxTokens: 70% of contextLength to leave room for input tokens
+            final contextLength = model.contextLength ?? 4096;
+            final safeMaxTokens = max(256, (contextLength * 0.7).floor());
             
             return ModelSettings.fromApiModel(
               modelId,
-              model.contextLength,
-              maxTokens, // Use model's context as maxTokens
+              contextLength,
+              safeMaxTokens, // 70% of context, not full context
             );
           }
         } catch (e) {
@@ -131,15 +131,14 @@ class ModelSettingsProvider with ChangeNotifier {
 
       _logger.logInfo('[ModelSettingsProvider] Got model info from API: ${model.name}, context: ${model.contextLength}');
       
-      // Use the model's context length for maxTokens
-      final maxTokens = model.contextLength != null 
-          ? model.contextLength! 
-          : 4096;
+      // Calculate safe maxTokens: 70% of contextLength to leave room for input tokens
+      final contextLength = model.contextLength ?? 4096;
+      final safeMaxTokens = max(256, (contextLength * 0.8).floor());
       
       return ModelSettings.fromApiModel(
         modelId,
-        model.contextLength,
-        maxTokens, // Use model's context as maxTokens
+        contextLength,
+        safeMaxTokens, // 70% of context, not full context
       );
     } catch (e) {
       _logger.logWarning('[ModelSettingsProvider] Could not get model info: $e');

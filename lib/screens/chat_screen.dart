@@ -41,6 +41,11 @@ class ChatScreenConstants {
 
   // Token Management
   static const int defaultMaxTokens = 32000;
+  
+  // Adaptive rollback configuration
+  static const int maxTokenReductionAttempts = 10;
+  static const double reductionFactor = 0.97; // 3% reduction per attempt
+  static const int absoluteMinTokens = 256; // Absolute minimum
 
   // Error Handling
   static const int maxErrorLength = 500;
@@ -736,6 +741,54 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     return {'role': msg.role.name, 'content': msg.content};
   }
 
+  /// Sanitizes messages before sending to API:
+  /// - Removes assistant messages containing errors
+  /// - Truncates overly long messages
+  /// - Preserves multimodal structure
+  List<Map<String, dynamic>> _sanitizeMessages(List<Map<String, dynamic>> messages) {
+    final patterns = [
+      'Exception',
+      'DioException',
+      'This exception was thrown',
+      'Traceback',
+      'stack trace',
+      'status code',
+      'RequestOptions',
+      'Bad Request',
+      'Client error',
+      'SocketException',
+      'HttpException',
+    ];
+
+    const int maxMessageLen = 20000; // per-message soft limit
+    final out = <Map<String, dynamic>>[];
+
+    for (final m in messages) {
+      var content = m['content'] ?? '';
+      final role = m['role'] ?? 'user';
+
+      // Skip assistant messages with error patterns
+      final hasErrPattern = patterns.any((p) => content.contains(p));
+      if (role == 'assistant' && hasErrPattern) {
+        continue;
+      }
+
+      // Truncate very long messages
+      if (content.length > maxMessageLen) {
+        content = '${content.substring(0, maxMessageLen)}...[truncated]';
+      }
+
+      // Preserve multimodal structure (with images)
+      if (m.containsKey('content') && m['content'] is List) {
+        out.add(m);
+      } else {
+        out.add({'role': role, 'content': content});
+      }
+    }
+
+    return out;
+  }
+
   Future<void> _streamAIResponse() async {
     if (_currentChat == null) {
       _logger.logError('[ChatScreen] No current chat available');
@@ -772,70 +825,27 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   /// Uses 5% token reduction per attempt before removing messages
   Future<ChatCompletionResponse> _getChatCompletionWithAdaptiveRollback({
     required String model,
-    required List<Map<String, String>> messages,
+    required List<Map<String, dynamic>> messages,
     required ModelSettings modelSettings,
   }) async {
-    // Reuse the same sanitization logic as for streaming
-    List<Map<String, dynamic>> sanitize(List<Map<String, dynamic>> src) {
-      final patterns = [
-        'Exception',
-        'DioException',
-        'This exception was thrown',
-        'Traceback',
-        'stack trace',
-        'status code',
-        'RequestOptions',
-        'Bad Request',
-        'Client error',
-        'SocketException',
-        'HttpException',
-      ];
+    // Sanitize messages
+    var attemptMsgs = _sanitizeMessages(messages);
 
-      const int maxMessageLen = 20000;
-      final out = <Map<String, dynamic>>[];
-
-      for (final m in src) {
-        var content = m['content'] ?? '';
-        final role = m['role'] ?? 'user';
-
-        final hasErrPattern = patterns.any((p) => content.contains(p));
-        if (role == 'assistant' && hasErrPattern) {
-          continue;
-        }
-
-        if (content.length > maxMessageLen) {
-          content = '${content.substring(0, maxMessageLen)}...[truncated]';
-        }
-
-        // Preserve the full message structure (including images if present)
-        if (m.containsKey('content') && m['content'] is List) {
-          // Multimodal message
-          out.add(m);
-        } else {
-          // Text message
-          out.add({'role': role, 'content': content});
-        }
-      }
-
-      return out;
-    }
-
-    var attemptMsgs = sanitize(messages);
-
-    // Get model context length for precise calculation
+    // Get model context length
     final modelObj = _themeProvider.getModelById(model);
     final modelContextLength =
         modelObj?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
 
-    // Mutable max tokens - start with provided or model's full context
-    int currentMaxTokens = modelSettings.maxTokens;
+    // Calculate safe initial maxTokens: min(user setting, contextLength)
+    int currentMaxTokens = min(modelSettings.maxTokens, modelContextLength);
 
-    // Token reduction state
+    // Effective minimum tokens (dynamic based on model size)
+    final effectiveMinTokens = min(8000, modelContextLength ~/ 2);
+
+    final reductionFactor = ChatScreenConstants.reductionFactor;
     int tokenReductionAttempts = 0;
-    const int maxTokenReductionAttempts =
-        10; // Allow up to 10 reductions (5% each)
-    const double reductionFactor = 0.97; // 3% reduction per attempt
-    const int minTokens = 8000; // Absolute minimum to prevent too small values
+
+    _logger.logInfo('[AdaptiveRollback] Non-streaming: initial maxTokens=$currentMaxTokens, contextLength=$modelContextLength, minTokens=$effectiveMinTokens');
 
     while (true) {
       try {
@@ -861,39 +871,40 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
         if (!isBadRequest) rethrow;
 
-        // Token reduction first (5% per attempt)
-        if (tokenReductionAttempts < maxTokenReductionAttempts &&
-            currentMaxTokens > minTokens) {
+        // 1. Try token reduction first
+        if (tokenReductionAttempts < ChatScreenConstants.maxTokenReductionAttempts &&
+            currentMaxTokens > effectiveMinTokens) {
           int newTokens = (currentMaxTokens * reductionFactor).floor();
-
-          if (newTokens < minTokens) {
-            newTokens = minTokens;
-          }
+          if (newTokens < effectiveMinTokens) newTokens = effectiveMinTokens;
 
           if (newTokens < currentMaxTokens) {
             tokenReductionAttempts++;
             currentMaxTokens = newTokens;
-            continue; // retry with reduced tokens
+            _logger.logInfo('[AdaptiveRollback] Reduced maxTokens to $currentMaxTokens (attempt $tokenReductionAttempts)');
+            continue;
           }
         }
 
-        // Try to remove oldest non-system message(s)
-        if (attemptMsgs.length <= 1) rethrow;
-
-        final removableIndex = attemptMsgs.indexWhere(
-          (m) => m['role'] != 'system',
-        );
-        if (removableIndex == -1) rethrow;
-
-        attemptMsgs.removeAt(removableIndex);
-        if (removableIndex < attemptMsgs.length &&
-            attemptMsgs[removableIndex]['role'] == 'assistant') {
-          attemptMsgs.removeAt(removableIndex);
+        // 2. Remove oldest non-system message(s)
+        if (attemptMsgs.length <= 1) {
+          _logger.logError('[AdaptiveRollback] Cannot remove more messages, rethrowing');
+          rethrow;
         }
 
-        // Reset token reduction attempts after message removal
+        // Remove one non-system message (prefer removing oldest)
+        int removedCount = 0;
+        for (int i = 0; i < attemptMsgs.length && removedCount < 2; i++) {
+          if (attemptMsgs[i]['role'] != 'system') {
+            attemptMsgs.removeAt(i);
+            removedCount++;
+            i--; // adjust index after removal
+          }
+        }
+
+        _logger.logInfo('[AdaptiveRollback] Removed $removedCount messages, remaining: ${attemptMsgs.length}');
+
+        // Reset token reduction attempts, but KEEP currentMaxTokens reduced (don't reset to contextLength)
         tokenReductionAttempts = 0;
-        currentMaxTokens = modelContextLength;
       }
     }
   }
@@ -1359,8 +1370,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     required String modelId,
     required ModelSettings modelSettings,
   }) async {
-    // Use a mutable local max tokens so we can reduce it on 400 before removing messages
-    int currentMaxTokens = modelSettings.maxTokens;
+    // Calculate safe initial maxTokens: min(user setting, contextLength)
+    final modelObj = _themeProvider.getModelById(modelId);
+    final modelContextLength =
+        modelObj?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
+
+    int currentMaxTokens = min(modelSettings.maxTokens, modelContextLength);
+
+    // Effective minimum tokens (dynamic based on model size)
+    final effectiveMinTokens = min(8000, modelContextLength ~/ 2);
+
+    final reductionFactor = ChatScreenConstants.reductionFactor;
+    int tokenReductionAttempts = 0;
 
     // Set streaming state
     setState(() {
@@ -1374,68 +1395,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // Create a local flag that can be captured by closures
     bool isStreamingLocal = true;
 
-    // Prepare messages by sanitizing out error-filled assistant messages and truncating huge individual messages
-    List<Map<String, dynamic>> sanitize(List<Map<String, dynamic>> src) {
-      final patterns = [
-        'Exception',
-        'DioException',
-        'This exception was thrown',
-        'Traceback',
-        'stack trace',
-        'status code',
-        'RequestOptions',
-        'Bad Request',
-        'Client error',
-        'SocketException',
-        'HttpException',
-      ];
+    // Sanitize messages
+    var attemptMsgs = _sanitizeMessages(messages);
 
-      const int maxMessageLen = 20000; // per-message soft limit
-
-      final out = <Map<String, dynamic>>[];
-
-      for (final m in src) {
-        var content = m['content'] ?? '';
-        final role = m['role'] ?? 'user';
-
-        final hasErrPattern = patterns.any((p) => content.contains(p));
-        if (role == 'assistant' && hasErrPattern) {
-          continue; // drop this assistant message
-        }
-
-        if (content.length > maxMessageLen) {
-          content = '${content.substring(0, maxMessageLen)}...[truncated]';
-        }
-
-        // Preserve the full message structure (including images if present)
-        if (m.containsKey('content') && m['content'] is List) {
-          // Multimodal message
-          out.add(m);
-        } else {
-          // Text message
-          out.add({'role': role, 'content': content});
-        }
-      }
-
-      return out;
-    }
-
-    // Adaptive retry: on 400-like errors, use 5% token reduction first,
-    // then progressively remove oldest non-system messages and retry
-    final originalSanitized = sanitize(messages);
-    var attemptMsgs = List<Map<String, dynamic>>.from(originalSanitized);
-
-    // Get model context length for precise calculation
-    final modelObj = _themeProvider.getModelById(modelId);
-    final modelContextLength =
-        modelObj?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
-
-    // Token reduction state
-    int tokenReductionAttempts = 0;
-    const int maxTokenReductionAttempts =
-        10; // Allow up to 10 reductions (5% each)
-    const double reductionFactor = 0.95; // 5% reduction per attempt
-    const int minTokens = 8000; // Absolute minimum
+    _logger.logInfo('[AdaptiveRollback] Streaming: initial maxTokens=$currentMaxTokens, contextLength=$modelContextLength, minTokens=$effectiveMinTokens');
 
     while (true) {
       try {
@@ -1499,45 +1462,33 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               return;
             }
 
-            // Final immutable update to mark as complete
             if (mounted &&
                 _currentChat != null &&
                 _currentChat!.messages.isNotEmpty) {
               final lastMessage = _currentChat!.messages.last;
-
-              // CRITICAL: Create NEW completed message
               final completedMessage = lastMessage.copyWith(
                 content: accumulatedContent,
                 reasoning: accumulatedReasoning,
                 isComplete: true,
               );
-
-              // CRITICAL: Create NEW list
               final newMessages = List<Message>.from(_currentChat!.messages);
               newMessages[newMessages.length - 1] = completedMessage;
-
-              // CRITICAL: Create NEW chat
               final newChat = _currentChat!.copyWith(
                 messages: newMessages,
                 updatedAt: DateTime.now(),
               );
-
-              // CRITICAL: setState with NEW objects
               _updateCurrentChat(newChat);
 
-              // Reset streaming state and force final rebuild
               setState(() {
                 _isStreaming = false;
               });
 
-              // Save to storage (this is OK, it's the final state)
               _chatStorageService.updateMessageInChat(
                 newChat.id,
                 completedMessage.id,
                 completedMessage,
               );
 
-              // Show continuation suggestions
               if (!isContinuation) {
                 _showContinuationSuggestions(completedMessage);
               }
@@ -1545,18 +1496,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           },
         );
 
-        // If we reached here, the streaming started & completed successfully
-        break; // exit retry loop
+        break; // success
       } catch (e) {
         final err = e.toString();
-        _logger.logError('[ChatScreen] Streaming error: $err');
-
-        // Detect 400/bad request cases - adaptive rollback
         final isBadRequest =
             err.contains('400') ||
             err.toLowerCase().contains('bad response') ||
             err.toLowerCase().contains('client error') ||
             err.toLowerCase().contains('bad request');
+
         if (!isBadRequest) {
           setState(() {
             _isStreaming = false;
@@ -1565,22 +1513,21 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           break;
         }
 
-        // Token reduction first (5% per attempt)
-        if (tokenReductionAttempts < maxTokenReductionAttempts &&
-            currentMaxTokens > minTokens) {
+        // 1. Token reduction
+        if (tokenReductionAttempts < ChatScreenConstants.maxTokenReductionAttempts &&
+            currentMaxTokens > effectiveMinTokens) {
           int newTokens = (currentMaxTokens * reductionFactor).floor();
-
-          if (newTokens < minTokens) {
-            newTokens = minTokens;
-          }
+          if (newTokens < effectiveMinTokens) newTokens = effectiveMinTokens;
 
           if (newTokens < currentMaxTokens) {
             tokenReductionAttempts++;
             currentMaxTokens = newTokens;
-            continue; // retry with reduced tokens
+            _logger.logInfo('[AdaptiveRollback] Reduced maxTokens to $currentMaxTokens (attempt $tokenReductionAttempts)');
+            continue;
           }
         }
 
+        // 2. Remove oldest non-system messages
         if (attemptMsgs.length <= 1) {
           setState(() {
             _isStreaming = false;
@@ -1589,25 +1536,19 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           break;
         }
 
-        final removableIndex = attemptMsgs.indexWhere(
-          (m) => m['role'] != 'system',
-        );
-        if (removableIndex == -1) {
-          setState(() {
-            _isStreaming = false;
-          });
-          await _handleStreamingError(e, isContinuation);
-          break;
+        int removedCount = 0;
+        for (int i = 0; i < attemptMsgs.length && removedCount < 2; i++) {
+          if (attemptMsgs[i]['role'] != 'system') {
+            attemptMsgs.removeAt(i);
+            removedCount++;
+            i--;
+          }
         }
 
-        attemptMsgs.removeAt(removableIndex);
-        if (removableIndex < attemptMsgs.length &&
-            attemptMsgs[removableIndex]['role'] == 'assistant') {
-          attemptMsgs.removeAt(removableIndex);
-        }
+        _logger.logInfo('[AdaptiveRollback] Removed $removedCount messages, remaining: ${attemptMsgs.length}');
 
+        // Reset token reduction attempts, but KEEP currentMaxTokens reduced
         tokenReductionAttempts = 0;
-        currentMaxTokens = modelContextLength;
       }
     }
   }
