@@ -15,16 +15,19 @@ final _logger = LogTags.settings;
 
 class ModelSettingsProvider with ChangeNotifier {
   static const String _settingsPrefix = 'model_settings_';
-  
+
   // Cache for model settings
   final Map<String, ModelSettings> _settingsCache = {};
-  
+
   // Currently active model settings
   ModelSettings? _activeSettings;
-  
+
   // Loading state
   bool _isLoading = false;
-  
+
+  // OpenRouterService dependency (injected via setter)
+  OpenRouterService? _openRouterService;
+
   bool get isLoading => _isLoading;
   ModelSettings? get activeSettings => _activeSettings;
 
@@ -32,9 +35,19 @@ class ModelSettingsProvider with ChangeNotifier {
     _logger.logInfo('[ModelSettingsProvider] Initialized');
   }
 
+  /// Setter for dependency injection of OpenRouterService
+  set openRouterService(OpenRouterService service) {
+    if (_openRouterService != service) {
+      _openRouterService = service;
+    }
+  }
+
   /// Load settings for a specific model
   /// Pass BuildContext to access ThemeProvider for model info
-  Future<ModelSettings> loadSettings(String modelId, [BuildContext? context]) async {
+  Future<ModelSettings> loadSettings(
+    String modelId, [
+    BuildContext? context,
+  ]) async {
     if (_settingsCache.containsKey(modelId)) {
       return _settingsCache[modelId]!;
     }
@@ -53,11 +66,15 @@ class ModelSettingsProvider with ChangeNotifier {
         try {
           final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
           settings = ModelSettings.fromJson(jsonMap);
-          
+
           // Check if settings have API info, if not refresh from API
-          if (settings.apiContextLength == null || settings.apiMaxTokens == null) {
-            final freshSettings = await _createSettingsFromModelInfo(modelId, context);
-            
+          if (settings.apiContextLength == null ||
+              settings.apiMaxTokens == null) {
+            final freshSettings = await _createSettingsFromModelInfo(
+              modelId,
+              context,
+            );
+
             // Merge: keep user preferences, update API info
             settings = settings.copyWith(
               maxContextLength: freshSettings.maxContextLength,
@@ -66,7 +83,7 @@ class ModelSettingsProvider with ChangeNotifier {
               apiMaxTemperature: freshSettings.apiMaxTemperature,
               apiMinTemperature: freshSettings.apiMinTemperature,
             );
-            
+
             // Save updated settings
             await saveSettings(settings);
           }
@@ -80,11 +97,15 @@ class ModelSettingsProvider with ChangeNotifier {
       }
 
       _settingsCache[modelId] = settings;
-      _logger.logInfo('[ModelSettingsProvider] Loaded settings for $modelId: $settings');
-      
+      _logger.logInfo(
+        '[ModelSettingsProvider] Loaded settings for $modelId: $settings',
+      );
+
       return settings;
     } catch (e) {
-      _logger.logError('[ModelSettingsProvider] Error loading settings for $modelId: $e');
+      _logger.logError(
+        '[ModelSettingsProvider] Error loading settings for $modelId: $e',
+      );
       final defaultSettings = ModelSettings.defaultForModel(modelId);
       _settingsCache[modelId] = defaultSettings;
       return defaultSettings;
@@ -95,21 +116,29 @@ class ModelSettingsProvider with ChangeNotifier {
   }
 
   /// Create settings from model information (from theme provider or API)
-  Future<ModelSettings> _createSettingsFromModelInfo(String modelId, [BuildContext? context]) async {
+  Future<ModelSettings> _createSettingsFromModelInfo(
+    String modelId, [
+    BuildContext? context,
+  ]) async {
     try {
       // First try to get from ThemeProvider if context is available
       if (context != null && context.mounted) {
         try {
-          final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+          final themeProvider = Provider.of<ThemeProvider>(
+            context,
+            listen: false,
+          );
           final model = themeProvider.getModelById(modelId);
-          
+
           if (model != null) {
-            _logger.logInfo('[ModelSettingsProvider] Got model info from ThemeProvider: ${model.name}, context: ${model.contextLength}');
-            
+            _logger.logInfo(
+              '[ModelSettingsProvider] Got model info from ThemeProvider: ${model.name}, context: ${model.contextLength}',
+            );
+
             // Calculate safe maxTokens: 70% of contextLength to leave room for input tokens
             final contextLength = model.contextLength ?? 4096;
             final safeMaxTokens = max(256, (contextLength * 0.7).floor());
-            
+
             return ModelSettings.fromApiModel(
               modelId,
               contextLength,
@@ -117,31 +146,37 @@ class ModelSettingsProvider with ChangeNotifier {
             );
           }
         } catch (e) {
-          _logger.logWarning('[ModelSettingsProvider] Could not get model from ThemeProvider: $e');
+          _logger.logWarning(
+            '[ModelSettingsProvider] Could not get model from ThemeProvider: $e',
+          );
         }
       }
 
       // Fallback to API call
-      final openRouterService = OpenRouterService();
+      final openRouterService = _openRouterService ?? OpenRouterService();
       final models = await openRouterService.getAvailableModels();
       final model = models.firstWhere(
         (m) => m.id == modelId,
         orElse: () => throw Exception('Model not found'),
       );
 
-      _logger.logInfo('[ModelSettingsProvider] Got model info from API: ${model.name}, context: ${model.contextLength}');
-      
+      _logger.logInfo(
+        '[ModelSettingsProvider] Got model info from API: ${model.name}, context: ${model.contextLength}',
+      );
+
       // Calculate safe maxTokens: 70% of contextLength to leave room for input tokens
       final contextLength = model.contextLength ?? 4096;
       final safeMaxTokens = max(256, (contextLength * 0.8).floor());
-      
+
       return ModelSettings.fromApiModel(
         modelId,
         contextLength,
         safeMaxTokens, // 70% of context, not full context
       );
     } catch (e) {
-      _logger.logWarning('[ModelSettingsProvider] Could not get model info: $e');
+      _logger.logWarning(
+        '[ModelSettingsProvider] Could not get model info: $e',
+      );
       return ModelSettings.defaultForModel(modelId);
     }
   }
@@ -151,21 +186,23 @@ class ModelSettingsProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final key = '$_settingsPrefix${settings.modelId}';
-      
+
       // Convert to JSON string
       final jsonString = jsonEncode(settings.toJson());
-      
+
       await prefs.setString(key, jsonString);
-      
+
       // Update cache
       _settingsCache[settings.modelId] = settings;
-      
+
       // If this is the active model, update active settings
       if (_activeSettings?.modelId == settings.modelId) {
         _activeSettings = settings;
       }
-      
-      _logger.logInfo('[ModelSettingsProvider] Saved settings for ${settings.modelId}');
+
+      _logger.logInfo(
+        '[ModelSettingsProvider] Saved settings for ${settings.modelId}',
+      );
       notifyListeners();
     } catch (e) {
       _logger.logError('[ModelSettingsProvider] Error saving settings: $e');
@@ -187,17 +224,21 @@ class ModelSettingsProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final key = '$_settingsPrefix$modelId';
       final jsonString = prefs.getString(key);
-      
+
       ModelSettings settings;
       if (jsonString != null && jsonString.isNotEmpty) {
         // Use stored settings
         final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
         settings = ModelSettings.fromJson(jsonMap);
-        
+
         // Check if settings have API info, if not refresh from API
-        if (settings.apiContextLength == null || settings.apiMaxTokens == null) {
-          final freshSettings = await _createSettingsFromModelInfo(modelId, context);
-          
+        if (settings.apiContextLength == null ||
+            settings.apiMaxTokens == null) {
+          final freshSettings = await _createSettingsFromModelInfo(
+            modelId,
+            context,
+          );
+
           // Merge: keep user preferences, update API info
           settings = settings.copyWith(
             maxContextLength: freshSettings.maxContextLength,
@@ -206,24 +247,28 @@ class ModelSettingsProvider with ChangeNotifier {
             apiMaxTemperature: freshSettings.apiMaxTemperature,
             apiMinTemperature: freshSettings.apiMinTemperature,
           );
-          
+
           // Save updated settings
           await saveSettings(settings);
         }
       } else {
         // No stored settings - create from API model info
         settings = await _createSettingsFromModelInfo(modelId, context);
-        
+
         // Save the initial settings
         await saveSettings(settings);
       }
 
       _activeSettings = settings;
       _settingsCache[modelId] = settings;
-      _logger.logInfo('[ModelSettingsProvider] Active model set to $modelId with settings: $settings');
+      _logger.logInfo(
+        '[ModelSettingsProvider] Active model set to $modelId with settings: $settings',
+      );
       notifyListeners();
     } catch (e) {
-      _logger.logError('[ModelSettingsProvider] Error setting active model: $e');
+      _logger.logError(
+        '[ModelSettingsProvider] Error setting active model: $e',
+      );
       // Fallback to defaults
       final defaultSettings = ModelSettings.defaultForModel(modelId);
       _activeSettings = defaultSettings;
@@ -275,7 +320,10 @@ class ModelSettingsProvider with ChangeNotifier {
 
   /// Get settings for any model (without setting as active)
   /// Pass BuildContext to access ThemeProvider for model info
-  Future<ModelSettings> getSettings(String modelId, [BuildContext? context]) async {
+  Future<ModelSettings> getSettings(
+    String modelId, [
+    BuildContext? context,
+  ]) async {
     return await loadSettings(modelId, context);
   }
 
@@ -285,14 +333,14 @@ class ModelSettingsProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final key = '$_settingsPrefix$modelId';
       await prefs.remove(key);
-      
+
       _settingsCache.remove(modelId);
-      
+
       // If this was the active model, clear active settings
       if (_activeSettings?.modelId == modelId) {
         _activeSettings = null;
       }
-      
+
       _logger.logInfo('[ModelSettingsProvider] Deleted settings for $modelId');
       notifyListeners();
     } catch (e) {
@@ -304,20 +352,22 @@ class ModelSettingsProvider with ChangeNotifier {
   Future<void> resetSettings(String modelId) async {
     final defaultSettings = ModelSettings.defaultForModel(modelId);
     await saveSettings(defaultSettings);
-    
+
     // If this is the active model, update active settings
     if (_activeSettings?.modelId == modelId) {
       _activeSettings = defaultSettings;
     }
-    
-    _logger.logInfo('[ModelSettingsProvider] Reset settings for $modelId to defaults');
+
+    _logger.logInfo(
+      '[ModelSettingsProvider] Reset settings for $modelId to defaults',
+    );
     notifyListeners();
   }
 
   /// Reset active model settings to defaults
   Future<void> resetActiveSettings() async {
     if (_activeSettings == null) return;
-    
+
     await resetSettings(_activeSettings!.modelId);
   }
 
@@ -331,7 +381,9 @@ class ModelSettingsProvider with ChangeNotifier {
           .map((key) => key.substring(_settingsPrefix.length))
           .toList();
     } catch (e) {
-      _logger.logError('[ModelSettingsProvider] Error getting stored model IDs: $e');
+      _logger.logError(
+        '[ModelSettingsProvider] Error getting stored model IDs: $e',
+      );
       return [];
     }
   }
@@ -340,7 +392,7 @@ class ModelSettingsProvider with ChangeNotifier {
   Future<void> clearAll() async {
     _settingsCache.clear();
     _activeSettings = null;
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys();
@@ -352,7 +404,9 @@ class ModelSettingsProvider with ChangeNotifier {
       _logger.logInfo('[ModelSettingsProvider] Cleared all model settings');
       notifyListeners();
     } catch (e) {
-      _logger.logError('[ModelSettingsProvider] Error clearing all settings: $e');
+      _logger.logError(
+        '[ModelSettingsProvider] Error clearing all settings: $e',
+      );
     }
   }
 }

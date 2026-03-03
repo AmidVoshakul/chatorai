@@ -41,7 +41,7 @@ class ChatScreenConstants {
 
   // Token Management
   static const int defaultMaxTokens = 32000;
-  
+
   // Adaptive rollback configuration
   static const int maxTokenReductionAttempts = 10;
   static const double reductionFactor = 0.97; // 3% reduction per attempt
@@ -127,7 +127,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _chatStorageService = ChatStorageService();
-    _openRouterService = widget.openRouterService ?? OpenRouterService();
+    _openRouterService =
+        widget.openRouterService ??
+        Provider.of<OpenRouterService>(context, listen: false);
     _themeProvider =
         widget.themeProvider ??
         Provider.of<ThemeProvider>(context, listen: false);
@@ -745,7 +747,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   /// - Removes assistant messages containing errors
   /// - Truncates overly long messages
   /// - Preserves multimodal structure
-  List<Map<String, dynamic>> _sanitizeMessages(List<Map<String, dynamic>> messages) {
+  List<Map<String, dynamic>> _sanitizeMessages(
+    List<Map<String, dynamic>> messages,
+  ) {
     final patterns = [
       'Exception',
       'DioException',
@@ -845,7 +849,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final reductionFactor = ChatScreenConstants.reductionFactor;
     int tokenReductionAttempts = 0;
 
-    _logger.logInfo('[AdaptiveRollback] Non-streaming: initial maxTokens=$currentMaxTokens, contextLength=$modelContextLength, minTokens=$effectiveMinTokens');
+    _logger.logInfo(
+      '[AdaptiveRollback] Non-streaming: initial maxTokens=$currentMaxTokens, contextLength=$modelContextLength, minTokens=$effectiveMinTokens',
+    );
 
     while (true) {
       try {
@@ -872,7 +878,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         if (!isBadRequest) rethrow;
 
         // 1. Try token reduction first
-        if (tokenReductionAttempts < ChatScreenConstants.maxTokenReductionAttempts &&
+        if (tokenReductionAttempts <
+                ChatScreenConstants.maxTokenReductionAttempts &&
             currentMaxTokens > effectiveMinTokens) {
           int newTokens = (currentMaxTokens * reductionFactor).floor();
           if (newTokens < effectiveMinTokens) newTokens = effectiveMinTokens;
@@ -880,14 +887,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           if (newTokens < currentMaxTokens) {
             tokenReductionAttempts++;
             currentMaxTokens = newTokens;
-            _logger.logInfo('[AdaptiveRollback] Reduced maxTokens to $currentMaxTokens (attempt $tokenReductionAttempts)');
+            _logger.logInfo(
+              '[AdaptiveRollback] Reduced maxTokens to $currentMaxTokens (attempt $tokenReductionAttempts)',
+            );
             continue;
           }
         }
 
         // 2. Remove oldest non-system message(s)
         if (attemptMsgs.length <= 1) {
-          _logger.logError('[AdaptiveRollback] Cannot remove more messages, rethrowing');
+          _logger.logError(
+            '[AdaptiveRollback] Cannot remove more messages, rethrowing',
+          );
           rethrow;
         }
 
@@ -901,7 +912,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           }
         }
 
-        _logger.logInfo('[AdaptiveRollback] Removed $removedCount messages, remaining: ${attemptMsgs.length}');
+        _logger.logInfo(
+          '[AdaptiveRollback] Removed $removedCount messages, remaining: ${attemptMsgs.length}',
+        );
 
         // Reset token reduction attempts, but KEEP currentMaxTokens reduced (don't reset to contextLength)
         tokenReductionAttempts = 0;
@@ -1398,7 +1411,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // Sanitize messages
     var attemptMsgs = _sanitizeMessages(messages);
 
-    _logger.logInfo('[AdaptiveRollback] Streaming: initial maxTokens=$currentMaxTokens, contextLength=$modelContextLength, minTokens=$effectiveMinTokens');
+    _logger.logInfo(
+      '[AdaptiveRollback] Streaming: initial maxTokens=$currentMaxTokens, contextLength=$modelContextLength, minTokens=$effectiveMinTokens',
+    );
 
     while (true) {
       try {
@@ -1514,7 +1529,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         }
 
         // 1. Token reduction
-        if (tokenReductionAttempts < ChatScreenConstants.maxTokenReductionAttempts &&
+        if (tokenReductionAttempts <
+                ChatScreenConstants.maxTokenReductionAttempts &&
             currentMaxTokens > effectiveMinTokens) {
           int newTokens = (currentMaxTokens * reductionFactor).floor();
           if (newTokens < effectiveMinTokens) newTokens = effectiveMinTokens;
@@ -1522,7 +1538,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           if (newTokens < currentMaxTokens) {
             tokenReductionAttempts++;
             currentMaxTokens = newTokens;
-            _logger.logInfo('[AdaptiveRollback] Reduced maxTokens to $currentMaxTokens (attempt $tokenReductionAttempts)');
+            _logger.logInfo(
+              '[AdaptiveRollback] Reduced maxTokens to $currentMaxTokens (attempt $tokenReductionAttempts)',
+            );
             continue;
           }
         }
@@ -1545,7 +1563,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           }
         }
 
-        _logger.logInfo('[AdaptiveRollback] Removed $removedCount messages, remaining: ${attemptMsgs.length}');
+        _logger.logInfo(
+          '[AdaptiveRollback] Removed $removedCount messages, remaining: ${attemptMsgs.length}',
+        );
 
         // Reset token reduction attempts, but KEEP currentMaxTokens reduced
         tokenReductionAttempts = 0;

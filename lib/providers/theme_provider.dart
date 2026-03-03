@@ -11,11 +11,7 @@ import 'package:chatorai/services/openrouter_service.dart';
 // Initialize logger for this provider
 final _logger = LogTags.settings;
 
-enum AppThemeMode {
-  light,
-  dark,
-  system
-}
+enum AppThemeMode { light, dark, system }
 
 class ThemeProvider with ChangeNotifier {
   static const String _themeModeKey = 'theme_mode';
@@ -42,10 +38,14 @@ class ThemeProvider with ChangeNotifier {
   bool _isLoadingModels = false;
   bool _settingsLoaded = false;
 
+  // OpenRouterService dependency (injected via setter)
+  OpenRouterService? _openRouterService;
+
   // Computed property for dark mode based on theme mode
-  bool get isDarkMode => _themeMode == AppThemeMode.dark || 
-                       (_themeMode == AppThemeMode.system && 
-                        PlatformDispatcher.instance.platformBrightness == Brightness.dark);
+  bool get isDarkMode =>
+      _themeMode == AppThemeMode.dark ||
+      (_themeMode == AppThemeMode.system &&
+          PlatformDispatcher.instance.platformBrightness == Brightness.dark);
 
   AppThemeMode get themeMode => _themeMode;
   double get fontSize => _fontSize;
@@ -64,8 +64,18 @@ class ThemeProvider with ChangeNotifier {
 
   ThemeProvider() {
     loadSettings();
-    // Load models asynchronously after initialization
-    _loadModelsAsync();
+    // Models will be loaded when openRouterService is set via setter
+  }
+
+  /// Setter for dependency injection of OpenRouterService
+  set openRouterService(OpenRouterService service) {
+    if (_openRouterService != service) {
+      _openRouterService = service;
+      // Trigger model loading if settings are loaded and models not yet loaded
+      if (_settingsLoaded && !_modelsLoaded && !_isLoadingModels) {
+        _loadModelsAsync();
+      }
+    }
   }
 
   set themeMode(AppThemeMode value) {
@@ -125,7 +135,6 @@ class ThemeProvider with ChangeNotifier {
         orElse: () => _availableModels.first, // Return first model if not found
       );
 
-
       saveSettings();
       notifyListeners();
     }
@@ -142,7 +151,6 @@ class ThemeProvider with ChangeNotifier {
         (model) => model.id == modelId,
         orElse: () => _availableModels.first, // Return first model if not found
       );
-
 
       await saveSettings();
     }
@@ -169,11 +177,16 @@ class ThemeProvider with ChangeNotifier {
 
   /// Get favorite models
   List<OpenRouterModel> getFavoriteModels() {
-    return _availableModels.where((model) => _favoriteModelIds.contains(model.id)).toList();
+    return _availableModels
+        .where((model) => _favoriteModelIds.contains(model.id))
+        .toList();
   }
 
   /// Load models asynchronously
   Future<void> _loadModelsAsync() async {
+    // Fallback for backward compatibility: if openRouterService not set, create one
+    final openRouterService = _openRouterService ?? OpenRouterService();
+
     if (_modelsLoaded || _isLoadingModels) return;
 
     _isLoadingModels = true;
@@ -181,10 +194,11 @@ class ThemeProvider with ChangeNotifier {
 
     try {
       _logger.logInfo('[ThemeProvider] Loading models from OpenRouter...');
-      final openRouterService = OpenRouterService();
 
       // Wait for OpenRouterService to be fully initialized
-      _logger.logInfo('[ThemeProvider] Waiting for OpenRouterService initialization...');
+      _logger.logInfo(
+        '[ThemeProvider] Waiting for OpenRouterService initialization...',
+      );
       int retryCount = 0;
       const maxRetries = 20; // Wait up to 10 seconds (20 * 500ms)
 
@@ -199,7 +213,9 @@ class ThemeProvider with ChangeNotifier {
       }
 
       if (retryCount >= maxRetries) {
-        _logger.logWarning('[ThemeProvider] OpenRouterService initialization timeout, proceeding anyway...');
+        _logger.logWarning(
+          '[ThemeProvider] OpenRouterService initialization timeout, proceeding anyway...',
+        );
       }
 
       final models = await openRouterService.getAvailableModels();
@@ -208,7 +224,6 @@ class ThemeProvider with ChangeNotifier {
       _availableModels = _deduplicateModels(models);
       _modelsLoaded = true;
 
-
       // Set the selected model object from saved ID
       if (_selectedModelObject == null) {
         // If no model ID is saved, use the first available model
@@ -216,7 +231,7 @@ class ThemeProvider with ChangeNotifier {
           _selectedModelId = _availableModels.first.id;
           _selectedModelObject = _availableModels.first;
           await saveSettings();
-       } else {
+        } else {
           // Find the model object for the saved ID
           final modelObject = _availableModels.firstWhere(
             (model) => model.id == _selectedModelId,
@@ -237,20 +252,24 @@ class ThemeProvider with ChangeNotifier {
         await setSelectedModel(defaultModel.id);
       }
 
-      _logger.logInfo('[ThemeProvider] Successfully loaded ${models.length} models');
+      _logger.logInfo(
+        '[ThemeProvider] Successfully loaded ${models.length} models',
+      );
     } catch (e) {
       _logger.logError('[ThemeProvider] Failed to load models: $e');
-      _logger.logWarning('[ThemeProvider] Retrying model loading in 2 seconds...');
+      _logger.logWarning(
+        '[ThemeProvider] Retrying model loading in 2 seconds...',
+      );
 
       // Retry after a short delay
       await Future<void>.delayed(const Duration(seconds: 2));
 
       try {
         _logger.logInfo('[ThemeProvider] Retrying model loading...');
-        final openRouterService = OpenRouterService();
-        final models = await openRouterService.getAvailableModels();
+        final retryService = _openRouterService ?? OpenRouterService();
+        final retryModels = await retryService.getAvailableModels();
 
-        _availableModels = _deduplicateModels(models);
+        _availableModels = _deduplicateModels(retryModels);
         _modelsLoaded = true;
 
         if (_selectedModelObject == null) {
@@ -269,9 +288,13 @@ class ThemeProvider with ChangeNotifier {
           await setSelectedModel(defaultModel.id);
         }
 
-        _logger.logInfo('[ThemeProvider] Successfully loaded ${models.length} models on retry');
+        _logger.logInfo(
+          '[ThemeProvider] Successfully loaded ${retryModels.length} models on retry',
+        );
       } catch (retryError) {
-        _logger.logError('[ThemeProvider] Failed to load models on retry: $retryError');
+        _logger.logError(
+          '[ThemeProvider] Failed to load models on retry: $retryError',
+        );
         _modelsLoaded = true; // Mark as loaded to prevent infinite retries
       }
     } finally {
@@ -291,9 +314,7 @@ class ThemeProvider with ChangeNotifier {
   /// Get model by ID
   OpenRouterModel? getModelById(String modelId) {
     try {
-      return _availableModels.firstWhere(
-        (model) => model.id == modelId,
-      );
+      return _availableModels.firstWhere((model) => model.id == modelId);
     } catch (e) {
       return null;
     }
@@ -305,26 +326,32 @@ class ThemeProvider with ChangeNotifier {
   bool modelSupportsImages(String modelId) {
     // Try to get model from loaded models
     final model = getModelById(modelId);
-    
+
     if (model == null) {
-      _logger.logWarning('[ThemeProvider] Model $modelId not found in available models, returning false');
+      _logger.logWarning(
+        '[ThemeProvider] Model $modelId not found in available models, returning false',
+      );
       return false; // Conservative: assume no support if model not found
     }
-    
+
     // Check if model has multimodal capabilities from API
     // The OpenRouterModel.fromJson() already parses architecture.input_modalities
     // and sets capabilities.multimodal and capabilities.vision
-    
+
     // Use the multimodal flag which is already parsed from API
     final supportsMultimodal = model.capabilities.multimodal;
     final supportsVision = model.capabilities.vision;
-    
+
     if (supportsMultimodal || supportsVision) {
-      _logger.logInfo('[ThemeProvider] Model $modelId supports images (API: multimodal=$supportsMultimodal, vision=$supportsVision)');
+      _logger.logInfo(
+        '[ThemeProvider] Model $modelId supports images (API: multimodal=$supportsMultimodal, vision=$supportsVision)',
+      );
       return true;
     }
-    
-    _logger.logInfo('[ThemeProvider] Model $modelId does not support images (API data)');
+
+    _logger.logInfo(
+      '[ThemeProvider] Model $modelId does not support images (API data)',
+    );
     return false;
   }
 
@@ -345,14 +372,16 @@ class ThemeProvider with ChangeNotifier {
     // Try API-based check first
     final apiSupport = modelSupportsImages(modelId);
     if (apiSupport) return true;
-    
+
     // Fallback: check if model is loaded
     // If models aren't loaded yet, be conservative and return false
     if (!_modelsLoaded) {
-      _logger.logWarning('[ThemeProvider] Models not loaded yet, returning false for $modelId');
+      _logger.logWarning(
+        '[ThemeProvider] Models not loaded yet, returning false for $modelId',
+      );
       return false;
     }
-    
+
     // If model exists but doesn't support images, return false
     return false;
   }
@@ -361,13 +390,13 @@ class ThemeProvider with ChangeNotifier {
   Future<void> loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       final String themeModeString = prefs.getString(_themeModeKey) ?? 'system';
       _themeMode = AppThemeMode.values.firstWhere(
         (mode) => mode.toString() == 'AppThemeMode.$themeModeString',
         orElse: () => AppThemeMode.system,
       );
-      
+
       _fontSize = prefs.getDouble(_fontSizeKey) ?? 1.0;
       _reduceMotion = prefs.getBool(_reduceMotionKey) ?? false;
       _highContrast = prefs.getBool(_highContrastKey) ?? false;
@@ -375,14 +404,14 @@ class ThemeProvider with ChangeNotifier {
       _selectedLanguage = prefs.getString(_languageKey) ?? 'en';
       _selectedModelId = prefs.getString(_selectedModelKey) ?? '';
 
-      
       // Load favorite models
-      final favoriteModelsString = prefs.getStringList(_favoriteModelsKey) ?? [];
+      final favoriteModelsString =
+          prefs.getStringList(_favoriteModelsKey) ?? [];
       _favoriteModelIds = favoriteModelsString;
 
       // Update RTL based on loaded language
       _isRTL = ['ar', 'he', 'fa', 'ur'].contains(_selectedLanguage);
-      
+
       // Initialize selected model object if models are already loaded
       if (_modelsLoaded && _availableModels.isNotEmpty) {
         if (_selectedModelId.isEmpty) {
@@ -402,6 +431,11 @@ class ThemeProvider with ChangeNotifier {
 
       _settingsLoaded = true;
       notifyListeners();
+
+      // Trigger model loading if openRouterService is available
+      if (_openRouterService != null && !_modelsLoaded && !_isLoadingModels) {
+        _loadModelsAsync();
+      }
     } catch (e) {
       _logger.logError('[Settings] Error loading settings: $e');
     }
@@ -411,8 +445,11 @@ class ThemeProvider with ChangeNotifier {
   Future<void> saveSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
-      await prefs.setString(_themeModeKey, _themeMode.toString().split('.').last);
+
+      await prefs.setString(
+        _themeModeKey,
+        _themeMode.toString().split('.').last,
+      );
       await prefs.setDouble(_fontSizeKey, _fontSize);
       await prefs.setBool(_reduceMotionKey, _reduceMotion);
       await prefs.setBool(_highContrastKey, _highContrast);
@@ -451,7 +488,7 @@ class ThemeProvider with ChangeNotifier {
   ThemeData getTheme() {
     final bool isDark = isDarkMode; // Use computed property
     var theme = AppTheme.getTheme(isDark ? Brightness.dark : Brightness.light);
-    
+
     // Apply high contrast if enabled
     if (_highContrast) {
       theme = theme.copyWith(
@@ -484,7 +521,9 @@ class ThemeProvider with ChangeNotifier {
   }
 
   /// Wait for models to be loaded with timeout
-  Future<void> waitForModelsLoaded({Duration timeout = const Duration(seconds: 10)}) async {
+  Future<void> waitForModelsLoaded({
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
     if (_modelsLoaded) return;
 
     final stopwatch = Stopwatch()..start();

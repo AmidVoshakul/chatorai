@@ -8,17 +8,11 @@ import '../utils/logger.dart';
 final _logger = LogTags.network;
 
 /// Состояние интернет-соединения
-enum NetworkStatus {
-  connected,
-  disconnected,
-  checking,
-}
+enum NetworkStatus { connected, disconnected, checking }
 
 /// Централизованный сервис для проверки интернет-соединения
 class NetworkService extends ChangeNotifier {
-  static final NetworkService _instance = NetworkService._internal();
-  factory NetworkService() => _instance;
-  NetworkService._internal() {
+  NetworkService() {
     _initialize();
   }
 
@@ -30,28 +24,33 @@ class NetworkService extends ChangeNotifier {
 
   /// Текущий статус сети
   NetworkStatus get status => _status;
-  
+
   /// Есть ли подключение к интернету
   bool get isConnected => _status == NetworkStatus.connected;
-  
+
   /// Виден ли SnackBar об отсутствии сети
   bool get isSnackbarVisible => _isSnackbarVisible;
-  
+
   /// Скрыл ли пользователь SnackBar
   bool get userDismissed => _userDismissed;
 
   /// Инициализация сервиса
   void _initialize() {
     _logger.logInfo('Initializing NetworkService');
-    
+
     // Подписка на изменения состояния подключения
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(_onConnectivityChanged);
-    
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
+      _onConnectivityChanged,
+    );
+
     // Первоначальная проверка
     _checkInitialConnection();
-    
+
     // Периодическая проверка каждые 30 секунд
-    _checkTimer = Timer.periodic(const Duration(seconds: 30), (_) => _checkConnection());
+    _checkTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _checkConnection(),
+    );
   }
 
   /// Проверка начального состояния подключения
@@ -63,14 +62,16 @@ class NetworkService extends ChangeNotifier {
   /// Обработка изменений состояния подключения
   void _onConnectivityChanged(List<ConnectivityResult> results) {
     _logger.logInfo('Connectivity changed: $results');
-    
+
     // Проверяем, есть ли подключение
-    final hasConnectivity = results.any((result) => 
-        result == ConnectivityResult.wifi || 
-        result == ConnectivityResult.ethernet ||
-        result == ConnectivityResult.mobile ||
-        result == ConnectivityResult.other);
-    
+    final hasConnectivity = results.any(
+      (result) =>
+          result == ConnectivityResult.wifi ||
+          result == ConnectivityResult.ethernet ||
+          result == ConnectivityResult.mobile ||
+          result == ConnectivityResult.other,
+    );
+
     if (hasConnectivity) {
       // Если есть подключение, проверяем реальный доступ к интернету
       _checkConnection();
@@ -84,21 +85,17 @@ class NetworkService extends ChangeNotifier {
   Future<void> _checkConnection() async {
     try {
       _logger.logDebug('Checking internet connection');
-      
+
       // Проверяем несколько хостов для надежности
-      final hosts = [
-        'google.com',
-        'cloudflare.com',
-        'openrouter.ai',
-      ];
-      
+      final hosts = ['google.com', 'cloudflare.com', 'openrouter.ai'];
+
       for (final host in hosts) {
         if (await _canReachHost(host)) {
           _updateStatus(NetworkStatus.connected);
           return;
         }
       }
-      
+
       _updateStatus(NetworkStatus.disconnected);
     } catch (e) {
       _logger.logError('Error checking connection: $e');
@@ -109,9 +106,10 @@ class NetworkService extends ChangeNotifier {
   /// Проверка доступности хоста
   Future<bool> _canReachHost(String host) async {
     try {
-      final result = await InternetAddress.lookup(host)
-          .timeout(const Duration(seconds: 5));
-      
+      final result = await InternetAddress.lookup(
+        host,
+      ).timeout(const Duration(seconds: 5));
+
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } catch (e) {
       _logger.logDebug('Cannot reach host $host: $e');
@@ -122,18 +120,18 @@ class NetworkService extends ChangeNotifier {
   /// Обновление статуса сети
   void _updateStatus(NetworkStatus newStatus) {
     if (_status == newStatus) return;
-    
+
     final oldStatus = _status;
     _status = newStatus;
-    
+
     _logger.logInfo('Network status changed from $oldStatus to $newStatus');
-    
+
     // Сбрасываем флаг отклонения пользователем при восстановлении соединения
     if (newStatus == NetworkStatus.connected) {
       _userDismissed = false;
       _isSnackbarVisible = false;
     }
-    
+
     notifyListeners();
   }
 
