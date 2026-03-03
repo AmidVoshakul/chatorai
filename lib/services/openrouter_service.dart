@@ -20,13 +20,13 @@ class OpenRouterConstants {
   static const Duration baseRetryDelay = Duration(seconds: 1);
   static const int modelsCacheDurationMinutes = 15;
   static const int chunkProcessingDelayMs = 5;
-  
+
   // API endpoints
   static const String modelsEndpoint = '/models';
   static const String completionsEndpoint = '/chat/completions';
   static const String filesEndpoint = '/files';
   static const String healthEndpoint = '/health';
-  
+
   // Environment variables
   static const String envApiKey = 'OPENROUTER_API_KEY';
   static const String envBaseUrl = 'OPENROUTER_BASE_URL';
@@ -457,19 +457,24 @@ class OpenRouterConfig {
 }
 
 class OpenRouterService implements OpenRouterClient {
+  final NetworkService _networkService;
   String? _apiKey;
   final String _baseUrl;
   final OpenRouterConfig _config;
   Dio? _dio;
-  
+
   // Caching
   final Map<String, List<OpenRouterModel>> _modelsCache = {};
   DateTime? _modelsCacheTimestamp;
   final Map<String, String> _fileCache = {};
 
-  OpenRouterService({OpenRouterConfig? config, String? baseUrl})
-      : _config = config ?? const OpenRouterConfig(),
-        _baseUrl = baseUrl ?? OpenRouterConstants.baseUrl {
+  OpenRouterService({
+    OpenRouterConfig? config,
+    String? baseUrl,
+    NetworkService? networkService,
+  }) : _config = config ?? const OpenRouterConfig(),
+       _baseUrl = baseUrl ?? OpenRouterConstants.baseUrl,
+       _networkService = networkService ?? NetworkService() {
     _initializeService();
   }
 
@@ -548,7 +553,7 @@ class OpenRouterService implements OpenRouterClient {
   /// Extract error message from DioException
   Future<String> _extractErrorMessage(DioException e) async {
     String errorMessage = 'Unknown error';
-    
+
     if (e.response?.data == null) {
       return errorMessage;
     }
@@ -558,7 +563,8 @@ class OpenRouterService implements OpenRouterClient {
         errorMessage = e.response!.data as String;
       } else if (e.response!.data is Map) {
         final errorData = Map<String, dynamic>.from(e.response!.data);
-        errorMessage = errorData['error']?['message'] ??
+        errorMessage =
+            errorData['error']?['message'] ??
             errorData['message'] ??
             errorData.toString();
       } else if (e.response!.data is ResponseBody) {
@@ -593,7 +599,7 @@ class OpenRouterService implements OpenRouterClient {
         return await operation();
       } catch (e) {
         lastException = e as Exception;
-        
+
         if (e is DioException && e.response?.statusCode == 429) {
           // Rate limit - wait longer
           final delay = Duration(seconds: pow(2, attempt).toInt());
@@ -619,7 +625,7 @@ class OpenRouterService implements OpenRouterClient {
   /// Clear expired cache
   void _clearExpiredCache() {
     if (_modelsCacheTimestamp == null) return;
-    
+
     final age = DateTime.now().difference(_modelsCacheTimestamp!).inMinutes;
     if (age > OpenRouterConstants.modelsCacheDurationMinutes) {
       _logger.logInfo('[OpenRouter] Clearing expired models cache');
@@ -644,9 +650,10 @@ class OpenRouterService implements OpenRouterClient {
     }
 
     // Проверка наличия интернет-соединения
-    final networkService = NetworkService();
-    if (!networkService.isConnected) {
-      _logger.logWarning('[OpenRouter] No internet connection, aborting models fetch');
+    if (!_networkService.isConnected) {
+      _logger.logWarning(
+        '[OpenRouter] No internet connection, aborting models fetch',
+      );
       throw Exception('No internet connection');
     }
 
@@ -655,7 +662,11 @@ class OpenRouterService implements OpenRouterClient {
     // Check cache first
     if (_config.enableCaching && !forceRefresh) {
       _clearExpiredCache();
-      final cacheKey = _buildModelsCacheKey(category, supportsReasoning, supportsMultimodal);
+      final cacheKey = _buildModelsCacheKey(
+        category,
+        supportsReasoning,
+        supportsMultimodal,
+      );
       if (_modelsCache.containsKey(cacheKey)) {
         _logger.logInfo('[OpenRouter] Returning cached models');
         return _modelsCache[cacheKey]!;
@@ -672,7 +683,9 @@ class OpenRouterService implements OpenRouterClient {
       operation: () async {
         final response = await _dio!.get(OpenRouterConstants.modelsEndpoint);
 
-        _logger.logDebug('[OpenRouter] Response status: ${response.statusCode}');
+        _logger.logDebug(
+          '[OpenRouter] Response status: ${response.statusCode}',
+        );
 
         if (response.statusCode != 200) {
           _logger.logError(
@@ -689,15 +702,35 @@ class OpenRouterService implements OpenRouterClient {
           final modelsData = data['data'] is List
               ? data['data'] as List
               : [data['data']];
-          
+
           models = modelsData
-              .map((model) => OpenRouterModel.fromJson(model as Map<String, dynamic>))
-              .where((model) => _filterModel(model, category, supportsReasoning, supportsMultimodal))
+              .map(
+                (model) =>
+                    OpenRouterModel.fromJson(model as Map<String, dynamic>),
+              )
+              .where(
+                (model) => _filterModel(
+                  model,
+                  category,
+                  supportsReasoning,
+                  supportsMultimodal,
+                ),
+              )
               .toList();
         } else if (data is List) {
           models = data
-              .map((model) => OpenRouterModel.fromJson(model as Map<String, dynamic>))
-              .where((model) => _filterModel(model, category, supportsReasoning, supportsMultimodal))
+              .map(
+                (model) =>
+                    OpenRouterModel.fromJson(model as Map<String, dynamic>),
+              )
+              .where(
+                (model) => _filterModel(
+                  model,
+                  category,
+                  supportsReasoning,
+                  supportsMultimodal,
+                ),
+              )
               .toList();
         } else {
           _logger.logError(
@@ -714,10 +747,16 @@ class OpenRouterService implements OpenRouterClient {
 
         // Cache the result
         if (_config.enableCaching) {
-          final cacheKey = _buildModelsCacheKey(category, supportsReasoning, supportsMultimodal);
+          final cacheKey = _buildModelsCacheKey(
+            category,
+            supportsReasoning,
+            supportsMultimodal,
+          );
           _modelsCache[cacheKey] = uniqueModels;
           _modelsCacheTimestamp = DateTime.now();
-          _logger.logInfo('[OpenRouter] Models cached for ${OpenRouterConstants.modelsCacheDurationMinutes} minutes');
+          _logger.logInfo(
+            '[OpenRouter] Models cached for ${OpenRouterConstants.modelsCacheDurationMinutes} minutes',
+          );
         }
 
         return uniqueModels;
@@ -778,7 +817,9 @@ class OpenRouterService implements OpenRouterClient {
         } else {
           final errorMessage = await _extractErrorMessage(
             DioException(
-              requestOptions: RequestOptions(path: OpenRouterConstants.completionsEndpoint),
+              requestOptions: RequestOptions(
+                path: OpenRouterConstants.completionsEndpoint,
+              ),
               response: response,
             ),
           );
@@ -799,9 +840,10 @@ class OpenRouterService implements OpenRouterClient {
     }
 
     // Проверка наличия интернет-соединения
-    final networkService = NetworkService();
-    if (!networkService.isConnected) {
-      _logger.logWarning('[OpenRouter] No internet connection, aborting file upload');
+    if (!_networkService.isConnected) {
+      _logger.logWarning(
+        '[OpenRouter] No internet connection, aborting request',
+      );
       throw Exception('No internet connection');
     }
 
@@ -870,9 +912,10 @@ class OpenRouterService implements OpenRouterClient {
     _logger.logDebug('[OpenRouter] Include reasoning: $includeReasoning');
 
     // Проверка наличия интернет-соединения
-    final networkService = NetworkService();
-    if (!networkService.isConnected) {
-      _logger.logWarning('[OpenRouter] No internet connection, aborting request');
+    if (!_networkService.isConnected) {
+      _logger.logWarning(
+        '[OpenRouter] No internet connection, aborting models fetch',
+      );
       throw Exception('No internet connection');
     }
 
@@ -912,7 +955,9 @@ class OpenRouterService implements OpenRouterClient {
         if (response.statusCode != 200) {
           final errorMessage = await _extractErrorMessage(
             DioException(
-              requestOptions: RequestOptions(path: OpenRouterConstants.completionsEndpoint),
+              requestOptions: RequestOptions(
+                path: OpenRouterConstants.completionsEndpoint,
+              ),
               response: response,
             ),
           );
@@ -926,7 +971,7 @@ class OpenRouterService implements OpenRouterClient {
         _logger.logInfo('[OpenRouter] Streaming started successfully!');
 
         final stream = response.data;
-        
+
         if (stream is ResponseBody) {
           return await _processSSEStream(
             stream,
@@ -940,7 +985,7 @@ class OpenRouterService implements OpenRouterClient {
           _logger.logWarning(
             '[OpenRouter] Unknown stream type: ${stream.runtimeType}',
           );
-          
+
           // Try to process as raw response
           if (response.data is String) {
             final responseText = response.data as String;
@@ -960,9 +1005,10 @@ class OpenRouterService implements OpenRouterClient {
   /// Get service health status
   Future<bool> isHealthy() async {
     // Проверка наличия интернет-соединения
-    final networkService = NetworkService();
-    if (!networkService.isConnected) {
-      _logger.logWarning('[OpenRouter] No internet connection, health check failed');
+    if (!_networkService.isConnected) {
+      _logger.logWarning(
+        '[OpenRouter] No internet connection, health check failed',
+      );
       return false;
     }
 
@@ -995,9 +1041,18 @@ class OpenRouterService implements OpenRouterClient {
     }
 
     // Проверка наличия интернет-соединения
-    final networkService = NetworkService();
-    if (!networkService.isConnected) {
-      _logger.logWarning('[OpenRouter] No internet connection, aborting provider structure test');
+    if (!_networkService.isConnected) {
+      _logger.logWarning(
+        '[OpenRouter] No internet connection, aborting provider structure test',
+      );
+      throw Exception('No internet connection');
+    }
+
+    // Проверка наличия интернет-соединения
+    if (!_networkService.isConnected) {
+      _logger.logWarning(
+        '[OpenRouter] No internet connection, aborting provider structure test',
+      );
       throw Exception('No internet connection');
     }
 
@@ -1103,7 +1158,7 @@ class OpenRouterService implements OpenRouterClient {
         for (final line in lines) {
           if (line.startsWith('data: ')) {
             final dataStr = line.substring(6).trim();
-            
+
             if (dataStr.isEmpty || dataStr == '[DONE]') {
               if (dataStr == '[DONE]') {
                 _logger.logInfo('[OpenRouter] Stream completed');
@@ -1114,7 +1169,9 @@ class OpenRouterService implements OpenRouterClient {
             try {
               final chunkData = jsonDecode(dataStr);
               final choices = chunkData['choices'] as List?;
-              final choice = (choices != null && choices.isNotEmpty) ? choices[0] : null;
+              final choice = (choices != null && choices.isNotEmpty)
+                  ? choices[0]
+                  : null;
               final delta = choice?['delta'] ?? {};
               final content = delta['content'];
               final reasoning = delta['reasoning'];
@@ -1130,11 +1187,15 @@ class OpenRouterService implements OpenRouterClient {
                 if (onReasoning != null) {
                   onReasoning(reasoning);
                 }
-                _logger.logVerbose('[OpenRouter] Reasoning chunk: "$reasoning"');
+                _logger.logVerbose(
+                  '[OpenRouter] Reasoning chunk: "$reasoning"',
+                );
               }
 
               if (choice?['finish_reason'] != null) {
-                _logger.logInfo('[OpenRouter] Finish reason: ${choice?['finish_reason']}');
+                _logger.logInfo(
+                  '[OpenRouter] Finish reason: ${choice?['finish_reason']}',
+                );
               }
             } catch (e) {
               _logger.logWarning('[OpenRouter] Failed to parse chunk: $e');
@@ -1152,11 +1213,15 @@ class OpenRouterService implements OpenRouterClient {
     }
 
     if (includeReasoning && !hasReasoning) {
-      _logger.logInfo('[OpenRouter] Reasoning not in stream, will be available after completion');
+      _logger.logInfo(
+        '[OpenRouter] Reasoning not in stream, will be available after completion',
+      );
     }
 
     onCompletion(fullContent);
-    _logger.logInfo('[OpenRouter] Streaming completed, total content length: ${fullContent.length}');
+    _logger.logInfo(
+      '[OpenRouter] Streaming completed, total content length: ${fullContent.length}',
+    );
   }
 
   /// Simulate streaming response for testing
@@ -1168,7 +1233,9 @@ class OpenRouterService implements OpenRouterClient {
 
     for (int i = 0; i < simulatedResponse.length; i++) {
       await Future<void>.delayed(
-        const Duration(milliseconds: OpenRouterConstants.chunkProcessingDelayMs),
+        const Duration(
+          milliseconds: OpenRouterConstants.chunkProcessingDelayMs,
+        ),
       );
       final chunk = simulatedResponse.substring(i, i + 1);
       onChunk(chunk);

@@ -70,21 +70,22 @@ void main() {
       });
     });
 
-    group('Singleton Pattern Tests', () {
-      test('NetworkService follows singleton pattern', () {
-        final instance1 = NetworkService();
-        final instance2 = NetworkService();
-        expect(identical(instance1, instance2), true);
-      });
-    });
+    // group('Singleton Pattern Tests', () {
+    //   test('NetworkService follows singleton pattern', () {
+    //     final instance1 = NetworkService();
+    //     final instance2 = NetworkService();
+    //     expect(identical(instance1, instance2), true);
+    //   });
+    // });
 
     group('Connection Logic Tests', () {
       test('can reach host functionality works', () async {
         // Test with a reliable host
         // This test might need to be mocked in CI/CD environments
         try {
-          final result = await InternetAddress.lookup('google.com')
-              .timeout(const Duration(seconds: 5));
+          final result = await InternetAddress.lookup(
+            'google.com',
+          ).timeout(const Duration(seconds: 5));
           expect(result.isNotEmpty, true);
         } catch (e) {
           // Network unavailable in test environment

@@ -6,6 +6,7 @@ import 'package:chatorai/screens/settings_screen.dart';
 import 'package:chatorai/providers/theme_provider.dart';
 import 'package:chatorai/providers/model_settings_provider.dart';
 import 'package:chatorai/services/network_service.dart';
+import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/widgets/network_aware_widget.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/themes/app_theme.dart';
@@ -20,9 +21,25 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => ModelSettingsProvider()),
-        ChangeNotifierProvider(create: (_) => NetworkService()),
+        ChangeNotifierProvider<NetworkService>(create: (_) => NetworkService()),
+        Provider<OpenRouterService>(
+          create: (context) =>
+              OpenRouterService(networkService: context.read<NetworkService>()),
+        ),
+        ChangeNotifierProxyProvider<OpenRouterService, ThemeProvider>(
+          create: (_) => ThemeProvider(),
+          update: (context, openRouterService, themeProvider) {
+            themeProvider!.openRouterService = openRouterService;
+            return themeProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider<OpenRouterService, ModelSettingsProvider>(
+          create: (_) => ModelSettingsProvider(),
+          update: (context, openRouterService, provider) {
+            provider!.openRouterService = openRouterService;
+            return provider;
+          },
+        ),
       ],
       child: const MyApp(),
     ),
@@ -44,7 +61,9 @@ class MyApp extends StatelessWidget {
         final navBarColor = isDark
             ? UbuntuColors.navBarBackgroundDark
             : UbuntuColors.navBarBackgroundLight;
-        final navBarIconBrightness = isDark ? Brightness.light : Brightness.dark;
+        final navBarIconBrightness = isDark
+            ? Brightness.light
+            : Brightness.dark;
 
         return MaterialApp(
           title: 'ChatORAI',
@@ -65,12 +84,8 @@ class MyApp extends StatelessWidget {
           locale: locale,
           theme: theme,
           debugShowCheckedModeBanner: false,
-          home: const NetworkAwareWidget(
-            child: ChatScreen(),
-          ),
-          routes: {
-            '/settings': (context) => const SettingsScreen(),
-          },
+          home: const NetworkAwareWidget(child: ChatScreen()),
+          routes: {'/settings': (context) => const SettingsScreen()},
           builder: (context, child) {
             // Set system navigation bar color after theme is applied
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -83,7 +98,7 @@ class MyApp extends StatelessWidget {
                 ),
               );
             });
-            
+
             // Apply RTL direction for Arabic and other RTL languages
             if (themeProvider.isRTL) {
               return Directionality(
@@ -91,7 +106,7 @@ class MyApp extends StatelessWidget {
                 child: child!,
               );
             }
-            
+
             return child!;
           },
         );
