@@ -16,6 +16,7 @@ import 'package:chatorai/widgets/chat/chat_input.dart';
 import 'package:chatorai/widgets/chat/chat_messages.dart';
 import 'package:chatorai/widgets/chat/markdown_navigator_sidebar.dart';
 import 'package:chatorai/widgets/chat/welcome_questions_data.dart';
+import 'package:chatorai/widgets/chat/chat_app_bar.dart';
 import 'package:chatorai/widgets/chat/sliding_app_bar.dart';
 import 'package:chatorai/widgets/chat/speech_overlay.dart';
 import 'package:chatorai/services/speech_to_text_service.dart';
@@ -1630,112 +1631,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     return _navigatorHeadings.isNotEmpty;
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 800;
-
-    // Darker text on dark theme, icon color on light theme
-    final modelTextColor = theme.brightness == Brightness.dark
-        ? Colors.grey[700] // Darker gray for dark theme
-        : theme.iconTheme.color; // Icon color for light theme
-
-    return AppBar(
-      title: Text(
-        '',
-        style: TextStyle(
-          color: theme.colorScheme.primary,
-          fontWeight: FontWeight.bold,
-          fontSize: 20,
-        ),
-      ),
-      backgroundColor: theme.canvasColor,
-      elevation: 0,
-      leading: Builder(
-        builder: (context) => IconButton(
-          icon: const Icon(Icons.menu, size: 20),
-          onPressed: () => Scaffold.of(context).openDrawer(),
-        ),
-      ),
-      actions: [
-        // Current model name - with width limit and overflow
-        // Only show if we have a model object (don't show ID before object loads)
-        if (_selectedModelObject == null)
-          SizedBox(width: isMobile ? screenWidth * 0.50 : 0)
-        else if (isMobile)
-          SizedBox(
-            width: screenWidth * 0.50, // 50% of screen width
-            child: Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: Center(
-                child: Text(
-                  _selectedModelObject!.name,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: modelTextColor,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Text(
-              _selectedModelObject!.name,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: modelTextColor,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ),
-
-        // Model selection
-        IconButton(
-          icon: const Icon(Icons.smart_toy, size: 20),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ModelsScreen(
-                  onModelSelected: (String modelId, OpenRouterModel? modelObject) {
-                    // ModelsScreen already handles navigation and ThemeProvider update
-                    // Use the passed model object for immediate use
-                    _updateSelectedModel(modelId, modelObject);
-                  },
-                  currentModel: _selectedModel,
-                ),
-              ),
-            );
-          },
-          tooltip:
-              AppLocalizations.of(context)?.selectModelTooltip ??
-              'Select Model',
-        ),
-
-        // Navigator button - only show if there are headings
-        if (_hasHeadings())
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: IconButton(
-              icon: const Icon(Icons.format_list_bulleted, size: 20),
-              onPressed: _toggleNavigator,
-              tooltip:
-                  AppLocalizations.of(context)?.toggleNavigatorTooltip ??
-                  'Toggle Navigator',
-            ),
-          ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -1919,7 +1814,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   Widget _buildDesktopLayout(BuildContext context, Widget chatInput) {
     return Scaffold(
-      appBar: _buildAppBar(context),
+      appBar: ChatAppBar(
+        selectedModel: _selectedModel,
+        selectedModelObject: _selectedModelObject,
+        hasHeadings: _hasHeadings,
+        onToggleNavigator: _toggleNavigator,
+        onModelSelected: _updateSelectedModel,
+      ),
       drawer: Drawer(
         width: ChatScreenConstants.sidebarWidth,
         child: Sidebar(

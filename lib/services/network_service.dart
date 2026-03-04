@@ -84,7 +84,6 @@ class NetworkService extends ChangeNotifier {
   /// Проверка реального доступа к интернету
   Future<void> _checkConnection() async {
     try {
-      _logger.logDebug('Checking internet connection');
 
       // Проверяем несколько хостов для надежности
       final hosts = ['google.com', 'cloudflare.com', 'openrouter.ai'];
