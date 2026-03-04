@@ -4,6 +4,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:chatorai/screens/chat_screen.dart';
 import 'package:chatorai/screens/settings_screen.dart';
 import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/providers/language_provider.dart';
+import 'package:chatorai/providers/model_provider.dart';
 import 'package:chatorai/providers/model_settings_provider.dart';
 import 'package:chatorai/services/network_service.dart';
 import 'package:chatorai/services/openrouter_service.dart';
@@ -26,18 +28,22 @@ void main() {
           create: (context) =>
               OpenRouterService(networkService: context.read<NetworkService>()),
         ),
-        ChangeNotifierProxyProvider<OpenRouterService, ThemeProvider>(
-          create: (_) => ThemeProvider(),
-          update: (context, openRouterService, themeProvider) {
-            themeProvider!.openRouterService = openRouterService;
-            return themeProvider;
+        ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider<LanguageProvider>(
+          create: (_) => LanguageProvider(),
+        ),
+        ChangeNotifierProxyProvider<OpenRouterService, ModelProvider>(
+          create: (_) => ModelProvider(),
+          update: (context, openRouterService, modelProvider) {
+            modelProvider!.openRouterService = openRouterService;
+            return modelProvider;
           },
         ),
         ChangeNotifierProxyProvider<OpenRouterService, ModelSettingsProvider>(
           create: (_) => ModelSettingsProvider(),
-          update: (context, openRouterService, provider) {
-            provider!.openRouterService = openRouterService;
-            return provider;
+          update: (context, openRouterService, settingsProvider) {
+            settingsProvider!.openRouterService = openRouterService;
+            return settingsProvider;
           },
         ),
       ],
@@ -51,65 +57,60 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        final theme = themeProvider.getTheme();
-        final locale = Locale(themeProvider.selectedLanguage);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    final theme = themeProvider.getTheme();
+    final locale = Locale(languageProvider.selectedLanguage);
 
-        // Determine navigation bar colors based on theme
-        final isDark = theme.brightness == Brightness.dark;
-        final navBarColor = isDark
-            ? UbuntuColors.navBarBackgroundDark
-            : UbuntuColors.navBarBackgroundLight;
-        final navBarIconBrightness = isDark
-            ? Brightness.light
-            : Brightness.dark;
+    // Determine navigation bar colors based on theme
+    final isDark = theme.brightness == Brightness.dark;
+    final navBarColor = isDark
+        ? UbuntuColors.navBarBackgroundDark
+        : UbuntuColors.navBarBackgroundLight;
+    final navBarIconBrightness = isDark ? Brightness.light : Brightness.dark;
 
-        return MaterialApp(
-          title: 'ChatORAI',
-          localizationsDelegates: [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-            AppLocalizations.delegate,
-          ],
-          supportedLocales: const [
-            Locale('en'),
-            Locale('ru'),
-            Locale('uk'),
-            Locale('zh'),
-            Locale('ja'),
-            Locale('ar'),
-          ],
-          locale: locale,
-          theme: theme,
-          debugShowCheckedModeBanner: false,
-          home: const NetworkAwareWidget(child: ChatScreen()),
-          routes: {'/settings': (context) => const SettingsScreen()},
-          builder: (context, child) {
-            // Set system navigation bar color after theme is applied
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              SystemChrome.setSystemUIOverlayStyle(
-                SystemUiOverlayStyle(
-                  systemNavigationBarColor: navBarColor,
-                  systemNavigationBarIconBrightness: navBarIconBrightness,
-                  // Add a subtle border line above the navigation bar
-                  systemNavigationBarContrastEnforced: true,
-                ),
-              );
-            });
+    return MaterialApp(
+      title: 'ChatORAI',
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        AppLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'),
+        Locale('ru'),
+        Locale('uk'),
+        Locale('zh'),
+        Locale('ja'),
+        Locale('ar'),
+      ],
+      locale: locale,
+      theme: theme,
+      debugShowCheckedModeBanner: false,
+      home: const NetworkAwareWidget(child: ChatScreen()),
+      routes: {'/settings': (context) => const SettingsScreen()},
+      builder: (context, child) {
+        // Set system navigation bar color after theme is applied
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          SystemChrome.setSystemUIOverlayStyle(
+            SystemUiOverlayStyle(
+              systemNavigationBarColor: navBarColor,
+              systemNavigationBarIconBrightness: navBarIconBrightness,
+              systemNavigationBarContrastEnforced: true,
+            ),
+          );
+        });
 
-            // Apply RTL direction for Arabic and other RTL languages
-            if (themeProvider.isRTL) {
-              return Directionality(
-                textDirection: TextDirection.rtl,
-                child: child!,
-              );
-            }
+        // Apply RTL direction for Arabic and other RTL languages
+        if (languageProvider.isRTL) {
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: child!,
+          );
+        }
 
-            return child!;
-          },
-        );
+        return child!;
       },
     );
   }

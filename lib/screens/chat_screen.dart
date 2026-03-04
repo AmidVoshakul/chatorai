@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chatorai/providers/theme_provider.dart';
 import 'package:chatorai/providers/model_settings_provider.dart';
+import 'package:chatorai/providers/model_provider.dart';
+import 'package:chatorai/providers/language_provider.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/models/chat_models.dart';
@@ -70,12 +72,16 @@ class ChatScreen extends StatefulWidget {
   // Optional overrides for testing
   final OpenRouterClient? openRouterService;
   final ThemeProvider? themeProvider;
+  final ModelProvider? modelProvider;
+  final LanguageProvider? languageProvider;
 
   const ChatScreen({
     super.key,
     this.initialModel,
     this.openRouterService,
     this.themeProvider,
+    this.modelProvider,
+    this.languageProvider,
   });
 
   @override
@@ -85,7 +91,8 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   late ChatStorageService _chatStorageService;
   late OpenRouterClient _openRouterService;
-  late ThemeProvider _themeProvider;
+  late ModelProvider _modelProvider;
+  late LanguageProvider _languageProvider;
 
   bool _isSidebarCollapsed = false;
 
@@ -130,9 +137,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _openRouterService =
         widget.openRouterService ??
         Provider.of<OpenRouterService>(context, listen: false);
-    _themeProvider =
-        widget.themeProvider ??
-        Provider.of<ThemeProvider>(context, listen: false);
+    _modelProvider =
+        widget.modelProvider ??
+        Provider.of<ModelProvider>(context, listen: false);
+    _languageProvider =
+        widget.languageProvider ??
+        Provider.of<LanguageProvider>(context, listen: false);
 
     // Initialize scroll controller
     _messageScrollController = ScrollController();
@@ -155,12 +165,12 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
     _chatScrollUtils!.initialize();
 
-    // Initialize model selection from ThemeProvider
-    _selectedModel = _themeProvider.selectedModelId;
-    _selectedModelObject = _themeProvider.selectedModelObject;
+    // Initialize model selection from ModelProvider
+    _selectedModel = _modelProvider.selectedModelId;
+    _selectedModelObject = _modelProvider.selectedModelObject;
 
-    // Listen to ThemeProvider changes to update loading state
-    _themeProvider.addListener(_onThemeProviderChange);
+    // Listen to ModelProvider changes to update loading state
+    _modelProvider.addListener(_onModelProviderChange);
 
     // Load chats after a short delay to ensure context is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -168,16 +178,16 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
   }
 
-  // Listen for ThemeProvider changes to update loading state
-  void _onThemeProviderChange() {
+  // Listen for ModelProvider changes to update loading state
+  void _onModelProviderChange() {
     if (mounted) {
-      final themeModelId = _themeProvider.selectedModelId;
-      final themeModelObject = _themeProvider.selectedModelObject;
+      final modelProviderModelId = _modelProvider.selectedModelId;
+      final modelProviderModelObject = _modelProvider.selectedModelObject;
 
-      if (_selectedModel != themeModelId ||
-          _selectedModelObject != themeModelObject) {
-        _selectedModel = themeModelId;
-        _selectedModelObject = themeModelObject;
+      if (_selectedModel != modelProviderModelId ||
+          _selectedModelObject != modelProviderModelObject) {
+        _selectedModel = modelProviderModelId;
+        _selectedModelObject = modelProviderModelObject;
       }
 
       setState(() {});
@@ -203,7 +213,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     // Remove listener to prevent memory leaks
-    _themeProvider.removeListener(_onThemeProviderChange);
+    _modelProvider.removeListener(_onModelProviderChange);
     _messageScrollController.removeListener(_handleScrollForSlidingAppBar);
     _messageScrollController.dispose();
     _titleController.dispose();
@@ -311,7 +321,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   Future<void> _deleteChat(String chatId) async {
     final chat = _chats.firstWhere((c) => c.id == chatId);
-    final String currentLanguage = _themeProvider.selectedLanguage;
+    final String currentLanguage = _languageProvider.selectedLanguage;
 
     String getLocalizedText(String key) {
       if (currentLanguage == 'en') {
@@ -836,7 +846,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     var attemptMsgs = _sanitizeMessages(messages);
 
     // Get model context length
-    final modelObj = _themeProvider.getModelById(model);
+    final modelObj = _modelProvider.getModelById(model);
     final modelContextLength =
         modelObj?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
 
@@ -1384,7 +1394,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     required ModelSettings modelSettings,
   }) async {
     // Calculate safe initial maxTokens: min(user setting, contextLength)
-    final modelObj = _themeProvider.getModelById(modelId);
+    final modelObj = _modelProvider.getModelById(modelId);
     final modelContextLength =
         modelObj?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
 
@@ -1652,8 +1662,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     if (!mounted) return;
 
     OpenRouterModel? finalModelObject = modelObject;
-    if (finalModelObject == null && _themeProvider.modelsLoaded) {
-      finalModelObject = _themeProvider.getModelById(modelId);
+    if (finalModelObject == null && _modelProvider.modelsLoaded) {
+      finalModelObject = _modelProvider.getModelById(modelId);
     }
 
     setState(() {
@@ -1811,8 +1821,8 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         }
       },
       checkModelSupportsImages: (modelId) {
-        // Use ThemeProvider's synchronous check for currently selected model
-        return _themeProvider.modelSupportsImagesSelected();
+        // Use ModelProvider's synchronous check for currently selected model
+        return _modelProvider.modelSupportsImagesSelected();
       },
     );
 

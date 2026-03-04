@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/themes/app_theme.dart' show UbuntuColors;
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/providers/model_provider.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 
 // Initialize logger for this screen
@@ -21,7 +20,7 @@ class ModelsScreen extends StatefulWidget {
 }
 
 class _ModelsScreenState extends State<ModelsScreen> {
-  late ThemeProvider _themeProvider;
+  late ModelProvider _modelProvider;
   List<OpenRouterModel> _models = [];
   List<OpenRouterModel> _filteredModels = [];
   bool _isLoading = false;
@@ -31,11 +30,11 @@ class _ModelsScreenState extends State<ModelsScreen> {
   @override
   void initState() {
     super.initState();
-    _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    _modelProvider = Provider.of<ModelProvider>(context, listen: false);
     _searchController = TextEditingController();
     _searchController.addListener(_onSearchChanged);
 
-    // Load models from ThemeProvider or refresh if needed
+    // Load models from ModelProvider or refresh if needed
     _loadModels();
   }
 
@@ -55,7 +54,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       // Apply favorites filter first
       List<OpenRouterModel> models = _showFavoritesOnly
           ? _models
-                .where((model) => _themeProvider.isFavoriteModel(model.id))
+                .where((model) => _modelProvider.isFavoriteModel(model.id))
                 .toList()
           : _models;
 
@@ -78,7 +77,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
     setState(() {
       _filteredModels = _showFavoritesOnly
           ? _models
-                .where((model) => _themeProvider.isFavoriteModel(model.id))
+                .where((model) => _modelProvider.isFavoriteModel(model.id))
                 .toList()
           : _models;
     });
@@ -93,7 +92,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   void _toggleFavorite(String modelId) {
     setState(() {
-      _themeProvider.toggleFavoriteModel(modelId);
+      _modelProvider.toggleFavoriteModel(modelId);
     });
 
     // Update filtered list if favorites filter is active
@@ -108,8 +107,8 @@ class _ModelsScreenState extends State<ModelsScreen> {
 
   void _selectModel(OpenRouterModel model) async {
     try {
-      // Update model selection in ThemeProvider (without notifyListeners yet)
-      await _themeProvider.setSelectedModelSilent(model.id);
+      // Update model selection in ModelProvider (without notifyListeners yet)
+      await _modelProvider.setSelectedModelSilent(model.id);
 
       // Call the callback with full model object for immediate use
       if (widget.onModelSelected != null) {
@@ -125,7 +124,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
       // Then notify listeners after navigation to update UI
       WidgetsBinding.instance.addPostFrameCallback((_) {
         // Use the regular setter to notify listeners
-        _themeProvider.setSelectedModel(model.id);
+        _modelProvider.setSelectedModel(model.id);
       });
     } catch (e) {
       _logger.logError('[ModelsScreen] Failed to select model: $e');
@@ -142,17 +141,17 @@ class _ModelsScreenState extends State<ModelsScreen> {
     });
 
     try {
-      // Wait for models to be loaded in ThemeProvider
-      await _themeProvider.waitForModelsLoaded();
+      // Wait for models to be loaded in ModelProvider
+      await _modelProvider.waitForModelsLoaded();
 
-      // Get models from ThemeProvider
-      _models = _themeProvider.availableModels;
+      // Get models from ModelProvider
+      _models = _modelProvider.availableModels;
 
       // Preserve current filters and search state
       final searchQuery = _searchController.text.toLowerCase();
       List<OpenRouterModel> models = _showFavoritesOnly
           ? _models
-                .where((model) => _themeProvider.isFavoriteModel(model.id))
+                .where((model) => _modelProvider.isFavoriteModel(model.id))
                 .toList()
           : _models;
 
@@ -331,7 +330,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
   Widget _buildModelsList() {
     final screenWidth = MediaQuery.of(context).size.width;
     final isWideScreen = screenWidth >= 1200; // Ширина для двух колонок
-    
+
     if (isWideScreen) {
       // Двухколоночный режим для широких экранов
       return GridView.builder(
@@ -421,10 +420,10 @@ class _ModelsScreenState extends State<ModelsScreen> {
                   // Favorite button
                   IconButton(
                     icon: Icon(
-                      _themeProvider.isFavoriteModel(model.id)
+                      _modelProvider.isFavoriteModel(model.id)
                           ? Icons.favorite
                           : Icons.favorite_border,
-                      color: _themeProvider.isFavoriteModel(model.id)
+                      color: _modelProvider.isFavoriteModel(model.id)
                           ? Colors.red
                           : null,
                       size: 24,
@@ -432,7 +431,7 @@ class _ModelsScreenState extends State<ModelsScreen> {
                     onPressed: () {
                       _toggleFavorite(model.id);
                     },
-                    tooltip: _themeProvider.isFavoriteModel(model.id)
+                    tooltip: _modelProvider.isFavoriteModel(model.id)
                         ? 'Remove from favorites'
                         : 'Add to favorites',
                   ),

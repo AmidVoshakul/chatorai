@@ -10,7 +10,7 @@ import 'package:chatorai/utils/image_utils.dart';
 import 'package:chatorai/services/speech_to_text_service.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/providers/model_settings_provider.dart';
-import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/providers/model_provider.dart';
 import 'package:chatorai/widgets/chat/model_settings_sheet.dart';
 
 /// Data class for sending messages with optional media
@@ -32,7 +32,7 @@ class MessageData {
 /// Works for both File and WebFile
 String _getFileName(dynamic file) {
   String path;
-  
+
   if (file is WebFile) {
     path = file.path;
   } else if (file is File) {
@@ -40,7 +40,7 @@ String _getFileName(dynamic file) {
   } else {
     return 'unknown';
   }
-  
+
   if (kIsWeb) {
     // On web, the path is just the file name
     return path;
@@ -65,8 +65,10 @@ class ChatInput extends StatefulWidget {
   final VoidCallback? onStopStreaming;
   final bool isStreaming;
   final FocusNode? focusNode;
-  final Function(SpeechUiState, String)? onSpeechStateChanged; // Callback for speech state
-  final bool Function(String)? checkModelSupportsImages; // Callback to check model support
+  final Function(SpeechUiState, String)?
+  onSpeechStateChanged; // Callback for speech state
+  final bool Function(String)?
+  checkModelSupportsImages; // Callback to check model support
 
   const ChatInput({
     super.key,
@@ -83,7 +85,8 @@ class ChatInput extends StatefulWidget {
   State<ChatInput> createState() => _ChatInputState();
 }
 
-class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixin {
+class _ChatInputState extends State<ChatInput>
+    with AutomaticKeepAliveClientMixin {
   final TextEditingController _textController = TextEditingController();
   SpeechToTextService? _speechService;
   SpeechUiState _speechUiState = SpeechUiState.idle;
@@ -202,7 +205,8 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   }
 
   Future<void> _startSpeechToText() async {
-    if (_speechUiState == SpeechUiState.listening || _speechUiState == SpeechUiState.preparing) {
+    if (_speechUiState == SpeechUiState.listening ||
+        _speechUiState == SpeechUiState.preparing) {
       await _speechService?.stopListening();
       return;
     }
@@ -212,10 +216,10 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
 
     // Проверяем доступность микрофона
     final available = await _speechService?.checkAvailability() ?? false;
-    
+
     if (!available) {
       // Показываем уведомление о необходимости разрешения
-      if (mounted && context.mounted) {
+      if (mounted) {
         SnackbarUtils.showErrorSnackBar(
           context: context,
           message: localizations.micUnavailable,
@@ -242,15 +246,16 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   Future<void> _handleCamera() async {
     // Check model support BEFORE picking file
     if (widget.checkModelSupportsImages != null) {
-      final modelId = context.read<ThemeProvider>().selectedModelId;
+      final modelId = context.read<ModelProvider>().selectedModelId;
       final supportsImages = widget.checkModelSupportsImages!(modelId);
-      
+
       if (!supportsImages) {
         // Show error but don't prevent camera use - user might want to type text first
-        if (mounted && context.mounted) {
+        if (mounted) {
           SnackbarUtils.showErrorSnackBar(
             context: context,
-            message: 'Модель $modelId не поддерживает изображения. Вы можете прикрепить фото, но отправка не сработает.',
+            message:
+                'Модель $modelId не поддерживает изображения. Вы можете прикрепить фото, но отправка не сработает.',
             icon: Icons.image_not_supported,
             duration: const Duration(seconds: 4),
           );
@@ -284,15 +289,16 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   Future<void> _handleImage() async {
     // Check model support BEFORE picking file
     if (widget.checkModelSupportsImages != null) {
-      final modelId = context.read<ThemeProvider>().selectedModelId;
+      final modelId = context.read<ModelProvider>().selectedModelId;
       final supportsImages = widget.checkModelSupportsImages!(modelId);
-      
+
       if (!supportsImages) {
         // Show error but don't prevent image pick - user might want to type text first
-        if (mounted && context.mounted) {
+        if (mounted) {
           SnackbarUtils.showErrorSnackBar(
             context: context,
-            message: 'Модель $modelId не поддерживает изображения. Вы можете прикрепить фото, но отправка не сработает.',
+            message:
+                'Модель $modelId не поддерживает изображения. Вы можете прикрепить фото, но отправка не сработает.',
             icon: Icons.image_not_supported,
             duration: const Duration(seconds: 4),
           );
@@ -326,15 +332,16 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   Future<void> _handleFile() async {
     // Check model support BEFORE picking file
     if (widget.checkModelSupportsImages != null) {
-      final modelId = context.read<ThemeProvider>().selectedModelId;
+      final modelId = context.read<ModelProvider>().selectedModelId;
       final supportsImages = widget.checkModelSupportsImages!(modelId);
-      
+
       if (!supportsImages) {
         // Show error but don't prevent file pick - user might want to type text first
-        if (mounted && context.mounted) {
+        if (mounted) {
           SnackbarUtils.showErrorSnackBar(
             context: context,
-            message: 'Модель $modelId не поддерживает файлы. Вы можете прикрепить файл, но отправка не сработает.',
+            message:
+                'Модель $modelId не поддерживает файлы. Вы можете прикрепить файл, но отправка не сработает.',
             icon: Icons.attach_file,
             duration: const Duration(seconds: 4),
           );
@@ -368,20 +375,23 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   }
 
   Future<void> _sendMessage() async {
-    if (_textController.text.trim().isEmpty && _attachedFilePath == null) return;
+    if (_textController.text.trim().isEmpty && _attachedFilePath == null) {
+      return;
+    }
 
     // Check model support BEFORE sending if there's an attached file
     if (_attachedFilePath != null && _attachedBase64Data != null) {
       if (widget.checkModelSupportsImages != null) {
-        final modelId = context.read<ThemeProvider>().selectedModelId;
+        final modelId = context.read<ModelProvider>().selectedModelId;
         final supportsImages = widget.checkModelSupportsImages!(modelId);
-        
+
         if (!supportsImages) {
           // Show error but DON'T clear data - user can switch model or remove file
-          if (mounted && context.mounted) {
+          if (mounted) {
             SnackbarUtils.showErrorSnackBar(
               context: context,
-              message: 'Модель $modelId не поддерживает файлы. Удалите файл или выберите другую модель.',
+              message:
+                  'Модель $modelId не поддерживает файлы. Удалите файл или выберите другую модель.',
               icon: Icons.image_not_supported,
               duration: const Duration(seconds: 5),
             );
@@ -395,7 +405,8 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
     setState(() => _isSending = true);
 
     // Останавливаем микрофон, если он активен
-    if (_speechUiState == SpeechUiState.listening || _speechUiState == SpeechUiState.preparing) {
+    if (_speechUiState == SpeechUiState.listening ||
+        _speechUiState == SpeechUiState.preparing) {
       await _speechService?.stopListening();
     }
 
@@ -478,9 +489,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
         offset.dx + size.width,
         offset.dy - 40, // Нижняя граница выше кнопки
       ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       items: menuItems,
     );
 
@@ -510,7 +519,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
-      padding: isMobile 
+      padding: isMobile
           ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4)
           : const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -528,9 +537,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
           ),
           const SizedBox(width: 4),
           ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: isMobile ? 120 : 150,
-            ),
+            constraints: BoxConstraints(maxWidth: isMobile ? 120 : 150),
             child: Text(
               _attachedFileName ?? 'file',
               style: TextStyle(
@@ -544,9 +551,9 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
           const SizedBox(width: 4),
           IconButton(
             icon: Icon(
-              Icons.close, 
-              size: isMobile ? 10 : 10, 
-              color: Colors.red
+              Icons.close,
+              size: isMobile ? 10 : 10,
+              color: Colors.red,
             ),
             onPressed: _clearAttachedFile,
             padding: EdgeInsets.zero,
@@ -563,28 +570,43 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
 
   IconData _getActionIcon() {
     if (_isSending) return Icons.autorenew;
-    if (_textController.text.trim().isNotEmpty || _attachedFilePath != null) return Icons.send;
-    if (_speechUiState == SpeechUiState.listening || _speechUiState == SpeechUiState.preparing) return Icons.stop;
+    if (_textController.text.trim().isNotEmpty || _attachedFilePath != null) {
+      return Icons.send;
+    }
+    if (_speechUiState == SpeechUiState.listening ||
+        _speechUiState == SpeechUiState.preparing) {
+      return Icons.stop;
+    }
     return Icons.mic;
   }
 
   Color _getActionColor(ThemeData theme) {
     if (_isSending) return Colors.white;
-    if (_textController.text.trim().isNotEmpty || _attachedFilePath != null) return Colors.white;
-    if (_speechUiState == SpeechUiState.listening || _speechUiState == SpeechUiState.preparing) return Colors.red;
-    if (_speechUiState == SpeechUiState.error || _speechUiState == SpeechUiState.noSpeech) return Colors.red;
+    if (_textController.text.trim().isNotEmpty || _attachedFilePath != null) {
+      return Colors.white;
+    }
+    if (_speechUiState == SpeechUiState.listening ||
+        _speechUiState == SpeechUiState.preparing) {
+      return Colors.red;
+    }
+    if (_speechUiState == SpeechUiState.error ||
+        _speechUiState == SpeechUiState.noSpeech) {
+      return Colors.red;
+    }
     return theme.iconTheme.color ?? Colors.black;
   }
 
   Future<void> _handleMicrophoneAction() async {
     // If currently listening or preparing, stop
-    if (_speechUiState == SpeechUiState.listening || _speechUiState == SpeechUiState.preparing) {
+    if (_speechUiState == SpeechUiState.listening ||
+        _speechUiState == SpeechUiState.preparing) {
       await _speechService?.stopListening();
       return;
     }
 
     // If in error state, restart
-    if (_speechUiState == SpeechUiState.error || _speechUiState == SpeechUiState.noSpeech) {
+    if (_speechUiState == SpeechUiState.error ||
+        _speechUiState == SpeechUiState.noSpeech) {
       await _startSpeechToText();
       return;
     }
@@ -600,14 +622,14 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
 
     try {
       final available = await _speechService?.checkAvailability() ?? false;
-      
-      if (available && mounted && context.mounted) {
+
+      if (available && mounted) {
         // Permission granted, start listening
         setState(() {
           _isSending = false;
         });
         await _startSpeechToText();
-      } else if (mounted && context.mounted) {
+      } else if (mounted) {
         // Permission denied
         setState(() {
           _isSending = false;
@@ -624,7 +646,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
         }
       }
     } catch (e) {
-      if (mounted && context.mounted) {
+      if (mounted) {
         setState(() {
           _isSending = false;
         });
@@ -643,12 +665,12 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
   }
 
   Future<void> _handleModelSettings() async {
-    final themeProvider = context.read<ThemeProvider>();
+    final modelProvider = context.read<ModelProvider>();
     final settingsProvider = context.read<ModelSettingsProvider>();
     final localizations = AppLocalizations.of(context)!;
 
     // Check if a model is selected
-    if (themeProvider.selectedModelId.isEmpty) {
+    if (modelProvider.selectedModelId.isEmpty) {
       SnackbarUtils.showErrorSnackBar(
         context: context,
         message: localizations.noModelSelected,
@@ -658,8 +680,12 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
     }
 
     // Ensure settings provider has the active model set
-    if (settingsProvider.activeSettings?.modelId != themeProvider.selectedModelId) {
-      await settingsProvider.setActiveModel(themeProvider.selectedModelId, context);
+    if (settingsProvider.activeSettings?.modelId !=
+        modelProvider.selectedModelId) {
+      await settingsProvider.setActiveModel(
+        modelProvider.selectedModelId,
+        context,
+      );
     }
 
     // Show the settings sheet
@@ -707,12 +733,13 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
       maxLines: maxLines,
       decoration: isMobile
           ? InputDecoration(
-              hintText: _attachedFilePath != null 
+              hintText: _attachedFilePath != null
                   ? localizations.typeYourMessage
                   : localizations.typeYourMessage,
               hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.textTheme.bodyMedium?.color
-                    ?.withValues(alpha: 0.6),
+                color: theme.textTheme.bodyMedium?.color?.withValues(
+                  alpha: 0.6,
+                ),
               ),
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
@@ -735,10 +762,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                 vertical: 12,
               ),
             ),
-      style: theme.textTheme.bodyMedium?.copyWith(
-        fontSize: 16,
-        height: 1.2,
-      ),
+      style: theme.textTheme.bodyMedium?.copyWith(fontSize: 16, height: 1.2),
       textInputAction: isMobile ? TextInputAction.newline : null,
       onChanged: (text) => setState(() {}),
       enabled: !_isSending,
@@ -782,8 +806,8 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
           decoration: BoxDecoration(
             color: isMobile
                 ? (theme.brightness == Brightness.dark
-                    ? UbuntuColors.inputContainerDark
-                    : UbuntuColors.inputContainerLight)
+                      ? UbuntuColors.inputContainerDark
+                      : UbuntuColors.inputContainerLight)
                 : Colors.transparent,
             border: isMobile
                 ? Border(
@@ -862,7 +886,11 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(
-                          sidePadding, 0, sidePadding, bottomPadding),
+                        sidePadding,
+                        0,
+                        sidePadding,
+                        bottomPadding,
+                      ),
                       child: Row(
                         children: [
                           buildActionButton(
@@ -871,15 +899,17 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                                 ? LinearGradient(
                                     colors: [
                                       theme.colorScheme.primary,
-                                      theme.colorScheme.primary.withValues(alpha: 0.8),
+                                      theme.colorScheme.primary.withValues(
+                                        alpha: 0.8,
+                                      ),
                                     ],
                                   )
                                 : null,
                             bgColor: _plusActive
                                 ? null
                                 : (theme.brightness == Brightness.dark
-                                    ? UbuntuColors.inputContainerDark
-                                    : UbuntuColors.inputContainerLight),
+                                      ? UbuntuColors.inputContainerDark
+                                      : UbuntuColors.inputContainerLight),
                             onTap: () {
                               _showPlusMenu(context);
                             },
@@ -924,20 +954,30 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                             )
                           else
                             buildActionButton(
-                              gradient: _textController.text.trim().isEmpty && _attachedFilePath == null && _speechUiState == SpeechUiState.idle
+                              gradient:
+                                  _textController.text.trim().isEmpty &&
+                                      _attachedFilePath == null &&
+                                      _speechUiState == SpeechUiState.idle
                                   ? null
                                   : LinearGradient(
                                       colors: [
                                         theme.colorScheme.primary,
-                                        theme.colorScheme.primary.withValues(alpha: 0.8),
+                                        theme.colorScheme.primary.withValues(
+                                          alpha: 0.8,
+                                        ),
                                       ],
                                     ),
-                              bgColor: _textController.text.trim().isEmpty && _attachedFilePath == null && _speechUiState == SpeechUiState.idle
+                              bgColor:
+                                  _textController.text.trim().isEmpty &&
+                                      _attachedFilePath == null &&
+                                      _speechUiState == SpeechUiState.idle
                                   ? (theme.brightness == Brightness.dark
-                                      ? UbuntuColors.inputContainerDark
-                                      : UbuntuColors.inputContainerLight)
+                                        ? UbuntuColors.inputContainerDark
+                                        : UbuntuColors.inputContainerLight)
                                   : null,
-                              onTap: _textController.text.trim().isEmpty && _attachedFilePath == null
+                              onTap:
+                                  _textController.text.trim().isEmpty &&
+                                      _attachedFilePath == null
                                   ? _handleMicrophoneAction
                                   : _sendMessage,
                               child: Icon(
@@ -960,10 +1000,7 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                           ? UbuntuColors.inputContainerDark
                           : UbuntuColors.inputContainerLight,
                       onTap: () => _showPlusMenu(context),
-                      child: Icon(
-                        Icons.add,
-                        color: theme.iconTheme.color,
-                      ),
+                      child: Icon(Icons.add, color: theme.iconTheme.color),
                     ),
                     const SizedBox(width: 8),
                     // Settings button
@@ -986,9 +1023,13 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                         children: [
                           if (_attachedFilePath != null) ...[
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
                               child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 300),
+                                constraints: const BoxConstraints(
+                                  maxWidth: 300,
+                                ),
                                 child: _buildAttachedFilePreview(),
                               ),
                             ),
@@ -996,7 +1037,8 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                           ],
                           ConstrainedBox(
                             constraints: BoxConstraints(
-                              maxHeight: MediaQuery.of(context).size.height * 0.4,
+                              maxHeight:
+                                  MediaQuery.of(context).size.height * 0.4,
                             ),
                             child: Container(
                               decoration: BoxDecoration(
@@ -1014,8 +1056,11 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                               child: Focus(
                                 onKeyEvent: (node, event) {
                                   if (event is KeyDownEvent &&
-                                      event.logicalKey == LogicalKeyboardKey.enter &&
-                                      !HardwareKeyboard.instance.isShiftPressed) {
+                                      event.logicalKey ==
+                                          LogicalKeyboardKey.enter &&
+                                      !HardwareKeyboard
+                                          .instance
+                                          .isShiftPressed) {
                                     _sendMessage();
                                     return KeyEventResult.handled;
                                   }
@@ -1039,27 +1084,34 @@ class _ChatInputState extends State<ChatInput> with AutomaticKeepAliveClientMixi
                           ],
                         ),
                         onTap: _handleStopStreaming,
-                        child: Icon(
-                          Icons.stop,
-                          color: Colors.white,
-                        ),
+                        child: Icon(Icons.stop, color: Colors.white),
                       )
                     else
                       buildActionButton(
-                        gradient: _textController.text.trim().isEmpty && _attachedFilePath == null && _speechUiState == SpeechUiState.idle
+                        gradient:
+                            _textController.text.trim().isEmpty &&
+                                _attachedFilePath == null &&
+                                _speechUiState == SpeechUiState.idle
                             ? null
                             : LinearGradient(
                                 colors: [
                                   theme.colorScheme.primary,
-                                  theme.colorScheme.primary.withValues(alpha: 0.8),
+                                  theme.colorScheme.primary.withValues(
+                                    alpha: 0.8,
+                                  ),
                                 ],
                               ),
-                        bgColor: _textController.text.trim().isEmpty && _attachedFilePath == null && _speechUiState == SpeechUiState.idle
+                        bgColor:
+                            _textController.text.trim().isEmpty &&
+                                _attachedFilePath == null &&
+                                _speechUiState == SpeechUiState.idle
                             ? (theme.brightness == Brightness.dark
-                                ? UbuntuColors.inputContainerDark
-                                : UbuntuColors.inputContainerLight)
+                                  ? UbuntuColors.inputContainerDark
+                                  : UbuntuColors.inputContainerLight)
                             : null,
-                        onTap: _textController.text.trim().isEmpty && _attachedFilePath == null
+                        onTap:
+                            _textController.text.trim().isEmpty &&
+                                _attachedFilePath == null
                             ? _handleMicrophoneAction
                             : _sendMessage,
                         child: Icon(

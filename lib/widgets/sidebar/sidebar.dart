@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/providers/language_provider.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/screens/settings_screen.dart';
@@ -54,16 +55,20 @@ class _SidebarState extends State<Sidebar> {
 
   List<Chat> get _filteredChats {
     if (_searchQuery.isEmpty) return widget.chats;
-    return widget.chats.where((chat) => 
-      chat.title.toLowerCase().contains(_searchQuery.toLowerCase())
-    ).toList();
+    return widget.chats
+        .where(
+          (chat) =>
+              chat.title.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
     _theme = themeProvider.getTheme();
-    _language = themeProvider.selectedLanguage;
+    _language = languageProvider.selectedLanguage;
     final localizations = AppLocalizations.of(context)!;
 
     return AnimatedContainer(
@@ -79,29 +84,21 @@ class _SidebarState extends State<Sidebar> {
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border(
-          right: BorderSide(
-            color: _theme.dividerColor,
-            width: 1,
-          ),
-        ),
+        border: Border(right: BorderSide(color: _theme.dividerColor, width: 1)),
       ),
       child: Column(
         children: [
           // Header
           Container(
             padding: EdgeInsets.only(
-              left: widget.isCollapsed ? 2 : 16, 
+              left: widget.isCollapsed ? 2 : 16,
               right: widget.isCollapsed ? 2 : 16,
               top: widget.isCollapsed ? 0 : 12,
               bottom: widget.isCollapsed ? 0 : 8,
             ),
             decoration: BoxDecoration(
               border: Border(
-                bottom: BorderSide(
-                  color: _theme.dividerColor,
-                  width: 1,
-                ),
+                bottom: BorderSide(color: _theme.dividerColor, width: 1),
               ),
             ),
             child: Column(
@@ -123,8 +120,7 @@ class _SidebarState extends State<Sidebar> {
                           softWrap: false,
                         ),
                       ),
-                    if (widget.isCollapsed)
-                      const Spacer(),
+                    if (widget.isCollapsed) const Spacer(),
                     IconButton(
                       icon: Icon(
                         widget.isCollapsed ? Icons.menu : Icons.close,
@@ -132,7 +128,9 @@ class _SidebarState extends State<Sidebar> {
                         size: 18,
                       ),
                       onPressed: widget.onToggleSidebar,
-                      padding: widget.isCollapsed ? const EdgeInsets.all(4) : const EdgeInsets.all(8),
+                      padding: widget.isCollapsed
+                          ? const EdgeInsets.all(4)
+                          : const EdgeInsets.all(8),
                       constraints: const BoxConstraints(
                         minWidth: 28,
                         minHeight: 28,
@@ -144,7 +142,7 @@ class _SidebarState extends State<Sidebar> {
               ],
             ),
           ),
-          
+
           // Search field and New Chat button in one row
           if (!widget.isCollapsed)
             Container(
@@ -162,23 +160,35 @@ class _SidebarState extends State<Sidebar> {
                             topLeft: Radius.circular(8),
                             bottomLeft: Radius.circular(8),
                           ),
-                          borderSide: BorderSide(color: _theme.dividerColor, width: 1),
+                          borderSide: BorderSide(
+                            color: _theme.dividerColor,
+                            width: 1,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(8),
                             bottomLeft: Radius.circular(8),
                           ),
-                          borderSide: BorderSide(color: _theme.dividerColor, width: 1),
+                          borderSide: BorderSide(
+                            color: _theme.dividerColor,
+                            width: 1,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(8),
                             bottomLeft: Radius.circular(8),
                           ),
-                          borderSide: BorderSide(color: _theme.colorScheme.primary, width: 1),
+                          borderSide: BorderSide(
+                            color: _theme.colorScheme.primary,
+                            width: 1,
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         isDense: true,
                       ),
                       style: const TextStyle(fontSize: 14),
@@ -204,7 +214,8 @@ class _SidebarState extends State<Sidebar> {
                             bottomRight: Radius.circular(8),
                           ),
                         ),
-                        backgroundColor: Theme.of(context).brightness == Brightness.dark
+                        backgroundColor:
+                            Theme.of(context).brightness == Brightness.dark
                             ? Colors.grey[900]
                             : Colors.white,
                       ),
@@ -213,23 +224,23 @@ class _SidebarState extends State<Sidebar> {
                 ],
               ),
             ),
-          
+
           // Chat List
           Expanded(
-            child: !widget.isCollapsed 
+            child: !widget.isCollapsed
                 ? (_filteredChats.isEmpty
-                    ? _buildEmptyState(_theme, _language)
-                    : ListView.builder(
-                        padding: EdgeInsets.zero,
-                        itemCount: _filteredChats.length,
-                        itemBuilder: (context, index) {
-                          final chat = _filteredChats[index];
-                          return _buildChatItem(chat);
-                        },
-                      ))
+                      ? _buildEmptyState(_theme, _language)
+                      : ListView.builder(
+                          padding: EdgeInsets.zero,
+                          itemCount: _filteredChats.length,
+                          itemBuilder: (context, index) {
+                            final chat = _filteredChats[index];
+                            return _buildChatItem(chat);
+                          },
+                        ))
                 : Container(), // Пустой контейнер в свёрнутом состоянии
           ),
-          
+
           // Footer
           if (!widget.isCollapsed)
             Container(
@@ -245,11 +256,7 @@ class _SidebarState extends State<Sidebar> {
               ),
               child: Column(
                 children: [
-                  Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: _theme.dividerColor,
-                  ),
+                  Divider(height: 1, thickness: 1, color: _theme.dividerColor),
                   // Settings
                   ListTile(
                     leading: const Icon(Icons.settings),
@@ -257,15 +264,21 @@ class _SidebarState extends State<Sidebar> {
                     minLeadingWidth: 0,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     onTap: () {
-                      _logger.logInfo('[Sidebar] Attempting to navigate to settings...');
+                      _logger.logInfo(
+                        '[Sidebar] Attempting to navigate to settings...',
+                      );
                       try {
                         Navigator.pushNamed(context, '/settings');
                       } catch (e) {
                         _logger.logError('[Sidebar] Navigation failed: $e');
-                        _logger.logInfo('[Sidebar] Manual navigation to SettingsScreen');
+                        _logger.logInfo(
+                          '[Sidebar] Manual navigation to SettingsScreen',
+                        );
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const SettingsScreen(),
+                          ),
                         );
                       }
                     },
@@ -299,7 +312,7 @@ class _SidebarState extends State<Sidebar> {
                   children: [
                     Icon(
                       Icons.chat_bubble_outline,
-                      color: isSelected 
+                      color: isSelected
                           ? _theme.colorScheme.primary
                           : _theme.iconTheme.color,
                       size: 20,
@@ -315,7 +328,7 @@ class _SidebarState extends State<Sidebar> {
                             style: TextStyle(
                               fontWeight: FontWeight.w500,
                               fontSize: 14,
-                              color: isSelected 
+                              color: isSelected
                                   ? _theme.colorScheme.primary
                                   : _theme.textTheme.bodyMedium?.color,
                             ),
@@ -323,7 +336,11 @@ class _SidebarState extends State<Sidebar> {
                             maxLines: 1,
                           ),
                           Text(
-                            _formatDate(chat.updatedAt, _language, localizations),
+                            _formatDate(
+                              chat.updatedAt,
+                              _language,
+                              localizations,
+                            ),
                             style: TextStyle(
                               fontSize: 11,
                               color: _theme.textTheme.bodySmall?.color,
@@ -338,7 +355,7 @@ class _SidebarState extends State<Sidebar> {
                     const SizedBox(width: 36), // Space for both icons
                   ],
                 ),
-              
+
               // Always position icons at the same right position (only show in expanded state)
               if (!widget.isCollapsed)
                 Stack(
@@ -352,7 +369,8 @@ class _SidebarState extends State<Sidebar> {
                         chat: chat,
                         theme: _theme,
                         language: _language,
-                        onRename: (newTitle) => _handleRenameChat(chat, newTitle, localizations),
+                        onRename: (newTitle) =>
+                            _handleRenameChat(chat, newTitle, localizations),
                         onDelete: () => widget.onChatDelete(chat.id),
                       ),
                     ),
@@ -365,7 +383,11 @@ class _SidebarState extends State<Sidebar> {
     );
   }
 
-  void _handleRenameChat(Chat chat, String newTitle, AppLocalizations localizations) async {
+  void _handleRenameChat(
+    Chat chat,
+    String newTitle,
+    AppLocalizations localizations,
+  ) async {
     try {
       await _chatStorageService.renameChat(chat.id, newTitle);
       setState(() {
@@ -388,7 +410,7 @@ class _SidebarState extends State<Sidebar> {
   Widget _buildEmptyState(ThemeData theme, String language) {
     final localizations = AppLocalizations.of(context)!;
     final hasSearch = _searchQuery.isNotEmpty;
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -402,7 +424,7 @@ class _SidebarState extends State<Sidebar> {
             ),
             const SizedBox(height: 16),
             Text(
-              hasSearch 
+              hasSearch
                   ? localizations.noChatsFound(_searchQuery)
                   : localizations.noChatsYet,
               style: TextStyle(
@@ -414,7 +436,7 @@ class _SidebarState extends State<Sidebar> {
             ),
             const SizedBox(height: 8),
             Text(
-              hasSearch 
+              hasSearch
                   ? localizations.tryDifferentSearchTerm
                   : localizations.startConversation,
               style: TextStyle(
@@ -429,8 +451,11 @@ class _SidebarState extends State<Sidebar> {
     );
   }
 
-  String _formatDate(DateTime date, String language, AppLocalizations localizations) {
+  String _formatDate(
+    DateTime date,
+    String language,
+    AppLocalizations localizations,
+  ) {
     return formatSidebarDate(date, context: context);
   }
-
 }
