@@ -5,8 +5,7 @@ import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/widgets/chat/chat_message.dart' as chat_msg;
-import 'package:chatorai/widgets/chat/reasoning_message.dart'
-    as reasoning_msg;
+import 'package:chatorai/widgets/chat/reasoning_message.dart' as reasoning_msg;
 import 'package:chatorai/widgets/chat/loading_indicator.dart';
 import 'package:chatorai/widgets/chat/continuation_suggestions.dart';
 import 'package:chatorai/widgets/chat/welcome_suggestions.dart';
@@ -44,24 +43,31 @@ class ChatMessages extends StatefulWidget {
   final OpenRouterClient openRouterService;
   final ChatStorageService chatStorageService;
   final String? selectedModel;
-  final Function(MessageData) onSendMessage; // Add callback for sending messages
+  final Function(MessageData)
+  onSendMessage; // Add callback for sending messages
   final Function() onMessageDeleted; // Add callback for message deletion
-  final Function(String, String)? onMessageEdited; // Callback for message edit (messageId, newContent)
-  final Function(String, String)? onMessageEditAndSend; // Callback for edit + regenerate (messageId, newContent)
-  final Function(String)? onContinueResponse; // Add callback for continuing response
-  final VoidCallback? onRegenerateResponse; // Add callback for regenerating response
+  final Function(String, String)?
+  onMessageEdited; // Callback for message edit (messageId, newContent)
+  final Function(String, String)?
+  onMessageEditAndSend; // Callback for edit + regenerate (messageId, newContent)
+  final Function(String)?
+  onContinueResponse; // Add callback for continuing response
+  final VoidCallback?
+  onRegenerateResponse; // Add callback for regenerating response
   final ScrollController? scrollController; // External scroll controller
   final List<String> continuationSuggestions; // Suggestions to display
   final bool showSuggestions; // Whether to show suggestions
   final bool isSuggestionsLoading; // Whether suggestions are loading
-  final VoidCallback? onSuggestionsClose; // Callback when suggestions are closed
+  final VoidCallback?
+  onSuggestionsClose; // Callback when suggestions are closed
   final VoidCallback? onSuggestionsRefresh; // Callback to refresh suggestions
-  
+
   // Welcome suggestions for empty chats
   final List<String> welcomeSuggestions; // Welcome questions to display
   final bool showWelcomeSuggestions; // Whether to show welcome suggestions
-  final VoidCallback? onWelcomeSuggestionsClose; // Callback when welcome suggestions are closed
-  
+  final VoidCallback?
+  onWelcomeSuggestionsClose; // Callback when welcome suggestions are closed
+
   // Navigator callbacks
   final Function(List<MarkdownHeadingInfoWithKey> headings)? onHeadingsUpdated;
   final Function()? onToggleNavigator;
@@ -101,7 +107,8 @@ class ChatMessagesState extends State<ChatMessages>
   final GlobalKey _loadingIndicatorKey = GlobalKey();
 
   // Navigator state
-  List<MarkdownHeadingInfoWithKey> _headings = []; // Store heading info with keys
+  List<MarkdownHeadingInfoWithKey> _headings =
+      []; // Store heading info with keys
 
   @override
   bool get wantKeepAlive => true;
@@ -115,8 +122,10 @@ class ChatMessagesState extends State<ChatMessages>
 
     // Use external scroll controller if provided, otherwise create new one
     _scrollController = widget.scrollController ?? ScrollController();
-    _logger.logInfo('[ChatMessages] ScrollController initialized: ${_scrollController.hashCode}');
-    
+    _logger.logInfo(
+      '[ChatMessages] ScrollController initialized: ${_scrollController.hashCode}',
+    );
+
     // Initialize headings
     _updateHeadings();
   }
@@ -124,17 +133,19 @@ class ChatMessagesState extends State<ChatMessages>
   @override
   void didUpdateWidget(ChatMessages oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Update headings when chat content changes
-    if (widget.chat?.id != oldWidget.chat?.id || 
+    if (widget.chat?.id != oldWidget.chat?.id ||
         widget.chat?.messages.length != oldWidget.chat?.messages.length) {
       _updateHeadings();
     }
   }
 
   void _updateHeadings() {
-    final allContent = (widget.chat?.messages ?? []).map((m) => m.content).join('\n\n');
-    
+    final allContent = (widget.chat?.messages ?? [])
+        .map((m) => m.content)
+        .join('\n\n');
+
     if (_headings.isEmpty) {
       // First time - create new headings with keys
       _headings = MarkdownParserWithKeys.parseHeadingsWithKeys(allContent);
@@ -142,9 +153,11 @@ class ChatMessagesState extends State<ChatMessages>
       // Update existing headings, preserving keys
       _headings = MarkdownParserWithKeys.updateHeadings(_headings, allContent);
     }
-    
-    _logger.logInfo('[ChatMessages] Updated headings: ${_headings.length} total');
-    
+
+    _logger.logInfo(
+      '[ChatMessages] Updated headings: ${_headings.length} total',
+    );
+
     // Notify parent about headings update
     if (widget.onHeadingsUpdated != null) {
       widget.onHeadingsUpdated!(_headings);
@@ -158,8 +171,6 @@ class ChatMessagesState extends State<ChatMessages>
   }
 
   void _toggleNavigator() {
-    _logger.logInfo('[ChatMessages] _toggleNavigator called');
-    
     // Notify parent about toggle
     if (widget.onToggleNavigator != null) {
       widget.onToggleNavigator!();
@@ -171,10 +182,8 @@ class ChatMessagesState extends State<ChatMessages>
     _toggleNavigator();
   }
 
-
   // Public method to send messages from outside (e.g., from chat input)
   void sendMessage(MessageData messageData) {
-    _logger.logInfo('[ChatMessages] sendMessage called: ${messageData.text}');
     // Notify parent to handle AI response
     widget.onSendMessage(messageData);
   }
@@ -185,8 +194,6 @@ class ChatMessagesState extends State<ChatMessages>
   }
 
   void _handleDeleteMessage(Message message) async {
-    _logger.logInfo('[ChatMessages] Deleting message: ${message.id}');
-
     final bool deleted = await MessageUtils.deleteMessage(
       chatId: widget.chat?.id ?? '',
       messageId: message.id,
@@ -195,10 +202,7 @@ class ChatMessagesState extends State<ChatMessages>
     );
 
     if (deleted) {
-      _logger.logInfo('[ChatMessages] Message deleted from database');
       widget.onMessageDeleted();
-    } else {
-      _logger.logError('[ChatMessages] Failed to delete message from database');
     }
   }
 
@@ -234,21 +238,23 @@ class ChatMessagesState extends State<ChatMessages>
     final hasAssistantMessage =
         hasMessages && messages.last.role == MessageRole.assistant;
     final isStreaming = hasAssistantMessage && !messages.last.isComplete;
-    
+
     // Show waiting animation ONLY when:
     // 1. There ARE messages (user has sent something)
     // 2. AND last message is assistant
     // 3. AND it has no content yet AND no reasoning yet (waiting for first chunk)
-    final shouldShowWaitingAnimation = hasMessages && 
-        hasAssistantMessage && 
-        messages.last.content.isEmpty && 
+    final shouldShowWaitingAnimation =
+        hasMessages &&
+        hasAssistantMessage &&
+        messages.last.content.isEmpty &&
         (messages.last.reasoning == null || messages.last.reasoning!.isEmpty) &&
         !messages.last.isComplete;
-    
-
 
     // Show welcome suggestions when chat is empty and welcome suggestions are enabled
-    final shouldShowWelcome = !hasMessages && widget.showWelcomeSuggestions && widget.welcomeSuggestions.isNotEmpty;
+    final shouldShowWelcome =
+        !hasMessages &&
+        widget.showWelcomeSuggestions &&
+        widget.welcomeSuggestions.isNotEmpty;
 
     return Container(
       color: theme.scaffoldBackgroundColor,
@@ -256,214 +262,254 @@ class ChatMessagesState extends State<ChatMessages>
         children: [
           // Messages List
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: EdgeInsets.only(
-                left: ChatMessagesConstants.horizontalPadding,
-                right: ChatMessagesConstants.horizontalPadding,
-                top: ChatMessagesConstants.verticalPadding,
-                bottom: ChatMessagesConstants.verticalPadding,
-              ),
-              itemCount: messages.length + 
-                  (shouldShowWaitingAnimation ? 1 : 0) + 
-                  (widget.showSuggestions && widget.continuationSuggestions.isNotEmpty ? 1 : 0) +
-                  (shouldShowWelcome ? 1 : 0),
-              itemBuilder: (context, index) {
-                // Show waiting animation at the end
-                if (shouldShowWaitingAnimation && index == messages.length) {
-                  return _buildWaitingAnimation();
-                }
+            child: RepaintBoundary(
+              child: ListView.builder(
+                controller: _scrollController,
+                // Cache visible items and some offscreen items for better performance
+                cacheExtent: 200,
+                // Add physics for better scroll performance
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.only(
+                  left: ChatMessagesConstants.horizontalPadding,
+                  right: ChatMessagesConstants.horizontalPadding,
+                  top: ChatMessagesConstants.verticalPadding,
+                  bottom: ChatMessagesConstants.verticalPadding,
+                ),
+                itemCount:
+                    messages.length +
+                    (shouldShowWaitingAnimation ? 1 : 0) +
+                    (widget.showSuggestions &&
+                            widget.continuationSuggestions.isNotEmpty
+                        ? 1
+                        : 0) +
+                    (shouldShowWelcome ? 1 : 0),
+                itemBuilder: (context, index) {
+                  // Show waiting animation at the end
+                  if (shouldShowWaitingAnimation && index == messages.length) {
+                    return _buildWaitingAnimation();
+                  }
 
-                // Show continuation suggestions after messages
-                final suggestionsIndex = messages.length + (shouldShowWaitingAnimation ? 1 : 0);
-                if (widget.showSuggestions && widget.continuationSuggestions.isNotEmpty && index == suggestionsIndex) {
-                  return _buildContinuationSuggestions();
-                }
+                  // Show continuation suggestions after messages
+                  final suggestionsIndex =
+                      messages.length + (shouldShowWaitingAnimation ? 1 : 0);
+                  if (widget.showSuggestions &&
+                      widget.continuationSuggestions.isNotEmpty &&
+                      index == suggestionsIndex) {
+                    return _buildContinuationSuggestions();
+                  }
 
-                // Show welcome suggestions at the beginning
-                if (shouldShowWelcome && index == 0) {
-                  return _buildWelcomeSuggestions();
-                }
+                  // Show welcome suggestions at the beginning
+                  if (shouldShowWelcome && index == 0) {
+                    return _buildWelcomeSuggestions();
+                  }
 
-                if (index >= messages.length) {
-                  return const SizedBox.shrink();
-                }
-
-                final message = messages[index];
-                final isLastMessage = index == messages.length - 1;
-                final isAssistantMessage =
-                    message.role == MessageRole.assistant;
-                final isEmptyAssistantMessage =
-                    isAssistantMessage && message.content.isEmpty;
-
-                // During streaming: handle assistant message with reasoning
-                if (isEmptyAssistantMessage && !message.isComplete && isLastMessage) {
-                  final hasReasoning = message.reasoning != null && message.reasoning!.isNotEmpty;
-                  final hasContent = message.content.isNotEmpty;
-                  
-                  // If no reasoning and no content yet, hide the empty message
-                  if (!hasReasoning && !hasContent) {
+                  if (index >= messages.length) {
                     return const SizedBox.shrink();
                   }
-                  
-                  if (hasReasoning && !hasContent) {
-                    // Show only reasoning (streaming) - content not started yet
-                    return reasoning_msg.ReasoningMessage(
-                      key: ValueKey(message.id),
-                      reasoning: message.reasoning!,
-                      isStreaming: true,
-                    );
-                  } else if (hasReasoning && hasContent) {
-                    // Show both reasoning and content (streaming)
+
+                  final message = messages[index];
+                  final isLastMessage = index == messages.length - 1;
+                  final isAssistantMessage =
+                      message.role == MessageRole.assistant;
+                  final isEmptyAssistantMessage =
+                      isAssistantMessage && message.content.isEmpty;
+
+                  // During streaming: handle assistant message with reasoning
+                  if (isEmptyAssistantMessage &&
+                      !message.isComplete &&
+                      isLastMessage) {
+                    final hasReasoning =
+                        message.reasoning != null &&
+                        message.reasoning!.isNotEmpty;
+                    final hasContent = message.content.isNotEmpty;
+
+                    // If no reasoning and no content yet, hide the empty message
+                    if (!hasReasoning && !hasContent) {
+                      return const SizedBox.shrink();
+                    }
+
+                    if (hasReasoning && !hasContent) {
+                      // Show only reasoning (streaming) - content not started yet
+                      return reasoning_msg.ReasoningMessage(
+                        key: ValueKey(message.id),
+                        reasoning: message.reasoning!,
+                        isStreaming: true,
+                      );
+                    } else if (hasReasoning && hasContent) {
+                      // Show both reasoning and content (streaming)
+                      return Column(
+                        key: ValueKey(message.id),
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          reasoning_msg.ReasoningMessage(
+                            key: ValueKey('${message.id}_reasoning'),
+                            reasoning: message.reasoning!,
+                            isStreaming: true,
+                          ),
+                          const SizedBox(
+                            height: ChatMessagesConstants.messageSpacing,
+                          ),
+                          chat_msg.ChatMessage(
+                            key: ValueKey('${message.id}_content'),
+                            message: message,
+                            isStreaming: true,
+                            isLastMessage: isLastMessage,
+                            onRetry: () {},
+                            chatId: widget.chat?.id ?? '',
+                            chatStorageService: widget.chatStorageService,
+                            onMessageDeleted: widget.onMessageDeleted,
+                            onMessageEdited:
+                                (String messageId, String newContent) {
+                                  widget.onMessageEdited?.call(
+                                    messageId,
+                                    newContent,
+                                  );
+                                },
+                            onMessageEditAndSend:
+                                (String messageId, String newContent) {
+                                  widget.onMessageEditAndSend?.call(
+                                    messageId,
+                                    newContent,
+                                  );
+                                },
+                            onMessageUpdated: (newContent) {
+                              if (newContent == 'REGENERATE') {
+                                widget.onRegenerateResponse?.call();
+                              }
+                            },
+                            onDelete: () {},
+                            onContinueResponse: null,
+                            headings: _headings,
+                          ),
+                        ],
+                      );
+                    }
+                    // No reasoning yet, skip this message (waiting animation shown separately)
+                    return const SizedBox.shrink();
+                  }
+
+                  // Show reasoning first if present
+                  if (message.reasoning != null &&
+                      message.reasoning!.isNotEmpty) {
                     return Column(
                       key: ValueKey(message.id),
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Reasoning message
                         reasoning_msg.ReasoningMessage(
                           key: ValueKey('${message.id}_reasoning'),
                           reasoning: message.reasoning!,
-                          isStreaming: true,
+                          isStreaming: isStreaming && isLastMessage,
                         ),
-                        const SizedBox(height: ChatMessagesConstants.messageSpacing),
+                        const SizedBox(
+                          height: ChatMessagesConstants.messageSpacing,
+                        ),
+                        // Main message
                         chat_msg.ChatMessage(
                           key: ValueKey('${message.id}_content'),
                           message: message,
-                          isStreaming: true,
+                          isStreaming: isStreaming && isLastMessage,
                           isLastMessage: isLastMessage,
-                          onRetry: () {},
+                          onRetry: () {
+                            if (message.role == MessageRole.user) {
+                              widget.onSendMessage(
+                                MessageData(
+                                  text: message.content,
+                                  imagePath: null,
+                                  imageType: message.imageType,
+                                  base64Data: message.imageData,
+                                ),
+                              );
+                            }
+                          },
                           chatId: widget.chat?.id ?? '',
                           chatStorageService: widget.chatStorageService,
                           onMessageDeleted: widget.onMessageDeleted,
-                          onMessageEdited: (String messageId, String newContent) {
-                            widget.onMessageEdited?.call(messageId, newContent);
-                          },
-                          onMessageEditAndSend: (String messageId, String newContent) {
-                            widget.onMessageEditAndSend?.call(messageId, newContent);
-                          },
+                          onMessageEdited:
+                              (String messageId, String newContent) {
+                                widget.onMessageEdited?.call(
+                                  messageId,
+                                  newContent,
+                                );
+                              },
+                          onMessageEditAndSend:
+                              (String messageId, String newContent) {
+                                widget.onMessageEditAndSend?.call(
+                                  messageId,
+                                  newContent,
+                                );
+                              },
                           onMessageUpdated: (newContent) {
                             if (newContent == 'REGENERATE') {
                               widget.onRegenerateResponse?.call();
                             }
                           },
-                          onDelete: () {},
-                          onContinueResponse: null,
+                          onDelete: () {
+                            _handleDeleteMessage(message);
+                          },
+                          onContinueResponse:
+                              message.role == MessageRole.assistant
+                              ? () =>
+                                    widget.onContinueResponse?.call(message.id)
+                              : null,
                           headings: _headings,
                         ),
                       ],
                     );
                   }
-                  // No reasoning yet, skip this message (waiting animation shown separately)
-                  return const SizedBox.shrink();
-                }
 
-                // Show reasoning first if present
-                if (message.reasoning != null &&
-                    message.reasoning!.isNotEmpty) {
-                  return Column(
-                    key: ValueKey(message.id),
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Reasoning message
-                      reasoning_msg.ReasoningMessage(
-                        key: ValueKey('${message.id}_reasoning'),
-                        reasoning: message.reasoning!,
-                        isStreaming: isStreaming && isLastMessage,
-                      ),
-                      const SizedBox(
-                        height: ChatMessagesConstants.messageSpacing,
-                      ),
-                      // Main message
-                      chat_msg.ChatMessage(
-                        key: ValueKey('${message.id}_content'),
-                        message: message,
-                        isStreaming: isStreaming && isLastMessage,
-                        isLastMessage: isLastMessage,
-                        onRetry: () {
-                          if (message.role == MessageRole.user) {
-                            widget.onSendMessage(
-                              MessageData(
-                                text: message.content,
-                                imagePath: null,
-                                imageType: message.imageType,
-                                base64Data: message.imageData,
-                              ),
-                            );
-                          }
+                  // Hide empty assistant messages (shouldn't happen, but safety check)
+                  if (isAssistantMessage && message.content.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return chat_msg.ChatMessage(
+                    key: ValueKey(message.id), // CRITICAL: Only use message.id
+                    message: message,
+                    isStreaming: isStreaming && isLastMessage,
+                    isLastMessage: isLastMessage,
+                    onRetry: () {
+                      if (message.role == MessageRole.user) {
+                        widget.onSendMessage(
+                          MessageData(
+                            text: message.content,
+                            imagePath: null,
+                            imageType: message.imageType,
+                            base64Data: message.imageData,
+                          ),
+                        );
+                      }
+                    },
+                    chatId: widget.chat?.id ?? '',
+                    chatStorageService: widget.chatStorageService,
+                    onMessageDeleted: widget.onMessageDeleted,
+                    onMessageEdited: (String messageId, String newContent) {
+                      widget.onMessageEdited?.call(messageId, newContent);
+                    },
+                    onMessageEditAndSend:
+                        (String messageId, String newContent) {
+                          widget.onMessageEditAndSend?.call(
+                            messageId,
+                            newContent,
+                          );
                         },
-                        chatId: widget.chat?.id ?? '',
-                        chatStorageService: widget.chatStorageService,
-                        onMessageDeleted: widget.onMessageDeleted,
-                        onMessageEdited: (String messageId, String newContent) {
-                          widget.onMessageEdited?.call(messageId, newContent);
-                        },
-                        onMessageEditAndSend: (String messageId, String newContent) {
-                          widget.onMessageEditAndSend?.call(messageId, newContent);
-                        },
-                        onMessageUpdated: (newContent) {
-                          if (newContent == 'REGENERATE') {
-                            widget.onRegenerateResponse?.call();
-                          }
-                        },
-                        onDelete: () {
-                          _handleDeleteMessage(message);
-                        },
-                        onContinueResponse:
-                            message.role == MessageRole.assistant
-                            ? () => widget.onContinueResponse?.call(message.id)
-                            : null,
-                        headings: _headings,
-                      ),
-                    ],
+                    onMessageUpdated: (newContent) {
+                      if (newContent == 'REGENERATE') {
+                        widget.onRegenerateResponse?.call();
+                      }
+                    },
+                    onDelete: () {
+                      _handleDeleteMessage(message);
+                    },
+                    onContinueResponse: message.role == MessageRole.assistant
+                        ? () => widget.onContinueResponse?.call(message.id)
+                        : null,
+                    headings: _headings,
                   );
-                }
-
-                // Hide empty assistant messages (shouldn't happen, but safety check)
-                if (isAssistantMessage && message.content.isEmpty) {
-                  return const SizedBox.shrink();
-                }
-
-                return chat_msg.ChatMessage(
-                  key: ValueKey(message.id), // CRITICAL: Only use message.id
-                  message: message,
-                  isStreaming: isStreaming && isLastMessage,
-                  isLastMessage: isLastMessage,
-                  onRetry: () {
-                    if (message.role == MessageRole.user) {
-                      widget.onSendMessage(
-                        MessageData(
-                          text: message.content,
-                          imagePath: null,
-                          imageType: message.imageType,
-                          base64Data: message.imageData,
-                        ),
-                      );
-                    }
-                  },
-                  chatId: widget.chat?.id ?? '',
-                  chatStorageService: widget.chatStorageService,
-                  onMessageDeleted: widget.onMessageDeleted,
-                  onMessageEdited: (String messageId, String newContent) {
-                    widget.onMessageEdited?.call(messageId, newContent);
-                  },
-                  onMessageEditAndSend: (String messageId, String newContent) {
-                    widget.onMessageEditAndSend?.call(messageId, newContent);
-                  },
-                  onMessageUpdated: (newContent) {
-                    if (newContent == 'REGENERATE') {
-                      widget.onRegenerateResponse?.call();
-                    }
-                  },
-                  onDelete: () {
-                    _handleDeleteMessage(message);
-                  },
-                  onContinueResponse: message.role == MessageRole.assistant
-                      ? () => widget.onContinueResponse?.call(message.id)
-                      : null,
-                  headings: _headings,
-                );
-              },
+                },
+              ),
             ),
           ),
         ],

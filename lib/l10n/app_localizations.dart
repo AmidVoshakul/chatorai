@@ -1843,18 +1843,6 @@ abstract class AppLocalizations {
   /// **'Instructions for the AI assistant'**
   String get systemPromptDescription;
 
-  /// No description provided for @streamResponse.
-  ///
-  /// In en, this message translates to:
-  /// **'Stream Response'**
-  String get streamResponse;
-
-  /// No description provided for @streamResponseDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Receive responses in real-time'**
-  String get streamResponseDescription;
-
   /// No description provided for @resetToDefaults.
   ///
   /// In en, this message translates to:
@@ -1890,18 +1878,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings applied successfully'**
   String get settingsApplied;
-
-  /// No description provided for @enableReasoning.
-  ///
-  /// In en, this message translates to:
-  /// **'Enable Reasoning'**
-  String get enableReasoning;
-
-  /// No description provided for @enableReasoningDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Include model reasoning/thoughts in responses'**
-  String get enableReasoningDescription;
 
   /// No description provided for @apiLimitExceeded.
   ///

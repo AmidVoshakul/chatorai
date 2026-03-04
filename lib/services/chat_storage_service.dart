@@ -24,7 +24,7 @@ class ChatStorageService {
   Future<void> addChat(Chat chat) async {
     final prefs = await SharedPreferences.getInstance();
     final chats = await _getChatsFromStorage(prefs);
-    
+
     chats.insert(0, chat);
     await _saveChatsToStorage(prefs, chats);
   }
@@ -33,7 +33,7 @@ class ChatStorageService {
   Future<void> renameChat(String chatId, String newTitle) async {
     final prefs = await SharedPreferences.getInstance();
     final chats = await _getChatsFromStorage(prefs);
-    
+
     final chatIndex = chats.indexWhere((chat) => chat.id == chatId);
     if (chatIndex != -1) {
       chats[chatIndex] = chats[chatIndex].copyWith(
@@ -48,7 +48,7 @@ class ChatStorageService {
   Future<void> deleteChat(String chatId) async {
     final prefs = await SharedPreferences.getInstance();
     final chats = await _getChatsFromStorage(prefs);
-    
+
     final chatIndex = chats.indexWhere((chat) => chat.id == chatId);
     if (chatIndex != -1) {
       chats.removeAt(chatIndex);
@@ -66,7 +66,7 @@ class ChatStorageService {
   Future<void> updateChatTitle(String chatId, String title) async {
     final prefs = await SharedPreferences.getInstance();
     final chats = await _getChatsFromStorage(prefs);
-    
+
     final chatIndex = chats.indexWhere((chat) => chat.id == chatId);
     if (chatIndex != -1) {
       chats[chatIndex] = chats[chatIndex].copyWith(
@@ -78,35 +78,43 @@ class ChatStorageService {
   }
 
   /// Update message in chat
-  Future<void> updateMessageInChat(String chatId, String messageId, Message updatedMessage) async {
-    _logger.logInfo('[ChatStorageService] Updating message $messageId in chat $chatId');
-    
+  Future<void> updateMessageInChat(
+    String chatId,
+    String messageId,
+    Message updatedMessage,
+  ) async {
+    _logger.logInfo(
+      '[ChatStorageService] Updating message $messageId in chat $chatId',
+    );
+
     final prefs = await SharedPreferences.getInstance();
     final chats = await _getChatsFromStorage(prefs);
-    
+
     final chatIndex = chats.indexWhere((chat) => chat.id == chatId);
     if (chatIndex != -1) {
       final chat = chats[chatIndex];
-      final messageIndex = chat.messages.indexWhere((msg) => msg.id == messageId);
-      
+      final messageIndex = chat.messages.indexWhere(
+        (msg) => msg.id == messageId,
+      );
+
       if (messageIndex != -1) {
         final existingMessage = chat.messages[messageIndex];
         // Preserve existing reasoning if the updated message doesn't have reasoning
-        final finalMessage = updatedMessage.reasoning != null 
-            ? updatedMessage 
+        final finalMessage = updatedMessage.reasoning != null
+            ? updatedMessage
             : updatedMessage.copyWith(reasoning: existingMessage.reasoning);
-        
+
         final updatedMessages = List<Message>.from(chat.messages);
         updatedMessages[messageIndex] = finalMessage;
-        
+
         final updatedChat = chat.copyWith(
           messages: updatedMessages,
           updatedAt: DateTime.now(),
         );
-        
+
         chats[chatIndex] = updatedChat;
         await _saveChatsToStorage(prefs, chats);
-        
+
         _logger.logInfo('[ChatStorageService] Message updated successfully');
       }
     }
@@ -116,7 +124,7 @@ class ChatStorageService {
   Future<void> addMessageToChat(String chatId, Message message) async {
     final prefs = await SharedPreferences.getInstance();
     final chats = await _getChatsFromStorage(prefs);
-    
+
     final chatIndex = chats.indexWhere((chat) => chat.id == chatId);
     if (chatIndex != -1) {
       final chat = chats[chatIndex];
@@ -124,15 +132,15 @@ class ChatStorageService {
         messages: [...chat.messages, message],
         updatedAt: DateTime.now(),
       );
-      
+
       // Auto-update chat title if it's still default
       String chatTitle = chat.title;
       if (chat.title == 'Новый чат' && message.role == MessageRole.user) {
-        chatTitle = message.content.length > 30 
-            ? '${message.content.substring(0, 30)}...' 
+        chatTitle = message.content.length > 30
+            ? '${message.content.substring(0, 30)}...'
             : message.content;
       }
-      
+
       chats[chatIndex] = updatedChat.copyWith(title: chatTitle);
       await _saveChatsToStorage(prefs, chats);
     }
@@ -152,17 +160,19 @@ class ChatStorageService {
   Future<void> deleteMessageFromChat(String chatId, String messageId) async {
     final prefs = await SharedPreferences.getInstance();
     final chats = await _getChatsFromStorage(prefs);
-    
+
     final chatIndex = chats.indexWhere((chat) => chat.id == chatId);
     if (chatIndex != -1) {
       final chat = chats[chatIndex];
-      final filteredMessages = chat.messages.where((message) => message.id != messageId).toList();
-      
+      final filteredMessages = chat.messages
+          .where((message) => message.id != messageId)
+          .toList();
+
       final updatedChat = chat.copyWith(
         messages: filteredMessages,
         updatedAt: DateTime.now(),
       );
-      
+
       chats[chatIndex] = updatedChat;
       await _saveChatsToStorage(prefs, chats);
     }
@@ -172,7 +182,7 @@ class ChatStorageService {
   Future<void> updateChat(Chat chat) async {
     final prefs = await SharedPreferences.getInstance();
     final chats = await _getChatsFromStorage(prefs);
-    
+
     final chatIndex = chats.indexWhere((c) => c.id == chat.id);
     if (chatIndex != -1) {
       chats[chatIndex] = chat.copyWith(updatedAt: DateTime.now());
@@ -187,16 +197,12 @@ class ChatStorageService {
       _logger.logDebug('[ChatStorageService] No chats found in storage');
       return [];
     }
-    
+
     try {
       final List<dynamic> chatsData = json.decode(chatsJson);
-      _logger.logDebug('[ChatStorageService] Loading ${chatsData.length} chats from storage');
-      
+
       final chats = chatsData.map((data) => Chat.fromJson(data)).toList();
-      
-      // Log summary only
-      _logger.logDebug('[ChatStorageService] Loaded ${chats.length} chats with total ${chats.fold<int>(0, (sum, chat) => sum + chat.messages.length)} messages');
-      
+
       return chats;
     } catch (e) {
       _logger.logError('Error parsing chats from storage: $e');
@@ -205,12 +211,12 @@ class ChatStorageService {
   }
 
   /// Private method to save chats to storage
-  Future<void> _saveChatsToStorage(SharedPreferences prefs, List<Chat> chats) async {
+  Future<void> _saveChatsToStorage(
+    SharedPreferences prefs,
+    List<Chat> chats,
+  ) async {
     final chatsData = chats.map((chat) => chat.toJson()).toList();
-    
-    // Log summary only
-    _logger.logDebug('[ChatStorageService] Saving ${chats.length} chats with total ${chats.fold<int>(0, (sum, chat) => sum + chat.messages.length)} messages');
-    
+
     final chatsJson = json.encode(chatsData);
     await prefs.setString(_chatsKey, chatsJson);
   }

@@ -897,12 +897,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get systemPromptDescription => 'AI助手的指令';
 
   @override
-  String get streamResponse => '流式响应';
-
-  @override
-  String get streamResponseDescription => '实时接收响应';
-
-  @override
   String get resetToDefaults => '重置为默认值';
 
   @override
@@ -919,12 +913,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsApplied => '设置应用成功';
-
-  @override
-  String get enableReasoning => '启用推理';
-
-  @override
-  String get enableReasoningDescription => '在响应中包含模型推理/思考';
 
   @override
   String apiLimitExceeded(Object limit) {

@@ -25,7 +25,6 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
       TextEditingController();
   final TextEditingController _systemPromptController = TextEditingController();
 
-  bool _streamResponse = true;
   bool _isInitialized = false;
 
   // Validation state
@@ -58,7 +57,6 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
       _frequencyPenaltyController.text = settings.frequencyPenalty.toString();
       _presencePenaltyController.text = settings.presencePenalty.toString();
       _systemPromptController.text = settings.systemPrompt ?? '';
-      _streamResponse = settings.stream;
       _isInitialized = true;
     } else if (modelProvider.selectedModelObject != null) {
       // If no saved settings but we have model info, create settings from API
@@ -76,7 +74,6 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
           .toString();
       _presencePenaltyController.text = apiSettings.presencePenalty.toString();
       _systemPromptController.text = apiSettings.systemPrompt ?? '';
-      _streamResponse = apiSettings.stream;
       _isInitialized = true;
 
       // Set these as active settings
@@ -199,10 +196,9 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
         systemPrompt: _systemPromptController.text.isNotEmpty
             ? _systemPromptController.text
             : null,
-        stream: _streamResponse,
+        stream: true,
         maxContextLength: current.maxContextLength,
-        reasoningEnabled:
-            settingsProvider.activeSettings?.reasoningEnabled ?? true,
+        reasoningEnabled: true,
         apiMaxTokens: current.apiMaxTokens,
         apiMaxTemperature: current.apiMaxTemperature,
         apiMinTemperature: current.apiMinTemperature,
@@ -263,7 +259,6 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
     _presencePenaltyController.text = defaultSettings.presencePenalty
         .toString();
     _systemPromptController.text = defaultSettings.systemPrompt ?? '';
-    _streamResponse = defaultSettings.stream;
 
     // Apply to provider
     settingsProvider.updateActiveSettings(defaultSettings);
@@ -505,61 +500,6 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
           style: TextStyle(
             fontSize: 14,
             color: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Widget _buildToggleSwitch({
-    required String title,
-    required String description,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-              ),
-            ),
-            Transform.scale(
-              scale: 0.75,
-              child: Switch(
-                value: value,
-                onChanged: onChanged,
-                activeThumbColor: UbuntuColors.orange,
-                activeTrackColor: UbuntuColors.orange.withAlpha(150),
-                inactiveThumbColor: isDark
-                    ? UbuntuColors.toggleInactiveThumbDark
-                    : UbuntuColors.toggleInactiveThumbLight,
-                inactiveTrackColor: isDark
-                    ? UbuntuColors.toggleInactiveTrackDark
-                    : UbuntuColors.toggleInactiveTrackLight,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          description,
-          style: TextStyle(
-            fontSize: 12,
-            color: isDark ? Colors.grey[400] : Colors.grey[600],
           ),
         ),
         const SizedBox(height: 16),
@@ -850,37 +790,6 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
 
                         // System Prompt
                         _buildSystemPromptField(),
-
-                        // Stream Response Toggle
-                        _buildToggleSwitch(
-                          title: localizations.streamResponse,
-                          description: localizations.streamResponseDescription,
-                          value: _streamResponse,
-                          onChanged: (value) {
-                            setState(() {
-                              _streamResponse = value;
-                            });
-                          },
-                        ),
-
-                        // Reasoning Toggle (new)
-                        _buildToggleSwitch(
-                          title: localizations.enableReasoning,
-                          description: localizations.enableReasoningDescription,
-                          value:
-                              settingsProvider
-                                  .activeSettings
-                                  ?.reasoningEnabled ??
-                              true,
-                          onChanged: (value) {
-                            setState(() {
-                              // Update through provider
-                              settingsProvider.updateActiveParameter(
-                                reasoningEnabled: value,
-                              );
-                            });
-                          },
-                        ),
 
                         const SizedBox(height: 24),
 

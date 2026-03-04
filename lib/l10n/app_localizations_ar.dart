@@ -897,12 +897,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get systemPromptDescription => 'تعليمات مساعد الذكاء الاصطناعي';
 
   @override
-  String get streamResponse => 'استجابة تدفق';
-
-  @override
-  String get streamResponseDescription => 'تلقى الاستجابات في الوقت الفعلي';
-
-  @override
   String get resetToDefaults => 'إعادة تعيين إلى الافتراضي';
 
   @override
@@ -919,12 +913,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsApplied => 'تم تطبيق الإعدادات بنجاح';
-
-  @override
-  String get enableReasoning => 'تمكين التفكير';
-
-  @override
-  String get enableReasoningDescription => 'تضمين تفكير/استدلال النموذج في الردود';
 
   @override
   String apiLimitExceeded(Object limit) {

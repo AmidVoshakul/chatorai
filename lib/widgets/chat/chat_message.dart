@@ -9,14 +9,10 @@ import 'package:chatorai/widgets/chat/loading_indicator.dart';
 import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
-import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 import 'package:chatorai/utils/format_time.dart';
-
-// Initialize logger for this widget
-final _logger = LogTags.message;
 
 class ChatMessage extends StatefulWidget {
   final Message message;
@@ -26,12 +22,16 @@ class ChatMessage extends StatefulWidget {
   final ChatStorageService chatStorageService;
   final VoidCallback onMessageDeleted; // Callback for when message is deleted
   final VoidCallback? onDelete;
-  final Function(String, String)? onMessageEdited; // Callback for message edit (messageId, newContent)
-  final Function(String)? onMessageUpdated; // Callback for when message content is updated (just edit) - legacy
-  final Function(String, String)? onMessageEditAndSend; // Callback for edit + regenerate (messageId, newContent)
+  final Function(String, String)?
+  onMessageEdited; // Callback for message edit (messageId, newContent)
+  final Function(String)?
+  onMessageUpdated; // Callback for when message content is updated (just edit) - legacy
+  final Function(String, String)?
+  onMessageEditAndSend; // Callback for edit + regenerate (messageId, newContent)
   final VoidCallback? onContinueResponse; // Callback for continuing response
   final bool isLastMessage; // Whether this is the last message in chat
-  final List<MarkdownHeadingInfoWithKey>? headings; // Headings with keys for navigation
+  final List<MarkdownHeadingInfoWithKey>?
+  headings; // Headings with keys for navigation
 
   const ChatMessage({
     super.key,
@@ -54,22 +54,24 @@ class ChatMessage extends StatefulWidget {
   State<ChatMessage> createState() => _ChatMessageState();
 }
 
-class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin {
+class _ChatMessageState extends State<ChatMessage>
+    with TickerProviderStateMixin {
   // ===========================================================================
-  // ANIMATION CONTROLLERS
+  // ANIMATION CONTROLLERS - Lazily initialized
   // ===========================================================================
 
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
-  late AnimationController _slideController;
-  late Animation<Offset> _slideAnimation;
-  
+  AnimationController? _fadeController;
+  Animation<double>? _fadeAnimation;
+  AnimationController? _slideController;
+  Animation<Offset>? _slideAnimation;
+
   // ===========================================================================
   // STATE VARIABLES
   // ===========================================================================
-  
+
   bool _isEditing = false; // Режим редактирования
-  late TextEditingController _textController; // Контроллер для текста редактирования
+  late TextEditingController
+  _textController; // Контроллер для текста редактирования
 
   // ===========================================================================
   // LIFECYCLE METHODS
@@ -78,60 +80,86 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    final previewLength = widget.message.content.length > 30 ? 30 : widget.message.content.length;
-    _logger.logInfo('Initializing message widget for: ${widget.message.role} - ${widget.message.content.substring(0, previewLength)}...');
-    
+
     // Инициализируем контроллер для редактирования
     _textController = TextEditingController(text: widget.message.content);
-    
+
     // Слушаем изменения сообщения
     _textController.addListener(() {
       if (!_isEditing && _textController.text != widget.message.content) {
         _textController.text = widget.message.content;
       }
     });
-    
-    // Fade-in animation
-    _fadeController = AnimationController(
-      duration: Duration(milliseconds: 500),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
-    
-    // Slide-in animation
-    _slideController = AnimationController(
-      duration: Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.1, 0),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.easeOut),
-    );
-    
-    _fadeController.forward();
-    _slideController.forward();
+
+    // Fade-in animation - only create if not already created
+    if (_fadeController == null) {
+      _fadeController = AnimationController(
+        duration: const Duration(milliseconds: 500),
+        vsync: this,
+      );
+      _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+        CurvedAnimation(parent: _fadeController!, curve: Curves.easeInOut),
+      );
+      _fadeController!.forward();
+    }
+
+    // Slide-in animation - only create if not already created
+    if (_slideController == null) {
+      _slideController = AnimationController(
+        duration: const Duration(milliseconds: 300),
+        vsync: this,
+      );
+      _slideAnimation =
+          Tween<Offset>(begin: const Offset(0.1, 0), end: Offset.zero).animate(
+            CurvedAnimation(parent: _slideController!, curve: Curves.easeOut),
+          );
+      _slideController!.forward();
+    }
   }
 
   @override
   void dispose() {
-    _fadeController.dispose();
-    _slideController.dispose();
+    _fadeController?.dispose();
+    _slideController?.dispose();
     super.dispose();
+  }
+
+  void _initializeAnimations() {
+    if (_fadeController != null && _slideController != null) return;
+
+    // Fade-in animation
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _fadeController!, curve: Curves.easeInOut),
+    );
+    _fadeController!.forward();
+
+    // Slide-in animation
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0.1, 0), end: Offset.zero).animate(
+          CurvedAnimation(parent: _slideController!, curve: Curves.easeOut),
+        );
+    _slideController!.forward();
   }
 
   @override
   void didUpdateWidget(covariant ChatMessage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Update text controller if content changed
     if (oldWidget.message.content != widget.message.content) {
       _textController.value = TextEditingValue(
         text: widget.message.content,
-        selection: TextSelection.collapsed(offset: widget.message.content.length),
+        selection: TextSelection.collapsed(
+          offset: widget.message.content.length,
+        ),
       );
     }
   }
@@ -153,157 +181,178 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
         onDelete: widget.onDelete,
         onMessageUpdated: widget.onMessageUpdated,
         isStreaming: widget.isStreaming, // Передаем флаг загрузки
-        showLoadingFirst: widget.isStreaming, // Показываем загрузку перед ошибкой если идет потоковая передача
+        showLoadingFirst: widget
+            .isStreaming, // Показываем загрузку перед ошибкой если идет потоковая передача
       );
     }
 
-    // Если сообщение содержит reasoning, показываем ReasoningMessage
-    // Но только если это не уже обрабатывается родительским компонентом
-    if (widget.message.reasoning != null && widget.message.reasoning!.isNotEmpty) {
-      _logger.logInfo('[ChatMessage] Message has reasoning content, but should be handled by parent. Showing regular message content instead.');
-      // Don't return ReasoningMessage here - it should be handled by parent ChatMessages widget
-      // Just continue to show the regular message content
-    }
+    // If message has reasoning, parent handles it - no need to log
+
+    // Ensure animations are initialized before build
+    _initializeAnimations();
 
     return SlideTransition(
-      position: _slideAnimation,
+      position: _slideAnimation!,
       child: FadeTransition(
-        opacity: _fadeAnimation,
+        opacity: _fadeAnimation!,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isUser
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             // Message bubble (without actions)
             Row(
-              mainAxisAlignment:
-                  isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+              mainAxisAlignment: isUser
+                  ? MainAxisAlignment.end
+                  : MainAxisAlignment.start,
               children: [
                 // No avatar for any messages
-                
+
                 // User messages take responsive width, AI messages take full width
-                isUser 
-                  ? Flexible(
-                      fit: FlexFit.loose,
-                      flex: 8,
-                      child: Container(
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width < 800 
-                            ? MediaQuery.of(context).size.width * 0.8  // Mobile: 80%
-                            : MediaQuery.of(context).size.width * 0.6  // Desktop: 60%
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 5,
-                              offset: const Offset(0, 2),
+                isUser
+                    ? Flexible(
+                        fit: FlexFit.loose,
+                        flex: 8,
+                        child: Container(
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width < 800
+                                ? MediaQuery.of(context).size.width *
+                                      0.8 // Mobile: 80%
+                                : MediaQuery.of(context).size.width *
+                                      0.6, // Desktop: 60%
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.1,
                             ),
-                          ],
-                          border: Border.all(
-                            color: theme.dividerColor.withValues(alpha: 0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Image Preview (if message has image)
-                            if (widget.message.imageData != null)
-                              _buildImagePreview(),
-                            
-                            // Message Content
-                            _buildMessageContent(context),
-                            
-                            // Error State
-                            if (widget.message.isError)
-                              _buildErrorMessage(),
-                            
-                            // Streaming Indicator - only show if no reasoning (reasoning handles its own indicator)
-                            // This prevents duplicate indicators when reasoning is present
-                            if (widget.isStreaming && 
-                                widget.message.role == MessageRole.assistant &&
-                                (widget.message.reasoning == null || widget.message.reasoning!.isEmpty))
-                              _buildStreamingIndicator(),
-                          ],
-                        ),
-                      ),
-                    )
-                  : Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: theme.cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 5,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                        border: Border.all(
-                          color: theme.dividerColor.withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Message Header
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  widget.message.role == MessageRole.assistant && widget.message.model != null
-                                    ? widget.message.model!
-                                    : widget.message.role.displayName,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _formatTime(widget.message.timestamp),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                                ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 5,
+                                offset: const Offset(0, 2),
                               ),
                             ],
+                            border: Border.all(
+                              color: theme.dividerColor.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
                           ),
-                          
-                          const SizedBox(height: 8),
-                          
-                          // Image Preview (if message has image)
-                          if (widget.message.imageData != null)
-                            _buildImagePreview(),
-                          
-                          // Message Content
-                          _buildMessageContent(context),
-                          
-                          // Error State
-                          if (widget.message.isError)
-                            _buildErrorMessage(),
-                          
-                          // Streaming Indicator - only show if no reasoning (reasoning handles its own indicator)
-                          // This prevents duplicate indicators when reasoning is present
-                          if (widget.isStreaming && 
-                              widget.message.role == MessageRole.assistant &&
-                              (widget.message.reasoning == null || widget.message.reasoning!.isEmpty))
-                            _buildStreamingIndicator(),
-                        ],
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Image Preview (if message has image)
+                              if (widget.message.imageData != null)
+                                _buildImagePreview(),
+
+                              // Message Content
+                              _buildMessageContent(context),
+
+                              // Error State
+                              if (widget.message.isError) _buildErrorMessage(),
+
+                              // Streaming Indicator - only show if no reasoning (reasoning handles its own indicator)
+                              // This prevents duplicate indicators when reasoning is present
+                              if (widget.isStreaming &&
+                                  widget.message.role ==
+                                      MessageRole.assistant &&
+                                  (widget.message.reasoning == null ||
+                                      widget.message.reasoning!.isEmpty))
+                                _buildStreamingIndicator(),
+                            ],
+                          ),
+                        ),
+                      )
+                    : Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.cardColor,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 5,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                            border: Border.all(
+                              color: theme.dividerColor.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Message Header
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      widget.message.role ==
+                                                  MessageRole.assistant &&
+                                              widget.message.model != null
+                                          ? widget.message.model!
+                                          : widget.message.role.displayName,
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: theme
+                                                .textTheme
+                                                .bodySmall
+                                                ?.color
+                                                ?.withValues(alpha: 0.7),
+                                          ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _formatTime(widget.message.timestamp),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.textTheme.bodySmall?.color
+                                          ?.withValues(alpha: 0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 8),
+
+                              // Image Preview (if message has image)
+                              if (widget.message.imageData != null)
+                                _buildImagePreview(),
+
+                              // Message Content
+                              _buildMessageContent(context),
+
+                              // Error State
+                              if (widget.message.isError) _buildErrorMessage(),
+
+                              // Streaming Indicator - only show if no reasoning (reasoning handles its own indicator)
+                              // This prevents duplicate indicators when reasoning is present
+                              if (widget.isStreaming &&
+                                  widget.message.role ==
+                                      MessageRole.assistant &&
+                                  (widget.message.reasoning == null ||
+                                      widget.message.reasoning!.isEmpty))
+                                _buildStreamingIndicator(),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
               ],
             ),
-            
+
             // Message Actions (outside the message bubble, on main chat background)
             if (!widget.isStreaming)
               Container(
@@ -326,7 +375,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                         splashRadius: 20,
                       ),
                     ],
-                    
+
                     // Share action for assistant messages
                     if (!isUser) ...[
                       IconButton(
@@ -345,13 +394,15 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                         splashRadius: 20,
                       ),
                     ],
-                    
+
                     // Universal copy action
                     IconButton(
                       icon: Icon(
                         Icons.copy_all, // Используем более современную иконку
                         size: 16, // Увеличиваем размер
-                        color: theme.iconTheme.color?.withValues(alpha: 0.8), // Увеличиваем opacity
+                        color: theme.iconTheme.color?.withValues(
+                          alpha: 0.8,
+                        ), // Увеличиваем opacity
                       ),
                       onPressed: () {
                         // Копируем сообщение без добавления имени отправителя
@@ -364,10 +415,14 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                       },
                       tooltip: localizations.copyMessage, // Улучшаем tooltip
                       splashRadius: 24, // Увеличиваем радиус клика
-                      hoverColor: theme.colorScheme.primary.withValues(alpha: 0.1), // Добавляем hover эффект
-                      focusColor: theme.colorScheme.primary.withValues(alpha: 0.1), // Добавляем focus эффект
+                      hoverColor: theme.colorScheme.primary.withValues(
+                        alpha: 0.1,
+                      ), // Добавляем hover эффект
+                      focusColor: theme.colorScheme.primary.withValues(
+                        alpha: 0.1,
+                      ), // Добавляем focus эффект
                     ),
-                    
+
                     // Delete action for all messages
                     IconButton(
                       icon: Icon(
@@ -382,7 +437,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                           chatStorageService: widget.chatStorageService,
                           context: context,
                         );
-                        
+
                         if (deleted) {
                           widget.onMessageDeleted();
                         }
@@ -390,7 +445,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                       tooltip: localizations.delete,
                       splashRadius: 20,
                     ),
-                    
+
                     // AI-specific actions (only for assistant messages)
                     if (!isUser) ...[
                       // Listen button
@@ -406,7 +461,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                         tooltip: localizations.listen,
                         splashRadius: 20,
                       ),
-                      
+
                       // Regenerate button
                       IconButton(
                         icon: Icon(
@@ -430,17 +485,20 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                         tooltip: localizations.regenerate,
                         splashRadius: 20,
                       ),
-                      
+
                       // Continue response button (only show for recent assistant messages that might be incomplete)
-                      if (widget.isLastMessage && widget.message.content.isNotEmpty && 
-                          (widget.message.content.endsWith('...') || 
-                           widget.message.content.split(' ').length > 30 ||
-                           !widget.message.isComplete))
+                      if (widget.isLastMessage &&
+                          widget.message.content.isNotEmpty &&
+                          (widget.message.content.endsWith('...') ||
+                              widget.message.content.split(' ').length > 30 ||
+                              !widget.message.isComplete))
                         IconButton(
                           icon: Icon(
                             Icons.play_arrow,
                             size: 16,
-                            color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                           onPressed: () {
                             if (widget.onContinueResponse != null) {
@@ -450,7 +508,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                           tooltip: localizations.continueResponse,
                           splashRadius: 20,
                         ),
-                      
+
                       // Like button
                       IconButton(
                         icon: Icon(
@@ -464,7 +522,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                         tooltip: localizations.like,
                         splashRadius: 20,
                       ),
-                      
+
                       // Dislike button
                       IconButton(
                         icon: Icon(
@@ -501,17 +559,12 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Colors.blue.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.3), width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxHeight: 200,
-          ),
+          constraints: const BoxConstraints(maxHeight: 200),
           child: Image.memory(
             base64Decode(widget.message.imageData!),
             fit: BoxFit.contain,
@@ -544,7 +597,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
         // Check if heading text is in this message content
         return widget.message.content.contains(h.text);
       }).toList();
-      
+
       if (messageHeadings.isNotEmpty) {
         return MarkdownBody(
           data: widget.message.content,
@@ -587,7 +640,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
 
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
-      
+
       if (line.startsWith('```')) {
         // Handle code block start/end
         if (inCodeBlock) {
@@ -604,10 +657,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
           }
           if (currentCodeBlock.isNotEmpty) {
             contentWidgets.add(
-              CodeBlock(
-                code: currentCodeBlock,
-                language: currentLanguage,
-              ),
+              CodeBlock(code: currentCodeBlock, language: currentLanguage),
             );
             currentCodeBlock = '';
           }
@@ -649,10 +699,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
     }
     if (currentCodeBlock.isNotEmpty) {
       contentWidgets.add(
-        CodeBlock(
-          code: currentCodeBlock.trim(),
-          language: currentLanguage,
-        ),
+        CodeBlock(code: currentCodeBlock.trim(), language: currentLanguage),
       );
     }
 
@@ -665,9 +712,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
   Widget _buildStreamingIndicator() {
     return Container(
       margin: const EdgeInsets.only(top: 8),
-      child: ChatTypingDotsIndicator(
-        dotSize: 6,
-      ),
+      child: ChatTypingDotsIndicator(dotSize: 6),
     );
   }
 
@@ -682,17 +727,13 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error,
-            color: Colors.red,
-            size: 16,
-          ),
+          Icon(Icons.error, color: Colors.red, size: 16),
           const SizedBox(width: 4),
           Text(
             localizations.failedToSendMessage,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.red,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Colors.red),
           ),
           const Spacer(),
           TextButton(
@@ -745,7 +786,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
     setState(() {
       _isEditing = false;
     });
-    
+
     await _handleEditMessage(_textController.text);
   }
 
@@ -754,7 +795,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
     setState(() {
       _isEditing = false;
     });
-    
+
     await _handleEditAndSend(_textController.text);
   }
 
@@ -790,7 +831,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
             ),
           ),
         ),
-        
+
         // Кнопки действий
         Row(
           children: [
@@ -798,11 +839,7 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
             if (MediaQuery.of(context).size.width < 800) ...[
               // Мобильная иконка отмены (красный крестик)
               IconButton(
-                icon: Icon(
-                  Icons.close,
-                  size: 20,
-                  color: Colors.red,
-                ),
+                icon: Icon(Icons.close, size: 20, color: Colors.red),
                 onPressed: _cancelEditing,
                 tooltip: localizations.cancel,
                 padding: const EdgeInsets.all(8),
@@ -818,34 +855,26 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                 ),
               ),
             ],
-            
+
             // Spacer чтобы отодвинуть остальные кнопки вправо
             const Spacer(),
-            
+
             // Остальные кнопки (сохранить, сохранить и отправить) - справа
             if (MediaQuery.of(context).size.width < 800) ...[
               // Мобильные иконки
               // Сохранить (зеленая галочка)
               IconButton(
-                icon: Icon(
-                  Icons.check,
-                  size: 20,
-                  color: Colors.green,
-                ),
+                icon: Icon(Icons.check, size: 20, color: Colors.green),
                 onPressed: _saveEditing,
                 tooltip: localizations.save,
                 padding: const EdgeInsets.all(8),
                 constraints: const BoxConstraints(),
               ),
               const SizedBox(width: 8),
-              
+
               // Сохранить и отправить (оранжевый самолетик)
               IconButton(
-                icon: Icon(
-                  Icons.send,
-                  size: 20,
-                  color: theme.primaryColor,
-                ),
+                icon: Icon(Icons.send, size: 20, color: theme.primaryColor),
                 onPressed: _saveAndSend,
                 tooltip: localizations.saveAndSend,
                 padding: const EdgeInsets.all(8),
@@ -861,15 +890,20 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
                   style: TextStyle(color: theme.primaryColor),
                 ),
               ),
-              
+
               // Сохранить и отправить
               ElevatedButton(
                 onPressed: _saveAndSend,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.primaryColor,
                   foregroundColor: theme.colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                 ),
                 child: Text(localizations.saveAndSend),
               ),
@@ -889,10 +923,10 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
     } else if (widget.onMessageUpdated != null) {
       widget.onMessageUpdated!(newContent);
     }
-    
+
     // Обновляем текст в контроллере
     _textController.text = newContent;
-    
+
     // Выходим из режима редактирования
     setState(() {
       _isEditing = false;
@@ -909,10 +943,10 @@ class _ChatMessageState extends State<ChatMessage> with TickerProviderStateMixin
       // Fallback для совместимости
       widget.onMessageUpdated!(newContent);
     }
-    
+
     // Обновляем текст в контроллере
     _textController.text = newContent;
-    
+
     // Выходим из режима редактирования
     setState(() {
       _isEditing = false;
@@ -929,7 +963,7 @@ class _HeadingBuilder extends MarkdownElementBuilder {
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
     final text = element.textContent.trim();
-    
+
     // Find the matching heading with key
     final heading = headings.firstWhere(
       (h) => h.text == text && h.level == level,
@@ -949,10 +983,7 @@ class _HeadingBuilder extends MarkdownElementBuilder {
     return Container(
       key: heading.key,
       padding: const EdgeInsets.only(top: 16, bottom: 8),
-      child: Text(
-        text,
-        style: preferredStyle,
-      ),
+      child: Text(text, style: preferredStyle),
     );
   }
 }

@@ -1,6 +1,5 @@
 // ignore_for_file: avoid_print
 
-import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +21,9 @@ import 'package:chatorai/widgets/chat/speech_overlay.dart';
 import 'package:chatorai/services/speech_to_text_service.dart';
 import 'package:chatorai/screens/models_screen.dart';
 import 'package:chatorai/utils/chat_scroll_utils.dart';
+import 'package:chatorai/constants/chat_constants.dart';
+import 'package:chatorai/utils/chat_error_utils.dart';
+import 'package:chatorai/utils/chat_language_utils.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
@@ -29,43 +31,6 @@ import 'package:chatorai/l10n/app_localizations.dart';
 
 // Initialize logger for this screen
 final _logger = LogTags.chatScreen;
-
-/// Centralized constants for ChatScreen configuration
-class ChatScreenConstants {
-  // UI Constants
-  static const double sidebarWidth = 280.0;
-  static const double sidebarCollapsedWidth = 40.0;
-  static const int mobileBreakpoint = 800;
-
-  // Retry Configuration
-  static const int maxRetryAttempts = 3;
-  static const int baseRetryDelaySeconds = 2;
-
-  // Token Management
-  static const int defaultMaxTokens = 32000;
-
-  // Adaptive rollback configuration
-  static const int maxTokenReductionAttempts = 10;
-  static const double reductionFactor = 0.97; // 3% reduction per attempt
-  static const int absoluteMinTokens = 256; // Absolute minimum
-
-  // Error Handling
-  static const int maxErrorLength = 500;
-  // These messages are now localized via AppLocalizations
-  // Kept as empty strings for backward compatibility
-  static const String defaultErrorMessage = '';
-  static const String rateLimitMessage = '';
-
-  // Scroll & Animation
-  static const Duration scrollAnimationDuration = Duration(milliseconds: 300);
-  static const Duration sidebarUpdateDelay = Duration(milliseconds: 10);
-  static const Duration modelLoadWaitTime = Duration(milliseconds: 500);
-
-  // Model Defaults
-  static const String defaultModelId = 'nvidia/nemotron-3-nano-30b-a3b:free';
-
-  // Continuation Suggestions (moved to ContinuationSuggestions widget constants)
-}
 
 class ChatScreen extends StatefulWidget {
   final String? initialModel;
@@ -736,47 +701,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   List<Map<String, dynamic>> _sanitizeMessages(
     List<Map<String, dynamic>> messages,
   ) {
-    final patterns = [
-      'Exception',
-      'DioException',
-      'This exception was thrown',
-      'Traceback',
-      'stack trace',
-      'status code',
-      'RequestOptions',
-      'Bad Request',
-      'Client error',
-      'SocketException',
-      'HttpException',
-    ];
-
-    const int maxMessageLen = 20000; // per-message soft limit
-    final out = <Map<String, dynamic>>[];
-
-    for (final m in messages) {
-      var content = m['content'] ?? '';
-      final role = m['role'] ?? 'user';
-
-      // Skip assistant messages with error patterns
-      final hasErrPattern = patterns.any((p) => content.contains(p));
-      if (role == 'assistant' && hasErrPattern) {
-        continue;
-      }
-
-      // Truncate very long messages
-      if (content.length > maxMessageLen) {
-        content = '${content.substring(0, maxMessageLen)}...[truncated]';
-      }
-
-      // Preserve multimodal structure (with images)
-      if (m.containsKey('content') && m['content'] is List) {
-        out.add(m);
-      } else {
-        out.add({'role': role, 'content': content});
-      }
-    }
-
-    return out;
+    return ChatErrorUtils.sanitizeMessages(messages);
   }
 
   Future<void> _streamAIResponse() async {
@@ -835,10 +760,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     final reductionFactor = ChatScreenConstants.reductionFactor;
     int tokenReductionAttempts = 0;
 
-    _logger.logInfo(
-      '[AdaptiveRollback] Non-streaming: initial maxTokens=$currentMaxTokens, contextLength=$modelContextLength, minTokens=$effectiveMinTokens',
-    );
-
     while (true) {
       try {
         final response = await _openRouterService.getChatCompletion(
@@ -849,7 +770,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           topP: modelSettings.topP,
           frequencyPenalty: modelSettings.frequencyPenalty,
           presencePenalty: modelSettings.presencePenalty,
-          includeReasoning: modelSettings.reasoningEnabled,
+          includeReasoning: true,
         );
 
         return response;
@@ -1106,10 +1027,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     String messageId,
     String newContent,
   ) async {
-    _logger.logInfo(
-      '[ChatScreen] Edit and send for message $messageId, new content: ${newContent.substring(0, min(newContent.length, 50))}...',
-    );
-
     if (_currentChat == null) {
       _logger.logError('[ChatScreen] Cannot edit and send - no current chat');
       return;
@@ -1394,12 +1311,85 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // Create a local flag that can be captured by closures
     bool isStreamingLocal = true;
 
+    // THROTTLING: Timer to batch UI updates (every 50ms instead of every chunk)
+    DateTime lastUpdateTime = DateTime.now();
+    const updateIntervalMs =
+        50; // 20 FPS for UI updates - sufficient for smooth feel
+
+    // Pending update flags
+    bool pendingContentUpdate = false;
+    bool pendingReasoningUpdate = false;
+
+    // Helper to throttle UI updates
+    void throttleUpdate() {
+      final now = DateTime.now();
+      final elapsed = now.difference(lastUpdateTime).inMilliseconds;
+
+      if (elapsed >= updateIntervalMs) {
+        // Time to update UI
+        if (mounted &&
+            _currentChat != null &&
+            _currentChat!.messages.isNotEmpty) {
+          final lastMessage = _currentChat!.messages.last;
+
+          // Build updated message with current accumulated values
+          final updatedMessage = lastMessage.copyWith(
+            content: accumulatedContent,
+            reasoning: accumulatedReasoning.isNotEmpty
+                ? accumulatedReasoning
+                : null,
+          );
+
+          final newMessages = List<Message>.from(_currentChat!.messages);
+          newMessages[newMessages.length - 1] = updatedMessage;
+          final newChat = _currentChat!.copyWith(
+            messages: newMessages,
+            updatedAt: DateTime.now(),
+          );
+          _updateCurrentChat(newChat);
+
+          lastUpdateTime = now;
+        }
+        pendingContentUpdate = false;
+        pendingReasoningUpdate = false;
+      } else {
+        // Schedule an update for later
+        pendingContentUpdate = true;
+        pendingReasoningUpdate = true;
+      }
+    }
+
+    // Timer to ensure pending updates get applied
+    Future<void> flushPendingUpdates() async {
+      while (pendingContentUpdate || pendingReasoningUpdate) {
+        await Future.delayed(const Duration(milliseconds: 10));
+        if (pendingContentUpdate || pendingReasoningUpdate) {
+          if (mounted &&
+              _currentChat != null &&
+              _currentChat!.messages.isNotEmpty) {
+            final lastMessage = _currentChat!.messages.last;
+            final updatedMessage = lastMessage.copyWith(
+              content: accumulatedContent,
+              reasoning: accumulatedReasoning.isNotEmpty
+                  ? accumulatedReasoning
+                  : null,
+            );
+            final newMessages = List<Message>.from(_currentChat!.messages);
+            newMessages[newMessages.length - 1] = updatedMessage;
+            final newChat = _currentChat!.copyWith(
+              messages: newMessages,
+              updatedAt: DateTime.now(),
+            );
+            _updateCurrentChat(newChat);
+          }
+          pendingContentUpdate = false;
+          pendingReasoningUpdate = false;
+        }
+      }
+    }
+
     // Sanitize messages
     var attemptMsgs = _sanitizeMessages(messages);
-
-    _logger.logInfo(
-      '[AdaptiveRollback] Streaming: initial maxTokens=$currentMaxTokens, contextLength=$modelContextLength, minTokens=$effectiveMinTokens',
-    );
 
     while (true) {
       try {
@@ -1411,29 +1401,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           topP: modelSettings.topP,
           frequencyPenalty: modelSettings.frequencyPenalty,
           presencePenalty: modelSettings.presencePenalty,
-          includeReasoning: modelSettings.reasoningEnabled,
+          includeReasoning: true,
           onChunk: (content) {
             if (!isStreamingLocal || !_isStreaming || content.isEmpty) {
               return;
             }
 
             accumulatedContent += content;
-
-            if (mounted &&
-                _currentChat != null &&
-                _currentChat!.messages.isNotEmpty) {
-              final lastMessage = _currentChat!.messages.last;
-              final updatedMessage = lastMessage.copyWith(
-                content: accumulatedContent,
-              );
-              final newMessages = List<Message>.from(_currentChat!.messages);
-              newMessages[newMessages.length - 1] = updatedMessage;
-              final newChat = _currentChat!.copyWith(
-                messages: newMessages,
-                updatedAt: DateTime.now(),
-              );
-              _updateCurrentChat(newChat);
-            }
+            throttleUpdate();
           },
           onReasoning: (reasoning) {
             if (!isStreamingLocal || !_isStreaming || reasoning.isEmpty) {
@@ -1441,27 +1416,15 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
             }
 
             accumulatedReasoning += reasoning;
-
-            if (mounted &&
-                _currentChat != null &&
-                _currentChat!.messages.isNotEmpty) {
-              final lastMessage = _currentChat!.messages.last;
-              final updatedMessage = lastMessage.copyWith(
-                reasoning: accumulatedReasoning,
-              );
-              final newMessages = List<Message>.from(_currentChat!.messages);
-              newMessages[newMessages.length - 1] = updatedMessage;
-              final newChat = _currentChat!.copyWith(
-                messages: newMessages,
-                updatedAt: DateTime.now(),
-              );
-              _updateCurrentChat(newChat);
-            }
+            throttleUpdate();
           },
-          onCompletion: (fullContent) {
+          onCompletion: (fullContent) async {
             if (!isStreamingLocal || !_isStreaming) {
               return;
             }
+
+            // First, flush any pending updates
+            await flushPendingUpdates();
 
             if (mounted &&
                 _currentChat != null &&
@@ -2178,18 +2141,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   // Method to detect language from text
   String _detectLanguage(String text) {
-    // Simple language detection based on common characters
-    final hasCyrillic = RegExp(r'[а-яА-Я]').hasMatch(text);
-    final hasLatin = RegExp(r'[a-zA-Z]').hasMatch(text);
-    final hasChinese = RegExp(r'[\u4e00-\u9fff]').hasMatch(text);
-    final hasJapanese = RegExp(r'[\u3040-\u309f\u30a0-\u30ff]').hasMatch(text);
-
-    if (hasCyrillic) return 'ru';
-    if (hasChinese) return 'zh';
-    if (hasJapanese) return 'ja';
-    if (hasLatin) return 'en';
-
-    return 'en'; // Default
+    return ChatLanguageUtils.detectLanguage(text);
   }
 
   // Method to get localized system prompt based on language
@@ -2316,59 +2268,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   // Method to extract and format error message from DioException or other errors
   String _formatErrorMessage(Object error) {
-    try {
-      final errorString = error.toString();
-
-      // Try to parse as JSON first
-      try {
-        final parsed = jsonDecode(errorString);
-        if (parsed is Map<String, dynamic> && parsed.containsKey('error')) {
-          final errorData = parsed['error'];
-          if (errorData is Map<String, dynamic>) {
-            final message = errorData['message'] ?? 'Unknown error';
-            final code = errorData['code'] ?? '';
-            final localizations = AppLocalizations.of(context);
-            final errorPrefix = localizations != null
-                ? localizations.errorMessage
-                : 'Error';
-            return '$errorPrefix $code: $message';
-          }
-        }
-      } catch (_) {
-        // Not JSON, continue with string processing
-      }
-
-      // Clean up common error formatting
-      String cleanedError = errorString
-          .replaceAll('\\n', '\n')
-          .replaceAll('\\t', ' ')
-          .replaceAll('\\\\', '\\')
-          .trim();
-
-      // Remove common prefixes
-      final prefixes = [
-        'DioException [bad response]: ',
-        'DioException [connection error]: ',
-        'SocketException: ',
-        'HttpException: ',
-      ];
-
-      for (final prefix in prefixes) {
-        if (cleanedError.startsWith(prefix)) {
-          cleanedError = cleanedError.substring(prefix.length);
-          break;
-        }
-      }
-
-      // Truncate if too long
-      if (cleanedError.length > ChatScreenConstants.maxErrorLength) {
-        cleanedError =
-            '${cleanedError.substring(0, ChatScreenConstants.maxErrorLength)}...';
-      }
-
-      return cleanedError;
-    } catch (e) {
-      return error.toString();
-    }
+    return ChatErrorUtils.formatError(error);
   }
 }

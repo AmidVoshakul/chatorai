@@ -897,12 +897,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get systemPromptDescription => 'Инструкции для AI-ассистента';
 
   @override
-  String get streamResponse => 'Потоковый ответ';
-
-  @override
-  String get streamResponseDescription => 'Получать ответы в реальном времени';
-
-  @override
   String get resetToDefaults => 'Сбросить к настройкам по умолчанию';
 
   @override
@@ -919,12 +913,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsApplied => 'Настройки успешно применены';
-
-  @override
-  String get enableReasoning => 'Включить рассуждения';
-
-  @override
-  String get enableReasoningDescription => 'Включать рассуждения/мысли модели в ответы';
 
   @override
   String apiLimitExceeded(Object limit) {

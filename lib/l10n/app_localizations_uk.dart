@@ -897,12 +897,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get systemPromptDescription => 'Інструкції для AI-асистента';
 
   @override
-  String get streamResponse => 'Потокова відповідь';
-
-  @override
-  String get streamResponseDescription => 'Отримувати відповіді в реальному часі';
-
-  @override
   String get resetToDefaults => 'Скинути до стандартних';
 
   @override
@@ -919,12 +913,6 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get settingsApplied => 'Налаштування успішно застосовано';
-
-  @override
-  String get enableReasoning => 'Увімкнути міркування';
-
-  @override
-  String get enableReasoningDescription => 'Включати міркування/думки моделі у відповіді';
 
   @override
   String apiLimitExceeded(Object limit) {

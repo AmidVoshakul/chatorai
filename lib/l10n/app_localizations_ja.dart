@@ -897,12 +897,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get systemPromptDescription => 'AIアシスタントへの指示';
 
   @override
-  String get streamResponse => 'ストリーミング応答';
-
-  @override
-  String get streamResponseDescription => 'リアルタイムで応答を受信';
-
-  @override
   String get resetToDefaults => 'デフォルトにリセット';
 
   @override
@@ -919,12 +913,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsApplied => '設定が正常に適用されました';
-
-  @override
-  String get enableReasoning => '推論を有効にする';
-
-  @override
-  String get enableReasoningDescription => 'モデルの推論/思考をレスポンスに含める';
 
   @override
   String apiLimitExceeded(Object limit) {

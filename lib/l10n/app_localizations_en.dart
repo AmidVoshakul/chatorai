@@ -897,12 +897,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get systemPromptDescription => 'Instructions for the AI assistant';
 
   @override
-  String get streamResponse => 'Stream Response';
-
-  @override
-  String get streamResponseDescription => 'Receive responses in real-time';
-
-  @override
   String get resetToDefaults => 'Reset to Defaults';
 
   @override
@@ -919,12 +913,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsApplied => 'Settings applied successfully';
-
-  @override
-  String get enableReasoning => 'Enable Reasoning';
-
-  @override
-  String get enableReasoningDescription => 'Include model reasoning/thoughts in responses';
 
   @override
   String apiLimitExceeded(Object limit) {
