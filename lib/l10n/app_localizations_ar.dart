@@ -27,6 +27,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get baseUrl => 'عنوان URL الأساسي';
 
   @override
+  String get validateApiKey => 'تحقق من مفتاح API';
+
+  @override
+  String get apiKeyValid => 'مفتاح API صالح';
+
+  @override
+  String get apiKeyInvalid => 'صيغة مفتاح API غير صالحة';
+
+  @override
+  String get apiKeyEmpty => 'لا يمكن أن يكون مفتاح API فارغاً';
+
+  @override
   String get appearance => 'المظهر';
 
   @override

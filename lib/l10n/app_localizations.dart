@@ -139,6 +139,30 @@ abstract class AppLocalizations {
   /// **'Base URL'**
   String get baseUrl;
 
+  /// No description provided for @validateApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Validate API Key'**
+  String get validateApiKey;
+
+  /// No description provided for @apiKeyValid.
+  ///
+  /// In en, this message translates to:
+  /// **'API key is valid'**
+  String get apiKeyValid;
+
+  /// No description provided for @apiKeyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid API key format'**
+  String get apiKeyInvalid;
+
+  /// No description provided for @apiKeyEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'API key cannot be empty'**
+  String get apiKeyEmpty;
+
   /// No description provided for @appearance.
   ///
   /// In en, this message translates to:

@@ -27,6 +27,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get baseUrl => '基础 URL';
 
   @override
+  String get validateApiKey => '验证 API 密钥';
+
+  @override
+  String get apiKeyValid => 'API 密钥有效';
+
+  @override
+  String get apiKeyInvalid => 'API 密钥格式无效';
+
+  @override
+  String get apiKeyEmpty => 'API 密钥不能为空';
+
+  @override
   String get appearance => '外观';
 
   @override

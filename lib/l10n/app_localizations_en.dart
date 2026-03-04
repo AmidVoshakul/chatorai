@@ -27,6 +27,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get baseUrl => 'Base URL';
 
   @override
+  String get validateApiKey => 'Validate API Key';
+
+  @override
+  String get apiKeyValid => 'API key is valid';
+
+  @override
+  String get apiKeyInvalid => 'Invalid API key format';
+
+  @override
+  String get apiKeyEmpty => 'API key cannot be empty';
+
+  @override
   String get appearance => 'Appearance';
 
   @override

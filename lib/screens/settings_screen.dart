@@ -32,6 +32,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _baseUrlController = TextEditingController(
       text: dotenv.env['OPENROUTER_BASE_URL'] ?? 'https://openrouter.ai/api/v1',
     );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _validateApiKeyOnInit();
+    });
   }
 
   @override
@@ -39,6 +43,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _apiKeyController.dispose();
     _baseUrlController.dispose();
     super.dispose();
+  }
+
+  void _validateApiKeyOnInit() {
+    final localizations = AppLocalizations.of(context)!;
+    final apiKey = _apiKeyController.text.trim();
+
+    if (apiKey.isEmpty) {
+      return;
+    }
+
+    final isValid = _isValidApiKey(apiKey);
+
+    if (!isValid) {
+      SnackbarUtils.showErrorSnackBar(
+        context: context,
+        message: localizations.apiKeyInvalid,
+        icon: Icons.error,
+      );
+    }
+  }
+
+  bool _isValidApiKey(String apiKey) {
+    if (apiKey.isEmpty) return false;
+
+    final validPrefixes = ['sk-', 'sk-or-'];
+
+    return validPrefixes.any((prefix) => apiKey.startsWith(prefix)) &&
+        apiKey.length > 10;
   }
 
   @override

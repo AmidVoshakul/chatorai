@@ -27,6 +27,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get baseUrl => 'Base URL';
 
   @override
+  String get validateApiKey => 'Проверить API ключ';
+
+  @override
+  String get apiKeyValid => 'API ключ валидный';
+
+  @override
+  String get apiKeyInvalid => 'Неверный формат API ключа';
+
+  @override
+  String get apiKeyEmpty => 'API ключ не может быть пустым';
+
+  @override
   String get appearance => 'Внешний вид';
 
   @override

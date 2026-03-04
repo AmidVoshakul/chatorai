@@ -27,6 +27,18 @@ class AppLocalizationsUk extends AppLocalizations {
   String get baseUrl => 'Base URL';
 
   @override
+  String get validateApiKey => 'Перевірити API ключ';
+
+  @override
+  String get apiKeyValid => 'API ключ валідний';
+
+  @override
+  String get apiKeyInvalid => 'Невірний формат API ключа';
+
+  @override
+  String get apiKeyEmpty => 'API ключ не може бути порожнім';
+
+  @override
   String get appearance => 'Зовнішній вигляд';
 
   @override

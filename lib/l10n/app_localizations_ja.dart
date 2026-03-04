@@ -27,6 +27,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get baseUrl => 'ベース URL';
 
   @override
+  String get validateApiKey => 'API キーを検証';
+
+  @override
+  String get apiKeyValid => 'API キーは有効です';
+
+  @override
+  String get apiKeyInvalid => 'API キーの形式が無効です';
+
+  @override
+  String get apiKeyEmpty => 'API キーは空にできません';
+
+  @override
   String get appearance => '外観';
 
   @override
