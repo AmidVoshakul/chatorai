@@ -15,7 +15,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings => 'الإعدادات';
 
   @override
-  String get openRouterConfiguration => 'تكوين OpenRouter';
+  String get providerConfiguration => 'تكوين المزود';
 
   @override
   String get apiKey => 'مفتاح API';

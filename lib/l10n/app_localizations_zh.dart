@@ -15,7 +15,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settings => '设置';
 
   @override
-  String get openRouterConfiguration => 'OpenRouter 配置';
+  String get providerConfiguration => '提供商配置';
 
   @override
   String get apiKey => 'API 密钥';

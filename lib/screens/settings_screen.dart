@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:chatorai/providers/theme_provider.dart';
 import 'package:chatorai/providers/language_provider.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
@@ -25,13 +26,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     _languageProvider = Provider.of<LanguageProvider>(context, listen: false);
 
-    // Initialize controllers with current values
     _apiKeyController = TextEditingController(
-      text:
-          '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',
+      text: dotenv.env['OPENROUTER_API_KEY'] ?? '',
     );
     _baseUrlController = TextEditingController(
-      text: 'https://openrouter.ai/api/v1',
+      text: dotenv.env['OPENROUTER_BASE_URL'] ?? 'https://openrouter.ai/api/v1',
     );
   }
 
@@ -65,7 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              localizations.openRouterConfiguration,
+              localizations.providerConfiguration,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
@@ -171,41 +170,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Font Size
             Text(
               localizations.fontSize,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Card(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.grey[900]
-                  : null,
+                  ? UbuntuColors.darkCard
+                  : UbuntuColors.lightCard,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? UbuntuColors.darkInputBorder
+                      : UbuntuColors.inputBorder,
+                  width: 1,
+                ),
+              ),
+              elevation: 0,
               child: Padding(
-                padding: const EdgeInsets.all(12.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
                     Text(
                       localizations.currentSize(
                         (themeProvider.fontSize * 100).toInt(),
                       ),
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? UbuntuColors.darkTextColor
+                            : UbuntuColors.lightTextColor,
+                      ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(Icons.text_fields, size: 16),
+                        Icon(
+                          Icons.text_fields,
+                          size: 18,
+                          color: UbuntuColors.orange,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Slider(
-                            value: themeProvider.fontSize,
-                            min: 0.8,
-                            max: 1.5,
-                            divisions: 7,
-                            label: '${(themeProvider.fontSize * 100).toInt()}%',
-                            onChanged: (value) {
-                              themeProvider.fontSize = value;
-                            },
+                          child: SliderTheme(
+                            data: SliderTheme.of(context).copyWith(
+                              activeTrackColor: UbuntuColors.orange,
+                              inactiveTrackColor:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? UbuntuColors.darkInputBorder
+                                  : UbuntuColors.inputBorder,
+                              thumbColor: UbuntuColors.orange,
+                              overlayColor: UbuntuColors.orange.withAlpha(30),
+                              valueIndicatorColor: UbuntuColors.orange,
+                              valueIndicatorTextStyle: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            child: Slider(
+                              value: themeProvider.fontSize,
+                              min: 0.8,
+                              max: 1.5,
+                              divisions: 7,
+                              label:
+                                  '${(themeProvider.fontSize * 100).toInt()}%',
+                              onChanged: (value) {
+                                themeProvider.fontSize = value;
+                              },
+                            ),
                           ),
                         ),
-                        const Icon(Icons.text_fields, size: 24),
+                        Icon(
+                          Icons.text_fields,
+                          size: 26,
+                          color: UbuntuColors.orange,
+                        ),
                       ],
                     ),
                   ],
@@ -218,118 +258,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Accessibility Options
             Text(
               localizations.accessibility,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Card(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.grey[900]
-                  : null,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  children: [
-                    SwitchListTile(
-                      value: themeProvider.reduceMotion,
-                      onChanged: (value) {
-                        themeProvider.reduceMotion = value;
-                      },
-                      title: Text(localizations.reduceMotion),
-                      subtitle: Text(localizations.disableAnimation),
-                      activeThumbColor: Theme.of(context).colorScheme.primary,
-                    ),
-                    Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? UbuntuColors.darkInputBorder
-                          : UbuntuColors.inputBorder,
-                    ),
-                    SwitchListTile(
-                      value: themeProvider.highContrast,
-                      onChanged: (value) {
-                        themeProvider.highContrast = value;
-                      },
-                      title: Text(localizations.highContrast),
-                      subtitle: Text(localizations.increaseContrast),
-                      activeThumbColor: Theme.of(context).colorScheme.primary,
-                    ),
-                    Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? UbuntuColors.darkInputBorder
-                          : UbuntuColors.inputBorder,
-                    ),
-                    SwitchListTile(
-                      value: themeProvider.wideScreenMode,
-                      onChanged: (value) {
-                        themeProvider.wideScreenMode = value;
-                      },
-                      title: Text(localizations.wideScreenMode),
-                      subtitle: Text(localizations.useFullScreenWidth),
-                      activeThumbColor: Theme.of(context).colorScheme.primary,
-                    ),
-                  ],
+                  ? UbuntuColors.darkCard
+                  : UbuntuColors.lightCard,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? UbuntuColors.darkInputBorder
+                      : UbuntuColors.inputBorder,
+                  width: 1,
                 ),
               ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Reset Settings
-            Text(
-              localizations.resetSettings,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.grey[900]
-                  : null,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  children: [
-                    Text(
-                      localizations.resetAllSettings,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.grey[400]
-                            : Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? UbuntuColors.darkInputBorder
-                                : UbuntuColors.inputBorder,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: () async {
-                          final local = AppLocalizations.of(context)!;
-                          await themeProvider.resetSettings();
-                          if (mounted && context.mounted) {
-                            SnackbarUtils.showInfoSnackBar(
-                              context: context,
-                              message: local.settingsReset,
-                            );
-                          }
-                        },
-                        child: Text(localizations.resetSettings),
-                      ),
-                    ),
-                  ],
-                ),
+              elevation: 0,
+              child: _buildToggleTile(
+                title: localizations.wideScreenMode,
+                subtitle: localizations.useFullScreenWidth,
+                value: themeProvider.wideScreenMode,
+                onChanged: (value) => themeProvider.wideScreenMode = value,
               ),
             ),
 
@@ -820,5 +770,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'ja': localizations.japanese,
     };
     return languages[code] ?? code.toUpperCase();
+  }
+
+  // Build modern Google-style toggle tile
+  Widget _buildToggleTile({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return InkWell(
+      onTap: () => onChanged(!value),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: isDark
+                          ? UbuntuColors.darkTextColor
+                          : UbuntuColors.lightTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark
+                          ? UbuntuColors.darkSecondaryTextColor
+                          : UbuntuColors.secondaryTextColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Transform.scale(
+              scale: 0.75,
+              child: Switch(
+                value: value,
+                onChanged: onChanged,
+                activeThumbColor: UbuntuColors.orange,
+                activeTrackColor: UbuntuColors.orange.withAlpha(150),
+                inactiveThumbColor: isDark
+                    ? UbuntuColors.toggleInactiveThumbDark
+                    : UbuntuColors.toggleInactiveThumbLight,
+                inactiveTrackColor: isDark
+                    ? UbuntuColors.toggleInactiveTrackDark
+                    : UbuntuColors.toggleInactiveTrackLight,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -115,11 +115,11 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
-  /// No description provided for @openRouterConfiguration.
+  /// No description provided for @providerConfiguration.
   ///
   /// In en, this message translates to:
-  /// **'OpenRouter Configuration'**
-  String get openRouterConfiguration;
+  /// **'Provider Configuration'**
+  String get providerConfiguration;
 
   /// No description provided for @apiKey.
   ///

@@ -7,52 +7,104 @@ class UbuntuColors {
   static const Color orange = Color(0xFFFF7F00); // Vibrant Ubuntu orange
   static const Color dark = Color(0xFF1A0E00); // Deep dark brown
   static const Color light = Color(0xFFEBEBEB); // Pure white
-  
+
   // Grays
   static const Color gray = Color(0xFF555555); // Dark gray for better contrast
   static const Color lightGray = Color(0xFFEEEEEE); // Light gray
   static const Color darkGray = Color(0xFF2A2A2A); // Dark gray for dark theme
   static const Color mediumGray = Color(0xFFB0B0B0); // Medium gray
-  
+
   // Accent colors
   static const Color accent = Color(0xFF6B008E); // Deep purple
   static const Color neonBlue = Color.fromARGB(255, 0, 145, 255); // Neon blue
-  
+
   // Border colors
-  static const Color lightBorderColor = Color(0xFFF5F5F5); // Light gray for light theme
-  static const Color darkBorderColor = Color(0xFF0C0C0C); // Dark border color for dark theme
-  
+  static const Color lightBorderColor = Color(
+    0xFFF5F5F5,
+  ); // Light gray for light theme
+  static const Color darkBorderColor = Color(
+    0xFF0C0C0C,
+  ); // Dark border color for dark theme
+
   // Surface colors
-  static const Color lightSurface = Color(0xFFF8F9FA); // Light surface background
+  static const Color lightSurface = Color(
+    0xFFF8F9FA,
+  ); // Light surface background
   static const Color darkSurface = Color(0xFF0A0A0A); // Dark surface background
-  
+
   // Card colors
   static const Color lightCard = Color(0xFFFFFFFF); // Light card color
   static const Color darkCard = Color(0xFF1A1A1A); // Dark card color
-  
+
   // Text colors
-  static const Color lightTextColor = Color(0xFF333333); // Primary text for light theme
-  static const Color darkTextColor = Color(0xFFE0E0E0); // Primary text for dark theme
-  static const Color secondaryTextColor = Color(0xFF666666); // Secondary text for light theme
-  static const Color darkSecondaryTextColor = Color(0xFFB0B0B0); // Secondary text for dark theme
-  
+  static const Color lightTextColor = Color(
+    0xFF333333,
+  ); // Primary text for light theme
+  static const Color darkTextColor = Color(
+    0xFFE0E0E0,
+  ); // Primary text for dark theme
+  static const Color secondaryTextColor = Color(
+    0xFF666666,
+  ); // Secondary text for light theme
+  static const Color darkSecondaryTextColor = Color(
+    0xFFB0B0B0,
+  ); // Secondary text for dark theme
+
   // Input colors
-  static const Color inputFill = Color(0xFFF0F0F0); // Input background for light theme
-  static const Color darkInputFill = Color(0xFF252525); // Input background for dark theme
-  static const Color inputBorder = Color(0xFFDDDDDD); // Input border for light theme
-  static const Color darkInputBorder = Color(0xFF252525); // Input border for dark theme
-  
+  static const Color inputFill = Color(
+    0xFFF0F0F0,
+  ); // Input background for light theme
+  static const Color darkInputFill = Color(
+    0xFF252525,
+  ); // Input background for dark theme
+  static const Color inputBorder = Color(
+    0xFFDDDDDD,
+  ); // Input border for light theme
+  static const Color darkInputBorder = Color(
+    0xFF252525,
+  ); // Input border for dark theme
+
   // Navigation bar colors
-  static const Color navBarBackgroundLight = Color(0xFFF0F0F0); // Light theme nav bar background
-  static const Color navBarBackgroundDark = Color(0xFF1A1A1A); // Dark theme nav bar background
-  static const Color navBarBorderLight = Color(0xFFE0E0E0); // Light theme nav bar border
-  static const Color navBarBorderDark = Color(0xFF2A2A2A); // Dark theme nav bar border
-  
+  static const Color navBarBackgroundLight = Color(
+    0xFFF0F0F0,
+  ); // Light theme nav bar background
+  static const Color navBarBackgroundDark = Color(
+    0xFF1A1A1A,
+  ); // Dark theme nav bar background
+  static const Color navBarBorderLight = Color(
+    0xFFE0E0E0,
+  ); // Light theme nav bar border
+  static const Color navBarBorderDark = Color(
+    0xFF2A2A2A,
+  ); // Dark theme nav bar border
+
   // Input widget container colors
-  static const Color inputContainerLight = Color(0xFFFFFFFF); // Light theme input container
-  static const Color inputContainerDark = Color(0xFF1A1A1A); // Dark theme input container
-  static const Color inputContainerBorderLight = Color(0xFFE0E0E0); // Light theme input border
-  static const Color inputContainerBorderDark = Color(0xFF2A2A2A); // Dark theme input border
+  static const Color inputContainerLight = Color(
+    0xFFFFFFFF,
+  ); // Light theme input container
+  static const Color inputContainerDark = Color(
+    0xFF1A1A1A,
+  ); // Dark theme input container
+  static const Color inputContainerBorderLight = Color(
+    0xFFE0E0E0,
+  ); // Light theme input border
+  static const Color inputContainerBorderDark = Color(
+    0xFF2A2A2A,
+  ); // Dark theme input border
+
+  // Toggle/Switch colors
+  static const Color toggleInactiveThumbLight = Color(
+    0xFFFAFAFA,
+  ); // Toggle thumb - light theme
+  static const Color toggleInactiveThumbDark = Color(
+    0xFFBDBDBD,
+  ); // Toggle thumb - dark theme
+  static const Color toggleInactiveTrackLight = Color(
+    0xFFE0E0E0,
+  ); // Toggle track - light theme
+  static const Color toggleInactiveTrackDark = Color(
+    0xFF424242,
+  ); // Toggle track - dark theme
 }
 
 /// Типографика для разных элементов
@@ -84,18 +136,9 @@ class UbuntuTypography {
       fontWeight: FontWeight.bold,
       color: UbuntuColors.dark,
     ),
-    bodyLarge: TextStyle(
-      fontSize: 16,
-      color: UbuntuColors.lightTextColor,
-    ),
-    bodyMedium: TextStyle(
-      fontSize: 14,
-      color: UbuntuColors.secondaryTextColor,
-    ),
-    bodySmall: TextStyle(
-      fontSize: 12,
-      color: UbuntuColors.secondaryTextColor,
-    ),
+    bodyLarge: TextStyle(fontSize: 16, color: UbuntuColors.lightTextColor),
+    bodyMedium: TextStyle(fontSize: 14, color: UbuntuColors.secondaryTextColor),
+    bodySmall: TextStyle(fontSize: 12, color: UbuntuColors.secondaryTextColor),
   );
 
   // Dark theme text styles
@@ -125,10 +168,7 @@ class UbuntuTypography {
       fontWeight: FontWeight.bold,
       color: UbuntuColors.light,
     ),
-    bodyLarge: TextStyle(
-      fontSize: 16,
-      color: UbuntuColors.darkTextColor,
-    ),
+    bodyLarge: TextStyle(fontSize: 16, color: UbuntuColors.darkTextColor),
     bodyMedium: TextStyle(
       fontSize: 14,
       color: UbuntuColors.darkSecondaryTextColor,
@@ -146,10 +186,10 @@ class UbuntuMarkdownStyles {
   static MarkdownStyleSheet getMarkdownStyles(BuildContext context) {
     final brightness = MediaQuery.of(context).platformBrightness;
     final theme = Theme.of(context);
-    
+
     // Начинаем с базовых стилей темы
     final baseStyle = MarkdownStyleSheet.fromTheme(theme);
-    
+
     if (brightness == Brightness.light) {
       return baseStyle.copyWith(
         // Цитаты - светлая тема с оранжевым акцентом
@@ -161,20 +201,19 @@ class UbuntuMarkdownStyles {
         blockquoteDecoration: BoxDecoration(
           color: UbuntuColors.lightGray.withAlpha(50), // Очень легкий серый
           border: Border(
-            left: BorderSide(
-              color: UbuntuColors.orange,
-              width: 4,
-            ),
+            left: BorderSide(color: UbuntuColors.orange, width: 4),
           ),
           borderRadius: BorderRadius.only(
             topRight: Radius.circular(8),
             bottomRight: Radius.circular(8),
           ),
         ),
-        
+
         // Код - улучшаем видимость
         code: baseStyle.code?.copyWith(
-          backgroundColor: UbuntuColors.lightGray.withAlpha(150), // Светлый фон с хорошей видимостью
+          backgroundColor: UbuntuColors.lightGray.withAlpha(
+            150,
+          ), // Светлый фон с хорошей видимостью
           color: Colors.blue[700],
           fontFamily: 'Monaco, Consolas, "Courier New", monospace',
           fontSize: 13,
@@ -191,13 +230,13 @@ class UbuntuMarkdownStyles {
             ),
           ], // Визуальное расширение фона слева и справа
         ),
-        
+
         // Ссылки - оранжевые
         a: baseStyle.a?.copyWith(
           color: UbuntuColors.orange,
           decoration: TextDecoration.underline,
         ),
-        
+
         // Заголовки - улучшаем контраст
         h1: baseStyle.h1?.copyWith(color: UbuntuColors.dark),
         h2: baseStyle.h2?.copyWith(color: UbuntuColors.dark),
@@ -212,19 +251,18 @@ class UbuntuMarkdownStyles {
           fontSize: 14,
         ),
         blockquoteDecoration: BoxDecoration(
-          color: UbuntuColors.darkGray.withAlpha(150), // Темный фон с легкой прозрачностью
+          color: UbuntuColors.darkGray.withAlpha(
+            150,
+          ), // Темный фон с легкой прозрачностью
           border: Border(
-            left: BorderSide(
-              color: UbuntuColors.orange,
-              width: 4,
-            ),
+            left: BorderSide(color: UbuntuColors.orange, width: 4),
           ),
           borderRadius: BorderRadius.only(
             topRight: Radius.circular(8),
             bottomRight: Radius.circular(8),
           ),
         ),
-        
+
         // Код - темная тема
         code: baseStyle.code?.copyWith(
           // backgroundColor: UbuntuColors.darkGray.withAlpha(200), // Темный фон с увеличенной непрозрачностью
@@ -232,13 +270,13 @@ class UbuntuMarkdownStyles {
           fontFamily: 'Monaco, Consolas, "Courier New", monospace',
           fontSize: 13,
         ),
-        
+
         // Ссылки - оранжевые
         a: baseStyle.a?.copyWith(
           color: UbuntuColors.orange,
           decoration: TextDecoration.underline,
         ),
-        
+
         // Заголовки - светлые в темной теме
         h1: baseStyle.h1?.copyWith(color: UbuntuColors.light),
         h2: baseStyle.h2?.copyWith(color: UbuntuColors.light),
@@ -295,17 +333,13 @@ class AppTheme {
         color: UbuntuColors.secondaryTextColor,
         fontSize: 14,
       ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
     cardTheme: CardThemeData(
       color: UbuntuColors.light,
       elevation: 0,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ),
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
@@ -366,17 +400,13 @@ class AppTheme {
         color: UbuntuColors.darkSecondaryTextColor,
         fontSize: 14,
       ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
     cardTheme: CardThemeData(
       color: UbuntuColors.darkCard,
       elevation: 0,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ),
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
@@ -405,7 +435,7 @@ class AppTheme {
 
   /// Получить тему по умолчанию (светлая)
   static ThemeData get light => lightTheme;
-  
+
   /// Получить тему по умолчанию (темная)
   static ThemeData get dark => darkTheme;
 }
