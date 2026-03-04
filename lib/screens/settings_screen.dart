@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/providers/language_provider.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/themes/app_theme.dart';
@@ -14,6 +15,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late ThemeProvider _themeProvider;
+  late LanguageProvider _languageProvider;
   late TextEditingController _apiKeyController;
   late TextEditingController _baseUrlController;
 
@@ -21,10 +23,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    _languageProvider = Provider.of<LanguageProvider>(context, listen: false);
 
     // Initialize controllers with current values
-    _apiKeyController = TextEditingController(text: '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');
-    _baseUrlController = TextEditingController(text: 'https://openrouter.ai/api/v1');
+    _apiKeyController = TextEditingController(
+      text:
+          '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',
+    );
+    _baseUrlController = TextEditingController(
+      text: 'https://openrouter.ai/api/v1',
+    );
   }
 
   @override
@@ -36,7 +44,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _themeProvider = Provider.of<ThemeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
     final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -57,10 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Text(
               localizations.openRouterConfiguration,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
 
@@ -80,19 +86,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: UbuntuColors.orange,
-                    width: 2,
-                  ),
+                  borderSide: BorderSide(color: UbuntuColors.orange, width: 2),
                 ),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.content_copy),
                   onPressed: () {
-                    // Copy to clipboard functionality
                     SnackbarUtils.showCopySnackBar(
-                    context: context,
-                    message: localizations.apiKeyCopied,
-                  );
+                      context: context,
+                      message: localizations.apiKeyCopied,
+                    );
                   },
                   tooltip: localizations.copy,
                 ),
@@ -118,10 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color: UbuntuColors.orange,
-                    width: 2,
-                  ),
+                  borderSide: BorderSide(color: UbuntuColors.orange, width: 2),
                 ),
               ),
               maxLines: 1,
@@ -130,46 +129,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             Text(
               localizations.appearance,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
 
             // Theme Selection
             Text(
               localizations.theme,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             _buildSelectionCard(
               context: context,
               icon: Icons.palette,
-              title: _getThemeModeName(_themeProvider.themeMode, localizations),
+              title: _getThemeModeName(themeProvider.themeMode, localizations),
               subtitle: localizations.theme,
               onTap: () => _showThemeDialog(context, localizations),
             ),
 
             const SizedBox(height: 20),
 
-
             // Language Section
             Text(
               localizations.language,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             _buildSelectionCard(
               context: context,
               icon: Icons.language,
-              title: _getLanguageName(_themeProvider.selectedLanguage, localizations),
+              title: _getLanguageName(
+                languageProvider.selectedLanguage,
+                localizations,
+              ),
               subtitle: localizations.language,
               onTap: () => _showLanguageDialog(context, localizations),
             ),
@@ -179,10 +171,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Font Size
             Text(
               localizations.fontSize,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Card(
@@ -194,7 +183,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   children: [
                     Text(
-                      localizations.currentSize((_themeProvider.fontSize * 100).toInt()),
+                      localizations.currentSize(
+                        (themeProvider.fontSize * 100).toInt(),
+                      ),
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 8),
@@ -204,13 +195,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Slider(
-                            value: _themeProvider.fontSize,
+                            value: themeProvider.fontSize,
                             min: 0.8,
                             max: 1.5,
                             divisions: 7,
-                            label: '${(_themeProvider.fontSize * 100).toInt()}%',
+                            label: '${(themeProvider.fontSize * 100).toInt()}%',
                             onChanged: (value) {
-                              _themeProvider.fontSize = value;
+                              themeProvider.fontSize = value;
                             },
                           ),
                         ),
@@ -227,10 +218,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Accessibility Options
             Text(
               localizations.accessibility,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Card(
@@ -242,9 +230,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   children: [
                     SwitchListTile(
-                      value: _themeProvider.reduceMotion,
+                      value: themeProvider.reduceMotion,
                       onChanged: (value) {
-                        _themeProvider.reduceMotion = value;
+                        themeProvider.reduceMotion = value;
                       },
                       title: Text(localizations.reduceMotion),
                       subtitle: Text(localizations.disableAnimation),
@@ -258,9 +246,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           : UbuntuColors.inputBorder,
                     ),
                     SwitchListTile(
-                      value: _themeProvider.highContrast,
+                      value: themeProvider.highContrast,
                       onChanged: (value) {
-                        _themeProvider.highContrast = value;
+                        themeProvider.highContrast = value;
                       },
                       title: Text(localizations.highContrast),
                       subtitle: Text(localizations.increaseContrast),
@@ -274,9 +262,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           : UbuntuColors.inputBorder,
                     ),
                     SwitchListTile(
-                      value: _themeProvider.wideScreenMode,
+                      value: themeProvider.wideScreenMode,
                       onChanged: (value) {
-                        _themeProvider.wideScreenMode = value;
+                        themeProvider.wideScreenMode = value;
                       },
                       title: Text(localizations.wideScreenMode),
                       subtitle: Text(localizations.useFullScreenWidth),
@@ -289,14 +277,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             const SizedBox(height: 20),
 
-
             // Reset Settings
             Text(
               localizations.resetSettings,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Card(
@@ -322,7 +306,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(
-                            color: Theme.of(context).brightness == Brightness.dark
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
                                 ? UbuntuColors.darkInputBorder
                                 : UbuntuColors.inputBorder,
                           ),
@@ -332,11 +317,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         onPressed: () async {
                           final local = AppLocalizations.of(context)!;
-                          await _themeProvider.resetSettings();
+                          await themeProvider.resetSettings();
                           if (mounted && context.mounted) {
                             SnackbarUtils.showInfoSnackBar(
                               context: context,
-                              message: local.settingsReset
+                              message: local.settingsReset,
                             );
                           }
                         },
@@ -351,7 +336,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 20),
 
             // About Section
-
             const SizedBox(height: 8),
             _buildSelectionCard(
               context: context,
@@ -371,16 +355,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Show About dialog
   void _showAboutDialog(BuildContext context, AppLocalizations localizations) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: isDark ? UbuntuColors.darkCard : UbuntuColors.lightCard,
+          backgroundColor: isDark
+              ? UbuntuColors.darkCard
+              : UbuntuColors.lightCard,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(
-              color: isDark ? UbuntuColors.darkInputBorder : UbuntuColors.inputBorder,
+              color: isDark
+                  ? UbuntuColors.darkInputBorder
+                  : UbuntuColors.inputBorder,
               width: 1,
             ),
           ),
@@ -409,7 +397,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.5,
-                        color: isDark ? UbuntuColors.darkSecondaryTextColor : UbuntuColors.secondaryTextColor,
+                        color: isDark
+                            ? UbuntuColors.darkSecondaryTextColor
+                            : UbuntuColors.secondaryTextColor,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -422,7 +412,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 right: 8,
                 child: IconButton(
                   icon: const Icon(Icons.close, size: 20),
-                  color: isDark ? UbuntuColors.darkSecondaryTextColor : UbuntuColors.secondaryTextColor,
+                  color: isDark
+                      ? UbuntuColors.darkSecondaryTextColor
+                      : UbuntuColors.secondaryTextColor,
                   onPressed: () => Navigator.pop(context),
                   tooltip: localizations.close,
                 ),
@@ -443,13 +435,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Card(
       color: isDark ? UbuntuColors.darkCard : UbuntuColors.lightCard,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
-          color: isDark ? UbuntuColors.darkInputBorder : UbuntuColors.inputBorder,
+          color: isDark
+              ? UbuntuColors.darkInputBorder
+              : UbuntuColors.inputBorder,
           width: 1,
         ),
       ),
@@ -461,11 +455,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: UbuntuColors.orange,
-                size: 20,
-              ),
+              Icon(icon, color: UbuntuColors.orange, size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -476,7 +466,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? UbuntuColors.darkTextColor : UbuntuColors.lightTextColor,
+                        color: isDark
+                            ? UbuntuColors.darkTextColor
+                            : UbuntuColors.lightTextColor,
                       ),
                     ),
                     if (subtitle.isNotEmpty)
@@ -484,7 +476,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         subtitle,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? UbuntuColors.darkSecondaryTextColor : UbuntuColors.secondaryTextColor,
+                          color: isDark
+                              ? UbuntuColors.darkSecondaryTextColor
+                              : UbuntuColors.secondaryTextColor,
                         ),
                       ),
                   ],
@@ -493,7 +487,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
-                color: isDark ? UbuntuColors.darkSecondaryTextColor : UbuntuColors.secondaryTextColor,
+                color: isDark
+                    ? UbuntuColors.darkSecondaryTextColor
+                    : UbuntuColors.secondaryTextColor,
               ),
             ],
           ),
@@ -505,16 +501,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Show theme selection dialog
   void _showThemeDialog(BuildContext context, AppLocalizations localizations) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: isDark ? UbuntuColors.darkCard : UbuntuColors.lightCard,
+          backgroundColor: isDark
+              ? UbuntuColors.darkCard
+              : UbuntuColors.lightCard,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(
-              color: isDark ? UbuntuColors.darkInputBorder : UbuntuColors.inputBorder,
+              color: isDark
+                  ? UbuntuColors.darkInputBorder
+                  : UbuntuColors.inputBorder,
               width: 1,
             ),
           ),
@@ -541,7 +541,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.brightness_6,
                       title: localizations.system,
                       subtitle: localizations.useSystemTheme,
-                      isSelected: _themeProvider.themeMode == AppThemeMode.system,
+                      isSelected:
+                          _themeProvider.themeMode == AppThemeMode.system,
                       onTap: () {
                         _themeProvider.themeMode = AppThemeMode.system;
                         Navigator.pop(context);
@@ -557,7 +558,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.wb_sunny,
                       title: localizations.light,
                       subtitle: localizations.useLightTheme,
-                      isSelected: _themeProvider.themeMode == AppThemeMode.light,
+                      isSelected:
+                          _themeProvider.themeMode == AppThemeMode.light,
                       onTap: () {
                         _themeProvider.themeMode = AppThemeMode.light;
                         Navigator.pop(context);
@@ -593,7 +595,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 right: 8,
                 child: IconButton(
                   icon: const Icon(Icons.close, size: 20),
-                  color: isDark ? UbuntuColors.darkSecondaryTextColor : UbuntuColors.secondaryTextColor,
+                  color: isDark
+                      ? UbuntuColors.darkSecondaryTextColor
+                      : UbuntuColors.secondaryTextColor,
                   onPressed: () => Navigator.pop(context),
                   tooltip: localizations.close,
                 ),
@@ -606,7 +610,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // Show language selection dialog
-  void _showLanguageDialog(BuildContext context, AppLocalizations localizations) {
+  void _showLanguageDialog(
+    BuildContext context,
+    AppLocalizations localizations,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final languages = <String, String>{
       'en': localizations.english,
@@ -616,16 +623,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'zh': localizations.chinese,
       'ja': localizations.japanese,
     };
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: isDark ? UbuntuColors.darkCard : UbuntuColors.lightCard,
+          backgroundColor: isDark
+              ? UbuntuColors.darkCard
+              : UbuntuColors.lightCard,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(
-              color: isDark ? UbuntuColors.darkInputBorder : UbuntuColors.inputBorder,
+              color: isDark
+                  ? UbuntuColors.darkInputBorder
+                  : UbuntuColors.inputBorder,
               width: 1,
             ),
           ),
@@ -655,12 +666,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         itemCount: languages.length,
                         separatorBuilder: (context, index) => Divider(
                           height: 1,
-                          color: isDark ? UbuntuColors.darkInputBorder : UbuntuColors.inputBorder,
+                          color: isDark
+                              ? UbuntuColors.darkInputBorder
+                              : UbuntuColors.inputBorder,
                         ),
                         itemBuilder: (context, index) {
                           final entry = languages.entries.elementAt(index);
-                          final isSelected = _themeProvider.selectedLanguage == entry.key;
-                          
+                          final isSelected =
+                              _languageProvider.selectedLanguage == entry.key;
+
                           return _buildDialogOption(
                             context: context,
                             icon: Icons.language,
@@ -668,7 +682,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             subtitle: entry.value,
                             isSelected: isSelected,
                             onTap: () {
-                              _themeProvider.selectedLanguage = entry.key;
+                              _languageProvider.selectedLanguage = entry.key;
                               Navigator.pop(context);
                               SnackbarUtils.showSuccessSnackBar(
                                 context: context,
@@ -689,7 +703,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 right: 8,
                 child: IconButton(
                   icon: const Icon(Icons.close, size: 20),
-                  color: isDark ? UbuntuColors.darkSecondaryTextColor : UbuntuColors.secondaryTextColor,
+                  color: isDark
+                      ? UbuntuColors.darkSecondaryTextColor
+                      : UbuntuColors.secondaryTextColor,
                   onPressed: () => Navigator.pop(context),
                   tooltip: localizations.close,
                 ),
@@ -711,7 +727,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -721,18 +737,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: isSelected 
-              ? (isDark ? UbuntuColors.darkSurface : UbuntuColors.lightSurface)
-              : Colors.transparent,
+            color: isSelected
+                ? (isDark
+                      ? UbuntuColors.darkSurface
+                      : UbuntuColors.lightSurface)
+                : Colors.transparent,
             border: isSelected
-              ? Border.all(color: UbuntuColors.orange, width: 1)
-              : null,
+                ? Border.all(color: UbuntuColors.orange, width: 1)
+                : null,
           ),
           child: Row(
             children: [
               Icon(
                 icon,
-                color: isSelected ? UbuntuColors.orange : (isDark ? UbuntuColors.darkSecondaryTextColor : UbuntuColors.secondaryTextColor),
+                color: isSelected
+                    ? UbuntuColors.orange
+                    : (isDark
+                          ? UbuntuColors.darkSecondaryTextColor
+                          : UbuntuColors.secondaryTextColor),
                 size: 18,
               ),
               const SizedBox(width: 12),
@@ -744,28 +766,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title,
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        color: isSelected 
-                          ? UbuntuColors.orange
-                          : (isDark ? UbuntuColors.darkTextColor : UbuntuColors.lightTextColor),
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w500,
+                        color: isSelected
+                            ? UbuntuColors.orange
+                            : (isDark
+                                  ? UbuntuColors.darkTextColor
+                                  : UbuntuColors.lightTextColor),
                       ),
                     ),
                     Text(
                       subtitle,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? UbuntuColors.darkSecondaryTextColor : UbuntuColors.secondaryTextColor,
+                        color: isDark
+                            ? UbuntuColors.darkSecondaryTextColor
+                            : UbuntuColors.secondaryTextColor,
                       ),
                     ),
                   ],
                 ),
               ),
               if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: UbuntuColors.orange,
-                  size: 20,
-                ),
+                Icon(Icons.check_circle, color: UbuntuColors.orange, size: 20),
             ],
           ),
         ),
@@ -797,5 +821,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     };
     return languages[code] ?? code.toUpperCase();
   }
-
 }

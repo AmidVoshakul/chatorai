@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/models/model_settings.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/services/openrouter_service.dart';
-import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/providers/model_provider.dart';
 
 // Initialize logger for this provider
 final _logger = LogTags.settings;
@@ -43,7 +43,7 @@ class ModelSettingsProvider with ChangeNotifier {
   }
 
   /// Load settings for a specific model
-  /// Pass BuildContext to access ThemeProvider for model info
+  /// Pass BuildContext to access ModelProvider for model info
   Future<ModelSettings> loadSettings(
     String modelId, [
     BuildContext? context,
@@ -92,7 +92,7 @@ class ModelSettingsProvider with ChangeNotifier {
           settings = ModelSettings.defaultForModel(modelId);
         }
       } else {
-        // No stored settings, try to get model info from theme provider or API
+        // No stored settings, try to get model info from ModelProvider or API
         settings = await _createSettingsFromModelInfo(modelId, context);
       }
 
@@ -115,24 +115,24 @@ class ModelSettingsProvider with ChangeNotifier {
     }
   }
 
-  /// Create settings from model information (from theme provider or API)
+  /// Create settings from model information (from ModelProvider or API)
   Future<ModelSettings> _createSettingsFromModelInfo(
     String modelId, [
     BuildContext? context,
   ]) async {
     try {
-      // First try to get from ThemeProvider if context is available
+      // First try to get from ModelProvider if context is available
       if (context != null && context.mounted) {
         try {
-          final themeProvider = Provider.of<ThemeProvider>(
+          final modelProvider = Provider.of<ModelProvider>(
             context,
             listen: false,
           );
-          final model = themeProvider.getModelById(modelId);
+          final model = modelProvider.getModelById(modelId);
 
           if (model != null) {
             _logger.logInfo(
-              '[ModelSettingsProvider] Got model info from ThemeProvider: ${model.name}, context: ${model.contextLength}',
+              '[ModelSettingsProvider] Got model info from ModelProvider: ${model.name}, context: ${model.contextLength}',
             );
 
             // Calculate safe maxTokens: 70% of contextLength to leave room for input tokens
@@ -147,7 +147,7 @@ class ModelSettingsProvider with ChangeNotifier {
           }
         } catch (e) {
           _logger.logWarning(
-            '[ModelSettingsProvider] Could not get model from ThemeProvider: $e',
+            '[ModelSettingsProvider] Could not get model from ModelProvider: $e',
           );
         }
       }
@@ -319,7 +319,7 @@ class ModelSettingsProvider with ChangeNotifier {
   }
 
   /// Get settings for any model (without setting as active)
-  /// Pass BuildContext to access ThemeProvider for model info
+  /// Pass BuildContext to access ModelProvider for model info
   Future<ModelSettings> getSettings(
     String modelId, [
     BuildContext? context,

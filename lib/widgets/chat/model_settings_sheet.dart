@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:chatorai/providers/model_settings_provider.dart';
-import 'package:chatorai/providers/theme_provider.dart';
+import 'package:chatorai/providers/model_provider.dart';
 import 'package:chatorai/models/model_settings.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/themes/app_theme.dart';
@@ -19,13 +19,15 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
   final TextEditingController _temperatureController = TextEditingController();
   final TextEditingController _maxTokensController = TextEditingController();
   final TextEditingController _topPController = TextEditingController();
-  final TextEditingController _frequencyPenaltyController = TextEditingController();
-  final TextEditingController _presencePenaltyController = TextEditingController();
+  final TextEditingController _frequencyPenaltyController =
+      TextEditingController();
+  final TextEditingController _presencePenaltyController =
+      TextEditingController();
   final TextEditingController _systemPromptController = TextEditingController();
-  
+
   bool _streamResponse = true;
   bool _isInitialized = false;
-  
+
   // Validation state
   bool _maxTokensExceeded = false;
   String? _validationMessage;
@@ -38,17 +40,18 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
 
   void _initializeControllers() {
     final settingsProvider = context.read<ModelSettingsProvider>();
-    final themeProvider = context.read<ThemeProvider>();
-    
+    final modelProvider = context.read<ModelProvider>();
+
     // Set active model if not already set, passing context for API info
-    if (settingsProvider.activeSettings == null && themeProvider.selectedModelId.isNotEmpty) {
-      settingsProvider.setActiveModel(themeProvider.selectedModelId, context);
+    if (settingsProvider.activeSettings == null &&
+        modelProvider.selectedModelId.isNotEmpty) {
+      settingsProvider.setActiveModel(modelProvider.selectedModelId, context);
     }
-    
+
     // Initialize controllers with current settings
     if (settingsProvider.activeSettings != null) {
       final settings = settingsProvider.activeSettings!;
-      
+
       _temperatureController.text = settings.temperature.toString();
       _maxTokensController.text = settings.maxTokens.toString();
       _topPController.text = settings.topP.toString();
@@ -57,24 +60,25 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
       _systemPromptController.text = settings.systemPrompt ?? '';
       _streamResponse = settings.stream;
       _isInitialized = true;
-    } else if (themeProvider.selectedModelObject != null) {
+    } else if (modelProvider.selectedModelObject != null) {
       // If no saved settings but we have model info, create settings from API
-      final model = themeProvider.selectedModelObject!;
+      final model = modelProvider.selectedModelObject!;
       final apiSettings = ModelSettings.fromApiModel(
         model.id,
         model.contextLength,
         model.contextLength, // Use context length as maxTokens
       );
-      
+
       _temperatureController.text = apiSettings.temperature.toString();
       _maxTokensController.text = apiSettings.maxTokens.toString();
       _topPController.text = apiSettings.topP.toString();
-      _frequencyPenaltyController.text = apiSettings.frequencyPenalty.toString();
+      _frequencyPenaltyController.text = apiSettings.frequencyPenalty
+          .toString();
       _presencePenaltyController.text = apiSettings.presencePenalty.toString();
       _systemPromptController.text = apiSettings.systemPrompt ?? '';
       _streamResponse = apiSettings.stream;
       _isInitialized = true;
-      
+
       // Set these as active settings
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -113,7 +117,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
   void _validateMaxTokens(String value) {
     final settingsProvider = context.read<ModelSettingsProvider>();
     final settings = settingsProvider.activeSettings;
-    
+
     if (settings == null || value.isEmpty) {
       setState(() {
         _maxTokensExceeded = false;
@@ -139,7 +143,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
         _maxTokensExceeded = true;
         _validationMessage = localizations.apiLimitExceeded(apiLimit);
       });
-      
+
       // Show snackbar warning
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -162,7 +166,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
   void _applySettings() {
     final settingsProvider = context.read<ModelSettingsProvider>();
     final localizations = AppLocalizations.of(context)!;
-    
+
     if (settingsProvider.activeSettings == null) {
       SnackbarUtils.showErrorSnackBar(
         context: context,
@@ -175,7 +179,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
     try {
       // Get current settings to preserve API fields
       final current = settingsProvider.activeSettings!;
-      
+
       // Handle maxTokens validation - cap at API limit if exceeded
       int maxTokens = int.tryParse(_maxTokensController.text) ?? 4096;
       final apiLimit = current.apiContextLength ?? current.apiMaxTokens;
@@ -188,12 +192,17 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
         temperature: double.tryParse(_temperatureController.text) ?? 1.0,
         maxTokens: maxTokens,
         topP: double.tryParse(_topPController.text) ?? 1.0,
-        frequencyPenalty: double.tryParse(_frequencyPenaltyController.text) ?? 0.0,
-        presencePenalty: double.tryParse(_presencePenaltyController.text) ?? 0.0,
-        systemPrompt: _systemPromptController.text.isNotEmpty ? _systemPromptController.text : null,
+        frequencyPenalty:
+            double.tryParse(_frequencyPenaltyController.text) ?? 0.0,
+        presencePenalty:
+            double.tryParse(_presencePenaltyController.text) ?? 0.0,
+        systemPrompt: _systemPromptController.text.isNotEmpty
+            ? _systemPromptController.text
+            : null,
         stream: _streamResponse,
         maxContextLength: current.maxContextLength,
-        reasoningEnabled: settingsProvider.activeSettings?.reasoningEnabled ?? true,
+        reasoningEnabled:
+            settingsProvider.activeSettings?.reasoningEnabled ?? true,
         apiMaxTokens: current.apiMaxTokens,
         apiMaxTemperature: current.apiMaxTemperature,
         apiMinTemperature: current.apiMinTemperature,
@@ -201,14 +210,14 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
       );
 
       settingsProvider.updateActiveSettings(updatedSettings);
-      
+
       SnackbarUtils.showSuccessSnackBar(
         context: context,
         message: localizations.settingsApplied,
         icon: Icons.check_circle,
         duration: const Duration(seconds: 2),
       );
-      
+
       // Close the sheet
       Navigator.of(context).pop();
     } catch (e) {
@@ -222,15 +231,15 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
 
   void _resetToDefaults() {
     final settingsProvider = context.read<ModelSettingsProvider>();
-    final themeProvider = context.read<ThemeProvider>();
+    final modelProvider = context.read<ModelProvider>();
     final localizations = AppLocalizations.of(context)!;
-    
+
     if (settingsProvider.activeSettings == null) return;
 
     // Get model info from theme provider to create proper defaults
-    final model = themeProvider.selectedModelObject;
+    final model = modelProvider.selectedModelObject;
     ModelSettings defaultSettings;
-    
+
     if (model != null) {
       // Use API model info to create appropriate defaults
       defaultSettings = ModelSettings.fromApiModel(
@@ -241,7 +250,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
     } else {
       // Fallback to generic defaults
       defaultSettings = ModelSettings.defaultForModel(
-        settingsProvider.activeSettings!.modelId
+        settingsProvider.activeSettings!.modelId,
       );
     }
 
@@ -249,14 +258,16 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
     _temperatureController.text = defaultSettings.temperature.toString();
     _maxTokensController.text = defaultSettings.maxTokens.toString();
     _topPController.text = defaultSettings.topP.toString();
-    _frequencyPenaltyController.text = defaultSettings.frequencyPenalty.toString();
-    _presencePenaltyController.text = defaultSettings.presencePenalty.toString();
+    _frequencyPenaltyController.text = defaultSettings.frequencyPenalty
+        .toString();
+    _presencePenaltyController.text = defaultSettings.presencePenalty
+        .toString();
     _systemPromptController.text = defaultSettings.systemPrompt ?? '';
     _streamResponse = defaultSettings.stream;
 
     // Apply to provider
     settingsProvider.updateActiveSettings(defaultSettings);
-    
+
     SnackbarUtils.showInfoSnackBar(
       context: context,
       message: localizations.settingsReset,
@@ -356,32 +367,43 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
           decoration: InputDecoration(
             hintText: hintText,
             filled: true,
-            fillColor: isDark ? UbuntuColors.darkInputFill : UbuntuColors.inputFill,
+            fillColor: isDark
+                ? UbuntuColors.darkInputFill
+                : UbuntuColors.inputFill,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: isDark ? UbuntuColors.darkInputBorder : UbuntuColors.inputBorder,
+                color: isDark
+                    ? UbuntuColors.darkInputBorder
+                    : UbuntuColors.inputBorder,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: _maxTokensExceeded && label.contains('Max Tokens') 
-                  ? Colors.red 
-                  : (isDark ? UbuntuColors.darkInputBorder : UbuntuColors.inputBorder),
-                width: _maxTokensExceeded && label.contains('Max Tokens') ? 2 : 1,
+                color: _maxTokensExceeded && label.contains('Max Tokens')
+                    ? Colors.red
+                    : (isDark
+                          ? UbuntuColors.darkInputBorder
+                          : UbuntuColors.inputBorder),
+                width: _maxTokensExceeded && label.contains('Max Tokens')
+                    ? 2
+                    : 1,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: _maxTokensExceeded && label.contains('Max Tokens') 
-                  ? Colors.red 
-                  : UbuntuColors.orange,
+                color: _maxTokensExceeded && label.contains('Max Tokens')
+                    ? Colors.red
+                    : UbuntuColors.orange,
                 width: 2,
               ),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
             suffixIcon: _maxTokensExceeded && label.contains('Max Tokens')
                 ? const Icon(Icons.error_outline, color: Colors.red)
                 : null,
@@ -394,7 +416,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
           ),
           inputFormatters: [
             // Allow decimal numbers for temperature and topP
-            if (isDecimal) 
+            if (isDecimal)
               _DecimalTextInputFormatter(min: min, max: max)
             else
               _IntegerTextInputFormatter(min: min.toInt(), max: max.toInt()),
@@ -452,27 +474,33 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
           decoration: InputDecoration(
             hintText: 'You are a helpful assistant...',
             filled: true,
-            fillColor: isDark ? UbuntuColors.darkInputFill : UbuntuColors.inputFill,
+            fillColor: isDark
+                ? UbuntuColors.darkInputFill
+                : UbuntuColors.inputFill,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: isDark ? UbuntuColors.darkInputBorder : UbuntuColors.inputBorder,
+                color: isDark
+                    ? UbuntuColors.darkInputBorder
+                    : UbuntuColors.inputBorder,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: isDark ? UbuntuColors.darkInputBorder : UbuntuColors.inputBorder,
+                color: isDark
+                    ? UbuntuColors.darkInputBorder
+                    : UbuntuColors.inputBorder,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: UbuntuColors.orange,
-                width: 2,
-              ),
+              borderSide: BorderSide(color: UbuntuColors.orange, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
           ),
           style: TextStyle(
             fontSize: 14,
@@ -534,13 +562,13 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final localizations = AppLocalizations.of(context)!;
-    final themeProvider = context.watch<ThemeProvider>();
+    final modelProvider = context.watch<ModelProvider>();
     final settingsProvider = context.watch<ModelSettingsProvider>();
 
     // Get current model name
     String modelName = localizations.noModelSelected;
-    if (themeProvider.selectedModelObject != null) {
-      modelName = themeProvider.selectedModelObject!.name;
+    if (modelProvider.selectedModelObject != null) {
+      modelName = modelProvider.selectedModelObject!.name;
     }
 
     return Container(
@@ -567,7 +595,9 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: isDark ? UbuntuColors.darkBorderColor : UbuntuColors.lightBorderColor,
+                  color: isDark
+                      ? UbuntuColors.darkBorderColor
+                      : UbuntuColors.lightBorderColor,
                   width: 1,
                 ),
               ),
@@ -600,16 +630,24 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                               modelName,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
                                 fontWeight: FontWeight.w500,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (settingsProvider.activeSettings?.apiContextLength != null) ...[
+                          if (settingsProvider
+                                  .activeSettings
+                                  ?.apiContextLength !=
+                              null) ...[
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: UbuntuColors.orange.withAlpha(30),
                                 borderRadius: BorderRadius.circular(4),
@@ -650,14 +688,18 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(UbuntuColors.orange),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              UbuntuColors.orange,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'Loading settings...',
                             style: TextStyle(
                               fontSize: 16,
-                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
                             ),
                           ),
                         ],
@@ -705,11 +747,24 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                           controller: _temperatureController,
                           hintText: '0.0 - 2.0',
                           isDecimal: true,
-                          min: settingsProvider.activeSettings!.apiMinTemperature ?? 0.0,
-                          max: settingsProvider.activeSettings!.apiMaxTemperature ?? 2.0,
-                          apiValue: 'Current: ${settingsProvider.activeSettings!.temperature}',
-                          apiLimit: settingsProvider.activeSettings!.apiMaxTemperature != null 
-                              ? 'Max: ${settingsProvider.activeSettings!.apiMaxTemperature}' 
+                          min:
+                              settingsProvider
+                                  .activeSettings!
+                                  .apiMinTemperature ??
+                              0.0,
+                          max:
+                              settingsProvider
+                                  .activeSettings!
+                                  .apiMaxTemperature ??
+                              2.0,
+                          apiValue:
+                              'Current: ${settingsProvider.activeSettings!.temperature}',
+                          apiLimit:
+                              settingsProvider
+                                      .activeSettings!
+                                      .apiMaxTemperature !=
+                                  null
+                              ? 'Max: ${settingsProvider.activeSettings!.apiMaxTemperature}'
                               : null,
                         ),
 
@@ -718,16 +773,29 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                           label: localizations.maxTokens,
                           description: localizations.maxTokensDescription,
                           controller: _maxTokensController,
-                          hintText: '1 - ${(settingsProvider.activeSettings!.apiMaxTokens ?? settingsProvider.activeSettings!.apiContextLength ?? 8192).toDouble()}',
+                          hintText:
+                              '1 - ${(settingsProvider.activeSettings!.apiMaxTokens ?? settingsProvider.activeSettings!.apiContextLength ?? 8192).toDouble()}',
                           isDecimal: false,
                           min: 1,
-                          max: (settingsProvider.activeSettings!.apiMaxTokens ?? settingsProvider.activeSettings!.apiContextLength ?? 8192).toDouble(),
-                          apiValue: 'Current: ${settingsProvider.activeSettings!.maxTokens}',
-                          apiLimit: settingsProvider.activeSettings!.apiMaxTokens != null 
-                              ? 'Max: ${settingsProvider.activeSettings!.apiMaxTokens}' 
-                              : (settingsProvider.activeSettings!.apiContextLength != null 
-                                  ? 'Context: ${settingsProvider.activeSettings!.apiContextLength}' 
-                                  : null),
+                          max:
+                              (settingsProvider.activeSettings!.apiMaxTokens ??
+                                      settingsProvider
+                                          .activeSettings!
+                                          .apiContextLength ??
+                                      8192)
+                                  .toDouble(),
+                          apiValue:
+                              'Current: ${settingsProvider.activeSettings!.maxTokens}',
+                          apiLimit:
+                              settingsProvider.activeSettings!.apiMaxTokens !=
+                                  null
+                              ? 'Max: ${settingsProvider.activeSettings!.apiMaxTokens}'
+                              : (settingsProvider
+                                            .activeSettings!
+                                            .apiContextLength !=
+                                        null
+                                    ? 'Context: ${settingsProvider.activeSettings!.apiContextLength}'
+                                    : null),
                         ),
 
                         // Top P
@@ -739,19 +807,22 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                           isDecimal: true,
                           min: 0.0,
                           max: 1.0,
-                          apiValue: 'Current: ${settingsProvider.activeSettings!.topP}',
+                          apiValue:
+                              'Current: ${settingsProvider.activeSettings!.topP}',
                         ),
 
                         // Frequency Penalty
                         _buildParameterField(
                           label: localizations.frequencyPenalty,
-                          description: localizations.frequencyPenaltyDescription,
+                          description:
+                              localizations.frequencyPenaltyDescription,
                           controller: _frequencyPenaltyController,
                           hintText: '-2.0 - 2.0',
                           isDecimal: true,
                           min: -2.0,
                           max: 2.0,
-                          apiValue: 'Current: ${settingsProvider.activeSettings!.frequencyPenalty}',
+                          apiValue:
+                              'Current: ${settingsProvider.activeSettings!.frequencyPenalty}',
                         ),
 
                         // Presence Penalty
@@ -763,7 +834,8 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                           isDecimal: true,
                           min: -2.0,
                           max: 2.0,
-                          apiValue: 'Current: ${settingsProvider.activeSettings!.presencePenalty}',
+                          apiValue:
+                              'Current: ${settingsProvider.activeSettings!.presencePenalty}',
                         ),
 
                         // System Prompt
@@ -785,7 +857,11 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                         _buildToggleSwitch(
                           title: localizations.enableReasoning,
                           description: localizations.enableReasoningDescription,
-                          value: settingsProvider.activeSettings?.reasoningEnabled ?? true,
+                          value:
+                              settingsProvider
+                                  .activeSettings
+                                  ?.reasoningEnabled ??
+                              true,
                           onChanged: (value) {
                             setState(() {
                               // Update through provider
@@ -807,13 +883,21 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                                     child: OutlinedButton.icon(
                                       onPressed: _resetToDefaults,
                                       icon: const Icon(Icons.refresh),
-                                      label: Text(localizations.resetToDefaults),
+                                      label: Text(
+                                        localizations.resetToDefaults,
+                                      ),
                                       style: OutlinedButton.styleFrom(
-                                        foregroundColor: isDark ? Colors.white : Colors.black87,
+                                        foregroundColor: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
                                         side: BorderSide(
-                                          color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+                                          color: isDark
+                                              ? Colors.grey[600]!
+                                              : Colors.grey[400]!,
                                         ),
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -827,7 +911,9 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: UbuntuColors.orange,
                                         foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -839,13 +925,21 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                                     child: OutlinedButton.icon(
                                       onPressed: _resetToDefaults,
                                       icon: const Icon(Icons.refresh),
-                                      label: Text(localizations.resetToDefaults),
+                                      label: Text(
+                                        localizations.resetToDefaults,
+                                      ),
                                       style: OutlinedButton.styleFrom(
-                                        foregroundColor: isDark ? Colors.white : Colors.black87,
+                                        foregroundColor: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
                                         side: BorderSide(
-                                          color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+                                          color: isDark
+                                              ? Colors.grey[600]!
+                                              : Colors.grey[400]!,
                                         ),
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -858,7 +952,9 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: UbuntuColors.orange,
                                         foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
                                       ),
                                     ),
                                   ),
