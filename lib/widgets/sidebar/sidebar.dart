@@ -3,18 +3,17 @@ import 'package:provider/provider.dart';
 import 'package:chatorai/providers/theme_provider.dart';
 import 'package:chatorai/providers/language_provider.dart';
 import 'package:chatorai/models/chat_models.dart';
-import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/screens/settings_screen.dart';
+import 'package:chatorai/widgets/sidebar/sidebar_controller.dart';
 import 'package:chatorai/widgets/sidebar/sidebar_chat_actions_menu.dart';
-import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/utils/format_time.dart';
 
-// Initialize logger for this widget
+import '../../utils/snackbar_utils.dart';
+
 final _logger = LogTags.sidebar;
 
-// Cache for formatted dates to avoid repeated formatting
 class Sidebar extends StatefulWidget {
   final double width;
   final bool isCollapsed;
@@ -42,33 +41,20 @@ class Sidebar extends StatefulWidget {
 }
 
 class _SidebarState extends State<Sidebar> {
-  late ThemeData _theme;
-  late String _language;
-  late ChatStorageService _chatStorageService;
-  String _searchQuery = '';
+  late SidebarController _controller;
 
   @override
   void initState() {
     super.initState();
-    _chatStorageService = ChatStorageService();
-  }
-
-  List<Chat> get _filteredChats {
-    if (_searchQuery.isEmpty) return widget.chats;
-    return widget.chats
-        .where(
-          (chat) =>
-              chat.title.toLowerCase().contains(_searchQuery.toLowerCase()),
-        )
-        .toList();
+    _controller = SidebarController(chats: widget.chats);
   }
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final languageProvider = Provider.of<LanguageProvider>(context);
-    _theme = themeProvider.getTheme();
-    _language = languageProvider.selectedLanguage;
+    final theme = themeProvider.getTheme();
+    final language = languageProvider.selectedLanguage;
     final localizations = AppLocalizations.of(context)!;
 
     return AnimatedContainer(
@@ -76,7 +62,7 @@ class _SidebarState extends State<Sidebar> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
-        color: _theme.cardColor,
+        color: theme.cardColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
@@ -84,298 +70,250 @@ class _SidebarState extends State<Sidebar> {
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border(right: BorderSide(color: _theme.dividerColor, width: 1)),
+        border: Border(right: BorderSide(color: theme.dividerColor, width: 1)),
       ),
       child: Column(
         children: [
-          // Header
-          Container(
-            padding: EdgeInsets.only(
-              left: widget.isCollapsed ? 2 : 16,
-              right: widget.isCollapsed ? 2 : 16,
-              top: widget.isCollapsed ? 0 : 12,
-              bottom: widget.isCollapsed ? 0 : 8,
-            ),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: _theme.dividerColor, width: 1),
-              ),
-            ),
-            child: Column(
-              children: [
-                // Title and close button row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (!widget.isCollapsed)
-                      Expanded(
-                        child: Text(
-                          localizations.appShortName,
-                          style: _theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: _theme.textTheme.headlineSmall?.color,
-                            fontSize: 18,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
-                        ),
-                      ),
-                    if (widget.isCollapsed) const Spacer(),
-                    IconButton(
-                      icon: Icon(
-                        widget.isCollapsed ? Icons.menu : Icons.close,
-                        color: _theme.iconTheme.color,
-                        size: 18,
-                      ),
-                      onPressed: widget.onToggleSidebar,
-                      padding: widget.isCollapsed
-                          ? const EdgeInsets.all(4)
-                          : const EdgeInsets.all(8),
-                      constraints: const BoxConstraints(
-                        minWidth: 28,
-                        minHeight: 28,
-                      ),
-                      splashRadius: widget.isCollapsed ? 16 : 20,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Search field and New Chat button in one row
-          if (!widget.isCollapsed)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  // Search field
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: localizations.searchChats,
-                        prefixIcon: const Icon(Icons.search, size: 18),
-                        border: OutlineInputBorder(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomLeft: Radius.circular(8),
-                          ),
-                          borderSide: BorderSide(
-                            color: _theme.dividerColor,
-                            width: 1,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomLeft: Radius.circular(8),
-                          ),
-                          borderSide: BorderSide(
-                            color: _theme.dividerColor,
-                            width: 1,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomLeft: Radius.circular(8),
-                          ),
-                          borderSide: BorderSide(
-                            color: _theme.colorScheme.primary,
-                            width: 1,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        isDense: true,
-                      ),
-                      style: const TextStyle(fontSize: 14),
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value;
-                        });
-                      },
-                    ),
-                  ),
-                  // New Chat icon button
-                  Container(
-                    margin: const EdgeInsets.only(left: 4),
-                    child: IconButton(
-                      onPressed: widget.onNewChat,
-                      icon: const Icon(Icons.edit_square),
-                      style: IconButton.styleFrom(
-                        side: BorderSide(color: _theme.dividerColor, width: 1),
-                        padding: const EdgeInsets.all(8),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                            topRight: Radius.circular(8),
-                            bottomRight: Radius.circular(8),
-                          ),
-                        ),
-                        backgroundColor:
-                            Theme.of(context).brightness == Brightness.dark
-                            ? Colors.grey[900]
-                            : Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // Chat List
+          _buildHeader(theme, localizations),
+          if (!widget.isCollapsed) _buildSearchBar(theme, localizations),
           Expanded(
-            child: !widget.isCollapsed
-                ? (_filteredChats.isEmpty
-                      ? _buildEmptyState(_theme, _language)
-                      : ListView.builder(
-                          padding: EdgeInsets.zero,
-                          itemCount: _filteredChats.length,
-                          itemBuilder: (context, index) {
-                            final chat = _filteredChats[index];
-                            return _buildChatItem(chat);
-                          },
-                        ))
-                : Container(), // Пустой контейнер в свёрнутом состоянии
-          ),
-
-          // Footer
-          if (!widget.isCollapsed)
-            Container(
-              decoration: BoxDecoration(
-                color: _theme.cardColor,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Divider(height: 1, thickness: 1, color: _theme.dividerColor),
-                  // Settings
-                  ListTile(
-                    leading: const Icon(Icons.settings),
-                    title: Text(localizations.settings),
-                    minLeadingWidth: 0,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    onTap: () {
-                      _logger.logInfo(
-                        '[Sidebar] Attempting to navigate to settings...',
-                      );
-                      try {
-                        Navigator.pushNamed(context, '/settings');
-                      } catch (e) {
-                        _logger.logError('[Sidebar] Navigation failed: $e');
-                        _logger.logInfo(
-                          '[Sidebar] Manual navigation to SettingsScreen',
-                        );
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SettingsScreen(),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ],
-              ),
+            child: ListenableBuilder(
+              listenable: _controller,
+              builder: (context, _) {
+                if (widget.isCollapsed) {
+                  return Container();
+                }
+                if (_controller.filteredChats.isEmpty) {
+                  return _buildEmptyState(theme, language, localizations);
+                }
+                return ListView.builder(
+                  padding: EdgeInsets.zero,
+                  itemCount: _controller.filteredChats.length,
+                  itemBuilder: (context, index) {
+                    final chat = _controller.filteredChats[index];
+                    return _buildChatItem(chat, theme, language, localizations);
+                  },
+                );
+              },
             ),
+          ),
+          if (!widget.isCollapsed) _buildFooter(theme, localizations),
         ],
       ),
     );
   }
 
-  Widget _buildChatItem(Chat chat) {
+  Widget _buildHeader(ThemeData theme, AppLocalizations localizations) {
+    return Container(
+      padding: EdgeInsets.only(
+        left: widget.isCollapsed ? 2 : 16,
+        right: widget.isCollapsed ? 2 : 16,
+        top: widget.isCollapsed ? 0 : 12,
+        bottom: widget.isCollapsed ? 0 : 8,
+      ),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: theme.dividerColor, width: 1)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          if (!widget.isCollapsed)
+            Expanded(
+              child: Text(
+                localizations.appShortName,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.headlineSmall?.color,
+                  fontSize: 18,
+                ),
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
+              ),
+            ),
+          if (widget.isCollapsed) const Spacer(),
+          IconButton(
+            icon: Icon(
+              widget.isCollapsed ? Icons.menu : Icons.close,
+              color: theme.iconTheme.color,
+              size: 18,
+            ),
+            onPressed: widget.onToggleSidebar,
+            padding: widget.isCollapsed
+                ? const EdgeInsets.all(4)
+                : const EdgeInsets.all(8),
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            splashRadius: widget.isCollapsed ? 16 : 20,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(ThemeData theme, AppLocalizations localizations) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: localizations.searchChats,
+                prefixIcon: const Icon(Icons.search, size: 18),
+                border: OutlineInputBorder(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
+                  borderSide: BorderSide(color: theme.dividerColor, width: 1),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
+                  borderSide: BorderSide(color: theme.dividerColor, width: 1),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.primary,
+                    width: 1,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                isDense: true,
+              ),
+              style: const TextStyle(fontSize: 14),
+              onChanged: (value) {
+                setState(() {
+                  _controller.setSearchQuery(value);
+                });
+              },
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(left: 4),
+            child: IconButton(
+              onPressed: widget.onNewChat,
+              icon: const Icon(Icons.edit_square),
+              style: IconButton.styleFrom(
+                side: BorderSide(color: theme.dividerColor, width: 1),
+                padding: const EdgeInsets.all(8),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
+                ),
+                backgroundColor: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[900]
+                    : Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChatItem(
+    Chat chat,
+    ThemeData theme,
+    String language,
+    AppLocalizations localizations,
+  ) {
     final isSelected = widget.currentChat?.id == chat.id;
-    final localizations = AppLocalizations.of(context)!;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () => widget.onChatSelect(chat.id),
         borderRadius: BorderRadius.zero,
-        hoverColor: _theme.colorScheme.primary.withValues(alpha: 0.1),
+        hoverColor: theme.colorScheme.primary.withValues(alpha: 0.1),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           height: 60,
           child: Stack(
             children: [
-              // Main content (only show in expanded state)
-              if (!widget.isCollapsed)
-                Row(
-                  children: [
-                    Icon(
-                      Icons.chat_bubble_outline,
-                      color: isSelected
-                          ? _theme.colorScheme.primary
-                          : _theme.iconTheme.color,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            chat.title,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                              color: isSelected
-                                  ? _theme.colorScheme.primary
-                                  : _theme.textTheme.bodyMedium?.color,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+              Row(
+                children: [
+                  Icon(
+                    Icons.chat_bubble_outline,
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.iconTheme.color,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          chat.title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.textTheme.bodyMedium?.color,
                           ),
-                          Text(
-                            _formatDate(
-                              chat.updatedAt,
-                              _language,
-                              localizations,
-                            ),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: _theme.textTheme.bodySmall?.color,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        Text(
+                          formatSidebarDate(chat.updatedAt, context: context),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: theme.textTheme.bodySmall?.color,
                           ),
-                        ],
-                      ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ],
                     ),
-                    // Always reserve space for icons on the right
-                    const SizedBox(width: 36), // Space for both icons
-                  ],
+                  ),
+                  const SizedBox(width: 36),
+                ],
+              ),
+              Positioned(
+                right: 8,
+                top: 0,
+                bottom: 0,
+                child: ChatActionsMenu(
+                  chat: chat,
+                  theme: theme,
+                  language: language,
+                  onRename: (newTitle) async {
+                    try {
+                      await _controller.renameChat(context, chat, newTitle);
+                      if (context.mounted) {
+                        SnackbarUtils.showSuccessSnackBar(
+                          context: context,
+                          message: localizations.chatRenamedTo(newTitle),
+                          icon: Icons.edit,
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        SnackbarUtils.showErrorSnackBar(
+                          context: context,
+                          message: localizations.failedToRenameChat,
+                          icon: Icons.error,
+                        );
+                      }
+                    }
+                  },
+                  onDelete: () => widget.onChatDelete(chat.id),
                 ),
-
-              // Always position icons at the same right position (only show in expanded state)
-              if (!widget.isCollapsed)
-                Stack(
-                  children: [
-                    // Chat actions menu (show for all chats)
-                    Positioned(
-                      right: 8,
-                      top: 0,
-                      bottom: 0,
-                      child: ChatActionsMenu(
-                        chat: chat,
-                        theme: _theme,
-                        language: _language,
-                        onRename: (newTitle) =>
-                            _handleRenameChat(chat, newTitle, localizations),
-                        onDelete: () => widget.onChatDelete(chat.id),
-                      ),
-                    ),
-                  ],
-                ),
+              ),
             ],
           ),
         ),
@@ -383,33 +321,12 @@ class _SidebarState extends State<Sidebar> {
     );
   }
 
-  void _handleRenameChat(
-    Chat chat,
-    String newTitle,
+  Widget _buildEmptyState(
+    ThemeData theme,
+    String language,
     AppLocalizations localizations,
-  ) async {
-    try {
-      await _chatStorageService.renameChat(chat.id, newTitle);
-      setState(() {
-        widget.chats.firstWhere((c) => c.id == chat.id).title = newTitle;
-      });
-      SnackbarUtils.showSuccessSnackBar(
-        context: context,
-        message: localizations.chatRenamedTo(newTitle),
-        icon: Icons.edit,
-      );
-    } catch (e) {
-      SnackbarUtils.showErrorSnackBar(
-        context: context,
-        message: localizations.failedToRenameChat,
-        icon: Icons.error,
-      );
-    }
-  }
-
-  Widget _buildEmptyState(ThemeData theme, String language) {
-    final localizations = AppLocalizations.of(context)!;
-    final hasSearch = _searchQuery.isNotEmpty;
+  ) {
+    final hasSearch = _controller.searchQuery.isNotEmpty;
 
     return Center(
       child: Padding(
@@ -425,7 +342,7 @@ class _SidebarState extends State<Sidebar> {
             const SizedBox(height: 16),
             Text(
               hasSearch
-                  ? localizations.noChatsFound(_searchQuery)
+                  ? localizations.noChatsFound(_controller.searchQuery)
                   : localizations.noChatsYet,
               style: TextStyle(
                 fontSize: 16,
@@ -451,11 +368,36 @@ class _SidebarState extends State<Sidebar> {
     );
   }
 
-  String _formatDate(
-    DateTime date,
-    String language,
-    AppLocalizations localizations,
-  ) {
-    return formatSidebarDate(date, context: context);
+  Widget _buildFooter(ThemeData theme, AppLocalizations localizations) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 8,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Divider(height: 1, thickness: 1, color: theme.dividerColor),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: Text(localizations.settings),
+            minLeadingWidth: 0,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            onTap: () {
+              _logger.logInfo('[Sidebar] Navigating to settings...');
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
