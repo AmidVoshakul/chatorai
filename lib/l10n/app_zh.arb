@@ -1,7 +1,7 @@
 {
   "appName": "ChatORAI",
   "settings": "设置",
-  "openRouterConfiguration": "OpenRouter 配置",
+  "providerConfiguration": "提供商配置",
   "apiKey": "API 密钥",
   "enterApiKey": "输入您的 OpenRouter API 密钥",
   "baseUrl": "基础 URL",

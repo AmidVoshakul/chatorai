@@ -15,7 +15,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings => '設定';
 
   @override
-  String get openRouterConfiguration => 'OpenRouter 設定';
+  String get providerConfiguration => 'プロバイダー設定';
 
   @override
   String get apiKey => 'API キー';

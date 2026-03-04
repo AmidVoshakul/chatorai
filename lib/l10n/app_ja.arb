@@ -1,7 +1,7 @@
 {
   "appName": "チャットORAI",
   "settings": "設定",
-  "openRouterConfiguration": "OpenRouter 設定",
+  "providerConfiguration": "プロバイダー設定",
   "apiKey": "API キー",
   "enterApiKey": "あなたの OpenRouter API キーを入力してください",
   "baseUrl": "ベース URL",

@@ -536,11 +536,21 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                 ),
               ),
             ),
-            Switch(
-              value: value,
-              onChanged: onChanged,
-              activeThumbColor: UbuntuColors.orange,
-              activeTrackColor: UbuntuColors.orange.withAlpha(80),
+            Transform.scale(
+              scale: 0.75,
+              child: Switch(
+                value: value,
+                onChanged: onChanged,
+                activeThumbColor: UbuntuColors.orange,
+                activeTrackColor: UbuntuColors.orange.withAlpha(150),
+                inactiveThumbColor: isDark
+                    ? UbuntuColors.toggleInactiveThumbDark
+                    : UbuntuColors.toggleInactiveThumbLight,
+                inactiveTrackColor: isDark
+                    ? UbuntuColors.toggleInactiveTrackDark
+                    : UbuntuColors.toggleInactiveTrackLight,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
             ),
           ],
         ),

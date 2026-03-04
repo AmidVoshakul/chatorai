@@ -15,7 +15,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settings => 'Налаштування';
 
   @override
-  String get openRouterConfiguration => 'Конфігурація OpenRouter';
+  String get providerConfiguration => 'Конфігурація провайдера';
 
   @override
   String get apiKey => 'API ключ';

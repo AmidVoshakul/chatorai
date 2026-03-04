@@ -1,7 +1,7 @@
 {
   "appName": "ChatORAI",
   "settings": "الإعدادات",
-  "openRouterConfiguration": "تكوين OpenRouter",
+  "providerConfiguration": "تكوين المزود",
   "apiKey": "مفتاح API",
   "enterApiKey": "أدخل مفتاح OpenRouter API الخاص بك",
   "baseUrl": "عنوان URL الأساسي",

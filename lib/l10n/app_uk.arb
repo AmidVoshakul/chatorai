@@ -1,7 +1,7 @@
 {
 "appName": "ChatORAI",
 "settings": "Налаштування",
-"openRouterConfiguration": "Конфігурація OpenRouter",
+"providerConfiguration": "Конфігурація провайдера",
 "apiKey": "API ключ",
 "enterApiKey": "Введіть ваш OpenRouter API ключ",
 "baseUrl": "Base URL",
