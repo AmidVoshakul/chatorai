@@ -837,6 +837,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tapHeartToAddFavorites => 'Tap the heart icon on models to add them to your favorites';
 
   @override
+  String get addToFavorites => 'Add to favorites';
+
+  @override
+  String get removeFromFavorites => 'Remove from favorites';
+
+  @override
   String get startListening => 'Start voice input';
 
   @override

@@ -837,6 +837,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tapHeartToAddFavorites => 'モデルの心臓アイコンをタップしてお気に入りに追加';
 
   @override
+  String get addToFavorites => 'Add to favorites';
+
+  @override
+  String get removeFromFavorites => 'Remove from favorites';
+
+  @override
   String get startListening => '音声入力を開始';
 
   @override

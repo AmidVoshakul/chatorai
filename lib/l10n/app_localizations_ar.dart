@@ -837,6 +837,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tapHeartToAddFavorites => 'اضغط على أيقونة القلب على النماذج لإضافتها إلى المفضلة';
 
   @override
+  String get addToFavorites => 'Add to favorites';
+
+  @override
+  String get removeFromFavorites => 'Remove from favorites';
+
+  @override
   String get startListening => 'بدء الإدخال الصوتي';
 
   @override

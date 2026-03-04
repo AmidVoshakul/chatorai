@@ -837,6 +837,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get tapHeartToAddFavorites => 'Нажмите на сердечко у моделей, чтобы добавить их в избранные';
 
   @override
+  String get addToFavorites => 'Add to favorites';
+
+  @override
+  String get removeFromFavorites => 'Remove from favorites';
+
+  @override
   String get startListening => 'Начать голосовой ввод';
 
   @override

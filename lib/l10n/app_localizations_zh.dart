@@ -837,6 +837,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tapHeartToAddFavorites => '点击模型上的爱心图标将其添加到收藏';
 
   @override
+  String get addToFavorites => 'Add to favorites';
+
+  @override
+  String get removeFromFavorites => 'Remove from favorites';
+
+  @override
   String get startListening => '开始语音输入';
 
   @override

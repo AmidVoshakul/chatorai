@@ -837,6 +837,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get tapHeartToAddFavorites => 'Натисніть на сердечко біля моделей, щоб додати їх до вибраних';
 
   @override
+  String get addToFavorites => 'Add to favorites';
+
+  @override
+  String get removeFromFavorites => 'Remove from favorites';
+
+  @override
   String get startListening => 'Почати голосовий ввід';
 
   @override

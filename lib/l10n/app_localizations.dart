@@ -1723,6 +1723,18 @@ abstract class AppLocalizations {
   /// **'Tap the heart icon on models to add them to your favorites'**
   String get tapHeartToAddFavorites;
 
+  /// No description provided for @addToFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to favorites'**
+  String get addToFavorites;
+
+  /// No description provided for @removeFromFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favorites'**
+  String get removeFromFavorites;
+
   /// No description provided for @startListening.
   ///
   /// In en, this message translates to:
