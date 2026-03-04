@@ -727,11 +727,29 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to delete this message?'**
   String get areYouSureYouWantToDeleteThisMessage;
 
+  /// No description provided for @confirmDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete the chat \"{chatTitle}\"?'**
+  String confirmDeleteMessage(Object chatTitle);
+
   /// No description provided for @areYouSureYouWantToRegenerateThisMessage.
   ///
   /// In en, this message translates to:
   /// **'Are you sure you want to regenerate this message?'**
   String get areYouSureYouWantToRegenerateThisMessage;
+
+  /// No description provided for @modelDoesNotSupportImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Model {modelId} does not support images. You can attach a photo, but sending will not work.'**
+  String modelDoesNotSupportImages(Object modelId);
+
+  /// No description provided for @chatTitleUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat renamed to: {title}'**
+  String chatTitleUpdated(Object title);
 
   /// No description provided for @messageDeletedSuccessfully.
   ///
@@ -2052,6 +2070,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No internet connection'**
   String get noInternetConnection;
+
+  /// No description provided for @modelDoesNotSupportFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Model {modelId} does not support files. You can attach a file, but sending will not work.'**
+  String modelDoesNotSupportFiles(Object modelId);
+
+  /// No description provided for @fileAttachedButNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'File attached but not supported by the current model'**
+  String get fileAttachedButNotSupported;
+
+  /// No description provided for @copyCodeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy code'**
+  String get copyCodeTooltip;
+
+  /// No description provided for @expandTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand'**
+  String get expandTooltip;
+
+  /// No description provided for @collapseTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get collapseTooltip;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

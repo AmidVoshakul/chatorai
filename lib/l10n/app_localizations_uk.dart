@@ -331,7 +331,22 @@ class AppLocalizationsUk extends AppLocalizations {
   String get areYouSureYouWantToDeleteThisMessage => 'Ви впевнені, що хочете видалити це повідомлення?';
 
   @override
+  String confirmDeleteMessage(Object chatTitle) {
+    return 'Ви впевнені, що хочете видалити чат \"$chatTitle\"?';
+  }
+
+  @override
   String get areYouSureYouWantToRegenerateThisMessage => 'Ви впевнені, що хочете перегенерувати це повідомлення?';
+
+  @override
+  String modelDoesNotSupportImages(Object modelId) {
+    return 'Модель $modelId не підтримує зображення. Ви можете прикріпити фото, але відправлення не спрацює.';
+  }
+
+  @override
+  String chatTitleUpdated(Object title) {
+    return 'Чат перейменовано на: $title';
+  }
 
   @override
   String get messageDeletedSuccessfully => 'Повідомлення успішно видалено';
@@ -1004,4 +1019,21 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get noInternetConnection => 'Немає підключення до інтернету';
+
+  @override
+  String modelDoesNotSupportFiles(Object modelId) {
+    return 'Модель $modelId не підтримує файли. Ви можете прикріпити файл, але відправлення не спрацює.';
+  }
+
+  @override
+  String get fileAttachedButNotSupported => 'Файл прикріплено, але не підтримується поточною моделлю';
+
+  @override
+  String get copyCodeTooltip => 'Копіювати код';
+
+  @override
+  String get expandTooltip => 'Розгорнути';
+
+  @override
+  String get collapseTooltip => 'Згорнути';
 }

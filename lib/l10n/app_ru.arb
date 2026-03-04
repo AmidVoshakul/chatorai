@@ -102,9 +102,12 @@
 "failedToEditMessage": "Не удалось отредактировать сообщение",
 "messageEditedAndResponseRegenerated": "Сообщение отредактировано и ответ перегенерирован",
 "failedToEditAndSendMessage": "Не удалось отредактировать и отправить сообщение",
-"areYouSureYouWantToDeleteThisMessage": "Вы уверены, что хотите удалить это сообщение?",
-"areYouSureYouWantToRegenerateThisMessage": "Вы уверены, что хотите перегенерировать это сообщение?",
-"messageDeletedSuccessfully": "Сообщение успешно удалено",
+   "areYouSureYouWantToDeleteThisMessage": "Вы уверены, что хотите удалить это сообщение?",
+   "confirmDeleteMessage": "Вы действительно хотите удалить чат \"{chatTitle}\"?",
+   "areYouSureYouWantToRegenerateThisMessage": "Вы уверены, что хотите перегенерировать это сообщение?",
+   "modelDoesNotSupportImages": "Модель {modelId} не поддерживает изображения. Вы можете прикрепить фото, но отправка не сработает.",
+   "chatTitleUpdated": "Чат переименован в: {title}",
+   "messageDeletedSuccessfully": "Сообщение успешно удалено",
 "failedToDeleteMessage": "Не удалось удалить сообщение",
 "regenerationStarted": "Перегенерация начата",
 "failedToRegenerateMessage": "Не удалось перегенерировать сообщение",
@@ -326,6 +329,11 @@
 "userPromptSuggestion": "Предложи 3 конкретных и логичных продолжения для этого сообщения. Отвечай только списком, без дополнительного текста.",
 "selectModelTooltip": "Выбрать модель",
 "toggleNavigatorTooltip": "Переключить навигатор",
-"refreshQuestions": "Обновить вопросы",
-"noInternetConnection": "Нет подключения к интернету"
-}
+   "refreshQuestions": "Обновить вопросы",
+   "noInternetConnection": "Нет подключения к интернету",
+   "modelDoesNotSupportFiles": "Модель {modelId} не поддерживает файлы. Вы можете прикрепить файл, но отправка не сработает.",
+   "fileAttachedButNotSupported": "Файл прикреплен, но не поддерживается текущей моделью",
+   "copyCodeTooltip": "Копировать код",
+   "expandTooltip": "Развернуть",
+   "collapseTooltip": "Свернуть"
+ }

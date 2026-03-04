@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/themes/app_theme.dart';
 
+import 'package:chatorai/l10n/app_localizations.dart';
 /// Constants for SlidingAppBar behavior
 class SlidingAppBarConstants {
   static const double hideThreshold = 100.0;
@@ -237,7 +238,7 @@ class SlidingAppBarState extends State<SlidingAppBar> {
                           icon: const Icon(Icons.smart_toy, size: SlidingAppBarConstants.iconSize),
                           color: UbuntuColors.orange,
                           onPressed: widget.onModelSelected,
-                          tooltip: 'Select Model',
+                          tooltip: AppLocalizations.of(context)!.selectModelTooltip,
                           padding: const EdgeInsets.only(left: 4.0, right: 4.0, bottom: 8.0, top: 4.0),
                           constraints: const BoxConstraints(),
                           iconSize: SlidingAppBarConstants.iconSize,
@@ -249,7 +250,7 @@ class SlidingAppBarState extends State<SlidingAppBar> {
                             icon: const Icon(Icons.format_list_bulleted, size: SlidingAppBarConstants.iconSize),
                             color: UbuntuColors.orange,
                             onPressed: widget.onNavigatorPressed,
-                            tooltip: 'Toggle Navigator',
+                            tooltip: AppLocalizations.of(context)!.toggleNavigatorTooltip,
                             padding: const EdgeInsets.only(right: 4.0, bottom: 8.0, top: 4.0),
                             constraints: const BoxConstraints(),
                             iconSize: SlidingAppBarConstants.iconSize,

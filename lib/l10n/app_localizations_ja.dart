@@ -331,7 +331,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get areYouSureYouWantToDeleteThisMessage => 'このメッセージを削除してもよろしいですか？';
 
   @override
+  String confirmDeleteMessage(Object chatTitle) {
+    return 'チャット\"$chatTitle\"を削除してもよろしいですか？';
+  }
+
+  @override
   String get areYouSureYouWantToRegenerateThisMessage => 'このメッセージを再生成してもよろしいですか？';
+
+  @override
+  String modelDoesNotSupportImages(Object modelId) {
+    return 'モデル$modelIdは画像をサポートしていません。写真を添付することはできますが、送信は機能しません。';
+  }
+
+  @override
+  String chatTitleUpdated(Object title) {
+    return 'チャット名を変更: $title';
+  }
 
   @override
   String get messageDeletedSuccessfully => 'メッセージが正常に削除されました';
@@ -1004,4 +1019,21 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get noInternetConnection => 'インターネット接続がありません';
+
+  @override
+  String modelDoesNotSupportFiles(Object modelId) {
+    return 'モデル $modelId はファイルをサポートしていません。ファイルを添付することはできますが、送信は機能しません。';
+  }
+
+  @override
+  String get fileAttachedButNotSupported => 'ファイルが添付されましたが、現在のモデルではサポートされていません';
+
+  @override
+  String get copyCodeTooltip => 'コードをコピー';
+
+  @override
+  String get expandTooltip => '展開';
+
+  @override
+  String get collapseTooltip => '折りたたむ';
 }

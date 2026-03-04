@@ -102,9 +102,12 @@
   "failedToEditMessage": "فشل في تعديل الرسالة",
   "messageEditedAndResponseRegenerated": "تم تعديل الرسالة وإعادة توليد الاستجابة",
   "failedToEditAndSendMessage": "فشل في تعديل وإرسال الرسالة",
-  "areYouSureYouWantToDeleteThisMessage": "هل أنت متأكد أنك تريد حذف هذه الرسالة؟",
-  "areYouSureYouWantToRegenerateThisMessage": "هل أنت متأكد أنك تريد إعادة توليد هذه الرسالة؟",
-  "messageDeletedSuccessfully": "تم حذف الرسالة بنجاح",
+   "areYouSureYouWantToDeleteThisMessage": "هل أنت متأكد أنك تريد حذف هذه الرسالة؟",
+   "confirmDeleteMessage": "هل أنت متأكد أنك تريد حذف الدردشة\"{chatTitle}\"؟",
+   "areYouSureYouWantToRegenerateThisMessage": "هل أنت متأكد أنك تريد إعادة توليد هذه الرسالة؟",
+   "modelDoesNotSupportImages": "النموذج {modelId} لا يدعم الصور. يمكنك إرفاق صورة، لكن الإرسال لن يعمل.",
+   "chatTitleUpdated": "تم إعادة تسمية الدردشة إلى: {title}",
+   "messageDeletedSuccessfully": "تم حذف الرسالة بنجاح",
   "failedToDeleteMessage": "فشل في حذف الرسالة",
   "regenerationStarted": "بدأت إعادة التوليد",
   "failedToRegenerateMessage": "فشل في إعادة توليد الرسالة",
@@ -324,6 +327,11 @@
 "userPromptSuggestion": "قدم 3 استمرارات محددة ومنطقية لهذه الرسالة. أجب بالقائمة فقط، بدون نص إضافي.",
 "selectModelTooltip": "اختيار النموذج",
 "toggleNavigatorTooltip": "تبديل الملاحة",
-"refreshQuestions": "تحديث الأسئلة",
-"noInternetConnection": "لا يوجد اتصال بالإنترنت"
-}
+   "refreshQuestions": "تحديث الأسئلة",
+   "noInternetConnection": "لا يوجد اتصال بالإنترنت",
+   "modelDoesNotSupportFiles": "النموذج {modelId} لا يدعم الملفات. يمكنك إرفاق ملف، لكن الإرسال لن يعمل.",
+   "fileAttachedButNotSupported": "تم إرفاق الملف ولكن النموذج الحالي لا يدعمه",
+   "copyCodeTooltip": "نسخ الكود",
+   "expandTooltip": "توسيع",
+   "collapseTooltip": "طي"
+ }

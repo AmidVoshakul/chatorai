@@ -102,9 +102,12 @@
   "failedToEditMessage": "无法编辑消息",
   "messageEditedAndResponseRegenerated": "消息已编辑并重新生成响应",
   "failedToEditAndSendMessage": "无法编辑并发送消息",
-  "areYouSureYouWantToDeleteThisMessage": "您确定要删除此消息吗？",
-  "areYouSureYouWantToRegenerateThisMessage": "您确定要重新生成此消息吗？",
-  "messageDeletedSuccessfully": "消息删除成功",
+   "areYouSureYouWantToDeleteThisMessage": "您确定要删除此消息吗？",
+   "confirmDeleteMessage": "您确定要删除聊天\"{chatTitle}\"吗？",
+   "areYouSureYouWantToRegenerateThisMessage": "您确定要重新生成此消息吗？",
+   "modelDoesNotSupportImages": "模型 {modelId} 不支持图像。您可以附加照片，但发送将不起作用。",
+   "chatTitleUpdated": "聊天已重命名为: {title}",
+   "messageDeletedSuccessfully": "消息删除成功",
   "failedToDeleteMessage": "无法删除消息",
   "regenerationStarted": "重新生成已开始",
   "failedToRegenerateMessage": "无法重新生成消息",
@@ -324,6 +327,11 @@
 "userPromptSuggestion": "为这条消息提供3个具体且合乎逻辑的延续。只回答列表，不要额外文本。",
 "selectModelTooltip": "选择模型",
 "toggleNavigatorTooltip": "切换导航器",
-"refreshQuestions": "刷新问题",
-"noInternetConnection": "无网络连接"
-}
+   "refreshQuestions": "刷新问题",
+   "noInternetConnection": "无网络连接",
+   "modelDoesNotSupportFiles": "模型 {modelId} 不支持文件。您可以附加文件，但发送将不起作用。",
+   "fileAttachedButNotSupported": "文件已附加，但当前模型不支持",
+   "copyCodeTooltip": "复制代码",
+   "expandTooltip": "展开",
+   "collapseTooltip": "折叠"
+ }
