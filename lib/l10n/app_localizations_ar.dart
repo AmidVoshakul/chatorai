@@ -331,7 +331,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get areYouSureYouWantToDeleteThisMessage => 'هل أنت متأكد أنك تريد حذف هذه الرسالة؟';
 
   @override
+  String confirmDeleteMessage(Object chatTitle) {
+    return 'هل أنت متأكد أنك تريد حذف الدردشة\"$chatTitle\"؟';
+  }
+
+  @override
   String get areYouSureYouWantToRegenerateThisMessage => 'هل أنت متأكد أنك تريد إعادة توليد هذه الرسالة؟';
+
+  @override
+  String modelDoesNotSupportImages(Object modelId) {
+    return 'النموذج $modelId لا يدعم الصور. يمكنك إرفاق صورة، لكن الإرسال لن يعمل.';
+  }
+
+  @override
+  String chatTitleUpdated(Object title) {
+    return 'تم إعادة تسمية الدردشة إلى: $title';
+  }
 
   @override
   String get messageDeletedSuccessfully => 'تم حذف الرسالة بنجاح';
@@ -1004,4 +1019,21 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noInternetConnection => 'لا يوجد اتصال بالإنترنت';
+
+  @override
+  String modelDoesNotSupportFiles(Object modelId) {
+    return 'النموذج $modelId لا يدعم الملفات. يمكنك إرفاق ملف، لكن الإرسال لن يعمل.';
+  }
+
+  @override
+  String get fileAttachedButNotSupported => 'تم إرفاق الملف ولكن النموذج الحالي لا يدعمه';
+
+  @override
+  String get copyCodeTooltip => 'نسخ الكود';
+
+  @override
+  String get expandTooltip => 'توسيع';
+
+  @override
+  String get collapseTooltip => 'طي';
 }

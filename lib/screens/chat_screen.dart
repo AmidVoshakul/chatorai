@@ -92,7 +92,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   late ChatStorageService _chatStorageService;
   late OpenRouterClient _openRouterService;
   late ModelProvider _modelProvider;
-  late LanguageProvider _languageProvider;
 
   bool _isSidebarCollapsed = false;
 
@@ -140,9 +139,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _modelProvider =
         widget.modelProvider ??
         Provider.of<ModelProvider>(context, listen: false);
-    _languageProvider =
-        widget.languageProvider ??
-        Provider.of<LanguageProvider>(context, listen: false);
 
     // Initialize scroll controller
     _messageScrollController = ScrollController();
@@ -321,43 +317,24 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   Future<void> _deleteChat(String chatId) async {
     final chat = _chats.firstWhere((c) => c.id == chatId);
-    final String currentLanguage = _languageProvider.selectedLanguage;
-
-    String getLocalizedText(String key) {
-      if (currentLanguage == 'en') {
-        return {
-              'deleteChat': 'Delete Chat',
-              'confirmDelete':
-                  'Are you sure you want to delete the chat "${chat.title}"?',
-              'cancel': 'Cancel',
-              'delete': 'Delete',
-            }[key] ??
-            key;
-      } else {
-        return {
-              'deleteChat': 'Удалить чат',
-              'confirmDelete':
-                  'Вы действительно хотите удалить чат "${chat.title}"?',
-              'cancel': 'Отмена',
-              'delete': 'Удалить',
-            }[key] ??
-            key;
-      }
-    }
+    final localizations = AppLocalizations.of(context)!;
 
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(getLocalizedText('deleteChat')),
-        content: Text(getLocalizedText('confirmDelete')),
+        title: Text(localizations.deleteChat),
+        content: Text(localizations.confirmDeleteMessage(chat.title)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(getLocalizedText('cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(localizations.cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(getLocalizedText('delete')),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              localizations.delete,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -369,11 +346,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
       // Show success snackbar
       if (!mounted) return;
+      final localizations = AppLocalizations.of(context)!;
       SnackbarUtils.showSuccessSnackBar(
         context: context,
-        message: currentLanguage == 'en'
-            ? 'Chat deleted successfully'
-            : 'Чат успешно удален',
+        message: localizations.messageDeletedSuccessfully,
         icon: Icons.delete,
       );
 

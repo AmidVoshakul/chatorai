@@ -3,16 +3,13 @@ import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:flutter_highlight/themes/monokai-sublime.dart';
 import 'package:chatorai/utils/message_utils.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 
 class CodeBlock extends StatefulWidget {
   final String code;
   final String language;
 
-  const CodeBlock({
-    super.key,
-    required this.code,
-    required this.language,
-  });
+  const CodeBlock({super.key, required this.code, required this.language});
 
   @override
   State<CodeBlock> createState() => _CodeBlockState();
@@ -67,7 +64,9 @@ class _CodeBlockState extends State<CodeBlock> {
                           _isCollapsed = !_isCollapsed;
                         });
                       },
-                      tooltip: _isCollapsed ? 'Expand' : 'Collapse',
+                      tooltip: _isCollapsed
+                          ? AppLocalizations.of(context)!.expandTooltip
+                          : AppLocalizations.of(context)!.collapseTooltip,
                       splashRadius: 16,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(
@@ -99,7 +98,7 @@ class _CodeBlockState extends State<CodeBlock> {
                       context: context,
                     );
                   },
-                  tooltip: 'Copy code',
+                  tooltip: AppLocalizations.of(context)!.copyCodeTooltip,
                   splashRadius: 16,
                   hoverColor: isDark ? Colors.white10 : Colors.black12,
                   padding: EdgeInsets.zero,
@@ -114,9 +113,7 @@ class _CodeBlockState extends State<CodeBlock> {
           // Code content with syntax highlighting (only if not collapsed)
           if (!_isCollapsed)
             Container(
-              color: isDark 
-                ? const Color(0xFF23241F) 
-                : const Color(0xFFF6F8FA),
+              color: isDark ? const Color(0xFF23241F) : const Color(0xFFF6F8FA),
               child: SingleChildScrollView(
                 scrollDirection: Axis.vertical,
                 child: Padding(

@@ -102,9 +102,12 @@
   "failedToEditMessage": "メッセージの編集に失敗しました",
   "messageEditedAndResponseRegenerated": "メッセージが編集され、応答が再生成されました",
   "failedToEditAndSendMessage": "メッセージの編集と送信に失敗しました",
-  "areYouSureYouWantToDeleteThisMessage": "このメッセージを削除してもよろしいですか？",
-  "areYouSureYouWantToRegenerateThisMessage": "このメッセージを再生成してもよろしいですか？",
-  "messageDeletedSuccessfully": "メッセージが正常に削除されました",
+   "areYouSureYouWantToDeleteThisMessage": "このメッセージを削除してもよろしいですか？",
+   "confirmDeleteMessage": "チャット\"{chatTitle}\"を削除してもよろしいですか？",
+   "areYouSureYouWantToRegenerateThisMessage": "このメッセージを再生成してもよろしいですか？",
+   "modelDoesNotSupportImages": "モデル{modelId}は画像をサポートしていません。写真を添付することはできますが、送信は機能しません。",
+   "chatTitleUpdated": "チャット名を変更: {title}",
+   "messageDeletedSuccessfully": "メッセージが正常に削除されました",
   "failedToDeleteMessage": "メッセージの削除に失敗しました",
   "regenerationStarted": "再生成が開始されました",
   "failedToRegenerateMessage": "メッセージの再生成に失敗しました",
@@ -324,6 +327,11 @@
 "userPromptSuggestion": "このメッセージに対して3つの具体的で論理的な続きを提案してください。リストのみで回答し、追加テキストは含めないでください。",
 "selectModelTooltip": "モデルを選択",
 "toggleNavigatorTooltip": "ナビゲーターを切り替え",
-"refreshQuestions": "質問を更新",
-"noInternetConnection": "インターネット接続がありません"
-}
+   "refreshQuestions": "質問を更新",
+   "noInternetConnection": "インターネット接続がありません",
+   "modelDoesNotSupportFiles": "モデル {modelId} はファイルをサポートしていません。ファイルを添付することはできますが、送信は機能しません。",
+   "fileAttachedButNotSupported": "ファイルが添付されましたが、現在のモデルではサポートされていません",
+   "copyCodeTooltip": "コードをコピー",
+   "expandTooltip": "展開",
+   "collapseTooltip": "折りたたむ"
+ }

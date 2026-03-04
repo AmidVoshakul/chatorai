@@ -244,6 +244,8 @@ class _ChatInputState extends State<ChatInput>
   }
 
   Future<void> _handleCamera() async {
+    final localizations = AppLocalizations.of(context)!;
+
     // Check model support BEFORE picking file
     if (widget.checkModelSupportsImages != null) {
       final modelId = context.read<ModelProvider>().selectedModelId;
@@ -254,8 +256,7 @@ class _ChatInputState extends State<ChatInput>
         if (mounted) {
           SnackbarUtils.showErrorSnackBar(
             context: context,
-            message:
-                'Модель $modelId не поддерживает изображения. Вы можете прикрепить фото, но отправка не сработает.',
+            message: localizations.modelDoesNotSupportImages(modelId),
             icon: Icons.image_not_supported,
             duration: const Duration(seconds: 4),
           );
@@ -287,6 +288,8 @@ class _ChatInputState extends State<ChatInput>
   }
 
   Future<void> _handleImage() async {
+    final localizations = AppLocalizations.of(context)!;
+
     // Check model support BEFORE picking file
     if (widget.checkModelSupportsImages != null) {
       final modelId = context.read<ModelProvider>().selectedModelId;
@@ -297,8 +300,7 @@ class _ChatInputState extends State<ChatInput>
         if (mounted) {
           SnackbarUtils.showErrorSnackBar(
             context: context,
-            message:
-                'Модель $modelId не поддерживает изображения. Вы можете прикрепить фото, но отправка не сработает.',
+            message: localizations.modelDoesNotSupportImages(modelId),
             icon: Icons.image_not_supported,
             duration: const Duration(seconds: 4),
           );
@@ -330,6 +332,8 @@ class _ChatInputState extends State<ChatInput>
   }
 
   Future<void> _handleFile() async {
+    final localizations = AppLocalizations.of(context)!;
+
     // Check model support BEFORE picking file
     if (widget.checkModelSupportsImages != null) {
       final modelId = context.read<ModelProvider>().selectedModelId;
@@ -340,8 +344,7 @@ class _ChatInputState extends State<ChatInput>
         if (mounted) {
           SnackbarUtils.showErrorSnackBar(
             context: context,
-            message:
-                'Модель $modelId не поддерживает файлы. Вы можете прикрепить файл, но отправка не сработает.',
+            message: localizations.modelDoesNotSupportFiles(modelId),
             icon: Icons.attach_file,
             duration: const Duration(seconds: 4),
           );

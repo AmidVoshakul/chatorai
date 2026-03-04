@@ -331,7 +331,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get areYouSureYouWantToDeleteThisMessage => '您确定要删除此消息吗？';
 
   @override
+  String confirmDeleteMessage(Object chatTitle) {
+    return '您确定要删除聊天\"$chatTitle\"吗？';
+  }
+
+  @override
   String get areYouSureYouWantToRegenerateThisMessage => '您确定要重新生成此消息吗？';
+
+  @override
+  String modelDoesNotSupportImages(Object modelId) {
+    return '模型 $modelId 不支持图像。您可以附加照片，但发送将不起作用。';
+  }
+
+  @override
+  String chatTitleUpdated(Object title) {
+    return '聊天已重命名为: $title';
+  }
 
   @override
   String get messageDeletedSuccessfully => '消息删除成功';
@@ -1004,4 +1019,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noInternetConnection => '无网络连接';
+
+  @override
+  String modelDoesNotSupportFiles(Object modelId) {
+    return '模型 $modelId 不支持文件。您可以附加文件，但发送将不起作用。';
+  }
+
+  @override
+  String get fileAttachedButNotSupported => '文件已附加，但当前模型不支持';
+
+  @override
+  String get copyCodeTooltip => '复制代码';
+
+  @override
+  String get expandTooltip => '展开';
+
+  @override
+  String get collapseTooltip => '折叠';
 }

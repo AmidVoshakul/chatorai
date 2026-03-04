@@ -102,9 +102,12 @@
 "failedToEditMessage": "Не вдалося відредагувати повідомлення",
 "messageEditedAndResponseRegenerated": "Повідомлення відредаговано та відповідь перегенеровано",
 "failedToEditAndSendMessage": "Не вдалося відредагувати та надіслати повідомлення",
-"areYouSureYouWantToDeleteThisMessage": "Ви впевнені, що хочете видалити це повідомлення?",
-"areYouSureYouWantToRegenerateThisMessage": "Ви впевнені, що хочете перегенерувати це повідомлення?",
-"messageDeletedSuccessfully": "Повідомлення успішно видалено",
+   "areYouSureYouWantToDeleteThisMessage": "Ви впевнені, що хочете видалити це повідомлення?",
+   "confirmDeleteMessage": "Ви впевнені, що хочете видалити чат \"{chatTitle}\"?",
+   "areYouSureYouWantToRegenerateThisMessage": "Ви впевнені, що хочете перегенерувати це повідомлення?",
+   "modelDoesNotSupportImages": "Модель {modelId} не підтримує зображення. Ви можете прикріпити фото, але відправлення не спрацює.",
+   "chatTitleUpdated": "Чат перейменовано на: {title}",
+   "messageDeletedSuccessfully": "Повідомлення успішно видалено",
 "failedToDeleteMessage": "Не вдалося видалити повідомлення",
 "regenerationStarted": "Перегенерація розпочата",
 "failedToRegenerateMessage": "Не вдалося перегенерувати повідомлення",
@@ -324,6 +327,11 @@
 "userPromptSuggestion": "Запропонуйте 3 конкретні та логічні продовження для цього повідомлення. Відповідайте тільки списком, без додаткового тексту.",
 "selectModelTooltip": "Вибрати модель",
 "toggleNavigatorTooltip": "Перемкнути навігатор",
-"refreshQuestions": "Оновити питання",
-"noInternetConnection": "Немає підключення до інтернету"
-}
+   "refreshQuestions": "Оновити питання",
+   "noInternetConnection": "Немає підключення до інтернету",
+   "modelDoesNotSupportFiles": "Модель {modelId} не підтримує файли. Ви можете прикріпити файл, але відправлення не спрацює.",
+   "fileAttachedButNotSupported": "Файл прикріплено, але не підтримується поточною моделлю",
+   "copyCodeTooltip": "Копіювати код",
+   "expandTooltip": "Розгорнути",
+   "collapseTooltip": "Згорнути"
+ }

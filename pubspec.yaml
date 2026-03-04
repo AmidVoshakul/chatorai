@@ -54,10 +54,7 @@ dependencies:
   clipboard: ^3.0.8
   logger: ^2.6.2
   connectivity_plus: ^7.0.0
-  
-  # Platform Detection
-  # platform_detect: ^1.1.0
-  
+
   # Environment Variables
   flutter_dotenv: ^6.0.0
 
