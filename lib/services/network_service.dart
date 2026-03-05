@@ -84,7 +84,6 @@ class NetworkService extends ChangeNotifier {
   /// Проверка реального доступа к интернету
   Future<void> _checkConnection() async {
     try {
-
       // Проверяем несколько хостов для надежности
       final hosts = ['google.com', 'cloudflare.com', 'openrouter.ai'];
 
@@ -104,6 +103,19 @@ class NetworkService extends ChangeNotifier {
 
   /// Проверка доступности хоста
   Future<bool> _canReachHost(String host) async {
+    // На вебе InternetAddress.lookup не поддерживается
+    // Используем Connectivity API для проверки
+    if (kIsWeb) {
+      try {
+        final result = await Connectivity().checkConnectivity();
+        return result.isNotEmpty &&
+            !result.every((r) => r == ConnectivityResult.none);
+      } catch (e) {
+        _logger.logDebug('Connectivity check failed on web: $e');
+        return false;
+      }
+    }
+
     try {
       final result = await InternetAddress.lookup(
         host,
@@ -162,6 +174,7 @@ class NetworkService extends ChangeNotifier {
   }
 
   /// Очистка ресурсов
+  @override
   void dispose() {
     _logger.logInfo('Disposing NetworkService');
     _connectivitySubscription?.cancel();

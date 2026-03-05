@@ -1631,6 +1631,60 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     return _navigatorHeadings.isNotEmpty;
   }
 
+  Widget _buildChatMessages({bool wrapWithGesture = false}) {
+    final chatMessages = ChatMessages(
+      key: _chatMessagesKey,
+      openRouterService: _openRouterService,
+      chatStorageService: _chatStorageService,
+      chat: _currentChat,
+      selectedModel: _selectedModel,
+      onSendMessage: _handleSendMessage,
+      onMessageDeleted: _refreshChatMessages,
+      onMessageEdited: _handleMessageEdited,
+      onMessageEditAndSend: _handleMessageEditAndSend,
+      onContinueResponse: (messageId) => _continueAIResponse(messageId),
+      onRegenerateResponse: _regenerateResponse,
+      scrollController: _messageScrollController,
+      continuationSuggestions: _continuationSuggestions,
+      showSuggestions: _showSuggestions,
+      isSuggestionsLoading: _isSuggestionsLoading,
+      onSuggestionsClose: () {
+        setState(() {
+          _showSuggestions = false;
+          _continuationSuggestions.clear();
+        });
+      },
+      onSuggestionsRefresh: () {
+        if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
+          _showContinuationSuggestions(_currentChat!.messages.last);
+        }
+      },
+      welcomeSuggestions: _welcomeSuggestions,
+      showWelcomeSuggestions: _showWelcomeSuggestions,
+      onWelcomeSuggestionsClose: () {
+        setState(() {
+          _showWelcomeSuggestions = false;
+          _welcomeSuggestions.clear();
+        });
+      },
+      onHeadingsUpdated: _onHeadingsUpdated,
+      onToggleNavigator: _toggleNavigator,
+    );
+
+    if (wrapWithGesture) {
+      return GestureDetector(
+        onDoubleTap: () {
+          if (_hasHeadings()) {
+            _toggleNavigator();
+          }
+        },
+        child: chatMessages,
+      );
+    }
+
+    return chatMessages;
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -1747,58 +1801,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 child: Column(
                   children: [
                     // Chat Messages
-                    Expanded(
-                      child: GestureDetector(
-                        onDoubleTap: () {
-                          // Double-tap gesture to toggle navigator on mobile
-                          if (_hasHeadings()) {
-                            _toggleNavigator();
-                          }
-                        },
-                        child: ChatMessages(
-                          key: _chatMessagesKey,
-                          openRouterService: _openRouterService,
-                          chatStorageService: _chatStorageService,
-                          chat: _currentChat,
-                          selectedModel: _selectedModel,
-                          onSendMessage: _handleSendMessage,
-                          onMessageDeleted: _refreshChatMessages,
-                          onMessageEdited: _handleMessageEdited,
-                          onMessageEditAndSend: _handleMessageEditAndSend,
-                          onContinueResponse: (messageId) =>
-                              _continueAIResponse(messageId),
-                          onRegenerateResponse: _regenerateResponse,
-                          scrollController: _messageScrollController,
-                          continuationSuggestions: _continuationSuggestions,
-                          showSuggestions: _showSuggestions,
-                          isSuggestionsLoading: _isSuggestionsLoading,
-                          onSuggestionsClose: () {
-                            setState(() {
-                              _showSuggestions = false;
-                              _continuationSuggestions.clear();
-                            });
-                          },
-                          onSuggestionsRefresh: () {
-                            if (_currentChat != null &&
-                                _currentChat!.messages.isNotEmpty) {
-                              _showContinuationSuggestions(
-                                _currentChat!.messages.last,
-                              );
-                            }
-                          },
-                          welcomeSuggestions: _welcomeSuggestions,
-                          showWelcomeSuggestions: _showWelcomeSuggestions,
-                          onWelcomeSuggestionsClose: () {
-                            setState(() {
-                              _showWelcomeSuggestions = false;
-                              _welcomeSuggestions.clear();
-                            });
-                          },
-                          onHeadingsUpdated: _onHeadingsUpdated,
-                          onToggleNavigator: _toggleNavigator,
-                        ),
-                      ),
-                    ),
+                    Expanded(child: _buildChatMessages(wrapWithGesture: true)),
 
                     // Input Area
                     chatInput,
@@ -1851,50 +1854,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
               child: Column(
                 children: [
                   // Chat Messages
-                  Expanded(
-                    child: ChatMessages(
-                      key: _chatMessagesKey,
-                      openRouterService: _openRouterService,
-                      chatStorageService: _chatStorageService,
-                      chat: _currentChat,
-                      selectedModel: _selectedModel,
-                      onSendMessage: _handleSendMessage,
-                      onMessageDeleted: _refreshChatMessages,
-                      onMessageEdited: _handleMessageEdited,
-                      onMessageEditAndSend: _handleMessageEditAndSend,
-                      onContinueResponse: (messageId) =>
-                          _continueAIResponse(messageId),
-                      scrollController: _messageScrollController,
-                      continuationSuggestions: _continuationSuggestions,
-                      showSuggestions: _showSuggestions,
-                      isSuggestionsLoading: _isSuggestionsLoading,
-                      onSuggestionsClose: () {
-                        setState(() {
-                          _showSuggestions = false;
-                          _continuationSuggestions.clear();
-                        });
-                      },
-                      onSuggestionsRefresh: () {
-                        if (_currentChat != null &&
-                            _currentChat!.messages.isNotEmpty) {
-                          _showContinuationSuggestions(
-                            _currentChat!.messages.last,
-                          );
-                        }
-                      },
-                      onRegenerateResponse: _regenerateResponse,
-                      welcomeSuggestions: _welcomeSuggestions,
-                      showWelcomeSuggestions: _showWelcomeSuggestions,
-                      onWelcomeSuggestionsClose: () {
-                        setState(() {
-                          _showWelcomeSuggestions = false;
-                          _welcomeSuggestions.clear();
-                        });
-                      },
-                      onHeadingsUpdated: _onHeadingsUpdated,
-                      onToggleNavigator: _toggleNavigator,
-                    ),
-                  ),
+                  Expanded(child: _buildChatMessages()),
 
                   // Input Area
                   chatInput,
@@ -2045,49 +2005,27 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     return ChatLanguageUtils.detectLanguage(text);
   }
 
-  // Method to get localized system prompt based on language
-  String _getLocalizedSystemPrompt(
+  String _getLocalizedPrompt(
     AppLocalizations localizations,
     String language,
+    bool isSystemPrompt,
   ) {
     switch (language) {
       case 'ru':
-        return localizations.systemPromptSuggestion;
       case 'zh':
-        return localizations.systemPromptSuggestion;
       case 'ja':
-        return localizations.systemPromptSuggestion;
       case 'ar':
-        return localizations.systemPromptSuggestion;
       case 'uk':
-        return localizations.systemPromptSuggestion;
+        return isSystemPrompt
+            ? localizations.systemPromptSuggestion
+            : localizations.userPromptSuggestion;
       default:
-        return localizations.systemPromptSuggestion;
+        return isSystemPrompt
+            ? localizations.systemPromptSuggestion
+            : localizations.userPromptSuggestion;
     }
   }
 
-  // Method to get localized user prompt based on language
-  String _getLocalizedUserPrompt(
-    AppLocalizations localizations,
-    String language,
-  ) {
-    switch (language) {
-      case 'ru':
-        return localizations.userPromptSuggestion;
-      case 'zh':
-        return localizations.userPromptSuggestion;
-      case 'ja':
-        return localizations.userPromptSuggestion;
-      case 'ar':
-        return localizations.userPromptSuggestion;
-      case 'uk':
-        return localizations.userPromptSuggestion;
-      default:
-        return localizations.userPromptSuggestion;
-    }
-  }
-
-  // Method to get continuation suggestions from AI with adaptive rollback
   Future<List<String>> _getContinuationSuggestions(
     String lastMessageContent,
     String language,
@@ -2095,10 +2033,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     try {
       final localizations = AppLocalizations.of(context);
       final systemPrompt = localizations != null
-          ? _getLocalizedSystemPrompt(localizations, language)
+          ? _getLocalizedPrompt(localizations, language, true)
           : 'You are a helpful assistant. Continue the conversation by providing 3 specific and logical continuations of the last message. Respond in the same language as the user.';
       final userPrompt = localizations != null
-          ? _getLocalizedUserPrompt(localizations, language)
+          ? _getLocalizedPrompt(localizations, language, false)
           : 'Provide 3 specific and logical continuations for this message. Answer only with the list, no additional text.';
 
       final suggestionPrompt = [
