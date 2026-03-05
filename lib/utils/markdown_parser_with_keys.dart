@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:chatorai/models/chat_models.dart' as models;
 import 'markdown_parser.dart';
 
-/// Расширенная версия MarkdownHeadingInfo с GlobalKey для прокрутки
 class MarkdownHeadingInfoWithKey extends MarkdownHeadingInfo {
   final GlobalKey key;
+  final String messageId;
 
   MarkdownHeadingInfoWithKey({
     required String text,
@@ -11,18 +12,17 @@ class MarkdownHeadingInfoWithKey extends MarkdownHeadingInfo {
     required int lineIndex,
     required String rawLine,
     required this.key,
-  }) : super(
-          text: text,
-          level: level,
-          lineIndex: lineIndex,
-          rawLine: rawLine,
-        );
+    required this.messageId,
+  }) : super(text: text, level: level, lineIndex: lineIndex, rawLine: rawLine);
+
+  String get uniqueKey => '${messageId}_${level}_$text';
 }
 
-/// Парсер Markdown с поддержкой GlobalKey
 class MarkdownParserWithKeys {
-  /// Парсит заголовки и создаёт объекты с GlobalKey
-  static List<MarkdownHeadingInfoWithKey> parseHeadingsWithKeys(String content) {
+  static List<MarkdownHeadingInfoWithKey> parseHeadingsWithKeys(
+    String content, {
+    required String messageId,
+  }) {
     final headings = MarkdownParser.parseHeadings(content);
     return headings
         .map(
@@ -31,45 +31,88 @@ class MarkdownParserWithKeys {
             level: h.level,
             lineIndex: h.lineIndex,
             rawLine: h.rawLine,
-            key: GlobalKey(),
+            key: GlobalKey(
+              debugLabel: 'heading_${messageId}_${h.level}_${h.text}',
+            ),
+            messageId: messageId,
           ),
         )
         .toList();
   }
 
-  /// Обновляет существующие заголовки (сохраняя ключи) для нового контента
-  static List<MarkdownHeadingInfoWithKey> updateHeadings(
-    List<MarkdownHeadingInfoWithKey> oldHeadings,
-    String newContent,
-  ) {
-    final newHeadings = MarkdownParser.parseHeadings(newContent);
-    final result = <MarkdownHeadingInfoWithKey>[];
+  static List<MarkdownHeadingInfoWithKey> parseAllMessagesHeadings(
+    List<models.Message> messages, {
+    List<MarkdownHeadingInfoWithKey>? existingHeadings,
+  }) {
+    final allHeadings = <MarkdownHeadingInfoWithKey>[];
 
-    for (var newHeading in newHeadings) {
-      // Пытаемся найти старый заголовок с таким же текстом и уровнем
-      final oldHeading = oldHeadings.firstWhere(
-        (h) => h.text == newHeading.text && h.level == newHeading.level,
-        orElse: () => MarkdownHeadingInfoWithKey(
-          text: newHeading.text,
-          level: newHeading.level,
-          lineIndex: newHeading.lineIndex,
-          rawLine: newHeading.rawLine,
-          key: GlobalKey(),
-        ),
-      );
-      
-      // Создаём новый объект с обновлёнными данными, но старым ключом
-      result.add(
-        MarkdownHeadingInfoWithKey(
-          text: newHeading.text,
-          level: newHeading.level,
-          lineIndex: newHeading.lineIndex,
-          rawLine: newHeading.rawLine,
-          key: oldHeading.key,
-        ),
-      );
+    for (final message in messages) {
+      if (message.role == models.MessageRole.assistant &&
+          message.content.isNotEmpty) {
+        final newHeadings = MarkdownParser.parseHeadings(message.content);
+
+        for (final newHeading in newHeadings) {
+          // Try to find existing heading with same messageId, level, and text
+          MarkdownHeadingInfoWithKey? existingHeading;
+          if (existingHeadings != null) {
+            try {
+              existingHeading = existingHeadings.firstWhere(
+                (h) =>
+                    h.messageId == message.id &&
+                    h.level == newHeading.level &&
+                    h.text == newHeading.text,
+              );
+            } catch (e) {
+              existingHeading = null;
+            }
+          }
+
+          // Use existing key if found, otherwise create new one
+          if (existingHeading != null) {
+            allHeadings.add(
+              MarkdownHeadingInfoWithKey(
+                text: newHeading.text,
+                level: newHeading.level,
+                lineIndex: newHeading.lineIndex,
+                rawLine: newHeading.rawLine,
+                key: existingHeading.key,
+                messageId: message.id,
+              ),
+            );
+          } else {
+            allHeadings.add(
+              MarkdownHeadingInfoWithKey(
+                text: newHeading.text,
+                level: newHeading.level,
+                lineIndex: newHeading.lineIndex,
+                rawLine: newHeading.rawLine,
+                key: GlobalKey(
+                  debugLabel:
+                      'heading_${message.id}_${newHeading.level}_${newHeading.text}',
+                ),
+                messageId: message.id,
+              ),
+            );
+          }
+        }
+      }
     }
 
-    return result;
+    return allHeadings;
+  }
+
+  static MarkdownHeadingInfoWithKey? findHeadingByKey(
+    List<MarkdownHeadingInfoWithKey> headings,
+    String messageId,
+    int level,
+    String text,
+  ) {
+    try {
+      return headings.firstWhere(
+        (h) => h.messageId == messageId && h.level == level && h.text == text,
+      );
+    } catch (e) {
+      return null;
+    }
   }
 }

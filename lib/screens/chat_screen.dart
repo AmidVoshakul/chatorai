@@ -86,6 +86,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       GlobalKey<ChatMessagesState>();
   bool _isNavigatorVisible = false;
   List<MarkdownHeadingInfoWithKey> _navigatorHeadings = [];
+  int _activeHeadingIndex = -1;
 
   // Sliding AppBar state
   final GlobalKey<SlidingAppBarState> _slidingAppBarKey =
@@ -112,6 +113,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
     // Add scroll listener for sliding app bar
     _messageScrollController.addListener(_handleScrollForSlidingAppBar);
+
+    // Add scroll listener for heading sync
+    _messageScrollController.addListener(_handleScrollForHeadingSync);
 
     // Ensure sliding app bar is visible on startup
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -173,11 +177,53 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _slidingAppBarKey.currentState?.handleScroll(offset);
   }
 
+  void _handleScrollForHeadingSync() {
+    if (!_messageScrollController.hasClients || _navigatorHeadings.isEmpty)
+      return;
+
+    final currentOffset = _messageScrollController.offset;
+    final viewportHeight = _messageScrollController.position.viewportDimension;
+
+    int newActiveIndex = -1;
+
+    for (int i = 0; i < _navigatorHeadings.length; i++) {
+      final heading = _navigatorHeadings[i];
+      final context = heading.key.currentContext;
+
+      if (context != null) {
+        final RenderBox? box = context.findRenderObject() as RenderBox?;
+        if (box != null && box.hasSize) {
+          final position = box.localToGlobal(Offset.zero);
+          final headingTop = position.dy;
+
+          if (headingTop < viewportHeight / 2 && headingTop > -50) {
+            newActiveIndex = i;
+            break;
+          }
+        }
+      }
+    }
+
+    if (newActiveIndex == -1) {
+      final scrollMax = _messageScrollController.position.maxScrollExtent;
+      if (currentOffset >= scrollMax - 100) {
+        newActiveIndex = _navigatorHeadings.length - 1;
+      }
+    }
+
+    if (newActiveIndex != _activeHeadingIndex) {
+      setState(() {
+        _activeHeadingIndex = newActiveIndex;
+      });
+    }
+  }
+
   @override
   void dispose() {
     // Remove listener to prevent memory leaks
     _modelProvider.removeListener(_onModelProviderChange);
     _messageScrollController.removeListener(_handleScrollForSlidingAppBar);
+    _messageScrollController.removeListener(_handleScrollForHeadingSync);
     _messageScrollController.dispose();
     _titleController.dispose();
     _chatScrollUtils?.dispose();
@@ -1139,42 +1185,101 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     });
   }
 
-  void _onHeadingTap(String headingText) {
-    // Find the heading with its key
+  void _onHeadingTap(String headingText, String messageId, int level) {
+    // Find the heading
     final heading = _navigatorHeadings.firstWhere(
-      (h) => h.text == headingText,
+      (h) =>
+          h.text == headingText && h.messageId == messageId && h.level == level,
       orElse: () {
-        _logger.logError('[HeadingTap] Heading not found: $headingText');
-        throw Exception('Heading not found: $headingText');
+        return _navigatorHeadings.firstWhere(
+          (h) => h.text == headingText,
+          orElse: () {
+            _logger.logError('[HeadingTap] Heading not found: $headingText');
+            throw Exception('Heading not found: $headingText');
+          },
+        );
       },
     );
 
-    // Close the navigator FIRST
+    // Update active heading index
+    final headingIndex = _navigatorHeadings.indexOf(heading);
+    if (headingIndex >= 0) {
+      setState(() {
+        _activeHeadingIndex = headingIndex;
+      });
+    }
+
+    // Close the navigator
     setState(() {
       _isNavigatorVisible = false;
     });
 
-    // Wait for the navigator to close and UI to update
-    Future.delayed(const Duration(milliseconds: 150), () async {
+    // Use approximate scroll since ListView doesn't build all items
+    Future.delayed(const Duration(milliseconds: 200), () async {
       if (!mounted) return;
-
-      final headingContext = heading.key.currentContext;
-      if (headingContext == null || !headingContext.mounted) {
-        _logger.logError(
-          '[HeadingTap] Heading context is null or not mounted!',
-        );
-        return;
-      }
-
-      await Scrollable.ensureVisible(
-        headingContext,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-        alignment: 0.15,
-      ).catchError((error) {
-        _logger.logError('[HeadingTap] Scroll error: $error');
-      });
+      await _scrollToHeadingByMessage(messageId, level, heading.text);
     });
+  }
+
+  Future<void> _scrollToHeadingByMessage(
+    String messageId,
+    int level,
+    String headingText,
+  ) async {
+    if (_currentChat == null || !_messageScrollController.hasClients) return;
+
+    // Find message and calculate heading line index from content
+    int messageIndex = -1;
+    int headingLineIndex = 0;
+
+    for (int i = 0; i < _currentChat!.messages.length; i++) {
+      if (_currentChat!.messages[i].id == messageId) {
+        messageIndex = i;
+        // Find which line the heading is on within the message content
+        final content = _currentChat!.messages[i].content;
+        final lines = content.split('\n');
+        final headingPrefix = '${'#' * level} ';
+
+        for (int j = 0; j < lines.length; j++) {
+          if (lines[j].startsWith(headingPrefix) &&
+              lines[j].contains(headingText)) {
+            headingLineIndex = j;
+            _logger.logInfo(
+              '[HeadingTap] Found heading at line $j: ${lines[j]}',
+            );
+            break;
+          }
+        }
+        break;
+      }
+    }
+
+    if (messageIndex == -1) return;
+
+    // Calculate position - position at TOP of viewport
+    const double appBarHeight = 80.0; // More space for appbar
+    const double baseMessageHeight = 180.0;
+    const double lineHeight = 24.0;
+    final headingExtraSpace = (level - 1) * 18.0;
+    final lineOffset = headingLineIndex * lineHeight;
+
+    // Position heading at top of viewport (subtract more)
+    final targetOffset =
+        (messageIndex * baseMessageHeight +
+                lineOffset +
+                headingExtraSpace -
+                appBarHeight)
+            .clamp(0.0, _messageScrollController.position.maxScrollExtent);
+
+    _logger.logInfo(
+      '[HeadingTap] Scroll to msgIdx=$messageIndex, lineIdx=$headingLineIndex, offset=$targetOffset',
+    );
+
+    await _messageScrollController.animateTo(
+      targetOffset,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
   }
 
   // Method to continue AI response
@@ -1778,6 +1883,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           // Navigator overlay with swipe to close
           MarkdownNavigatorSidebar(
             headings: _navigatorHeadings,
+            activeHeadingIndex: _activeHeadingIndex,
             isOpen: _isNavigatorVisible,
             onClose: _toggleNavigator,
             onHeadingTap: _onHeadingTap,

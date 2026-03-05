@@ -592,11 +592,10 @@ class _ChatMessageState extends State<ChatMessage>
 
     // If headings are provided, use MarkdownWithHeadings
     if (widget.headings != null && widget.headings!.isNotEmpty) {
-      // Filter headings that are in this message
-      final messageHeadings = widget.headings!.where((h) {
-        // Check if heading text is in this message content
-        return widget.message.content.contains(h.text);
-      }).toList();
+      // Filter headings for this specific message by messageId
+      final messageHeadings = widget.headings!
+          .where((h) => h.messageId == widget.message.id)
+          .toList();
 
       if (messageHeadings.isNotEmpty) {
         return MarkdownBody(
@@ -604,10 +603,36 @@ class _ChatMessageState extends State<ChatMessage>
           styleSheet: UbuntuMarkdownStyles.getMarkdownStyles(context),
           selectable: true,
           builders: {
-            'h1': _HeadingBuilder(messageHeadings, level: 1),
-            'h2': _HeadingBuilder(messageHeadings, level: 2),
-            'h3': _HeadingBuilder(messageHeadings, level: 3),
-            'h4': _HeadingBuilder(messageHeadings, level: 4),
+            'h1': _HeadingBuilder(
+              messageHeadings,
+              level: 1,
+              messageId: widget.message.id,
+            ),
+            'h2': _HeadingBuilder(
+              messageHeadings,
+              level: 2,
+              messageId: widget.message.id,
+            ),
+            'h3': _HeadingBuilder(
+              messageHeadings,
+              level: 3,
+              messageId: widget.message.id,
+            ),
+            'h4': _HeadingBuilder(
+              messageHeadings,
+              level: 4,
+              messageId: widget.message.id,
+            ),
+            'h5': _HeadingBuilder(
+              messageHeadings,
+              level: 5,
+              messageId: widget.message.id,
+            ),
+            'h6': _HeadingBuilder(
+              messageHeadings,
+              level: 6,
+              messageId: widget.message.id,
+            ),
           },
           onTapLink: (text, href, title) {
             if (href != null) {
@@ -957,8 +982,13 @@ class _ChatMessageState extends State<ChatMessage>
 class _HeadingBuilder extends MarkdownElementBuilder {
   final List<MarkdownHeadingInfoWithKey> headings;
   final int level;
+  final String messageId;
 
-  _HeadingBuilder(this.headings, {required this.level});
+  _HeadingBuilder(
+    this.headings, {
+    required this.level,
+    required this.messageId,
+  });
 
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
@@ -966,16 +996,15 @@ class _HeadingBuilder extends MarkdownElementBuilder {
 
     // Find the matching heading with key
     final heading = headings.firstWhere(
-      (h) => h.text == text && h.level == level,
+      (h) => h.text == text && h.level == level && h.messageId == messageId,
       orElse: () {
-        // This should not happen if headings are properly synced
-        // Create a fallback key if no match found
         return MarkdownHeadingInfoWithKey(
           text: text,
           level: level,
           lineIndex: 0,
           rawLine: '',
-          key: GlobalKey(),
+          key: GlobalKey(debugLabel: 'fallback_$messageId'),
+          messageId: messageId,
         );
       },
     );

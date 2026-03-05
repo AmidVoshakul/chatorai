@@ -135,24 +135,36 @@ class ChatMessagesState extends State<ChatMessages>
     super.didUpdateWidget(oldWidget);
 
     // Update headings when chat content changes
-    if (widget.chat?.id != oldWidget.chat?.id ||
-        widget.chat?.messages.length != oldWidget.chat?.messages.length) {
+    // Check for: chat ID change, message count change, or content changes
+    final oldMessages = oldWidget.chat?.messages ?? [];
+    final newMessages = widget.chat?.messages ?? [];
+
+    bool shouldUpdate =
+        widget.chat?.id != oldWidget.chat?.id ||
+        oldMessages.length != newMessages.length;
+
+    // Also check for content changes (for streaming updates)
+    if (!shouldUpdate && oldMessages.length == newMessages.length) {
+      for (int i = 0; i < oldMessages.length; i++) {
+        if (oldMessages[i].content != newMessages[i].content) {
+          shouldUpdate = true;
+          break;
+        }
+      }
+    }
+
+    if (shouldUpdate) {
       _updateHeadings();
     }
   }
 
   void _updateHeadings() {
-    final allContent = (widget.chat?.messages ?? [])
-        .map((m) => m.content)
-        .join('\n\n');
+    final messages = widget.chat?.messages ?? [];
 
-    if (_headings.isEmpty) {
-      // First time - create new headings with keys
-      _headings = MarkdownParserWithKeys.parseHeadingsWithKeys(allContent);
-    } else {
-      // Update existing headings, preserving keys
-      _headings = MarkdownParserWithKeys.updateHeadings(_headings, allContent);
-    }
+    _headings = MarkdownParserWithKeys.parseAllMessagesHeadings(
+      messages,
+      existingHeadings: _headings.isNotEmpty ? _headings : null,
+    );
 
     _logger.logInfo(
       '[ChatMessages] Updated headings: ${_headings.length} total',
@@ -162,6 +174,10 @@ class ChatMessagesState extends State<ChatMessages>
     if (widget.onHeadingsUpdated != null) {
       widget.onHeadingsUpdated!(_headings);
     }
+  }
+
+  void refreshHeadings() {
+    _updateHeadings();
   }
 
   @override

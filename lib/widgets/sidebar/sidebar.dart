@@ -50,6 +50,15 @@ class _SidebarState extends State<Sidebar> {
   }
 
   @override
+  void didUpdateWidget(Sidebar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update controller when chats list changes
+    if (widget.chats != oldWidget.chats) {
+      _controller = SidebarController(chats: widget.chats);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final languageProvider = Provider.of<LanguageProvider>(context);

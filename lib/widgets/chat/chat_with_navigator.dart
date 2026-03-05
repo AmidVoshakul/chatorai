@@ -7,10 +7,7 @@ import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 class ChatWithNavigator extends StatefulWidget {
   final String chatContent;
 
-  const ChatWithNavigator({
-    super.key,
-    required this.chatContent,
-  });
+  const ChatWithNavigator({super.key, required this.chatContent});
 
   @override
   State<ChatWithNavigator> createState() => _ChatWithNavigatorState();
@@ -36,7 +33,10 @@ class _ChatWithNavigatorState extends State<ChatWithNavigator> {
 
   void _parseHeadings() {
     setState(() {
-      _headings = MarkdownParserWithKeys.parseHeadingsWithKeys(widget.chatContent);
+      _headings = MarkdownParserWithKeys.parseHeadingsWithKeys(
+        widget.chatContent,
+        messageId: 'standalone',
+      );
     });
   }
 
@@ -46,10 +46,11 @@ class _ChatWithNavigatorState extends State<ChatWithNavigator> {
     });
   }
 
-  void _onHeadingTap(String headingText) {
+  void _onHeadingTap(String headingText, String messageId, int level) {
     // Находим заголовок в списке
     final heading = _headings.firstWhere(
-      (h) => h.text == headingText,
+      (h) =>
+          h.text == headingText && h.messageId == messageId && h.level == level,
       orElse: () => throw Exception('Heading not found: $headingText'),
     );
 
@@ -63,7 +64,7 @@ class _ChatWithNavigatorState extends State<ChatWithNavigator> {
         alignment: 0.15,
       );
     }
-    
+
     // Закрываем навигатор
     setState(() {
       _isNavigatorOpen = false;
@@ -82,15 +83,13 @@ class _ChatWithNavigatorState extends State<ChatWithNavigator> {
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(16),
-                  child: SingleChildScrollView(
-                    child: Text(widget.chatContent),
-                  ),
+                  child: SingleChildScrollView(child: Text(widget.chatContent)),
                 ),
               ),
             ],
           ),
         ),
-        
+
         // Сайдбар навигации
         MarkdownNavigatorSidebar(
           headings: _headings,

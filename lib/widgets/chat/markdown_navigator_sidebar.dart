@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 
 /// Сайдбар для навигации по заголовкам Markdown в чате
@@ -6,26 +7,28 @@ import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 /// Аналогичен основному сайдбару, но для заголовков чата
 class MarkdownNavigatorSidebar extends StatefulWidget {
   final List<MarkdownHeadingInfoWithKey> headings;
-  final Function(String)? onHeadingTap;
+  final int activeHeadingIndex;
+  final Function(String headingText, String messageId, int level)? onHeadingTap;
   final bool isOpen;
   final VoidCallback? onClose;
 
   const MarkdownNavigatorSidebar({
     super.key,
     required this.headings,
+    this.activeHeadingIndex = -1,
     this.onHeadingTap,
     required this.isOpen,
     this.onClose,
   });
 
   @override
-  State<MarkdownNavigatorSidebar> createState() => _MarkdownNavigatorSidebarState();
+  State<MarkdownNavigatorSidebar> createState() =>
+      _MarkdownNavigatorSidebarState();
 }
 
 class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  int _activeIndex = -1;
 
   @override
   void initState() {
@@ -34,7 +37,7 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    
+
     if (widget.isOpen) {
       _animationController.forward();
     }
@@ -43,7 +46,7 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
   @override
   void didUpdateWidget(MarkdownNavigatorSidebar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     if (widget.isOpen != oldWidget.isOpen) {
       if (widget.isOpen) {
         _animationController.forward();
@@ -51,6 +54,7 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
         _animationController.reverse();
       }
     }
+    // Active index is controlled by parent - no local state needed
   }
 
   @override
@@ -60,12 +64,9 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
   }
 
   void _scrollToHeading(int index) {
-    setState(() {
-      _activeIndex = index;
-    });
-    
     if (widget.onHeadingTap != null) {
-      widget.onHeadingTap!(widget.headings[index].text);
+      final heading = widget.headings[index];
+      widget.onHeadingTap!(heading.text, heading.messageId, heading.level);
     }
   }
 
@@ -84,11 +85,13 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
                 child: GestureDetector(
                   onTap: widget.onClose,
                   child: Container(
-                    color: Colors.black.withValues(alpha: 0.3 * _animationController.value),
+                    color: Colors.black.withValues(
+                      alpha: 0.3 * _animationController.value,
+                    ),
                   ),
                 ),
               ),
-            
+
             // Sidebar - matches main sidebar width (280px) and style
             Positioned(
               right: 0,
@@ -96,10 +99,7 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
               bottom: 0,
               width: 280.0,
               child: Transform.translate(
-                offset: Offset(
-                  280.0 * (1 - _animationController.value),
-                  0,
-                ),
+                offset: Offset(280.0 * (1 - _animationController.value), 0),
                 child: GestureDetector(
                   onHorizontalDragUpdate: (details) {
                     // Swipe right to close
@@ -118,10 +118,7 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
                         ),
                       ],
                       border: Border(
-                        left: BorderSide(
-                          color: theme.dividerColor,
-                          width: 1,
-                        ),
+                        left: BorderSide(color: theme.dividerColor, width: 1),
                       ),
                     ),
                     child: Column(
@@ -155,7 +152,7 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
                             ],
                           ),
                         ),
-                        
+
                         // Content
                         Expanded(
                           child: widget.headings.isEmpty
@@ -166,23 +163,32 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
                                       Icon(
                                         Icons.format_underlined,
                                         size: 48,
-                                        color: theme.iconTheme.color?.withValues(alpha: 0.5),
+                                        color: theme.iconTheme.color
+                                            ?.withValues(alpha: 0.5),
                                       ),
                                       const SizedBox(height: 12),
                                       Text(
                                         'Заголовки не найдены',
-                                        style: theme.textTheme.bodyMedium?.copyWith(
-                                          color: theme.textTheme.bodyMedium?.color,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color: theme
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.color,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                         textAlign: TextAlign.center,
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         'Используйте #, ##, ### в Markdown',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme.textTheme.bodySmall?.color,
-                                        ),
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: theme
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.color,
+                                            ),
                                         textAlign: TextAlign.center,
                                       ),
                                     ],
@@ -198,27 +204,33 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
                                   itemCount: widget.headings.length,
                                   separatorBuilder: (context, index) => Divider(
                                     height: 1,
-                                    color: theme.dividerColor.withValues(alpha: 0.1),
+                                    color: theme.dividerColor.withValues(
+                                      alpha: 0.1,
+                                    ),
                                   ),
                                   itemBuilder: (context, index) {
                                     final heading = widget.headings[index];
-                                    final isActive = index == _activeIndex;
-                                    
+                                    final isActive =
+                                        index == widget.activeHeadingIndex;
+
                                     return Material(
                                       color: Colors.transparent,
                                       child: InkWell(
                                         onTap: () => _scrollToHeading(index),
-                                        hoverColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                                        hoverColor: theme.colorScheme.primary
+                                            .withValues(alpha: 0.1),
                                         child: Container(
                                           padding: EdgeInsets.only(
-                                            left: 16 + (heading.level - 1) * 12.0,
+                                            left:
+                                                16 + (heading.level - 1) * 12.0,
                                             right: 16,
                                             top: 12,
                                             bottom: 12,
                                           ),
                                           decoration: BoxDecoration(
                                             color: isActive
-                                                ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                                                ? theme.colorScheme.primary
+                                                      .withValues(alpha: 0.1)
                                                 : Colors.transparent,
                                             border: Border(
                                               left: BorderSide(
@@ -232,16 +244,26 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
                                           child: Row(
                                             children: [
                                               Expanded(
-                                                child: Text(
-                                                  heading.text,
-                                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                                    fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                                                    color: isActive
-                                                        ? theme.colorScheme.primary
-                                                        : theme.textTheme.bodyMedium?.color,
+                                                child: MarkdownBody(
+                                                  data: heading.text,
+                                                  styleSheet: MarkdownStyleSheet(
+                                                    p: theme
+                                                        .textTheme
+                                                        .bodyMedium
+                                                        ?.copyWith(
+                                                          fontWeight: isActive
+                                                              ? FontWeight.bold
+                                                              : FontWeight.w500,
+                                                          color: isActive
+                                                              ? theme
+                                                                    .colorScheme
+                                                                    .primary
+                                                              : theme
+                                                                    .textTheme
+                                                                    .bodyMedium
+                                                                    ?.color,
+                                                        ),
                                                   ),
-                                                  maxLines: 2,
-                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
                                             ],
