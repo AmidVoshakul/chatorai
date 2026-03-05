@@ -25,6 +25,7 @@ import 'package:chatorai/utils/chat_scroll_utils.dart';
 import 'package:chatorai/constants/chat_constants.dart';
 import 'package:chatorai/utils/chat_error_utils.dart';
 import 'package:chatorai/utils/chat_language_utils.dart';
+import 'package:chatorai/utils/chat_suggestion_utils.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
@@ -1631,6 +1632,33 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     return _navigatorHeadings.isNotEmpty;
   }
 
+  Widget _buildSidebarDrawer({
+    required double width,
+    bool isCollapsed = false,
+  }) {
+    return Drawer(
+      width: width,
+      child: Sidebar(
+        width: width,
+        isCollapsed: isCollapsed,
+        onToggleSidebar: () {
+          Navigator.pop(context);
+        },
+        chats: _chats,
+        currentChat: _currentChat,
+        onChatSelect: (chatId) {
+          _selectChat(chatId);
+          Navigator.of(context).pop();
+        },
+        onChatDelete: _deleteChat,
+        onNewChat: () {
+          _createNewChat();
+          Navigator.of(context).pop();
+        },
+      ),
+    );
+  }
+
   Widget _buildChatMessages({bool wrapWithGesture = false}) {
     final chatMessages = ChatMessages(
       key: _chatMessagesKey,
@@ -1744,26 +1772,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   Widget _buildMobileLayout(BuildContext context, Widget chatInput) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: Drawer(
-        child: Sidebar(
-          width: ChatScreenConstants.sidebarWidth,
-          isCollapsed: false,
-          onToggleSidebar: () {
-            Navigator.pop(context);
-          },
-          chats: _chats,
-          currentChat: _currentChat,
-          onChatSelect: (chatId) {
-            _selectChat(chatId);
-            Navigator.of(context).pop();
-          },
-          onChatDelete: _deleteChat,
-          onNewChat: () {
-            _createNewChat();
-            Navigator.of(context).pop();
-          },
-        ),
-      ),
+      drawer: _buildSidebarDrawer(width: ChatScreenConstants.sidebarWidth),
       body: GestureDetector(
         onHorizontalDragStart: (details) {
           // Swipe from left edge to open drawer
@@ -1824,27 +1833,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         onToggleNavigator: _toggleNavigator,
         onModelSelected: _updateSelectedModel,
       ),
-      drawer: Drawer(
-        width: ChatScreenConstants.sidebarWidth,
-        child: Sidebar(
-          width: ChatScreenConstants.sidebarWidth,
-          isCollapsed: false,
-          onToggleSidebar: () {
-            Navigator.pop(context);
-          },
-          chats: _chats,
-          currentChat: _currentChat,
-          onChatSelect: (chatId) {
-            _selectChat(chatId);
-            Navigator.of(context).pop();
-          },
-          onChatDelete: _deleteChat,
-          onNewChat: () {
-            _createNewChat();
-            Navigator.of(context).pop();
-          },
-        ),
-      ),
+      drawer: _buildSidebarDrawer(width: ChatScreenConstants.sidebarWidth),
       body: Column(
         children: [
           // Chat content area with width control
@@ -2070,27 +2059,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       );
 
       final suggestionsText = response.content;
-      final suggestions = suggestionsText
-          .split('\n')
-          .map((s) => s.trim())
-          .where(
-            (s) =>
-                s.isNotEmpty &&
-                (s.startsWith('-') ||
-                    s.startsWith('1.') ||
-                    s.startsWith('2.') ||
-                    s.startsWith('3.') ||
-                    s.startsWith('•') ||
-                    s.length > 10),
-          )
-          .map(
-            (s) => s
-                .replaceFirst(RegExp(r'^[-•]\s*'), '')
-                .replaceFirst(RegExp(r'^\d+\.\s*'), ''),
-          )
-          .where((s) => s.length > 5)
-          .take(4)
-          .toList();
+      final suggestions = parseSuggestions(suggestionsText);
 
       return suggestions;
     } catch (e) {
