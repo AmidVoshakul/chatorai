@@ -4,6 +4,7 @@ import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/utils/logger.dart';
+import 'package:chatorai/constants/chat_messages_constants.dart';
 import 'package:chatorai/widgets/chat/chat_message.dart' as chat_msg;
 import 'package:chatorai/widgets/chat/reasoning_message.dart' as reasoning_msg;
 import 'package:chatorai/widgets/chat/loading_indicator.dart';
@@ -14,29 +15,6 @@ import 'package:chatorai/widgets/chat/chat_input.dart' show MessageData;
 
 // Initialize logger for this widget
 final _logger = LogTags.chatService;
-
-/// Centralized constants for ChatMessages widget
-class ChatMessagesConstants {
-  // UI Constants
-  static const double horizontalPadding = 20.0;
-  static const double verticalPadding = 16.0;
-  static const double messageSpacing = 8.0;
-  static const double loadingIndicatorSize = 12.0;
-
-  // Animation & Update Constants
-  static const Duration updateInterval = Duration(milliseconds: 16); // 60 FPS
-  static const int minChunkLengthForUpdate = 1;
-
-  // Display Constants
-  static const int maxPreviewLength = 50;
-  static const int maxReasoningPreviewLength = 100;
-
-  // Error Messages
-  static const String noAssistantMessageError =
-      'No assistant message to update';
-  static const String noReasoningError =
-      'Cannot update reasoning, no assistant message found';
-}
 
 class ChatMessages extends StatefulWidget {
   final Chat? chat;
