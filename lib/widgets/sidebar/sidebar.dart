@@ -4,7 +4,7 @@ import 'package:chatorai/providers/theme_provider.dart';
 import 'package:chatorai/providers/language_provider.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/screens/settings_screen.dart';
-import 'package:chatorai/widgets/sidebar/sidebar_controller.dart';
+import 'package:chatorai/controllers/sidebar_controller.dart';
 import 'package:chatorai/widgets/sidebar/sidebar_chat_actions_menu.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/l10n/app_localizations.dart';

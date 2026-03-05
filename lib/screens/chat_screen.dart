@@ -368,13 +368,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       }
     }
 
-    final userMessage = Message(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      role: MessageRole.user,
-      content: messageData.text,
-      timestamp: DateTime.now(),
-      isComplete: true,
-      imageData: messageData.imagePath != null ? messageData.base64Data : null,
+    final userMessage = _createUserMessage(
+      messageData.text,
+      base64Data: messageData.imagePath != null ? messageData.base64Data : null,
       imageType: messageData.imageType,
     );
 
@@ -395,14 +391,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     _updateCurrentChat(updatedChat);
 
     // Add assistant placeholder (indicators will show)
-    final assistantMessage = Message(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      role: MessageRole.assistant,
-      content: '',
-      timestamp: DateTime.now(),
-      isComplete: false,
-      model: _selectedModel,
-    );
+    final assistantMessage = _createAssistantMessage();
 
     await _chatStorageService.addMessageToChat(
       _currentChat!.id,
@@ -1632,6 +1621,37 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     return _navigatorHeadings.isNotEmpty;
   }
 
+  Message _createUserMessage(
+    String content, {
+    String? base64Data,
+    String? imageType,
+  }) {
+    return Message(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      role: MessageRole.user,
+      content: content,
+      timestamp: DateTime.now(),
+      isComplete: true,
+      imageData: base64Data,
+      imageType: imageType,
+    );
+  }
+
+  Message _createAssistantMessage({
+    String content = '',
+    bool isComplete = false,
+    String? model,
+  }) {
+    return Message(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      role: MessageRole.assistant,
+      content: content,
+      timestamp: DateTime.now(),
+      isComplete: isComplete,
+      model: model ?? _selectedModel,
+    );
+  }
+
   Widget _buildSidebarDrawer({
     required double width,
     bool isCollapsed = false,
@@ -1999,20 +2019,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     String language,
     bool isSystemPrompt,
   ) {
-    switch (language) {
-      case 'ru':
-      case 'zh':
-      case 'ja':
-      case 'ar':
-      case 'uk':
-        return isSystemPrompt
-            ? localizations.systemPromptSuggestion
-            : localizations.userPromptSuggestion;
-      default:
-        return isSystemPrompt
-            ? localizations.systemPromptSuggestion
-            : localizations.userPromptSuggestion;
+    const supportedLanguages = {'ru', 'zh', 'ja', 'ar', 'uk'};
+    if (!supportedLanguages.contains(language)) {
+      language = 'en';
     }
+    return isSystemPrompt
+        ? localizations.systemPromptSuggestion
+        : localizations.userPromptSuggestion;
   }
 
   Future<List<String>> _getContinuationSuggestions(

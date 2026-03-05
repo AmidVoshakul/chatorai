@@ -3,7 +3,7 @@ import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:chatorai/providers/model_provider.dart';
 import 'package:chatorai/services/openrouter_service.dart';
-import 'package:chatorai/widgets/models/models_controller.dart';
+import 'package:chatorai/controllers/models_controller.dart';
 import 'package:chatorai/widgets/models/model_card_widget.dart';
 import 'package:chatorai/widgets/models/model_details_dialog_widget.dart';
 import 'package:chatorai/widgets/models/models_empty_state_widget.dart';
