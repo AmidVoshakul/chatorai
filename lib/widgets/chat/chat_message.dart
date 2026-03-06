@@ -56,80 +56,34 @@ class ChatMessage extends StatefulWidget {
 
 class _ChatMessageState extends State<ChatMessage>
     with TickerProviderStateMixin {
-  // ===========================================================================
-  // ANIMATION CONTROLLERS - Lazily initialized
-  // ===========================================================================
-
   AnimationController? _fadeController;
   Animation<double>? _fadeAnimation;
   AnimationController? _slideController;
   Animation<Offset>? _slideAnimation;
 
-  // ===========================================================================
-  // STATE VARIABLES
-  // ===========================================================================
-
-  bool _isEditing = false; // Режим редактирования
-  late TextEditingController
-  _textController; // Контроллер для текста редактирования
-
-  // ===========================================================================
-  // LIFECYCLE METHODS
-  // ===========================================================================
+  bool _isEditing = false;
+  late TextEditingController _textController;
+  bool _animationsInitialized = false;
 
   @override
   void initState() {
     super.initState();
-
-    // Инициализируем контроллер для редактирования
     _textController = TextEditingController(text: widget.message.content);
+    _textController.addListener(_onTextChanged);
+  }
 
-    // Слушаем изменения сообщения
-    _textController.addListener(() {
-      if (!_isEditing && _textController.text != widget.message.content) {
-        _textController.text = widget.message.content;
-      }
-    });
-
-    // Fade-in animation - only create if not already created
-    if (_fadeController == null) {
-      _fadeController = AnimationController(
-        duration: const Duration(milliseconds: 500),
-        vsync: this,
-      );
-      _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(parent: _fadeController!, curve: Curves.easeInOut),
-      );
-      _fadeController!.forward();
-    }
-
-    // Slide-in animation - only create if not already created
-    if (_slideController == null) {
-      _slideController = AnimationController(
-        duration: const Duration(milliseconds: 300),
-        vsync: this,
-      );
-      _slideAnimation =
-          Tween<Offset>(begin: const Offset(0.1, 0), end: Offset.zero).animate(
-            CurvedAnimation(parent: _slideController!, curve: Curves.easeOut),
-          );
-      _slideController!.forward();
+  void _onTextChanged() {
+    if (!_isEditing && _textController.text != widget.message.content) {
+      _textController.text = widget.message.content;
     }
   }
 
-  @override
-  void dispose() {
-    _fadeController?.dispose();
-    _slideController?.dispose();
-    super.dispose();
-  }
+  void _initAnimations() {
+    if (_animationsInitialized) return;
+    _animationsInitialized = true;
 
-  void _initializeAnimations() {
-    if (_fadeController != null && _slideController != null) return;
-
-    // Fade-in animation
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: ChatoraiDurations.slow,
       vsync: this,
     );
     _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
@@ -137,9 +91,8 @@ class _ChatMessageState extends State<ChatMessage>
     );
     _fadeController!.forward();
 
-    // Slide-in animation
     _slideController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: ChatoraiDurations.normal,
       vsync: this,
     );
     _slideAnimation =
@@ -147,6 +100,14 @@ class _ChatMessageState extends State<ChatMessage>
           CurvedAnimation(parent: _slideController!, curve: Curves.easeOut),
         );
     _slideController!.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController?.dispose();
+    _slideController?.dispose();
+    _textController.dispose();
+    super.dispose();
   }
 
   @override
@@ -167,10 +128,18 @@ class _ChatMessageState extends State<ChatMessage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isUser = widget.message.role == MessageRole.user;
     final localizations = AppLocalizations.of(context)!;
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final isMobile = screenWidth < 800;
+    final isUser = widget.message.role == MessageRole.user;
+    final isAssistant = widget.message.role == MessageRole.assistant;
+    final hasImage = widget.message.imageData != null;
+    final showStreaming =
+        widget.isStreaming &&
+        isAssistant &&
+        (widget.message.reasoning == null || widget.message.reasoning!.isEmpty);
 
-    // Если сообщение содержит ошибку, показываем ErrorMessage
     if (widget.message.isError) {
       return ErrorMessage(
         errorMessage: widget.message.content,
@@ -189,7 +158,7 @@ class _ChatMessageState extends State<ChatMessage>
     // If message has reasoning, parent handles it - no need to log
 
     // Ensure animations are initialized before build
-    _initializeAnimations();
+    _initAnimations();
 
     return SlideTransition(
       position: _slideAnimation!,
@@ -216,39 +185,32 @@ class _ChatMessageState extends State<ChatMessage>
                         flex: 8,
                         child: Container(
                           constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width < 800
-                                ? MediaQuery.of(context).size.width *
-                                      0.8 // Mobile: 80%
-                                : MediaQuery.of(context).size.width *
-                                      0.6, // Desktop: 60%
+                            maxWidth: isMobile
+                                ? screenWidth * 0.8
+                                : screenWidth * 0.6,
                           ),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                            horizontal: ChatoraiSpacing.md,
+                            vertical: ChatoraiSpacing.sm,
                           ),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.primary.withValues(
                               alpha: 0.1,
                             ),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 5,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                            borderRadius: BorderRadius.circular(
+                              ChatoraiBorderRadius.md,
+                            ),
+                            boxShadow: ChatoraiShadows.cardShadow,
                             border: Border.all(
                               color: theme.dividerColor.withValues(alpha: 0.3),
-                              width: 1,
+                              width: ChatoraiBorderWidth.thinBold,
                             ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Image Preview (if message has image)
-                              if (widget.message.imageData != null)
-                                _buildImagePreview(),
+                              if (hasImage) _buildImagePreview(),
 
                               // Message Content
                               _buildMessageContent(context),
@@ -256,14 +218,8 @@ class _ChatMessageState extends State<ChatMessage>
                               // Error State
                               if (widget.message.isError) _buildErrorMessage(),
 
-                              // Streaming Indicator - only show if no reasoning (reasoning handles its own indicator)
-                              // This prevents duplicate indicators when reasoning is present
-                              if (widget.isStreaming &&
-                                  widget.message.role ==
-                                      MessageRole.assistant &&
-                                  (widget.message.reasoning == null ||
-                                      widget.message.reasoning!.isEmpty))
-                                _buildStreamingIndicator(),
+                              // Streaming Indicator
+                              if (showStreaming) _buildStreamingIndicator(),
                             ],
                           ),
                         ),
@@ -271,22 +227,18 @@ class _ChatMessageState extends State<ChatMessage>
                     : Expanded(
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                            horizontal: ChatoraiSpacing.md,
+                            vertical: ChatoraiSpacing.sm,
                           ),
                           decoration: BoxDecoration(
                             color: theme.cardColor,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 5,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                            borderRadius: BorderRadius.circular(
+                              ChatoraiBorderRadius.md,
+                            ),
+                            boxShadow: ChatoraiShadows.cardShadow,
                             border: Border.all(
                               color: theme.dividerColor.withValues(alpha: 0.3),
-                              width: 1,
+                              width: ChatoraiBorderWidth.thinBold,
                             ),
                           ),
                           child: Column(
@@ -297,8 +249,7 @@ class _ChatMessageState extends State<ChatMessage>
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      widget.message.role ==
-                                                  MessageRole.assistant &&
+                                      isAssistant &&
                                               widget.message.model != null
                                           ? widget.message.model!
                                           : widget.message.role.displayName,
@@ -315,7 +266,7 @@ class _ChatMessageState extends State<ChatMessage>
                                       maxLines: 1,
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: ChatoraiSpacing.sm),
                                   Text(
                                     _formatTime(widget.message.timestamp),
                                     style: theme.textTheme.bodySmall?.copyWith(
@@ -326,11 +277,10 @@ class _ChatMessageState extends State<ChatMessage>
                                 ],
                               ),
 
-                              const SizedBox(height: 8),
+                              const SizedBox(height: ChatoraiSpacing.sm),
 
                               // Image Preview (if message has image)
-                              if (widget.message.imageData != null)
-                                _buildImagePreview(),
+                              if (hasImage) _buildImagePreview(),
 
                               // Message Content
                               _buildMessageContent(context),
@@ -338,14 +288,8 @@ class _ChatMessageState extends State<ChatMessage>
                               // Error State
                               if (widget.message.isError) _buildErrorMessage(),
 
-                              // Streaming Indicator - only show if no reasoning (reasoning handles its own indicator)
-                              // This prevents duplicate indicators when reasoning is present
-                              if (widget.isStreaming &&
-                                  widget.message.role ==
-                                      MessageRole.assistant &&
-                                  (widget.message.reasoning == null ||
-                                      widget.message.reasoning!.isEmpty))
-                                _buildStreamingIndicator(),
+                              // Streaming Indicator
+                              if (showStreaming) _buildStreamingIndicator(),
                             ],
                           ),
                         ),
@@ -367,8 +311,10 @@ class _ChatMessageState extends State<ChatMessage>
                       IconButton(
                         icon: Icon(
                           Icons.edit,
-                          size: 16,
-                          color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                          size: ChatoraiIconSizes.actionIcon,
+                          color: theme.iconTheme.color?.withValues(
+                            alpha: ChatoraiIconOpacity.medium,
+                          ),
                         ),
                         onPressed: _startEditing,
                         tooltip: localizations.edit,
@@ -381,8 +327,10 @@ class _ChatMessageState extends State<ChatMessage>
                       IconButton(
                         icon: Icon(
                           Icons.share,
-                          size: 16,
-                          color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                          size: ChatoraiIconSizes.actionIcon,
+                          color: theme.iconTheme.color?.withValues(
+                            alpha: ChatoraiIconOpacity.medium,
+                          ),
                         ),
                         onPressed: () {
                           MessageUtils.shareMessage(
@@ -398,11 +346,9 @@ class _ChatMessageState extends State<ChatMessage>
                     // Universal copy action
                     IconButton(
                       icon: Icon(
-                        Icons.copy_all, // Используем более современную иконку
-                        size: 16, // Увеличиваем размер
-                        color: theme.iconTheme.color?.withValues(
-                          alpha: 0.8,
-                        ), // Увеличиваем opacity
+                        Icons.copy_all,
+                        size: ChatoraiIconSizes.actionIcon,
+                        color: theme.iconTheme.color?.withValues(alpha: 0.8),
                       ),
                       onPressed: () {
                         // Копируем сообщение без добавления имени отправителя
@@ -427,7 +373,7 @@ class _ChatMessageState extends State<ChatMessage>
                     IconButton(
                       icon: Icon(
                         Icons.delete,
-                        size: 16,
+                        size: ChatoraiIconSizes.actionIcon,
                         color: Colors.red.withValues(alpha: 0.7),
                       ),
                       onPressed: () async {
@@ -452,8 +398,10 @@ class _ChatMessageState extends State<ChatMessage>
                       IconButton(
                         icon: Icon(
                           Icons.volume_up,
-                          size: 16,
-                          color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                          size: ChatoraiIconSizes.actionIcon,
+                          color: theme.iconTheme.color?.withValues(
+                            alpha: ChatoraiIconOpacity.medium,
+                          ),
                         ),
                         onPressed: () {
                           // TODO: Voice message
@@ -466,8 +414,10 @@ class _ChatMessageState extends State<ChatMessage>
                       IconButton(
                         icon: Icon(
                           Icons.refresh,
-                          size: 16,
-                          color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                          size: ChatoraiIconSizes.actionIcon,
+                          color: theme.iconTheme.color?.withValues(
+                            alpha: ChatoraiIconOpacity.medium,
+                          ),
                         ),
                         onPressed: () async {
                           await MessageUtils.regenerateMessage(
@@ -495,9 +445,9 @@ class _ChatMessageState extends State<ChatMessage>
                         IconButton(
                           icon: Icon(
                             Icons.play_arrow,
-                            size: 16,
+                            size: ChatoraiIconSizes.actionIcon,
                             color: theme.colorScheme.primary.withValues(
-                              alpha: 0.7,
+                              alpha: ChatoraiIconOpacity.medium,
                             ),
                           ),
                           onPressed: () {
@@ -513,8 +463,10 @@ class _ChatMessageState extends State<ChatMessage>
                       IconButton(
                         icon: Icon(
                           Icons.thumb_up,
-                          size: 16,
-                          color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                          size: ChatoraiIconSizes.actionIcon,
+                          color: theme.iconTheme.color?.withValues(
+                            alpha: ChatoraiIconOpacity.medium,
+                          ),
                         ),
                         onPressed: () {
                           // TODO: Like message
@@ -527,8 +479,10 @@ class _ChatMessageState extends State<ChatMessage>
                       IconButton(
                         icon: Icon(
                           Icons.thumb_down,
-                          size: 16,
-                          color: theme.iconTheme.color?.withValues(alpha: 0.7),
+                          size: ChatoraiIconSizes.actionIcon,
+                          color: theme.iconTheme.color?.withValues(
+                            alpha: ChatoraiIconOpacity.medium,
+                          ),
                         ),
                         onPressed: () {
                           // TODO: Dislike message
@@ -558,11 +512,14 @@ class _ChatMessageState extends State<ChatMessage>
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.3), width: 1),
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+        border: Border.all(
+          color: ChatoraiColors.neonBlue.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxHeight: 200),
           child: Image.memory(
@@ -600,7 +557,7 @@ class _ChatMessageState extends State<ChatMessage>
       if (messageHeadings.isNotEmpty) {
         return MarkdownBody(
           data: widget.message.content,
-          styleSheet: UbuntuMarkdownStyles.getMarkdownStyles(context),
+          styleSheet: ChatoraiMarkdownStyles.getMarkdownStyles(context),
           selectable: true,
           builders: {
             'h1': _HeadingBuilder(
@@ -645,7 +602,7 @@ class _ChatMessageState extends State<ChatMessage>
 
     return MarkdownBody(
       data: widget.message.content,
-      styleSheet: UbuntuMarkdownStyles.getMarkdownStyles(context),
+      styleSheet: ChatoraiMarkdownStyles.getMarkdownStyles(context),
       selectable: true,
       onTapLink: (text, href, title) {
         if (href != null) {
@@ -657,6 +614,7 @@ class _ChatMessageState extends State<ChatMessage>
 
   Widget _buildCustomMarkdownContent(BuildContext context) {
     final lines = widget.message.content.split('\n');
+    final styleSheet = ChatoraiMarkdownStyles.getMarkdownStyles(context);
     final List<Widget> contentWidgets = [];
     String currentTextBlock = '';
     bool inCodeBlock = false;
@@ -674,7 +632,7 @@ class _ChatMessageState extends State<ChatMessage>
             contentWidgets.add(
               MarkdownBody(
                 data: currentTextBlock,
-                styleSheet: UbuntuMarkdownStyles.getMarkdownStyles(context),
+                styleSheet: styleSheet,
                 selectable: true,
               ),
             );
@@ -693,7 +651,7 @@ class _ChatMessageState extends State<ChatMessage>
             contentWidgets.add(
               MarkdownBody(
                 data: currentTextBlock,
-                styleSheet: UbuntuMarkdownStyles.getMarkdownStyles(context),
+                styleSheet: styleSheet,
                 selectable: true,
               ),
             );
@@ -717,7 +675,7 @@ class _ChatMessageState extends State<ChatMessage>
       contentWidgets.add(
         MarkdownBody(
           data: currentTextBlock,
-          styleSheet: UbuntuMarkdownStyles.getMarkdownStyles(context),
+          styleSheet: styleSheet,
           selectable: true,
         ),
       );
@@ -736,38 +694,41 @@ class _ChatMessageState extends State<ChatMessage>
 
   Widget _buildStreamingIndicator() {
     return Container(
-      margin: const EdgeInsets.only(top: 8),
+      margin: const EdgeInsets.only(top: ChatoraiSpacing.sm),
       child: ChatTypingDotsIndicator(dotSize: 6),
     );
   }
 
   Widget _buildErrorMessage() {
+    final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context)!;
+    final bodySmallStyle = theme.textTheme.bodySmall;
+
     return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.only(top: ChatoraiSpacing.sm),
+      padding: const EdgeInsets.all(ChatoraiSpacing.sm),
       decoration: BoxDecoration(
         color: Colors.red.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         children: [
-          Icon(Icons.error, color: Colors.red, size: 16),
+          Icon(
+            Icons.error,
+            color: Colors.red,
+            size: ChatoraiIconSizes.actionIcon,
+          ),
           const SizedBox(width: 4),
           Text(
             localizations.failedToSendMessage,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: Colors.red),
+            style: bodySmallStyle?.copyWith(color: Colors.red),
           ),
           const Spacer(),
           TextButton(
             onPressed: widget.onRetry,
             child: Text(
               localizations.retry,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-              ),
+              style: bodySmallStyle?.copyWith(color: theme.colorScheme.primary),
             ),
           ),
         ],
@@ -828,6 +789,7 @@ class _ChatMessageState extends State<ChatMessage>
   Widget _buildEditInterface(BuildContext context) {
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context)!;
+    final isMobile = MediaQuery.of(context).size.width < 800;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -836,7 +798,7 @@ class _ChatMessageState extends State<ChatMessage>
         Container(
           decoration: BoxDecoration(
             color: theme.cardColor,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
             border: Border.all(color: theme.dividerColor),
           ),
           child: TextField(
@@ -851,7 +813,7 @@ class _ChatMessageState extends State<ChatMessage>
               isDense: true,
             ),
             style: TextStyle(
-              fontSize: 14,
+              fontSize: ChatoraiFontSizes.base,
               color: theme.textTheme.bodyMedium?.color,
             ),
           ),
@@ -861,7 +823,7 @@ class _ChatMessageState extends State<ChatMessage>
         Row(
           children: [
             // Кнопка отмены/крестик - всегда слева
-            if (MediaQuery.of(context).size.width < 800) ...[
+            if (isMobile) ...[
               // Мобильная иконка отмены (красный крестик)
               IconButton(
                 icon: Icon(Icons.close, size: 20, color: Colors.red),
@@ -885,7 +847,7 @@ class _ChatMessageState extends State<ChatMessage>
             const Spacer(),
 
             // Остальные кнопки (сохранить, сохранить и отправить) - справа
-            if (MediaQuery.of(context).size.width < 800) ...[
+            if (isMobile) ...[
               // Мобильные иконки
               // Сохранить (зеленая галочка)
               IconButton(
@@ -923,11 +885,13 @@ class _ChatMessageState extends State<ChatMessage>
                   backgroundColor: theme.primaryColor,
                   foregroundColor: theme.colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(
+                      ChatoraiBorderRadius.xs,
+                    ),
                   ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                    horizontal: ChatoraiSpacing.lg,
+                    vertical: ChatoraiSpacing.sm,
                   ),
                 ),
                 child: Text(localizations.saveAndSend),

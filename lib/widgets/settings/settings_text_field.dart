@@ -27,17 +27,33 @@ class SettingsTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
+        filled: true,
+        fillColor: isDark
+            ? ChatoraiColors.darkInputFill
+            : ChatoraiColors.inputFill,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
           borderSide: BorderSide(
             color: isDark
                 ? ChatoraiColors.darkInputBorder
                 : ChatoraiColors.inputBorder,
           ),
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+          borderSide: BorderSide(
+            color: isDark
+                ? ChatoraiColors.darkInputBorder
+                : ChatoraiColors.inputBorder,
+            width: ChatoraiBorderWidth.thinBold,
+          ),
+        ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: ChatoraiColors.orange, width: 2),
+          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+          borderSide: BorderSide(
+            color: ChatoraiColors.orange,
+            width: ChatoraiBorderWidth.medium,
+          ),
         ),
         suffixIcon: onCopy != null
             ? IconButton(

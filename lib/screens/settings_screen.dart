@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/widgets/settings/settings_section_header.dart';
 import 'package:chatorai/widgets/settings/settings_selection_card.dart';
 import 'package:chatorai/widgets/settings/settings_toggle_tile.dart';
@@ -58,12 +59,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(ChatoraiSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SettingsSectionHeader(title: localizations.providerConfiguration),
-            const SizedBox(height: 16),
+            const SizedBox(height: ChatoraiSpacing.lg),
             SettingsTextField(
               controller: controller.apiKeyController,
               labelText: localizations.apiKey,
@@ -71,17 +72,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               obscureText: true,
               onCopy: () => controller.onApiKeyCopy(context, localizations),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: ChatoraiSpacing.md),
             SettingsTextField(
               controller: controller.baseUrlController,
               labelText: 'Base URL',
               hintText: 'https://openrouter.ai/api/v1',
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: ChatoraiSpacing.xl),
             _buildAppearanceSection(context, localizations),
-            const SizedBox(height: 20),
+            const SizedBox(height: ChatoraiSpacing.xl),
             _buildAccessibilitySection(context, localizations),
-            const SizedBox(height: 20),
+            const SizedBox(height: ChatoraiSpacing.xl),
             SettingsSelectionCard(
               context: context,
               icon: Icons.info,
@@ -89,7 +90,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: '',
               onTap: () => showSettingsAboutDialog(context, localizations),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: ChatoraiSpacing.xxxl),
           ],
         ),
       ),
@@ -107,7 +108,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SettingsSectionHeader(title: localizations.appearance),
-        const SizedBox(height: 16),
+        const SizedBox(height: ChatoraiSpacing.lg),
         SettingsSelectionCard(
           context: context,
           icon: Icons.palette,
@@ -118,7 +119,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           subtitle: localizations.theme,
           onTap: () => showThemeSelectionDialog(context, localizations),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: ChatoraiSpacing.xl),
         SettingsSelectionCard(
           context: context,
           icon: Icons.language,
@@ -129,9 +130,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           subtitle: localizations.language,
           onTap: () => showLanguageSelectionDialog(context, localizations),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: ChatoraiSpacing.xl),
         SettingsSectionHeader(title: localizations.fontSize),
-        const SizedBox(height: 16),
+        const SizedBox(height: ChatoraiSpacing.lg),
         SettingsSliderCard(
           context: context,
           value: themeProviderRead.fontSize,
@@ -156,7 +157,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SettingsSectionHeader(title: localizations.accessibility),
-        const SizedBox(height: 16),
+        const SizedBox(height: ChatoraiSpacing.lg),
         SettingsToggleTile(
           context: context,
           title: localizations.wideScreenMode,

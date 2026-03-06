@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/providers.dart'
     show themeProvider, languageProvider, currentChatProvider;
 import 'package:chatorai/providers/chat/sidebar_provider.dart';
@@ -43,18 +44,17 @@ class Sidebar extends ConsumerWidget {
 
     return AnimatedContainer(
       width: width,
-      duration: const Duration(milliseconds: 300),
+      duration: ChatoraiDurations.normal,
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
         color: theme.cardColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+        boxShadow: ChatoraiShadows.lightShadow,
+        border: Border(
+          right: BorderSide(
+            color: theme.dividerColor,
+            width: ChatoraiBorderWidth.thinBold,
           ),
-        ],
-        border: Border(right: BorderSide(color: theme.dividerColor, width: 1)),
+        ),
       ),
       child: Column(
         children: [
@@ -101,13 +101,18 @@ class Sidebar extends ConsumerWidget {
   ) {
     return Container(
       padding: EdgeInsets.only(
-        left: isCollapsed ? 2 : 16,
-        right: isCollapsed ? 2 : 16,
-        top: isCollapsed ? 0 : 12,
-        bottom: isCollapsed ? 0 : 8,
+        left: isCollapsed ? ChatoraiSpacing.xs : ChatoraiSpacing.lg,
+        right: isCollapsed ? ChatoraiSpacing.xs : ChatoraiSpacing.lg,
+        top: isCollapsed ? 0 : ChatoraiSpacing.md,
+        bottom: isCollapsed ? 0 : ChatoraiSpacing.sm,
       ),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: theme.dividerColor, width: 1)),
+        border: Border(
+          bottom: BorderSide(
+            color: theme.dividerColor,
+            width: ChatoraiBorderWidth.thinBold,
+          ),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -119,7 +124,7 @@ class Sidebar extends ConsumerWidget {
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: theme.textTheme.headlineSmall?.color,
-                  fontSize: 18,
+                  fontSize: ChatoraiFontSizes.sidebarTitle,
                 ),
                 overflow: TextOverflow.ellipsis,
                 softWrap: false,
@@ -130,14 +135,19 @@ class Sidebar extends ConsumerWidget {
             icon: Icon(
               isCollapsed ? Icons.menu : Icons.close,
               color: theme.iconTheme.color,
-              size: 18,
+              size: ChatoraiIconSizes.sidebarMenuIcon,
             ),
             onPressed: onToggleSidebar,
             padding: isCollapsed
-                ? const EdgeInsets.all(4)
-                : const EdgeInsets.all(8),
-            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-            splashRadius: isCollapsed ? 16 : 20,
+                ? const EdgeInsets.all(ChatoraiSpacing.xs)
+                : const EdgeInsets.all(ChatoraiSpacing.sm),
+            constraints: const BoxConstraints(
+              minWidth: ChatoraiSizes.sidebarIconButtonSize,
+              minHeight: ChatoraiSizes.sidebarIconButtonSize,
+            ),
+            splashRadius: isCollapsed
+                ? ChatoraiSizes.sidebarSplashRadiusCollapsed
+                : ChatoraiSizes.sidebarSplashRadiusExpanded,
           ),
         ],
       ),
@@ -150,68 +160,85 @@ class Sidebar extends ConsumerWidget {
     ThemeData theme,
     AppLocalizations localizations,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: ChatoraiSpacing.lg,
+        vertical: ChatoraiSpacing.sm,
+      ),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               decoration: InputDecoration(
                 hintText: localizations.searchChats,
-                prefixIcon: const Icon(Icons.search, size: 18),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  size: ChatoraiIconSizes.lg,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(8),
-                    bottomLeft: Radius.circular(8),
+                    topLeft: Radius.circular(ChatoraiBorderRadius.sm),
+                    bottomLeft: Radius.circular(ChatoraiBorderRadius.sm),
                   ),
-                  borderSide: BorderSide(color: theme.dividerColor, width: 1),
+                  borderSide: BorderSide(
+                    color: theme.dividerColor,
+                    width: ChatoraiBorderWidth.thinBold,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(8),
-                    bottomLeft: Radius.circular(8),
+                    topLeft: Radius.circular(ChatoraiBorderRadius.sm),
+                    bottomLeft: Radius.circular(ChatoraiBorderRadius.sm),
                   ),
-                  borderSide: BorderSide(color: theme.dividerColor, width: 1),
+                  borderSide: BorderSide(
+                    color: theme.dividerColor,
+                    width: ChatoraiBorderWidth.thinBold,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(8),
-                    bottomLeft: Radius.circular(8),
+                    topLeft: Radius.circular(ChatoraiBorderRadius.sm),
+                    bottomLeft: Radius.circular(ChatoraiBorderRadius.sm),
                   ),
                   borderSide: BorderSide(
                     color: theme.colorScheme.primary,
-                    width: 1,
+                    width: ChatoraiBorderWidth.thinBold,
                   ),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: ChatoraiSpacing.md,
+                  vertical: ChatoraiSpacing.sm,
                 ),
                 isDense: true,
               ),
-              style: const TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: ChatoraiFontSizes.base),
               onChanged: (value) {
                 ref.read(sidebarProvider.notifier).setSearchQuery(value);
               },
             ),
           ),
           Container(
-            margin: const EdgeInsets.only(left: 4),
+            margin: const EdgeInsets.only(left: ChatoraiSpacing.xs),
             child: IconButton(
               onPressed: onNewChat,
               icon: const Icon(Icons.edit_square),
               style: IconButton.styleFrom(
-                side: BorderSide(color: theme.dividerColor, width: 1),
-                padding: const EdgeInsets.all(8),
+                side: BorderSide(
+                  color: theme.dividerColor,
+                  width: ChatoraiBorderWidth.thinBold,
+                ),
+                padding: const EdgeInsets.all(ChatoraiSpacing.sm),
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(8),
-                    bottomRight: Radius.circular(8),
+                    topRight: Radius.circular(ChatoraiBorderRadius.sm),
+                    bottomRight: Radius.circular(ChatoraiBorderRadius.sm),
                   ),
                 ),
-                backgroundColor: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[900]
-                    : Colors.white,
+                backgroundColor: isDark
+                    ? ChatoraiColors.darkGray
+                    : ChatoraiColors.pureWhite,
               ),
             ),
           ),
@@ -236,10 +263,13 @@ class Sidebar extends ConsumerWidget {
       child: InkWell(
         onTap: () => onChatSelect(chat.id),
         borderRadius: BorderRadius.zero,
-        hoverColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+        hoverColor: ChatoraiColors.hoverLight,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          height: 60,
+          padding: const EdgeInsets.symmetric(
+            horizontal: ChatoraiSpacing.lg,
+            vertical: ChatoraiSpacing.md,
+          ),
+          height: ChatoraiSpacing.sidebarItemHeight,
           child: Stack(
             children: [
               Row(
@@ -249,9 +279,9 @@ class Sidebar extends ConsumerWidget {
                     color: isSelected
                         ? theme.colorScheme.primary
                         : theme.iconTheme.color,
-                    size: 20,
+                    size: ChatoraiIconSizes.sidebarIcon,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: ChatoraiSpacing.sidebarIconSpacing),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,7 +291,7 @@ class Sidebar extends ConsumerWidget {
                           chat.title,
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
-                            fontSize: 14,
+                            fontSize: ChatoraiFontSizes.sidebarItem,
                             color: isSelected
                                 ? theme.colorScheme.primary
                                 : theme.textTheme.bodyMedium?.color,
@@ -272,7 +302,7 @@ class Sidebar extends ConsumerWidget {
                         Text(
                           formatSidebarDate(chat.updatedAt, context: context),
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: ChatoraiFontSizes.sidebarDate,
                             color: theme.textTheme.bodySmall?.color,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -281,11 +311,11 @@ class Sidebar extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 36),
+                  const SizedBox(width: ChatoraiSizes.sidebarActionMenuWidth),
                 ],
               ),
               Positioned(
-                right: 8,
+                right: ChatoraiSpacing.sm,
                 top: 0,
                 bottom: 0,
                 child: ChatActionsMenu(
@@ -335,34 +365,36 @@ class Sidebar extends ConsumerWidget {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.lg),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               hasSearch ? Icons.search_off : Icons.chat_bubble_outline,
-              size: 60,
-              color: theme.iconTheme.color?.withValues(alpha: 0.5),
+              size: ChatoraiIconSizes.emptyStateIcon,
+              color: theme.iconTheme.color?.withValues(
+                alpha: ChatoraiIconOpacity.low,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: ChatoraiSpacing.lg),
             Text(
               hasSearch
                   ? localizations.noChatsFound(searchQuery)
                   : localizations.noChatsYet,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: ChatoraiFontSizes.lg,
                 fontWeight: FontWeight.w500,
                 color: theme.textTheme.bodyMedium?.color,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: ChatoraiSpacing.sm),
             Text(
               hasSearch
                   ? localizations.tryDifferentSearchTerm
                   : localizations.startConversation,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: ChatoraiFontSizes.caption,
                 color: theme.textTheme.bodySmall?.color,
               ),
               textAlign: TextAlign.center,
@@ -381,22 +413,22 @@ class Sidebar extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 8,
-            offset: const Offset(0, -4),
-          ),
-        ],
+        boxShadow: ChatoraiShadows.lightFooterShadow,
       ),
       child: Column(
         children: [
-          Divider(height: 1, thickness: 1, color: theme.dividerColor),
+          Divider(
+            height: 1,
+            thickness: ChatoraiBorderWidth.thinBold,
+            color: theme.dividerColor,
+          ),
           ListTile(
             leading: const Icon(Icons.settings),
             title: Text(localizations.settings),
             minLeadingWidth: 0,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: ChatoraiSpacing.lg,
+            ),
             onTap: () {
               Navigator.push(
                 context,

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/providers.dart';
@@ -41,7 +42,9 @@ class ModelsScreenState {
 class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
   @override
   ModelsScreenState build() {
-    Future.microtask(() => loadModels());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadModels();
+    });
     return const ModelsScreenState();
   }
 
@@ -49,14 +52,23 @@ class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // Watch the modelProvider to ensure it's initialized
-      ref.watch(modelProvider);
-
       final modelNotifier = ref.read(modelProvider.notifier);
-      await modelNotifier.waitForModelsLoaded();
+
+      // Wait for models to be loaded (with timeout handling)
+      await modelNotifier.waitForModelsLoaded(
+        timeout: const Duration(seconds: 15),
+      );
 
       final modelState = ref.read(modelProvider);
-      final models = modelState.availableModels;
+
+      // If still no models after waiting, try forcing a reload
+      if (modelState.availableModels.isEmpty && !modelState.modelsLoaded) {
+        await modelNotifier.reloadModels();
+        await Future.delayed(const Duration(seconds: 2));
+      }
+
+      final modelState2 = ref.read(modelProvider);
+      final models = modelState2.availableModels;
       final filtered = _applyFilters(models);
 
       state = state.copyWith(

@@ -26,7 +26,6 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
 
   bool _isInitialized = false;
 
-  // Validation state
   bool _maxTokensExceeded = false;
   String? _validationMessage;
 
@@ -43,13 +42,11 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
     final modelState = ref.read(modelProvider);
     final settingsNotifier = ref.read(modelSettingsProvider.notifier);
 
-    // Set active model if not already set, passing context for API info
     if (settingsState.activeSettings == null &&
         modelState.selectedModelId.isNotEmpty) {
       settingsNotifier.setActiveModel(modelState.selectedModelId);
     }
 
-    // Initialize controllers with current settings
     if (settingsState.activeSettings != null) {
       final settings = settingsState.activeSettings!;
 
@@ -61,12 +58,11 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
       _systemPromptController.text = settings.systemPrompt ?? '';
       _isInitialized = true;
     } else if (modelState.selectedModelObject != null) {
-      // If no saved settings but we have model info, create settings from API
       final model = modelState.selectedModelObject!;
       final apiSettings = ModelSettings.fromApiModel(
         model.id,
         model.contextLength,
-        model.contextLength, // Use context length as maxTokens
+        model.contextLength,
       );
 
       _temperatureController.text = apiSettings.temperature.toString();
@@ -78,7 +74,6 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
       _systemPromptController.text = apiSettings.systemPrompt ?? '';
       _isInitialized = true;
 
-      // Set these as active settings
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           settingsNotifier.updateActiveSettings(apiSettings);
@@ -90,7 +85,6 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Re-initialize if settings change
     if (!_isInitialized) {
       _initializeControllers();
     }
@@ -107,7 +101,6 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
     super.dispose();
   }
 
-  // Helper to check if device is mobile
   bool get isMobile {
     return MediaQuery.of(context).size.width < 600;
   }
@@ -297,24 +290,28 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: ChatoraiFontSizes.base,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: isDark
+                      ? ChatoraiColors.pureWhite
+                      : ChatoraiColors.pureBlack,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            // Show current value
+            const SizedBox(width: ChatoraiSpacing.sm),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: ChatoraiSpacing.sm,
+                vertical: ChatoraiSpacing.xs,
+              ),
               decoration: BoxDecoration(
                 color: ChatoraiColors.orange.withAlpha(20),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xs),
               ),
               child: Text(
                 controller.text,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: ChatoraiFontSizes.md,
                   fontWeight: FontWeight.bold,
                   color: ChatoraiColors.orange,
                 ),
@@ -322,16 +319,17 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
             ),
           ],
         ),
-        const SizedBox(height: 4),
-        // Description and API info
+        const SizedBox(height: ChatoraiSpacing.xs),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               description,
               style: TextStyle(
-                fontSize: 12,
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                fontSize: ChatoraiFontSizes.md,
+                color: isDark
+                    ? ChatoraiColors.darkSecondaryTextColor
+                    : ChatoraiColors.secondaryTextColor,
               ),
             ),
             if (apiValue != null || apiLimit != null) ...[
@@ -340,16 +338,20 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                 children: [
                   Icon(
                     Icons.info_outline,
-                    size: 12,
-                    color: isDark ? Colors.grey[500] : Colors.grey[600],
+                    size: ChatoraiIconSizes.xs,
+                    color: isDark
+                        ? ChatoraiColors.darkSecondaryTextColor
+                        : ChatoraiColors.secondaryTextColor,
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: ChatoraiSpacing.xs),
                   Expanded(
                     child: Text(
                       '${apiValue ?? ''}${apiLimit != null ? ' | Limit: $apiLimit' : ''}',
                       style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        fontSize: ChatoraiFontSizes.sm,
+                        color: isDark
+                            ? ChatoraiColors.darkSecondaryTextColor
+                            : ChatoraiColors.secondaryTextColor,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -359,7 +361,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
             ],
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: ChatoraiSpacing.sm),
         TextField(
           controller: controller,
           keyboardType: TextInputType.numberWithOptions(decimal: isDecimal),
@@ -370,7 +372,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                 ? ChatoraiColors.darkInputFill
                 : ChatoraiColors.inputFill,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
               borderSide: BorderSide(
                 color: isDark
                     ? ChatoraiColors.darkInputBorder
@@ -378,43 +380,44 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
               ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
               borderSide: BorderSide(
                 color: _maxTokensExceeded && label.contains('Max Tokens')
-                    ? Colors.red
+                    ? ChatoraiColors.error
                     : (isDark
                           ? ChatoraiColors.darkInputBorder
                           : ChatoraiColors.inputBorder),
                 width: _maxTokensExceeded && label.contains('Max Tokens')
-                    ? 2
-                    : 1,
+                    ? ChatoraiBorderWidth.medium
+                    : ChatoraiBorderWidth.thinBold,
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
               borderSide: BorderSide(
                 color: _maxTokensExceeded && label.contains('Max Tokens')
-                    ? Colors.red
+                    ? ChatoraiColors.error
                     : ChatoraiColors.orange,
-                width: 2,
+                width: ChatoraiBorderWidth.medium,
               ),
             ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
+              horizontal: ChatoraiSpacing.md,
+              vertical: ChatoraiSpacing.sm,
             ),
             suffixIcon: _maxTokensExceeded && label.contains('Max Tokens')
-                ? const Icon(Icons.error_outline, color: Colors.red)
+                ? const Icon(Icons.error_outline, color: ChatoraiColors.error)
                 : null,
           ),
           style: TextStyle(
-            fontSize: 14,
+            fontSize: ChatoraiFontSizes.base,
             color: _maxTokensExceeded && label.contains('Max Tokens')
-                ? Colors.red
-                : (isDark ? Colors.white : Colors.black87),
+                ? ChatoraiColors.error
+                : (isDark
+                      ? ChatoraiColors.pureWhite
+                      : ChatoraiColors.pureBlack),
           ),
           inputFormatters: [
-            // Allow decimal numbers for temperature and topP
             if (isDecimal)
               _DecimalTextInputFormatter(min: min, max: max)
             else
@@ -427,17 +430,17 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
           },
         ),
         if (_validationMessage != null && label.contains('Max Tokens')) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: ChatoraiSpacing.xs),
           Text(
             _validationMessage!,
             style: TextStyle(
-              fontSize: 11,
-              color: Colors.red,
+              fontSize: ChatoraiFontSizes.sm,
+              color: ChatoraiColors.error,
               fontWeight: FontWeight.w500,
             ),
           ),
         ],
-        const SizedBox(height: 16),
+        const SizedBox(height: ChatoraiSpacing.lg),
       ],
     );
   }
@@ -453,20 +456,22 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
         Text(
           localizations.systemPrompt,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: ChatoraiFontSizes.base,
             fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : Colors.black87,
+            color: isDark ? ChatoraiColors.pureWhite : ChatoraiColors.pureBlack,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: ChatoraiSpacing.xs),
         Text(
           localizations.systemPromptDescription,
           style: TextStyle(
-            fontSize: 12,
-            color: isDark ? Colors.grey[400] : Colors.grey[600],
+            fontSize: ChatoraiFontSizes.md,
+            color: isDark
+                ? ChatoraiColors.darkSecondaryTextColor
+                : ChatoraiColors.secondaryTextColor,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: ChatoraiSpacing.sm),
         TextField(
           controller: _systemPromptController,
           maxLines: 3,
@@ -477,7 +482,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                 ? ChatoraiColors.darkInputFill
                 : ChatoraiColors.inputFill,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
               borderSide: BorderSide(
                 color: isDark
                     ? ChatoraiColors.darkInputBorder
@@ -485,7 +490,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
               ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
               borderSide: BorderSide(
                 color: isDark
                     ? ChatoraiColors.darkInputBorder
@@ -493,20 +498,23 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: ChatoraiColors.orange, width: 2),
+              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+              borderSide: BorderSide(
+                color: ChatoraiColors.orange,
+                width: ChatoraiBorderWidth.medium,
+              ),
             ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
+              horizontal: ChatoraiSpacing.md,
+              vertical: ChatoraiSpacing.md,
             ),
           ),
           style: TextStyle(
-            fontSize: 14,
-            color: isDark ? Colors.white : Colors.black87,
+            fontSize: ChatoraiFontSizes.base,
+            color: isDark ? ChatoraiColors.pureWhite : ChatoraiColors.pureBlack,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: ChatoraiSpacing.lg),
       ],
     );
   }
@@ -529,30 +537,23 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
       decoration: BoxDecoration(
         color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+          topLeft: Radius.circular(ChatoraiBorderRadius.xl),
+          topRight: Radius.circular(ChatoraiBorderRadius.xl),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
+        boxShadow: ChatoraiShadows.popupShadow,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(ChatoraiSpacing.lg),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
                   color: isDark
                       ? ChatoraiColors.darkBorderColor
                       : ChatoraiColors.lightBorderColor,
-                  width: 1,
+                  width: ChatoraiBorderWidth.thinBold,
                 ),
               ),
             ),
@@ -561,9 +562,9 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                 Icon(
                   Icons.settings_input_component_outlined,
                   color: ChatoraiColors.orange,
-                  size: 24,
+                  size: ChatoraiIconSizes.xxl,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: ChatoraiSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,9 +572,11 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                       Text(
                         localizations.modelSettings,
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: ChatoraiFontSizes.xl,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
+                          color: isDark
+                              ? ChatoraiColors.pureWhite
+                              : ChatoraiColors.pureBlack,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -583,10 +586,10 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                             child: Text(
                               modelName,
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: ChatoraiFontSizes.md,
                                 color: isDark
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600],
+                                    ? ChatoraiColors.darkSecondaryTextColor
+                                    : ChatoraiColors.secondaryTextColor,
                                 fontWeight: FontWeight.w500,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -594,20 +597,22 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                           ),
                           if (settingsState.activeSettings?.apiContextLength !=
                               null) ...[
-                            const SizedBox(width: 8),
+                            const SizedBox(width: ChatoraiSpacing.sm),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
+                                horizontal: ChatoraiSpacing.xs,
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
                                 color: ChatoraiColors.orange.withAlpha(30),
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(
+                                  ChatoraiBorderRadius.xs,
+                                ),
                               ),
                               child: Text(
                                 '${settingsState.activeSettings!.apiContextLength} tokens',
                                 style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: ChatoraiFontSizes.xs,
                                   color: ChatoraiColors.orange,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -622,7 +627,9 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                 IconButton(
                   icon: Icon(
                     Icons.close,
-                    color: isDark ? Colors.white70 : Colors.black54,
+                    color: isDark
+                        ? ChatoraiColors.white70
+                        : ChatoraiColors.secondaryTextColor,
                   ),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
@@ -630,10 +637,9 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
             ),
           ),
 
-          // Content
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(ChatoraiSpacing.lg),
               child: settingsState.isLoading
                   ? Center(
                       child: Column(
@@ -644,14 +650,14 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                               ChatoraiColors.orange,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: ChatoraiSpacing.lg),
                           Text(
                             'Loading settings...',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: ChatoraiFontSizes.lg,
                               color: isDark
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
+                                  ? ChatoraiColors.darkSecondaryTextColor
+                                  : ChatoraiColors.secondaryTextColor,
                             ),
                           ),
                         ],
@@ -664,15 +670,19 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                         children: [
                           Icon(
                             Icons.settings_suggest,
-                            size: 48,
-                            color: Colors.grey[400],
+                            size: ChatoraiIconSizes.xxxl,
+                            color: isDark
+                                ? ChatoraiColors.darkSecondaryTextColor
+                                : ChatoraiColors.secondaryTextColor,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: ChatoraiSpacing.lg),
                           Text(
                             localizations.noModelSelected,
                             style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[500],
+                              fontSize: ChatoraiFontSizes.lg,
+                              color: isDark
+                                  ? ChatoraiColors.darkSecondaryTextColor
+                                  : ChatoraiColors.secondaryTextColor,
                             ),
                           ),
                         ],
@@ -681,16 +691,17 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Model Parameters Section
                         Text(
                           localizations.modelParameters,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: ChatoraiFontSizes.lg,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: isDark
+                                ? ChatoraiColors.pureWhite
+                                : ChatoraiColors.pureBlack,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: ChatoraiSpacing.lg),
 
                         // Temperature
                         _buildParameterField(
@@ -786,7 +797,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                         // System Prompt
                         _buildSystemPromptField(),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: ChatoraiSpacing.xxl),
 
                         // Action Buttons
                         isMobile
@@ -802,20 +813,20 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                                       ),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: isDark
-                                            ? Colors.white
-                                            : Colors.black87,
+                                            ? ChatoraiColors.pureWhite
+                                            : ChatoraiColors.pureBlack,
                                         side: BorderSide(
                                           color: isDark
-                                              ? Colors.grey[600]!
-                                              : Colors.grey[400]!,
+                                              ? ChatoraiColors.darkGray
+                                              : ChatoraiColors.mediumGray,
                                         ),
                                         padding: const EdgeInsets.symmetric(
-                                          vertical: 12,
+                                          vertical: ChatoraiSpacing.md,
                                         ),
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 12),
+                                  const SizedBox(height: ChatoraiSpacing.md),
                                   SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton.icon(
@@ -824,9 +835,10 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                                       label: Text(localizations.applySettings),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: ChatoraiColors.orange,
-                                        foregroundColor: Colors.white,
+                                        foregroundColor:
+                                            ChatoraiColors.pureWhite,
                                         padding: const EdgeInsets.symmetric(
-                                          vertical: 12,
+                                          vertical: ChatoraiSpacing.md,
                                         ),
                                       ),
                                     ),
@@ -844,20 +856,20 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                                       ),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: isDark
-                                            ? Colors.white
-                                            : Colors.black87,
+                                            ? ChatoraiColors.pureWhite
+                                            : ChatoraiColors.pureBlack,
                                         side: BorderSide(
                                           color: isDark
-                                              ? Colors.grey[600]!
-                                              : Colors.grey[400]!,
+                                              ? ChatoraiColors.darkGray
+                                              : ChatoraiColors.mediumGray,
                                         ),
                                         padding: const EdgeInsets.symmetric(
-                                          vertical: 12,
+                                          vertical: ChatoraiSpacing.md,
                                         ),
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: ChatoraiSpacing.md),
                                   Expanded(
                                     child: ElevatedButton.icon(
                                       onPressed: _applySettings,
@@ -865,9 +877,10 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                                       label: Text(localizations.applySettings),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: ChatoraiColors.orange,
-                                        foregroundColor: Colors.white,
+                                        foregroundColor:
+                                            ChatoraiColors.pureWhite,
                                         padding: const EdgeInsets.symmetric(
-                                          vertical: 12,
+                                          vertical: ChatoraiSpacing.md,
                                         ),
                                       ),
                                     ),

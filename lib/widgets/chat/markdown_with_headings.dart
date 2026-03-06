@@ -25,7 +25,7 @@ class MarkdownWithHeadings extends StatelessWidget {
 
     return MarkdownBody(
       data: data,
-      styleSheet: UbuntuMarkdownStyles.getMarkdownStyles(context),
+      styleSheet: ChatoraiMarkdownStyles.getMarkdownStyles(context),
       selectable: true,
       builders: {
         'h1': _HeadingBuilder(

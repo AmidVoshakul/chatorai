@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/utils/logger.dart';
@@ -42,7 +43,8 @@ class ErrorMessage extends StatefulWidget {
   State<ErrorMessage> createState() => _ErrorMessageState();
 }
 
-class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMixin {
+class _ErrorMessageState extends State<ErrorMessage>
+    with TickerProviderStateMixin {
   // ===========================================================================
   // ANIMATION CONTROLLERS
   // ===========================================================================
@@ -103,7 +105,7 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
   void _initializeAnimations() {
     // Fade-in animation
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: ChatoraiDurations.slow,
       vsync: this,
     );
     _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
@@ -112,19 +114,17 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
 
     // Slide-in animation
     _slideController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: ChatoraiDurations.normal,
       vsync: this,
     );
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0.1, 0),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.easeOut),
-    );
+    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
 
     // Loading animation
     _loadingController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: ChatoraiDurations.normal,
       vsync: this,
     );
     _loadingAnimation = Tween<double>(begin: 1, end: 0).animate(
@@ -141,8 +141,8 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
       _showLoading = true;
       _errorReadyToShow = false;
 
-      // Auto-transition to error after 300ms
-      Future.delayed(const Duration(milliseconds: 300), () {
+      // Auto-transition to error after delay
+      Future.delayed(ChatoraiDurations.normal, () {
         if (mounted) {
           setState(() {
             _showLoading = false;
@@ -196,8 +196,10 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
 
   Widget _buildStreamingIndicator() {
     return Container(
-      margin: const EdgeInsets.only(top: 8),
-      child: ChatTypingDotsIndicator(dotSize: 6),
+      margin: const EdgeInsets.only(top: ChatoraiSpacing.sm),
+      child: ChatTypingDotsIndicator(
+        dotSize: ChatoraiSizes.chatTypingDotsDefaultSize,
+      ),
     );
   }
 
@@ -252,7 +254,7 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
   Future<void> _regenerateMessage() async {
     // Сначала удаляем сообщение об ошибке из UI
     widget.onMessageDeleted();
-    
+
     // Затем вызываем callback для перегенерации
     // Это вызовет onRegenerateResponse в ChatScreen, который:
     // 1. Удалит последнее AI сообщение из БД (это сообщение об ошибке)
@@ -322,20 +324,23 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
           children: [
             // Message bubble
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: ChatoraiSpacing.md,
+                vertical: ChatoraiSpacing.sm,
+              ),
               decoration: BoxDecoration(
                 color: theme.cardColor,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: ChatoraiColors.black05,
                     blurRadius: 5,
                     offset: const Offset(0, 2),
                   ),
                 ],
                 border: Border.all(
                   color: theme.dividerColor.withValues(alpha: 0.3),
-                  width: 1,
+                  width: ChatoraiBorderWidth.thinBold,
                 ),
               ),
               child: Column(
@@ -346,26 +351,27 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
                     children: [
                       Icon(
                         Icons.error,
-                        size: 16,
-                        color: theme.colorScheme.error,
+                        size: ChatoraiIconSizes.actionIcon,
+                        color: ChatoraiColors.error,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: ChatoraiSpacing.sm),
                       Expanded(
                         child: Text(
                           isJsonError
-                            ? '$errorType Error (Code: $errorCode)'
-                            : (localizations?.errorMessage ?? 'Error message'),
+                              ? '$errorType Error (Code: $errorCode)'
+                              : (localizations?.errorMessage ??
+                                    'Error message'),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.error,
-                            fontSize: 12,
+                            color: ChatoraiColors.error,
+                            fontSize: ChatoraiFontSizes.md,
                           ),
                         ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: ChatoraiSpacing.sm),
 
                   // Content
                   if (_errorReadyToShow)
@@ -375,19 +381,20 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
                         Text(
                           isJsonError ? errorMessage : widget.errorMessage,
                           style: TextStyle(
-                            color: theme.colorScheme.error,
-                            fontSize: 13,
-                            height: 1.4,
+                            color: ChatoraiColors.error,
+                            fontSize: ChatoraiFontSizes.sm,
+                            height: ChatoraiSizes.errorTextLineHeight,
                           ),
                           textAlign: TextAlign.left,
                         ),
-                        if (isJsonError) const SizedBox(height: 8),
+                        if (isJsonError)
+                          const SizedBox(height: ChatoraiSpacing.sm),
                         if (isJsonError)
                           Text(
                             'Error Code: $errorCode',
                             style: TextStyle(
-                              color: theme.colorScheme.error,
-                              fontSize: 12,
+                              color: ChatoraiColors.error,
+                              fontSize: ChatoraiFontSizes.md,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -402,11 +409,14 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: ChatoraiSpacing.sm),
 
             // Action buttons
             Container(
-              margin: const EdgeInsets.only(top: 4, bottom: 8),
+              margin: const EdgeInsets.only(
+                top: ChatoraiSpacing.xs,
+                bottom: ChatoraiSpacing.sm,
+              ),
               alignment: Alignment.centerRight,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -414,36 +424,46 @@ class _ErrorMessageState extends State<ErrorMessage> with TickerProviderStateMix
                   IconButton(
                     icon: Icon(
                       Icons.refresh,
-                      size: 16,
-                      color: theme.iconTheme.color?.withValues(alpha: 0.8),
+                      size: ChatoraiIconSizes.actionIcon,
+                      color: theme.iconTheme.color?.withValues(
+                        alpha: ChatoraiIconOpacity.high,
+                      ),
                     ),
                     onPressed: _regenerateMessage,
                     tooltip: localizations?.regenerate ?? 'Regenerate',
-                    splashRadius: 20,
+                    splashRadius: ChatoraiSizes.sidebarSplashRadiusExpanded,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: ChatoraiSpacing.sm),
                   IconButton(
                     icon: Icon(
                       Icons.copy_all,
-                      size: 16,
-                      color: theme.iconTheme.color?.withValues(alpha: 0.8),
+                      size: ChatoraiIconSizes.actionIcon,
+                      color: theme.iconTheme.color?.withValues(
+                        alpha: ChatoraiIconOpacity.high,
+                      ),
                     ),
                     onPressed: _copyToClipboard,
                     tooltip: localizations?.copyMessage ?? 'Copy',
-                    splashRadius: 24,
-                    hoverColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-                    focusColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    splashRadius: ChatoraiSizes.iconButtonSplashRadius,
+                    hoverColor: theme.colorScheme.primary.withValues(
+                      alpha: ChatoraiIconOpacity.low,
+                    ),
+                    focusColor: theme.colorScheme.primary.withValues(
+                      alpha: ChatoraiIconOpacity.low,
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: ChatoraiSpacing.sm),
                   IconButton(
                     icon: Icon(
                       Icons.delete,
-                      size: 16,
-                      color: Colors.red.withValues(alpha: 0.7),
+                      size: ChatoraiIconSizes.actionIcon,
+                      color: ChatoraiColors.error.withValues(
+                        alpha: ChatoraiIconOpacity.medium,
+                      ),
                     ),
                     onPressed: _deleteMessage,
                     tooltip: localizations?.delete ?? 'Delete',
-                    splashRadius: 20,
+                    splashRadius: ChatoraiSizes.sidebarSplashRadiusExpanded,
                   ),
                 ],
               ),

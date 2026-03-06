@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:chatorai/themes/app_theme.dart';
 
 /// Unified loading indicator for chat messages
 /// Shows animated dots only
@@ -9,7 +10,7 @@ class ChatLoadingIndicator extends StatelessWidget {
 
   const ChatLoadingIndicator({
     super.key,
-    this.size = 12,
+    this.size = ChatoraiSizes.chatLoadingIndicatorDefaultSize,
     this.color,
   });
 
@@ -17,29 +18,25 @@ class ChatLoadingIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkTheme = theme.brightness == Brightness.dark;
-    
-    final indicatorColor = color ?? (isDarkTheme ? Colors.white70 : Colors.black54);
+
+    final indicatorColor =
+        color ??
+        (isDarkTheme ? ChatoraiColors.white70 : ChatoraiColors.mediumGray);
 
     return Container(
       constraints: const BoxConstraints(
-        maxWidth: 60,
+        maxWidth: ChatoraiSizes.loadingIndicatorMaxWidth,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: ChatoraiSpacing.md,
+        vertical: ChatoraiSpacing.sm,
+      ),
       decoration: BoxDecoration(
-        color: isDarkTheme ? const Color(0xFF2A2A2A) : const Color(0xFFEEEEEE),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: isDarkTheme ? ChatoraiColors.darkGray : ChatoraiColors.lightGray,
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xl),
+        boxShadow: ChatoraiShadows.cardShadow,
       ),
-      child: SpinKitThreeBounce(
-        color: indicatorColor,
-        size: size,
-      ),
+      child: SpinKitThreeBounce(color: indicatorColor, size: size),
     );
   }
 }
@@ -51,36 +48,32 @@ class ChatTypingDotsIndicator extends StatelessWidget {
 
   const ChatTypingDotsIndicator({
     super.key,
-    this.dotSize = 6,
+    this.dotSize = ChatoraiSizes.chatTypingDotsDefaultSize,
     this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final indicatorColor = color ?? theme.iconTheme.color?.withValues(alpha: 0.7);
+    final indicatorColor =
+        color ??
+        theme.iconTheme.color?.withValues(alpha: ChatoraiIconOpacity.medium);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: ChatoraiSpacing.md,
+        vertical: ChatoraiSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+        boxShadow: ChatoraiShadows.cardShadow,
         border: Border.all(
           color: theme.dividerColor.withValues(alpha: 0.3),
-          width: 1,
+          width: ChatoraiBorderWidth.thinBold,
         ),
       ),
-      child: _TypingDotsAnimation(
-        dotSize: dotSize,
-        color: indicatorColor,
-      ),
+      child: _TypingDotsAnimation(dotSize: dotSize, color: indicatorColor),
     );
   }
 }
@@ -90,10 +83,7 @@ class _TypingDotsAnimation extends StatefulWidget {
   final double dotSize;
   final Color? color;
 
-  const _TypingDotsAnimation({
-    required this.dotSize,
-    this.color,
-  });
+  const _TypingDotsAnimation({required this.dotSize, this.color});
 
   @override
   __TypingDotsAnimationState createState() => __TypingDotsAnimationState();
@@ -120,13 +110,7 @@ class __TypingDotsAnimationState extends State<_TypingDotsAnimation>
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _buildDot(0),
-        _buildDot(1),
-        _buildDot(2),
-      ],
-    );
+    return Row(children: [_buildDot(0), _buildDot(1), _buildDot(2)]);
   }
 
   Widget _buildDot(int index) {
@@ -134,13 +118,12 @@ class __TypingDotsAnimationState extends State<_TypingDotsAnimation>
       animation: _controller,
       builder: (context, child) {
         final baseValue = index * 0.33;
-        final opacity = _controller.value >= baseValue && _controller.value < baseValue + 0.33
+        final opacity =
+            _controller.value >= baseValue &&
+                _controller.value < baseValue + 0.33
             ? 1.0
             : 0.3;
-        return Opacity(
-          opacity: opacity,
-          child: child,
-        );
+        return Opacity(opacity: opacity, child: child);
       },
       child: Container(
         width: widget.dotSize,

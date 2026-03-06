@@ -104,15 +104,25 @@ class ModelNotifier extends Notifier<ModelState> {
 
       final openRouterService = _openRouterService;
 
+      // Wait for service to be ready (includes waiting for async initialization)
       int retryCount = 0;
-      const maxRetries = 20;
+      const maxRetries = 30; // 15 seconds max wait
 
       while (retryCount < maxRetries) {
         if (openRouterService.isReady()) {
+          _logger.logInfo(
+            '[ModelNotifier] Service is ready, loading models...',
+          );
           break;
         }
         await Future<void>.delayed(const Duration(milliseconds: 500));
         retryCount++;
+      }
+
+      if (!openRouterService.isReady()) {
+        _logger.logError('[ModelNotifier] Service not ready after max retries');
+        state = state.copyWith(modelsLoaded: true, isLoadingModels: false);
+        return;
       }
 
       final models = await openRouterService.getAvailableModels();
@@ -286,7 +296,14 @@ class ModelNotifier extends Notifier<ModelState> {
 
 final openRouterServiceProvider = Provider<OpenRouterService>((ref) {
   final networkState = ref.watch(networkServiceProvider);
-  return OpenRouterService(isConnected: networkState.isConnected);
+  final service = OpenRouterService(isConnected: networkState.isConnected);
+
+  // Listen to network changes and update service
+  ref.listen(networkServiceProvider, (previous, next) {
+    service.setConnectivityStatus(next.isConnected);
+  });
+
+  return service;
 });
 
 final modelProvider = NotifierProvider<ModelNotifier, ModelState>(

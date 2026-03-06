@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:flutter_highlight/themes/monokai-sublime.dart';
+import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
@@ -22,115 +23,136 @@ class _CodeBlockState extends State<CodeBlock> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final localizations = AppLocalizations.of(context)!;
+
+    final headerColor = isDark
+        ? ChatoraiColors.white70
+        : ChatoraiColors.pureBlack;
+    final codeBgColor = isDark
+        ? ChatoraiColors.codeBackgroundDark
+        : ChatoraiColors.codeBackgroundLight;
+    final headerBgColor = isDark
+        ? ChatoraiColors.darkGray
+        : ChatoraiColors.lightGray;
+    final codeHighlightColor = isDark
+        ? ChatoraiColors.codeHighlightDark
+        : ChatoraiColors.codeBackgroundLight;
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: ChatoraiSpacing.sm),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(8),
+        color: codeBgColor,
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
         border: Border.all(
           color: theme.dividerColor.withValues(alpha: 0.3),
-          width: 1,
+          width: ChatoraiBorderWidth.thinBold,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with language, collapse button, and copy button
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding: const EdgeInsets.symmetric(
+              horizontal: ChatoraiSpacing.sm,
+              vertical: ChatoraiSpacing.xs,
+            ),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE9ECEF),
+              color: headerBgColor,
               borderRadius: BorderRadius.vertical(
-                top: const Radius.circular(8),
-                bottom: _isCollapsed ? const Radius.circular(8) : Radius.zero,
+                top: Radius.circular(ChatoraiBorderRadius.sm),
+                bottom: _isCollapsed
+                    ? Radius.circular(ChatoraiBorderRadius.sm)
+                    : Radius.zero,
               ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Language and collapse button
                 Row(
                   children: [
-                    // Collapse/expand button
-                    IconButton(
-                      icon: Icon(
-                        _isCollapsed ? Icons.chevron_right : Icons.expand_more,
-                        color: isDark ? Colors.white70 : Colors.black87,
-                        size: 18,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isCollapsed = !_isCollapsed;
-                        });
-                      },
-                      tooltip: _isCollapsed
-                          ? AppLocalizations.of(context)!.expandTooltip
-                          : AppLocalizations.of(context)!.collapseTooltip,
-                      splashRadius: 16,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 24,
-                        minHeight: 24,
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: IconButton(
+                        icon: Icon(
+                          _isCollapsed
+                              ? Icons.chevron_right
+                              : Icons.expand_more,
+                          color: headerColor,
+                          size: ChatoraiIconSizes.lg,
+                        ),
+                        onPressed: () =>
+                            setState(() => _isCollapsed = !_isCollapsed),
+                        tooltip: _isCollapsed
+                            ? localizations.expandTooltip
+                            : localizations.collapseTooltip,
+                        splashRadius: ChatoraiSizes.iconButtonSplashRadius,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: ChatoraiSpacing.lg,
+                          minHeight: ChatoraiSpacing.lg,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: ChatoraiSpacing.xs),
                     Text(
                       widget.language.toUpperCase(),
                       style: TextStyle(
-                        color: isDark ? Colors.white70 : Colors.black87,
+                        color: headerColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                        fontSize: ChatoraiFontSizes.md,
                       ),
                     ),
                   ],
                 ),
-                // Copy button
-                IconButton(
-                  icon: Icon(
-                    Icons.copy_all,
-                    color: isDark ? Colors.white70 : Colors.black87,
-                    size: 18,
-                  ),
-                  onPressed: () {
-                    MessageUtils.copyMessage(
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.copy_all,
+                      color: headerColor,
+                      size: ChatoraiIconSizes.lg,
+                    ),
+                    onPressed: () => MessageUtils.copyMessage(
                       content: widget.code,
                       context: context,
-                    );
-                  },
-                  tooltip: AppLocalizations.of(context)!.copyCodeTooltip,
-                  splashRadius: 16,
-                  hoverColor: isDark ? Colors.white10 : Colors.black12,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 24,
-                    minHeight: 24,
+                    ),
+                    tooltip: localizations.copyCodeTooltip,
+                    splashRadius: ChatoraiIconSizes.md,
+                    hoverColor: isDark
+                        ? ChatoraiColors.black10
+                        : ChatoraiColors.black12,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: ChatoraiSpacing.lg,
+                      minHeight: ChatoraiSpacing.lg,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          // Code content with syntax highlighting (only if not collapsed)
           if (!_isCollapsed)
             Container(
-              color: isDark ? const Color(0xFF23241F) : const Color(0xFFF6F8FA),
+              color: codeHighlightColor,
               child: SingleChildScrollView(
                 scrollDirection: Axis.vertical,
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(ChatoraiSpacing.md),
                   child: Row(
                     children: [
                       Expanded(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: HighlightView(
-                            widget.code,
-                            language: widget.language.toLowerCase(),
-                            theme: isDark ? monokaiSublimeTheme : githubTheme,
-                            padding: EdgeInsets.zero,
-                            textStyle: const TextStyle(
-                              fontSize: 14,
-                              height: 1.5, // Line spacing
+                        child: SelectionArea(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: HighlightView(
+                              widget.code,
+                              language: widget.language.toLowerCase(),
+                              theme: isDark ? monokaiSublimeTheme : githubTheme,
+                              padding: EdgeInsets.zero,
+                              textStyle: TextStyle(
+                                fontSize: ChatoraiFontSizes.base,
+                                height: ChatoraiSizes.codeBlockLineHeight,
+                              ),
                             ),
                           ),
                         ),

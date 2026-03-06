@@ -453,8 +453,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
           value: 'add_camera',
           child: Row(
             children: [
-              Icon(Icons.camera_alt, size: 20),
-              SizedBox(width: 8),
+              Icon(Icons.camera_alt, size: ChatoraiIconSizes.buttonIcon),
+              SizedBox(width: ChatoraiSpacing.sm),
               Text(localizations.addCamera),
             ],
           ),
@@ -464,8 +464,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
         value: 'add_image',
         child: Row(
           children: [
-            Icon(Icons.image, size: 20),
-            SizedBox(width: 8),
+            Icon(Icons.image, size: ChatoraiIconSizes.buttonIcon),
+            SizedBox(width: ChatoraiSpacing.sm),
             Text(localizations.addImage),
           ],
         ),
@@ -475,8 +475,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
         value: 'add_file',
         child: Row(
           children: [
-            Icon(Icons.attach_file, size: 20),
-            SizedBox(width: 8),
+            Icon(Icons.attach_file, size: ChatoraiIconSizes.buttonIcon),
+            SizedBox(width: ChatoraiSpacing.sm),
             Text(localizations.addFile),
           ],
         ),
@@ -487,11 +487,13 @@ class _ChatInputState extends ConsumerState<ChatInput>
       context: context,
       position: RelativeRect.fromLTRB(
         offset.dx,
-        offset.dy - 170, // Подняли выше, чтобы меню было над кнопкой
+        offset.dy - 170,
         offset.dx + size.width,
-        offset.dy - 40, // Нижняя граница выше кнопки
+        offset.dy - 40,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+      ),
       items: menuItems,
     );
 
@@ -520,50 +522,51 @@ class _ChatInputState extends ConsumerState<ChatInput>
     final isMobile = _isMobileLayout(context);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: isMobile
-          ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4)
-          : const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      margin: const EdgeInsets.only(bottom: ChatoraiSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: ChatoraiSpacing.sm,
+        vertical: ChatoraiSpacing.xs,
+      ),
       decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.25)),
+        color: ChatoraiColors.link.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+        border: Border.all(color: ChatoraiColors.link.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             _attachedImageType != null ? Icons.image : Icons.attach_file,
-            size: isMobile ? 12 : 12,
-            color: Colors.blue,
+            size: ChatoraiIconSizes.xs,
+            color: ChatoraiColors.link,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: ChatoraiSpacing.xs),
           ConstrainedBox(
             constraints: BoxConstraints(maxWidth: isMobile ? 120 : 150),
             child: Text(
               _attachedFileName ?? 'file',
               style: TextStyle(
-                fontSize: isMobile ? 10 : 10,
-                color: Colors.blue,
+                fontSize: ChatoraiFontSizes.sm,
+                color: ChatoraiColors.link,
                 fontWeight: FontWeight.w500,
               ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: ChatoraiSpacing.xs),
           IconButton(
             icon: Icon(
               Icons.close,
-              size: isMobile ? 10 : 10,
-              color: Colors.red,
+              size: ChatoraiFontSizes.sm,
+              color: ChatoraiColors.error,
             ),
             onPressed: _clearAttachedFile,
             padding: EdgeInsets.zero,
-            constraints: BoxConstraints(
-              minWidth: isMobile ? 14 : 14,
-              minHeight: isMobile ? 14 : 14,
+            constraints: const BoxConstraints(
+              minWidth: ChatoraiSpacing.md,
+              minHeight: ChatoraiSpacing.md,
             ),
-            splashRadius: isMobile ? 8 : 8,
+            splashRadius: ChatoraiSpacing.sm,
           ),
         ],
       ),
@@ -583,19 +586,19 @@ class _ChatInputState extends ConsumerState<ChatInput>
   }
 
   Color _getActionColor(ThemeData theme) {
-    if (_isSending) return Colors.white;
+    if (_isSending) return ChatoraiColors.pureWhite;
     if (_textController.text.trim().isNotEmpty || _attachedFilePath != null) {
-      return Colors.white;
+      return ChatoraiColors.pureWhite;
     }
     if (_speechUiState == SpeechUiState.listening ||
         _speechUiState == SpeechUiState.preparing) {
-      return Colors.red;
+      return ChatoraiColors.error;
     }
     if (_speechUiState == SpeechUiState.error ||
         _speechUiState == SpeechUiState.noSpeech) {
-      return Colors.red;
+      return ChatoraiColors.error;
     }
-    return theme.iconTheme.color ?? Colors.black;
+    return theme.iconTheme.color ?? ChatoraiColors.pureBlack;
   }
 
   Future<void> _handleMicrophoneAction() async {
@@ -712,18 +715,17 @@ class _ChatInputState extends ConsumerState<ChatInput>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    super.build(context);
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context)!;
     final isMobile = _isMobileLayout(context);
     final maxLines = _computeMaxLines(context);
 
     const double buttonSize = 44.0;
-    const double iconSize = 20.0;
-    const double sidePadding = 20.0;
-    const double bottomPadding = 12.0;
+    const double iconSize = ChatoraiIconSizes.buttonIcon;
+    const double sidePadding = ChatoraiSpacing.lg;
+    const double bottomPadding = ChatoraiSpacing.md;
 
-    // Create the TextField once to preserve state across layout changes
     final textField = TextField(
       controller: _textController,
       focusNode: widget.focusNode,
@@ -746,8 +748,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
               filled: false,
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
+                horizontal: ChatoraiSpacing.lg,
+                vertical: ChatoraiSpacing.md,
               ),
             )
           : InputDecoration(
@@ -757,11 +759,14 @@ class _ChatInputState extends ConsumerState<ChatInput>
               focusedBorder: InputBorder.none,
               filled: false,
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
+                horizontal: ChatoraiSpacing.lg,
+                vertical: ChatoraiSpacing.md,
               ),
             ),
-      style: theme.textTheme.bodyMedium?.copyWith(fontSize: 16, height: 1.2),
+      style: theme.textTheme.bodyMedium?.copyWith(
+        fontSize: ChatoraiFontSizes.lg,
+        height: 1.2,
+      ),
       textInputAction: isMobile ? TextInputAction.newline : null,
       onChanged: (text) => setState(() {}),
       enabled: !_isSending,
@@ -797,11 +802,10 @@ class _ChatInputState extends ConsumerState<ChatInput>
 
     return Stack(
       children: [
-        // Основной контейнер ввода
         Container(
           padding: isMobile
-              ? const EdgeInsets.only(top: 16)
-              : const EdgeInsets.all(16),
+              ? const EdgeInsets.only(top: ChatoraiSpacing.lg)
+              : const EdgeInsets.all(ChatoraiSpacing.lg),
           decoration: BoxDecoration(
             color: isMobile
                 ? (theme.brightness == Brightness.dark
@@ -814,26 +818,26 @@ class _ChatInputState extends ConsumerState<ChatInput>
                       color: theme.brightness == Brightness.dark
                           ? ChatoraiColors.inputContainerBorderDark
                           : ChatoraiColors.inputContainerBorderLight,
-                      width: 1,
+                      width: ChatoraiBorderWidth.thinBold,
                     ),
                     bottom: BorderSide(
                       color: theme.brightness == Brightness.dark
                           ? ChatoraiColors.navBarBorderDark
                           : ChatoraiColors.navBarBorderLight,
-                      width: 1,
+                      width: ChatoraiBorderWidth.thinBold,
                     ),
                   )
                 : null,
             boxShadow: isMobile
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
+                      color: ChatoraiColors.black30,
                       blurRadius: 12,
                       offset: const Offset(0, -4),
                       spreadRadius: 0,
                     ),
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: ChatoraiColors.black20,
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                       spreadRadius: 0,
@@ -841,27 +845,28 @@ class _ChatInputState extends ConsumerState<ChatInput>
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: ChatoraiColors.black05,
                       blurRadius: 10,
                       offset: const Offset(0, -2),
                     ),
                   ],
             borderRadius: isMobile
                 ? const BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    topRight: Radius.circular(24),
+                    topLeft: Radius.circular(ChatoraiBorderRadius.xl),
+                    topRight: Radius.circular(ChatoraiBorderRadius.xl),
                   )
-                : BorderRadius.circular(0),
+                : BorderRadius.zero,
           ),
           child: isMobile
               ? Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // УБРАЛИ inline статус микрофона
                     if (_attachedFilePath != null) ...[
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: ChatoraiSpacing.lg,
+                        ),
                         child: _buildAttachedFilePreview(),
                       ),
                     ],
@@ -876,15 +881,15 @@ class _ChatInputState extends ConsumerState<ChatInput>
                               ? ChatoraiColors.inputContainerDark
                               : ChatoraiColors.inputContainerLight,
                           borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(24),
-                            topRight: Radius.circular(24),
+                            topLeft: Radius.circular(ChatoraiBorderRadius.xl),
+                            topRight: Radius.circular(ChatoraiBorderRadius.xl),
                           ),
                         ),
                         child: textField,
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(
+                      padding: EdgeInsets.fromLTRB(
                         sidePadding,
                         0,
                         sidePadding,
@@ -916,12 +921,11 @@ class _ChatInputState extends ConsumerState<ChatInput>
                               Icons.add,
                               size: iconSize,
                               color: _plusActive
-                                  ? Colors.white
+                                  ? ChatoraiColors.pureWhite
                                   : theme.iconTheme.color,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          // Settings button
+                          const SizedBox(width: ChatoraiSpacing.sm),
                           buildActionButton(
                             key: _settingsKey,
                             bgColor: theme.brightness == Brightness.dark
@@ -935,20 +939,19 @@ class _ChatInputState extends ConsumerState<ChatInput>
                             ),
                           ),
                           const Spacer(),
-                          // Show stop button when streaming
                           if (widget.isStreaming)
                             buildActionButton(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.red,
-                                  Colors.red.withValues(alpha: 0.8),
+                                  ChatoraiColors.error,
+                                  ChatoraiColors.error.withValues(alpha: 0.8),
                                 ],
                               ),
                               onTap: _handleStopStreaming,
                               child: Icon(
                                 Icons.stop,
                                 size: iconSize,
-                                color: Colors.white,
+                                color: ChatoraiColors.pureWhite,
                               ),
                             )
                           else
@@ -1001,8 +1004,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
                       onTap: () => _showPlusMenu(context),
                       child: Icon(Icons.add, color: theme.iconTheme.color),
                     ),
-                    const SizedBox(width: 8),
-                    // Settings button
+                    const SizedBox(width: ChatoraiSpacing.sm),
                     buildActionButton(
                       key: _settingsKey,
                       bgColor: theme.brightness == Brightness.dark
@@ -1014,7 +1016,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
                         color: theme.iconTheme.color,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: ChatoraiSpacing.md),
                     Expanded(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -1023,7 +1025,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
                           if (_attachedFilePath != null) ...[
                             Padding(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
+                                horizontal: ChatoraiSpacing.xs,
                               ),
                               child: ConstrainedBox(
                                 constraints: const BoxConstraints(
@@ -1032,7 +1034,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
                                 child: _buildAttachedFilePreview(),
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: ChatoraiSpacing.xs),
                           ],
                           ConstrainedBox(
                             constraints: BoxConstraints(
@@ -1044,12 +1046,15 @@ class _ChatInputState extends ConsumerState<ChatInput>
                                 color: theme.brightness == Brightness.dark
                                     ? ChatoraiColors.inputContainerDark
                                     : ChatoraiColors.inputContainerLight,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(
+                                  ChatoraiBorderRadius.md,
+                                ),
                                 border: Border.all(
                                   color: theme.brightness == Brightness.dark
                                       ? ChatoraiColors.inputContainerBorderDark
-                                      : ChatoraiColors.inputContainerBorderLight,
-                                  width: 1,
+                                      : ChatoraiColors
+                                            .inputContainerBorderLight,
+                                  width: ChatoraiBorderWidth.thinBold,
                                 ),
                               ),
                               child: Focus(
@@ -1072,18 +1077,20 @@ class _ChatInputState extends ConsumerState<ChatInput>
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    // Show stop button when streaming
+                    const SizedBox(width: ChatoraiSpacing.md),
                     if (widget.isStreaming)
                       buildActionButton(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.red,
-                            Colors.red.withValues(alpha: 0.8),
+                            ChatoraiColors.error,
+                            ChatoraiColors.error.withValues(alpha: 0.8),
                           ],
                         ),
                         onTap: _handleStopStreaming,
-                        child: Icon(Icons.stop, color: Colors.white),
+                        child: Icon(
+                          Icons.stop,
+                          color: ChatoraiColors.pureWhite,
+                        ),
                       )
                     else
                       buildActionButton(
