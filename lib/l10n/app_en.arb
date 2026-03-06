@@ -333,7 +333,19 @@
    "noInternetConnection": "No internet connection",
    "modelDoesNotSupportFiles": "Model {modelId} does not support files. You can attach a file, but sending will not work.",
    "fileAttachedButNotSupported": "File attached but not supported by the current model",
-   "copyCodeTooltip": "Copy code",
-   "expandTooltip": "Expand",
-   "collapseTooltip": "Collapse"
- }
+"copyCodeTooltip": "Copy code",
+    "expandTooltip": "Expand",
+    "collapseTooltip": "Collapse",
+    "welcomeGreeting1": "Ask, explore, create — let's figure it out together.",
+    "welcomeGreeting2": "Ask a question, describe a task, or just start a conversation.",
+    "welcomeGreeting3": "Ask a question or start an exploration.",
+    "welcomeGreeting4": "Ask any question, share an idea, or ask for help — I'm here to help.",
+    "welcomeGreeting5": "Got an idea? Let's figure it out.",
+    "welcomeGreeting6": "Set a direction for the conversation.",
+    "welcomeGreeting7": "What are we exploring today?",
+    "welcomeGreeting8": "Write a thought. Let's analyze it together.",
+    "welcomeGreeting9": "Curiosity is welcome.",
+    "welcomeGreeting10": "Your question is my next answer.",
+    "welcomeGreeting11": "Let's turn an idea into an answer.",
+    "welcomeGreeting12": "Enter a question. The rest is my job."
+  }

@@ -331,7 +331,19 @@
    "noInternetConnection": "インターネット接続がありません",
    "modelDoesNotSupportFiles": "モデル {modelId} はファイルをサポートしていません。ファイルを添付することはできますが、送信は機能しません。",
    "fileAttachedButNotSupported": "ファイルが添付されましたが、現在のモデルではサポートされていません",
-   "copyCodeTooltip": "コードをコピー",
-   "expandTooltip": "展開",
-   "collapseTooltip": "折りたたむ"
- }
+"copyCodeTooltip": "コードをコピー",
+    "expandTooltip": "展開",
+    "collapseTooltip": "折りたたむ",
+    "welcomeGreeting1": "聞いて、探索して、作ろう — 一緒に考えましょう。",
+    "welcomeGreeting2": "質問したり、タスクを説明したり、会話を始めたりしてください。",
+    "welcomeGreeting3": "質問するか、探索を始めましょう。",
+    "welcomeGreeting4": "どんな質問でも、アイデアを共有しても、助けてと言っても — ここにいるので助けになります。",
+    "welcomeGreeting5": "アイデアがありますか？一緒に考えましょう。",
+    "welcomeGreeting6": "会話の方向性を決めます。",
+    "welcomeGreeting7": "今日は何を探索しますか？",
+    "welcomeGreeting8": "考えを書いてください。一緒に分析しましょう。",
+    "welcomeGreeting9": "好奇心は大歓迎です。",
+    "welcomeGreeting10": "あなたの質問が次の私の答えです。",
+    "welcomeGreeting11": "アイデアを答えに変えましょう。",
+    "welcomeGreeting12": "質問を入力してください。残りは私の仕事です。"
+  }

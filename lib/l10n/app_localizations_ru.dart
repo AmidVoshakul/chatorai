@@ -1042,4 +1042,40 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get collapseTooltip => 'Свернуть';
+
+  @override
+  String get welcomeGreeting1 => 'Спрашивайте, исследуйте, создавайте — давайте разберёмся вместе.';
+
+  @override
+  String get welcomeGreeting2 => 'Задайте вопрос, опишите задачу или просто начните разговор.';
+
+  @override
+  String get welcomeGreeting3 => 'Задайте вопрос или начните исследование.';
+
+  @override
+  String get welcomeGreeting4 => 'Задайте любой вопрос, поделитесь идеей или попросите помощи — я здесь, чтобы помочь.';
+
+  @override
+  String get welcomeGreeting5 => 'Есть идея? Давайте разберём.';
+
+  @override
+  String get welcomeGreeting6 => 'Задайте направление для разговора.';
+
+  @override
+  String get welcomeGreeting7 => 'Что сегодня исследуем?';
+
+  @override
+  String get welcomeGreeting8 => 'Напишите мысль. Разберём её вместе.';
+
+  @override
+  String get welcomeGreeting9 => 'Любопытство приветствуется.';
+
+  @override
+  String get welcomeGreeting10 => 'Ваш вопрос — мой следующий ответ.';
+
+  @override
+  String get welcomeGreeting11 => 'Давайте превратим идею в ответ.';
+
+  @override
+  String get welcomeGreeting12 => 'Введите вопрос. Остальное — моя работа.';
 }

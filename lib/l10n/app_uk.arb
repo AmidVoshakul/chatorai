@@ -331,7 +331,19 @@
    "noInternetConnection": "Немає підключення до інтернету",
    "modelDoesNotSupportFiles": "Модель {modelId} не підтримує файли. Ви можете прикріпити файл, але відправлення не спрацює.",
    "fileAttachedButNotSupported": "Файл прикріплено, але не підтримується поточною моделлю",
-   "copyCodeTooltip": "Копіювати код",
-   "expandTooltip": "Розгорнути",
-   "collapseTooltip": "Згорнути"
- }
+"copyCodeTooltip": "Копіювати код",
+    "expandTooltip": "Розгорнути",
+    "collapseTooltip": "Згорнути",
+    "welcomeGreeting1": "Питай, досліджуй, створюй — давай розберемося разом.",
+    "welcomeGreeting2": "Постав питання, опиши завдання або просто почни розмову.",
+    "welcomeGreeting3": "Постав питання або почни дослідження.",
+    "welcomeGreeting4": "Постав будь-яке питання, поділися ідеєю або попроси допомоги — я тут, щоб допомогти.",
+    "welcomeGreeting5": "Є ідея? Давай розберемося.",
+    "welcomeGreeting6": "Задай напрямок для розмови.",
+    "welcomeGreeting7": "Що сьогодні досліджуємо?",
+    "welcomeGreeting8": "Напиши думку. Розберемося разом.",
+    "welcomeGreeting9": "Цікавість вітається.",
+    "welcomeGreeting10": "Твоє питання — моя наступна відповідь.",
+    "welcomeGreeting11": "Давай перетворимо ідею на відповідь.",
+    "welcomeGreeting12": "Введи питання. Решта — моя робота."
+  }

@@ -1042,4 +1042,40 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get collapseTooltip => 'طي';
+
+  @override
+  String get welcomeGreeting1 => 'اسأل، استكشف، اصنع — دعنا نكتشف معًا.';
+
+  @override
+  String get welcomeGreeting2 => 'اطرح سؤالًا، صف مهمة، أو ابدأ محادثة فقط.';
+
+  @override
+  String get welcomeGreeting3 => 'اطرح سؤالًا أو ابدأ استكشافًا.';
+
+  @override
+  String get welcomeGreeting4 => 'اطرح أي سؤال، شارك فكرة، أو اطلب المساعدة — أنا هنا للمساعدة.';
+
+  @override
+  String get welcomeGreeting5 => 'لديك فكرة؟ دعنا نكتشف.';
+
+  @override
+  String get welcomeGreeting6 => 'حدد اتجاه المحادثة.';
+
+  @override
+  String get welcomeGreeting7 => 'ماذا نستكشف اليوم؟';
+
+  @override
+  String get welcomeGreeting8 => 'اكتب فكرة. دعنا نحللها معًا.';
+
+  @override
+  String get welcomeGreeting9 => 'الفضول مرحب به.';
+
+  @override
+  String get welcomeGreeting10 => 'سؤالك هو إجابتي التالية.';
+
+  @override
+  String get welcomeGreeting11 => 'دعنا نحول الفكرة إلى إجابة.';
+
+  @override
+  String get welcomeGreeting12 => 'أدخل سؤالًا. الباقي عملي.';
 }

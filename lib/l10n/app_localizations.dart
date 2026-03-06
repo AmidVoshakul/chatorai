@@ -2112,6 +2112,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Collapse'**
   String get collapseTooltip;
+
+  /// No description provided for @welcomeGreeting1.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask, explore, create — let\'s figure it out together.'**
+  String get welcomeGreeting1;
+
+  /// No description provided for @welcomeGreeting2.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask a question, describe a task, or just start a conversation.'**
+  String get welcomeGreeting2;
+
+  /// No description provided for @welcomeGreeting3.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask a question or start an exploration.'**
+  String get welcomeGreeting3;
+
+  /// No description provided for @welcomeGreeting4.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask any question, share an idea, or ask for help — I\'m here to help.'**
+  String get welcomeGreeting4;
+
+  /// No description provided for @welcomeGreeting5.
+  ///
+  /// In en, this message translates to:
+  /// **'Got an idea? Let\'s figure it out.'**
+  String get welcomeGreeting5;
+
+  /// No description provided for @welcomeGreeting6.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a direction for the conversation.'**
+  String get welcomeGreeting6;
+
+  /// No description provided for @welcomeGreeting7.
+  ///
+  /// In en, this message translates to:
+  /// **'What are we exploring today?'**
+  String get welcomeGreeting7;
+
+  /// No description provided for @welcomeGreeting8.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a thought. Let\'s analyze it together.'**
+  String get welcomeGreeting8;
+
+  /// No description provided for @welcomeGreeting9.
+  ///
+  /// In en, this message translates to:
+  /// **'Curiosity is welcome.'**
+  String get welcomeGreeting9;
+
+  /// No description provided for @welcomeGreeting10.
+  ///
+  /// In en, this message translates to:
+  /// **'Your question is my next answer.'**
+  String get welcomeGreeting10;
+
+  /// No description provided for @welcomeGreeting11.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s turn an idea into an answer.'**
+  String get welcomeGreeting11;
+
+  /// No description provided for @welcomeGreeting12.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a question. The rest is my job.'**
+  String get welcomeGreeting12;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

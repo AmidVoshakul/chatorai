@@ -1042,4 +1042,40 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get collapseTooltip => '折りたたむ';
+
+  @override
+  String get welcomeGreeting1 => '聞いて、探索して、作ろう — 一緒に考えましょう。';
+
+  @override
+  String get welcomeGreeting2 => '質問したり、タスクを説明したり、会話を始めたりしてください。';
+
+  @override
+  String get welcomeGreeting3 => '質問するか、探索を始めましょう。';
+
+  @override
+  String get welcomeGreeting4 => 'どんな質問でも、アイデアを共有しても、助けてと言っても — ここにいるので助けになります。';
+
+  @override
+  String get welcomeGreeting5 => 'アイデアがありますか？一緒に考えましょう。';
+
+  @override
+  String get welcomeGreeting6 => '会話の方向性を決めます。';
+
+  @override
+  String get welcomeGreeting7 => '今日は何を探索しますか？';
+
+  @override
+  String get welcomeGreeting8 => '考えを書いてください。一緒に分析しましょう。';
+
+  @override
+  String get welcomeGreeting9 => '好奇心は大歓迎です。';
+
+  @override
+  String get welcomeGreeting10 => 'あなたの質問が次の私の答えです。';
+
+  @override
+  String get welcomeGreeting11 => 'アイデアを答えに変えましょう。';
+
+  @override
+  String get welcomeGreeting12 => '質問を入力してください。残りは私の仕事です。';
 }

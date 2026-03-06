@@ -331,7 +331,19 @@
    "noInternetConnection": "لا يوجد اتصال بالإنترنت",
    "modelDoesNotSupportFiles": "النموذج {modelId} لا يدعم الملفات. يمكنك إرفاق ملف، لكن الإرسال لن يعمل.",
    "fileAttachedButNotSupported": "تم إرفاق الملف ولكن النموذج الحالي لا يدعمه",
-   "copyCodeTooltip": "نسخ الكود",
-   "expandTooltip": "توسيع",
-   "collapseTooltip": "طي"
- }
+"copyCodeTooltip": "نسخ الكود",
+    "expandTooltip": "توسيع",
+    "collapseTooltip": "طي",
+    "welcomeGreeting1": "اسأل، استكشف، اصنع — دعنا نكتشف معًا.",
+    "welcomeGreeting2": "اطرح سؤالًا، صف مهمة، أو ابدأ محادثة فقط.",
+    "welcomeGreeting3": "اطرح سؤالًا أو ابدأ استكشافًا.",
+    "welcomeGreeting4": "اطرح أي سؤال، شارك فكرة، أو اطلب المساعدة — أنا هنا للمساعدة.",
+    "welcomeGreeting5": "لديك فكرة؟ دعنا نكتشف.",
+    "welcomeGreeting6": "حدد اتجاه المحادثة.",
+    "welcomeGreeting7": "ماذا نستكشف اليوم؟",
+    "welcomeGreeting8": "اكتب فكرة. دعنا نحللها معًا.",
+    "welcomeGreeting9": "الفضول مرحب به.",
+    "welcomeGreeting10": "سؤالك هو إجابتي التالية.",
+    "welcomeGreeting11": "دعنا نحول الفكرة إلى إجابة.",
+    "welcomeGreeting12": "أدخل سؤالًا. الباقي عملي."
+  }

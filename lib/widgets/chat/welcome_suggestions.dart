@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/providers/language_provider.dart';
 import 'package:chatorai/widgets/chat/welcome_questions_data.dart';
+import 'package:chatorai/widgets/chat/welcome_greetings_data.dart';
 
-class WelcomeSuggestions extends StatefulWidget {
+class WelcomeSuggestions extends ConsumerStatefulWidget {
   final List<String> suggestions;
   final Function(String) onSuggestionTap;
   final VoidCallback? onClose;
@@ -18,10 +20,10 @@ class WelcomeSuggestions extends StatefulWidget {
   });
 
   @override
-  State<WelcomeSuggestions> createState() => _WelcomeSuggestionsState();
+  ConsumerState<WelcomeSuggestions> createState() => _WelcomeSuggestionsState();
 }
 
-class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
+class _WelcomeSuggestionsState extends ConsumerState<WelcomeSuggestions>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late AnimationController _rotationController;
@@ -32,7 +34,8 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
   Timer? _cycleTimer;
   bool _isCycleActive = false;
   List<String> _currentSuggestions = [];
-  
+  late String _randomGreeting;
+
   // Navigation groups
   int _currentGroup = 0;
   final int _groupSize = 4;
@@ -42,6 +45,10 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
   void initState() {
     super.initState();
 
+    _randomGreeting = WelcomeGreetingsData.getRandomGreeting(
+      widget.context ?? context,
+    );
+
     _currentSuggestions = widget.suggestions;
     _initQuestionGroups();
 
@@ -50,6 +57,18 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
       duration: const Duration(milliseconds: 500),
     );
 
+    // Listen to language changes
+    ref.listenManual(languageProvider, (previous, next) {
+      if (!mounted) return;
+      if (previous?.selectedLanguage != next.selectedLanguage) {
+        setState(() {
+          _randomGreeting = WelcomeGreetingsData.getRandomGreeting(
+            widget.context ?? context,
+          );
+        });
+      }
+    });
+
     // Rotation animation for smooth question transitions
     _rotationController = AnimationController(
       vsync: this,
@@ -57,25 +76,14 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
       value: 1.0, // Start fully visible
     );
 
-    _rotationFadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _rotationController,
-        curve: Curves.easeInOut,
-      ),
+    _rotationFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _rotationController, curve: Curves.easeInOut),
     );
 
-    _rotationSlideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, 0.15),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _rotationController,
-        curve: Curves.easeInOut,
-      ),
-    );
+    _rotationSlideAnimation =
+        Tween<Offset>(begin: const Offset(0.0, 0.15), end: Offset.zero).animate(
+          CurvedAnimation(parent: _rotationController, curve: Curves.easeInOut),
+        );
 
     // Initialize pulse controllers
     for (int i = 0; i < _currentSuggestions.length; i++) {
@@ -225,39 +233,42 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
 
   void _initQuestionGroups() {
     final ctx = widget.context ?? context;
-    
+
     final allQuestions = WelcomeQuestionsData.getAllQuestions(ctx);
     _questionGroups = [];
-    
+
     for (var i = 0; i < allQuestions.length; i += _groupSize) {
-      final end = (i + _groupSize) < allQuestions.length ? i + _groupSize : allQuestions.length;
+      final end = (i + _groupSize) < allQuestions.length
+          ? i + _groupSize
+          : allQuestions.length;
       _questionGroups.add(allQuestions.sublist(i, end));
     }
   }
 
   void _previousGroup() {
     if (_questionGroups.isEmpty) return;
-    
+
     _stopCycle();
-    
-    final newGroup = (_currentGroup - 1 + _questionGroups.length) % _questionGroups.length;
-    
+
+    final newGroup =
+        (_currentGroup - 1 + _questionGroups.length) % _questionGroups.length;
+
     _rotationController.reverse().then((_) {
       if (!mounted) return;
-      
+
       final newQuestions = _questionGroups[newGroup];
-      
+
       for (var c in _pulseControllers) {
         c.dispose();
       }
       _pulseControllers.clear();
-      
+
       setState(() {
         _currentGroup = newGroup;
         _currentSuggestions = newQuestions;
         _currentIndex = 0;
       });
-      
+
       for (int i = 0; i < _currentSuggestions.length; i++) {
         _pulseControllers.add(
           AnimationController(
@@ -266,34 +277,34 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
           ),
         );
       }
-      
+
       _rotationController.forward();
     });
   }
 
   void _nextGroup() {
     if (_questionGroups.isEmpty) return;
-    
+
     _stopCycle();
-    
+
     final newGroup = (_currentGroup + 1) % _questionGroups.length;
-    
+
     _rotationController.reverse().then((_) {
       if (!mounted) return;
-      
+
       final newQuestions = _questionGroups[newGroup];
-      
+
       for (var c in _pulseControllers) {
         c.dispose();
       }
       _pulseControllers.clear();
-      
+
       setState(() {
         _currentGroup = newGroup;
         _currentSuggestions = newQuestions;
         _currentIndex = 0;
       });
-      
+
       for (int i = 0; i < _currentSuggestions.length; i++) {
         _pulseControllers.add(
           AnimationController(
@@ -302,7 +313,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
           ),
         );
       }
-      
+
       _rotationController.forward();
     });
   }
@@ -310,7 +321,6 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context);
 
     return AnimatedBuilder(
       animation: _animationController,
@@ -318,15 +328,16 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
         return FadeTransition(
           opacity: _animationController,
           child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0.0, 0.2),
-              end: Offset.zero,
-            ).animate(
-              CurvedAnimation(
-                parent: _animationController,
-                curve: Curves.easeOut,
-              ),
-            ),
+            position:
+                Tween<Offset>(
+                  begin: const Offset(0.0, 0.2),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: _animationController,
+                    curve: Curves.easeOut,
+                  ),
+                ),
             child: Center(
               child: Container(
                 margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -350,7 +361,9 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: 0.15,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -360,10 +373,10 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                       ),
                     ),
                     const SizedBox(height: 12),
-              
+
                     // Welcome text
                     Text(
-                      l10n?.welcomeMessage ?? 'Welcome! How can I help you today?',
+                      _randomGreeting,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,
@@ -372,14 +385,14 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                         height: 1.3,
                       ),
                     ),
-              
+
                     const SizedBox(height: 16),
-              
+
                     // Suggestions list
                     _buildSuggestions(),
-                    
+
                     const SizedBox(height: 12),
-                    
+
                     // Navigation arrows
                     _buildNavigationArrows(),
                   ],
@@ -415,7 +428,11 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
     );
   }
 
-  Widget _buildSuggestionItem(String suggestion, bool isActive, ThemeData theme) {
+  Widget _buildSuggestionItem(
+    String suggestion,
+    bool isActive,
+    ThemeData theme,
+  ) {
     // Get animation for this suggestion
     Animation<double>? animation;
     if (isActive && _currentIndex < _pulseControllers.length) {
@@ -442,7 +459,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                   // Use scale directly for perfectly synchronized transition
                   final scale = animation!.value;
                   final progress = 1.0 - scale; // 0.0 to 0.04
-                  
+
                   // Smooth color transition - perfectly synced with scale
                   final bgColor = theme.brightness == Brightness.dark
                       ? Color.lerp(
@@ -455,14 +472,17 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                           Colors.black,
                           progress * 2.5,
                         )!.withValues(alpha: 0.95);
-                  
+
                   // Smooth shadow - synced with scale
                   final shadowOpacity = progress * 0.25;
-                  
+
                   return Transform.scale(
                     scale: scale,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         color: bgColor,
@@ -476,7 +496,9 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                           // Animated shadow for active state
                           if (shadowOpacity > 0.001)
                             BoxShadow(
-                              color: theme.colorScheme.primary.withValues(alpha: shadowOpacity),
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: shadowOpacity,
+                              ),
                               blurRadius: 6 + progress * 6, // 6 to 12
                               offset: Offset(0, 1 + progress * 2), // 1 to 3
                             ),
@@ -497,7 +519,10 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
                 },
               )
             : Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   color: theme.brightness == Brightness.dark
@@ -528,7 +553,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
 
   Widget _buildNavigationArrows() {
     final theme = Theme.of(context);
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -539,7 +564,7 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
             onTap: _previousGroup,
             borderRadius: BorderRadius.circular(20),
             child: Container(
-              width:36,
+              width: 36,
               height: 36,
               decoration: BoxDecoration(
                 color: theme.brightness == Brightness.dark
@@ -559,9 +584,9 @@ class _WelcomeSuggestionsState extends State<WelcomeSuggestions>
             ),
           ),
         ),
-        
+
         const SizedBox(width: 12),
-        
+
         // Next button
         Material(
           color: Colors.transparent,

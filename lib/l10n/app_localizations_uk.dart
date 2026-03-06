@@ -1042,4 +1042,40 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get collapseTooltip => 'Згорнути';
+
+  @override
+  String get welcomeGreeting1 => 'Питай, досліджуй, створюй — давай розберемося разом.';
+
+  @override
+  String get welcomeGreeting2 => 'Постав питання, опиши завдання або просто почни розмову.';
+
+  @override
+  String get welcomeGreeting3 => 'Постав питання або почни дослідження.';
+
+  @override
+  String get welcomeGreeting4 => 'Постав будь-яке питання, поділися ідеєю або попроси допомоги — я тут, щоб допомогти.';
+
+  @override
+  String get welcomeGreeting5 => 'Є ідея? Давай розберемося.';
+
+  @override
+  String get welcomeGreeting6 => 'Задай напрямок для розмови.';
+
+  @override
+  String get welcomeGreeting7 => 'Що сьогодні досліджуємо?';
+
+  @override
+  String get welcomeGreeting8 => 'Напиши думку. Розберемося разом.';
+
+  @override
+  String get welcomeGreeting9 => 'Цікавість вітається.';
+
+  @override
+  String get welcomeGreeting10 => 'Твоє питання — моя наступна відповідь.';
+
+  @override
+  String get welcomeGreeting11 => 'Давай перетворимо ідею на відповідь.';
+
+  @override
+  String get welcomeGreeting12 => 'Введи питання. Решта — моя робота.';
 }

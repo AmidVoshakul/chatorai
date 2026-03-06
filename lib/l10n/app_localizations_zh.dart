@@ -1042,4 +1042,40 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get collapseTooltip => '折叠';
+
+  @override
+  String get welcomeGreeting1 => '问吧、探索吧、创造吧 — 让我们一起弄清楚。';
+
+  @override
+  String get welcomeGreeting2 => '提问题、描述任务，或者直接开始对话。';
+
+  @override
+  String get welcomeGreeting3 => '提问题或开始探索。';
+
+  @override
+  String get welcomeGreeting4 => '问任何问题、分享想法或寻求帮助 — 我在这里帮助你。';
+
+  @override
+  String get welcomeGreeting5 => '有想法吗？让我们来分析。';
+
+  @override
+  String get welcomeGreeting6 => '为对话设定方向。';
+
+  @override
+  String get welcomeGreeting7 => '今天探索什么？';
+
+  @override
+  String get welcomeGreeting8 => '写下想法。让我们一起分析。';
+
+  @override
+  String get welcomeGreeting9 => '好奇心是受欢迎的。';
+
+  @override
+  String get welcomeGreeting10 => '你的问题是我下一个答案。';
+
+  @override
+  String get welcomeGreeting11 => '让我们把想法变成答案。';
+
+  @override
+  String get welcomeGreeting12 => '输入问题。其他的是我的工作。';
 }

@@ -1042,4 +1042,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get collapseTooltip => 'Collapse';
+
+  @override
+  String get welcomeGreeting1 => 'Ask, explore, create — let\'s figure it out together.';
+
+  @override
+  String get welcomeGreeting2 => 'Ask a question, describe a task, or just start a conversation.';
+
+  @override
+  String get welcomeGreeting3 => 'Ask a question or start an exploration.';
+
+  @override
+  String get welcomeGreeting4 => 'Ask any question, share an idea, or ask for help — I\'m here to help.';
+
+  @override
+  String get welcomeGreeting5 => 'Got an idea? Let\'s figure it out.';
+
+  @override
+  String get welcomeGreeting6 => 'Set a direction for the conversation.';
+
+  @override
+  String get welcomeGreeting7 => 'What are we exploring today?';
+
+  @override
+  String get welcomeGreeting8 => 'Write a thought. Let\'s analyze it together.';
+
+  @override
+  String get welcomeGreeting9 => 'Curiosity is welcome.';
+
+  @override
+  String get welcomeGreeting10 => 'Your question is my next answer.';
+
+  @override
+  String get welcomeGreeting11 => 'Let\'s turn an idea into an answer.';
+
+  @override
+  String get welcomeGreeting12 => 'Enter a question. The rest is my job.';
 }
