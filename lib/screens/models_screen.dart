@@ -183,7 +183,26 @@ class ModelsScreen extends ConsumerWidget {
         itemCount: state.filteredModels.length,
         itemBuilder: (context, index) {
           final model = state.filteredModels[index];
-          return _buildCompactModelCard(context, ref, model);
+          return ModelCardWidget(
+            key: ValueKey(model.id),
+            model: model,
+            isSelected: currentModel == model.id,
+            isFavorite: ref
+                .read(modelsScreenProvider.notifier)
+                .isFavorite(model.id),
+            onTap: () async {
+              await ref
+                  .read(modelsScreenProvider.notifier)
+                  .selectModel(model.id);
+              if (context.mounted) {
+                Navigator.of(context).pop(model);
+              }
+            },
+            onFavoriteToggle: () {
+              ref.read(modelsScreenProvider.notifier).toggleFavorite(model.id);
+            },
+            onInfoTap: () => showModelDetailsDialog(context, model),
+          );
         },
       );
     } else {
@@ -192,90 +211,28 @@ class ModelsScreen extends ConsumerWidget {
         itemCount: state.filteredModels.length,
         itemBuilder: (context, index) {
           final model = state.filteredModels[index];
-          return _buildModelCard(context, ref, model);
+          return ModelCardWidget(
+            key: ValueKey(model.id),
+            model: model,
+            isSelected: currentModel == model.id,
+            isFavorite: ref
+                .read(modelsScreenProvider.notifier)
+                .isFavorite(model.id),
+            onTap: () async {
+              await ref
+                  .read(modelsScreenProvider.notifier)
+                  .selectModel(model.id);
+              if (context.mounted) {
+                Navigator.of(context).pop(model);
+              }
+            },
+            onFavoriteToggle: () {
+              ref.read(modelsScreenProvider.notifier).toggleFavorite(model.id);
+            },
+            onInfoTap: () => showModelDetailsDialog(context, model),
+          );
         },
       );
     }
-  }
-
-  Widget _buildModelCard(
-    BuildContext context,
-    WidgetRef ref,
-    OpenRouterModel model,
-  ) {
-    return ModelCardWidget(
-      model: model,
-      isSelected: currentModel == model.id,
-      isFavorite: ref.read(modelsScreenProvider.notifier).isFavorite(model.id),
-      onTap: () async {
-        await ref.read(modelsScreenProvider.notifier).selectModel(model.id);
-        if (context.mounted) {
-          Navigator.of(context).pop(model);
-        }
-      },
-      onFavoriteToggle: () {
-        ref.read(modelsScreenProvider.notifier).toggleFavorite(model.id);
-      },
-      onInfoTap: () => showModelDetailsDialog(context, model),
-    );
-  }
-
-  Widget _buildCompactModelCard(
-    BuildContext context,
-    WidgetRef ref,
-    OpenRouterModel model,
-  ) {
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () async {
-          await ref.read(modelsScreenProvider.notifier).selectModel(model.id);
-          if (context.mounted) {
-            Navigator.of(context).pop(model);
-          }
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                model.name,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).textTheme.titleMedium!.color,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                model.id,
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodySmall!.color,
-                  fontSize: 10,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const Spacer(),
-              Text(
-                model.description,
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyMedium!.color,
-                  fontSize: 11,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

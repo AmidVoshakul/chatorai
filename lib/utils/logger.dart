@@ -1,13 +1,7 @@
 import 'dart:developer' as developer;
 
 /// Enum representing different log levels
-enum LogLevel {
-  verbose,
-  debug,
-  info,
-  warning,
-  error,
-}
+enum LogLevel { verbose, debug, info, warning, error }
 
 /// Extension to add log level comparison methods
 extension LogLevelExtensions on LogLevel {
@@ -29,7 +23,7 @@ class Logger {
   final LogLevel minimumLevel;
 
   Logger(this.tag, {LogLevel? minimumLevel})
-      : minimumLevel = minimumLevel ?? LogConfig.minimumLevel;
+    : minimumLevel = minimumLevel ?? LogConfig.minimumLevel;
 
   void logVerbose(String message, [Object? error, StackTrace? stackTrace]) {
     if (!LogConfig.enabled || minimumLevel > LogLevel.verbose) return;
@@ -56,8 +50,12 @@ class Logger {
     _log(LogLevel.error, message, error: error, stackTrace: stackTrace);
   }
 
-  void _log(LogLevel level, String message,
-      {Object? error, StackTrace? stackTrace}) {
+  void _log(
+    LogLevel level,
+    String message, {
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
     final timestamp = DateTime.now().toIso8601String();
     final levelStr = level.name.toUpperCase().padRight(7);
     final fullMessage = '[$timestamp] $levelStr [$tag] $message';
@@ -76,7 +74,12 @@ class Logger {
         developer.log(fullMessage, name: tag, error: error);
         break;
       case LogLevel.error:
-        developer.log(fullMessage, name: tag, error: error, stackTrace: stackTrace);
+        developer.log(
+          fullMessage,
+          name: tag,
+          error: error,
+          stackTrace: stackTrace,
+        );
         break;
     }
   }
@@ -98,7 +101,5 @@ class LogTags {
   static final Logger message = Logger('Message');
   static final Logger chatService = Logger('ChatService');
   static final Logger sidebar = Logger('Sidebar');
-  static final Logger modelsScreen = Logger('ModelsScreen');
   static final Logger errorMessage = Logger('ErrorMessage');
-  static final Logger reasoningMessage = Logger('ReasoningMessage');
 }

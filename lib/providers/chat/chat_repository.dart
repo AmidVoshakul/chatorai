@@ -26,17 +26,7 @@ class ChatRepository {
   }
 
   Future<void> updateChat(Chat chat) async {
-    await _storageService.updateMessageInChat(
-      chat.id,
-      chat.messages.isNotEmpty ? chat.messages.last.id : '',
-      chat.messages.isNotEmpty
-          ? chat.messages.last
-          : Message(
-              role: MessageRole.user,
-              content: '',
-              timestamp: DateTime.now(),
-            ),
-    );
+    await _storageService.updateChat(chat);
   }
 
   Future<void> addMessageToChat(String chatId, Message message) async {

@@ -13,14 +13,14 @@ void showSettingsAboutDialog(
     builder: (BuildContext context) {
       return Dialog(
         backgroundColor: isDark
-            ? UbuntuColors.darkCard
-            : UbuntuColors.lightCard,
+            ? ChatoraiColors.darkCard
+            : ChatoraiColors.lightCard,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
             color: isDark
-                ? UbuntuColors.darkInputBorder
-                : UbuntuColors.inputBorder,
+                ? ChatoraiColors.darkInputBorder
+                : ChatoraiColors.inputBorder,
             width: 1,
           ),
         ),
@@ -38,7 +38,7 @@ void showSettingsAboutDialog(
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? UbuntuColors.light : UbuntuColors.dark,
+                      color: isDark ? ChatoraiColors.light : ChatoraiColors.dark,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -48,8 +48,8 @@ void showSettingsAboutDialog(
                       fontSize: 14,
                       height: 1.5,
                       color: isDark
-                          ? UbuntuColors.darkSecondaryTextColor
-                          : UbuntuColors.secondaryTextColor,
+                          ? ChatoraiColors.darkSecondaryTextColor
+                          : ChatoraiColors.secondaryTextColor,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -62,8 +62,8 @@ void showSettingsAboutDialog(
               child: IconButton(
                 icon: const Icon(Icons.close, size: 20),
                 color: isDark
-                    ? UbuntuColors.darkSecondaryTextColor
-                    : UbuntuColors.secondaryTextColor,
+                    ? ChatoraiColors.darkSecondaryTextColor
+                    : ChatoraiColors.secondaryTextColor,
                 onPressed: () => Navigator.pop(context),
                 tooltip: localizations.close,
               ),

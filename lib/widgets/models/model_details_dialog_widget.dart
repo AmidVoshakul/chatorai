@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:chatorai/themes/app_theme.dart' show UbuntuColors;
+import 'package:chatorai/themes/app_theme.dart' show ChatoraiColors;
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 
@@ -44,8 +44,8 @@ class ModelDetailsDialogWidget extends StatelessWidget {
             height: 1,
             thickness: 1,
             color: Theme.of(context).brightness == Brightness.dark
-                ? UbuntuColors.darkBorderColor
-                : UbuntuColors.lightBorderColor,
+                ? ChatoraiColors.darkBorderColor
+                : ChatoraiColors.lightBorderColor,
           ),
           const SizedBox(height: 8),
           Text(

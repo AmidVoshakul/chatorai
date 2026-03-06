@@ -209,7 +209,7 @@ class SlidingAppBarState extends State<SlidingAppBar> {
                     Builder(
                       builder: (context) => IconButton(
                         icon: const Icon(Icons.menu, size: SlidingAppBarConstants.iconSize),
-                        color: UbuntuColors.orange,
+                        color: ChatoraiColors.orange,
                         onPressed: widget.onMenuPressed,
                         padding: const EdgeInsets.only(left: 4.0, right: 4.0, bottom: 8.0, top: 4.0),
                         constraints: const BoxConstraints(),
@@ -236,7 +236,7 @@ class SlidingAppBarState extends State<SlidingAppBar> {
                         // Model selection button
                         IconButton(
                           icon: const Icon(Icons.smart_toy, size: SlidingAppBarConstants.iconSize),
-                          color: UbuntuColors.orange,
+                          color: ChatoraiColors.orange,
                           onPressed: widget.onModelSelected,
                           tooltip: AppLocalizations.of(context)!.selectModelTooltip,
                           padding: const EdgeInsets.only(left: 4.0, right: 4.0, bottom: 8.0, top: 4.0),
@@ -248,7 +248,7 @@ class SlidingAppBarState extends State<SlidingAppBar> {
                         if (widget.hasHeadings())
                           IconButton(
                             icon: const Icon(Icons.format_list_bulleted, size: SlidingAppBarConstants.iconSize),
-                            color: UbuntuColors.orange,
+                            color: ChatoraiColors.orange,
                             onPressed: widget.onNavigatorPressed,
                             tooltip: AppLocalizations.of(context)!.toggleNavigatorTooltip,
                             padding: const EdgeInsets.only(right: 4.0, bottom: 8.0, top: 4.0),

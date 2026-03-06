@@ -10,10 +10,16 @@ import 'package:chatorai/providers.dart'
         modelSettingsProvider,
         streamingContentProvider,
         chatListProvider,
-        currentChatIdProvider;
+        currentChatIdProvider,
+        isStreamingProvider,
+        continuationSuggestionsProvider,
+        showSuggestionsProvider,
+        welcomeSuggestionsProvider,
+        showWelcomeSuggestionsProvider,
+        speechUiStateProvider,
+        speechStatusMessageProvider;
 import 'package:chatorai/providers/chat/streaming_content_controller.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
-import 'package:chatorai/services/network_service.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/models/model_settings.dart';
@@ -41,10 +47,9 @@ import 'package:chatorai/l10n/app_localizations.dart';
 final _logger = LogTags.chatScreen;
 
 class ChatScreen extends ConsumerStatefulWidget {
-  final String? initialModel;
   final OpenRouterClient? openRouterService;
 
-  const ChatScreen({super.key, this.initialModel, this.openRouterService});
+  const ChatScreen({super.key, this.openRouterService});
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -95,13 +100,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   // Streaming content controller for selective UI updates
   late StreamingContentNotifier _streamingController;
 
+  // Provider-based getters (these delegate to providers)
+  List<Chat> get chats =>
+      ref.watch(chatListProvider).whenOrNull(data: (d) => d) ?? _chats;
+  bool get isStreamingFromProvider => ref.watch(isStreamingProvider);
+  List<String> get continuationSuggestionsFromProvider =>
+      ref.watch(continuationSuggestionsProvider);
+  bool get showSuggestionsFromProvider => ref.watch(showSuggestionsProvider);
+  List<String> get welcomeSuggestionsFromProvider =>
+      ref.watch(welcomeSuggestionsProvider);
+  bool get showWelcomeSuggestionsFromProvider =>
+      ref.watch(showWelcomeSuggestionsProvider);
+  SpeechUiState get speechUiStateFromProvider =>
+      ref.watch(speechUiStateProvider);
+  String get speechStatusMessageFromProvider =>
+      ref.watch(speechStatusMessageProvider);
+
   @override
   void initState() {
     super.initState();
     _chatStorageService = ChatStorageService();
-    _openRouterService =
-        widget.openRouterService ??
-        OpenRouterService(networkService: NetworkService());
+    _openRouterService = widget.openRouterService ?? OpenRouterService();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -239,6 +258,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       _chats[index] = updatedChat;
     }
 
+    // Update the chat in Riverpod provider
+    ref.read(chatListProvider.notifier).updateChat(updatedChat);
+
     // Просто вызываем setState без throttling
     setState(() {});
   }
@@ -255,6 +277,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     });
 
     _slidingAppBarKey.currentState?.reset();
+
+    // Show welcome suggestions for new chat
+    _showWelcomeSuggestionsForNewChat();
   }
 
   void _showWelcomeSuggestionsForNewChat() {
@@ -316,13 +341,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _chatScrollUtils?.reset();
     _slidingAppBarKey.currentState?.reset();
 
+    // Check if this chat has messages
+    final hasMessages = chat.messages.isNotEmpty;
+
     setState(() {
       _currentChat = chat;
+      // Reset suggestions state - always hide first
       _showWelcomeSuggestions = false;
       _welcomeSuggestions.clear();
+      _showSuggestions = false;
+      _continuationSuggestions.clear();
     });
 
-    if (chat.messages.isEmpty) {
+    // Show welcome suggestions only for empty chats (new chats)
+    if (!hasMessages) {
       _showWelcomeSuggestionsForNewChat();
     }
 
@@ -373,14 +405,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           _currentChat = null;
         });
       }
-
-      // Show success snackbar
-      if (!mounted) return;
-      SnackbarUtils.showSuccessSnackBar(
-        context: context,
-        message: localizations.messageDeletedSuccessfully,
-        icon: Icons.delete,
-      );
     }
   }
 
@@ -984,6 +1008,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         final updatedChat = await _chatStorageService.getChat(_currentChat!.id);
         if (updatedChat != null) {
           _updateCurrentChat(updatedChat);
+
+          // Show welcome suggestions if chat is now empty
+          if (updatedChat.messages.isEmpty) {
+            _showWelcomeSuggestionsForNewChat();
+          }
         }
       } catch (e) {
         _logger.logError('[ChatScreen] Error refreshing chat messages: $e');

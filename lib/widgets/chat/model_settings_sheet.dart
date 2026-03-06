@@ -308,7 +308,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: UbuntuColors.orange.withAlpha(20),
+                color: ChatoraiColors.orange.withAlpha(20),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -316,7 +316,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: UbuntuColors.orange,
+                  color: ChatoraiColors.orange,
                 ),
               ),
             ),
@@ -367,14 +367,14 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
             hintText: hintText,
             filled: true,
             fillColor: isDark
-                ? UbuntuColors.darkInputFill
-                : UbuntuColors.inputFill,
+                ? ChatoraiColors.darkInputFill
+                : ChatoraiColors.inputFill,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
                 color: isDark
-                    ? UbuntuColors.darkInputBorder
-                    : UbuntuColors.inputBorder,
+                    ? ChatoraiColors.darkInputBorder
+                    : ChatoraiColors.inputBorder,
               ),
             ),
             enabledBorder: OutlineInputBorder(
@@ -383,8 +383,8 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                 color: _maxTokensExceeded && label.contains('Max Tokens')
                     ? Colors.red
                     : (isDark
-                          ? UbuntuColors.darkInputBorder
-                          : UbuntuColors.inputBorder),
+                          ? ChatoraiColors.darkInputBorder
+                          : ChatoraiColors.inputBorder),
                 width: _maxTokensExceeded && label.contains('Max Tokens')
                     ? 2
                     : 1,
@@ -395,7 +395,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
               borderSide: BorderSide(
                 color: _maxTokensExceeded && label.contains('Max Tokens')
                     ? Colors.red
-                    : UbuntuColors.orange,
+                    : ChatoraiColors.orange,
                 width: 2,
               ),
             ),
@@ -474,27 +474,27 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
             hintText: 'You are a helpful assistant...',
             filled: true,
             fillColor: isDark
-                ? UbuntuColors.darkInputFill
-                : UbuntuColors.inputFill,
+                ? ChatoraiColors.darkInputFill
+                : ChatoraiColors.inputFill,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
                 color: isDark
-                    ? UbuntuColors.darkInputBorder
-                    : UbuntuColors.inputBorder,
+                    ? ChatoraiColors.darkInputBorder
+                    : ChatoraiColors.inputBorder,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
                 color: isDark
-                    ? UbuntuColors.darkInputBorder
-                    : UbuntuColors.inputBorder,
+                    ? ChatoraiColors.darkInputBorder
+                    : ChatoraiColors.inputBorder,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: UbuntuColors.orange, width: 2),
+              borderSide: BorderSide(color: ChatoraiColors.orange, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
@@ -527,7 +527,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? UbuntuColors.darkCard : UbuntuColors.lightCard,
+        color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -550,8 +550,8 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
               border: Border(
                 bottom: BorderSide(
                   color: isDark
-                      ? UbuntuColors.darkBorderColor
-                      : UbuntuColors.lightBorderColor,
+                      ? ChatoraiColors.darkBorderColor
+                      : ChatoraiColors.lightBorderColor,
                   width: 1,
                 ),
               ),
@@ -560,7 +560,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
               children: [
                 Icon(
                   Icons.settings_input_component_outlined,
-                  color: UbuntuColors.orange,
+                  color: ChatoraiColors.orange,
                   size: 24,
                 ),
                 const SizedBox(width: 12),
@@ -601,14 +601,14 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: UbuntuColors.orange.withAlpha(30),
+                                color: ChatoraiColors.orange.withAlpha(30),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 '${settingsState.activeSettings!.apiContextLength} tokens',
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: UbuntuColors.orange,
+                                  color: ChatoraiColors.orange,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -641,7 +641,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                         children: [
                           const CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              UbuntuColors.orange,
+                              ChatoraiColors.orange,
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -823,7 +823,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                                       icon: const Icon(Icons.check),
                                       label: Text(localizations.applySettings),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: UbuntuColors.orange,
+                                        backgroundColor: ChatoraiColors.orange,
                                         foregroundColor: Colors.white,
                                         padding: const EdgeInsets.symmetric(
                                           vertical: 12,
@@ -864,7 +864,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                                       icon: const Icon(Icons.check),
                                       label: Text(localizations.applySettings),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: UbuntuColors.orange,
+                                        backgroundColor: ChatoraiColors.orange,
                                         foregroundColor: Colors.white,
                                         padding: const EdgeInsets.symmetric(
                                           vertical: 12,

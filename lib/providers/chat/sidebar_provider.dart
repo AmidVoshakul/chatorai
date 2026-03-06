@@ -22,7 +22,7 @@ class SidebarNotifier extends Notifier<SidebarState> {
 
   @override
   SidebarState build() {
-    _storageService = ChatStorageService();
+    _storageService = ref.read(chatStorageServiceProvider);
     return const SidebarState();
   }
 

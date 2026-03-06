@@ -31,13 +31,13 @@ class SettingsTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
             color: isDark
-                ? UbuntuColors.darkInputBorder
-                : UbuntuColors.inputBorder,
+                ? ChatoraiColors.darkInputBorder
+                : ChatoraiColors.inputBorder,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: UbuntuColors.orange, width: 2),
+          borderSide: BorderSide(color: ChatoraiColors.orange, width: 2),
         ),
         suffixIcon: onCopy != null
             ? IconButton(

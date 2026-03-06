@@ -56,14 +56,14 @@ class ModelNotifier extends Notifier<ModelState> {
 
   @override
   ModelState build() {
-    _loadSettings();
+    _loadSettingsAsync();
     return const ModelState();
   }
 
   OpenRouterService get _openRouterService =>
       ref.read(openRouterServiceProvider);
 
-  Future<void> _loadSettings() async {
+  Future<void> _loadSettingsAsync() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final selectedModelId = prefs.getString(_selectedModelKey) ?? '';
@@ -285,11 +285,8 @@ class ModelNotifier extends Notifier<ModelState> {
 }
 
 final openRouterServiceProvider = Provider<OpenRouterService>((ref) {
-  return OpenRouterService();
-});
-
-final networkServiceProvider = Provider<NetworkService>((ref) {
-  return NetworkService();
+  final networkState = ref.watch(networkServiceProvider);
+  return OpenRouterService(isConnected: networkState.isConnected);
 });
 
 final modelProvider = NotifierProvider<ModelNotifier, ModelState>(

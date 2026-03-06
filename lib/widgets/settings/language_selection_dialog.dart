@@ -29,14 +29,14 @@ void showLanguageSelectionDialog(
 
           return Dialog(
             backgroundColor: isDark
-                ? UbuntuColors.darkCard
-                : UbuntuColors.lightCard,
+                ? ChatoraiColors.darkCard
+                : ChatoraiColors.lightCard,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
                 color: isDark
-                    ? UbuntuColors.darkInputBorder
-                    : UbuntuColors.inputBorder,
+                    ? ChatoraiColors.darkInputBorder
+                    : ChatoraiColors.inputBorder,
                 width: 1,
               ),
             ),
@@ -55,8 +55,8 @@ void showLanguageSelectionDialog(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: isDark
-                              ? UbuntuColors.light
-                              : UbuntuColors.dark,
+                              ? ChatoraiColors.light
+                              : ChatoraiColors.dark,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -69,8 +69,8 @@ void showLanguageSelectionDialog(
                           separatorBuilder: (context, index) => Divider(
                             height: 1,
                             color: isDark
-                                ? UbuntuColors.darkInputBorder
-                                : UbuntuColors.inputBorder,
+                                ? ChatoraiColors.darkInputBorder
+                                : ChatoraiColors.inputBorder,
                           ),
                           itemBuilder: (context, index) {
                             final entry = languages.entries.elementAt(index);
@@ -107,8 +107,8 @@ void showLanguageSelectionDialog(
                   child: IconButton(
                     icon: const Icon(Icons.close, size: 20),
                     color: isDark
-                        ? UbuntuColors.darkSecondaryTextColor
-                        : UbuntuColors.secondaryTextColor,
+                        ? ChatoraiColors.darkSecondaryTextColor
+                        : ChatoraiColors.secondaryTextColor,
                     onPressed: () => Navigator.pop(dialogContext),
                     tooltip: localizations.close,
                   ),
@@ -142,10 +142,10 @@ Widget _buildDialogOption({
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           color: isSelected
-              ? (isDark ? UbuntuColors.darkSurface : UbuntuColors.lightSurface)
+              ? (isDark ? ChatoraiColors.darkSurface : ChatoraiColors.lightSurface)
               : Colors.transparent,
           border: isSelected
-              ? Border.all(color: UbuntuColors.orange, width: 1)
+              ? Border.all(color: ChatoraiColors.orange, width: 1)
               : null,
         ),
         child: Row(
@@ -153,10 +153,10 @@ Widget _buildDialogOption({
             Icon(
               icon,
               color: isSelected
-                  ? UbuntuColors.orange
+                  ? ChatoraiColors.orange
                   : (isDark
-                        ? UbuntuColors.darkSecondaryTextColor
-                        : UbuntuColors.secondaryTextColor),
+                        ? ChatoraiColors.darkSecondaryTextColor
+                        : ChatoraiColors.secondaryTextColor),
               size: 18,
             ),
             const SizedBox(width: 12),
@@ -172,10 +172,10 @@ Widget _buildDialogOption({
                           ? FontWeight.bold
                           : FontWeight.w500,
                       color: isSelected
-                          ? UbuntuColors.orange
+                          ? ChatoraiColors.orange
                           : (isDark
-                                ? UbuntuColors.darkTextColor
-                                : UbuntuColors.lightTextColor),
+                                ? ChatoraiColors.darkTextColor
+                                : ChatoraiColors.lightTextColor),
                     ),
                   ),
                   Text(
@@ -183,15 +183,15 @@ Widget _buildDialogOption({
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark
-                          ? UbuntuColors.darkSecondaryTextColor
-                          : UbuntuColors.secondaryTextColor,
+                          ? ChatoraiColors.darkSecondaryTextColor
+                          : ChatoraiColors.secondaryTextColor,
                     ),
                   ),
                 ],
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: UbuntuColors.orange, size: 20),
+              Icon(Icons.check_circle, color: ChatoraiColors.orange, size: 20),
           ],
         ),
       ),

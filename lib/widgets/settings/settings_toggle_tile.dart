@@ -22,13 +22,13 @@ class SettingsToggleTile extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
-      color: isDark ? UbuntuColors.darkCard : UbuntuColors.lightCard,
+      color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
           color: isDark
-              ? UbuntuColors.darkInputBorder
-              : UbuntuColors.inputBorder,
+              ? ChatoraiColors.darkInputBorder
+              : ChatoraiColors.inputBorder,
           width: 1,
         ),
       ),
@@ -49,8 +49,8 @@ class SettingsToggleTile extends StatelessWidget {
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                         color: isDark
-                            ? UbuntuColors.darkTextColor
-                            : UbuntuColors.lightTextColor,
+                            ? ChatoraiColors.darkTextColor
+                            : ChatoraiColors.lightTextColor,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -59,8 +59,8 @@ class SettingsToggleTile extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark
-                            ? UbuntuColors.darkSecondaryTextColor
-                            : UbuntuColors.secondaryTextColor,
+                            ? ChatoraiColors.darkSecondaryTextColor
+                            : ChatoraiColors.secondaryTextColor,
                       ),
                     ),
                   ],
@@ -71,14 +71,14 @@ class SettingsToggleTile extends StatelessWidget {
                 child: Switch(
                   value: value,
                   onChanged: onChanged,
-                  activeThumbColor: UbuntuColors.orange,
-                  activeTrackColor: UbuntuColors.orange.withAlpha(150),
+                  activeThumbColor: ChatoraiColors.orange,
+                  activeTrackColor: ChatoraiColors.orange.withAlpha(150),
                   inactiveThumbColor: isDark
-                      ? UbuntuColors.toggleInactiveThumbDark
-                      : UbuntuColors.toggleInactiveThumbLight,
+                      ? ChatoraiColors.toggleInactiveThumbDark
+                      : ChatoraiColors.toggleInactiveThumbLight,
                   inactiveTrackColor: isDark
-                      ? UbuntuColors.toggleInactiveTrackDark
-                      : UbuntuColors.toggleInactiveTrackLight,
+                      ? ChatoraiColors.toggleInactiveTrackDark
+                      : ChatoraiColors.toggleInactiveTrackLight,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),

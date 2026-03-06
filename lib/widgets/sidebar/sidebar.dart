@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/providers.dart' show themeProvider, languageProvider;
+import 'package:chatorai/providers.dart'
+    show themeProvider, languageProvider, currentChatProvider;
 import 'package:chatorai/providers/chat/sidebar_provider.dart';
-import 'package:chatorai/providers/chat/chat_providers.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/screens/settings_screen.dart';
 import 'package:chatorai/widgets/sidebar/sidebar_chat_actions_menu.dart';
-import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/utils/format_time.dart';
-
-import '../../utils/snackbar_utils.dart';
-
-final _logger = LogTags.sidebar;
+import 'package:chatorai/utils/snackbar_utils.dart';
 
 class Sidebar extends ConsumerWidget {
   final double width;
@@ -38,17 +34,10 @@ class Sidebar extends ConsumerWidget {
     final themeNotifier = ref.read(themeProvider.notifier);
     final sidebarState = ref.watch(sidebarProvider);
     final filteredChats = ref.watch(filteredChatsProvider);
-    final chatsAsync = ref.watch(chatListProvider);
 
     final theme = themeNotifier.getTheme();
     final language = languageState.selectedLanguage;
     final localizations = AppLocalizations.of(context)!;
-
-    chatsAsync.when(
-      data: (data) => data,
-      loading: () => <Chat>[],
-      error: (e, st) => <Chat>[],
-    );
 
     final currentChat = ref.watch(currentChatProvider);
 
@@ -409,7 +398,6 @@ class Sidebar extends ConsumerWidget {
             minLeadingWidth: 0,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16),
             onTap: () {
-              _logger.logInfo('[Sidebar] Navigating to settings...');
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const SettingsScreen()),

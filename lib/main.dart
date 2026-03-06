@@ -29,8 +29,8 @@ class ChatoraiApp extends ConsumerWidget {
 
     final isDark = theme.brightness == Brightness.dark;
     final navBarColor = isDark
-        ? UbuntuColors.navBarBackgroundDark
-        : UbuntuColors.navBarBackgroundLight;
+        ? ChatoraiColors.navBarBackgroundDark
+        : ChatoraiColors.navBarBackgroundLight;
     final navBarIconBrightness = isDark ? Brightness.light : Brightness.dark;
 
     return MaterialApp(

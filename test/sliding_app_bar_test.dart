@@ -303,7 +303,7 @@ void main() {
       // Verify each icon has orange color
       for (int i = 0; i < 3; i++) {
         final iconButton = tester.widget<IconButton>(iconButtons.at(i));
-        expect(iconButton.color, equals(const Color(0xFFFF7F00))); // UbuntuColors.orange
+        expect(iconButton.color, equals(const Color(0xFFFF7F00))); // ChatoraiColors.orange
       }
     });
 
@@ -335,7 +335,7 @@ void main() {
       // Verify each icon has orange color
       for (int i = 0; i < 3; i++) {
         final iconButton = tester.widget<IconButton>(iconButtons.at(i));
-        expect(iconButton.color, equals(const Color(0xFFFF7F00))); // UbuntuColors.orange
+        expect(iconButton.color, equals(const Color(0xFFFF7F00))); // ChatoraiColors.orange
       }
     });
 

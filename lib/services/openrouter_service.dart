@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path/path.dart' as path;
 import '../utils/logger.dart';
-import 'network_service.dart';
 
 // Initialize logger for this service
 final _logger = LogTags.openRouter;
@@ -459,7 +458,7 @@ class OpenRouterConfig {
 }
 
 class OpenRouterService implements OpenRouterClient {
-  final NetworkService _networkService;
+  bool _isConnected = true;
   String? _apiKey;
   final String _baseUrl;
   final OpenRouterConfig _config;
@@ -468,16 +467,19 @@ class OpenRouterService implements OpenRouterClient {
   // Caching
   final Map<String, List<OpenRouterModel>> _modelsCache = {};
   DateTime? _modelsCacheTimestamp;
-  final Map<String, String> _fileCache = {};
 
   OpenRouterService({
     OpenRouterConfig? config,
     String? baseUrl,
-    NetworkService? networkService,
+    bool isConnected = true,
   }) : _config = config ?? const OpenRouterConfig(),
        _baseUrl = baseUrl ?? OpenRouterConstants.baseUrl,
-       _networkService = networkService ?? NetworkService() {
+       _isConnected = isConnected {
     _initializeService();
+  }
+
+  void setConnectivityStatus(bool isConnected) {
+    _isConnected = isConnected;
   }
 
   Future<void> _initializeService() async {
@@ -698,7 +700,7 @@ class OpenRouterService implements OpenRouterClient {
     }
 
     // Проверка наличия интернет-соединения
-    if (!_networkService.isConnected) {
+    if (!_isConnected) {
       _logger.logWarning(
         '[OpenRouter] No internet connection, aborting models fetch',
       );
@@ -881,63 +883,6 @@ class OpenRouterService implements OpenRouterClient {
     );
   }
 
-  /// Upload file for multimodal models
-  Future<String> uploadFile({required String filePath, String? model}) async {
-    if (_apiKey == null || _apiKey!.isEmpty) {
-      throw Exception('OpenRouter API key not configured');
-    }
-
-    // Проверка наличия интернет-соединения
-    if (!_networkService.isConnected) {
-      _logger.logWarning(
-        '[OpenRouter] No internet connection, aborting request',
-      );
-      throw Exception('No internet connection');
-    }
-
-    await _waitForInitialization();
-
-    _logger.logInfo('[OpenRouter] Uploading file: $filePath');
-
-    // Check cache
-    final cacheKey = '$filePath|$model';
-    if (_fileCache.containsKey(cacheKey)) {
-      _logger.logInfo('[OpenRouter] Returning cached file ID');
-      return _fileCache[cacheKey]!;
-    }
-
-    return _retryWithBackoff(
-      operationName: 'uploadFile',
-      operation: () async {
-        final formData = FormData.fromMap({
-          'file': await MultipartFile.fromFile(filePath),
-          if (model != null) 'model': model,
-        });
-
-        final response = await _dio!.post(
-          OpenRouterConstants.filesEndpoint,
-          data: formData,
-          options: Options(headers: {'Content-Type': 'multipart/form-data'}),
-        );
-
-        if (response.statusCode == 200) {
-          final responseData = response.data;
-          final fileId = responseData['data']?['id'] as String?;
-
-          if (fileId != null) {
-            _logger.logInfo('[OpenRouter] File uploaded successfully: $fileId');
-            _fileCache[cacheKey] = fileId;
-            return fileId;
-          } else {
-            throw Exception('File upload response missing file ID');
-          }
-        } else {
-          throw Exception('File upload failed');
-        }
-      },
-    );
-  }
-
   @override
   /// Stream chat completion for real-time responses with proper SSE parsing
   Future<void> streamChatCompletion({
@@ -960,7 +905,7 @@ class OpenRouterService implements OpenRouterClient {
     _logger.logDebug('[OpenRouter] Include reasoning: $includeReasoning');
 
     // Проверка наличия интернет-соединения
-    if (!_networkService.isConnected) {
+    if (!_isConnected) {
       _logger.logWarning(
         '[OpenRouter] No internet connection, aborting models fetch',
       );
@@ -1050,110 +995,10 @@ class OpenRouterService implements OpenRouterClient {
     );
   }
 
-  /// Get service health status
-  Future<bool> isHealthy() async {
-    // Проверка наличия интернет-соединения
-    if (!_networkService.isConnected) {
-      _logger.logWarning(
-        '[OpenRouter] No internet connection, health check failed',
-      );
-      return false;
-    }
-
-    await _waitForInitialization();
-
-    try {
-      final response = await _dio!.get(OpenRouterConstants.healthEndpoint);
-      return response.statusCode == 200;
-    } catch (e) {
-      _logger.logError('[OpenRouter] Health check failed: $e');
-      return false;
-    }
-  }
-
-  /// Get current API key status
-  String getApiKeyStatus() {
-    if (_apiKey == null) {
-      return 'No API key configured';
-    } else if (_apiKey!.length > 10) {
-      return 'API key configured (${_apiKey!.substring(0, 10)}...)';
-    } else {
-      return 'API key configured';
-    }
-  }
-
-  /// Test method to check provider field structure
-  Future<void> testProviderStructure() async {
-    if (_apiKey == null || _apiKey!.isEmpty) {
-      throw Exception('OpenRouter API key not configured');
-    }
-
-    // Проверка наличия интернет-соединения
-    if (!_networkService.isConnected) {
-      _logger.logWarning(
-        '[OpenRouter] No internet connection, aborting provider structure test',
-      );
-      throw Exception('No internet connection');
-    }
-
-    // Проверка наличия интернет-соединения
-    if (!_networkService.isConnected) {
-      _logger.logWarning(
-        '[OpenRouter] No internet connection, aborting provider structure test',
-      );
-      throw Exception('No internet connection');
-    }
-
-    await _waitForInitialization();
-
-    try {
-      final response = await _dio!.get(OpenRouterConstants.modelsEndpoint);
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-
-        if (data.containsKey('data')) {
-          final modelsData = data['data'] is List
-              ? data['data'] as List
-              : [data['data']];
-
-          for (int i = 0; i < modelsData.length && i < 5; i++) {
-            final modelData = modelsData[i] as Map<String, dynamic>;
-            final providerRaw = modelData['provider'];
-
-            _logger.logDebug('[OpenRouter] Model ${modelData['id']}:');
-            _logger.logDebug(
-              '[OpenRouter]   Provider type: ${providerRaw?.runtimeType}',
-            );
-            _logger.logDebug('[OpenRouter]   Provider value: $providerRaw');
-
-            if (providerRaw is Map<String, dynamic>) {
-              _logger.logDebug(
-                '[OpenRouter]   Provider name: ${providerRaw['name']}',
-              );
-            } else if (providerRaw is String) {
-              _logger.logDebug('[OpenRouter]   Provider string: $providerRaw');
-            }
-          }
-        }
-      }
-    } catch (e) {
-      _logger.logError('[OpenRouter] Error testing provider structure: $e');
-    }
-  }
-
   @override
   /// Check if OpenRouterService is ready for API calls
   bool isReady() {
     return _dio != null && _apiKey != null && _apiKey!.isNotEmpty;
-  }
-
-  /// Clear all caches
-  void clearCache() {
-    _modelsCache.clear();
-    _modelsCacheTimestamp = null;
-    _fileCache.clear();
-    _logger.logInfo('[OpenRouter] All caches cleared');
   }
 
   // ===========================================================================

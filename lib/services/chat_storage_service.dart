@@ -13,7 +13,7 @@ class ChatStorageService {
   Chat newChat() {
     return Chat(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: 'Новый чат',
+      title: 'Новый чат', // Keep as before - will be localized when displayed
       messages: [],
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -60,21 +60,6 @@ class ChatStorageService {
   Future<List<Chat>> getChats() async {
     final prefs = await SharedPreferences.getInstance();
     return await _getChatsFromStorage(prefs);
-  }
-
-  /// Update chat title
-  Future<void> updateChatTitle(String chatId, String title) async {
-    final prefs = await SharedPreferences.getInstance();
-    final chats = await _getChatsFromStorage(prefs);
-
-    final chatIndex = chats.indexWhere((chat) => chat.id == chatId);
-    if (chatIndex != -1) {
-      chats[chatIndex] = chats[chatIndex].copyWith(
-        title: title,
-        updatedAt: DateTime.now(),
-      );
-      await _saveChatsToStorage(prefs, chats);
-    }
   }
 
   /// Update message in chat

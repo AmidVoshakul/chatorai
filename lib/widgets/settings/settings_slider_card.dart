@@ -28,13 +28,13 @@ class SettingsSliderCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
-      color: isDark ? UbuntuColors.darkCard : UbuntuColors.lightCard,
+      color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
           color: isDark
-              ? UbuntuColors.darkInputBorder
-              : UbuntuColors.inputBorder,
+              ? ChatoraiColors.darkInputBorder
+              : ChatoraiColors.inputBorder,
           width: 1,
         ),
       ),
@@ -48,25 +48,25 @@ class SettingsSliderCard extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: isDark
-                    ? UbuntuColors.darkTextColor
-                    : UbuntuColors.lightTextColor,
+                    ? ChatoraiColors.darkTextColor
+                    : ChatoraiColors.lightTextColor,
               ),
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.text_fields, size: 18, color: UbuntuColors.orange),
+                Icon(Icons.text_fields, size: 18, color: ChatoraiColors.orange),
                 const SizedBox(width: 8),
                 Expanded(
                   child: SliderTheme(
                     data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: UbuntuColors.orange,
+                      activeTrackColor: ChatoraiColors.orange,
                       inactiveTrackColor: isDark
-                          ? UbuntuColors.darkInputBorder
-                          : UbuntuColors.inputBorder,
-                      thumbColor: UbuntuColors.orange,
-                      overlayColor: UbuntuColors.orange.withAlpha(30),
-                      valueIndicatorColor: UbuntuColors.orange,
+                          ? ChatoraiColors.darkInputBorder
+                          : ChatoraiColors.inputBorder,
+                      thumbColor: ChatoraiColors.orange,
+                      overlayColor: ChatoraiColors.orange.withAlpha(30),
+                      valueIndicatorColor: ChatoraiColors.orange,
                       valueIndicatorTextStyle: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w500,
@@ -82,7 +82,7 @@ class SettingsSliderCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Icon(Icons.text_fields, size: 26, color: UbuntuColors.orange),
+                Icon(Icons.text_fields, size: 26, color: ChatoraiColors.orange),
               ],
             ),
           ],

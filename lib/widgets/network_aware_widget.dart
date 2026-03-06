@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/network_service.dart';
 import '../l10n/app_localizations.dart';
-import '../providers.dart' show networkServiceProvider;
 
-/// Widget for managing network status SnackBar display
 class NetworkAwareWidget extends ConsumerStatefulWidget {
   final Widget child;
 
@@ -17,27 +15,10 @@ class NetworkAwareWidget extends ConsumerStatefulWidget {
 class _NetworkAwareWidgetState extends ConsumerState<NetworkAwareWidget> {
   OverlayEntry? _overlayEntry;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _setupNetworkListener();
-    });
-  }
-
-  void _setupNetworkListener() {
-    final networkService = ref.read(networkServiceProvider);
-    networkService.addListener(_onNetworkStatusChanged);
-    _onNetworkStatusChanged();
-  }
-
-  void _onNetworkStatusChanged() {
-    final networkService = ref.read(networkServiceProvider);
-
+  void _onNetworkStateChanged(NetworkState? previous, NetworkState next) {
     if (!mounted) return;
 
-    if (networkService.status == NetworkStatus.disconnected &&
-        !networkService.userDismissed) {
+    if (next.status == NetworkStatus.disconnected && !next.userDismissed) {
       _showNetworkSnackBar();
     } else {
       _hideNetworkSnackBar();
@@ -57,8 +38,7 @@ class _NetworkAwareWidgetState extends ConsumerState<NetworkAwareWidget> {
           child: _NetworkSnackBar(
             message: AppLocalizations.of(context)!.noInternetConnection,
             onDismiss: () {
-              final networkService = ref.read(networkServiceProvider);
-              networkService.dismissSnackbar();
+              ref.read(networkServiceProvider.notifier).dismissSnackbar();
               _hideNetworkSnackBar();
             },
           ),
@@ -78,19 +58,19 @@ class _NetworkAwareWidgetState extends ConsumerState<NetworkAwareWidget> {
 
   @override
   void dispose() {
-    final networkService = ref.read(networkServiceProvider);
-    networkService.removeListener(_onNetworkStatusChanged);
     _hideNetworkSnackBar();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<NetworkState>(networkServiceProvider, (previous, next) {
+      _onNetworkStateChanged(previous, next);
+    });
     return widget.child;
   }
 }
 
-/// Specialized SnackBar for network notifications
 class _NetworkSnackBar extends StatefulWidget {
   final String message;
   final VoidCallback onDismiss;

@@ -22,13 +22,13 @@ class SettingsSelectionCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
-      color: isDark ? UbuntuColors.darkCard : UbuntuColors.lightCard,
+      color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
           color: isDark
-              ? UbuntuColors.darkInputBorder
-              : UbuntuColors.inputBorder,
+              ? ChatoraiColors.darkInputBorder
+              : ChatoraiColors.inputBorder,
           width: 1,
         ),
       ),
@@ -40,7 +40,7 @@ class SettingsSelectionCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Icon(icon, color: UbuntuColors.orange, size: 20),
+              Icon(icon, color: ChatoraiColors.orange, size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -52,8 +52,8 @@ class SettingsSelectionCard extends StatelessWidget {
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                         color: isDark
-                            ? UbuntuColors.darkTextColor
-                            : UbuntuColors.lightTextColor,
+                            ? ChatoraiColors.darkTextColor
+                            : ChatoraiColors.lightTextColor,
                       ),
                     ),
                     if (subtitle.isNotEmpty)
@@ -62,8 +62,8 @@ class SettingsSelectionCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           color: isDark
-                              ? UbuntuColors.darkSecondaryTextColor
-                              : UbuntuColors.secondaryTextColor,
+                              ? ChatoraiColors.darkSecondaryTextColor
+                              : ChatoraiColors.secondaryTextColor,
                         ),
                       ),
                   ],
@@ -73,8 +73,8 @@ class SettingsSelectionCard extends StatelessWidget {
                 Icons.arrow_forward_ios,
                 size: 16,
                 color: isDark
-                    ? UbuntuColors.darkSecondaryTextColor
-                    : UbuntuColors.secondaryTextColor,
+                    ? ChatoraiColors.darkSecondaryTextColor
+                    : ChatoraiColors.secondaryTextColor,
               ),
             ],
           ),

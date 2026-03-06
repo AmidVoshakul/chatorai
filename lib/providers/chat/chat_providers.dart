@@ -1,9 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/providers/chat/chat_repository.dart';
+import 'package:chatorai/services/chat_storage_service.dart';
+import 'package:chatorai/services/speech_to_text_service.dart'
+    show SpeechUiState;
+
+final chatStorageServiceProvider = Provider<ChatStorageService>((ref) {
+  return ChatStorageService();
+});
 
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {
-  return ChatRepository();
+  final storageService = ref.watch(chatStorageServiceProvider);
+  return ChatRepository(storageService: storageService);
 });
 
 final chatListProvider =
@@ -91,3 +99,21 @@ final currentChatProvider = Provider<Chat?>((ref) {
     },
   );
 });
+
+final isStreamingProvider = StateProvider<bool>((ref) => false);
+
+final continuationSuggestionsProvider = StateProvider<List<String>>(
+  (ref) => [],
+);
+
+final showSuggestionsProvider = StateProvider<bool>((ref) => false);
+
+final welcomeSuggestionsProvider = StateProvider<List<String>>((ref) => []);
+
+final showWelcomeSuggestionsProvider = StateProvider<bool>((ref) => false);
+
+final speechUiStateProvider = StateProvider<SpeechUiState>(
+  (ref) => SpeechUiState.idle,
+);
+
+final speechStatusMessageProvider = StateProvider<String>((ref) => '');

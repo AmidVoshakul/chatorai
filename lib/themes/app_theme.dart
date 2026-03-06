@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 /// Ubuntu-inspired color palette
-class UbuntuColors {
+class ChatoraiColors {
   // Primary colors
   static const Color orange = Color(0xFFFF7F00); // Vibrant Ubuntu orange
   static const Color dark = Color(0xFF1A0E00); // Deep dark brown
@@ -114,31 +114,31 @@ class UbuntuTypography {
     headlineLarge: TextStyle(
       fontSize: 32,
       fontWeight: FontWeight.bold,
-      color: UbuntuColors.dark,
+      color: ChatoraiColors.dark,
     ),
     headlineMedium: TextStyle(
       fontSize: 24,
       fontWeight: FontWeight.bold,
-      color: UbuntuColors.dark,
+      color: ChatoraiColors.dark,
     ),
     titleLarge: TextStyle(
       fontSize: 20,
       fontWeight: FontWeight.bold,
-      color: UbuntuColors.dark,
+      color: ChatoraiColors.dark,
     ),
     titleMedium: TextStyle(
       fontSize: 16,
       fontWeight: FontWeight.bold,
-      color: UbuntuColors.dark,
+      color: ChatoraiColors.dark,
     ),
     titleSmall: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.bold,
-      color: UbuntuColors.dark,
+      color: ChatoraiColors.dark,
     ),
-    bodyLarge: TextStyle(fontSize: 16, color: UbuntuColors.lightTextColor),
-    bodyMedium: TextStyle(fontSize: 14, color: UbuntuColors.secondaryTextColor),
-    bodySmall: TextStyle(fontSize: 12, color: UbuntuColors.secondaryTextColor),
+    bodyLarge: TextStyle(fontSize: 16, color: ChatoraiColors.lightTextColor),
+    bodyMedium: TextStyle(fontSize: 14, color: ChatoraiColors.secondaryTextColor),
+    bodySmall: TextStyle(fontSize: 12, color: ChatoraiColors.secondaryTextColor),
   );
 
   // Dark theme text styles
@@ -151,31 +151,31 @@ class UbuntuTypography {
     headlineMedium: TextStyle(
       fontSize: 24,
       fontWeight: FontWeight.bold,
-      color: UbuntuColors.light,
+      color: ChatoraiColors.light,
     ),
     titleLarge: TextStyle(
       fontSize: 20,
       fontWeight: FontWeight.bold,
-      color: UbuntuColors.light,
+      color: ChatoraiColors.light,
     ),
     titleMedium: TextStyle(
       fontSize: 16,
       fontWeight: FontWeight.bold,
-      color: UbuntuColors.light,
+      color: ChatoraiColors.light,
     ),
     titleSmall: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.bold,
-      color: UbuntuColors.light,
+      color: ChatoraiColors.light,
     ),
-    bodyLarge: TextStyle(fontSize: 16, color: UbuntuColors.darkTextColor),
+    bodyLarge: TextStyle(fontSize: 16, color: ChatoraiColors.darkTextColor),
     bodyMedium: TextStyle(
       fontSize: 14,
-      color: UbuntuColors.darkSecondaryTextColor,
+      color: ChatoraiColors.darkSecondaryTextColor,
     ),
     bodySmall: TextStyle(
       fontSize: 12,
-      color: UbuntuColors.darkSecondaryTextColor,
+      color: ChatoraiColors.darkSecondaryTextColor,
     ),
   );
 }
@@ -194,14 +194,14 @@ class UbuntuMarkdownStyles {
       return baseStyle.copyWith(
         // Цитаты - светлая тема с оранжевым акцентом
         blockquote: baseStyle.blockquote?.copyWith(
-          color: UbuntuColors.secondaryTextColor,
+          color: ChatoraiColors.secondaryTextColor,
           fontStyle: FontStyle.italic,
           fontSize: 14,
         ),
         blockquoteDecoration: BoxDecoration(
-          color: UbuntuColors.lightGray.withAlpha(50), // Очень легкий серый
+          color: ChatoraiColors.lightGray.withAlpha(50), // Очень легкий серый
           border: Border(
-            left: BorderSide(color: UbuntuColors.orange, width: 4),
+            left: BorderSide(color: ChatoraiColors.orange, width: 4),
           ),
           borderRadius: BorderRadius.only(
             topRight: Radius.circular(8),
@@ -211,7 +211,7 @@ class UbuntuMarkdownStyles {
 
         // Код - улучшаем видимость
         code: baseStyle.code?.copyWith(
-          backgroundColor: UbuntuColors.lightGray.withAlpha(
+          backgroundColor: ChatoraiColors.lightGray.withAlpha(
             150,
           ), // Светлый фон с хорошей видимостью
           color: Colors.blue[700],
@@ -219,12 +219,12 @@ class UbuntuMarkdownStyles {
           fontSize: 13,
           shadows: [
             Shadow(
-              color: UbuntuColors.lightGray.withAlpha(150),
+              color: ChatoraiColors.lightGray.withAlpha(150),
               offset: const Offset(-2, 0),
               blurRadius: 0,
             ),
             Shadow(
-              color: UbuntuColors.lightGray.withAlpha(150),
+              color: ChatoraiColors.lightGray.withAlpha(150),
               offset: const Offset(2, 0),
               blurRadius: 0,
             ),
@@ -233,29 +233,29 @@ class UbuntuMarkdownStyles {
 
         // Ссылки - оранжевые
         a: baseStyle.a?.copyWith(
-          color: UbuntuColors.orange,
+          color: ChatoraiColors.orange,
           decoration: TextDecoration.underline,
         ),
 
         // Заголовки - улучшаем контраст
-        h1: baseStyle.h1?.copyWith(color: UbuntuColors.dark),
-        h2: baseStyle.h2?.copyWith(color: UbuntuColors.dark),
-        h3: baseStyle.h3?.copyWith(color: UbuntuColors.dark),
+        h1: baseStyle.h1?.copyWith(color: ChatoraiColors.dark),
+        h2: baseStyle.h2?.copyWith(color: ChatoraiColors.dark),
+        h3: baseStyle.h3?.copyWith(color: ChatoraiColors.dark),
       );
     } else {
       return baseStyle.copyWith(
         // Цитаты - темная тема с оранжевым акцентом
         blockquote: baseStyle.blockquote?.copyWith(
-          color: UbuntuColors.darkSecondaryTextColor,
+          color: ChatoraiColors.darkSecondaryTextColor,
           fontStyle: FontStyle.italic,
           fontSize: 14,
         ),
         blockquoteDecoration: BoxDecoration(
-          color: UbuntuColors.darkGray.withAlpha(
+          color: ChatoraiColors.darkGray.withAlpha(
             150,
           ), // Темный фон с легкой прозрачностью
           border: Border(
-            left: BorderSide(color: UbuntuColors.orange, width: 4),
+            left: BorderSide(color: ChatoraiColors.orange, width: 4),
           ),
           borderRadius: BorderRadius.only(
             topRight: Radius.circular(8),
@@ -265,7 +265,7 @@ class UbuntuMarkdownStyles {
 
         // Код - темная тема
         code: baseStyle.code?.copyWith(
-          // backgroundColor: UbuntuColors.darkGray.withAlpha(200), // Темный фон с увеличенной непрозрачностью
+          // backgroundColor: ChatoraiColors.darkGray.withAlpha(200), // Темный фон с увеличенной непрозрачностью
           color: Colors.blue[300],
           fontFamily: 'Monaco, Consolas, "Courier New", monospace',
           fontSize: 13,
@@ -273,14 +273,14 @@ class UbuntuMarkdownStyles {
 
         // Ссылки - оранжевые
         a: baseStyle.a?.copyWith(
-          color: UbuntuColors.orange,
+          color: ChatoraiColors.orange,
           decoration: TextDecoration.underline,
         ),
 
         // Заголовки - светлые в темной теме
-        h1: baseStyle.h1?.copyWith(color: UbuntuColors.light),
-        h2: baseStyle.h2?.copyWith(color: UbuntuColors.light),
-        h3: baseStyle.h3?.copyWith(color: UbuntuColors.light),
+        h1: baseStyle.h1?.copyWith(color: ChatoraiColors.light),
+        h2: baseStyle.h2?.copyWith(color: ChatoraiColors.light),
+        h3: baseStyle.h3?.copyWith(color: ChatoraiColors.light),
       );
     }
   }
@@ -291,52 +291,52 @@ class AppTheme {
   // Light theme
   static ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
-    primaryColor: UbuntuColors.orange,
+    primaryColor: ChatoraiColors.orange,
     primaryColorLight: const Color(0xFFFFC04C),
     primaryColorDark: const Color(0xFFCC8400),
-    canvasColor: UbuntuColors.light,
-    scaffoldBackgroundColor: UbuntuColors.lightSurface,
-    cardColor: UbuntuColors.lightCard,
+    canvasColor: ChatoraiColors.light,
+    scaffoldBackgroundColor: ChatoraiColors.lightSurface,
+    cardColor: ChatoraiColors.lightCard,
     textTheme: UbuntuTypography.lightTextTheme,
     appBarTheme: const AppBarTheme(
-      backgroundColor: UbuntuColors.light,
-      foregroundColor: UbuntuColors.dark,
+      backgroundColor: ChatoraiColors.light,
+      foregroundColor: ChatoraiColors.dark,
       elevation: 0,
-      iconTheme: IconThemeData(color: UbuntuColors.orange),
+      iconTheme: IconThemeData(color: ChatoraiColors.orange),
       surfaceTintColor: Colors.transparent,
       shadowColor: Colors.transparent,
     ),
     colorScheme: const ColorScheme.light(
-      primary: UbuntuColors.orange,
-      secondary: UbuntuColors.accent,
-      surface: UbuntuColors.light,
+      primary: ChatoraiColors.orange,
+      secondary: ChatoraiColors.accent,
+      surface: ChatoraiColors.light,
       error: Colors.red,
     ),
     iconTheme: const IconThemeData(color: Color(0xFF444444)),
-    dividerColor: UbuntuColors.lightBorderColor,
+    dividerColor: ChatoraiColors.lightBorderColor,
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: UbuntuColors.light,
-      selectedItemColor: UbuntuColors.orange,
+      backgroundColor: ChatoraiColors.light,
+      selectedItemColor: ChatoraiColors.orange,
       unselectedItemColor: Color(0xFF888888),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: UbuntuColors.light,
+      backgroundColor: ChatoraiColors.light,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
-      iconColor: UbuntuColors.dark,
+      iconColor: ChatoraiColors.dark,
       titleTextStyle: TextStyle(
-        color: UbuntuColors.dark,
+        color: ChatoraiColors.dark,
         fontSize: 20,
         fontWeight: FontWeight.bold,
       ),
       contentTextStyle: TextStyle(
-        color: UbuntuColors.secondaryTextColor,
+        color: ChatoraiColors.secondaryTextColor,
         fontSize: 14,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
     cardTheme: CardThemeData(
-      color: UbuntuColors.light,
+      color: ChatoraiColors.light,
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -344,13 +344,13 @@ class AppTheme {
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: UbuntuColors.inputBorder),
+        borderSide: BorderSide(color: ChatoraiColors.inputBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: UbuntuColors.orange),
+        borderSide: BorderSide(color: ChatoraiColors.orange),
       ),
-      fillColor: UbuntuColors.inputFill,
+      fillColor: ChatoraiColors.inputFill,
       filled: true,
     ),
   );
@@ -358,52 +358,52 @@ class AppTheme {
   // Dark theme
   static ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
-    primaryColor: UbuntuColors.orange,
+    primaryColor: ChatoraiColors.orange,
     primaryColorLight: const Color(0xFFFFC04C),
     primaryColorDark: const Color(0xFFCC8400),
-    canvasColor: UbuntuColors.darkSurface,
-    scaffoldBackgroundColor: UbuntuColors.darkSurface,
-    cardColor: UbuntuColors.darkCard,
+    canvasColor: ChatoraiColors.darkSurface,
+    scaffoldBackgroundColor: ChatoraiColors.darkSurface,
+    cardColor: ChatoraiColors.darkCard,
     textTheme: UbuntuTypography.darkTextTheme,
     appBarTheme: const AppBarTheme(
-      backgroundColor: UbuntuColors.darkSurface,
-      foregroundColor: UbuntuColors.light,
+      backgroundColor: ChatoraiColors.darkSurface,
+      foregroundColor: ChatoraiColors.light,
       elevation: 0,
-      iconTheme: IconThemeData(color: UbuntuColors.orange),
+      iconTheme: IconThemeData(color: ChatoraiColors.orange),
       surfaceTintColor: Colors.transparent,
       shadowColor: Colors.transparent,
     ),
     colorScheme: const ColorScheme.dark(
-      primary: UbuntuColors.orange,
-      secondary: UbuntuColors.accent,
-      surface: UbuntuColors.darkCard,
+      primary: ChatoraiColors.orange,
+      secondary: ChatoraiColors.accent,
+      surface: ChatoraiColors.darkCard,
       error: Colors.red,
     ),
-    iconTheme: const IconThemeData(color: UbuntuColors.darkTextColor),
-    dividerColor: UbuntuColors.darkBorderColor,
+    iconTheme: const IconThemeData(color: ChatoraiColors.darkTextColor),
+    dividerColor: ChatoraiColors.darkBorderColor,
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: UbuntuColors.darkSurface,
-      selectedItemColor: UbuntuColors.orange,
+      backgroundColor: ChatoraiColors.darkSurface,
+      selectedItemColor: ChatoraiColors.orange,
       unselectedItemColor: Color(0xFF666666),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: UbuntuColors.darkCard,
+      backgroundColor: ChatoraiColors.darkCard,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
-      iconColor: UbuntuColors.darkTextColor,
+      iconColor: ChatoraiColors.darkTextColor,
       titleTextStyle: TextStyle(
-        color: UbuntuColors.light,
+        color: ChatoraiColors.light,
         fontSize: 20,
         fontWeight: FontWeight.bold,
       ),
       contentTextStyle: TextStyle(
-        color: UbuntuColors.darkSecondaryTextColor,
+        color: ChatoraiColors.darkSecondaryTextColor,
         fontSize: 14,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
     cardTheme: CardThemeData(
-      color: UbuntuColors.darkCard,
+      color: ChatoraiColors.darkCard,
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -411,20 +411,20 @@ class AppTheme {
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: UbuntuColors.darkInputBorder, width: 1),
+        borderSide: BorderSide(color: ChatoraiColors.darkInputBorder, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: UbuntuColors.orange, width: 2),
+        borderSide: BorderSide(color: ChatoraiColors.orange, width: 2),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: UbuntuColors.darkInputBorder, width: 1),
+        borderSide: BorderSide(color: ChatoraiColors.darkInputBorder, width: 1),
       ),
-      fillColor: UbuntuColors.darkInputFill,
+      fillColor: ChatoraiColors.darkInputFill,
       filled: true,
-      labelStyle: TextStyle(color: UbuntuColors.darkSecondaryTextColor),
-      hintStyle: TextStyle(color: UbuntuColors.secondaryTextColor),
+      labelStyle: TextStyle(color: ChatoraiColors.darkSecondaryTextColor),
+      hintStyle: TextStyle(color: ChatoraiColors.secondaryTextColor),
     ),
   );
 

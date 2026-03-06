@@ -2,13 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
-import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
-// Initialize logger for this widget
-final _logger = LogTags.sidebar;
-
-class ChatActionsMenu extends StatefulWidget {
+class ChatActionsMenu extends StatelessWidget {
   final Chat chat;
   final ThemeData theme;
   final String language;
@@ -25,51 +21,24 @@ class ChatActionsMenu extends StatefulWidget {
   });
 
   @override
-  State<ChatActionsMenu> createState() => _ChatActionsMenuState();
-}
-
-class _ChatActionsMenuState extends State<ChatActionsMenu> {
-  late final Chat _chat;
-  late final ThemeData _theme;
-
-  // Helper methods for theme access
-  Color _getPrimaryColor() => _theme.colorScheme.primary;
-  Color _getOnPrimaryColor() => _theme.colorScheme.onPrimary;
-  Color _getDividerColor() => _theme.dividerColor;
-  Color _getCardColor() => _theme.cardColor;
-  Color _getIconColor() => _theme.iconTheme.color ?? Colors.black;
-  Color _getErrorColor() => _theme.colorScheme.error;
-
-  @override
-  void initState() {
-    super.initState();
-    _chat = widget.chat;
-    _theme = widget.theme;
-  }
-
-  @override
   Widget build(BuildContext context) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: _showChatActionsMenu,
+        onTap: () => _showChatActionsMenu(context),
         child: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
           child: Icon(
             Icons.more_vert,
             size: 18,
-            color: _getIconColor().withValues(alpha: 0.6),
+            color: theme.iconTheme.color?.withValues(alpha: 0.6),
           ),
         ),
       ),
     );
   }
 
-  void _showChatActionsMenu() {
+  void _showChatActionsMenu(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final RenderBox overlay =
         Overlay.of(context).context.findRenderObject() as RenderBox;
@@ -78,211 +47,183 @@ class _ChatActionsMenuState extends State<ChatActionsMenu> {
     final position = button.localToGlobal(Offset.zero);
     final size = button.size;
 
-    try {
-      showMenu(
-        context: context,
-        position: RelativeRect.fromRect(
-          Rect.fromPoints(
-            Offset(position.dx - 40, position.dy + size.height),
-            Offset(position.dx - 40, position.dy + size.height),
-          ),
-          overlay.localToGlobal(Offset.zero) & overlay.size,
+    showMenu(
+      context: context,
+      position: RelativeRect.fromRect(
+        Rect.fromPoints(
+          Offset(position.dx - 40, position.dy + size.height),
+          Offset(position.dx - 40, position.dy + size.height),
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: _getDividerColor(), width: 1),
+        overlay.localToGlobal(Offset.zero) & overlay.size,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.dividerColor, width: 1),
+      ),
+      color: theme.cardColor,
+      elevation: 8,
+      clipBehavior: Clip.antiAlias,
+      items: <PopupMenuEntry<dynamic>>[
+        PopupMenuItem(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          onTap: () => _handleShareChat(context),
+          child: Row(
+            children: [
+              Icon(Icons.share, size: 18, color: theme.iconTheme.color),
+              const SizedBox(width: 12),
+              Text(
+                localizations.shareChat,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
         ),
-        color: _getCardColor(),
-        elevation: 8,
-        clipBehavior: Clip.antiAlias,
-        items: <PopupMenuEntry<dynamic>>[
-          PopupMenuItem(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            enabled: true,
-            child: Row(
-              children: [
-                Icon(Icons.share, size: 18, color: _getIconColor()),
-                const SizedBox(width: 12),
-                Text(
-                  localizations.shareChat,
-                  style: TextStyle(fontWeight: FontWeight.w500),
+        PopupMenuItem(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          onTap: () => _handleCopyChat(context),
+          child: Row(
+            children: [
+              Icon(Icons.copy_all, size: 18, color: theme.iconTheme.color),
+              const SizedBox(width: 12),
+              Text(
+                localizations.copyChat,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          onTap: () => _handleRenameChat(context),
+          child: Row(
+            children: [
+              Icon(Icons.edit, size: 18, color: theme.iconTheme.color),
+              const SizedBox(width: 12),
+              Text(
+                localizations.renameChat,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          enabled: false,
+          padding: const EdgeInsets.all(0),
+          height: 4,
+          child: Container(height: 1, color: theme.dividerColor),
+        ),
+        PopupMenuItem(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          onTap: onDelete,
+          child: Row(
+            children: [
+              Icon(Icons.delete, size: 20, color: theme.colorScheme.error),
+              const SizedBox(width: 12),
+              Text(
+                localizations.deleteChat,
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.error,
                 ),
-              ],
-            ),
-            onTap: () => _handleShareChat(),
+              ),
+            ],
           ),
-          PopupMenuItem(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            enabled: true,
-            child: Row(
-              children: [
-                Icon(Icons.copy_all, size: 18, color: _getIconColor()),
-                const SizedBox(width: 12),
-                Text(
-                  localizations.copyChat,
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-            onTap: () => _handleCopyChat(),
-          ),
-          PopupMenuItem(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            enabled: true,
-            child: Row(
-              children: [
-                Icon(Icons.edit, size: 18, color: _getIconColor()),
-                const SizedBox(width: 12),
-                Text(
-                  localizations.renameChat,
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-            onTap: () => _handleRenameChat(),
-          ),
-          PopupMenuItem(
-            enabled: false,
-            padding: const EdgeInsets.all(0),
-            height: 4,
-            child: Container(
-              height: 1,
-              color: _getDividerColor(),
-            ),
-          ),
-          PopupMenuItem(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            enabled: true,
-            child: Row(
-              children: [
-                Icon(Icons.delete, size: 20, color: _getErrorColor()),
-                const SizedBox(width: 12),
-                Text(
-                  localizations.deleteChat,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: _getErrorColor(),
-                  ),
-                ),
-              ],
-            ),
-            onTap: () => widget.onDelete(),
-          ),
-        ],
-      );
-    } catch (e, stackTrace) {
-      _logger.logError('[ChatActionsMenu] Failed to show menu: $e\nStack trace: $stackTrace');
-      SnackbarUtils.showErrorSnackBar(
-        context: context,
-        message: localizations.failedToShowMenu,
-        icon: Icons.error,
-      );
-    }
+        ),
+      ],
+    );
   }
 
-  void _handleShareChat() {
-    // TODO: Implement chat sharing functionality
+  void _handleShareChat(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    final message = localizations.chatSharingNotImplemented;
     SnackbarUtils.showSecondarySnackBar(
       context: context,
-      message: message,
+      message: localizations.chatSharingNotImplemented,
       icon: Icons.share,
     );
   }
 
-  void _handleRenameChat() async {
+  void _handleRenameChat(BuildContext context) async {
+    final localizations = AppLocalizations.of(context)!;
     final TextEditingController controller = TextEditingController(
-      text: _chat.title,
+      text: chat.title,
     );
 
-    final localizations = AppLocalizations.of(context)!;
-
-    try {
-      final result = await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(
-            localizations.renameChatTitle,
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF1A1A1A)
-              : Colors.white,
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: localizations.enterNewChatName,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: _getDividerColor(), width: 1),
-              ),
-              isDense: true,
-            ),
-            maxLength: 50,
-            maxLines: 1,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(
-                localizations.cancel,
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
-                  Navigator.of(context).pop(controller.text.trim());
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _getPrimaryColor(),
-                foregroundColor: _getOnPrimaryColor(),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-              child: Text(
-                localizations.rename,
-                style: const TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ),
-          ],
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          localizations.renameChatTitle,
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-      );
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF1A1A1A)
+            : Colors.white,
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: localizations.enterNewChatName,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: theme.dividerColor, width: 1),
+            ),
+            isDense: true,
+          ),
+          maxLength: 50,
+          maxLines: 1,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(null),
+            child: Text(
+              localizations.cancel,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                Navigator.of(context).pop(controller.text.trim());
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: Text(
+              localizations.rename,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
 
-      if (result != null && result is String && result.isNotEmpty) {
-        widget.onRename(result);
-      }
-    } catch (e, stackTrace) {
-      _logger.logError('[ChatActionsMenu] Failed to rename chat: $e\nStack trace: $stackTrace');
-      SnackbarUtils.showErrorSnackBar(
-        context: context,
-        message: localizations.failedToRenameChat,
-        icon: Icons.error,
-      );
+    if (result != null && result.isNotEmpty) {
+      onRename(result);
     }
   }
 
-  void _handleCopyChat() async {
+  void _handleCopyChat(BuildContext context) async {
     final localizations = AppLocalizations.of(context)!;
     try {
-      // Используем функцию копирования чата из MessageUtils
       await MessageUtils.copyChat(
-        messages: _chat.messages,
-        chatTitle: _chat.title,
+        messages: chat.messages,
+        chatTitle: chat.title,
         context: context,
       );
-    } catch (e, stackTrace) {
-      _logger.logError('[ChatActionsMenu] Failed to copy chat: $e\nStack trace: $stackTrace');
-      SnackbarUtils.showErrorSnackBar(
-        context: context,
-        message: localizations.failedToCopyChat,
-        icon: Icons.error,
-      );
+    } catch (e) {
+      if (context.mounted) {
+        SnackbarUtils.showErrorSnackBar(
+          context: context,
+          message: localizations.failedToCopyChat,
+          icon: Icons.error,
+        );
+      }
     }
   }
 }

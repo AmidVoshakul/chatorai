@@ -1,19 +1,26 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+final streamingContentProvider =
+    NotifierProvider<StreamingContentNotifier, StreamingContentState>(
+      StreamingContentNotifier.new,
+    );
+
 class StreamingContentState {
   final String currentChatId;
   final String content;
   final String reasoning;
   final bool isStreaming;
-  final DateTime lastUpdate;
+  final DateTime? lastUpdate;
 
-  const StreamingContentState({
+  StreamingContentState({
     this.currentChatId = '',
     this.content = '',
     this.reasoning = '',
     this.isStreaming = false,
-    DateTime? lastUpdate,
-  }) : lastUpdate = lastUpdate ?? const _DefaultDateTime();
+    this.lastUpdate,
+  });
+
+  DateTime get effectiveLastUpdate => lastUpdate ?? DateTime.now();
 
   StreamingContentState copyWith({
     String? currentChatId,
@@ -36,15 +43,8 @@ class StreamingContentState {
   }
 }
 
-class _DefaultDateTime implements DateTime {
-  const _DefaultDateTime();
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => DateTime.now();
-}
-
 class StreamingContentNotifier extends Notifier<StreamingContentState> {
-  static const updateIntervalMs = 50;
+  static const updateIntervalMs = 100;
   DateTime _lastUiUpdate = DateTime.now();
   String _pendingContent = '';
   String _pendingReasoning = '';

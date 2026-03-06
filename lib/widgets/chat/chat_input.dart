@@ -805,21 +805,21 @@ class _ChatInputState extends ConsumerState<ChatInput>
           decoration: BoxDecoration(
             color: isMobile
                 ? (theme.brightness == Brightness.dark
-                      ? UbuntuColors.inputContainerDark
-                      : UbuntuColors.inputContainerLight)
+                      ? ChatoraiColors.inputContainerDark
+                      : ChatoraiColors.inputContainerLight)
                 : Colors.transparent,
             border: isMobile
                 ? Border(
                     top: BorderSide(
                       color: theme.brightness == Brightness.dark
-                          ? UbuntuColors.inputContainerBorderDark
-                          : UbuntuColors.inputContainerBorderLight,
+                          ? ChatoraiColors.inputContainerBorderDark
+                          : ChatoraiColors.inputContainerBorderLight,
                       width: 1,
                     ),
                     bottom: BorderSide(
                       color: theme.brightness == Brightness.dark
-                          ? UbuntuColors.navBarBorderDark
-                          : UbuntuColors.navBarBorderLight,
+                          ? ChatoraiColors.navBarBorderDark
+                          : ChatoraiColors.navBarBorderLight,
                       width: 1,
                     ),
                   )
@@ -873,8 +873,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
                       child: Container(
                         decoration: BoxDecoration(
                           color: theme.brightness == Brightness.dark
-                              ? UbuntuColors.inputContainerDark
-                              : UbuntuColors.inputContainerLight,
+                              ? ChatoraiColors.inputContainerDark
+                              : ChatoraiColors.inputContainerLight,
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(24),
                             topRight: Radius.circular(24),
@@ -907,8 +907,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
                             bgColor: _plusActive
                                 ? null
                                 : (theme.brightness == Brightness.dark
-                                      ? UbuntuColors.inputContainerDark
-                                      : UbuntuColors.inputContainerLight),
+                                      ? ChatoraiColors.inputContainerDark
+                                      : ChatoraiColors.inputContainerLight),
                             onTap: () {
                               _showPlusMenu(context);
                             },
@@ -925,8 +925,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
                           buildActionButton(
                             key: _settingsKey,
                             bgColor: theme.brightness == Brightness.dark
-                                ? UbuntuColors.inputContainerDark
-                                : UbuntuColors.inputContainerLight,
+                                ? ChatoraiColors.inputContainerDark
+                                : ChatoraiColors.inputContainerLight,
                             onTap: _handleModelSettings,
                             child: Icon(
                               Icons.settings_input_component_outlined,
@@ -971,8 +971,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
                                       _attachedFilePath == null &&
                                       _speechUiState == SpeechUiState.idle
                                   ? (theme.brightness == Brightness.dark
-                                        ? UbuntuColors.inputContainerDark
-                                        : UbuntuColors.inputContainerLight)
+                                        ? ChatoraiColors.inputContainerDark
+                                        : ChatoraiColors.inputContainerLight)
                                   : null,
                               onTap:
                                   _textController.text.trim().isEmpty &&
@@ -996,8 +996,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
                     buildActionButton(
                       key: _plusKey,
                       bgColor: theme.brightness == Brightness.dark
-                          ? UbuntuColors.inputContainerDark
-                          : UbuntuColors.inputContainerLight,
+                          ? ChatoraiColors.inputContainerDark
+                          : ChatoraiColors.inputContainerLight,
                       onTap: () => _showPlusMenu(context),
                       child: Icon(Icons.add, color: theme.iconTheme.color),
                     ),
@@ -1006,8 +1006,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
                     buildActionButton(
                       key: _settingsKey,
                       bgColor: theme.brightness == Brightness.dark
-                          ? UbuntuColors.inputContainerDark
-                          : UbuntuColors.inputContainerLight,
+                          ? ChatoraiColors.inputContainerDark
+                          : ChatoraiColors.inputContainerLight,
                       onTap: _handleModelSettings,
                       child: Icon(
                         Icons.settings_input_component_outlined,
@@ -1042,13 +1042,13 @@ class _ChatInputState extends ConsumerState<ChatInput>
                             child: Container(
                               decoration: BoxDecoration(
                                 color: theme.brightness == Brightness.dark
-                                    ? UbuntuColors.inputContainerDark
-                                    : UbuntuColors.inputContainerLight,
+                                    ? ChatoraiColors.inputContainerDark
+                                    : ChatoraiColors.inputContainerLight,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: theme.brightness == Brightness.dark
-                                      ? UbuntuColors.inputContainerBorderDark
-                                      : UbuntuColors.inputContainerBorderLight,
+                                      ? ChatoraiColors.inputContainerBorderDark
+                                      : ChatoraiColors.inputContainerBorderLight,
                                   width: 1,
                                 ),
                               ),
@@ -1105,8 +1105,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
                                 _attachedFilePath == null &&
                                 _speechUiState == SpeechUiState.idle
                             ? (theme.brightness == Brightness.dark
-                                  ? UbuntuColors.inputContainerDark
-                                  : UbuntuColors.inputContainerLight)
+                                  ? ChatoraiColors.inputContainerDark
+                                  : ChatoraiColors.inputContainerLight)
                             : null,
                         onTap:
                             _textController.text.trim().isEmpty &&
