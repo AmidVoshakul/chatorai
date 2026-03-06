@@ -1,133 +1,56 @@
-// ignore_for_file: avoid_print
-
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/utils/logger.dart';
 
-// Initialize logger for this provider
 final _logger = LogTags.settings;
 
 enum AppThemeMode { light, dark, system }
 
-/// Provider responsible for theme-related settings only:
-/// - Theme mode (light/dark/system)
-/// - Font size scaling
-/// - Wide screen mode
-class ThemeProvider with ChangeNotifier {
-  static const String _themeModeKey = 'theme_mode';
-  static const String _fontSizeKey = 'font_size';
-  static const String _wideScreenModeKey = 'wide_screen_mode';
+class ThemeState {
+  final AppThemeMode themeMode;
+  final double fontSize;
+  final bool wideScreenMode;
+  final bool isLoading;
 
-  AppThemeMode _themeMode = AppThemeMode.system;
-  double _fontSize = 1.0;
-  bool _wideScreenMode = false;
+  const ThemeState({
+    this.themeMode = AppThemeMode.system,
+    this.fontSize = 1.0,
+    this.wideScreenMode = false,
+    this.isLoading = true,
+  });
 
-  // Computed property for dark mode based on theme mode
   bool get isDarkMode =>
-      _themeMode == AppThemeMode.dark ||
-      (_themeMode == AppThemeMode.system &&
+      themeMode == AppThemeMode.dark ||
+      (themeMode == AppThemeMode.system &&
           PlatformDispatcher.instance.platformBrightness == Brightness.dark);
 
-  AppThemeMode get themeMode => _themeMode;
-  double get fontSize => _fontSize;
-  bool get wideScreenMode => _wideScreenMode;
-
-  ThemeProvider() {
-    loadSettings();
-  }
-
-  set themeMode(AppThemeMode value) {
-    if (_themeMode != value) {
-      _themeMode = value;
-      saveSettings();
-      notifyListeners();
-    }
-  }
-
-  set fontSize(double value) {
-    if (_fontSize != value) {
-      _fontSize = value;
-      saveSettings();
-      notifyListeners();
-    }
-  }
-
-  set wideScreenMode(bool value) {
-    if (_wideScreenMode != value) {
-      _wideScreenMode = value;
-      saveSettings();
-      notifyListeners();
-    }
-  }
-
-  /// Load theme settings from SharedPreferences
-  Future<void> loadSettings() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      final String themeModeString = prefs.getString(_themeModeKey) ?? 'system';
-      _themeMode = AppThemeMode.values.firstWhere(
-        (mode) => mode.toString() == 'AppThemeMode.$themeModeString',
-        orElse: () => AppThemeMode.system,
-      );
-
-      _fontSize = prefs.getDouble(_fontSizeKey) ?? 1.0;
-      _wideScreenMode = prefs.getBool(_wideScreenModeKey) ?? false;
-
-      _logger.logInfo('[ThemeProvider] Settings loaded');
-      notifyListeners();
-    } catch (e) {
-      _logger.logError('[ThemeProvider] Error loading settings: $e');
-    }
-  }
-
-  /// Save theme settings to SharedPreferences
-  Future<void> saveSettings() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      await prefs.setString(
-        _themeModeKey,
-        _themeMode.toString().split('.').last,
-      );
-      await prefs.setDouble(_fontSizeKey, _fontSize);
-      await prefs.setBool(_wideScreenModeKey, _wideScreenMode);
-
-      _logger.logVerbose('[ThemeProvider] Settings saved');
-    } catch (e) {
-      _logger.logError('[ThemeProvider] Error saving settings: $e');
-    }
-  }
-
-  /// Reset theme settings to default values
-  Future<void> resetSettings() async {
-    _themeMode = AppThemeMode.system;
-    _fontSize = 1.0;
-    _wideScreenMode = false;
-
-    await saveSettings();
-    notifyListeners();
-
-    _logger.logInfo('[ThemeProvider] Settings reset to defaults');
-  }
-
-  /// Get theme based on current settings
   ThemeData getTheme() {
     final bool isDark = isDarkMode;
     var theme = AppTheme.getTheme(isDark ? Brightness.dark : Brightness.light);
-
-    // Apply font size scaling to text theme
     theme = theme.copyWith(
-      textTheme: _scaleTextTheme(theme.textTheme, _fontSize),
+      textTheme: _scaleTextTheme(theme.textTheme, fontSize),
     );
-
     return theme;
   }
 
-  /// Scale all text styles by the given factor
-  TextTheme _scaleTextTheme(TextTheme textTheme, double scale) {
+  ThemeState copyWith({
+    AppThemeMode? themeMode,
+    double? fontSize,
+    bool? wideScreenMode,
+    bool? isLoading,
+  }) {
+    return ThemeState(
+      themeMode: themeMode ?? this.themeMode,
+      fontSize: fontSize ?? this.fontSize,
+      wideScreenMode: wideScreenMode ?? this.wideScreenMode,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
+
+  static TextTheme _scaleTextTheme(TextTheme textTheme, double scale) {
     return textTheme.copyWith(
       displayLarge: textTheme.displayLarge?.fontSize != null
           ? textTheme.displayLarge?.copyWith(
@@ -206,14 +129,88 @@ class ThemeProvider with ChangeNotifier {
           : textTheme.labelSmall,
     );
   }
-
-  // ==================== TEST HELPER METHODS ====================
-  // These methods are only for unit testing and should not be used in production
-
-  @visibleForTesting
-  void resetForTesting() {
-    _themeMode = AppThemeMode.system;
-    _fontSize = 1.0;
-    _wideScreenMode = false;
-  }
 }
+
+class ThemeNotifier extends Notifier<ThemeState> {
+  static const String _themeModeKey = 'theme_mode';
+  static const String _fontSizeKey = 'font_size';
+  static const String _wideScreenModeKey = 'wide_screen_mode';
+
+  @override
+  ThemeState build() {
+    _loadSettings();
+    return const ThemeState();
+  }
+
+  Future<void> _loadSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String themeModeString = prefs.getString(_themeModeKey) ?? 'system';
+      final themeMode = AppThemeMode.values.firstWhere(
+        (mode) => mode.toString() == 'AppThemeMode.$themeModeString',
+        orElse: () => AppThemeMode.system,
+      );
+      final fontSize = prefs.getDouble(_fontSizeKey) ?? 1.0;
+      final wideScreenMode = prefs.getBool(_wideScreenModeKey) ?? false;
+
+      state = ThemeState(
+        themeMode: themeMode,
+        fontSize: fontSize,
+        wideScreenMode: wideScreenMode,
+        isLoading: false,
+      );
+      _logger.logInfo('[ThemeNotifier] Settings loaded');
+    } catch (e) {
+      _logger.logError('[ThemeNotifier] Error loading settings: $e');
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  Future<void> _saveSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _themeModeKey,
+        state.themeMode.toString().split('.').last,
+      );
+      await prefs.setDouble(_fontSizeKey, state.fontSize);
+      await prefs.setBool(_wideScreenModeKey, state.wideScreenMode);
+      _logger.logVerbose('[ThemeNotifier] Settings saved');
+    } catch (e) {
+      _logger.logError('[ThemeNotifier] Error saving settings: $e');
+    }
+  }
+
+  void setThemeMode(AppThemeMode mode) {
+    if (state.themeMode != mode) {
+      state = state.copyWith(themeMode: mode);
+      _saveSettings();
+    }
+  }
+
+  void setFontSize(double size) {
+    if (state.fontSize != size) {
+      state = state.copyWith(fontSize: size);
+      _saveSettings();
+    }
+  }
+
+  void setWideScreenMode(bool value) {
+    if (state.wideScreenMode != value) {
+      state = state.copyWith(wideScreenMode: value);
+      _saveSettings();
+    }
+  }
+
+  Future<void> resetSettings() async {
+    state = const ThemeState(isLoading: false);
+    await _saveSettings();
+    _logger.logInfo('[ThemeNotifier] Settings reset to defaults');
+  }
+
+  ThemeData getTheme() => state.getTheme();
+}
+
+final themeProvider = NotifierProvider<ThemeNotifier, ThemeState>(
+  ThemeNotifier.new,
+);

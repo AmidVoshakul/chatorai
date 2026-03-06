@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:chatorai/providers/model_settings_provider.dart';
-import 'package:chatorai/providers/model_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/providers.dart';
 import 'package:chatorai/models/model_settings.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
 
-class ModelSettingsSheet extends StatefulWidget {
+class ModelSettingsSheet extends ConsumerStatefulWidget {
   const ModelSettingsSheet({super.key});
 
   @override
-  State<ModelSettingsSheet> createState() => _ModelSettingsSheetState();
+  ConsumerState<ModelSettingsSheet> createState() => _ModelSettingsSheetState();
 }
 
-class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
+class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
   final TextEditingController _temperatureController = TextEditingController();
   final TextEditingController _maxTokensController = TextEditingController();
   final TextEditingController _topPController = TextEditingController();
@@ -34,22 +33,25 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
   @override
   void initState() {
     super.initState();
-    _initializeControllers();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeControllers();
+    });
   }
 
   void _initializeControllers() {
-    final settingsProvider = context.read<ModelSettingsProvider>();
-    final modelProvider = context.read<ModelProvider>();
+    final settingsState = ref.read(modelSettingsProvider);
+    final modelState = ref.read(modelProvider);
+    final settingsNotifier = ref.read(modelSettingsProvider.notifier);
 
     // Set active model if not already set, passing context for API info
-    if (settingsProvider.activeSettings == null &&
-        modelProvider.selectedModelId.isNotEmpty) {
-      settingsProvider.setActiveModel(modelProvider.selectedModelId, context);
+    if (settingsState.activeSettings == null &&
+        modelState.selectedModelId.isNotEmpty) {
+      settingsNotifier.setActiveModel(modelState.selectedModelId);
     }
 
     // Initialize controllers with current settings
-    if (settingsProvider.activeSettings != null) {
-      final settings = settingsProvider.activeSettings!;
+    if (settingsState.activeSettings != null) {
+      final settings = settingsState.activeSettings!;
 
       _temperatureController.text = settings.temperature.toString();
       _maxTokensController.text = settings.maxTokens.toString();
@@ -58,9 +60,9 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
       _presencePenaltyController.text = settings.presencePenalty.toString();
       _systemPromptController.text = settings.systemPrompt ?? '';
       _isInitialized = true;
-    } else if (modelProvider.selectedModelObject != null) {
+    } else if (modelState.selectedModelObject != null) {
       // If no saved settings but we have model info, create settings from API
-      final model = modelProvider.selectedModelObject!;
+      final model = modelState.selectedModelObject!;
       final apiSettings = ModelSettings.fromApiModel(
         model.id,
         model.contextLength,
@@ -79,7 +81,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
       // Set these as active settings
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          settingsProvider.updateActiveSettings(apiSettings);
+          settingsNotifier.updateActiveSettings(apiSettings);
         }
       });
     }
@@ -112,8 +114,8 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
 
   // Validate maxTokens against API limits
   void _validateMaxTokens(String value) {
-    final settingsProvider = context.read<ModelSettingsProvider>();
-    final settings = settingsProvider.activeSettings;
+    final settingsState = ref.read(modelSettingsProvider);
+    final settings = settingsState.activeSettings;
 
     if (settings == null || value.isEmpty) {
       setState(() {
@@ -161,10 +163,11 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
   }
 
   void _applySettings() {
-    final settingsProvider = context.read<ModelSettingsProvider>();
+    final settingsState = ref.read(modelSettingsProvider);
+    final settingsNotifier = ref.read(modelSettingsProvider.notifier);
     final localizations = AppLocalizations.of(context)!;
 
-    if (settingsProvider.activeSettings == null) {
+    if (settingsState.activeSettings == null) {
       SnackbarUtils.showErrorSnackBar(
         context: context,
         message: localizations.noModelSelected,
@@ -175,7 +178,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
 
     try {
       // Get current settings to preserve API fields
-      final current = settingsProvider.activeSettings!;
+      final current = settingsState.activeSettings!;
 
       // Handle maxTokens validation - cap at API limit if exceeded
       int maxTokens = int.tryParse(_maxTokensController.text) ?? 4096;
@@ -205,7 +208,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
         apiContextLength: current.apiContextLength,
       );
 
-      settingsProvider.updateActiveSettings(updatedSettings);
+      settingsNotifier.updateActiveSettings(updatedSettings);
 
       SnackbarUtils.showSuccessSnackBar(
         context: context,
@@ -226,14 +229,15 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
   }
 
   void _resetToDefaults() {
-    final settingsProvider = context.read<ModelSettingsProvider>();
-    final modelProvider = context.read<ModelProvider>();
+    final settingsState = ref.read(modelSettingsProvider);
+    final modelState = ref.read(modelProvider);
+    final settingsNotifier = ref.read(modelSettingsProvider.notifier);
     final localizations = AppLocalizations.of(context)!;
 
-    if (settingsProvider.activeSettings == null) return;
+    if (settingsState.activeSettings == null) return;
 
     // Get model info from theme provider to create proper defaults
-    final model = modelProvider.selectedModelObject;
+    final model = modelState.selectedModelObject;
     ModelSettings defaultSettings;
 
     if (model != null) {
@@ -246,7 +250,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
     } else {
       // Fallback to generic defaults
       defaultSettings = ModelSettings.defaultForModel(
-        settingsProvider.activeSettings!.modelId,
+        settingsState.activeSettings!.modelId,
       );
     }
 
@@ -261,7 +265,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
     _systemPromptController.text = defaultSettings.systemPrompt ?? '';
 
     // Apply to provider
-    settingsProvider.updateActiveSettings(defaultSettings);
+    settingsNotifier.updateActiveSettings(defaultSettings);
 
     SnackbarUtils.showInfoSnackBar(
       context: context,
@@ -512,13 +516,13 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final localizations = AppLocalizations.of(context)!;
-    final modelProvider = context.watch<ModelProvider>();
-    final settingsProvider = context.watch<ModelSettingsProvider>();
+    final modelState = ref.watch(modelProvider);
+    final settingsState = ref.watch(modelSettingsProvider);
 
     // Get current model name
     String modelName = localizations.noModelSelected;
-    if (modelProvider.selectedModelObject != null) {
-      modelName = modelProvider.selectedModelObject!.name;
+    if (modelState.selectedModelObject != null) {
+      modelName = modelState.selectedModelObject!.name;
     }
 
     return Container(
@@ -588,9 +592,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (settingsProvider
-                                  .activeSettings
-                                  ?.apiContextLength !=
+                          if (settingsState.activeSettings?.apiContextLength !=
                               null) ...[
                             const SizedBox(width: 8),
                             Container(
@@ -603,7 +605,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                '${settingsProvider.activeSettings!.apiContextLength} tokens',
+                                '${settingsState.activeSettings!.apiContextLength} tokens',
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: UbuntuColors.orange,
@@ -632,7 +634,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              child: settingsProvider.isLoading
+              child: settingsState.isLoading
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -655,7 +657,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                         ],
                       ),
                     )
-                  : settingsProvider.activeSettings == null
+                  : settingsState.activeSettings == null
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -698,23 +700,17 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                           hintText: '0.0 - 2.0',
                           isDecimal: true,
                           min:
-                              settingsProvider
-                                  .activeSettings!
-                                  .apiMinTemperature ??
+                              settingsState.activeSettings!.apiMinTemperature ??
                               0.0,
                           max:
-                              settingsProvider
-                                  .activeSettings!
-                                  .apiMaxTemperature ??
+                              settingsState.activeSettings!.apiMaxTemperature ??
                               2.0,
                           apiValue:
-                              'Current: ${settingsProvider.activeSettings!.temperature}',
+                              'Current: ${settingsState.activeSettings!.temperature}',
                           apiLimit:
-                              settingsProvider
-                                      .activeSettings!
-                                      .apiMaxTemperature !=
+                              settingsState.activeSettings!.apiMaxTemperature !=
                                   null
-                              ? 'Max: ${settingsProvider.activeSettings!.apiMaxTemperature}'
+                              ? 'Max: ${settingsState.activeSettings!.apiMaxTemperature}'
                               : null,
                         ),
 
@@ -724,27 +720,26 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                           description: localizations.maxTokensDescription,
                           controller: _maxTokensController,
                           hintText:
-                              '1 - ${(settingsProvider.activeSettings!.apiMaxTokens ?? settingsProvider.activeSettings!.apiContextLength ?? 8192).toDouble()}',
+                              '1 - ${(settingsState.activeSettings!.apiMaxTokens ?? settingsState.activeSettings!.apiContextLength ?? 8192).toDouble()}',
                           isDecimal: false,
                           min: 1,
                           max:
-                              (settingsProvider.activeSettings!.apiMaxTokens ??
-                                      settingsProvider
+                              (settingsState.activeSettings!.apiMaxTokens ??
+                                      settingsState
                                           .activeSettings!
                                           .apiContextLength ??
                                       8192)
                                   .toDouble(),
                           apiValue:
-                              'Current: ${settingsProvider.activeSettings!.maxTokens}',
+                              'Current: ${settingsState.activeSettings!.maxTokens}',
                           apiLimit:
-                              settingsProvider.activeSettings!.apiMaxTokens !=
-                                  null
-                              ? 'Max: ${settingsProvider.activeSettings!.apiMaxTokens}'
-                              : (settingsProvider
+                              settingsState.activeSettings!.apiMaxTokens != null
+                              ? 'Max: ${settingsState.activeSettings!.apiMaxTokens}'
+                              : (settingsState
                                             .activeSettings!
                                             .apiContextLength !=
                                         null
-                                    ? 'Context: ${settingsProvider.activeSettings!.apiContextLength}'
+                                    ? 'Context: ${settingsState.activeSettings!.apiContextLength}'
                                     : null),
                         ),
 
@@ -758,7 +753,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                           min: 0.0,
                           max: 1.0,
                           apiValue:
-                              'Current: ${settingsProvider.activeSettings!.topP}',
+                              'Current: ${settingsState.activeSettings!.topP}',
                         ),
 
                         // Frequency Penalty
@@ -772,7 +767,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                           min: -2.0,
                           max: 2.0,
                           apiValue:
-                              'Current: ${settingsProvider.activeSettings!.frequencyPenalty}',
+                              'Current: ${settingsState.activeSettings!.frequencyPenalty}',
                         ),
 
                         // Presence Penalty
@@ -785,7 +780,7 @@ class _ModelSettingsSheetState extends State<ModelSettingsSheet> {
                           min: -2.0,
                           max: 2.0,
                           apiValue:
-                              'Current: ${settingsProvider.activeSettings!.presencePenalty}',
+                              'Current: ${settingsState.activeSettings!.presencePenalty}',
                         ),
 
                         // System Prompt

@@ -2,12 +2,18 @@
 
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:chatorai/providers/theme_provider.dart';
-import 'package:chatorai/providers/model_settings_provider.dart';
-import 'package:chatorai/providers/model_provider.dart';
-import 'package:chatorai/providers/language_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/providers.dart'
+    show
+        themeProvider,
+        modelProvider,
+        modelSettingsProvider,
+        streamingContentProvider,
+        chatListProvider,
+        currentChatIdProvider;
+import 'package:chatorai/providers/chat/streaming_content_controller.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
+import 'package:chatorai/services/network_service.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/models/model_settings.dart';
@@ -34,31 +40,20 @@ import 'package:chatorai/l10n/app_localizations.dart';
 // Initialize logger for this screen
 final _logger = LogTags.chatScreen;
 
-class ChatScreen extends StatefulWidget {
+class ChatScreen extends ConsumerStatefulWidget {
   final String? initialModel;
-  // Optional overrides for testing
   final OpenRouterClient? openRouterService;
-  final ThemeProvider? themeProvider;
-  final ModelProvider? modelProvider;
-  final LanguageProvider? languageProvider;
 
-  const ChatScreen({
-    super.key,
-    this.initialModel,
-    this.openRouterService,
-    this.themeProvider,
-    this.modelProvider,
-    this.languageProvider,
-  });
+  const ChatScreen({super.key, this.initialModel, this.openRouterService});
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
+class _ChatScreenState extends ConsumerState<ChatScreen>
+    with TickerProviderStateMixin {
   late ChatStorageService _chatStorageService;
   late OpenRouterClient _openRouterService;
-  late ModelProvider _modelProvider;
 
   bool _isSidebarCollapsed = false;
 
@@ -97,18 +92,23 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   SpeechUiState _speechUiState = SpeechUiState.idle;
   String _speechStatusMessage = '';
 
+  // Streaming content controller for selective UI updates
+  late StreamingContentNotifier _streamingController;
+
   @override
   void initState() {
     super.initState();
     _chatStorageService = ChatStorageService();
     _openRouterService =
         widget.openRouterService ??
-        Provider.of<OpenRouterService>(context, listen: false);
-    _modelProvider =
-        widget.modelProvider ??
-        Provider.of<ModelProvider>(context, listen: false);
+        OpenRouterService(networkService: NetworkService());
 
-    // Initialize scroll controller
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _streamingController = ref.read(streamingContentProvider.notifier);
+      }
+    });
+
     _messageScrollController = ScrollController();
 
     // Add scroll listener for sliding app bar
@@ -132,33 +132,19 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
     _chatScrollUtils!.initialize();
 
-    // Initialize model selection from ModelProvider
-    _selectedModel = _modelProvider.selectedModelId;
-    _selectedModelObject = _modelProvider.selectedModelObject;
-
-    // Listen to ModelProvider changes to update loading state
-    _modelProvider.addListener(_onModelProviderChange);
+    // Initialize model selection from model provider in post frame callback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final modelState = ref.read(modelProvider);
+        _selectedModel = modelState.selectedModelId;
+        _selectedModelObject = modelState.selectedModelObject;
+      }
+    });
 
     // Load chats after a short delay to ensure context is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadChats();
     });
-  }
-
-  // Listen for ModelProvider changes to update loading state
-  void _onModelProviderChange() {
-    if (mounted) {
-      final modelProviderModelId = _modelProvider.selectedModelId;
-      final modelProviderModelObject = _modelProvider.selectedModelObject;
-
-      if (_selectedModel != modelProviderModelId ||
-          _selectedModelObject != modelProviderModelObject) {
-        _selectedModel = modelProviderModelId;
-        _selectedModelObject = modelProviderModelObject;
-      }
-
-      setState(() {});
-    }
   }
 
   // Handle scroll events for sliding app bar
@@ -178,8 +164,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _handleScrollForHeadingSync() {
-    if (!_messageScrollController.hasClients || _navigatorHeadings.isEmpty)
+    if (!_messageScrollController.hasClients || _navigatorHeadings.isEmpty) {
       return;
+    }
 
     final currentOffset = _messageScrollController.offset;
     final viewportHeight = _messageScrollController.position.viewportDimension;
@@ -220,8 +207,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    // Remove listener to prevent memory leaks
-    _modelProvider.removeListener(_onModelProviderChange);
+    // No need to remove listener - using Riverpod
     _messageScrollController.removeListener(_handleScrollForSlidingAppBar);
     _messageScrollController.removeListener(_handleScrollForHeadingSync);
     _messageScrollController.dispose();
@@ -258,12 +244,14 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _createNewChat() async {
-    final newChat = _chatStorageService.newChat();
-    await _chatStorageService.addChat(newChat);
+    // Use Riverpod provider for proper state management
+    final newChat = await ref.read(chatListProvider.notifier).createNewChat();
+
+    // Update current chat in Riverpod provider for sidebar sync
+    ref.read(currentChatIdProvider.notifier).state = newChat.id;
 
     setState(() {
       _currentChat = newChat;
-      _chats = [newChat, ..._chats];
     });
 
     _slidingAppBarKey.currentState?.reset();
@@ -308,7 +296,22 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   void _selectChat(String chatId) {
-    final chat = _chats.firstWhere((c) => c.id == chatId);
+    // Get chat from Riverpod provider
+    final chatListAsync = ref.read(chatListProvider);
+    final chat = chatListAsync.whenOrNull(
+      data: (chats) {
+        try {
+          return chats.firstWhere((c) => c.id == chatId);
+        } catch (_) {
+          return null;
+        }
+      },
+    );
+
+    if (chat == null) return;
+
+    // Update current chat in Riverpod provider for sidebar sync
+    ref.read(currentChatIdProvider.notifier).state = chatId;
 
     _chatScrollUtils?.reset();
     _slidingAppBarKey.currentState?.reset();
@@ -329,7 +332,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _deleteChat(String chatId) async {
-    final chat = _chats.firstWhere((c) => c.id == chatId);
+    final chatListAsync = ref.read(chatListProvider);
+    final chat = chatListAsync.whenOrNull(
+      data: (chats) => chats.firstWhere((c) => c.id == chatId),
+    );
+
+    if (chat == null) return;
+
     final localizations = AppLocalizations.of(context)!;
 
     final shouldDelete = await showDialog<bool>(
@@ -354,24 +363,24 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     );
 
     if (shouldDelete == true) {
-      await _chatStorageService.deleteChat(chatId);
-      await _loadChats();
+      // Use Riverpod provider for proper state management
+      await ref.read(chatListProvider.notifier).deleteChat(chatId);
+
+      // Clear current chat if it was deleted and update provider
+      if (_currentChat?.id == chatId) {
+        ref.read(currentChatIdProvider.notifier).state = null;
+        setState(() {
+          _currentChat = null;
+        });
+      }
 
       // Show success snackbar
       if (!mounted) return;
-      final localizations = AppLocalizations.of(context)!;
       SnackbarUtils.showSuccessSnackBar(
         context: context,
         message: localizations.messageDeletedSuccessfully,
         icon: Icons.delete,
       );
-
-      // Clear current chat if it was deleted
-      if (_currentChat?.id == chatId) {
-        setState(() {
-          _currentChat = null;
-        });
-      }
     }
   }
 
@@ -752,24 +761,18 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         .map((msg) => _convertMessageToOpenRouterFormat(msg))
         .toList();
 
-    final modelSettingsProvider = context.read<ModelSettingsProvider>();
-    final modelSettings = await modelSettingsProvider.getSettings(
-      _selectedModel,
-      context,
-    );
+    final modelSettingsNotifier = ref.read(modelSettingsProvider.notifier);
+    final settings = await modelSettingsNotifier.getSettings(_selectedModel);
 
-    if (modelSettings.systemPrompt != null && messages.isNotEmpty) {
-      messages.insert(0, {
-        'role': 'system',
-        'content': modelSettings.systemPrompt!,
-      });
+    if (settings.systemPrompt != null && messages.isNotEmpty) {
+      messages.insert(0, {'role': 'system', 'content': settings.systemPrompt!});
     }
 
     await _handleStreamingResponse(
       messages: messages,
       isContinuation: false,
       modelId: _selectedModel,
-      modelSettings: modelSettings,
+      modelSettings: settings,
     );
   }
 
@@ -784,7 +787,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     var attemptMsgs = _sanitizeMessages(messages);
 
     // Get model context length
-    final modelObj = _modelProvider.getModelById(model);
+    final modelObj = ref.read(modelProvider.notifier).getModelById(model);
     final modelContextLength =
         modelObj?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
 
@@ -939,6 +942,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     setState(() {
       _isStreaming = false;
     });
+
+    // Reset streaming controller
+    _streamingController.reset();
 
     if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
       final lastMessage = _currentChat!.messages.last;
@@ -1348,16 +1354,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       {'role': 'user', 'content': 'Continue from where you left off.'},
     ];
 
-    final modelSettingsProvider = context.read<ModelSettingsProvider>();
-    final modelSettings = await modelSettingsProvider.getSettings(
-      _selectedModel,
-      context,
-    );
+    final modelSettingsNotifier = ref.read(modelSettingsProvider.notifier);
+    final settings = await modelSettingsNotifier.getSettings(_selectedModel);
 
-    if (modelSettings.systemPrompt != null) {
+    if (settings.systemPrompt != null) {
       continuationPrompt.insert(0, {
         'role': 'system',
-        'content': modelSettings.systemPrompt!,
+        'content': settings.systemPrompt!,
       });
     }
 
@@ -1365,7 +1368,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       messages: continuationPrompt,
       isContinuation: true,
       modelId: _selectedModel,
-      modelSettings: modelSettings,
+      modelSettings: settings,
     );
   }
 
@@ -1383,7 +1386,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     required ModelSettings modelSettings,
   }) async {
     // Calculate safe initial maxTokens: min(user setting, contextLength)
-    final modelObj = _modelProvider.getModelById(modelId);
+    final modelObj = ref.read(modelProvider.notifier).getModelById(modelId);
     final modelContextLength =
         modelObj?.contextLength ?? ChatScreenConstants.defaultMaxTokens;
 
@@ -1399,6 +1402,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     setState(() {
       _isStreaming = true;
     });
+
+    // Start streaming controller for selective UI updates
+    _streamingController.startStreaming(_currentChat?.id ?? '');
 
     // Local accumulators for this stream (not state variables)
     String accumulatedContent = '';
@@ -1416,34 +1422,26 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     bool pendingContentUpdate = false;
     bool pendingReasoningUpdate = false;
 
-    // Helper to throttle UI updates
+    // Helper to throttle UI updates - now uses streaming controller for selective rebuilds
     void throttleUpdate() {
       final now = DateTime.now();
       final elapsed = now.difference(lastUpdateTime).inMilliseconds;
 
       if (elapsed >= updateIntervalMs) {
-        // Time to update UI
+        // Time to update UI via streaming controller (selective rebuild)
         if (mounted &&
             _currentChat != null &&
             _currentChat!.messages.isNotEmpty) {
-          final lastMessage = _currentChat!.messages.last;
-
-          // Build updated message with current accumulated values
-          final updatedMessage = lastMessage.copyWith(
-            content: accumulatedContent,
+          // Update streaming controller instead of full setState
+          _streamingController.updateContent(
+            accumulatedContent,
             reasoning: accumulatedReasoning.isNotEmpty
                 ? accumulatedReasoning
                 : null,
           );
 
-          final newMessages = List<Message>.from(_currentChat!.messages);
-          newMessages[newMessages.length - 1] = updatedMessage;
-          final newChat = _currentChat!.copyWith(
-            messages: newMessages,
-            updatedAt: DateTime.now(),
-          );
-          _updateCurrentChat(newChat);
-
+          // Also update local state less frequently for other UI elements
+          // but skip the full _updateCurrentChat to avoid rebuilding entire screen
           lastUpdateTime = now;
         }
         pendingContentUpdate = false;
@@ -1463,20 +1461,13 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           if (mounted &&
               _currentChat != null &&
               _currentChat!.messages.isNotEmpty) {
-            final lastMessage = _currentChat!.messages.last;
-            final updatedMessage = lastMessage.copyWith(
-              content: accumulatedContent,
+            // Update streaming controller instead of full setState
+            _streamingController.updateContent(
+              accumulatedContent,
               reasoning: accumulatedReasoning.isNotEmpty
                   ? accumulatedReasoning
                   : null,
             );
-            final newMessages = List<Message>.from(_currentChat!.messages);
-            newMessages[newMessages.length - 1] = updatedMessage;
-            final newChat = _currentChat!.copyWith(
-              messages: newMessages,
-              updatedAt: DateTime.now(),
-            );
-            _updateCurrentChat(newChat);
           }
           pendingContentUpdate = false;
           pendingReasoningUpdate = false;
@@ -1543,6 +1534,9 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
                 _isStreaming = false;
               });
 
+              // Reset streaming controller after completion
+              _streamingController.stopStreaming();
+
               _chatStorageService.updateMessageInChat(
                 newChat.id,
                 completedMessage.id,
@@ -1569,6 +1563,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           setState(() {
             _isStreaming = false;
           });
+          _streamingController.reset();
           await _handleStreamingError(e, isContinuation);
           break;
         }
@@ -1595,6 +1590,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
           setState(() {
             _isStreaming = false;
           });
+          _streamingController.reset();
           await _handleStreamingError(e, isContinuation);
           break;
         }
@@ -1697,9 +1693,17 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     if (!mounted) return;
 
     OpenRouterModel? finalModelObject = modelObject;
-    if (finalModelObject == null && _modelProvider.modelsLoaded) {
-      finalModelObject = _modelProvider.getModelById(modelId);
+    if (finalModelObject == null) {
+      final modelState = ref.read(modelProvider);
+      if (modelState.modelsLoaded) {
+        finalModelObject = ref
+            .read(modelProvider.notifier)
+            .getModelById(modelId);
+      }
     }
+
+    // Update both local state AND Riverpod provider for proper synchronization
+    ref.read(modelProvider.notifier).setSelectedModel(modelId);
 
     setState(() {
       _selectedModel = modelId;
@@ -1769,8 +1773,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         onToggleSidebar: () {
           Navigator.pop(context);
         },
-        chats: _chats,
-        currentChat: _currentChat,
         onChatSelect: (chatId) {
           _selectChat(chatId);
           Navigator.of(context).pop();
@@ -1840,6 +1842,30 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    // Watch model changes for app bar - with null safety
+    String? watchedModelId;
+    OpenRouterModel? watchedModelObject;
+
+    try {
+      watchedModelId = ref.watch(
+        modelProvider.select((s) => s.selectedModelId),
+      );
+      watchedModelObject = ref.watch(
+        modelProvider.select((s) => s.selectedModelObject),
+      );
+
+      // Update local state if changed
+      if (watchedModelId != null && watchedModelId != _selectedModel) {
+        _selectedModel = watchedModelId;
+      }
+      if (watchedModelObject != null &&
+          watchedModelObject != _selectedModelObject) {
+        _selectedModelObject = watchedModelObject;
+      }
+    } catch (_) {
+      // Provider not initialized yet, use defaults
+    }
+
     final screenWidth = MediaQuery.of(context).size.width;
 
     // Simple mobile/desktop detection
@@ -1863,7 +1889,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
       },
       checkModelSupportsImages: (modelId) {
         // Use ModelProvider's synchronous check for currently selected model
-        return _modelProvider.modelSupportsImagesSelected();
+        return ref.read(modelProvider.notifier).modelSupportsImagesSelected();
       },
     );
 
@@ -1987,7 +2013,6 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     BuildContext context, {
     required Widget child,
   }) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
     final screenWidth = MediaQuery.of(context).size.width;
 
     // Wrap with swipe gesture to open navigator (only if headings exist and navigator is closed)
@@ -2017,7 +2042,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
     // Only apply width constraints on desktop (wide screens)
     if (screenWidth >= ChatScreenConstants.mobileBreakpoint) {
       // If wide screen mode is enabled, use full width
-      if (themeProvider.wideScreenMode) {
+      if (ref.watch(themeProvider).wideScreenMode) {
         return content;
       } else {
         // Use 75% width by default on desktop
@@ -2153,13 +2178,10 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         {'role': 'user', 'content': userPrompt},
       ];
 
-      final modelSettingsProvider = context.read<ModelSettingsProvider>();
-      final modelSettings = await modelSettingsProvider.getSettings(
-        _selectedModel,
-        context,
-      );
+      final modelSettingsNotifier = ref.read(modelSettingsProvider.notifier);
+      final settings = await modelSettingsNotifier.getSettings(_selectedModel);
 
-      final suggestionSettings = modelSettings.copyWith(
+      final suggestionSettings = settings.copyWith(
         maxTokens: 500,
         temperature: 0.7,
       );

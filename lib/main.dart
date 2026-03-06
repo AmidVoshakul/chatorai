@@ -1,68 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/screens/chat_screen.dart';
 import 'package:chatorai/screens/settings_screen.dart';
-import 'package:chatorai/providers/theme_provider.dart';
-import 'package:chatorai/providers/language_provider.dart';
-import 'package:chatorai/providers/model_provider.dart';
-import 'package:chatorai/providers/model_settings_provider.dart';
-import 'package:chatorai/services/network_service.dart';
-import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/providers.dart';
 import 'package:chatorai/widgets/network_aware_widget.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/themes/app_theme.dart';
-import 'package:provider/provider.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
 void main() {
-  // Initialize logger
   LogConfig.enabled = true;
   LogConfig.minimumLevel = LogLevel.debug;
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider<NetworkService>(create: (_) => NetworkService()),
-        Provider<OpenRouterService>(
-          create: (context) =>
-              OpenRouterService(networkService: context.read<NetworkService>()),
-        ),
-        ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider<LanguageProvider>(
-          create: (_) => LanguageProvider(),
-        ),
-        ChangeNotifierProxyProvider<OpenRouterService, ModelProvider>(
-          create: (_) => ModelProvider(),
-          update: (context, openRouterService, modelProvider) {
-            modelProvider!.openRouterService = openRouterService;
-            return modelProvider;
-          },
-        ),
-        ChangeNotifierProxyProvider<OpenRouterService, ModelSettingsProvider>(
-          create: (_) => ModelSettingsProvider(),
-          update: (context, openRouterService, settingsProvider) {
-            settingsProvider!.openRouterService = openRouterService;
-            return settingsProvider;
-          },
-        ),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: ChatoraiApp()));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class ChatoraiApp extends ConsumerWidget {
+  const ChatoraiApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final languageProvider = Provider.of<LanguageProvider>(context);
-    final theme = themeProvider.getTheme();
-    final locale = Locale(languageProvider.selectedLanguage);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final languageState = ref.watch(languageProvider);
+    final themeState = ref.watch(themeProvider);
+    final theme = themeState.getTheme();
+    final locale = Locale(languageState.selectedLanguage);
 
-    // Determine navigation bar colors based on theme
     final isDark = theme.brightness == Brightness.dark;
     final navBarColor = isDark
         ? UbuntuColors.navBarBackgroundDark
@@ -91,7 +55,6 @@ class MyApp extends StatelessWidget {
       home: const NetworkAwareWidget(child: ChatScreen()),
       routes: {'/settings': (context) => const SettingsScreen()},
       builder: (context, child) {
-        // Set system navigation bar color after theme is applied
         WidgetsBinding.instance.addPostFrameCallback((_) {
           SystemChrome.setSystemUIOverlayStyle(
             SystemUiOverlayStyle(
@@ -102,8 +65,7 @@ class MyApp extends StatelessWidget {
           );
         });
 
-        // Apply RTL direction for Arabic and other RTL languages
-        if (languageProvider.isRTL) {
+        if (languageState.isRTL) {
           return Directionality(
             textDirection: TextDirection.rtl,
             child: child!,

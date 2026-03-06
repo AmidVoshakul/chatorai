@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers/theme_provider.dart';
@@ -8,110 +8,122 @@ import 'package:chatorai/utils/snackbar_utils.dart';
 void showThemeSelectionDialog(
   BuildContext context,
   AppLocalizations localizations,
-  dynamic controller,
 ) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
-  final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
 
   showDialog(
     context: context,
-    builder: (BuildContext context) {
-      return Dialog(
-        backgroundColor: isDark
-            ? UbuntuColors.darkCard
-            : UbuntuColors.lightCard,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: isDark
-                ? UbuntuColors.darkInputBorder
-                : UbuntuColors.inputBorder,
-            width: 1,
-          ),
-        ),
-        elevation: 0,
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    localizations.theme,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? UbuntuColors.light : UbuntuColors.dark,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDialogOption(
-                    context: context,
-                    icon: Icons.brightness_6,
-                    title: localizations.system,
-                    subtitle: localizations.useSystemTheme,
-                    isSelected: themeProvider.themeMode == AppThemeMode.system,
-                    onTap: () {
-                      themeProvider.themeMode = AppThemeMode.system;
-                      Navigator.pop(context);
-                      SnackbarUtils.showSuccessSnackBar(
-                        context: context,
-                        message: localizations.settingsSaved,
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  _buildDialogOption(
-                    context: context,
-                    icon: Icons.wb_sunny,
-                    title: localizations.light,
-                    subtitle: localizations.useLightTheme,
-                    isSelected: themeProvider.themeMode == AppThemeMode.light,
-                    onTap: () {
-                      themeProvider.themeMode = AppThemeMode.light;
-                      Navigator.pop(context);
-                      SnackbarUtils.showSuccessSnackBar(
-                        context: context,
-                        message: localizations.settingsSaved,
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  _buildDialogOption(
-                    context: context,
-                    icon: Icons.nightlight,
-                    title: localizations.dark,
-                    subtitle: localizations.useDarkTheme,
-                    isSelected: themeProvider.themeMode == AppThemeMode.dark,
-                    onTap: () {
-                      themeProvider.themeMode = AppThemeMode.dark;
-                      Navigator.pop(context);
-                      SnackbarUtils.showSuccessSnackBar(
-                        context: context,
-                        message: localizations.settingsSaved,
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: IconButton(
-                icon: const Icon(Icons.close, size: 20),
+    builder: (BuildContext dialogContext) {
+      return Consumer(
+        builder: (context, ref, child) {
+          final themeState = ref.watch(themeProvider);
+
+          return Dialog(
+            backgroundColor: isDark
+                ? UbuntuColors.darkCard
+                : UbuntuColors.lightCard,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
                 color: isDark
-                    ? UbuntuColors.darkSecondaryTextColor
-                    : UbuntuColors.secondaryTextColor,
-                onPressed: () => Navigator.pop(context),
-                tooltip: localizations.close,
+                    ? UbuntuColors.darkInputBorder
+                    : UbuntuColors.inputBorder,
+                width: 1,
               ),
             ),
-          ],
-        ),
+            elevation: 0,
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        localizations.theme,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark
+                              ? UbuntuColors.light
+                              : UbuntuColors.dark,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDialogOption(
+                        context: context,
+                        icon: Icons.brightness_6,
+                        title: localizations.system,
+                        subtitle: localizations.useSystemTheme,
+                        isSelected: themeState.themeMode == AppThemeMode.system,
+                        onTap: () {
+                          ref
+                              .read(themeProvider.notifier)
+                              .setThemeMode(AppThemeMode.system);
+                          Navigator.pop(dialogContext);
+                          SnackbarUtils.showSuccessSnackBar(
+                            context: context,
+                            message: localizations.settingsSaved,
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      _buildDialogOption(
+                        context: context,
+                        icon: Icons.wb_sunny,
+                        title: localizations.light,
+                        subtitle: localizations.useLightTheme,
+                        isSelected: themeState.themeMode == AppThemeMode.light,
+                        onTap: () {
+                          ref
+                              .read(themeProvider.notifier)
+                              .setThemeMode(AppThemeMode.light);
+                          Navigator.pop(dialogContext);
+                          SnackbarUtils.showSuccessSnackBar(
+                            context: context,
+                            message: localizations.settingsSaved,
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      _buildDialogOption(
+                        context: context,
+                        icon: Icons.nightlight,
+                        title: localizations.dark,
+                        subtitle: localizations.useDarkTheme,
+                        isSelected: themeState.themeMode == AppThemeMode.dark,
+                        onTap: () {
+                          ref
+                              .read(themeProvider.notifier)
+                              .setThemeMode(AppThemeMode.dark);
+                          Navigator.pop(dialogContext);
+                          SnackbarUtils.showSuccessSnackBar(
+                            context: context,
+                            message: localizations.settingsSaved,
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    color: isDark
+                        ? UbuntuColors.darkSecondaryTextColor
+                        : UbuntuColors.secondaryTextColor,
+                    onPressed: () => Navigator.pop(dialogContext),
+                    tooltip: localizations.close,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       );
     },
   );

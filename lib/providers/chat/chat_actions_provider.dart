@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
@@ -6,25 +7,11 @@ import 'package:chatorai/utils/logger.dart';
 
 final _logger = LogTags.sidebar;
 
-class ChatActionsController extends ChangeNotifier {
+class ChatActionsNotifier extends StateNotifier<void> {
   final Chat chat;
-  final void Function(String) onRename;
   final VoidCallback onDelete;
 
-  ChatActionsController({
-    required this.chat,
-    required this.onRename,
-    required this.onDelete,
-  });
-
-  Future<void> handleShareChat(BuildContext context) async {
-    final message = 'Chat sharing not implemented yet';
-    SnackbarUtils.showSecondarySnackBar(
-      context: context,
-      message: message,
-      icon: Icons.share,
-    );
-  }
+  ChatActionsNotifier(this.chat, this.onDelete) : super(null);
 
   Future<void> handleCopyChat(BuildContext context) async {
     try {
@@ -35,7 +22,7 @@ class ChatActionsController extends ChangeNotifier {
       );
     } catch (e, stackTrace) {
       _logger.logError(
-        '[ChatActionsController] Failed to copy chat: $e\nStack trace: $stackTrace',
+        '[ChatActionsNotifier] Failed to copy chat: $e\nStack trace: $stackTrace',
       );
       SnackbarUtils.showErrorSnackBar(
         context: context,
@@ -85,25 +72,30 @@ class ChatActionsController extends ChangeNotifier {
     return result;
   }
 
-  Future<void> handleRename(BuildContext context) async {
-    try {
-      final result = await showRenameDialog(context);
-      if (result != null && result.isNotEmpty) {
-        onRename(result);
-      }
-    } catch (e, stackTrace) {
-      _logger.logError(
-        '[ChatActionsController] Failed to rename chat: $e\nStack trace: $stackTrace',
-      );
-      SnackbarUtils.showErrorSnackBar(
-        context: context,
-        message: 'Failed to rename chat',
-        icon: Icons.error,
-      );
-    }
-  }
-
   void handleDelete() {
     onDelete();
   }
+}
+
+final chatActionsProvider = StateNotifierProvider.autoDispose
+    .family<ChatActionsNotifier, void, ChatActionsParams>(
+      (ref, params) => ChatActionsNotifier(params.chat, params.onDelete),
+    );
+
+class ChatActionsParams {
+  final Chat chat;
+  final VoidCallback onDelete;
+
+  ChatActionsParams({required this.chat, required this.onDelete});
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ChatActionsParams &&
+        other.chat.id == chat.id &&
+        other.onDelete == onDelete;
+  }
+
+  @override
+  int get hashCode => Object.hash(chat.id, onDelete);
 }

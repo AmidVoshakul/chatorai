@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:chatorai/providers/theme_provider.dart';
-import 'package:chatorai/providers/language_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/providers.dart' show themeProvider, languageProvider;
+import 'package:chatorai/providers/chat/sidebar_provider.dart';
+import 'package:chatorai/providers/chat/chat_providers.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/screens/settings_screen.dart';
-import 'package:chatorai/controllers/sidebar_controller.dart';
 import 'package:chatorai/widgets/sidebar/sidebar_chat_actions_menu.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
@@ -14,12 +14,10 @@ import '../../utils/snackbar_utils.dart';
 
 final _logger = LogTags.sidebar;
 
-class Sidebar extends StatefulWidget {
+class Sidebar extends ConsumerWidget {
   final double width;
   final bool isCollapsed;
   final VoidCallback onToggleSidebar;
-  final List<Chat> chats;
-  final Chat? currentChat;
   final Function(String) onChatSelect;
   final Function(String) onChatDelete;
   final Function() onNewChat;
@@ -29,45 +27,33 @@ class Sidebar extends StatefulWidget {
     required this.width,
     required this.isCollapsed,
     required this.onToggleSidebar,
-    required this.chats,
-    required this.currentChat,
     required this.onChatSelect,
     required this.onChatDelete,
     required this.onNewChat,
   });
 
   @override
-  State<Sidebar> createState() => _SidebarState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final languageState = ref.watch(languageProvider);
+    final themeNotifier = ref.read(themeProvider.notifier);
+    final sidebarState = ref.watch(sidebarProvider);
+    final filteredChats = ref.watch(filteredChatsProvider);
+    final chatsAsync = ref.watch(chatListProvider);
 
-class _SidebarState extends State<Sidebar> {
-  late SidebarController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = SidebarController(chats: widget.chats);
-  }
-
-  @override
-  void didUpdateWidget(Sidebar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Update controller when chats list changes
-    if (widget.chats != oldWidget.chats) {
-      _controller = SidebarController(chats: widget.chats);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final languageProvider = Provider.of<LanguageProvider>(context);
-    final theme = themeProvider.getTheme();
-    final language = languageProvider.selectedLanguage;
+    final theme = themeNotifier.getTheme();
+    final language = languageState.selectedLanguage;
     final localizations = AppLocalizations.of(context)!;
 
+    chatsAsync.when(
+      data: (data) => data,
+      loading: () => <Chat>[],
+      error: (e, st) => <Chat>[],
+    );
+
+    final currentChat = ref.watch(currentChatProvider);
+
     return AnimatedContainer(
-      width: widget.width,
+      width: width,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
@@ -83,42 +69,53 @@ class _SidebarState extends State<Sidebar> {
       ),
       child: Column(
         children: [
-          _buildHeader(theme, localizations),
-          if (!widget.isCollapsed) _buildSearchBar(theme, localizations),
+          _buildHeader(context, theme, localizations),
+          if (!isCollapsed) _buildSearchBar(context, ref, theme, localizations),
           Expanded(
-            child: ListenableBuilder(
-              listenable: _controller,
-              builder: (context, _) {
-                if (widget.isCollapsed) {
-                  return Container();
-                }
-                if (_controller.filteredChats.isEmpty) {
-                  return _buildEmptyState(theme, language, localizations);
-                }
-                return ListView.builder(
-                  padding: EdgeInsets.zero,
-                  itemCount: _controller.filteredChats.length,
-                  itemBuilder: (context, index) {
-                    final chat = _controller.filteredChats[index];
-                    return _buildChatItem(chat, theme, language, localizations);
-                  },
-                );
-              },
-            ),
+            child: isCollapsed
+                ? Container()
+                : filteredChats.isEmpty
+                ? _buildEmptyState(
+                    context,
+                    theme,
+                    language,
+                    localizations,
+                    sidebarState.searchQuery,
+                  )
+                : ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: filteredChats.length,
+                    itemBuilder: (context, index) {
+                      final chat = filteredChats[index];
+                      return _buildChatItem(
+                        context,
+                        ref,
+                        chat,
+                        theme,
+                        language,
+                        localizations,
+                        currentChat,
+                      );
+                    },
+                  ),
           ),
-          if (!widget.isCollapsed) _buildFooter(theme, localizations),
+          if (!isCollapsed) _buildFooter(context, theme, localizations),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(ThemeData theme, AppLocalizations localizations) {
+  Widget _buildHeader(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations localizations,
+  ) {
     return Container(
       padding: EdgeInsets.only(
-        left: widget.isCollapsed ? 2 : 16,
-        right: widget.isCollapsed ? 2 : 16,
-        top: widget.isCollapsed ? 0 : 12,
-        bottom: widget.isCollapsed ? 0 : 8,
+        left: isCollapsed ? 2 : 16,
+        right: isCollapsed ? 2 : 16,
+        top: isCollapsed ? 0 : 12,
+        bottom: isCollapsed ? 0 : 8,
       ),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: theme.dividerColor, width: 1)),
@@ -126,7 +123,7 @@ class _SidebarState extends State<Sidebar> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          if (!widget.isCollapsed)
+          if (!isCollapsed)
             Expanded(
               child: Text(
                 localizations.appShortName,
@@ -139,26 +136,31 @@ class _SidebarState extends State<Sidebar> {
                 softWrap: false,
               ),
             ),
-          if (widget.isCollapsed) const Spacer(),
+          if (isCollapsed) const Spacer(),
           IconButton(
             icon: Icon(
-              widget.isCollapsed ? Icons.menu : Icons.close,
+              isCollapsed ? Icons.menu : Icons.close,
               color: theme.iconTheme.color,
               size: 18,
             ),
-            onPressed: widget.onToggleSidebar,
-            padding: widget.isCollapsed
+            onPressed: onToggleSidebar,
+            padding: isCollapsed
                 ? const EdgeInsets.all(4)
                 : const EdgeInsets.all(8),
             constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-            splashRadius: widget.isCollapsed ? 16 : 20,
+            splashRadius: isCollapsed ? 16 : 20,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSearchBar(ThemeData theme, AppLocalizations localizations) {
+  Widget _buildSearchBar(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeData theme,
+    AppLocalizations localizations,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -200,16 +202,14 @@ class _SidebarState extends State<Sidebar> {
               ),
               style: const TextStyle(fontSize: 14),
               onChanged: (value) {
-                setState(() {
-                  _controller.setSearchQuery(value);
-                });
+                ref.read(sidebarProvider.notifier).setSearchQuery(value);
               },
             ),
           ),
           Container(
             margin: const EdgeInsets.only(left: 4),
             child: IconButton(
-              onPressed: widget.onNewChat,
+              onPressed: onNewChat,
               icon: const Icon(Icons.edit_square),
               style: IconButton.styleFrom(
                 side: BorderSide(color: theme.dividerColor, width: 1),
@@ -232,17 +232,20 @@ class _SidebarState extends State<Sidebar> {
   }
 
   Widget _buildChatItem(
+    BuildContext context,
+    WidgetRef ref,
     Chat chat,
     ThemeData theme,
     String language,
     AppLocalizations localizations,
+    Chat? currentChat,
   ) {
-    final isSelected = widget.currentChat?.id == chat.id;
+    final isSelected = currentChat?.id == chat.id;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => widget.onChatSelect(chat.id),
+        onTap: () => onChatSelect(chat.id),
         borderRadius: BorderRadius.zero,
         hoverColor: theme.colorScheme.primary.withValues(alpha: 0.1),
         child: Container(
@@ -302,7 +305,9 @@ class _SidebarState extends State<Sidebar> {
                   language: language,
                   onRename: (newTitle) async {
                     try {
-                      await _controller.renameChat(context, chat, newTitle);
+                      await ref
+                          .read(sidebarProvider.notifier)
+                          .renameChat(chat.id, newTitle);
                       if (context.mounted) {
                         SnackbarUtils.showSuccessSnackBar(
                           context: context,
@@ -320,7 +325,7 @@ class _SidebarState extends State<Sidebar> {
                       }
                     }
                   },
-                  onDelete: () => widget.onChatDelete(chat.id),
+                  onDelete: () => onChatDelete(chat.id),
                 ),
               ),
             ],
@@ -331,11 +336,13 @@ class _SidebarState extends State<Sidebar> {
   }
 
   Widget _buildEmptyState(
+    BuildContext context,
     ThemeData theme,
     String language,
     AppLocalizations localizations,
+    String searchQuery,
   ) {
-    final hasSearch = _controller.searchQuery.isNotEmpty;
+    final hasSearch = searchQuery.isNotEmpty;
 
     return Center(
       child: Padding(
@@ -351,7 +358,7 @@ class _SidebarState extends State<Sidebar> {
             const SizedBox(height: 16),
             Text(
               hasSearch
-                  ? localizations.noChatsFound(_controller.searchQuery)
+                  ? localizations.noChatsFound(searchQuery)
                   : localizations.noChatsYet,
               style: TextStyle(
                 fontSize: 16,
@@ -377,7 +384,11 @@ class _SidebarState extends State<Sidebar> {
     );
   }
 
-  Widget _buildFooter(ThemeData theme, AppLocalizations localizations) {
+  Widget _buildFooter(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations localizations,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,

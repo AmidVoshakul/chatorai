@@ -3,14 +3,13 @@ import 'dart:io' show Platform, File;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/utils/image_utils.dart';
 import 'package:chatorai/services/speech_to_text_service.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
-import 'package:chatorai/providers/model_settings_provider.dart';
-import 'package:chatorai/providers/model_provider.dart';
+import 'package:chatorai/providers.dart';
 import 'package:chatorai/widgets/chat/model_settings_sheet.dart';
 
 /// Data class for sending messages with optional media
@@ -59,7 +58,7 @@ String _getFilePath(dynamic file) {
   return 'unknown';
 }
 
-class ChatInput extends StatefulWidget {
+class ChatInput extends ConsumerStatefulWidget {
   final Function(MessageData) onSendMessage;
   final Function(bool) onToggleStreaming;
   final VoidCallback? onStopStreaming;
@@ -82,10 +81,10 @@ class ChatInput extends StatefulWidget {
   });
 
   @override
-  State<ChatInput> createState() => _ChatInputState();
+  ConsumerState<ChatInput> createState() => _ChatInputState();
 }
 
-class _ChatInputState extends State<ChatInput>
+class _ChatInputState extends ConsumerState<ChatInput>
     with AutomaticKeepAliveClientMixin {
   final TextEditingController _textController = TextEditingController();
   SpeechToTextService? _speechService;
@@ -248,7 +247,7 @@ class _ChatInputState extends State<ChatInput>
 
     // Check model support BEFORE picking file
     if (widget.checkModelSupportsImages != null) {
-      final modelId = context.read<ModelProvider>().selectedModelId;
+      final modelId = ref.read(modelProvider).selectedModelId;
       final supportsImages = widget.checkModelSupportsImages!(modelId);
 
       if (!supportsImages) {
@@ -292,7 +291,7 @@ class _ChatInputState extends State<ChatInput>
 
     // Check model support BEFORE picking file
     if (widget.checkModelSupportsImages != null) {
-      final modelId = context.read<ModelProvider>().selectedModelId;
+      final modelId = ref.read(modelProvider).selectedModelId;
       final supportsImages = widget.checkModelSupportsImages!(modelId);
 
       if (!supportsImages) {
@@ -336,7 +335,7 @@ class _ChatInputState extends State<ChatInput>
 
     // Check model support BEFORE picking file
     if (widget.checkModelSupportsImages != null) {
-      final modelId = context.read<ModelProvider>().selectedModelId;
+      final modelId = ref.read(modelProvider).selectedModelId;
       final supportsImages = widget.checkModelSupportsImages!(modelId);
 
       if (!supportsImages) {
@@ -385,7 +384,7 @@ class _ChatInputState extends State<ChatInput>
     // Check model support BEFORE sending if there's an attached file
     if (_attachedFilePath != null && _attachedBase64Data != null) {
       if (widget.checkModelSupportsImages != null) {
-        final modelId = context.read<ModelProvider>().selectedModelId;
+        final modelId = ref.read(modelProvider).selectedModelId;
         final supportsImages = widget.checkModelSupportsImages!(modelId);
 
         if (!supportsImages) {
@@ -668,12 +667,13 @@ class _ChatInputState extends State<ChatInput>
   }
 
   Future<void> _handleModelSettings() async {
-    final modelProvider = context.read<ModelProvider>();
-    final settingsProvider = context.read<ModelSettingsProvider>();
+    final modelState = ref.read(modelProvider);
+    final settingsState = ref.read(modelSettingsProvider);
+    final settingsNotifier = ref.read(modelSettingsProvider.notifier);
     final localizations = AppLocalizations.of(context)!;
 
     // Check if a model is selected
-    if (modelProvider.selectedModelId.isEmpty) {
+    if (modelState.selectedModelId.isEmpty) {
       SnackbarUtils.showErrorSnackBar(
         context: context,
         message: localizations.noModelSelected,
@@ -683,12 +683,8 @@ class _ChatInputState extends State<ChatInput>
     }
 
     // Ensure settings provider has the active model set
-    if (settingsProvider.activeSettings?.modelId !=
-        modelProvider.selectedModelId) {
-      await settingsProvider.setActiveModel(
-        modelProvider.selectedModelId,
-        context,
-      );
+    if (settingsState.activeSettings?.modelId != modelState.selectedModelId) {
+      await settingsNotifier.setActiveModel(modelState.selectedModelId);
     }
 
     // Show the settings sheet

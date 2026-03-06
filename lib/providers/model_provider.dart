@@ -1,376 +1,297 @@
-// ignore_for_file: avoid_print
-
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/services/network_service.dart';
 import 'package:chatorai/utils/logger.dart';
 
-// Initialize logger for this provider
 final _logger = LogTags.settings;
 
-/// Provider responsible for AI model management:
-/// - Loading available models from OpenRouter
-/// - Selecting current model
-/// - Managing favorite models
-/// - Checking model capabilities (image support, etc.)
-/// - Model-specific settings integration
-class ModelProvider with ChangeNotifier {
+class ModelState {
+  final List<OpenRouterModel> availableModels;
+  final String selectedModelId;
+  final OpenRouterModel? selectedModelObject;
+  final List<String> favoriteModelIds;
+  final bool modelsLoaded;
+  final bool isLoadingModels;
+  final bool isLoading;
+
+  const ModelState({
+    this.availableModels = const [],
+    this.selectedModelId = '',
+    this.selectedModelObject,
+    this.favoriteModelIds = const [],
+    this.modelsLoaded = false,
+    this.isLoadingModels = false,
+    this.isLoading = true,
+  });
+
+  List<OpenRouterModel> get favoriteModels => availableModels
+      .where((model) => favoriteModelIds.contains(model.id))
+      .toList();
+
+  ModelState copyWith({
+    List<OpenRouterModel>? availableModels,
+    String? selectedModelId,
+    OpenRouterModel? selectedModelObject,
+    List<String>? favoriteModelIds,
+    bool? modelsLoaded,
+    bool? isLoadingModels,
+    bool? isLoading,
+  }) {
+    return ModelState(
+      availableModels: availableModels ?? this.availableModels,
+      selectedModelId: selectedModelId ?? this.selectedModelId,
+      selectedModelObject: selectedModelObject ?? this.selectedModelObject,
+      favoriteModelIds: favoriteModelIds ?? this.favoriteModelIds,
+      modelsLoaded: modelsLoaded ?? this.modelsLoaded,
+      isLoadingModels: isLoadingModels ?? this.isLoadingModels,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
+}
+
+class ModelNotifier extends Notifier<ModelState> {
   static const String _selectedModelKey = 'selected_model_id';
   static const String _favoriteModelsKey = 'favorite_models';
 
-  // OpenRouterService dependency (injected via setter)
-  OpenRouterService? _openRouterService;
-
-  // Model data
-  List<OpenRouterModel> _availableModels = [];
-  String _selectedModelId = '';
-  OpenRouterModel? _selectedModelObject;
-  List<String> _favoriteModelIds = [];
-  bool _modelsLoaded = false;
-  bool _isLoadingModels = false;
-  bool _settingsLoaded = false;
-
-  // Getters
-  List<OpenRouterModel> get availableModels => _availableModels;
-  String get selectedModelId => _selectedModelId;
-  OpenRouterModel? get selectedModelObject => _selectedModelObject;
-  List<String> get favoriteModelIds => _favoriteModelIds;
-  bool get modelsLoaded => _modelsLoaded;
-  bool get isLoadingModels => _isLoadingModels;
-
-  // Computed getters
-  List<OpenRouterModel> get favoriteModels => _availableModels
-      .where((model) => _favoriteModelIds.contains(model.id))
-      .toList();
-
-  ModelProvider() {
-    loadSettings();
+  @override
+  ModelState build() {
+    _loadSettings();
+    return const ModelState();
   }
 
-  /// Setter for dependency injection of OpenRouterService
-  set openRouterService(OpenRouterService service) {
-    if (_openRouterService != service) {
-      _openRouterService = service;
-      // Trigger model loading if settings are loaded and models not yet loaded
-      if (_settingsLoaded && !_modelsLoaded && !_isLoadingModels) {
-        _loadModelsAsync();
-      }
-    }
-  }
+  OpenRouterService get _openRouterService =>
+      ref.read(openRouterServiceProvider);
 
-  /// Load settings from SharedPreferences
-  Future<void> loadSettings() async {
+  Future<void> _loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final selectedModelId = prefs.getString(_selectedModelKey) ?? '';
+      final favoriteModelIds = prefs.getStringList(_favoriteModelsKey) ?? [];
 
-      _selectedModelId = prefs.getString(_selectedModelKey) ?? '';
-      final favoriteModelsString =
-          prefs.getStringList(_favoriteModelsKey) ?? [];
-      _favoriteModelIds = favoriteModelsString;
+      state = state.copyWith(
+        selectedModelId: selectedModelId,
+        favoriteModelIds: favoriteModelIds,
+        isLoading: false,
+      );
+      _logger.logInfo('[ModelNotifier] Settings loaded');
 
-      _settingsLoaded = true;
-      _logger.logInfo('[ModelProvider] Settings loaded');
-      notifyListeners();
-
-      // Trigger model loading if OpenRouterService is available and models not yet loaded
-      if (_openRouterService != null && !_modelsLoaded && !_isLoadingModels) {
-        _loadModelsAsync();
-      }
+      _loadModelsAsync();
     } catch (e) {
-      _logger.logError('[ModelProvider] Error loading settings: $e');
+      _logger.logError('[ModelNotifier] Error loading settings: $e');
+      state = state.copyWith(isLoading: false);
     }
   }
 
-  /// Save current settings to SharedPreferences
-  Future<void> saveSettings() async {
+  Future<void> _saveSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
-      await prefs.setString(_selectedModelKey, _selectedModelId);
-      await prefs.setStringList(_favoriteModelsKey, _favoriteModelIds);
-
-      _logger.logVerbose('[ModelProvider] Settings saved');
+      await prefs.setString(_selectedModelKey, state.selectedModelId);
+      await prefs.setStringList(_favoriteModelsKey, state.favoriteModelIds);
+      _logger.logVerbose('[ModelNotifier] Settings saved');
     } catch (e) {
-      _logger.logError('[ModelProvider] Error saving settings: $e');
+      _logger.logError('[ModelNotifier] Error saving settings: $e');
     }
   }
 
-  /// Load models asynchronously from OpenRouter
   Future<void> _loadModelsAsync() async {
-    // Use fallback for backward compatibility
-    final openRouterService = _openRouterService ?? OpenRouterService();
+    if (state.modelsLoaded || state.isLoadingModels) return;
 
-    if (_modelsLoaded || _isLoadingModels) return;
-
-    _isLoadingModels = true;
-    notifyListeners();
+    state = state.copyWith(isLoadingModels: true);
 
     try {
-      _logger.logInfo('[ModelProvider] Loading models from OpenRouter...');
+      _logger.logInfo('[ModelNotifier] Loading models from OpenRouter...');
 
-      // Wait for OpenRouterService to be fully initialized
+      final openRouterService = _openRouterService;
+
       int retryCount = 0;
-      const maxRetries = 20; // Wait up to 10 seconds (20 * 500ms)
+      const maxRetries = 20;
 
       while (retryCount < maxRetries) {
         if (openRouterService.isReady()) {
-          _logger.logInfo('[ModelProvider] OpenRouterService is ready');
           break;
         }
-
         await Future<void>.delayed(const Duration(milliseconds: 500));
         retryCount++;
       }
 
-      if (retryCount >= maxRetries) {
-        _logger.logWarning(
-          '[ModelProvider] OpenRouterService initialization timeout, proceeding anyway...',
-        );
-      }
-
       final models = await openRouterService.getAvailableModels();
+      final availableModels = _deduplicateModels(models);
 
-      // Remove duplicates using more robust deduplication method
-      _availableModels = _deduplicateModels(models);
-      _modelsLoaded = true;
+      String selectedModelId = state.selectedModelId;
+      OpenRouterModel? selectedModelObject;
 
-      // Set the selected model object from saved ID
-      if (_selectedModelObject == null) {
-        if (_selectedModelId.isEmpty) {
-          // No saved ID, use first available model
-          _selectedModelId = _availableModels.first.id;
-          _selectedModelObject = _availableModels.first;
-          await saveSettings();
-        } else {
-          // Find the model object for the saved ID
-          final modelObject = _availableModels.firstWhere(
-            (model) => model.id == _selectedModelId,
-            orElse: () => _availableModels.first,
+      if (selectedModelId.isEmpty && availableModels.isNotEmpty) {
+        selectedModelId = availableModels.first.id;
+        selectedModelObject = availableModels.first;
+        await _saveSettings();
+      } else if (availableModels.isNotEmpty) {
+        try {
+          selectedModelObject = availableModels.firstWhere(
+            (model) => model.id == selectedModelId,
           );
-          _selectedModelObject = modelObject;
-          // Update ID if we fell back to first available
-          if (modelObject.id != _selectedModelId) {
-            _selectedModelId = modelObject.id;
-            await saveSettings();
-          }
+        } catch (_) {
+          selectedModelObject = availableModels.first;
+          selectedModelId = selectedModelObject.id;
+          await _saveSettings();
         }
-        notifyListeners();
-      } else if (!_availableModels.any((m) => m.id == _selectedModelId)) {
-        // Current selection is not available, find a replacement
-        final defaultModel = _availableModels.first;
-        await setSelectedModel(defaultModel.id);
       }
+
+      state = state.copyWith(
+        availableModels: availableModels,
+        selectedModelId: selectedModelId,
+        selectedModelObject: selectedModelObject,
+        modelsLoaded: true,
+        isLoadingModels: false,
+      );
 
       _logger.logInfo(
-        '[ModelProvider] Successfully loaded ${models.length} models',
+        '[ModelNotifier] Successfully loaded ${models.length} models',
       );
     } catch (e) {
-      _logger.logError('[ModelProvider] Failed to load models: $e');
-      _logger.logWarning(
-        '[ModelProvider] Retrying model loading in 2 seconds...',
-      );
+      _logger.logError('[ModelNotifier] Failed to load models: $e');
 
-      // Retry after a short delay
       await Future<void>.delayed(const Duration(seconds: 2));
 
       try {
-        _logger.logInfo('[ModelProvider] Retrying model loading...');
-        final retryService = _openRouterService ?? OpenRouterService();
-        final retryModels = await retryService.getAvailableModels();
+        final retryModels = await _openRouterService.getAvailableModels();
+        final availableModels = _deduplicateModels(retryModels);
 
-        _availableModels = _deduplicateModels(retryModels);
-        _modelsLoaded = true;
-
-        if (_selectedModelObject == null) {
-          final modelObject = _availableModels.firstWhere(
-            (model) => model.id == _selectedModelId,
-            orElse: () => _availableModels.first,
-          );
-          _selectedModelObject = modelObject;
-          if (modelObject.id != _selectedModelId) {
-            _selectedModelId = modelObject.id;
-            await saveSettings();
+        OpenRouterModel? selectedModelObject;
+        if (availableModels.isNotEmpty) {
+          try {
+            selectedModelObject = availableModels.firstWhere(
+              (model) => model.id == state.selectedModelId,
+            );
+          } catch (_) {
+            selectedModelObject = availableModels.first;
           }
-          notifyListeners();
-        } else if (!_availableModels.any((m) => m.id == _selectedModelId)) {
-          final defaultModel = _availableModels.first;
-          await setSelectedModel(defaultModel.id);
         }
 
-        _logger.logInfo(
-          '[ModelProvider] Successfully loaded ${retryModels.length} models on retry',
+        state = state.copyWith(
+          availableModels: availableModels,
+          selectedModelObject: selectedModelObject,
+          modelsLoaded: true,
+          isLoadingModels: false,
         );
       } catch (retryError) {
         _logger.logError(
-          '[ModelProvider] Failed to load models on retry: $retryError',
+          '[ModelNotifier] Failed to load models on retry: $retryError',
         );
-        _modelsLoaded = true; // Mark as loaded to prevent infinite retries
+        state = state.copyWith(modelsLoaded: true, isLoadingModels: false);
       }
-    } finally {
-      _isLoadingModels = false;
-      notifyListeners();
     }
   }
 
-  /// Reload models (for refresh functionality)
+  List<OpenRouterModel> _deduplicateModels(List<OpenRouterModel> models) {
+    final Map<String, OpenRouterModel> uniqueModels = {};
+    for (final model in models) {
+      uniqueModels[model.id] = model;
+    }
+    return uniqueModels.values.toList();
+  }
+
   Future<void> reloadModels() async {
-    _modelsLoaded = false;
-    _availableModels.clear();
-    _selectedModelObject = null;
+    state = state.copyWith(
+      modelsLoaded: false,
+      availableModels: [],
+      selectedModelObject: null,
+    );
     await _loadModelsAsync();
   }
 
-  /// Set selected model by ID
   Future<void> setSelectedModel(String modelId) async {
-    if (_selectedModelId != modelId) {
-      _selectedModelId = modelId;
-
-      // Find the model object
-      final modelObject = _availableModels.firstWhere(
+    if (state.selectedModelId != modelId) {
+      final modelObject = state.availableModels.firstWhere(
         (model) => model.id == modelId,
-        orElse: () => _availableModels.first,
+        orElse: () => state.availableModels.first,
       );
-      _selectedModelObject = modelObject;
 
-      await saveSettings();
-      notifyListeners();
+      state = state.copyWith(
+        selectedModelId: modelId,
+        selectedModelObject: modelObject,
+      );
+      await _saveSettings();
     }
   }
 
-  /// Set selected model without notifying listeners immediately
-  /// Useful for navigation scenarios to avoid race conditions
   Future<void> setSelectedModelSilent(String modelId) async {
-    if (_selectedModelId != modelId) {
-      _selectedModelId = modelId;
-
-      final modelObject = _availableModels.firstWhere(
+    if (state.selectedModelId != modelId) {
+      final modelObject = state.availableModels.firstWhere(
         (model) => model.id == modelId,
-        orElse: () => _availableModels.first,
+        orElse: () => state.availableModels.first,
       );
-      _selectedModelObject = modelObject;
 
-      await saveSettings();
+      state = state.copyWith(
+        selectedModelId: modelId,
+        selectedModelObject: modelObject,
+      );
+      await _saveSettings();
     }
   }
 
-  /// Get model by ID
   OpenRouterModel? getModelById(String modelId) {
     try {
-      return _availableModels.firstWhere((model) => model.id == modelId);
+      return state.availableModels.firstWhere((model) => model.id == modelId);
     } catch (e) {
       return null;
     }
   }
 
-  /// Get favorite models
-  List<OpenRouterModel> getFavoriteModels() {
-    return favoriteModels;
-  }
-
-  /// Check if a model is in favorites
   bool isFavoriteModel(String modelId) {
-    return _favoriteModelIds.contains(modelId);
+    return state.favoriteModelIds.contains(modelId);
   }
 
-  /// Toggle favorite status for a model
   Future<void> toggleFavoriteModel(String modelId) async {
-    if (_favoriteModelIds.contains(modelId)) {
-      _favoriteModelIds.remove(modelId);
-      _logger.logInfo('[ModelProvider] Removed model from favorites: $modelId');
+    final favoriteModelIds = List<String>.from(state.favoriteModelIds);
+    if (favoriteModelIds.contains(modelId)) {
+      favoriteModelIds.remove(modelId);
+      _logger.logInfo('[ModelNotifier] Removed model from favorites: $modelId');
     } else {
-      _favoriteModelIds.add(modelId);
-      _logger.logInfo('[ModelProvider] Added model to favorites: $modelId');
+      favoriteModelIds.add(modelId);
+      _logger.logInfo('[ModelNotifier] Added model to favorites: $modelId');
     }
 
-    await saveSettings();
-    notifyListeners();
+    state = state.copyWith(favoriteModelIds: favoriteModelIds);
+    await _saveSettings();
   }
 
-  /// Check if a model supports images using API data
-  /// Returns true if model supports images, false otherwise
-  /// Uses API data from architecture.input_modalities
   bool modelSupportsImages(String modelId) {
     final model = getModelById(modelId);
-
     if (model == null) {
-      _logger.logWarning(
-        '[ModelProvider] Model $modelId not found in available models, returning false',
-      );
       return false;
     }
-
-    final supportsMultimodal = model.capabilities.multimodal;
-    final supportsVision = model.capabilities.vision;
-
-    if (supportsMultimodal || supportsVision) {
-      _logger.logInfo(
-        '[ModelProvider] Model $modelId supports images (API: multimodal=$supportsMultimodal, vision=$supportsVision)',
-      );
-      return true;
-    }
-
-    _logger.logInfo(
-      '[ModelProvider] Model $modelId does not support images (API data)',
-    );
-    return false;
+    return model.capabilities.multimodal || model.capabilities.vision;
   }
 
-  /// Check if the currently selected model supports images
   bool modelSupportsImagesSelected() {
-    if (_selectedModelId.isEmpty) {
-      _logger.logWarning('[ModelProvider] No selected model ID');
+    if (state.selectedModelId.isEmpty) {
       return false;
     }
-    return modelSupportsImages(_selectedModelId);
+    return modelSupportsImages(state.selectedModelId);
   }
 
-  /// Check if a model supports images with fallback
-  bool checkModelSupportsImages(String modelId) {
-    final apiSupport = modelSupportsImages(modelId);
-    if (apiSupport) return true;
-
-    if (!_modelsLoaded) {
-      _logger.logWarning(
-        '[ModelProvider] Models not loaded yet, returning false for $modelId',
-      );
-      return false;
-    }
-
-    return false;
-  }
-
-  /// Remove duplicate models using a more robust approach
-  List<OpenRouterModel> _deduplicateModels(List<OpenRouterModel> models) {
-    final Map<String, OpenRouterModel> uniqueModels = {};
-
-    for (final model in models) {
-      uniqueModels[model.id] = model;
-    }
-
-    return uniqueModels.values.toList();
-  }
-
-  /// Wait for models to be loaded with timeout
   Future<void> waitForModelsLoaded({
     Duration timeout = const Duration(seconds: 10),
   }) async {
-    if (_modelsLoaded) return;
+    if (state.modelsLoaded) return;
 
     final stopwatch = Stopwatch()..start();
-    while (!_modelsLoaded && stopwatch.elapsed < timeout) {
+    while (!state.modelsLoaded && stopwatch.elapsed < timeout) {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
     stopwatch.stop();
   }
-
-  /// Reset settings for testing
-  @visibleForTesting
-  void resetForTesting() {
-    _selectedModelId = '';
-    _selectedModelObject = null;
-    _availableModels.clear();
-    _modelsLoaded = false;
-    _isLoadingModels = false;
-    _favoriteModelIds.clear();
-  }
 }
+
+final openRouterServiceProvider = Provider<OpenRouterService>((ref) {
+  return OpenRouterService();
+});
+
+final networkServiceProvider = Provider<NetworkService>((ref) {
+  return NetworkService();
+});
+
+final modelProvider = NotifierProvider<ModelNotifier, ModelState>(
+  ModelNotifier.new,
+);

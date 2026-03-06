@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:path/path.dart' as path;
 import '../utils/logger.dart';
 import 'network_service.dart';
 
@@ -506,7 +508,53 @@ class OpenRouterService implements OpenRouterClient {
       _logger.logDebug('[OpenRouter] Loading API key from .env file...');
 
       // Load environment variables from .env file
-      await dotenv.load(fileName: '.env');
+      // Try multiple paths to find the .env file
+
+      // Try 1: Current working directory
+      bool loaded = false;
+      try {
+        await dotenv.load(fileName: '.env');
+        loaded = true;
+        _logger.logDebug('[OpenRouter] Loaded .env from current directory');
+      } catch (e) {
+        _logger.logDebug(
+          '[OpenRouter] Could not load .env from current directory: $e',
+        );
+      }
+
+      // Try 2: Project root (common for Flutter projects)
+      if (!loaded) {
+        try {
+          await dotenv.load(fileName: '../.env');
+          loaded = true;
+          _logger.logDebug('[OpenRouter] Loaded .env from parent directory');
+        } catch (e) {
+          _logger.logDebug(
+            '[OpenRouter] Could not load .env from parent directory: $e',
+          );
+        }
+      }
+
+      // Try 3: Try to find it relative to the script location
+      if (!loaded) {
+        try {
+          final scriptDir = File(Platform.script.toFilePath()).parent.path;
+          final envPath = path.join(scriptDir, '.env');
+          await dotenv.load(fileName: envPath);
+          loaded = true;
+          _logger.logDebug(
+            '[OpenRouter] Loaded .env from script directory: $envPath',
+          );
+        } catch (e) {
+          _logger.logDebug(
+            '[OpenRouter] Could not load .env from script directory: $e',
+          );
+        }
+      }
+
+      if (!loaded) {
+        throw Exception('Could not find .env file in any location');
+      }
 
       // Get API key from environment variables
       _apiKey = dotenv.env[OpenRouterConstants.envApiKey];

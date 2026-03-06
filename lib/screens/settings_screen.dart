@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:chatorai/providers/theme_provider.dart';
-import 'package:chatorai/providers/language_provider.dart';
+import 'package:chatorai/providers.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/widgets/settings/settings_section_header.dart';
@@ -14,32 +13,32 @@ import 'package:chatorai/widgets/settings/theme_selection_dialog.dart';
 import 'package:chatorai/widgets/settings/language_selection_dialog.dart';
 import 'package:chatorai/widgets/settings/about_dialog.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
-  late SettingsController _controller;
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  SettingsController? _controller;
+
+  SettingsController get controller {
+    _controller ??= SettingsController();
+    return _controller!;
+  }
 
   @override
   void initState() {
     super.initState();
-    _controller = SettingsController(
-      themeProvider: Provider.of<ThemeProvider>(context, listen: false),
-      languageProvider: Provider.of<LanguageProvider>(context, listen: false),
-    );
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller.validateApiKey(context);
+      controller.validateApiKey(context);
     });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -66,15 +65,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SettingsSectionHeader(title: localizations.providerConfiguration),
             const SizedBox(height: 16),
             SettingsTextField(
-              controller: _controller.apiKeyController,
+              controller: controller.apiKeyController,
               labelText: localizations.apiKey,
               hintText: localizations.enterApiKey,
               obscureText: true,
-              onCopy: () => _controller.onApiKeyCopy(context, localizations),
+              onCopy: () => controller.onApiKeyCopy(context, localizations),
             ),
             const SizedBox(height: 12),
             SettingsTextField(
-              controller: _controller.baseUrlController,
+              controller: controller.baseUrlController,
               labelText: 'Base URL',
               hintText: 'https://openrouter.ai/api/v1',
             ),
@@ -101,54 +100,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
     BuildContext context,
     AppLocalizations localizations,
   ) {
-    return Consumer2<ThemeProvider, LanguageProvider>(
-      builder: (context, themeProvider, languageProvider, _) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SettingsSectionHeader(title: localizations.appearance),
-            const SizedBox(height: 16),
-            SettingsSelectionCard(
-              context: context,
-              icon: Icons.palette,
-              title: _controller.getThemeModeName(
-                themeProvider.themeMode,
-                localizations,
-              ),
-              subtitle: localizations.theme,
-              onTap: () =>
-                  showThemeSelectionDialog(context, localizations, _controller),
-            ),
-            const SizedBox(height: 20),
-            SettingsSelectionCard(
-              context: context,
-              icon: Icons.language,
-              title: _controller.getLanguageName(
-                languageProvider.selectedLanguage,
-                localizations,
-              ),
-              subtitle: localizations.language,
-              onTap: () => showLanguageSelectionDialog(
-                context,
-                localizations,
-                _controller,
-              ),
-            ),
-            const SizedBox(height: 20),
-            SettingsSectionHeader(title: localizations.fontSize),
-            const SizedBox(height: 16),
-            SettingsSliderCard(
-              context: context,
-              value: themeProvider.fontSize,
-              min: 0.8,
-              max: 1.5,
-              divisions: 7,
-              label: '${(themeProvider.fontSize * 100).toInt()}%',
-              onChanged: (value) => themeProvider.fontSize = value,
-            ),
-          ],
-        );
-      },
+    final themeProviderRead = ref.watch(themeProvider);
+    final languageProviderRead = ref.watch(languageProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SettingsSectionHeader(title: localizations.appearance),
+        const SizedBox(height: 16),
+        SettingsSelectionCard(
+          context: context,
+          icon: Icons.palette,
+          title: controller.getThemeModeName(
+            themeProviderRead.themeMode,
+            localizations,
+          ),
+          subtitle: localizations.theme,
+          onTap: () => showThemeSelectionDialog(context, localizations),
+        ),
+        const SizedBox(height: 20),
+        SettingsSelectionCard(
+          context: context,
+          icon: Icons.language,
+          title: controller.getLanguageName(
+            languageProviderRead.selectedLanguage,
+            localizations,
+          ),
+          subtitle: localizations.language,
+          onTap: () => showLanguageSelectionDialog(context, localizations),
+        ),
+        const SizedBox(height: 20),
+        SettingsSectionHeader(title: localizations.fontSize),
+        const SizedBox(height: 16),
+        SettingsSliderCard(
+          context: context,
+          value: themeProviderRead.fontSize,
+          min: 0.8,
+          max: 1.5,
+          divisions: 7,
+          label: '${(themeProviderRead.fontSize * 100).toInt()}%',
+          onChanged: (value) =>
+              ref.read(themeProvider.notifier).setFontSize(value),
+        ),
+      ],
     );
   }
 
@@ -156,41 +150,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
     BuildContext context,
     AppLocalizations localizations,
   ) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, _) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SettingsSectionHeader(title: localizations.accessibility),
-            const SizedBox(height: 16),
-            SettingsToggleTile(
-              context: context,
-              title: localizations.wideScreenMode,
-              subtitle: localizations.useFullScreenWidth,
-              value: themeProvider.wideScreenMode,
-              onChanged: (value) => themeProvider.wideScreenMode = value,
-            ),
-          ],
-        );
-      },
+    final themeProviderRead = ref.watch(themeProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SettingsSectionHeader(title: localizations.accessibility),
+        const SizedBox(height: 16),
+        SettingsToggleTile(
+          context: context,
+          title: localizations.wideScreenMode,
+          subtitle: localizations.useFullScreenWidth,
+          value: themeProviderRead.wideScreenMode,
+          onChanged: (value) =>
+              ref.read(themeProvider.notifier).setWideScreenMode(value),
+        ),
+      ],
     );
   }
 }
 
 class SettingsController {
-  final ThemeProvider themeProvider;
-  final LanguageProvider languageProvider;
-
   late TextEditingController apiKeyController;
   late TextEditingController baseUrlController;
 
   static const List<String> validApiKeyPrefixes = ['sk-', 'sk-or-'];
   static const int minApiKeyLength = 10;
 
-  SettingsController({
-    required this.themeProvider,
-    required this.languageProvider,
-  }) {
+  SettingsController() {
     apiKeyController = TextEditingController(
       text: dotenv.env['OPENROUTER_API_KEY'] ?? '',
     );

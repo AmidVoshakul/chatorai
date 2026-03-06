@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
+import 'package:chatorai/providers.dart' show streamingContentProvider;
 import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/constants/chat_messages_constants.dart';
@@ -16,7 +18,7 @@ import 'package:chatorai/widgets/chat/chat_input.dart' show MessageData;
 // Initialize logger for this widget
 final _logger = LogTags.chatService;
 
-class ChatMessages extends StatefulWidget {
+class ChatMessages extends ConsumerStatefulWidget {
   final Chat? chat;
   final OpenRouterClient openRouterService;
   final ChatStorageService chatStorageService;
@@ -76,13 +78,15 @@ class ChatMessages extends StatefulWidget {
   });
 
   @override
-  State<ChatMessages> createState() => ChatMessagesState();
+  ConsumerState<ChatMessages> createState() => ChatMessagesState();
 }
 
-class ChatMessagesState extends State<ChatMessages>
+class ChatMessagesState extends ConsumerState<ChatMessages>
     with AutomaticKeepAliveClientMixin {
   late ScrollController _scrollController;
   final GlobalKey _loadingIndicatorKey = GlobalKey();
+
+  // Streaming state - managed via ref.watch in build
 
   // Navigator state
   List<MarkdownHeadingInfoWithKey> _headings =
@@ -106,6 +110,12 @@ class ChatMessagesState extends State<ChatMessages>
 
     // Initialize headings
     _updateHeadings();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -156,12 +166,6 @@ class ChatMessagesState extends State<ChatMessages>
 
   void refreshHeadings() {
     _updateHeadings();
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 
   void _toggleNavigator() {
@@ -223,6 +227,15 @@ class ChatMessagesState extends State<ChatMessages>
   @override
   Widget build(BuildContext context) {
     super.build(context); // Needed for AutomaticKeepAliveClientMixin
+
+    // Watch streaming state with select to avoid full rebuild on every content update
+    final streamingContent = ref.watch(
+      streamingContentProvider.select((s) => s.content),
+    );
+    final streamingReasoning = ref.watch(
+      streamingContentProvider.select((s) => s.reasoning),
+    );
+
     final theme = Theme.of(context);
 
     // CRITICAL: Always read from widget.chat, never from local state
@@ -309,13 +322,23 @@ class ChatMessagesState extends State<ChatMessages>
                       isAssistantMessage && message.content.isEmpty;
 
                   // During streaming: handle assistant message with reasoning
+                  // Use streaming content from controller if available
+                  final effectiveContent =
+                      (streamingContent.isNotEmpty && isLastMessage)
+                      ? streamingContent
+                      : message.content;
+                  final effectiveReasoning =
+                      (streamingReasoning.isNotEmpty && isLastMessage)
+                      ? streamingReasoning
+                      : message.reasoning;
+
                   if (isEmptyAssistantMessage &&
                       !message.isComplete &&
                       isLastMessage) {
                     final hasReasoning =
-                        message.reasoning != null &&
-                        message.reasoning!.isNotEmpty;
-                    final hasContent = message.content.isNotEmpty;
+                        effectiveReasoning != null &&
+                        effectiveReasoning.isNotEmpty;
+                    final hasContent = effectiveContent.isNotEmpty;
 
                     // If no reasoning and no content yet, hide the empty message
                     if (!hasReasoning && !hasContent) {
@@ -326,11 +349,16 @@ class ChatMessagesState extends State<ChatMessages>
                       // Show only reasoning (streaming) - content not started yet
                       return reasoning_msg.ReasoningMessage(
                         key: ValueKey(message.id),
-                        reasoning: message.reasoning!,
+                        reasoning: effectiveReasoning,
                         isStreaming: true,
                       );
                     } else if (hasReasoning && hasContent) {
                       // Show both reasoning and content (streaming)
+                      // Create a temporary message with streaming content
+                      final streamingMessage = message.copyWith(
+                        content: effectiveContent,
+                        reasoning: effectiveReasoning,
+                      );
                       return Column(
                         key: ValueKey(message.id),
                         mainAxisSize: MainAxisSize.min,
@@ -338,7 +366,7 @@ class ChatMessagesState extends State<ChatMessages>
                         children: [
                           reasoning_msg.ReasoningMessage(
                             key: ValueKey('${message.id}_reasoning'),
-                            reasoning: message.reasoning!,
+                            reasoning: effectiveReasoning,
                             isStreaming: true,
                           ),
                           const SizedBox(
@@ -346,7 +374,7 @@ class ChatMessagesState extends State<ChatMessages>
                           ),
                           chat_msg.ChatMessage(
                             key: ValueKey('${message.id}_content'),
-                            message: message,
+                            message: streamingMessage,
                             isStreaming: true,
                             isLastMessage: isLastMessage,
                             onRetry: () {},

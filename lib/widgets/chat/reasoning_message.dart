@@ -141,7 +141,7 @@ class _ReasoningMessageState extends State<ReasoningMessage>
       child: IgnorePointer(
         child: AnimatedBuilder(
           animation: _shimmerAnimation,
-          builder: (_, __) {
+          builder: (context, child) {
             return Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
@@ -156,10 +156,10 @@ class _ReasoningMessageState extends State<ReasoningMessage>
 
   Gradient _buildShimmerGradient(ThemeData theme) {
     final shimmerPosition = _shimmerAnimation.value;
-    final double normalizedPosition = shimmerPosition <= 0.5 
-        ? shimmerPosition * 2 
+    final double normalizedPosition = shimmerPosition <= 0.5
+        ? shimmerPosition * 2
         : (1.0 - shimmerPosition) * 2;
-    
+
     return LinearGradient(
       begin: Alignment(-1.0 + normalizedPosition, 0),
       end: Alignment(normalizedPosition, 0),

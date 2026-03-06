@@ -1,47 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:provider/provider.dart';
-import 'package:chatorai/providers/model_provider.dart';
+import 'package:chatorai/providers/chat/models_provider.dart';
 import 'package:chatorai/services/openrouter_service.dart';
-import 'package:chatorai/controllers/models_controller.dart';
 import 'package:chatorai/widgets/models/model_card_widget.dart';
 import 'package:chatorai/widgets/models/model_details_dialog_widget.dart';
 import 'package:chatorai/widgets/models/models_empty_state_widget.dart';
 
-class ModelsScreen extends StatefulWidget {
+class ModelsScreen extends ConsumerWidget {
   final Function(String, OpenRouterModel?)? onModelSelected;
   final String? currentModel;
 
   const ModelsScreen({super.key, this.onModelSelected, this.currentModel});
 
   @override
-  State<ModelsScreen> createState() => _ModelsScreenState();
-}
-
-class _ModelsScreenState extends State<ModelsScreen> {
-  late ModelsController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    final modelProvider = Provider.of<ModelProvider>(context, listen: false);
-    _controller = ModelsController(
-      modelProvider: modelProvider,
-      onModelSelected: widget.onModelSelected,
-      currentModelId: widget.currentModel,
-    );
-    _controller.loadModels();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final localizations = AppLocalizations.of(context)!;
+    final state = ref.watch(modelsScreenProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -52,59 +27,30 @@ class _ModelsScreenState extends State<ModelsScreen> {
         backgroundColor: Theme.of(context).canvasColor,
         elevation: 0,
         actions: [
-          ListenableBuilder(
-            listenable: _controller,
-            builder: (context, _) {
-              return IconButton(
-                icon: Icon(
-                  _controller.showFavoritesOnly
-                      ? Icons.favorite
-                      : Icons.favorite_border,
-                  color: _controller.showFavoritesOnly ? Colors.red : null,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _controller.toggleFavoritesFilter();
-                  });
-                },
-                tooltip: _controller.showFavoritesOnly
-                    ? localizations.showAllModels
-                    : localizations.showFavoritesOnly,
-              );
+          IconButton(
+            icon: Icon(
+              state.showFavoritesOnly ? Icons.favorite : Icons.favorite_border,
+              color: state.showFavoritesOnly ? Colors.red : null,
+            ),
+            onPressed: () {
+              ref.read(modelsScreenProvider.notifier).toggleFavoritesFilter();
             },
+            tooltip: state.showFavoritesOnly
+                ? localizations.showAllModels
+                : localizations.showFavoritesOnly,
           ),
         ],
       ),
       body: Column(
         children: [
-          _buildSearchBar(localizations),
+          _buildSearchBar(context, ref, localizations, state),
           const SizedBox(height: 8),
-          Expanded(
-            child: ListenableBuilder(
-              listenable: _controller,
-              builder: (context, _) {
-                if (_controller.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (_controller.filteredModels.isEmpty) {
-                  return ModelsEmptyStateWidget(
-                    isSearchEmpty: _controller.searchQuery.isNotEmpty,
-                    isFavoritesEmpty: _controller.showFavoritesOnly,
-                  );
-                }
-
-                return _buildModelsList();
-              },
-            ),
-          ),
+          Expanded(child: _buildContent(context, ref, localizations, state)),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          setState(() {
-            _controller.loadModels();
-          });
+          ref.read(modelsScreenProvider.notifier).loadModels();
         },
         tooltip: localizations.refresh,
         child: const Icon(Icons.refresh),
@@ -112,92 +58,116 @@ class _ModelsScreenState extends State<ModelsScreen> {
     );
   }
 
-  Widget _buildSearchBar(AppLocalizations localizations) {
+  Widget _buildSearchBar(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations localizations,
+    ModelsScreenState state,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return ListenableBuilder(
-      listenable: _controller,
-      builder: (context, _) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: TextField(
-            controller: _controller.searchController,
-            decoration: InputDecoration(
-              hintText: _controller.showFavoritesOnly
-                  ? localizations.searchFavorites
-                  : localizations.searchModels,
-              hintStyle: TextStyle(
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-                fontSize: 16,
-              ),
-              prefixIcon: Icon(
-                Icons.search,
-                color: isDark ? Colors.grey[300] : Colors.grey[700],
-              ),
-              suffixIcon: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_controller.showFavoritesOnly)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: Icon(Icons.favorite, color: Colors.red, size: 20),
-                    ),
-                  if (_controller.searchController.text.isNotEmpty)
-                    IconButton(
-                      icon: Icon(
-                        Icons.clear,
-                        color: isDark ? Colors.grey[300] : Colors.grey[700],
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _controller.clearSearch();
-                        });
-                      },
-                    ),
-                ],
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: isDark ? Colors.grey[700]! : Colors.grey[400]!,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: isDark ? Colors.grey[700]! : Colors.grey[400]!,
-                  width: 1,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: Theme.of(context).primaryColor,
-                  width: 2,
-                ),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              filled: true,
-              fillColor: isDark ? Theme.of(context).cardColor : Colors.white,
-              isDense: true,
-            ),
-            style: TextStyle(
-              color: Theme.of(context).textTheme.bodyLarge!.color,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-            cursorColor: Theme.of(context).primaryColor,
-            textInputAction: TextInputAction.search,
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: TextField(
+        onChanged: (value) {
+          ref.read(modelsScreenProvider.notifier).setSearchQuery(value);
+        },
+        decoration: InputDecoration(
+          hintText: state.showFavoritesOnly
+              ? localizations.searchFavorites
+              : localizations.searchModels,
+          hintStyle: TextStyle(
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+            fontSize: 16,
           ),
-        );
-      },
+          prefixIcon: Icon(
+            Icons.search,
+            color: isDark ? Colors.grey[300] : Colors.grey[700],
+          ),
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (state.showFavoritesOnly)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Icon(Icons.favorite, color: Colors.red, size: 20),
+                ),
+              if (state.searchQuery.isNotEmpty)
+                IconButton(
+                  icon: Icon(
+                    Icons.clear,
+                    color: isDark ? Colors.grey[300] : Colors.grey[700],
+                  ),
+                  onPressed: () {
+                    ref.read(modelsScreenProvider.notifier).clearSearch();
+                  },
+                ),
+            ],
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: isDark ? Colors.grey[700]! : Colors.grey[400]!,
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: isDark ? Colors.grey[700]! : Colors.grey[400]!,
+              width: 1,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Theme.of(context).primaryColor,
+              width: 2,
+            ),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+          filled: true,
+          fillColor: isDark ? Theme.of(context).cardColor : Colors.white,
+          isDense: true,
+        ),
+        style: TextStyle(
+          color: Theme.of(context).textTheme.bodyLarge!.color,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+        cursorColor: Theme.of(context).primaryColor,
+        textInputAction: TextInputAction.search,
+      ),
     );
   }
 
-  Widget _buildModelsList() {
+  Widget _buildContent(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations localizations,
+    ModelsScreenState state,
+  ) {
+    if (state.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.filteredModels.isEmpty) {
+      return ModelsEmptyStateWidget(
+        isSearchEmpty: state.searchQuery.isNotEmpty,
+        isFavoritesEmpty: state.showFavoritesOnly,
+      );
+    }
+
+    return _buildModelsList(context, ref, state);
+  }
+
+  Widget _buildModelsList(
+    BuildContext context,
+    WidgetRef ref,
+    ModelsScreenState state,
+  ) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isWideScreen = screenWidth >= 1200;
 
@@ -210,52 +180,63 @@ class _ModelsScreenState extends State<ModelsScreen> {
           mainAxisSpacing: 12,
           childAspectRatio: 2.2,
         ),
-        itemCount: _controller.filteredModels.length,
+        itemCount: state.filteredModels.length,
         itemBuilder: (context, index) {
-          final model = _controller.filteredModels[index];
-          return _buildCompactModelCard(model);
+          final model = state.filteredModels[index];
+          return _buildCompactModelCard(context, ref, model);
         },
       );
     } else {
       return ListView.builder(
         padding: const EdgeInsets.all(8.0),
-        itemCount: _controller.filteredModels.length,
+        itemCount: state.filteredModels.length,
         itemBuilder: (context, index) {
-          final model = _controller.filteredModels[index];
-          return _buildModelCard(model);
+          final model = state.filteredModels[index];
+          return _buildModelCard(context, ref, model);
         },
       );
     }
   }
 
-  Widget _buildModelCard(OpenRouterModel model) {
-    return ListenableBuilder(
-      listenable: _controller,
-      builder: (context, _) {
-        return ModelCardWidget(
-          model: model,
-          isSelected: widget.currentModel == model.id,
-          isFavorite: _controller.isFavorite(model.id),
-          onTap: () => _controller.selectModel(context, model),
-          onFavoriteToggle: () {
-            setState(() {
-              _controller.toggleFavorite(model.id);
-            });
-          },
-          onInfoTap: () => showModelDetailsDialog(context, model),
-        );
+  Widget _buildModelCard(
+    BuildContext context,
+    WidgetRef ref,
+    OpenRouterModel model,
+  ) {
+    return ModelCardWidget(
+      model: model,
+      isSelected: currentModel == model.id,
+      isFavorite: ref.read(modelsScreenProvider.notifier).isFavorite(model.id),
+      onTap: () async {
+        await ref.read(modelsScreenProvider.notifier).selectModel(model.id);
+        if (context.mounted) {
+          Navigator.of(context).pop(model);
+        }
       },
+      onFavoriteToggle: () {
+        ref.read(modelsScreenProvider.notifier).toggleFavorite(model.id);
+      },
+      onInfoTap: () => showModelDetailsDialog(context, model),
     );
   }
 
-  Widget _buildCompactModelCard(OpenRouterModel model) {
+  Widget _buildCompactModelCard(
+    BuildContext context,
+    WidgetRef ref,
+    OpenRouterModel model,
+  ) {
     return Card(
       margin: EdgeInsets.zero,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        onTap: () => _controller.selectModel(context, model),
+        onTap: () async {
+          await ref.read(modelsScreenProvider.notifier).selectModel(model.id);
+          if (context.mounted) {
+            Navigator.of(context).pop(model);
+          }
+        },
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
