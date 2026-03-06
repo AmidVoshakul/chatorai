@@ -108,6 +108,19 @@ flutter_launcher_icons:
   image_path: "assets/chatorai_logo_black.png"
   android: true
   ios: true
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/chatorai_logo_black.png"
+    background_color: "#1a1a1a"
+    theme_color: "#1a1a1a"
+  windows:
+    generate: true
+    image_path: "assets/chatorai_logo_black.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "assets/chatorai_logo_black.png"
   adaptive_icon_background: "#1a1a1a"
   adaptive_icon_foreground: "assets/chatorai_logo_black.png"
   generate: true
