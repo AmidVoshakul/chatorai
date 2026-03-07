@@ -1,7 +1,6 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/themes/app_theme.dart';
 
 class ReasoningMessage extends StatefulWidget {
   final String reasoning;
@@ -18,39 +17,39 @@ class ReasoningMessage extends StatefulWidget {
 }
 
 class _ReasoningMessageState extends State<ReasoningMessage>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
-  static const _shimmerDuration = Duration(milliseconds: 1500);
-  static const _chunkTimeout = Duration(milliseconds: 300);
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   static const _bubbleWidthRatio = 0.65;
-  static const _bubblePadding = 12.0;
-  static const _textFontSize = 13.0;
-  static const _headerFontSize = 12.0;
 
   bool _isExpanded = false;
-  bool _isShimmering = false;
-  Timer? _shimmerStopTimer;
+  bool _controllersInitialized = false;
+
   late final AnimationController _shimmerController;
   late final Animation<double> _shimmerAnimation;
+  late final AnimationController _dotsController;
 
   @override
   void initState() {
     super.initState();
-    _initShimmer();
-  }
 
-  void _initShimmer() {
     _shimmerController = AnimationController(
       vsync: this,
-      duration: _shimmerDuration,
+      duration: const Duration(milliseconds: 1800),
     );
-    _shimmerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+
+    _shimmerAnimation = Tween<double>(begin: -1, end: 1).animate(
       CurvedAnimation(parent: _shimmerController, curve: Curves.linear),
     );
 
+    _dotsController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    );
+
+    _controllersInitialized = true;
+
     if (widget.isStreaming) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _startShimmer();
-      });
+      _shimmerController.repeat();
+      _dotsController.repeat();
     }
   }
 
@@ -58,44 +57,31 @@ class _ReasoningMessageState extends State<ReasoningMessage>
   void didUpdateWidget(ReasoningMessage oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Only start shimmer if reasoning content changed
-    if (widget.reasoning != oldWidget.reasoning) {
-      _startShimmer();
+    if (!_controllersInitialized) {
+      return;
     }
 
-    // Only stop shimmer when streaming ends
-    if (widget.isStreaming != oldWidget.isStreaming && !widget.isStreaming) {
-      _stopShimmer();
-    }
-  }
+    final isReasoningPhase = widget.isStreaming && widget.reasoning.isEmpty;
 
-  void _startShimmer() {
-    _shimmerStopTimer?.cancel();
-
-    if (!_isShimmering) {
-      _isShimmering = true;
-      _shimmerController.repeat();
-    }
-
-    _shimmerStopTimer = Timer(_chunkTimeout, () {
-      if (mounted) _stopShimmer();
-    });
-  }
-
-  void _stopShimmer() {
-    _shimmerStopTimer?.cancel();
-    _shimmerStopTimer = null;
-
-    if (_isShimmering) {
-      _isShimmering = false;
-      _shimmerController.stop();
+    if (isReasoningPhase) {
+      if (!_shimmerController.isAnimating) _shimmerController.repeat();
+      if (!_dotsController.isAnimating) _dotsController.repeat();
+    } else if (!widget.isStreaming) {
+      if (_shimmerController.isAnimating) {
+        _shimmerController.stop();
+        _shimmerController.value = 0;
+      }
+      if (_dotsController.isAnimating) {
+        _dotsController.stop();
+        _dotsController.value = 0;
+      }
     }
   }
 
   @override
   void dispose() {
-    _shimmerStopTimer?.cancel();
     _shimmerController.dispose();
+    _dotsController.dispose();
     super.dispose();
   }
 
@@ -104,7 +90,8 @@ class _ReasoningMessageState extends State<ReasoningMessage>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Needed for AutomaticKeepAliveClientMixin
+    super.build(context);
+
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context);
 
@@ -112,148 +99,116 @@ class _ReasoningMessageState extends State<ReasoningMessage>
       alignment: Alignment.centerLeft,
       child: FractionallySizedBox(
         widthFactor: _bubbleWidthRatio,
-        child: Stack(
-          children: [
-            _buildContent(theme, localizations),
-            if (_isShimmering) _buildShimmerOverlay(theme),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContent(ThemeData theme, AppLocalizations? localizations) {
-    return Container(
-      padding: const EdgeInsets.all(_bubblePadding),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.secondary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-      ),
-      child: _isExpanded
-          ? _buildExpandedContent(theme, localizations)
-          : _buildCollapsedContent(theme, localizations),
-    );
-  }
-
-  Widget _buildShimmerOverlay(ThemeData theme) {
-    return Positioned.fill(
-      child: IgnorePointer(
-        child: AnimatedBuilder(
-          animation: _shimmerAnimation,
-          builder: (context, child) {
-            return Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                gradient: _buildShimmerGradient(theme),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Gradient _buildShimmerGradient(ThemeData theme) {
-    final shimmerPosition = _shimmerAnimation.value;
-    final double normalizedPosition = shimmerPosition <= 0.5
-        ? shimmerPosition * 2
-        : (1.0 - shimmerPosition) * 2;
-
-    return LinearGradient(
-      begin: Alignment(-1.0 + normalizedPosition, 0),
-      end: Alignment(normalizedPosition, 0),
-      colors: [
-        Colors.transparent,
-        theme.colorScheme.secondary.withValues(alpha: 0.1),
-        theme.colorScheme.secondary.withValues(alpha: 0.25),
-        theme.colorScheme.secondary.withValues(alpha: 0.4),
-        theme.colorScheme.secondary.withValues(alpha: 0.5),
-        theme.colorScheme.secondary.withValues(alpha: 0.4),
-        theme.colorScheme.secondary.withValues(alpha: 0.25),
-        theme.colorScheme.secondary.withValues(alpha: 0.1),
-        Colors.transparent,
-      ],
-      stops: const [0.0, 0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9, 1.0],
-    );
-  }
-
-  Widget _buildExpandedContent(
-    ThemeData theme,
-    AppLocalizations? localizations,
-  ) {
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildHeader(localizations, theme),
-          const SizedBox(height: 8),
-          MarkdownBody(
-            data: widget.reasoning,
-            styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-              p: const TextStyle(fontSize: _textFontSize, height: 1.4),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(ChatoraiSpacing.md),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+            border: Border.all(
+              color: theme.dividerColor.withValues(alpha: 0.3),
             ),
           ),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeader(localizations, theme),
+              if (_isExpanded) ...[
+                const SizedBox(height: ChatoraiSpacing.sm),
+                _buildExpandedContent(theme),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildCollapsedContent(
-    ThemeData theme,
-    AppLocalizations? localizations,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildHeader(localizations, theme),
-        const SizedBox(height: 8),
-        if (widget.reasoning.isNotEmpty)
-          Text(
-            widget.reasoning,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: _textFontSize, height: 1.4),
+  Widget _buildExpandedContent(ThemeData theme) {
+    final textColor = theme.textTheme.bodyMedium?.color ?? Colors.grey.shade700;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 200),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Text(
+          widget.reasoning,
+          style: TextStyle(
+            fontSize: ChatoraiFontSizes.sm,
+            height: 1.4,
+            color: textColor,
           ),
-      ],
+        ),
+      ),
     );
   }
 
   Widget _buildHeader(AppLocalizations? localizations, ThemeData theme) {
-    final iconColor = theme.textTheme.bodyMedium?.color ?? Colors.grey.shade700;
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.secondary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(Icons.lightbulb_outline, size: 12, color: iconColor),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            localizations?.reasoning ?? 'Reasoning',
-            style: const TextStyle(
-              fontSize: _headerFontSize,
-              fontWeight: FontWeight.w600,
-              height: 1.4,
+    final textColor = theme.textTheme.bodyMedium?.color ?? Colors.grey.shade700;
+    final headerText = localizations?.reasoning ?? 'Reasoning';
+
+    return AnimatedBuilder(
+      animation: Listenable.merge([_shimmerAnimation, _dotsController]),
+      builder: (context, child) {
+        final isStreaming = widget.isStreaming;
+
+        final String dotsText;
+        if (isStreaming) {
+          final dotIndex = (_dotsController.value * 3).floor() % 4;
+          dotsText = '.' * dotIndex;
+        } else {
+          dotsText = '';
+        }
+
+        Widget header = Row(
+          children: [
+            const SizedBox(width: ChatoraiSpacing.xs),
+            Expanded(
+              child: Text(
+                '$headerText$dotsText',
+                style: TextStyle(
+                  fontSize: ChatoraiFontSizes.sm,
+                  fontWeight: FontWeight.w600,
+                  height: 1.4,
+                  color: textColor,
+                ),
+              ),
             ),
-          ),
-        ),
-        GestureDetector(
-          onTap: () => setState(() => _isExpanded = !_isExpanded),
-          child: Icon(
-            _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-            size: 16,
-            color: iconColor,
-          ),
-        ),
-      ],
+            GestureDetector(
+              onTap: () => setState(() => _isExpanded = !_isExpanded),
+              child: Icon(
+                _isExpanded
+                    ? Icons.keyboard_arrow_up
+                    : Icons.keyboard_arrow_down,
+                size: ChatoraiIconSizes.md,
+                color: textColor,
+              ),
+            ),
+          ],
+        );
+
+        if (isStreaming) {
+          return ShaderMask(
+            shaderCallback: (bounds) {
+              return LinearGradient(
+                begin: Alignment(-1 + _shimmerAnimation.value, 0),
+                end: Alignment(1 + _shimmerAnimation.value, 0),
+                colors: [
+                  textColor.withValues(alpha: 0.35),
+                  textColor,
+                  textColor.withValues(alpha: 0.35),
+                ],
+                stops: const [0.25, 0.5, 0.75],
+              ).createShader(bounds);
+            },
+            blendMode: BlendMode.srcIn,
+            child: header,
+          );
+        }
+
+        return header;
+      },
     );
   }
 }

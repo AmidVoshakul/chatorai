@@ -44,7 +44,7 @@ class StreamingContentState {
 }
 
 class StreamingContentNotifier extends Notifier<StreamingContentState> {
-  static const updateIntervalMs = 100;
+  static const updateIntervalMs = 250;
   DateTime _lastUiUpdate = DateTime.now();
   String _pendingContent = '';
   String _pendingReasoning = '';

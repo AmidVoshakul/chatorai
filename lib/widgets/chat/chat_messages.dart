@@ -32,8 +32,8 @@ class ChatMessages extends ConsumerStatefulWidget {
   onMessageEditAndSend; // Callback for edit + regenerate (messageId, newContent)
   final Function(String)?
   onContinueResponse; // Add callback for continuing response
-  final VoidCallback?
-  onRegenerateResponse; // Add callback for regenerating response
+  final Function(String)? // Add callback for regenerating response (messageId)
+  onRegenerateResponse;
   final ScrollController? scrollController; // External scroll controller
   final List<String> continuationSuggestions; // Suggestions to display
   final bool showSuggestions; // Whether to show suggestions
@@ -360,64 +360,69 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
 
                     if (hasReasoning && !hasContent) {
                       // Show only reasoning (streaming) - content not started yet
-                      return reasoning_msg.ReasoningMessage(
-                        key: ValueKey(message.id),
-                        reasoning: effectiveReasoning,
-                        isStreaming: true,
+                      return RepaintBoundary(
+                        child: reasoning_msg.ReasoningMessage(
+                          key: ValueKey(message.id),
+                          reasoning: effectiveReasoning,
+                          isStreaming: true,
+                        ),
                       );
                     } else if (hasReasoning && hasContent) {
-                      // Show both reasoning and content (streaming)
-                      // Create a temporary message with streaming content
+                      // Show both reasoning and content - content already started, stop shimmer
                       final streamingMessage = message.copyWith(
                         content: effectiveContent,
                         reasoning: effectiveReasoning,
                       );
-                      return Column(
-                        key: ValueKey(message.id),
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          reasoning_msg.ReasoningMessage(
-                            key: ValueKey('${message.id}_reasoning'),
-                            reasoning: effectiveReasoning,
-                            isStreaming: true,
-                          ),
-                          const SizedBox(
-                            height: ChatMessagesConstants.messageSpacing,
-                          ),
-                          chat_msg.ChatMessage(
-                            key: ValueKey('${message.id}_content'),
-                            message: streamingMessage,
-                            isStreaming: true,
-                            isLastMessage: isLastMessage,
-                            onRetry: () {},
-                            chatId: widget.chat?.id ?? '',
-                            chatStorageService: widget.chatStorageService,
-                            onMessageDeleted: widget.onMessageDeleted,
-                            onMessageEdited:
-                                (String messageId, String newContent) {
-                                  widget.onMessageEdited?.call(
-                                    messageId,
-                                    newContent,
+                      return RepaintBoundary(
+                        child: Column(
+                          key: ValueKey(message.id),
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            reasoning_msg.ReasoningMessage(
+                              key: ValueKey('${message.id}_reasoning'),
+                              reasoning: effectiveReasoning,
+                              isStreaming: false,
+                            ),
+                            const SizedBox(
+                              height: ChatMessagesConstants.messageSpacing,
+                            ),
+                            chat_msg.ChatMessage(
+                              key: ValueKey('${message.id}_content'),
+                              message: streamingMessage,
+                              isStreaming: true,
+                              isLastMessage: isLastMessage,
+                              onRetry: () {},
+                              chatId: widget.chat?.id ?? '',
+                              chatStorageService: widget.chatStorageService,
+                              onMessageDeleted: widget.onMessageDeleted,
+                              onMessageEdited:
+                                  (String messageId, String newContent) {
+                                    widget.onMessageEdited?.call(
+                                      messageId,
+                                      newContent,
+                                    );
+                                  },
+                              onMessageEditAndSend:
+                                  (String messageId, String newContent) {
+                                    widget.onMessageEditAndSend?.call(
+                                      messageId,
+                                      newContent,
+                                    );
+                                  },
+                              onMessageUpdated: (newContent) {
+                                if (newContent == 'REGENERATE') {
+                                  widget.onRegenerateResponse?.call(
+                                    streamingMessage.id,
                                   );
-                                },
-                            onMessageEditAndSend:
-                                (String messageId, String newContent) {
-                                  widget.onMessageEditAndSend?.call(
-                                    messageId,
-                                    newContent,
-                                  );
-                                },
-                            onMessageUpdated: (newContent) {
-                              if (newContent == 'REGENERATE') {
-                                widget.onRegenerateResponse?.call();
-                              }
-                            },
-                            onDelete: () {},
-                            onContinueResponse: null,
-                            headings: _headings,
-                          ),
-                        ],
+                                }
+                              },
+                              onDelete: () {},
+                              onContinueResponse: null,
+                              headings: _headings,
+                            ),
+                          ],
+                        ),
                       );
                     }
                     // No reasoning yet, skip this message (waiting animation shown separately)
@@ -478,7 +483,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                               },
                           onMessageUpdated: (newContent) {
                             if (newContent == 'REGENERATE') {
-                              widget.onRegenerateResponse?.call();
+                              widget.onRegenerateResponse?.call(message.id);
                             }
                           },
                           onDelete: () {
@@ -532,7 +537,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                         },
                     onMessageUpdated: (newContent) {
                       if (newContent == 'REGENERATE') {
-                        widget.onRegenerateResponse?.call();
+                        widget.onRegenerateResponse?.call(message.id);
                       }
                     },
                     onDelete: () {

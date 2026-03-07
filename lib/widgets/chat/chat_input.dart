@@ -726,12 +726,18 @@ class _ChatInputState extends ConsumerState<ChatInput>
     const double sidePadding = ChatoraiSpacing.lg;
     const double bottomPadding = ChatoraiSpacing.md;
 
+    final isSpellCheckSupported =
+        kIsWeb || Platform.isAndroid || Platform.isIOS;
+
     final textField = TextField(
       controller: _textController,
       focusNode: widget.focusNode,
       keyboardType: TextInputType.multiline,
       minLines: 1,
       maxLines: maxLines,
+      spellCheckConfiguration: isSpellCheckSupported
+          ? const SpellCheckConfiguration()
+          : null,
       decoration: isMobile
           ? InputDecoration(
               hintText: _attachedFilePath != null

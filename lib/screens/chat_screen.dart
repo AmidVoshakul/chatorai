@@ -244,11 +244,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
 
     if (shouldDelete == true) {
+      final wasCurrentChat = currentChat != null && currentChat!.id == chatId;
       await ref.read(chatListProvider.notifier).deleteChat(chatId);
-      final chat = currentChat;
-      if (chat != null && chat.id == chatId) {
+      if (wasCurrentChat && mounted) {
         ref.read(currentChatIdProvider.notifier).state = null;
         ref.read(chatScreenProvider.notifier).setCurrentChat(null);
+        _showWelcomeSuggestions();
       }
     }
   }
@@ -351,28 +352,41 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
   }
 
-  Future<void> _regenerateResponse() async {
+  Future<void> _regenerateResponse(String messageId) async {
     final chat = currentChat;
     if (chat == null || chat.messages.isEmpty) return;
 
     ref.read(chatScreenProvider.notifier).hideSuggestions();
 
-    final lastAIMessageIndex = chat.messages.lastIndexWhere(
-      (m) => m.role == MessageRole.assistant,
-    );
-    final lastUserMessageIndex = chat.messages.lastIndexWhere(
-      (m) => m.role == MessageRole.user,
-    );
+    // Find the message to regenerate
+    final messageIndex = chat.messages.indexWhere((m) => m.id == messageId);
+    if (messageIndex == -1) return;
 
-    if (lastAIMessageIndex == -1 || lastUserMessageIndex == -1) return;
+    final targetMessage = chat.messages[messageIndex];
+    if (targetMessage.role != MessageRole.assistant) return;
 
-    final lastUserMessage = chat.messages[lastUserMessageIndex];
-    final lastAIMessage = chat.messages[lastAIMessageIndex];
+    // Find the user message that precedes this AI message
+    int userMessageIndex = -1;
+    for (int i = messageIndex - 1; i >= 0; i--) {
+      if (chat.messages[i].role == MessageRole.user) {
+        userMessageIndex = i;
+        break;
+      }
+    }
 
-    await _chatStorageService.deleteMessageFromChat(chat.id, lastAIMessage.id);
+    if (userMessageIndex == -1) return;
 
-    final updatedMessages = List<Message>.from(chat.messages)
-      ..removeAt(lastAIMessageIndex);
+    final userMessage = chat.messages[userMessageIndex];
+
+    final messagesToDelete = chat.messages
+        .sublist(messageIndex)
+        .map((m) => m.id)
+        .toList();
+    for (final msgId in messagesToDelete) {
+      await _chatStorageService.deleteMessageFromChat(chat.id, msgId);
+    }
+
+    final updatedMessages = chat.messages.sublist(0, messageIndex);
     final updatedChat = chat.copyWith(
       messages: updatedMessages,
       updatedAt: DateTime.now(),
@@ -396,7 +410,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       _chatScrollUtils?.scrollToIndicator();
     });
 
-    _sendToAI(lastUserMessage.content, chatWithNewPlaceholder);
+    _sendToAI(userMessage.content, chatWithNewPlaceholder);
   }
 
   Future<void> _sendToAI(String userMessage, [Chat? providedChat]) async {
@@ -553,14 +567,44 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     String accumulatedContent = '';
     String accumulatedReasoning = '';
+    String _pendingContent = '';
+    String _pendingReasoning = '';
 
     DateTime lastUpdateTime = DateTime.now();
-    const updateIntervalMs = 100;
+    const updateIntervalMs = 250;
 
-    void throttleUpdate() {
+    bool _isWordBoundary(String text) {
+      if (text.isEmpty) return false;
+      final lastChar = text[text.length - 1];
+      return lastChar == ' ' ||
+          lastChar == '\n' ||
+          lastChar == '.' ||
+          lastChar == ',' ||
+          lastChar == '!' ||
+          lastChar == '?' ||
+          lastChar == ';' ||
+          lastChar == ':' ||
+          lastChar == ')' ||
+          lastChar == ']' ||
+          lastChar == '}' ||
+          lastChar == '"' ||
+          lastChar == "'";
+    }
+
+    void throttleUpdate({bool forceUpdate = false}) {
       final now = DateTime.now();
-      if (now.difference(lastUpdateTime).inMilliseconds >= updateIntervalMs) {
+      final elapsed = now.difference(lastUpdateTime).inMilliseconds;
+
+      final shouldUpdate =
+          forceUpdate ||
+          elapsed >= updateIntervalMs ||
+          _isWordBoundary(_pendingContent) ||
+          _isWordBoundary(_pendingReasoning);
+
+      if (shouldUpdate) {
         if (mounted && chat.messages.isNotEmpty) {
+          accumulatedContent = _pendingContent;
+          accumulatedReasoning = _pendingReasoning;
           ref
               .read(streamingContentProvider.notifier)
               .updateContent(
@@ -575,16 +619,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
 
     void flushPendingUpdates() {
-      if (mounted && chat.messages.isNotEmpty) {
-        ref
-            .read(streamingContentProvider.notifier)
-            .updateContent(
-              accumulatedContent,
-              reasoning: accumulatedReasoning.isNotEmpty
-                  ? accumulatedReasoning
-                  : null,
-            );
-      }
+      accumulatedContent = _pendingContent;
+      accumulatedReasoning = _pendingReasoning;
+      throttleUpdate(forceUpdate: true);
     }
 
     final aiService = ref.read(chatAiServiceProvider);
@@ -604,12 +641,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           includeReasoning: true,
           onChunk: (content) {
             if (content.isEmpty) return;
-            accumulatedContent += content;
+            _pendingContent += content;
             throttleUpdate();
           },
           onReasoning: (reasoning) {
             if (reasoning.isEmpty) return;
-            accumulatedReasoning += reasoning;
+            _pendingReasoning += reasoning;
             throttleUpdate();
           },
           onCompletion: (fullContent) async {

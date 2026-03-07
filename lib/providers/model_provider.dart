@@ -125,8 +125,7 @@ class ModelNotifier extends Notifier<ModelState> {
         return;
       }
 
-      final models = await (openRouterService as OpenRouterService)
-          .getAvailableModels();
+      final models = await openRouterService.getAvailableModels();
       final availableModels = _deduplicateModels(models);
 
       String selectedModelId = state.selectedModelId;
@@ -281,12 +280,29 @@ class ModelNotifier extends Notifier<ModelState> {
   }
 }
 
+class _OpenRouterServiceProvider {
+  static OpenRouterService? _instance;
+  static bool _initialized = false;
+
+  static OpenRouterService getService(NetworkState networkState) {
+    if (!_initialized) {
+      _instance = OpenRouterService(isConnected: networkState.isConnected);
+      _initialized = true;
+    }
+    return _instance!;
+  }
+
+  static void updateConnectivity(bool isConnected) {
+    _instance?.setConnectivityStatus(isConnected);
+  }
+}
+
 final openRouterServiceProvider = Provider<OpenRouterClient>((ref) {
   final networkState = ref.watch(networkServiceProvider);
-  final service = OpenRouterService(isConnected: networkState.isConnected);
+  final service = _OpenRouterServiceProvider.getService(networkState);
 
-  ref.listen(networkServiceProvider, (previous, next) {
-    service.setConnectivityStatus(next.isConnected);
+  ref.listen<NetworkState>(networkServiceProvider, (previous, next) {
+    _OpenRouterServiceProvider.updateConnectivity(next.isConnected);
   });
 
   return service;
