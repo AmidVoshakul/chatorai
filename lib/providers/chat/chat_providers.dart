@@ -2,9 +2,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/providers/chat/chat_repository.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
+import 'package:chatorai/services/chat_ai_service.dart';
+import 'package:chatorai/providers/model_provider.dart';
 
 final chatStorageServiceProvider = Provider<ChatStorageService>((ref) {
   return ChatStorageService();
+});
+
+final chatAiServiceProvider = Provider<ChatAiService>((ref) {
+  final client = ref.watch(openRouterServiceProvider);
+  return ChatAiService(client: client);
 });
 
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {

@@ -122,10 +122,20 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
   void didUpdateWidget(ChatMessages oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    // Skip heading updates during streaming to prevent UI lag
+    final newMessages = widget.chat?.messages ?? [];
+    final isStreaming =
+        newMessages.isNotEmpty &&
+        !newMessages.last.isComplete &&
+        newMessages.last.role == MessageRole.assistant;
+
+    if (isStreaming) {
+      return;
+    }
+
     // Update headings when chat content changes
     // Check for: chat ID change, message count change, or content changes
     final oldMessages = oldWidget.chat?.messages ?? [];
-    final newMessages = widget.chat?.messages ?? [];
 
     bool shouldUpdate =
         widget.chat?.id != oldWidget.chat?.id ||

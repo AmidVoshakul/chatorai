@@ -33,42 +33,6 @@ class OpenRouterConstants {
   static const String envBaseUrl = 'OPENROUTER_BASE_URL';
 }
 
-// Message and role enums from chat_models.dart
-enum ChatRole { user, assistant, system }
-
-class ChatMessage {
-  final ChatRole role;
-  final String content;
-  final DateTime timestamp;
-
-  ChatMessage({
-    required this.role,
-    required this.content,
-    required this.timestamp,
-  });
-
-  factory ChatMessage.fromMap(Map<String, dynamic> map) {
-    return ChatMessage(
-      role: ChatRole.values.firstWhere(
-        (r) => r.name.toLowerCase() == map['role']?.toString().toLowerCase(),
-        orElse: () => ChatRole.user,
-      ),
-      content: map['content']?.toString() ?? '',
-      timestamp: DateTime.fromMillisecondsSinceEpoch(
-        map['timestamp'] ?? DateTime.now().millisecondsSinceEpoch,
-      ),
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'role': role.name,
-      'content': content,
-      'timestamp': timestamp.millisecondsSinceEpoch,
-    };
-  }
-}
-
 // Model and capabilities classes
 
 class ModelCapabilities {

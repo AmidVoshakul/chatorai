@@ -11,6 +11,7 @@ import 'package:chatorai/providers.dart'
         streamingContentProvider,
         chatListProvider,
         chatStorageServiceProvider,
+        chatAiServiceProvider,
         currentChatIdProvider,
         currentChatProvider,
         chatScreenUIProvider,
@@ -18,7 +19,6 @@ import 'package:chatorai/providers.dart'
 import 'package:chatorai/providers/chat/chat_screen_provider.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/services/openrouter_service.dart';
-import 'package:chatorai/services/chat_ai_service.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/models/model_settings.dart';
 import 'package:chatorai/widgets/sidebar/sidebar.dart';
@@ -48,7 +48,6 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen>
     with TickerProviderStateMixin {
   late ChatStorageService _chatStorageService;
-  late ChatAiService _aiService;
   late ScrollController _messageScrollController;
   ChatScrollUtils? _chatScrollUtils;
 
@@ -66,7 +65,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void initState() {
     super.initState();
     _chatStorageService = ref.read(chatStorageServiceProvider);
-    _aiService = ChatAiService(client: ref.read(openRouterServiceProvider));
 
     _messageScrollController = ScrollController();
     _messageScrollController.addListener(_handleScroll);
@@ -514,7 +512,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   Future<void> _streamAIResponse(Chat chat) async {
     final messages = chat.messages
         .where((m) => !m.isError)
-        .map((msg) => _aiService.convertMessageToOpenRouterFormat(msg))
+        .map(
+          (msg) => ref
+              .read(chatAiServiceProvider)
+              .convertMessageToOpenRouterFormat(msg),
+        )
         .toList();
 
     final modelSettingsNotifier = ref.read(modelSettingsProvider.notifier);
@@ -553,7 +555,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     String accumulatedReasoning = '';
 
     DateTime lastUpdateTime = DateTime.now();
-    const updateIntervalMs = 50;
+    const updateIntervalMs = 100;
 
     void throttleUpdate() {
       final now = DateTime.now();
@@ -585,8 +587,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       }
     }
 
-    final attemptMsgs = _aiService.sanitizeMessages(messages);
-    final client = _aiService.client;
+    final aiService = ref.read(chatAiServiceProvider);
+    final attemptMsgs = aiService.sanitizeMessages(messages);
+    final client = aiService.client;
 
     while (true) {
       try {
@@ -771,6 +774,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     String newContent,
   ) async {
     if (currentChat == null) return;
+
+    ref.read(chatScreenProvider.notifier).hideSuggestions();
+
     final messages = currentChat!.messages;
     final messageIndex = messages.indexWhere((m) => m.id == messageId);
     if (messageIndex == -1) return;
@@ -784,21 +790,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       editedUserMessage,
     );
 
-    for (int i = messages.length - 1; i >= messageIndex; i--) {
+    // Delete all messages AFTER the edited one (but keep messages BEFORE it)
+    for (int i = messages.length - 1; i > messageIndex; i--) {
       await _chatStorageService.deleteMessageFromChat(
         currentChat!.id,
         messages[i].id,
       );
     }
 
+    // Keep all messages BEFORE the edited one, replacing it with edited version
+    final messagesBeforeEdit = messages.sublist(0, messageIndex + 1);
+    messagesBeforeEdit[messagesBeforeEdit.length - 1] = editedUserMessage;
+
     final updatedChat = currentChat!.copyWith(
-      messages: [editedUserMessage],
+      messages: messagesBeforeEdit,
       updatedAt: DateTime.now(),
     );
 
     final assistantMessage = _createAssistantMessage();
     final chatWithAssistant = updatedChat.copyWith(
-      messages: [editedUserMessage, assistantMessage],
+      messages: [...messagesBeforeEdit, assistantMessage],
       updatedAt: DateTime.now(),
     );
 
@@ -1204,11 +1215,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
 
     try {
-      final response = await _aiService.getChatCompletionWithAdaptiveRollback(
-        model: selectedModelId,
-        messages: suggestionPrompt,
-        modelSettings: suggestionSettings,
-      );
+      final response = await ref
+          .read(chatAiServiceProvider)
+          .getChatCompletionWithAdaptiveRollback(
+            model: selectedModelId,
+            messages: suggestionPrompt,
+            modelSettings: suggestionSettings,
+          );
       return parseSuggestions(response.content);
     } catch (e) {
       final localizations = AppLocalizations.of(context);

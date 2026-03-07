@@ -60,7 +60,7 @@ class ModelNotifier extends Notifier<ModelState> {
     return const ModelState();
   }
 
-  OpenRouterService get _openRouterService =>
+  OpenRouterClient get _openRouterService =>
       ref.read(openRouterServiceProvider);
 
   Future<void> _loadSettingsAsync() async {
@@ -119,13 +119,14 @@ class ModelNotifier extends Notifier<ModelState> {
         retryCount++;
       }
 
-      if (!openRouterService.isReady()) {
+      if (!(openRouterService as OpenRouterService).isReady()) {
         _logger.logError('[ModelNotifier] Service not ready after max retries');
         state = state.copyWith(modelsLoaded: true, isLoadingModels: false);
         return;
       }
 
-      final models = await openRouterService.getAvailableModels();
+      final models = await (openRouterService as OpenRouterService)
+          .getAvailableModels();
       final availableModels = _deduplicateModels(models);
 
       String selectedModelId = state.selectedModelId;
@@ -164,7 +165,8 @@ class ModelNotifier extends Notifier<ModelState> {
       await Future<void>.delayed(const Duration(seconds: 2));
 
       try {
-        final retryModels = await _openRouterService.getAvailableModels();
+        final retryModels = await (_openRouterService as OpenRouterService)
+            .getAvailableModels();
         final availableModels = _deduplicateModels(retryModels);
 
         OpenRouterModel? selectedModelObject;
@@ -279,11 +281,10 @@ class ModelNotifier extends Notifier<ModelState> {
   }
 }
 
-final openRouterServiceProvider = Provider<OpenRouterService>((ref) {
+final openRouterServiceProvider = Provider<OpenRouterClient>((ref) {
   final networkState = ref.watch(networkServiceProvider);
   final service = OpenRouterService(isConnected: networkState.isConnected);
 
-  // Listen to network changes and update service
   ref.listen(networkServiceProvider, (previous, next) {
     service.setConnectivityStatus(next.isConnected);
   });
