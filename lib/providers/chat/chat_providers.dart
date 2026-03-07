@@ -2,8 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/providers/chat/chat_repository.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
-import 'package:chatorai/services/speech_to_text_service.dart'
-    show SpeechUiState;
 
 final chatStorageServiceProvider = Provider<ChatStorageService>((ref) {
   return ChatStorageService();
@@ -70,14 +68,18 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
   }
 
   void updateChat(Chat updatedChat) {
-    state.whenData((chats) {
+    final currentState = state;
+    if (currentState.hasValue) {
+      final chats = currentState.value!;
       final index = chats.indexWhere((c) => c.id == updatedChat.id);
       if (index != -1) {
         final newChats = List<Chat>.from(chats);
         newChats[index] = updatedChat;
         state = AsyncValue.data(newChats);
+        // Persist to storage
+        ref.read(chatRepositoryProvider).updateChat(updatedChat);
       }
-    });
+    }
   }
 }
 
@@ -99,21 +101,3 @@ final currentChatProvider = Provider<Chat?>((ref) {
     },
   );
 });
-
-final isStreamingProvider = StateProvider<bool>((ref) => false);
-
-final continuationSuggestionsProvider = StateProvider<List<String>>(
-  (ref) => [],
-);
-
-final showSuggestionsProvider = StateProvider<bool>((ref) => false);
-
-final welcomeSuggestionsProvider = StateProvider<List<String>>((ref) => []);
-
-final showWelcomeSuggestionsProvider = StateProvider<bool>((ref) => false);
-
-final speechUiStateProvider = StateProvider<SpeechUiState>(
-  (ref) => SpeechUiState.idle,
-);
-
-final speechStatusMessageProvider = StateProvider<String>((ref) => '');

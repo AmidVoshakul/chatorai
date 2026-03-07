@@ -250,12 +250,15 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     // 1. There ARE messages (user has sent something)
     // 2. AND last message is assistant
     // 3. AND it has no content yet AND no reasoning yet (waiting for first chunk)
+    // 4. AND there's no streaming content/reasoning (first chunk not received yet)
     final shouldShowWaitingAnimation =
         hasMessages &&
         hasAssistantMessage &&
         messages.last.content.isEmpty &&
         (messages.last.reasoning == null || messages.last.reasoning!.isEmpty) &&
-        !messages.last.isComplete;
+        !messages.last.isComplete &&
+        streamingContent.isEmpty &&
+        streamingReasoning.isEmpty;
 
     // Show welcome suggestions when chat is empty and welcome suggestions are enabled
     final shouldShowWelcome =

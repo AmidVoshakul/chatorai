@@ -358,20 +358,20 @@ class _WelcomeSuggestionsState extends ConsumerState<WelcomeSuggestions>
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // Welcome icon
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(
-                          alpha: 0.15,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.waving_hand,
-                        size: 24,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
+                    // Container(
+                    //   padding: const EdgeInsets.all(8),
+                    //   decoration: BoxDecoration(
+                    //     color: theme.colorScheme.primary.withValues(
+                    //       alpha: 0.15,
+                    //     ),
+                    //     borderRadius: BorderRadius.circular(12),
+                    //   ),
+                    //   // child: Icon(
+                    //   //   Icons.waving_hand,
+                    //   //   size: 24,
+                    //   //   color: theme.colorScheme.primary,
+                    //   // ),
+                    // ),
                     const SizedBox(height: 12),
 
                     // Welcome text

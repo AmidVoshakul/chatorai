@@ -10,14 +10,9 @@ import 'package:chatorai/providers.dart'
         modelSettingsProvider,
         streamingContentProvider,
         chatListProvider,
+        chatStorageServiceProvider,
         currentChatIdProvider,
-        isStreamingProvider,
-        continuationSuggestionsProvider,
-        showSuggestionsProvider,
-        welcomeSuggestionsProvider,
-        showWelcomeSuggestionsProvider,
-        speechUiStateProvider,
-        speechStatusMessageProvider;
+        chatScreenUIProvider;
 import 'package:chatorai/providers/chat/streaming_content_controller.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/services/openrouter_service.dart';
@@ -60,10 +55,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   late ChatStorageService _chatStorageService;
   late OpenRouterClient _openRouterService;
 
-  bool _isSidebarCollapsed = false;
-
-  List<Chat> _chats = [];
-  Chat? _currentChat;
   final TextEditingController _titleController = TextEditingController();
   final FocusNode _chatInputFocusNode = FocusNode();
   late ScrollController _messageScrollController;
@@ -81,12 +72,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   // Streaming state
   bool _isStreaming = false;
 
-  // Navigator state
+  // Navigator state - now managed via provider
   final GlobalKey<ChatMessagesState> _chatMessagesKey =
       GlobalKey<ChatMessagesState>();
-  bool _isNavigatorVisible = false;
-  List<MarkdownHeadingInfoWithKey> _navigatorHeadings = [];
-  int _activeHeadingIndex = -1;
 
   // Sliding AppBar state
   final GlobalKey<SlidingAppBarState> _slidingAppBarKey =
@@ -101,32 +89,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   late StreamingContentNotifier _streamingController;
 
   // Provider-based getters (these delegate to providers)
+  // Provider-based getters
   List<Chat> get chats =>
-      ref.watch(chatListProvider).whenOrNull(data: (d) => d) ?? _chats;
-  bool get isStreamingFromProvider => ref.watch(isStreamingProvider);
-  List<String> get continuationSuggestionsFromProvider =>
-      ref.watch(continuationSuggestionsProvider);
-  bool get showSuggestionsFromProvider => ref.watch(showSuggestionsProvider);
-  List<String> get welcomeSuggestionsFromProvider =>
-      ref.watch(welcomeSuggestionsProvider);
-  bool get showWelcomeSuggestionsFromProvider =>
-      ref.watch(showWelcomeSuggestionsProvider);
-  SpeechUiState get speechUiStateFromProvider =>
-      ref.watch(speechUiStateProvider);
-  String get speechStatusMessageFromProvider =>
-      ref.watch(speechStatusMessageProvider);
+      ref.watch(chatListProvider).whenOrNull(data: (d) => d) ?? [];
+
+  // Local current chat - synchronized with currentChatIdProvider
+  Chat? _currentChat;
+  Chat? get currentChat => _currentChat;
+
+  set currentChat(Chat? chat) {
+    _currentChat = chat;
+    ref.read(currentChatIdProvider.notifier).state = chat?.id;
+  }
 
   @override
   void initState() {
     super.initState();
-    _chatStorageService = ChatStorageService();
+    _chatStorageService = ref.read(chatStorageServiceProvider);
     _openRouterService = widget.openRouterService ?? OpenRouterService();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _streamingController = ref.read(streamingContentProvider.notifier);
-      }
-    });
+    _streamingController = ref.read(streamingContentProvider.notifier);
 
     _messageScrollController = ScrollController();
 
@@ -151,6 +132,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
     _chatScrollUtils!.initialize();
 
+    // Show welcome suggestions on initial load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _showWelcomeSuggestionsForNewChat();
+      }
+    });
+
     // Initialize model selection from model provider in post frame callback
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -159,15 +147,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         _selectedModelObject = modelState.selectedModelObject;
       }
     });
-
-    // Load chats after a short delay to ensure context is ready
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadChats();
-    });
   }
+
+  // Scroll throttling for performance
+  DateTime? _lastScrollUpdate;
+  static const _scrollThrottleDuration = Duration(milliseconds: 16); // ~60fps
 
   // Handle scroll events for sliding app bar
   void _handleScrollForSlidingAppBar() {
+    final now = DateTime.now();
+    if (_lastScrollUpdate != null &&
+        now.difference(_lastScrollUpdate!) < _scrollThrottleDuration) {
+      return;
+    }
+    _lastScrollUpdate = now;
+
     if (!_messageScrollController.hasClients) return;
 
     final offset = _messageScrollController.offset;
@@ -183,7 +177,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   }
 
   void _handleScrollForHeadingSync() {
-    if (!_messageScrollController.hasClients || _navigatorHeadings.isEmpty) {
+    final now = DateTime.now();
+    if (_lastScrollUpdate != null &&
+        now.difference(_lastScrollUpdate!) < _scrollThrottleDuration) {
+      return;
+    }
+    _lastScrollUpdate = now;
+
+    final uiState = ref.read(chatScreenUIProvider);
+    if (!_messageScrollController.hasClients ||
+        uiState.navigatorHeadings.isEmpty) {
       return;
     }
 
@@ -192,8 +195,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     int newActiveIndex = -1;
 
-    for (int i = 0; i < _navigatorHeadings.length; i++) {
-      final heading = _navigatorHeadings[i];
+    for (int i = 0; i < uiState.navigatorHeadings.length; i++) {
+      final heading = uiState.navigatorHeadings[i];
       final context = heading.key.currentContext;
 
       if (context != null) {
@@ -213,13 +216,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     if (newActiveIndex == -1) {
       final scrollMax = _messageScrollController.position.maxScrollExtent;
       if (currentOffset >= scrollMax - 100) {
-        newActiveIndex = _navigatorHeadings.length - 1;
+        newActiveIndex = uiState.navigatorHeadings.length - 1;
       }
     }
 
-    if (newActiveIndex != _activeHeadingIndex) {
-      setState(() {
-        _activeHeadingIndex = newActiveIndex;
+    if (newActiveIndex != uiState.activeHeadingIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && newActiveIndex != uiState.activeHeadingIndex) {
+          ref
+              .read(chatScreenUIProvider.notifier)
+              .setActiveHeadingIndex(newActiveIndex);
+        }
       });
     }
   }
@@ -235,34 +242,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     super.dispose();
   }
 
-  Future<void> _loadChats() async {
-    try {
-      final chats = await _chatStorageService.getChats();
-      setState(() {
-        _chats = chats;
-        // Always show welcome suggestions on app load
-        // User can either send a message (creates new chat) or open sidebar to select existing chat
-        _showWelcomeSuggestionsForEmptyState();
-      });
-    } catch (e) {
-      _logger.logError('[ChatScreen] Error loading chats: $e');
-    }
-  }
-
   // Helper method to update both current chat and chats list
-  void _updateCurrentChat(Chat updatedChat) {
+  // Set skipUIUpdate = true during streaming to avoid full rebuilds
+  void _updateCurrentChat(Chat updatedChat, {bool skipUIUpdate = false}) {
+    // Update local variable
     _currentChat = updatedChat;
-    // Update the chat in the _chats list
-    final index = _chats.indexWhere((c) => c.id == updatedChat.id);
-    if (index != -1) {
-      _chats[index] = updatedChat;
-    }
 
     // Update the chat in Riverpod provider
     ref.read(chatListProvider.notifier).updateChat(updatedChat);
 
-    // Просто вызываем setState без throttling
-    setState(() {});
+    // Skip setState during streaming to avoid full rebuilds
+    if (!skipUIUpdate) {
+      setState(() {});
+    }
   }
 
   Future<void> _createNewChat() async {
@@ -273,7 +265,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     ref.read(currentChatIdProvider.notifier).state = newChat.id;
 
     setState(() {
-      _currentChat = newChat;
+      currentChat = newChat;
     });
 
     _slidingAppBarKey.currentState?.reset();
@@ -303,23 +295,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     });
   }
 
-  void _showWelcomeSuggestionsForEmptyState() {
-    // Generate random welcome questions
-    final questions = WelcomeQuestionsData.getRandomQuestions(
-      context,
-      count: 4,
-    );
-
-    setState(() {
-      _welcomeSuggestions = questions;
-      _showWelcomeSuggestions = true;
-      _currentChat = null; // Always reset to no chat selected
-      // Hide continuation suggestions
-      _showSuggestions = false;
-      _continuationSuggestions.clear();
-    });
-  }
-
   void _selectChat(String chatId) {
     // Get chat from Riverpod provider
     final chatListAsync = ref.read(chatListProvider);
@@ -345,7 +320,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final hasMessages = chat.messages.isNotEmpty;
 
     setState(() {
-      _currentChat = chat;
+      currentChat = chat;
       // Reset suggestions state - always hide first
       _showWelcomeSuggestions = false;
       _welcomeSuggestions.clear();
@@ -399,10 +374,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       await ref.read(chatListProvider.notifier).deleteChat(chatId);
 
       // Clear current chat if it was deleted and update provider
-      if (_currentChat?.id == chatId) {
+      if (currentChat?.id == chatId) {
         ref.read(currentChatIdProvider.notifier).state = null;
         setState(() {
-          _currentChat = null;
+          currentChat = null;
         });
       }
     }
@@ -424,24 +399,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     // Handle sidebar based on screen width
     final screenWidth = MediaQuery.of(context).size.width;
+    final sidebarUI = ref.read(chatScreenUIProvider);
     if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
-      if (!_isSidebarCollapsed) {
-        setState(() {
-          _isSidebarCollapsed = true;
-        });
+      if (!sidebarUI.isSidebarCollapsed) {
+        ref.read(chatScreenUIProvider.notifier).setSidebarCollapsed(true);
       }
     } else {
       // On wide screens, ensure sidebar stays open
-      if (_isSidebarCollapsed) {
-        setState(() {
-          _isSidebarCollapsed = false;
-        });
+      if (sidebarUI.isSidebarCollapsed) {
+        ref.read(chatScreenUIProvider.notifier).setSidebarCollapsed(false);
       }
     }
 
-    if (_currentChat == null) {
+    if (currentChat == null) {
       await _createNewChat();
-      if (_currentChat == null) {
+      if (currentChat == null) {
         _logger.logError('[ChatScreen] Failed to create chat');
         return;
       }
@@ -454,42 +426,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
 
     // Add user message to chat storage
-    await _chatStorageService.addMessageToChat(_currentChat!.id, userMessage);
+    await _chatStorageService.addMessageToChat(currentChat!.id, userMessage);
 
     // Get updated chat from storage (includes title update if it was a new chat)
-    final chatFromStorage = await _chatStorageService.getChat(_currentChat!.id);
+    final chatFromStorage = await _chatStorageService.getChat(currentChat!.id);
     if (chatFromStorage != null) {
-      _currentChat = chatFromStorage;
+      currentChat = chatFromStorage;
     }
-
-    // Update local state immediately with the message
-    final updatedChat = _currentChat!.copyWith(
-      messages: [..._currentChat!.messages, userMessage],
-      updatedAt: DateTime.now(),
-    );
-    _updateCurrentChat(updatedChat);
 
     // Add assistant placeholder (indicators will show)
     final assistantMessage = _createAssistantMessage();
 
-    await _chatStorageService.addMessageToChat(
-      _currentChat!.id,
-      assistantMessage,
-    );
-
-    // Get updated chat from storage to ensure we have latest data
-    final chatFromStorage2 = await _chatStorageService.getChat(
-      _currentChat!.id,
-    );
-    if (chatFromStorage2 != null) {
-      _currentChat = chatFromStorage2;
-    }
-
-    final chatWithAssistant = _currentChat!.copyWith(
-      messages: [..._currentChat!.messages, assistantMessage],
+    // Combine user message (from storage) and assistant placeholder in ONE update
+    final allMessages = [...currentChat!.messages, assistantMessage];
+    final chatWithBoth = currentChat!.copyWith(
+      messages: allMessages,
       updatedAt: DateTime.now(),
     );
-    _updateCurrentChat(chatWithAssistant);
+
+    // Persist assistant placeholder to storage asynchronously
+    _chatStorageService.addMessageToChat(currentChat!.id, assistantMessage);
+
+    _updateCurrentChat(chatWithBoth);
 
     // CRITICAL: Scroll to indicator AFTER it appears
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -504,7 +462,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   ///
   /// Удаляет последнее AI сообщение и генерирует новый ответ на основе последнего user сообщения
   Future<void> _regenerateResponse() async {
-    if (_currentChat == null || _currentChat!.messages.isEmpty) {
+    if (currentChat == null || currentChat!.messages.isEmpty) {
       _logger.logError('[ChatScreen] Cannot regenerate - no chat or messages');
       return;
     }
@@ -514,7 +472,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       _continuationSuggestions.clear();
     });
 
-    final lastAIMessageIndex = _currentChat!.messages.lastIndexWhere(
+    final lastAIMessageIndex = currentChat!.messages.lastIndexWhere(
       (m) => m.role == MessageRole.assistant,
     );
 
@@ -523,7 +481,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       return;
     }
 
-    final lastUserMessageIndex = _currentChat!.messages.lastIndexWhere(
+    final lastUserMessageIndex = currentChat!.messages.lastIndexWhere(
       (m) => m.role == MessageRole.user,
     );
 
@@ -534,24 +492,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       return;
     }
 
-    final lastUserMessage = _currentChat!.messages[lastUserMessageIndex];
-    final lastAIMessage = _currentChat!.messages[lastAIMessageIndex];
+    final lastUserMessage = currentChat!.messages[lastUserMessageIndex];
+    final lastAIMessage = currentChat!.messages[lastAIMessageIndex];
 
     // Удаляем AI сообщение из базы данных
     await _chatStorageService.deleteMessageFromChat(
-      _currentChat!.id,
+      currentChat!.id,
       lastAIMessage.id,
     );
 
     // Обновляем локальный чат без AI сообщения
-    final updatedMessages = List<Message>.from(_currentChat!.messages);
+    final updatedMessages = List<Message>.from(currentChat!.messages);
     updatedMessages.removeAt(lastAIMessageIndex);
 
-    final updatedChat = _currentChat!.copyWith(
+    final updatedChat = currentChat!.copyWith(
       messages: updatedMessages,
       updatedAt: DateTime.now(),
     );
-    _updateCurrentChat(updatedChat);
 
     // Сбрасываем scroll lock
     _chatScrollUtils?.resetAutoScrollLock();
@@ -566,16 +523,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       model: _selectedModel,
     );
 
-    await _chatStorageService.addMessageToChat(
-      _currentChat!.id,
-      newAssistantMessage,
-    );
-
-    // Обновляем локальный чат с новым placeholder
-    final chatWithNewPlaceholder = _currentChat!.copyWith(
+    // Combine update: remove old AI message and add new placeholder in ONE call
+    final chatWithNewPlaceholder = updatedChat.copyWith(
       messages: [...updatedMessages, newAssistantMessage],
       updatedAt: DateTime.now(),
     );
+
+    // Persist asynchronously
+    _chatStorageService.addMessageToChat(currentChat!.id, newAssistantMessage);
+
     _updateCurrentChat(chatWithNewPlaceholder);
 
     // Прокручиваем к индикатору
@@ -588,7 +544,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   }
 
   Future<void> _sendToAI(String userMessage) async {
-    if (_currentChat == null) {
+    if (currentChat == null) {
       _logger.logError('[ChatScreen] No current chat available in _sendToAI');
       return;
     }
@@ -607,21 +563,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         isComplete: true,
       );
 
-      await _chatStorageService.addMessageToChat(
-        _currentChat!.id,
-        errorMessage,
-      );
+      await _chatStorageService.addMessageToChat(currentChat!.id, errorMessage);
 
       // Get updated chat from storage to ensure we have latest data
       final chatFromStorage = await _chatStorageService.getChat(
-        _currentChat!.id,
+        currentChat!.id,
       );
       if (chatFromStorage != null) {
-        _currentChat = chatFromStorage;
+        currentChat = chatFromStorage;
       }
 
-      final updatedChat = _currentChat!.copyWith(
-        messages: [..._currentChat!.messages, errorMessage],
+      final updatedChat = currentChat!.copyWith(
+        messages: [...currentChat!.messages, errorMessage],
         updatedAt: DateTime.now(),
       );
       _updateCurrentChat(updatedChat);
@@ -668,21 +621,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           );
 
           await _chatStorageService.addMessageToChat(
-            _currentChat!.id,
+            currentChat!.id,
             retryMessage,
           );
 
           // Get updated chat from storage to ensure we have latest data
           final chatFromStorage = await _chatStorageService.getChat(
-            _currentChat!.id,
+            currentChat!.id,
           );
           if (chatFromStorage != null) {
-            _currentChat = chatFromStorage;
+            currentChat = chatFromStorage;
           }
 
           _updateCurrentChat(
-            _currentChat!.copyWith(
-              messages: [..._currentChat!.messages, retryMessage],
+            currentChat!.copyWith(
+              messages: [...currentChat!.messages, retryMessage],
               updatedAt: DateTime.now(),
             ),
           );
@@ -690,12 +643,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           await Future.delayed(delay);
 
           // Remove retry message and retry
-          final messagesWithoutRetry = _currentChat!.messages
+          final messagesWithoutRetry = currentChat!.messages
               .where((msg) => msg.content != retryMessage.content)
               .toList();
 
           _updateCurrentChat(
-            _currentChat!.copyWith(
+            currentChat!.copyWith(
               messages: messagesWithoutRetry,
               updatedAt: DateTime.now(),
             ),
@@ -714,20 +667,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           );
 
           await _chatStorageService.addMessageToChat(
-            _currentChat!.id,
+            currentChat!.id,
             errorMessage,
           );
 
           // Get updated chat from storage to ensure we have latest data
           final chatFromStorage = await _chatStorageService.getChat(
-            _currentChat!.id,
+            currentChat!.id,
           );
           if (chatFromStorage != null) {
-            _currentChat = chatFromStorage;
+            currentChat = chatFromStorage;
           }
 
-          final updatedChat = _currentChat!.copyWith(
-            messages: [..._currentChat!.messages, errorMessage],
+          final updatedChat = currentChat!.copyWith(
+            messages: [...currentChat!.messages, errorMessage],
             updatedAt: DateTime.now(),
           );
 
@@ -775,12 +728,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   }
 
   Future<void> _streamAIResponse() async {
-    if (_currentChat == null) {
+    if (currentChat == null) {
       _logger.logError('[ChatScreen] No current chat available');
       return;
     }
 
-    final messages = _currentChat!.messages
+    final messages = currentChat!.messages
         .where((m) => !m.isError)
         .map((msg) => _convertMessageToOpenRouterFormat(msg))
         .toList();
@@ -895,7 +848,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   // Method to add assistant message from ChatMessages
   Future<void> addAssistantMessage() async {
-    if (_currentChat == null) return;
+    if (currentChat == null) return;
 
     final assistantMessage = Message(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -907,18 +860,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     // Update chat storage and local state immediately
     await _chatStorageService.addMessageToChat(
-      _currentChat!.id,
+      currentChat!.id,
       assistantMessage,
     );
 
     // Get updated chat from storage to ensure we have latest data
-    final chatFromStorage = await _chatStorageService.getChat(_currentChat!.id);
+    final chatFromStorage = await _chatStorageService.getChat(currentChat!.id);
     if (chatFromStorage != null) {
-      _currentChat = chatFromStorage;
+      currentChat = chatFromStorage;
     }
 
-    final updatedChat = _currentChat!.copyWith(
-      messages: [..._currentChat!.messages, assistantMessage],
+    final updatedChat = currentChat!.copyWith(
+      messages: [...currentChat!.messages, assistantMessage],
       updatedAt: DateTime.now(),
     );
     if (mounted) {
@@ -928,24 +881,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   // Method to update assistant message content
   void updateAssistantMessage(String content) {
-    if (_currentChat == null) return;
+    if (currentChat == null) return;
 
-    final messages = _currentChat!.messages;
+    final messages = currentChat!.messages;
     if (messages.isNotEmpty && messages.last.role == MessageRole.assistant) {
       final updatedMessage = messages.last.copyWith(content: content);
 
       _chatStorageService
           .updateMessageInChat(
-            _currentChat!.id,
+            currentChat!.id,
             updatedMessage.id,
             updatedMessage,
           )
           .then((_) {
-            final updatedChat = _currentChat!.copyWith(
+            final updatedChat = currentChat!.copyWith(
               messages: [
-                ..._currentChat!.messages.take(
-                  _currentChat!.messages.length - 1,
-                ),
+                ...currentChat!.messages.take(currentChat!.messages.length - 1),
                 updatedMessage,
               ],
               updatedAt: DateTime.now(),
@@ -970,29 +921,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     // Reset streaming controller
     _streamingController.reset();
 
-    if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
-      final lastMessage = _currentChat!.messages.last;
+    if (currentChat != null && currentChat!.messages.isNotEmpty) {
+      final lastMessage = currentChat!.messages.last;
 
       if (!lastMessage.isComplete) {
         final stoppedMessage = lastMessage.copyWith(isComplete: true);
 
         await _chatStorageService.updateMessageInChat(
-          _currentChat!.id,
+          currentChat!.id,
           stoppedMessage.id,
           stoppedMessage,
         );
 
         final chatFromStorage = await _chatStorageService.getChat(
-          _currentChat!.id,
+          currentChat!.id,
         );
         if (chatFromStorage != null) {
-          _currentChat = chatFromStorage;
+          currentChat = chatFromStorage;
         }
 
         _updateCurrentChat(
-          _currentChat!.copyWith(
+          currentChat!.copyWith(
             messages: [
-              ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
+              ...currentChat!.messages.take(currentChat!.messages.length - 1),
               stoppedMessage,
             ],
             updatedAt: DateTime.now(),
@@ -1003,9 +954,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   }
 
   void _refreshChatMessages() async {
-    if (_currentChat != null) {
+    // Close keyboard to prevent it from reopening after message deletion
+    FocusScope.of(context).unfocus();
+
+    if (currentChat != null) {
       try {
-        final updatedChat = await _chatStorageService.getChat(_currentChat!.id);
+        final updatedChat = await _chatStorageService.getChat(currentChat!.id);
         if (updatedChat != null) {
           _updateCurrentChat(updatedChat);
 
@@ -1022,13 +976,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   /// Обработка редактирования сообщения (просто сохранение)
   Future<void> _handleMessageEdited(String messageId, String newContent) async {
-    if (_currentChat == null) {
+    if (currentChat == null) {
       _logger.logError('[ChatScreen] Cannot edit message - no current chat');
       return;
     }
 
     try {
-      final messages = _currentChat!.messages;
+      final messages = currentChat!.messages;
       final messageIndex = messages.indexWhere((m) => m.id == messageId);
 
       if (messageIndex != -1) {
@@ -1036,7 +990,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           content: newContent,
         );
         await _chatStorageService.updateMessageInChat(
-          _currentChat!.id,
+          currentChat!.id,
           messageId,
           editedMessage,
         );
@@ -1044,7 +998,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         final updatedMessages = List<Message>.from(messages);
         updatedMessages[messageIndex] = editedMessage;
 
-        final updatedChat = _currentChat!.copyWith(
+        final updatedChat = currentChat!.copyWith(
           messages: updatedMessages,
           updatedAt: DateTime.now(),
         );
@@ -1099,14 +1053,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     String messageId,
     String newContent,
   ) async {
-    if (_currentChat == null) {
+    if (currentChat == null) {
       _logger.logError('[ChatScreen] Cannot edit and send - no current chat');
       return;
     }
 
     try {
       // 1. Обновляем сообщение пользователя
-      final messages = _currentChat!.messages;
+      final messages = currentChat!.messages;
       final messageIndex = messages.indexWhere((m) => m.id == messageId);
 
       if (messageIndex == -1) {
@@ -1119,7 +1073,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         content: newContent,
       );
       await _chatStorageService.updateMessageInChat(
-        _currentChat!.id,
+        currentChat!.id,
         messageId,
         editedUserMessage,
       );
@@ -1130,18 +1084,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       // Удаляем сообщения из storage, начиная с последнего
       for (int i = messages.length - 1; i > messageIndex; i--) {
         await _chatStorageService.deleteMessageFromChat(
-          _currentChat!.id,
+          currentChat!.id,
           messages[i].id,
         );
       }
 
       // 3. Создаём новый chat с обновлённым сообщением пользователя и без последующих сообщений
-      final updatedChat = _currentChat!.copyWith(
+      final updatedChat = currentChat!.copyWith(
         messages: messagesAfterEdit,
         updatedAt: DateTime.now(),
       );
-
-      _updateCurrentChat(updatedChat);
 
       // 4. Добавляем placeholder для AI ответа
       final assistantMessage = Message(
@@ -1153,16 +1105,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         model: _selectedModel,
       );
 
-      await _chatStorageService.addMessageToChat(
-        _currentChat!.id,
-        assistantMessage,
-      );
-
-      // Обновляем локальный чат с новым placeholder
+      // Combine: update chat with edited message AND add assistant placeholder in ONE call
       final chatWithAssistant = updatedChat.copyWith(
         messages: [...messagesAfterEdit, assistantMessage],
         updatedAt: DateTime.now(),
       );
+
+      // Persist asynchronously
+      _chatStorageService.updateMessageInChat(
+        currentChat!.id,
+        messageId,
+        editedUserMessage,
+      );
+      for (int i = messages.length - 1; i > messageIndex; i--) {
+        _chatStorageService.deleteMessageFromChat(
+          currentChat!.id,
+          messages[i].id,
+        );
+      }
+      _chatStorageService.addMessageToChat(currentChat!.id, assistantMessage);
+
       _updateCurrentChat(chatWithAssistant);
 
       // 5. Прокручиваем к индикатору
@@ -1204,29 +1166,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   // Navigator methods
   void _onHeadingsUpdated(List<MarkdownHeadingInfoWithKey> headings) {
-    // Use post-frame callback to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        setState(() {
-          _navigatorHeadings = headings;
-        });
+        ref.read(chatScreenUIProvider.notifier).setNavigatorHeadings(headings);
       }
     });
   }
 
   void _toggleNavigator() {
-    setState(() {
-      _isNavigatorVisible = !_isNavigatorVisible;
-    });
+    ref.read(chatScreenUIProvider.notifier).toggleNavigator();
   }
 
   void _onHeadingTap(String headingText, String messageId, int level) {
+    final uiState = ref.read(chatScreenUIProvider);
+
     // Find the heading
-    final heading = _navigatorHeadings.firstWhere(
+    final heading = uiState.navigatorHeadings.firstWhere(
       (h) =>
           h.text == headingText && h.messageId == messageId && h.level == level,
       orElse: () {
-        return _navigatorHeadings.firstWhere(
+        return uiState.navigatorHeadings.firstWhere(
           (h) => h.text == headingText,
           orElse: () {
             _logger.logError('[HeadingTap] Heading not found: $headingText');
@@ -1237,17 +1196,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
 
     // Update active heading index
-    final headingIndex = _navigatorHeadings.indexOf(heading);
+    final headingIndex = uiState.navigatorHeadings.indexOf(heading);
     if (headingIndex >= 0) {
-      setState(() {
-        _activeHeadingIndex = headingIndex;
-      });
+      ref
+          .read(chatScreenUIProvider.notifier)
+          .setActiveHeadingIndex(headingIndex);
     }
 
     // Close the navigator
-    setState(() {
-      _isNavigatorVisible = false;
-    });
+    ref.read(chatScreenUIProvider.notifier).setNavigatorVisible(false);
 
     // Use approximate scroll since ListView doesn't build all items
     Future.delayed(const Duration(milliseconds: 200), () async {
@@ -1261,17 +1218,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     int level,
     String headingText,
   ) async {
-    if (_currentChat == null || !_messageScrollController.hasClients) return;
+    if (currentChat == null || !_messageScrollController.hasClients) return;
 
     // Find message and calculate heading line index from content
     int messageIndex = -1;
     int headingLineIndex = 0;
 
-    for (int i = 0; i < _currentChat!.messages.length; i++) {
-      if (_currentChat!.messages[i].id == messageId) {
+    for (int i = 0; i < currentChat!.messages.length; i++) {
+      if (currentChat!.messages[i].id == messageId) {
         messageIndex = i;
         // Find which line the heading is on within the message content
-        final content = _currentChat!.messages[i].content;
+        final content = currentChat!.messages[i].content;
         final lines = content.split('\n');
         final headingPrefix = '${'#' * level} ';
 
@@ -1319,14 +1276,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   // Method to continue AI response
   void _continueAIResponse(String lastMessageId) async {
-    if (_currentChat == null) {
+    if (currentChat == null) {
       _logger.logError('[ChatScreen] No current chat available');
       return;
     }
 
-    final lastMessage = _currentChat!.messages.lastWhere(
+    final lastMessage = currentChat!.messages.lastWhere(
       (msg) => msg.role == MessageRole.assistant && msg.id == lastMessageId,
-      orElse: () => _currentChat!.messages.first,
+      orElse: () => currentChat!.messages.first,
     );
 
     if (lastMessage.content.isEmpty) {
@@ -1346,18 +1303,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     // Update chat storage and local state immediately
     await _chatStorageService.addMessageToChat(
-      _currentChat!.id,
+      currentChat!.id,
       continuationMessage,
     );
 
     // Get updated chat from storage to ensure we have latest data
-    final chatFromStorage = await _chatStorageService.getChat(_currentChat!.id);
+    final chatFromStorage = await _chatStorageService.getChat(currentChat!.id);
     if (chatFromStorage != null) {
-      _currentChat = chatFromStorage;
+      currentChat = chatFromStorage;
     }
 
-    final updatedChat = _currentChat!.copyWith(
-      messages: [..._currentChat!.messages, continuationMessage],
+    final updatedChat = currentChat!.copyWith(
+      messages: [...currentChat!.messages, continuationMessage],
       updatedAt: DateTime.now(),
     );
 
@@ -1427,13 +1384,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final reductionFactor = ChatScreenConstants.reductionFactor;
     int tokenReductionAttempts = 0;
 
-    // Set streaming state
+    // Set streaming state for UI (button display)
     setState(() {
       _isStreaming = true;
     });
 
     // Start streaming controller for selective UI updates
-    _streamingController.startStreaming(_currentChat?.id ?? '');
+    _streamingController.startStreaming(currentChat?.id ?? '');
 
     // Local accumulators for this stream (not state variables)
     String accumulatedContent = '';
@@ -1442,10 +1399,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     // Create a local flag that can be captured by closures
     bool isStreamingLocal = true;
 
-    // THROTTLING: Timer to batch UI updates (every 50ms instead of every chunk)
+    // THROTTLING: Timer to batch UI updates (every 16ms = 60fps)
     DateTime lastUpdateTime = DateTime.now();
-    const updateIntervalMs =
-        50; // 20 FPS for UI updates - sufficient for smooth feel
+    const updateIntervalMs = 16; // 60 FPS for smoother UI
 
     // Pending update flags
     bool pendingContentUpdate = false;
@@ -1459,8 +1415,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       if (elapsed >= updateIntervalMs) {
         // Time to update UI via streaming controller (selective rebuild)
         if (mounted &&
-            _currentChat != null &&
-            _currentChat!.messages.isNotEmpty) {
+            currentChat != null &&
+            currentChat!.messages.isNotEmpty) {
           // Update streaming controller instead of full setState
           _streamingController.updateContent(
             accumulatedContent,
@@ -1488,8 +1444,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         await Future.delayed(const Duration(milliseconds: 10));
         if (pendingContentUpdate || pendingReasoningUpdate) {
           if (mounted &&
-              _currentChat != null &&
-              _currentChat!.messages.isNotEmpty) {
+              currentChat != null &&
+              currentChat!.messages.isNotEmpty) {
             // Update streaming controller instead of full setState
             _streamingController.updateContent(
               accumulatedContent,
@@ -1543,17 +1499,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             await flushPendingUpdates();
 
             if (mounted &&
-                _currentChat != null &&
-                _currentChat!.messages.isNotEmpty) {
-              final lastMessage = _currentChat!.messages.last;
+                currentChat != null &&
+                currentChat!.messages.isNotEmpty) {
+              final lastMessage = currentChat!.messages.last;
               final completedMessage = lastMessage.copyWith(
                 content: accumulatedContent,
                 reasoning: accumulatedReasoning,
                 isComplete: true,
               );
-              final newMessages = List<Message>.from(_currentChat!.messages);
+              final newMessages = List<Message>.from(currentChat!.messages);
               newMessages[newMessages.length - 1] = completedMessage;
-              final newChat = _currentChat!.copyWith(
+              final newChat = currentChat!.copyWith(
                 messages: newMessages,
                 updatedAt: DateTime.now(),
               );
@@ -1648,8 +1604,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final errorMessage = _formatErrorMessage(error);
 
     // Update the existing assistant message with error content
-    if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
-      final lastMessage = _currentChat!.messages.last;
+    if (currentChat != null && currentChat!.messages.isNotEmpty) {
+      final lastMessage = currentChat!.messages.last;
       if (lastMessage.role == MessageRole.assistant) {
         // Update existing message with error content
         final errorResponseMessage = lastMessage.copyWith(
@@ -1659,22 +1615,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         );
 
         await _chatStorageService.updateMessageInChat(
-          _currentChat!.id,
+          currentChat!.id,
           errorResponseMessage.id,
           errorResponseMessage,
         );
 
         // Get updated chat from storage to ensure we have latest data
         final chatFromStorage = await _chatStorageService.getChat(
-          _currentChat!.id,
+          currentChat!.id,
         );
         if (chatFromStorage != null) {
-          _currentChat = chatFromStorage;
+          currentChat = chatFromStorage;
         }
 
-        final updatedChat = _currentChat!.copyWith(
+        final updatedChat = currentChat!.copyWith(
           messages: [
-            ..._currentChat!.messages.take(_currentChat!.messages.length - 1),
+            ...currentChat!.messages.take(currentChat!.messages.length - 1),
             errorResponseMessage,
           ],
           updatedAt: DateTime.now(),
@@ -1694,20 +1650,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         );
 
         await _chatStorageService.addMessageToChat(
-          _currentChat!.id,
+          currentChat!.id,
           errorResponseMessage,
         );
 
         // Get updated chat from storage to ensure we have latest data
         final chatFromStorage = await _chatStorageService.getChat(
-          _currentChat!.id,
+          currentChat!.id,
         );
         if (chatFromStorage != null) {
-          _currentChat = chatFromStorage;
+          currentChat = chatFromStorage;
         }
 
-        final updatedChat = _currentChat!.copyWith(
-          messages: [..._currentChat!.messages, errorResponseMessage],
+        final updatedChat = currentChat!.copyWith(
+          messages: [...currentChat!.messages, errorResponseMessage],
           updatedAt: DateTime.now(),
         );
 
@@ -1756,7 +1712,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   }
 
   bool _hasHeadings() {
-    return _navigatorHeadings.isNotEmpty;
+    return ref.read(chatScreenUIProvider).navigatorHeadings.isNotEmpty;
   }
 
   Message _createUserMessage(
@@ -1820,7 +1776,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       key: _chatMessagesKey,
       openRouterService: _openRouterService,
       chatStorageService: _chatStorageService,
-      chat: _currentChat,
+      chat: currentChat,
       selectedModel: _selectedModel,
       onSendMessage: _handleSendMessage,
       onMessageDeleted: _refreshChatMessages,
@@ -1839,8 +1795,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         });
       },
       onSuggestionsRefresh: () {
-        if (_currentChat != null && _currentChat!.messages.isNotEmpty) {
-          _showContinuationSuggestions(_currentChat!.messages.last);
+        if (currentChat != null && currentChat!.messages.isNotEmpty) {
+          _showContinuationSuggestions(currentChat!.messages.last);
         }
       },
       welcomeSuggestions: _welcomeSuggestions,
@@ -1931,15 +1887,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
 
     // Wrap with navigator overlay if needed
-    if (_navigatorHeadings.isNotEmpty) {
+    final uiState = ref.watch(chatScreenUIProvider);
+    if (uiState.navigatorHeadings.isNotEmpty) {
       return Stack(
         children: [
           baseLayout,
           // Navigator overlay with swipe to close
           MarkdownNavigatorSidebar(
-            headings: _navigatorHeadings,
-            activeHeadingIndex: _activeHeadingIndex,
-            isOpen: _isNavigatorVisible,
+            headings: uiState.navigatorHeadings,
+            activeHeadingIndex: uiState.activeHeadingIndex,
+            isOpen: uiState.isNavigatorVisible,
             onClose: _toggleNavigator,
             onHeadingTap: _onHeadingTap,
           ),
@@ -2045,9 +2002,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final screenWidth = MediaQuery.of(context).size.width;
 
     // Wrap with swipe gesture to open navigator (only if headings exist and navigator is closed)
+    final uiState = ref.watch(chatScreenUIProvider);
     Widget content = GestureDetector(
       onHorizontalDragUpdate: (details) {
-        if (_hasHeadings() && !_isNavigatorVisible) {
+        if (_hasHeadings() && !uiState.isNavigatorVisible) {
           // Swipe left from right edge to open
           if (details.primaryDelta! < -10 &&
               details.globalPosition.dx > screenWidth - 30) {
@@ -2125,15 +2083,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       );
 
       // Add the error message to the chat storage
-      if (_currentChat != null) {
+      if (currentChat != null) {
         await _chatStorageService.addMessageToChat(
-          _currentChat!.id,
+          currentChat!.id,
           errorMessageObject,
         );
 
         // Update the current chat state
-        final updatedChat = _currentChat!.copyWith(
-          messages: [..._currentChat!.messages, errorMessageObject],
+        final updatedChat = currentChat!.copyWith(
+          messages: [...currentChat!.messages, errorMessageObject],
           updatedAt: DateTime.now(),
         );
 

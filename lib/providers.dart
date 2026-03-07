@@ -12,3 +12,4 @@ export 'package:chatorai/services/network_service.dart'
 
 export 'package:chatorai/providers/chat/sidebar_provider.dart';
 export 'package:chatorai/providers/chat/streaming_content_controller.dart';
+export 'package:chatorai/providers/chat/chat_screen_ui_provider.dart';

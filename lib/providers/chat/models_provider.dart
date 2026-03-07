@@ -109,8 +109,7 @@ class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
 
   Future<void> selectModel(String modelId) async {
     final modelNotifier = ref.read(modelProvider.notifier);
-    await modelNotifier.setSelectedModelSilent(modelId);
-    modelNotifier.setSelectedModel(modelId);
+    await modelNotifier.setSelectedModel(modelId);
   }
 
   void _updateFilteredModels() {

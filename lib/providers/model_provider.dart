@@ -225,21 +225,6 @@ class ModelNotifier extends Notifier<ModelState> {
     }
   }
 
-  Future<void> setSelectedModelSilent(String modelId) async {
-    if (state.selectedModelId != modelId) {
-      final modelObject = state.availableModels.firstWhere(
-        (model) => model.id == modelId,
-        orElse: () => state.availableModels.first,
-      );
-
-      state = state.copyWith(
-        selectedModelId: modelId,
-        selectedModelObject: modelObject,
-      );
-      await _saveSettings();
-    }
-  }
-
   OpenRouterModel? getModelById(String modelId) {
     try {
       return state.availableModels.firstWhere((model) => model.id == modelId);

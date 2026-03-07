@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/providers/chat/chat_providers.dart';
-import 'package:chatorai/services/chat_storage_service.dart';
 
 class SidebarState {
   final String searchQuery;
@@ -18,11 +17,8 @@ class SidebarState {
 }
 
 class SidebarNotifier extends Notifier<SidebarState> {
-  late final ChatStorageService _storageService;
-
   @override
   SidebarState build() {
-    _storageService = ref.read(chatStorageServiceProvider);
     return const SidebarState();
   }
 
@@ -35,8 +31,7 @@ class SidebarNotifier extends Notifier<SidebarState> {
   }
 
   Future<void> renameChat(String chatId, String newTitle) async {
-    await _storageService.renameChat(chatId, newTitle);
-    ref.read(chatListProvider.notifier).renameChat(chatId, newTitle);
+    await ref.read(chatListProvider.notifier).renameChat(chatId, newTitle);
   }
 
   Future<void> deleteChat(String chatId) async {

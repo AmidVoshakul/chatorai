@@ -377,6 +377,9 @@ class _ChatMessageState extends State<ChatMessage>
                         color: Colors.red.withValues(alpha: 0.7),
                       ),
                       onPressed: () async {
+                        // Close keyboard before deleting
+                        FocusScope.of(context).unfocus();
+
                         final bool deleted = await MessageUtils.deleteMessage(
                           chatId: widget.chatId,
                           messageId: widget.message.id,
