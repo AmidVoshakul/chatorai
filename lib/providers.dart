@@ -6,6 +6,9 @@ export 'package:chatorai/providers/model_provider.dart'
     show modelProvider, openRouterServiceProvider;
 export 'package:chatorai/providers/model_settings_provider.dart';
 export 'package:chatorai/providers/chat/chat_providers.dart';
+export 'package:chatorai/providers/chat/chat_screen_notifier.dart';
+export 'package:chatorai/providers/chat/chat_screen_provider.dart'
+    show chatScreenProvider;
 
 export 'package:chatorai/services/network_service.dart'
     show networkServiceProvider;
