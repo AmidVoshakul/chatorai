@@ -14,12 +14,20 @@ import 'package:chatorai/widgets/settings/theme_selection_dialog.dart';
 import 'package:chatorai/widgets/settings/language_selection_dialog.dart';
 import 'package:chatorai/widgets/settings/about_dialog.dart';
 
+// ===========================================================================
+// SETTINGS SCREEN WIDGET
+// ===========================================================================
+
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
+
+// ===========================================================================
+// STATE
+// ===========================================================================
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   SettingsController? _controller;
@@ -28,6 +36,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _controller ??= SettingsController();
     return _controller!;
   }
+
+  // ===========================================================================
+  // LIFECYCLE
+  // ===========================================================================
 
   @override
   void initState() {
@@ -42,6 +54,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _controller?.dispose();
     super.dispose();
   }
+
+  // ===========================================================================
+  // BUILD METHOD
+  // ===========================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +112,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
   }
+
+  // ===========================================================================
+  // SECTION BUILDERS
+  // ===========================================================================
 
   Widget _buildAppearanceSection(
     BuildContext context,
@@ -171,6 +191,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 }
 
+// ===========================================================================
+// SETTINGS CONTROLLER
+// ===========================================================================
+
 class SettingsController {
   late TextEditingController apiKeyController;
   late TextEditingController baseUrlController;
@@ -191,6 +215,10 @@ class SettingsController {
     apiKeyController.dispose();
     baseUrlController.dispose();
   }
+
+  // ===========================================================================
+  // CONTROLLER METHODS
+  // ===========================================================================
 
   void validateApiKey(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;

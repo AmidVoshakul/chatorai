@@ -1,7 +1,7 @@
 /// Утилита для парсинга Markdown заголовков
 class MarkdownParser {
   /// Парсит заголовки из Markdown текста
-  /// Поддерживает уровни: #, ##, ###, ####, ####, ######
+  /// Поддерживает уровни: #, ##, ###
   static List<MarkdownHeadingInfo> parseHeadings(String content) {
     final lines = content.split('\n');
     final headings = <MarkdownHeadingInfo>[];
@@ -9,7 +9,7 @@ class MarkdownParser {
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i].trim();
 
-      // Парсим заголовки #, ##, ###, ####, ####, ######
+      // Парсим заголовки #, ##, ###
       if (line.startsWith('# ')) {
         headings.add(
           MarkdownHeadingInfo(
@@ -33,33 +33,6 @@ class MarkdownParser {
           MarkdownHeadingInfo(
             text: line.substring(4).trim(),
             level: 3,
-            lineIndex: i,
-            rawLine: line,
-          ),
-        );
-      } else if (line.startsWith('#### ')) {
-        headings.add(
-          MarkdownHeadingInfo(
-            text: line.substring(5).trim(),
-            level: 4,
-            lineIndex: i,
-            rawLine: line,
-          ),
-        );
-      } else if (line.startsWith('##### ')) {
-        headings.add(
-          MarkdownHeadingInfo(
-            text: line.substring(6).trim(),
-            level: 5,
-            lineIndex: i,
-            rawLine: line,
-          ),
-        );
-      } else if (line.startsWith('###### ')) {
-        headings.add(
-          MarkdownHeadingInfo(
-            text: line.substring(7).trim(),
-            level: 6,
             lineIndex: i,
             rawLine: line,
           ),

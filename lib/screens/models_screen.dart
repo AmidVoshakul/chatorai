@@ -1,3 +1,7 @@
+// ===========================================================================
+// IMPORTS
+// ===========================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
@@ -7,11 +11,19 @@ import 'package:chatorai/widgets/models/model_card_widget.dart';
 import 'package:chatorai/widgets/models/model_details_dialog_widget.dart';
 import 'package:chatorai/widgets/models/models_empty_state_widget.dart';
 
+// ===========================================================================
+// MODELS SCREEN WIDGET
+// ===========================================================================
+
 class ModelsScreen extends ConsumerWidget {
   final Function(String, OpenRouterModel?)? onModelSelected;
   final String? currentModel;
 
   const ModelsScreen({super.key, this.onModelSelected, this.currentModel});
+
+  // ===========================================================================
+  // BUILD METHOD
+  // ===========================================================================
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -57,6 +69,10 @@ class ModelsScreen extends ConsumerWidget {
       ),
     );
   }
+
+  // ===========================================================================
+  // SEARCH BAR BUILDER
+  // ===========================================================================
 
   Widget _buildSearchBar(
     BuildContext context,
@@ -143,6 +159,10 @@ class ModelsScreen extends ConsumerWidget {
     );
   }
 
+  // ===========================================================================
+  // CONTENT BUILDER
+  // ===========================================================================
+
   Widget _buildContent(
     BuildContext context,
     WidgetRef ref,
@@ -162,6 +182,10 @@ class ModelsScreen extends ConsumerWidget {
 
     return _buildModelsList(context, ref, state);
   }
+
+  // ===========================================================================
+  // MODELS LIST BUILDER
+  // ===========================================================================
 
   Widget _buildModelsList(
     BuildContext context,

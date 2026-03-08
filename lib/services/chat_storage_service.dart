@@ -6,6 +6,10 @@ import '../utils/logger.dart';
 // Initialize logger for this service
 final _logger = LogTags.storage;
 
+// ===========================================================================
+// CHAT STORAGE SERVICE
+// ===========================================================================
+
 class ChatStorageService {
   static const String _chatsKey = 'chats_storage';
 
@@ -174,6 +178,10 @@ class ChatStorageService {
       await _saveChatsToStorage(prefs, chats);
     }
   }
+
+  // ===========================================================================
+  // PRIVATE METHODS
+  // ===========================================================================
 
   /// Private method to get chats from storage
   Future<List<Chat>> _getChatsFromStorage(SharedPreferences prefs) async {

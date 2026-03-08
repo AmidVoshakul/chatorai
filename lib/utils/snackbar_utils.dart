@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+// ===========================================================================
+// ANIMATED SNACKBAR WIDGET
+// ===========================================================================
+
 /// Анимированный снackbar для отображения сверху
 class _AnimatedSnackbar extends StatefulWidget {
   final String message;
@@ -20,26 +24,31 @@ class _AnimatedSnackbar extends StatefulWidget {
   State<_AnimatedSnackbar> createState() => _AnimatedSnackbarState();
 }
 
-class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerProviderStateMixin {
+// ===========================================================================
+// ANIMATED SNACKBAR STATE
+// ===========================================================================
+
+class _AnimatedSnackbarState extends State<_AnimatedSnackbar>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    
+
     _animation = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
     );
-    
+
     _controller.forward();
-    
+
     Future.delayed(widget.duration, () {
       if (!mounted) return;
       _controller.reverse().then((_) {
@@ -60,32 +69,29 @@ class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerP
     final isDark = theme.brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 800;
-    
-    final glassColor = isDark 
+
+    final glassColor = isDark
         ? Colors.black.withValues(alpha: 0.7)
         : Colors.white.withValues(alpha: 0.85);
-    
-    final borderColor = isDark 
+
+    final borderColor = isDark
         ? Colors.white.withValues(alpha: 0.1)
         : Colors.black.withValues(alpha: 0.1);
-    
-    final padding = isDesktop 
+
+    final padding = isDesktop
         ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
         : const EdgeInsets.symmetric(horizontal: 16, vertical: 14);
-    
+
     final iconSize = isDesktop ? 18.0 : 20.0;
     final fontSize = isDesktop ? 11.0 : 12.0;
     final borderRadius = isDesktop ? 12.0 : 16.0;
-    
+
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
         return Transform.translate(
           offset: Offset(0, -20 * (1 - _animation.value)),
-          child: Opacity(
-            opacity: _animation.value,
-            child: child,
-          ),
+          child: Opacity(opacity: _animation.value, child: child),
         );
       },
       child: Container(
@@ -94,10 +100,7 @@ class _AnimatedSnackbarState extends State<_AnimatedSnackbar> with SingleTickerP
           color: glassColor,
           backgroundBlendMode: BlendMode.luminosity,
           borderRadius: BorderRadius.circular(borderRadius),
-          border: Border.all(
-            color: borderColor,
-            width: 1,
-          ),
+          border: Border.all(color: borderColor, width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.15),
@@ -312,10 +315,10 @@ class SnackbarUtils {
     required Duration duration,
   }) {
     _removeExistingOverlay(context);
-    
+
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 800;
-    
+
     final overlayState = Overlay.of(context);
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
@@ -339,7 +342,7 @@ class SnackbarUtils {
         ),
       ),
     );
-    
+
     _currentOverlayEntry = overlayEntry;
     overlayState.insert(overlayEntry);
   }

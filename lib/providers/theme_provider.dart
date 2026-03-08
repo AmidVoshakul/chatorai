@@ -7,7 +7,15 @@ import 'package:chatorai/utils/logger.dart';
 
 final _logger = LogTags.settings;
 
+// ===========================================================================
+// ENUMS
+// ===========================================================================
+
 enum AppThemeMode { light, dark, system }
+
+// ===========================================================================
+// THEME STATE
+// ===========================================================================
 
 class ThemeState {
   final AppThemeMode themeMode;
@@ -131,16 +139,28 @@ class ThemeState {
   }
 }
 
+// ===========================================================================
+// THEME NOTIFIER
+// ===========================================================================
+
 class ThemeNotifier extends Notifier<ThemeState> {
   static const String _themeModeKey = 'theme_mode';
   static const String _fontSizeKey = 'font_size';
   static const String _wideScreenModeKey = 'wide_screen_mode';
+
+  // ===========================================================================
+  // BUILD
+  // ===========================================================================
 
   @override
   ThemeState build() {
     _loadSettings();
     return const ThemeState();
   }
+
+  // ===========================================================================
+  // PRIVATE METHODS
+  // ===========================================================================
 
   Future<void> _loadSettings() async {
     try {
@@ -181,6 +201,10 @@ class ThemeNotifier extends Notifier<ThemeState> {
     }
   }
 
+  // ===========================================================================
+  // SETTER METHODS
+  // ===========================================================================
+
   void setThemeMode(AppThemeMode mode) {
     if (state.themeMode != mode) {
       state = state.copyWith(themeMode: mode);
@@ -210,6 +234,10 @@ class ThemeNotifier extends Notifier<ThemeState> {
 
   ThemeData getTheme() => state.getTheme();
 }
+
+// ===========================================================================
+// PROVIDER EXPORT
+// ===========================================================================
 
 final themeProvider = NotifierProvider<ThemeNotifier, ThemeState>(
   ThemeNotifier.new,

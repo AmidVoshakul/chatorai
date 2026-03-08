@@ -4,6 +4,10 @@ import 'package:chatorai/utils/logger.dart';
 
 final _logger = LogTags.settings;
 
+// ===========================================================================
+// LANGUAGE STATE
+// ===========================================================================
+
 class LanguageState {
   final String selectedLanguage;
   final bool isRTL;
@@ -61,6 +65,10 @@ class LanguageState {
     }
   }
 }
+
+// ===========================================================================
+// LANGUAGE NOTIFIER
+// ===========================================================================
 
 class LanguageNotifier extends Notifier<LanguageState> {
   static const String _languageKey = 'selected_language';
@@ -123,6 +131,10 @@ class LanguageNotifier extends Notifier<LanguageState> {
     _logger.logInfo('[LanguageNotifier] Language reset to default (en)');
   }
 }
+
+// ===========================================================================
+// PROVIDER
+// ===========================================================================
 
 final languageProvider = NotifierProvider<LanguageNotifier, LanguageState>(
   LanguageNotifier.new,

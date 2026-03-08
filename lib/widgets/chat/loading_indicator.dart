@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:chatorai/themes/app_theme.dart';
 
-/// Unified loading indicator for chat messages
-/// Shows animated dots only
+// ===========================================================================
+// CHAT LOADING INDICATOR
+// ===========================================================================
+
 class ChatLoadingIndicator extends StatelessWidget {
   final double size;
   final Color? color;
@@ -13,6 +15,10 @@ class ChatLoadingIndicator extends StatelessWidget {
     this.size = ChatoraiSizes.chatLoadingIndicatorDefaultSize,
     this.color,
   });
+
+  // =======================================================================
+  // BUILD METHOD
+  // =======================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +47,10 @@ class ChatLoadingIndicator extends StatelessWidget {
   }
 }
 
-/// Alternative loading indicator with dots animation (similar to ChatMessage)
+// ===========================================================================
+// CHAT TYPING DOTS INDICATOR
+// ===========================================================================
+
 class ChatTypingDotsIndicator extends StatelessWidget {
   final double dotSize;
   final Color? color;
@@ -51,6 +60,10 @@ class ChatTypingDotsIndicator extends StatelessWidget {
     this.dotSize = ChatoraiSizes.chatTypingDotsDefaultSize,
     this.color,
   });
+
+  // =======================================================================
+  // BUILD METHOD
+  // =======================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +91,10 @@ class ChatTypingDotsIndicator extends StatelessWidget {
   }
 }
 
-/// Animated dots for typing indicator
+// ===========================================================================
+// PRIVATE: TYPING DOTS ANIMATION
+// ===========================================================================
+
 class _TypingDotsAnimation extends StatefulWidget {
   final double dotSize;
   final Color? color;
@@ -92,6 +108,10 @@ class _TypingDotsAnimation extends StatefulWidget {
 class __TypingDotsAnimationState extends State<_TypingDotsAnimation>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+
+  // =======================================================================
+  // LIFECYCLE
+  // =======================================================================
 
   @override
   void initState() {
@@ -108,10 +128,18 @@ class __TypingDotsAnimationState extends State<_TypingDotsAnimation>
     super.dispose();
   }
 
+  // =======================================================================
+  // BUILD METHOD
+  // =======================================================================
+
   @override
   Widget build(BuildContext context) {
     return Row(children: [_buildDot(0), _buildDot(1), _buildDot(2)]);
   }
+
+  // =======================================================================
+  // HELPER METHODS
+  // =======================================================================
 
   Widget _buildDot(int index) {
     return AnimatedBuilder(

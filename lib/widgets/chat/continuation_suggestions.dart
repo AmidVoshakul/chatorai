@@ -4,6 +4,10 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/themes/app_theme.dart';
 
+// ===========================================================================
+// WIDGET CLASS
+// ===========================================================================
+
 class ContinuationSuggestions extends StatefulWidget {
   final List<String> suggestions;
   final Function(String) onSuggestionTap;
@@ -27,6 +31,10 @@ class ContinuationSuggestions extends StatefulWidget {
       _ContinuationSuggestionsState();
 }
 
+// ===========================================================================
+// STATE CLASS
+// ===========================================================================
+
 class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
@@ -34,6 +42,10 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
   int _currentIndex = 0;
   Timer? _cycleTimer;
   bool _isCycleActive = false;
+
+  // =======================================================================
+  // LIFECYCLE
+  // =======================================================================
 
   @override
   void initState() {
@@ -44,10 +56,8 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
       duration: ChatoraiDurations.normal,
     );
 
-    // Limit to 4 suggestions
     final limitedSuggestions = widget.suggestions.take(4).toList();
 
-    // Initialize pulse controllers
     for (int i = 0; i < limitedSuggestions.length; i++) {
       _pulseControllers.add(
         AnimationController(
@@ -82,10 +92,8 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
     super.didUpdateWidget(oldWidget);
     if (widget.suggestions != oldWidget.suggestions) {
       _stopCycle();
-      // Limit to 4 suggestions
       final limitedSuggestions = widget.suggestions.take(4).toList();
 
-      // Reinitialize controllers
       for (var c in _pulseControllers) {
         c.dispose();
       }
@@ -104,6 +112,14 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
       });
     }
   }
+
+  // =======================================================================
+  // PUBLIC API
+  // =======================================================================
+
+  // =======================================================================
+  // PRIVATE METHODS
+  // =======================================================================
 
   void _startCycle() {
     final limitedSuggestions = widget.suggestions.take(4).toList();
@@ -124,7 +140,6 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
       return;
     }
 
-    // Update current index
     setState(() {
       _currentIndex = index;
     });
@@ -158,6 +173,10 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
       _currentIndex = 0;
     });
   }
+
+  // =======================================================================
+  // BUILD METHOD
+  // =======================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -229,7 +248,6 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
                           ),
                         ),
                       ),
-                      // Refresh button
                       if (widget.onRefresh != null)
                         IconButton(
                           icon: Icon(
@@ -246,7 +264,6 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
                           tooltip: l10n.refreshQuestions,
                           splashRadius: ChatoraiSizes.iconButtonSplashRadius,
                         ),
-                      // Close button
                       IconButton(
                         icon: Icon(
                           Icons.close,
@@ -276,6 +293,10 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
       },
     );
   }
+
+  // =======================================================================
+  // HELPER WIDGETS
+  // =======================================================================
 
   Widget _buildLoading() {
     final l10n = AppLocalizations.of(context)!;
@@ -326,7 +347,6 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
     bool isActive,
     ThemeData theme,
   ) {
-    // Get animation for this suggestion
     Animation<double>? animation;
     final limitedSuggestions = widget.suggestions.take(4).toList();
     if (isActive &&
@@ -352,11 +372,9 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
             ? AnimatedBuilder(
                 animation: animation,
                 builder: (context, child) {
-                  // Use scale directly for perfectly synchronized transition
                   final scale = animation!.value;
-                  final progress = 1.0 - scale; // 0.0 to 0.04
+                  final progress = 1.0 - scale;
 
-                  // Smooth color transition - perfectly synced with scale
                   final bgColor = theme.brightness == Brightness.dark
                       ? Color.lerp(
                           theme.cardColor,
@@ -369,7 +387,6 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
                           progress * 2.5,
                         )!.withValues(alpha: 0.95);
 
-                  // Smooth shadow - synced with scale
                   final shadowOpacity = progress * 0.25;
 
                   return Transform.scale(

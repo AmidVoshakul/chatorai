@@ -10,12 +10,20 @@ import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
+// ===========================================================================
+// MAIN ENTRY POINT
+// ===========================================================================
+
 void main() {
   LogConfig.enabled = true;
   LogConfig.minimumLevel = LogLevel.debug;
 
   runApp(const ProviderScope(child: ChatoraiApp()));
 }
+
+// ===========================================================================
+// CHATORAI APP WIDGET
+// ===========================================================================
 
 class ChatoraiApp extends ConsumerWidget {
   const ChatoraiApp({super.key});

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:chatorai/themes/app_theme.dart';
 
+// ===========================================================================
+// SETTINGS TEXT FIELD WIDGET
+// ===========================================================================
+
 class SettingsTextField extends StatelessWidget {
   final TextEditingController controller;
   final String labelText;
@@ -16,6 +20,10 @@ class SettingsTextField extends StatelessWidget {
     this.onCopy,
     this.obscureText = false,
   });
+
+  // ===========================================================================
+  // BUILD METHOD
+  // ===========================================================================
 
   @override
   Widget build(BuildContext context) {

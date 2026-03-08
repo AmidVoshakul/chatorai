@@ -3,6 +3,10 @@ import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/constants/chat_constants.dart';
 
+// ===========================================================================
+// CHAT SCREEN STATE
+// ===========================================================================
+
 class ChatScreenState {
   final Chat? currentChat;
   final String selectedModelId;
@@ -69,6 +73,10 @@ class ChatScreenState {
     );
   }
 }
+
+// ===========================================================================
+// CHAT SCREEN NOTIFIER
+// ===========================================================================
 
 class ChatScreenNotifier extends StateNotifier<ChatScreenState> {
   final ChatStorageService _storageService;

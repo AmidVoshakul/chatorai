@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/providers.dart';
 
+// ===========================================================================
+// STATE
+// ===========================================================================
+
 class ModelsScreenState {
   final List<OpenRouterModel> models;
   final List<OpenRouterModel> filteredModels;
@@ -38,6 +42,10 @@ class ModelsScreenState {
     );
   }
 }
+
+// ===========================================================================
+// NOTIFIER
+// ===========================================================================
 
 class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
   @override
@@ -139,6 +147,10 @@ class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
     return filtered;
   }
 }
+
+// ===========================================================================
+// PROVIDER
+// ===========================================================================
 
 final modelsScreenProvider =
     NotifierProvider<ModelsScreenNotifier, ModelsScreenState>(

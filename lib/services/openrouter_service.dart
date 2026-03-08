@@ -11,6 +11,10 @@ import '../utils/logger.dart';
 // Initialize logger for this service
 final _logger = LogTags.openRouter;
 
+// ===========================================================================
+// CONSTANTS
+// ===========================================================================
+
 // Constants for configuration
 class OpenRouterConstants {
   static const String baseUrl = 'https://openrouter.ai/api/v1';
@@ -33,7 +37,9 @@ class OpenRouterConstants {
   static const String envBaseUrl = 'OPENROUTER_BASE_URL';
 }
 
-// Model and capabilities classes
+// ===========================================================================
+// MODEL CAPABILITIES
+// ===========================================================================
 
 class ModelCapabilities {
   final bool reasoning;
@@ -80,6 +86,10 @@ class ModelCapabilities {
     'tools': tools,
   };
 }
+
+// ===========================================================================
+// OPENROUTER MODEL
+// ===========================================================================
 
 class OpenRouterModel {
   final String id;
@@ -294,6 +304,10 @@ class OpenRouterModel {
   }
 }
 
+// ===========================================================================
+// RESPONSE CLASSES
+// ===========================================================================
+
 // Chat completion response classes
 class ChatCompletionChunk {
   final String? content;
@@ -370,6 +384,10 @@ class ChatCompletionResponse {
   }
 }
 
+// ===========================================================================
+// OPENROUTER CLIENT INTERFACE
+// ===========================================================================
+
 /// Minimal interface used by the UI layer to call OpenRouter service.
 /// This allows tests to inject fakes without needing to initialize the full
 /// network-backed OpenRouterService.
@@ -421,6 +439,10 @@ class OpenRouterConfig {
   });
 }
 
+// ===========================================================================
+// OPENROUTER SERVICE IMPLEMENTATION
+// ===========================================================================
+
 class OpenRouterService implements OpenRouterClient {
   bool _isConnected = true;
   String? _apiKey;
@@ -441,6 +463,10 @@ class OpenRouterService implements OpenRouterClient {
        _isConnected = isConnected {
     _initializeService();
   }
+
+  // ===========================================================================
+  // INITIALIZATION
+  // ===========================================================================
 
   void setConnectivityStatus(bool isConnected) {
     _isConnected = isConnected;

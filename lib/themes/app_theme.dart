@@ -109,6 +109,15 @@ class ChatoraiColors {
   static const Color toggleInactiveThumbDark = Color(0xFFBDBDBD);
   static const Color toggleInactiveTrackLight = Color(0xFFE0E0E0);
   static const Color toggleInactiveTrackDark = Color(0xFF424242);
+
+  // Speech Overlay
+  static const Color speechOverlayBackgroundLight = Color(0xDD000000);
+  static const Color speechOverlayBackgroundDark = Color(0xEE000000);
+  static const Color speechOverlayTextLight = Color(0xFFFFFFFF);
+  static const Color speechOverlayTextDark = Color(0xFFFFFFFF);
+  static const Color speechOverlayWaveLight = Color(0xFFFFFFFF);
+  static const Color speechOverlayWaveDark = Color(0xFFFFFFFF);
+  static const double speechOverlayBlur = 20.0;
 }
 
 // ===============================================================
@@ -394,12 +403,22 @@ class ChatoraiTypography {
 // MARKDOWN STYLES
 // ===============================================================
 class ChatoraiMarkdownStyles {
+  static final _cache = <int, MarkdownStyleSheet>{};
+
   static MarkdownStyleSheet getMarkdownStyles(BuildContext context) {
     final brightness = MediaQuery.platformBrightnessOf(context);
     final theme = Theme.of(context);
     final baseStyle = MarkdownStyleSheet.fromTheme(theme);
 
     final isLight = brightness == Brightness.light;
+
+    // Use theme brightness hash as cache key
+    final cacheKey = Object.hash(brightness, theme.brightness);
+
+    if (_cache.containsKey(cacheKey)) {
+      return _cache[cacheKey]!;
+    }
+
     final codeColor = isLight
         ? ChatoraiColors.codeLight
         : ChatoraiColors.codeDark;
@@ -407,7 +426,7 @@ class ChatoraiMarkdownStyles {
         ? ChatoraiColors.lightGray
         : ChatoraiColors.darkGray;
 
-    return baseStyle.copyWith(
+    final styleSheet = baseStyle.copyWith(
       blockquote: baseStyle.blockquote?.copyWith(
         color: isLight
             ? ChatoraiColors.secondaryTextColor
@@ -461,6 +480,9 @@ class ChatoraiMarkdownStyles {
         color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,
       ),
     );
+
+    _cache[cacheKey] = styleSheet;
+    return styleSheet;
   }
 }
 

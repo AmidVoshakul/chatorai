@@ -8,6 +8,10 @@ import 'package:chatorai/providers/model_provider.dart';
 
 final _logger = LogTags.settings;
 
+// ===========================================================================
+// MODEL SETTINGS STATE
+// ===========================================================================
+
 class ModelSettingsState {
   final Map<String, ModelSettings> settingsCache;
   final ModelSettings? activeSettings;
@@ -34,6 +38,10 @@ class ModelSettingsState {
     );
   }
 }
+
+// ===========================================================================
+// MODEL SETTINGS NOTIFIER
+// ===========================================================================
 
 class ModelSettingsNotifier extends Notifier<ModelSettingsState> {
   static const String _settingsPrefix = 'model_settings_';
@@ -336,6 +344,10 @@ class ModelSettingsNotifier extends Notifier<ModelSettingsState> {
     }
   }
 }
+
+// ===========================================================================
+// PROVIDER
+// ===========================================================================
 
 final modelSettingsProvider =
     NotifierProvider<ModelSettingsNotifier, ModelSettingsState>(

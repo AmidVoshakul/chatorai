@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:chatorai/themes/app_theme.dart';
 
+// ===========================================================================
+// SETTINGS TOGGLE TILE WIDGET
+// ===========================================================================
+
 class SettingsToggleTile extends StatelessWidget {
   final BuildContext context;
   final String title;
@@ -16,6 +20,10 @@ class SettingsToggleTile extends StatelessWidget {
     required this.value,
     required this.onChanged,
   });
+
+  // ===========================================================================
+  // BUILD METHOD
+  // ===========================================================================
 
   @override
   Widget build(BuildContext context) {

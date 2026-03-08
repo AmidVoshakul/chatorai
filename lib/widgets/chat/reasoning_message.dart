@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/themes/app_theme.dart';
 
+// ===========================================================================
+// WIDGET CLASS
+// ===========================================================================
+
 class ReasoningMessage extends StatefulWidget {
   final String reasoning;
   final bool isStreaming;
@@ -16,6 +20,10 @@ class ReasoningMessage extends StatefulWidget {
   State<ReasoningMessage> createState() => _ReasoningMessageState();
 }
 
+// ===========================================================================
+// STATE CLASS
+// ===========================================================================
+
 class _ReasoningMessageState extends State<ReasoningMessage>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   static const _bubbleWidthRatio = 0.65;
@@ -26,6 +34,10 @@ class _ReasoningMessageState extends State<ReasoningMessage>
   late final AnimationController _shimmerController;
   late final Animation<double> _shimmerAnimation;
   late final AnimationController _dotsController;
+
+  // =======================================================================
+  // LIFECYCLE
+  // =======================================================================
 
   @override
   void initState() {
@@ -88,6 +100,10 @@ class _ReasoningMessageState extends State<ReasoningMessage>
   @override
   bool get wantKeepAlive => true;
 
+  // =======================================================================
+  // BUILD METHOD
+  // =======================================================================
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -124,6 +140,10 @@ class _ReasoningMessageState extends State<ReasoningMessage>
       ),
     );
   }
+
+  // =======================================================================
+  // HELPER WIDGETS
+  // =======================================================================
 
   Widget _buildExpandedContent(ThemeData theme) {
     final textColor = theme.textTheme.bodyMedium?.color ?? Colors.grey.shade700;

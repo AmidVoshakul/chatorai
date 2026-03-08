@@ -8,12 +8,15 @@ import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/widgets/chat/loading_indicator.dart';
 import 'dart:convert';
 
-// =============================================================================
-// ERROR MESSAGE WIDGET
-// =============================================================================
+// ===========================================================================
+// LOGGER
+// ===========================================================================
 
-/// Initialize logger for this widget
 final _logger = LogTags.errorMessage;
+
+// ===========================================================================
+// WIDGET CLASS
+// ===========================================================================
 
 class ErrorMessage extends StatefulWidget {
   final String errorMessage;
@@ -43,11 +46,15 @@ class ErrorMessage extends StatefulWidget {
   State<ErrorMessage> createState() => _ErrorMessageState();
 }
 
+// ===========================================================================
+// STATE CLASS
+// ===========================================================================
+
 class _ErrorMessageState extends State<ErrorMessage>
     with TickerProviderStateMixin {
-  // ===========================================================================
+  // =======================================================================
   // ANIMATION CONTROLLERS
-  // ===========================================================================
+  // =======================================================================
 
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
@@ -56,16 +63,16 @@ class _ErrorMessageState extends State<ErrorMessage>
   late AnimationController _loadingController;
   late Animation<double> _loadingAnimation;
 
-  // ===========================================================================
+  // =======================================================================
   // STATE VARIABLES
-  // ===========================================================================
+  // =======================================================================
 
   bool _showLoading = true;
   bool _errorReadyToShow = false;
 
-  // ===========================================================================
-  // LIFECYCLE METHODS
-  // ===========================================================================
+  // =======================================================================
+  // LIFECYCLE
+  // =======================================================================
 
   @override
   void initState() {
@@ -78,12 +85,10 @@ class _ErrorMessageState extends State<ErrorMessage>
   void didUpdateWidget(covariant ErrorMessage oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Handle error message appearance during streaming
     if (oldWidget.errorMessage.isEmpty && widget.errorMessage.isNotEmpty) {
       _transitionToError();
     }
 
-    // Reinitialize if showLoadingFirst flag changed
     if (oldWidget.showLoadingFirst != widget.showLoadingFirst) {
       _initializeState();
     }
@@ -98,12 +103,11 @@ class _ErrorMessageState extends State<ErrorMessage>
     super.dispose();
   }
 
-  // ===========================================================================
-  // INITIALIZATION METHODS
-  // ===========================================================================
+  // =======================================================================
+  // INITIALIZATION
+  // =======================================================================
 
   void _initializeAnimations() {
-    // Fade-in animation
     _fadeController = AnimationController(
       duration: ChatoraiDurations.slow,
       vsync: this,
@@ -112,7 +116,6 @@ class _ErrorMessageState extends State<ErrorMessage>
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
 
-    // Slide-in animation
     _slideController = AnimationController(
       duration: ChatoraiDurations.normal,
       vsync: this,
@@ -122,7 +125,6 @@ class _ErrorMessageState extends State<ErrorMessage>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
 
-    // Loading animation
     _loadingController = AnimationController(
       duration: ChatoraiDurations.normal,
       vsync: this,
@@ -131,7 +133,6 @@ class _ErrorMessageState extends State<ErrorMessage>
       CurvedAnimation(parent: _loadingController, curve: Curves.easeOut),
     );
 
-    // Start animations
     _fadeController.forward();
     _slideController.forward();
   }
@@ -141,7 +142,6 @@ class _ErrorMessageState extends State<ErrorMessage>
       _showLoading = true;
       _errorReadyToShow = false;
 
-      // Auto-transition to error after delay
       Future.delayed(ChatoraiDurations.normal, () {
         if (mounted) {
           setState(() {
@@ -162,9 +162,9 @@ class _ErrorMessageState extends State<ErrorMessage>
     }
   }
 
-  // ===========================================================================
-  // TRANSITION METHODS
-  // ===========================================================================
+  // =======================================================================
+  // TRANSITIONS
+  // =======================================================================
 
   void _transitionToError() {
     _loadingController.removeStatusListener(_onLoadingAnimationComplete);
@@ -190,9 +190,13 @@ class _ErrorMessageState extends State<ErrorMessage>
     }
   }
 
-  // ===========================================================================
-  // UI BUILDERS
-  // ===========================================================================
+  // =======================================================================
+  // PUBLIC API
+  // =======================================================================
+
+  // =======================================================================
+  // PRIVATE METHODS
+  // =======================================================================
 
   Widget _buildStreamingIndicator() {
     return Container(
@@ -203,9 +207,38 @@ class _ErrorMessageState extends State<ErrorMessage>
     );
   }
 
-  // ===========================================================================
-  // ACTION METHODS
-  // ===========================================================================
+  Map<String, dynamic> _parseErrorDetails(String errorMessage) {
+    try {
+      final json = jsonDecode(errorMessage);
+
+      if (json is Map<String, dynamic>) {
+        if (json.containsKey('error')) {
+          final error = json['error'];
+          if (error is Map<String, dynamic>) {
+            return {
+              'message': error['message'] ?? 'Unknown error',
+              'code': error['code'] ?? 'Unknown',
+              'type': error['type'] ?? 'Error',
+              'isJson': true,
+            };
+          }
+        }
+      }
+    } catch (e) {
+      // Not JSON
+    }
+
+    return {
+      'message': errorMessage,
+      'code': 'Unknown',
+      'type': 'Error',
+      'isJson': false,
+    };
+  }
+
+  // =======================================================================
+  // ACTIONS
+  // =======================================================================
 
   Future<void> _copyToClipboard() async {
     try {
@@ -252,62 +285,22 @@ class _ErrorMessageState extends State<ErrorMessage>
   }
 
   Future<void> _regenerateMessage() async {
-    // Сначала удаляем сообщение об ошибке из UI
     widget.onMessageDeleted();
 
-    // Затем вызываем callback для перегенерации
-    // Это вызовет onRegenerateResponse в ChatScreen, который:
-    // 1. Удалит последнее AI сообщение из БД (это сообщение об ошибке)
-    // 2. Возьмет последнее user сообщение
-    // 3. Сгенерирует новый ответ
     if (widget.onMessageUpdated != null) {
       widget.onMessageUpdated!('REGENERATE');
     }
   }
 
-  // ===========================================================================
-  // UTILITY METHODS
-  // ===========================================================================
-
-  Map<String, dynamic> _parseErrorDetails(String errorMessage) {
-    try {
-      final json = jsonDecode(errorMessage);
-
-      if (json is Map<String, dynamic>) {
-        if (json.containsKey('error')) {
-          final error = json['error'];
-          if (error is Map<String, dynamic>) {
-            return {
-              'message': error['message'] ?? 'Unknown error',
-              'code': error['code'] ?? 'Unknown',
-              'type': error['type'] ?? 'Error',
-              'isJson': true,
-            };
-          }
-        }
-      }
-    } catch (e) {
-      // Not JSON, return as plain text
-    }
-
-    return {
-      'message': errorMessage,
-      'code': 'Unknown',
-      'type': 'Error',
-      'isJson': false,
-    };
-  }
-
-  // ===========================================================================
+  // =======================================================================
   // BUILD METHOD
-  // ===========================================================================
+  // =======================================================================
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context);
 
-    // Parse error details
     final errorDetails = _parseErrorDetails(widget.errorMessage);
     final isJsonError = errorDetails['isJson'] as bool;
     final errorMessage = errorDetails['message'] as String;
@@ -322,7 +315,6 @@ class _ErrorMessageState extends State<ErrorMessage>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Message bubble
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: ChatoraiSpacing.md,
@@ -346,7 +338,6 @@ class _ErrorMessageState extends State<ErrorMessage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
                   Row(
                     children: [
                       Icon(
@@ -373,7 +364,6 @@ class _ErrorMessageState extends State<ErrorMessage>
 
                   const SizedBox(height: ChatoraiSpacing.sm),
 
-                  // Content
                   if (_errorReadyToShow)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,7 +401,6 @@ class _ErrorMessageState extends State<ErrorMessage>
 
             const SizedBox(height: ChatoraiSpacing.sm),
 
-            // Action buttons
             Container(
               margin: const EdgeInsets.only(
                 top: ChatoraiSpacing.xs,

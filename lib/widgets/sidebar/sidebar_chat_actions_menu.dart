@@ -4,6 +4,10 @@ import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
+// ===========================================================================
+// CHAT ACTIONS MENU WIDGET
+// ===========================================================================
+
 class ChatActionsMenu extends StatelessWidget {
   final Chat chat;
   final ThemeData theme;
@@ -19,6 +23,10 @@ class ChatActionsMenu extends StatelessWidget {
     required this.onRename,
     required this.onDelete,
   });
+
+  // ===========================================================================
+  // BUILD METHOD
+  // ===========================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +45,10 @@ class ChatActionsMenu extends StatelessWidget {
       ),
     );
   }
+
+  // ===========================================================================
+  // PRIVATE METHODS
+  // ===========================================================================
 
   void _showChatActionsMenu(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
+// ===========================================================================
+// MESSAGE ROLE ENUM
+// ===========================================================================
+
 enum MessageRole {
   user,
   assistant,
@@ -29,6 +33,10 @@ enum MessageRole {
   }
 }
 
+// ===========================================================================
+// MESSAGE CLASS
+// ===========================================================================
+
 class Message {
   final String id;
   final MessageRole role;
@@ -53,6 +61,10 @@ class Message {
     this.imageData,
     this.imageType,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
+
+  // ===========================================================================
+  // COPY WITH
+  // ===========================================================================
 
   Message copyWith({
     String? id,
@@ -103,6 +115,10 @@ class Message {
         isError.hashCode;
   }
 
+  // ===========================================================================
+  // SERIALIZATION
+  // ===========================================================================
+
   Map<String, dynamic> toJson() {
     final json = {
       'id': id,
@@ -139,6 +155,10 @@ class Message {
     );
   }
 }
+
+// ===========================================================================
+// CHAT CLASS
+// ===========================================================================
 
 class Chat {
   final String id;

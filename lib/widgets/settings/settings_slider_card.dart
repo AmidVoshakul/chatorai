@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
+// ===========================================================================
+// SETTINGS SLIDER CARD WIDGET
+// ===========================================================================
+
 class SettingsSliderCard extends StatelessWidget {
   final BuildContext context;
   final double value;
@@ -21,6 +25,10 @@ class SettingsSliderCard extends StatelessWidget {
     required this.label,
     required this.onChanged,
   });
+
+  // ===========================================================================
+  // BUILD METHOD
+  // ===========================================================================
 
   @override
   Widget build(BuildContext context) {

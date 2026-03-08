@@ -1,6 +1,10 @@
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 
+// ===========================================================================
+// CHAT REPOSITORY
+// ===========================================================================
+
 class ChatRepository {
   final ChatStorageService _storageService;
 
@@ -39,6 +43,10 @@ class ChatRepository {
   Future<void> updateMessage(String chatId, Message message) async {
     await _storageService.updateMessageInChat(chatId, message.id, message);
   }
+
+  // ===========================================================================
+  // PRIVATE METHODS
+  // ===========================================================================
 
   Future<Chat?> _getChatById(String chatId) async {
     final chats = await getChats();

@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/screens/models_screen.dart';
+import 'package:chatorai/themes/app_theme.dart';
+import 'package:chatorai/constants/chat_constants.dart';
+
+// ===========================================================================
+// WIDGET CLASS
+// ===========================================================================
 
 class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String selectedModel;
@@ -9,6 +15,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool Function() hasHeadings;
   final VoidCallback onToggleNavigator;
   final Function(String modelId, OpenRouterModel? modelObject) onModelSelected;
+  final VoidCallback? onMenuPressed;
 
   const ChatAppBar({
     super.key,
@@ -17,77 +24,69 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.hasHeadings,
     required this.onToggleNavigator,
     required this.onModelSelected,
+    this.onMenuPressed,
   });
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
+  // =======================================================================
+  // BUILD METHOD
+  // =======================================================================
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 800;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isMobile = screenWidth < ChatScreenConstants.mobileBreakpoint;
+    final isDark = theme.brightness == Brightness.dark;
 
-    final modelTextColor = theme.brightness == Brightness.dark
-        ? Colors.grey[700]
-        : theme.iconTheme.color;
+    final modelTextColor = isDark ? Colors.grey[700] : theme.iconTheme.color;
+    final localizations = AppLocalizations.of(context);
 
     return AppBar(
-      title: Text(
-        '',
-        style: TextStyle(
-          color: theme.colorScheme.primary,
-          fontWeight: FontWeight.bold,
-          fontSize: 20,
-        ),
-      ),
+      title: const Text(''),
       backgroundColor: theme.canvasColor,
       elevation: 0,
       leading: Builder(
         builder: (context) => IconButton(
-          icon: const Icon(Icons.menu, size: 20),
-          onPressed: () => Scaffold.of(context).openDrawer(),
+          icon: Icon(Icons.menu, size: ChatoraiIconSizes.buttonIcon),
+          onPressed: onMenuPressed != null
+              ? onMenuPressed
+              : () => Scaffold.of(context).openDrawer(),
         ),
       ),
       actions: [
-        if (selectedModelObject == null)
-          SizedBox(width: isMobile ? screenWidth * 0.50 : 0)
-        else if (isMobile)
-          SizedBox(
-            width: screenWidth * 0.50,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: Center(
-                child: Text(
+        if (selectedModelObject != null)
+          isMobile
+              ? SizedBox(
+                  width: screenWidth * 0.50,
+                  child: Center(
+                    child: Text(
+                      selectedModelObject!.name,
+                      style: TextStyle(
+                        fontSize: ChatoraiFontSizes.sm,
+                        fontWeight: FontWeight.w500,
+                        color: modelTextColor,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              : Text(
                   selectedModelObject!.name,
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontSize: ChatoraiFontSizes.sm,
+                    fontWeight: FontWeight.w600,
                     color: modelTextColor,
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
-                  textAlign: TextAlign.center,
                 ),
-              ),
-            ),
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Text(
-              selectedModelObject!.name,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: modelTextColor,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ),
         IconButton(
-          icon: const Icon(Icons.smart_toy, size: 20),
+          icon: Icon(Icons.smart_toy, size: ChatoraiIconSizes.buttonIcon),
           onPressed: () {
             Navigator.push(
               context,
@@ -102,20 +101,17 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             );
           },
-          tooltip:
-              AppLocalizations.of(context)?.selectModelTooltip ??
-              'Select Model',
+          tooltip: localizations?.selectModelTooltip ?? 'Select Model',
         ),
         if (hasHeadings())
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: IconButton(
-              icon: const Icon(Icons.format_list_bulleted, size: 20),
-              onPressed: onToggleNavigator,
-              tooltip:
-                  AppLocalizations.of(context)?.toggleNavigatorTooltip ??
-                  'Toggle Navigator',
+          IconButton(
+            icon: Icon(
+              Icons.format_list_bulleted,
+              size: ChatoraiIconSizes.buttonIcon,
             ),
+            onPressed: onToggleNavigator,
+            tooltip:
+                localizations?.toggleNavigatorTooltip ?? 'Toggle Navigator',
           ),
       ],
     );

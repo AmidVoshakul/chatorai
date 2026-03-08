@@ -15,8 +15,16 @@ import 'package:chatorai/widgets/chat/welcome_suggestions.dart';
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 import 'package:chatorai/widgets/chat/chat_input.dart' show MessageData;
 
+// ===========================================================================
+// LOGGER
+// ===========================================================================
+
 // Initialize logger for this widget
 final _logger = LogTags.chatService;
+
+// ===========================================================================
+// CHAT MESSAGES WIDGET
+// ===========================================================================
 
 class ChatMessages extends ConsumerStatefulWidget {
   final Chat? chat;
@@ -81,8 +89,16 @@ class ChatMessages extends ConsumerStatefulWidget {
   ConsumerState<ChatMessages> createState() => ChatMessagesState();
 }
 
+// ===========================================================================
+// STATE
+// ===========================================================================
+
 class ChatMessagesState extends ConsumerState<ChatMessages>
-    with AutomaticKeepAliveClientMixin {
+        // ===========================================================================
+        // STATE VARIABLES
+        // ===========================================================================
+        with
+        AutomaticKeepAliveClientMixin {
   late ScrollController _scrollController;
   final GlobalKey _loadingIndicatorKey = GlobalKey();
 
@@ -92,8 +108,16 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
   List<MarkdownHeadingInfoWithKey> _headings =
       []; // Store heading info with keys
 
+  // ===========================================================================
+  // LIFECYCLE
+  // ===========================================================================
+
   @override
   bool get wantKeepAlive => true;
+
+  // ===========================================================================
+  // INIT STATE
+  // ===========================================================================
 
   @override
   void initState() {
@@ -117,6 +141,10 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     _scrollController.dispose();
     super.dispose();
   }
+
+  // ===========================================================================
+  // DID UPDATE WIDGET
+  // ===========================================================================
 
   @override
   void didUpdateWidget(ChatMessages oldWidget) {
@@ -156,6 +184,10 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     }
   }
 
+  // ===========================================================================
+  // HEADING METHODS
+  // ===========================================================================
+
   void _updateHeadings() {
     final messages = widget.chat?.messages ?? [];
 
@@ -174,9 +206,29 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     }
   }
 
+  // ===========================================================================
+  // PUBLIC METHODS
+  // ===========================================================================
+
   void refreshHeadings() {
     _updateHeadings();
   }
+
+  void scrollToHeading(String messageId) {
+    final messageIndex =
+        widget.chat?.messages.indexWhere((m) => m.id == messageId) ?? -1;
+    if (messageIndex >= 0) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  // ===========================================================================
+  // NAVIGATOR
+  // ===========================================================================
 
   void _toggleNavigator() {
     // Notify parent about toggle
@@ -191,6 +243,10 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
   }
 
   // Public method to send messages from outside (e.g., from chat input)
+  // ===========================================================================
+  // MESSAGE HANDLERS
+  // ===========================================================================
+
   void sendMessage(MessageData messageData) {
     // Notify parent to handle AI response
     widget.onSendMessage(messageData);
@@ -214,7 +270,11 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     }
   }
 
-  // Анимация ожидания ответа
+  // ===========================================================================
+  // WAITING ANIMATION
+  // ===========================================================================
+
+  // Animation of waiting for a response
   Widget _buildWaitingAnimation() {
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -233,6 +293,10 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
       ),
     );
   }
+
+  // ===========================================================================
+  // BUILD METHOD
+  // ===========================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -289,6 +353,9 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                 cacheExtent: 200,
                 // Add physics for better scroll performance
                 physics: const BouncingScrollPhysics(),
+                // Performance optimizations
+                addAutomaticKeepAlives: false,
+                addRepaintBoundaries: false,
                 padding: EdgeInsets.only(
                   left: ChatMessagesConstants.horizontalPadding,
                   right: ChatMessagesConstants.horizontalPadding,
@@ -557,6 +624,10 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     );
   }
 
+  // ===========================================================================
+  // SUGGESTION BUILDERS
+  // ===========================================================================
+
   Widget _buildWelcomeSuggestions() {
     return WelcomeSuggestions(
       suggestions: widget.welcomeSuggestions,
@@ -568,6 +639,10 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
       onClose: widget.onWelcomeSuggestionsClose,
     );
   }
+
+  // ===========================================================================
+  // CONTINUATION SUGGESTIONS
+  // ===========================================================================
 
   Widget _buildContinuationSuggestions() {
     return ContinuationSuggestions(

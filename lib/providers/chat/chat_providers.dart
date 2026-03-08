@@ -5,6 +5,10 @@ import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/services/chat_ai_service.dart';
 import 'package:chatorai/providers/model_provider.dart';
 
+// ===========================================================================
+// SERVICE PROVIDERS
+// ===========================================================================
+
 final chatStorageServiceProvider = Provider<ChatStorageService>((ref) {
   return ChatStorageService();
 });
@@ -19,35 +23,82 @@ final chatRepositoryProvider = Provider<ChatRepository>((ref) {
   return ChatRepository(storageService: storageService);
 });
 
+// ===========================================================================
+// CHAT LIST PROVIDER
+// ===========================================================================
+
 final chatListProvider =
     NotifierProvider<ChatListNotifier, AsyncValue<List<Chat>>>(
       ChatListNotifier.new,
     );
 
+// ===========================================================================
+// CHAT LIST NOTIFIER
+// ===========================================================================
+
 class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
+  bool _isLoadingChats = false;
+  bool _hasLoadedOnce = false;
+
   @override
   AsyncValue<List<Chat>> build() {
     final repository = ref.watch(chatRepositoryProvider);
-    loadChats(repository);
+    _loadChats(repository);
     return const AsyncValue.loading();
   }
 
-  Future<void> loadChats(ChatRepository repository) async {
-    state = const AsyncValue.loading();
+  Future<void> _loadChats(ChatRepository repository) async {
+    if (_isLoadingChats) {
+      return;
+    }
+
+    if (_hasLoadedOnce) {
+      return;
+    }
+
+    _isLoadingChats = true;
     try {
       final chats = await repository.getChats();
       state = AsyncValue.data(chats);
+      _hasLoadedOnce = true;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+    } finally {
+      _isLoadingChats = false;
     }
   }
 
+  Future<void> loadChats({bool forceReload = false}) async {
+    if (forceReload) {
+      _hasLoadedOnce = false;
+    }
+    final repository = ref.read(chatRepositoryProvider);
+    await _loadChats(repository);
+  }
+
   Future<Chat> createNewChat() async {
+    // Ensure chats are loaded first if not already loaded
+    if (!_hasLoadedOnce) {
+      final repository = ref.read(chatRepositoryProvider);
+      await _loadChats(repository);
+    }
+
     final repository = ref.read(chatRepositoryProvider);
     final newChat = await repository.createNewChat();
-    state.whenData((chats) {
+
+    // Handle all states - loading, data, or error
+    final currentState = state;
+    if (currentState.hasValue) {
+      final chats = currentState.value!;
       state = AsyncValue.data([newChat, ...chats]);
-    });
+    } else if (currentState.isLoading) {
+      // If still loading, rebuild after load completes
+      state = AsyncValue.data([newChat]);
+    } else if (currentState.hasError) {
+      // If there was an error, start with the new chat
+      state = AsyncValue.data([newChat]);
+    }
+
     return newChat;
   }
 
@@ -89,6 +140,10 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
     }
   }
 }
+
+// ===========================================================================
+// CURRENT CHAT PROVIDERS
+// ===========================================================================
 
 final currentChatIdProvider = StateProvider<String?>((ref) => null);
 

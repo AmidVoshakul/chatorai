@@ -11,6 +11,10 @@ import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/utils/format_time.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
 
+// ===========================================================================
+// SIDEBAR WIDGET
+// ===========================================================================
+
 class Sidebar extends ConsumerWidget {
   final double width;
   final bool isCollapsed;
@@ -35,6 +39,7 @@ class Sidebar extends ConsumerWidget {
     final themeNotifier = ref.read(themeProvider.notifier);
     final sidebarState = ref.watch(sidebarProvider);
     final filteredChats = ref.watch(filteredChatsProvider);
+    final isLoading = ref.watch(chatListLoadingProvider);
 
     final theme = themeNotifier.getTheme();
     final language = languageState.selectedLanguage;
@@ -63,6 +68,8 @@ class Sidebar extends ConsumerWidget {
           Expanded(
             child: isCollapsed
                 ? Container()
+                : isLoading
+                ? const Center(child: CircularProgressIndicator())
                 : filteredChats.isEmpty
                 ? _buildEmptyState(
                     context,

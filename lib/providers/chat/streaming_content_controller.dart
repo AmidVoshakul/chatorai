@@ -1,9 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// ===========================================================================
+// PROVIDER
+// ===========================================================================
+
 final streamingContentProvider =
     NotifierProvider<StreamingContentNotifier, StreamingContentState>(
       StreamingContentNotifier.new,
     );
+
+// ===========================================================================
+// STATE
+// ===========================================================================
 
 class StreamingContentState {
   final String currentChatId;
@@ -42,6 +50,10 @@ class StreamingContentState {
     return StreamingContentState(lastUpdate: DateTime.now());
   }
 }
+
+// ===========================================================================
+// NOTIFIER
+// ===========================================================================
 
 class StreamingContentNotifier extends Notifier<StreamingContentState> {
   static const updateIntervalMs = 250;

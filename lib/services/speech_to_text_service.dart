@@ -7,25 +7,27 @@ import '../utils/logger.dart';
 
 /// Состояния UI голосового ввода (Google-style)
 enum SpeechUiState {
-  idle,        // Ожидание
-  preparing,   // Подготовка
-  listening,   // Запись (с визуализацией)
-  processing,  // Обработка
-  error,       // Ошибка
-  noSpeech,    // Не услышали
+  idle, // Ожидание
+  preparing, // Подготовка
+  listening, // Запись (с визуализацией)
+  processing, // Обработка
+  error, // Ошибка
+  noSpeech, // Не услышали
 }
 
 /// Сервис для работы с голосовым вводом
 class SpeechToTextService {
   static final _logger = LogTags.speech;
-  
+
   final SpeechToText _speech = SpeechToText();
   final void Function(String) onResult;
   final void Function(String) onStatusMessage;
   final void Function(SpeechUiState) onStateChanged;
-  final void Function(String)? onPartialResult; // Опционально: для промежуточных результатов
+  final void Function(String)?
+  onPartialResult; // Опционально: для промежуточных результатов
   final void Function()? onAutoRestart; // Callback для авто-restart
-  
+  final void Function(double)? onSoundLevelChange; // Callback для уровня звука
+
   // Локализованные строки
   final String msgListening;
   final String msgPhase2;
@@ -41,7 +43,7 @@ class SpeechToTextService {
   final String msgErrorTooManyRequests;
   final String msgErrorUnknown;
   final String msgAutoRestart;
-  
+
   bool _isInitialized = false;
   bool _isListening = false;
   Timer? _listenTimer;
@@ -49,7 +51,7 @@ class SpeechToTextService {
   Timer? _partialDebounce; // Таймер для debounce промежуточных результатов
   String _lastRecognizedText = '';
   String _pendingPartialText = ''; // Текст для отложенной отправки
-  
+
   SpeechToTextService({
     required this.onResult,
     required this.onStatusMessage,
@@ -70,8 +72,9 @@ class SpeechToTextService {
     required this.msgAutoRestart,
     this.onPartialResult,
     this.onAutoRestart,
+    this.onSoundLevelChange,
   });
-  
+
   /// Проверка доступности микрофона
   Future<bool> checkAvailability() async {
     try {
@@ -81,7 +84,7 @@ class SpeechToTextService {
         _isInitialized = await _speech.initialize(
           onStatus: (status) {
             _logger.logDebug('Speech status: $status');
-            
+
             if (status == 'listening') {
               // _isListening уже true (установлен в startListening)
               _speechStartTimer?.cancel();
@@ -89,11 +92,11 @@ class SpeechToTextService {
               // Haptic feedback — короткая вибрация при старте
               HapticFeedback.lightImpact();
               onStatusMessage(msgListening);
-              
+
               // Запускаем таймеры ожидания речи
               final waitForSpeech = const Duration(seconds: 10);
               final timeout = const Duration(seconds: 30);
-              
+
               // Таймер для автоматической остановки (общий таймаут)
               _listenTimer = Timer(timeout, () {
                 if (_isListening) {
@@ -101,7 +104,7 @@ class SpeechToTextService {
                   _handleTimeout();
                 }
               });
-              
+
               // Таймер ожидания начала речи - Фаза 1: 10 секунд "Говорите..."
               _speechStartTimer = Timer(waitForSpeech, () {
                 if (_isListening && _lastRecognizedText.isEmpty) {
@@ -109,7 +112,7 @@ class SpeechToTextService {
                   // Фаза 2: "Я вас не слышу" - ждем еще 10 секунд
                   onStatusMessage(msgPhase2);
                   onStateChanged(SpeechUiState.noSpeech);
-                  
+
                   // Второй таймер - еще 10 секунд
                   _speechStartTimer = Timer(waitForSpeech, () {
                     if (_isListening && _lastRecognizedText.isEmpty) {
@@ -130,10 +133,10 @@ class SpeechToTextService {
                   _listenTimer?.cancel();
                   onStateChanged(SpeechUiState.processing);
                   onStatusMessage(msgProcessing);
-                  
+
                   // Вибрация
                   HapticFeedback.mediumImpact();
-                  
+
                   // Сброс через 1 сек
                   Future.delayed(const Duration(seconds: 1), () {
                     onStateChanged(SpeechUiState.idle);
@@ -142,14 +145,16 @@ class SpeechToTextService {
                 } else {
                   // Нет текста - таймеры обработают (или уже обработали)
                   // Если таймеры уже сработали, ничего не делаем
-                  _logger.logDebug('notListening with no text, timers will handle');
+                  _logger.logDebug(
+                    'notListening with no text, timers will handle',
+                  );
                 }
               }
             } else if (status == 'done') {
               // Завершение сессии
               _logger.logDebug('Speech status: done');
               _partialDebounce?.cancel();
-              
+
               // Проверяем, нужно ли обработать остановку
               if (_isListening) {
                 if (_lastRecognizedText.isNotEmpty) {
@@ -159,9 +164,9 @@ class SpeechToTextService {
                   _isListening = false;
                   _speechStartTimer?.cancel();
                   _listenTimer?.cancel();
-                  
+
                   HapticFeedback.mediumImpact();
-                  
+
                   Future.delayed(const Duration(seconds: 1), () {
                     onStateChanged(SpeechUiState.idle);
                     onStatusMessage('');
@@ -175,7 +180,7 @@ class SpeechToTextService {
                   _listenTimer?.cancel();
                   onStatusMessage(msgNoSpeech);
                   onStateChanged(SpeechUiState.noSpeech);
-                  
+
                   // Сброс через 2 сек
                   Future.delayed(const Duration(seconds: 2), () {
                     onStateChanged(SpeechUiState.idle);
@@ -190,7 +195,7 @@ class SpeechToTextService {
             _handleError(error);
           },
         );
-        
+
         // Если инициализация не удалась (пользователь отказал в разрешении)
         if (!_isInitialized) {
           _logger.logWarning('Microphone permission denied');
@@ -211,7 +216,7 @@ class SpeechToTextService {
       return false;
     }
   }
-  
+
   /// Начать прослушивание
   Future<bool> startListening({
     Duration timeout = const Duration(seconds: 30),
@@ -224,17 +229,17 @@ class SpeechToTextService {
         _logger.logWarning('Already listening');
         return false;
       }
-      
+
       // Сброс всех таймеров и текстов
       _lastRecognizedText = '';
       _pendingPartialText = '';
       _partialDebounce?.cancel();
       _speechStartTimer?.cancel();
       _listenTimer?.cancel();
-      
+
       // Устанавливаем флаг СРАЗУ при клике - пользователь хочет слушать
       _isListening = true;
-      
+
       // Проверяем доступность (запрашивает разрешение)
       final available = await checkAvailability();
       if (!available) {
@@ -243,29 +248,34 @@ class SpeechToTextService {
         onStateChanged(SpeechUiState.idle);
         return false;
       }
-      
+
       // Если уже не слушаем (например, остановлено во время initialize)
       if (!_isListening) {
         _logger.logDebug('Stopped during initialization');
         return false;
       }
-      
+
       // Показываем "Подготовка"
       onStateChanged(SpeechUiState.preparing);
       onStatusMessage(msgPreparing);
-      
+
       _logger.logDebug('Starting speech recognition...');
-      
+
       // Запускаем таймеры ПОСЛЕ того, как onStatus('listening') будет вызван
       // Таймеры будут запущены из onStatus callback
-      
+
       final result = await _speech.listen(
         onResult: _handleSpeechResult,
+        onSoundLevelChange: (level) {
+          onSoundLevelChange?.call(level);
+        },
         listenFor: timeout,
-        pauseFor: const Duration(seconds: 60), // 60 секунд - отключаем внутренний таймаут плагина
+        pauseFor: const Duration(
+          seconds: 60,
+        ), // 60 секунд - отключаем внутренний таймаут плагина
         localeId: 'ru_RU',
       );
-      
+
       return result ?? false;
     } catch (e) {
       _logger.logError('Error starting listening: $e');
@@ -279,18 +289,18 @@ class SpeechToTextService {
       return false;
     }
   }
-  
+
   /// Обработка таймаута ожидания речи
   void _handleTimeout() {
     if (!_isListening) return;
-    
+
     _logger.logDebug('Handling timeout, last text: $_lastRecognizedText');
-    
+
     // СРАЗУ устанавливаем флаг, чтобы предотвратить гонку данных
     _isListening = false;
     _speechStartTimer?.cancel();
     _listenTimer?.cancel();
-    
+
     if (_lastRecognizedText.isNotEmpty) {
       // Есть текст - переходим в обработку
       if (_pendingPartialText.isNotEmpty) {
@@ -299,10 +309,10 @@ class SpeechToTextService {
       }
       onStateChanged(SpeechUiState.processing);
       onStatusMessage(msgProcessing);
-      
+
       // Вибрация при успешном завершении
       HapticFeedback.mediumImpact();
-      
+
       // Сброс после обработки
       Future.delayed(const Duration(seconds: 1), () {
         onStateChanged(SpeechUiState.idle);
@@ -313,7 +323,7 @@ class SpeechToTextService {
       cancelListening();
       onStatusMessage(msgNoSpeech);
       onStateChanged(SpeechUiState.noSpeech);
-      
+
       // Сброс через 2 сек
       Future.delayed(const Duration(seconds: 2), () {
         onStateChanged(SpeechUiState.idle);
@@ -321,12 +331,12 @@ class SpeechToTextService {
       });
     }
   }
-  
+
   /// Остановить прослушивание
   Future<void> stopListening() async {
     try {
       if (!_isListening) return;
-      
+
       _logger.logDebug('Stopping speech recognition...');
       await _speech.stop();
       _listenTimer?.cancel();
@@ -336,12 +346,12 @@ class SpeechToTextService {
       _logger.logError('Error stopping listening: $e');
     }
   }
-  
+
   /// Отменить прослушивание
   Future<void> cancelListening() async {
     try {
       if (!_isListening) return;
-      
+
       _logger.logDebug('Canceling speech recognition...');
       await _speech.cancel();
       _listenTimer?.cancel();
@@ -351,26 +361,26 @@ class SpeechToTextService {
       _logger.logError('Error canceling listening: $e');
     }
   }
-  
+
   /// Обработка результата распознавания
   void _handleSpeechResult(SpeechRecognitionResult result) {
     _logger.logDebug('Speech result: ${result.recognizedWords}');
-    
+
     final text = result.recognizedWords.trim();
     if (text.isEmpty) return;
-    
+
     // Сохраняем последний текст для проверки таймера ожидания
     _lastRecognizedText = text;
-    
+
     // Сбрасываем таймеры ожидания, так как голос обнаружен
     _speechStartTimer?.cancel();
-    
+
     // Обновляем состояние на "слушаю" если еще не в этом состоянии
     if (_isListening) {
       onStateChanged(SpeechUiState.listening);
       onStatusMessage(msgListening);
     }
-    
+
     if (result.finalResult) {
       // Финальный результат — отправляем сразу
       if (_pendingPartialText.isNotEmpty) {
@@ -395,27 +405,26 @@ class SpeechToTextService {
       });
     }
   }
-  
+
   /// Обработка ошибок
   void _handleError(SpeechRecognitionError error) {
     _logger.logError('Speech recognition error: ${error.errorMsg}');
-    
+
     // Игнорируем некоторые ошибки если мы все еще слушаем
     // Например, если сработал pauseFor таймер, это не ошибка для нас
-    if (_isListening && (
-      error.errorMsg == 'error_speech_timeout' || 
-      error.errorMsg == 'error_no_match' ||
-      error.errorMsg == 'no-speech'
-    )) {
+    if (_isListening &&
+        (error.errorMsg == 'error_speech_timeout' ||
+            error.errorMsg == 'error_no_match' ||
+            error.errorMsg == 'no-speech')) {
       // Пусть таймеры обработают
       _logger.logDebug('Ignoring error $error.errorMsg, timers will handle');
       return;
     }
-    
+
     String errorMessage;
     SpeechUiState errorState = SpeechUiState.error;
     bool canAutoRestart = false;
-    
+
     switch (error.errorMsg) {
       case 'error_no_match':
         errorMessage = msgErrorNoMatch;
@@ -447,15 +456,15 @@ class SpeechToTextService {
         errorMessage = msgErrorUnknown;
         canAutoRestart = true;
     }
-    
+
     // Показываем ошибку
     onStatusMessage(errorMessage);
     onStateChanged(errorState);
     stopListening();
-    
+
     // Вибрация при ошибке
     HapticFeedback.heavyImpact();
-    
+
     // Авто-restart для повторяемых ошибок
     if (canAutoRestart && onAutoRestart != null) {
       _logger.logDebug('Auto-restart triggered for error: ${error.errorMsg}');
@@ -472,13 +481,13 @@ class SpeechToTextService {
       });
     }
   }
-  
+
   /// Проверка, слушает ли сейчас сервис
   bool get isListening => _isListening;
-  
+
   /// Проверка доступности микрофона (синхронная)
   bool get isAvailable => _isInitialized;
-  
+
   /// Очистка ресурсов
   void dispose() {
     _listenTimer?.cancel();

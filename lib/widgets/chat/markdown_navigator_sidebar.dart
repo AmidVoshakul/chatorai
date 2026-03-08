@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 
+// ===========================================================================
+// MARKDOWN NAVIGATOR SIDEBAR WIDGET
+// ===========================================================================
+
 /// Сайдбар для навигации по заголовкам Markdown в чате
 /// Открывается слайдом с правого края экрана влево
 /// Аналогичен основному сайдбару, но для заголовков чата
@@ -25,6 +29,10 @@ class MarkdownNavigatorSidebar extends StatefulWidget {
   State<MarkdownNavigatorSidebar> createState() =>
       _MarkdownNavigatorSidebarState();
 }
+
+// ===========================================================================
+// MARKDOWN NAVIGATOR SIDEBAR STATE
+// ===========================================================================
 
 class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
     with SingleTickerProviderStateMixin {

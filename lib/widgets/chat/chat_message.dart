@@ -14,6 +14,10 @@ import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 import 'package:chatorai/utils/format_time.dart';
 
+// ===========================================================================
+// CHAT MESSAGE WIDGET
+// ===========================================================================
+
 class ChatMessage extends StatefulWidget {
   final Message message;
   final bool isStreaming;
@@ -53,6 +57,10 @@ class ChatMessage extends StatefulWidget {
   @override
   State<ChatMessage> createState() => _ChatMessageState();
 }
+
+// ===========================================================================
+// CHAT MESSAGE STATE
+// ===========================================================================
 
 class _ChatMessageState extends State<ChatMessage>
     with TickerProviderStateMixin {
@@ -160,344 +168,356 @@ class _ChatMessageState extends State<ChatMessage>
     // Ensure animations are initialized before build
     _initAnimations();
 
-    return SlideTransition(
-      position: _slideAnimation!,
-      child: FadeTransition(
-        opacity: _fadeAnimation!,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: isUser
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
-          children: [
-            // Message bubble (without actions)
-            Row(
-              mainAxisAlignment: isUser
-                  ? MainAxisAlignment.end
-                  : MainAxisAlignment.start,
-              children: [
-                // No avatar for any messages
+    return RepaintBoundary(
+      child: SlideTransition(
+        position: _slideAnimation!,
+        child: FadeTransition(
+          opacity: _fadeAnimation!,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: isUser
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
+            children: [
+              // Message bubble (without actions)
+              Row(
+                mainAxisAlignment: isUser
+                    ? MainAxisAlignment.end
+                    : MainAxisAlignment.start,
+                children: [
+                  // No avatar for any messages
 
-                // User messages take responsive width, AI messages take full width
-                isUser
-                    ? Flexible(
-                        fit: FlexFit.loose,
-                        flex: 8,
-                        child: Container(
-                          constraints: BoxConstraints(
-                            maxWidth: isMobile
-                                ? screenWidth * 0.8
-                                : screenWidth * 0.6,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: ChatoraiSpacing.md,
-                            vertical: ChatoraiSpacing.sm,
-                          ),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withValues(
-                              alpha: 0.1,
+                  // User messages take responsive width, AI messages take full width
+                  isUser
+                      ? Flexible(
+                          fit: FlexFit.loose,
+                          flex: 8,
+                          child: Container(
+                            constraints: BoxConstraints(
+                              maxWidth: isMobile
+                                  ? screenWidth * 0.8
+                                  : screenWidth * 0.6,
                             ),
-                            borderRadius: BorderRadius.circular(
-                              ChatoraiBorderRadius.md,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: ChatoraiSpacing.md,
+                              vertical: ChatoraiSpacing.sm,
                             ),
-                            boxShadow: ChatoraiShadows.cardShadow,
-                            border: Border.all(
-                              color: theme.dividerColor.withValues(alpha: 0.3),
-                              width: ChatoraiBorderWidth.thinBold,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                ChatoraiBorderRadius.md,
+                              ),
+                              boxShadow: ChatoraiShadows.cardShadow,
+                              border: Border.all(
+                                color: theme.dividerColor.withValues(
+                                  alpha: 0.3,
+                                ),
+                                width: ChatoraiBorderWidth.thinBold,
+                              ),
                             ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Image Preview (if message has image)
-                              if (hasImage) _buildImagePreview(),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Image Preview (if message has image)
+                                if (hasImage) _buildImagePreview(),
 
-                              // Message Content
-                              _buildMessageContent(context),
+                                // Message Content
+                                _buildMessageContent(context),
 
-                              // Error State
-                              if (widget.message.isError) _buildErrorMessage(),
+                                // Error State
+                                if (widget.message.isError)
+                                  _buildErrorMessage(),
 
-                              // Streaming Indicator
-                              if (showStreaming) _buildStreamingIndicator(),
-                            ],
-                          ),
-                        ),
-                      )
-                    : Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: ChatoraiSpacing.md,
-                            vertical: ChatoraiSpacing.sm,
-                          ),
-                          decoration: BoxDecoration(
-                            color: theme.cardColor,
-                            borderRadius: BorderRadius.circular(
-                              ChatoraiBorderRadius.md,
-                            ),
-                            boxShadow: ChatoraiShadows.cardShadow,
-                            border: Border.all(
-                              color: theme.dividerColor.withValues(alpha: 0.3),
-                              width: ChatoraiBorderWidth.thinBold,
+                                // Streaming Indicator
+                                if (showStreaming) _buildStreamingIndicator(),
+                              ],
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Message Header
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      isAssistant &&
-                                              widget.message.model != null
-                                          ? widget.message.model!
-                                          : widget.message.role.displayName,
+                        )
+                      : Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: ChatoraiSpacing.md,
+                              vertical: ChatoraiSpacing.sm,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.cardColor,
+                              borderRadius: BorderRadius.circular(
+                                ChatoraiBorderRadius.md,
+                              ),
+                              boxShadow: ChatoraiShadows.cardShadow,
+                              border: Border.all(
+                                color: theme.dividerColor.withValues(
+                                  alpha: 0.3,
+                                ),
+                                width: ChatoraiBorderWidth.thinBold,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Message Header
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        isAssistant &&
+                                                widget.message.model != null
+                                            ? widget.message.model!
+                                            : widget.message.role.displayName,
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: theme
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.color
+                                                  ?.withValues(alpha: 0.7),
+                                            ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                    const SizedBox(width: ChatoraiSpacing.sm),
+                                    Text(
+                                      _formatTime(widget.message.timestamp),
                                       style: theme.textTheme.bodySmall
                                           ?.copyWith(
-                                            fontWeight: FontWeight.bold,
                                             color: theme
                                                 .textTheme
                                                 .bodySmall
                                                 ?.color
-                                                ?.withValues(alpha: 0.7),
+                                                ?.withValues(alpha: 0.6),
                                           ),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
                                     ),
-                                  ),
-                                  const SizedBox(width: ChatoraiSpacing.sm),
-                                  Text(
-                                    _formatTime(widget.message.timestamp),
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.textTheme.bodySmall?.color
-                                          ?.withValues(alpha: 0.6),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
 
-                              const SizedBox(height: ChatoraiSpacing.sm),
+                                const SizedBox(height: ChatoraiSpacing.sm),
 
-                              // Image Preview (if message has image)
-                              if (hasImage) _buildImagePreview(),
+                                // Image Preview (if message has image)
+                                if (hasImage) _buildImagePreview(),
 
-                              // Message Content
-                              _buildMessageContent(context),
+                                // Message Content
+                                _buildMessageContent(context),
 
-                              // Error State
-                              if (widget.message.isError) _buildErrorMessage(),
+                                // Error State
+                                if (widget.message.isError)
+                                  _buildErrorMessage(),
 
-                              // Streaming Indicator
-                              if (showStreaming) _buildStreamingIndicator(),
-                            ],
+                                // Streaming Indicator
+                                if (showStreaming) _buildStreamingIndicator(),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-              ],
-            ),
+                ],
+              ),
 
-            // Message Actions (outside the message bubble, on main chat background)
-            if (!widget.isStreaming)
-              Container(
-                margin: const EdgeInsets.only(top: 4, bottom: 8),
-                alignment: Alignment.centerRight,
-                child: ScrollableActionButtons(
-                  buttonSpacing: 4.0,
-                  height: 40.0,
-                  children: [
-                    // User message actions (only edit and copy)
-                    if (isUser) ...[
-                      IconButton(
-                        icon: Icon(
-                          Icons.edit,
-                          size: ChatoraiIconSizes.actionIcon,
-                          color: theme.iconTheme.color?.withValues(
-                            alpha: ChatoraiIconOpacity.medium,
-                          ),
-                        ),
-                        onPressed: _startEditing,
-                        tooltip: localizations.edit,
-                        splashRadius: 20,
-                      ),
-                    ],
-
-                    // Share action for assistant messages
-                    if (!isUser) ...[
-                      IconButton(
-                        icon: Icon(
-                          Icons.share,
-                          size: ChatoraiIconSizes.actionIcon,
-                          color: theme.iconTheme.color?.withValues(
-                            alpha: ChatoraiIconOpacity.medium,
-                          ),
-                        ),
-                        onPressed: () {
-                          MessageUtils.shareMessage(
-                            content: widget.message.content,
-                            context: context,
-                          );
-                        },
-                        tooltip: localizations.share,
-                        splashRadius: 20,
-                      ),
-                    ],
-
-                    // Universal copy action
-                    IconButton(
-                      icon: Icon(
-                        Icons.copy_all,
-                        size: ChatoraiIconSizes.actionIcon,
-                        color: theme.iconTheme.color?.withValues(alpha: 0.8),
-                      ),
-                      onPressed: () {
-                        // Копируем сообщение без добавления имени отправителя
-                        // (для одиночных сообщений это не нужно)
-                        MessageUtils.copyMessage(
-                          content: widget.message.content,
-                          context: context,
-                          senderName: null, // Не добавляем имя отправителя
-                        );
-                      },
-                      tooltip: localizations.copyMessage, // Улучшаем tooltip
-                      splashRadius: 24, // Увеличиваем радиус клика
-                      hoverColor: theme.colorScheme.primary.withValues(
-                        alpha: 0.1,
-                      ), // Добавляем hover эффект
-                      focusColor: theme.colorScheme.primary.withValues(
-                        alpha: 0.1,
-                      ), // Добавляем focus эффект
-                    ),
-
-                    // Delete action for all messages
-                    IconButton(
-                      icon: Icon(
-                        Icons.delete,
-                        size: ChatoraiIconSizes.actionIcon,
-                        color: Colors.red.withValues(alpha: 0.7),
-                      ),
-                      onPressed: () async {
-                        // Close keyboard before deleting
-                        FocusScope.of(context).unfocus();
-
-                        final bool deleted = await MessageUtils.deleteMessage(
-                          chatId: widget.chatId,
-                          messageId: widget.message.id,
-                          chatStorageService: widget.chatStorageService,
-                          context: context,
-                        );
-
-                        if (deleted) {
-                          widget.onMessageDeleted();
-                        }
-                      },
-                      tooltip: localizations.delete,
-                      splashRadius: 20,
-                    ),
-
-                    // AI-specific actions (only for assistant messages)
-                    if (!isUser) ...[
-                      // Listen button
-                      IconButton(
-                        icon: Icon(
-                          Icons.volume_up,
-                          size: ChatoraiIconSizes.actionIcon,
-                          color: theme.iconTheme.color?.withValues(
-                            alpha: ChatoraiIconOpacity.medium,
-                          ),
-                        ),
-                        onPressed: () {
-                          // TODO: Voice message
-                        },
-                        tooltip: localizations.listen,
-                        splashRadius: 20,
-                      ),
-
-                      // Regenerate button
-                      IconButton(
-                        icon: Icon(
-                          Icons.refresh,
-                          size: ChatoraiIconSizes.actionIcon,
-                          color: theme.iconTheme.color?.withValues(
-                            alpha: ChatoraiIconOpacity.medium,
-                          ),
-                        ),
-                        onPressed: () async {
-                          await MessageUtils.regenerateMessage(
-                            chatId: widget.chatId,
-                            messageId: widget.message.id,
-                            chatStorageService: widget.chatStorageService,
-                            onRegenerate: () {
-                              // Вызываем callback родителя для перегенерации
-                              if (widget.onMessageUpdated != null) {
-                                widget.onMessageUpdated!('REGENERATE');
-                              }
-                            },
-                          );
-                        },
-                        tooltip: localizations.regenerate,
-                        splashRadius: 20,
-                      ),
-
-                      // Continue response button (only show for recent assistant messages that might be incomplete)
-                      if (widget.isLastMessage &&
-                          widget.message.content.isNotEmpty &&
-                          (widget.message.content.endsWith('...') ||
-                              widget.message.content.split(' ').length > 30 ||
-                              !widget.message.isComplete))
+              // Message Actions (outside the message bubble, on main chat background)
+              if (!widget.isStreaming)
+                Container(
+                  margin: const EdgeInsets.only(top: 4, bottom: 8),
+                  alignment: Alignment.centerRight,
+                  child: ScrollableActionButtons(
+                    buttonSpacing: 4.0,
+                    height: 40.0,
+                    children: [
+                      // User message actions (only edit and copy)
+                      if (isUser) ...[
                         IconButton(
                           icon: Icon(
-                            Icons.play_arrow,
+                            Icons.edit,
                             size: ChatoraiIconSizes.actionIcon,
-                            color: theme.colorScheme.primary.withValues(
+                            color: theme.iconTheme.color?.withValues(
+                              alpha: ChatoraiIconOpacity.medium,
+                            ),
+                          ),
+                          onPressed: _startEditing,
+                          tooltip: localizations.edit,
+                          splashRadius: 20,
+                        ),
+                      ],
+
+                      // Share action for assistant messages
+                      if (!isUser) ...[
+                        IconButton(
+                          icon: Icon(
+                            Icons.share,
+                            size: ChatoraiIconSizes.actionIcon,
+                            color: theme.iconTheme.color?.withValues(
                               alpha: ChatoraiIconOpacity.medium,
                             ),
                           ),
                           onPressed: () {
-                            if (widget.onContinueResponse != null) {
-                              widget.onContinueResponse!();
-                            }
+                            MessageUtils.shareMessage(
+                              content: widget.message.content,
+                              context: context,
+                            );
                           },
-                          tooltip: localizations.continueResponse,
+                          tooltip: localizations.share,
+                          splashRadius: 20,
+                        ),
+                      ],
+
+                      // Universal copy action
+                      IconButton(
+                        icon: Icon(
+                          Icons.copy_all,
+                          size: ChatoraiIconSizes.actionIcon,
+                          color: theme.iconTheme.color?.withValues(alpha: 0.8),
+                        ),
+                        onPressed: () {
+                          // Копируем сообщение без добавления имени отправителя
+                          // (для одиночных сообщений это не нужно)
+                          MessageUtils.copyMessage(
+                            content: widget.message.content,
+                            context: context,
+                            senderName: null, // Не добавляем имя отправителя
+                          );
+                        },
+                        tooltip: localizations.copyMessage, // Улучшаем tooltip
+                        splashRadius: 24, // Увеличиваем радиус клика
+                        hoverColor: theme.colorScheme.primary.withValues(
+                          alpha: 0.1,
+                        ), // Добавляем hover эффект
+                        focusColor: theme.colorScheme.primary.withValues(
+                          alpha: 0.1,
+                        ), // Добавляем focus эффект
+                      ),
+
+                      // Delete action for all messages
+                      IconButton(
+                        icon: Icon(
+                          Icons.delete,
+                          size: ChatoraiIconSizes.actionIcon,
+                          color: Colors.red.withValues(alpha: 0.7),
+                        ),
+                        onPressed: () async {
+                          // Close keyboard before deleting
+                          FocusScope.of(context).unfocus();
+
+                          final bool deleted = await MessageUtils.deleteMessage(
+                            chatId: widget.chatId,
+                            messageId: widget.message.id,
+                            chatStorageService: widget.chatStorageService,
+                            context: context,
+                          );
+
+                          if (deleted) {
+                            widget.onMessageDeleted();
+                          }
+                        },
+                        tooltip: localizations.delete,
+                        splashRadius: 20,
+                      ),
+
+                      // AI-specific actions (only for assistant messages)
+                      if (!isUser) ...[
+                        // Listen button
+                        IconButton(
+                          icon: Icon(
+                            Icons.volume_up,
+                            size: ChatoraiIconSizes.actionIcon,
+                            color: theme.iconTheme.color?.withValues(
+                              alpha: ChatoraiIconOpacity.medium,
+                            ),
+                          ),
+                          onPressed: () {
+                            // TODO: Voice message
+                          },
+                          tooltip: localizations.listen,
                           splashRadius: 20,
                         ),
 
-                      // Like button
-                      IconButton(
-                        icon: Icon(
-                          Icons.thumb_up,
-                          size: ChatoraiIconSizes.actionIcon,
-                          color: theme.iconTheme.color?.withValues(
-                            alpha: ChatoraiIconOpacity.medium,
+                        // Regenerate button
+                        IconButton(
+                          icon: Icon(
+                            Icons.refresh,
+                            size: ChatoraiIconSizes.actionIcon,
+                            color: theme.iconTheme.color?.withValues(
+                              alpha: ChatoraiIconOpacity.medium,
+                            ),
                           ),
+                          onPressed: () async {
+                            await MessageUtils.regenerateMessage(
+                              chatId: widget.chatId,
+                              messageId: widget.message.id,
+                              chatStorageService: widget.chatStorageService,
+                              onRegenerate: () {
+                                // Вызываем callback родителя для перегенерации
+                                if (widget.onMessageUpdated != null) {
+                                  widget.onMessageUpdated!('REGENERATE');
+                                }
+                              },
+                            );
+                          },
+                          tooltip: localizations.regenerate,
+                          splashRadius: 20,
                         ),
-                        onPressed: () {
-                          // TODO: Like message
-                        },
-                        tooltip: localizations.like,
-                        splashRadius: 20,
-                      ),
 
-                      // Dislike button
-                      IconButton(
-                        icon: Icon(
-                          Icons.thumb_down,
-                          size: ChatoraiIconSizes.actionIcon,
-                          color: theme.iconTheme.color?.withValues(
-                            alpha: ChatoraiIconOpacity.medium,
+                        // Continue response button (only show for recent assistant messages that might be incomplete)
+                        if (widget.isLastMessage &&
+                            widget.message.content.isNotEmpty &&
+                            (widget.message.content.endsWith('...') ||
+                                widget.message.content.split(' ').length > 30 ||
+                                !widget.message.isComplete))
+                          IconButton(
+                            icon: Icon(
+                              Icons.play_arrow,
+                              size: ChatoraiIconSizes.actionIcon,
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: ChatoraiIconOpacity.medium,
+                              ),
+                            ),
+                            onPressed: () {
+                              if (widget.onContinueResponse != null) {
+                                widget.onContinueResponse!();
+                              }
+                            },
+                            tooltip: localizations.continueResponse,
+                            splashRadius: 20,
                           ),
+
+                        // Like button
+                        IconButton(
+                          icon: Icon(
+                            Icons.thumb_up,
+                            size: ChatoraiIconSizes.actionIcon,
+                            color: theme.iconTheme.color?.withValues(
+                              alpha: ChatoraiIconOpacity.medium,
+                            ),
+                          ),
+                          onPressed: () {
+                            // TODO: Like message
+                          },
+                          tooltip: localizations.like,
+                          splashRadius: 20,
                         ),
-                        onPressed: () {
-                          // TODO: Dislike message
-                        },
-                        tooltip: localizations.dislike,
-                        splashRadius: 20,
-                      ),
+
+                        // Dislike button
+                        IconButton(
+                          icon: Icon(
+                            Icons.thumb_down,
+                            size: ChatoraiIconSizes.actionIcon,
+                            color: theme.iconTheme.color?.withValues(
+                              alpha: ChatoraiIconOpacity.medium,
+                            ),
+                          ),
+                          onPressed: () {
+                            // TODO: Dislike message
+                          },
+                          tooltip: localizations.dislike,
+                          splashRadius: 20,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

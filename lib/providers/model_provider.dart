@@ -6,6 +6,10 @@ import 'package:chatorai/utils/logger.dart';
 
 final _logger = LogTags.settings;
 
+// ===========================================================================
+// MODEL STATE
+// ===========================================================================
+
 class ModelState {
   final List<OpenRouterModel> availableModels;
   final String selectedModelId;
@@ -49,6 +53,10 @@ class ModelState {
     );
   }
 }
+
+// ===========================================================================
+// MODEL NOTIFIER
+// ===========================================================================
 
 class ModelNotifier extends Notifier<ModelState> {
   static const String _selectedModelKey = 'selected_model_id';
@@ -280,6 +288,10 @@ class ModelNotifier extends Notifier<ModelState> {
   }
 }
 
+// ===========================================================================
+// SERVICE PROVIDER HELPER
+// ===========================================================================
+
 class _OpenRouterServiceProvider {
   static OpenRouterService? _instance;
   static bool _initialized = false;
@@ -296,6 +308,10 @@ class _OpenRouterServiceProvider {
     _instance?.setConnectivityStatus(isConnected);
   }
 }
+
+// ===========================================================================
+// PROVIDERS
+// ===========================================================================
 
 final openRouterServiceProvider = Provider<OpenRouterClient>((ref) {
   final networkState = ref.watch(networkServiceProvider);

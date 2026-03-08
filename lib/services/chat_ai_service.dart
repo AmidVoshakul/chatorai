@@ -4,13 +4,25 @@ import 'package:chatorai/models/model_settings.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/utils/chat_error_utils.dart';
 
+// ===========================================================================
+// CHAT AI SERVICE
+// ===========================================================================
+
 class ChatAiService {
   final OpenRouterClient _client;
+
+  // ===========================================================================
+  // CONSTRUCTOR & GETTERS
+  // ===========================================================================
 
   ChatAiService({OpenRouterClient? client})
     : _client = client ?? OpenRouterService();
 
   OpenRouterClient get client => _client;
+
+  // ===========================================================================
+  // MESSAGE CONVERSION
+  // ===========================================================================
 
   Map<String, dynamic> convertMessageToOpenRouterFormat(Message msg) {
     if (msg.imageData != null && msg.imageType != null) {
@@ -35,6 +47,10 @@ class ChatAiService {
   ) {
     return ChatErrorUtils.sanitizeMessages(messages);
   }
+
+  // ===========================================================================
+  // CHAT COMPLETION
+  // ===========================================================================
 
   Future<ChatCompletionResponse> getChatCompletionWithAdaptiveRollback({
     required String model,
@@ -103,6 +119,10 @@ class ChatAiService {
     }
   }
 
+  // ===========================================================================
+  // STREAMING
+  // ===========================================================================
+
   Future<void> streamChatCompletion({
     required List<Map<String, dynamic>> messages,
     required String model,
@@ -129,6 +149,10 @@ class ChatAiService {
       onCompletion: onCompletion,
     );
   }
+
+  // ===========================================================================
+  // ERROR HANDLING
+  // ===========================================================================
 
   String formatError(Object error) => ChatErrorUtils.formatError(error);
 }

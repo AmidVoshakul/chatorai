@@ -2,6 +2,10 @@
 
 import 'package:flutter/material.dart';
 
+// ===========================================================================
+// SCROLLABLE ACTION BUTTONS WIDGET
+// ===========================================================================
+
 /// Widget for horizontally scrollable action buttons
 /// Used to prevent overflow when there are many action icons
 class ScrollableActionButtons extends StatelessWidget {
@@ -22,6 +26,10 @@ class ScrollableActionButtons extends StatelessWidget {
     this.scrollController,
   });
 
+  // ===========================================================================
+  // BUILD METHOD
+  // ===========================================================================
+
   @override
   Widget build(BuildContext context) {
     // If we have 4 or fewer buttons, don't use scrolling
@@ -41,7 +49,7 @@ class ScrollableActionButtons extends StatelessWidget {
         children: [
           // Left padding
           const SizedBox(width: 8),
-          
+
           // Scrollable buttons
           Expanded(
             child: ListView(
@@ -57,7 +65,7 @@ class ScrollableActionButtons extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Right padding
           const SizedBox(width: 8),
         ],
@@ -68,16 +76,16 @@ class ScrollableActionButtons extends StatelessWidget {
   /// Build the list of button children with proper spacing
   List<Widget> _buildButtonChildren() {
     final List<Widget> buttonChildren = [];
-    
+
     for (int i = 0; i < children.length; i++) {
       buttonChildren.add(children[i]);
-      
+
       // Add spacing between buttons (not after the last one)
       if (i < children.length - 1) {
         buttonChildren.add(SizedBox(width: buttonSpacing));
       }
     }
-    
+
     return buttonChildren;
   }
 }

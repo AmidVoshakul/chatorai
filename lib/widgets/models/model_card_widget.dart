@@ -4,6 +4,10 @@ import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/widgets/models/model_features_widget.dart';
 
+// ===========================================================================
+// MODEL CARD WIDGET
+// ===========================================================================
+
 class ModelCardWidget extends StatelessWidget {
   final OpenRouterModel model;
   final bool isSelected;
@@ -21,6 +25,10 @@ class ModelCardWidget extends StatelessWidget {
     required this.onFavoriteToggle,
     required this.onInfoTap,
   });
+
+  // ===========================================================================
+  // BUILD METHOD
+  // ===========================================================================
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:chatorai/themes/app_theme.dart';
 
+// ===========================================================================
+// SETTINGS SELECTION CARD WIDGET
+// ===========================================================================
+
 class SettingsSelectionCard extends StatelessWidget {
   final BuildContext context;
   final IconData icon;
@@ -16,6 +20,10 @@ class SettingsSelectionCard extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
   });
+
+  // ===========================================================================
+  // BUILD METHOD
+  // ===========================================================================
 
   @override
   Widget build(BuildContext context) {

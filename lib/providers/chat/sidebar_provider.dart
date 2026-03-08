@@ -2,6 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/providers/chat/chat_providers.dart';
 
+// ===========================================================================
+// STATE
+// ===========================================================================
+
 class SidebarState {
   final String searchQuery;
   final bool isSearching;
@@ -15,6 +19,10 @@ class SidebarState {
     );
   }
 }
+
+// ===========================================================================
+// NOTIFIER
+// ===========================================================================
 
 class SidebarNotifier extends Notifier<SidebarState> {
   @override
@@ -39,9 +47,18 @@ class SidebarNotifier extends Notifier<SidebarState> {
   }
 }
 
+// ===========================================================================
+// PROVIDERS
+// ===========================================================================
+
 final sidebarProvider = NotifierProvider<SidebarNotifier, SidebarState>(
   SidebarNotifier.new,
 );
+
+final chatListLoadingProvider = Provider<bool>((ref) {
+  final chatsAsync = ref.watch(chatListProvider);
+  return chatsAsync.isLoading;
+});
 
 final filteredChatsProvider = Provider<List<Chat>>((ref) {
   final sidebarState = ref.watch(sidebarProvider);

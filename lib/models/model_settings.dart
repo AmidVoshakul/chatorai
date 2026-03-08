@@ -1,4 +1,8 @@
 /// Data class for model-specific parameters
+// ===========================================================================
+// MODEL SETTINGS CLASS
+// ===========================================================================
+
 class ModelSettings {
   final String modelId;
   final double temperature;
@@ -10,7 +14,7 @@ class ModelSettings {
   final bool stream;
   final int? maxContextLength;
   final bool reasoningEnabled;
-  
+
   // Model capabilities from API
   final int? apiMaxTokens;
   final double? apiMaxTemperature;
@@ -49,13 +53,17 @@ class ModelSettings {
   }
 
   /// Create settings from API model information
-  factory ModelSettings.fromApiModel(String modelId, int? contextLength, int? maxTokens) {
+  factory ModelSettings.fromApiModel(
+    String modelId,
+    int? contextLength,
+    int? maxTokens,
+  ) {
     // Use provided maxTokens or fall back to 97% of contextLength (to avoid 400 errors)
     // or default to 4096
     final apiLimit = contextLength ?? 4096;
     final safeMaxTokens = maxTokens ?? (apiLimit * 0.97).toInt();
     final defaultTemperature = 1.0;
-    
+
     return ModelSettings(
       modelId: modelId,
       temperature: defaultTemperature,
@@ -72,6 +80,10 @@ class ModelSettings {
       apiMinTemperature: 0.0, // Common min
     );
   }
+
+  // ===========================================================================
+  // COPY WITH
+  // ===========================================================================
 
   ModelSettings copyWith({
     String? modelId,
@@ -106,6 +118,10 @@ class ModelSettings {
       apiContextLength: apiContextLength ?? this.apiContextLength,
     );
   }
+
+  // ===========================================================================
+  // SERIALIZATION
+  // ===========================================================================
 
   Map<String, dynamic> toJson() {
     return {
@@ -148,7 +164,7 @@ class ModelSettings {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    
+
     return other is ModelSettings &&
         other.modelId == modelId &&
         other.temperature == temperature &&

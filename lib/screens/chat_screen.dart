@@ -28,6 +28,8 @@ import 'package:chatorai/widgets/chat/markdown_navigator_sidebar.dart';
 import 'package:chatorai/widgets/chat/welcome_questions_data.dart';
 import 'package:chatorai/widgets/chat/chat_app_bar.dart';
 import 'package:chatorai/widgets/chat/sliding_app_bar.dart';
+import 'package:chatorai/widgets/chat/speech_overlay.dart';
+import 'package:chatorai/services/speech_to_text_service.dart';
 import 'package:chatorai/screens/models_screen.dart';
 import 'package:chatorai/utils/chat_scroll_utils.dart';
 import 'package:chatorai/constants/chat_constants.dart';
@@ -38,12 +40,20 @@ import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
+// ===========================================================================
+// CHAT SCREEN WIDGET
+// ===========================================================================
+
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
+
+// ===========================================================================
+// STATE VARIABLES
+// ===========================================================================
 
 class _ChatScreenState extends ConsumerState<ChatScreen>
     with TickerProviderStateMixin {
@@ -60,6 +70,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   DateTime? _lastScrollUpdate;
   static const _scrollThrottleDuration = Duration(milliseconds: 16);
   late final FocusNode _chatInputFocusNode;
+
+  // Speech state
+  SpeechUiState _speechUiState = SpeechUiState.idle;
+  String _speechStatusMessage = '';
+  double _speechSoundLevel = 0.0;
+
+  // ===========================================================================
+  // LIFECYCLE METHODS
+  // ===========================================================================
 
   @override
   void initState() {
@@ -96,6 +115,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _chatInputFocusNode.dispose();
     super.dispose();
   }
+
+  // ===========================================================================
+  // SCROLL HANDLERS
+  // ===========================================================================
 
   void _handleScroll() {
     final now = DateTime.now();
@@ -165,12 +188,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
   }
 
+  // ===========================================================================
+  // GETTERS
+  // ===========================================================================
+
   Chat? get currentChat => ref.watch(currentChatProvider);
 
   String get selectedModelId => ref.watch(modelProvider).selectedModelId;
 
   OpenRouterModel? get selectedModelObject =>
       ref.watch(modelProvider).selectedModelObject;
+
+  // ===========================================================================
+  // WELCOME SUGGESTIONS
+  // ===========================================================================
 
   void _showWelcomeSuggestions() {
     final questions = WelcomeQuestionsData.getRandomQuestions(
@@ -179,6 +210,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
     ref.read(chatScreenProvider.notifier).showWelcomeSuggestions(questions);
   }
+
+  // ===========================================================================
+  // CHAT MANAGEMENT
+  // ===========================================================================
 
   Future<void> _createNewChat() async {
     final newChat = await ref.read(chatListProvider.notifier).createNewChat();
@@ -254,6 +289,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
   }
 
+  // ===========================================================================
+  // MESSAGE HANDLING
+  // ===========================================================================
+
   void _handleSendMessage(MessageData messageData) async {
     _chatScrollUtils?.resetAutoScrollLock();
     ref.read(chatScreenProvider.notifier).hideAllSuggestions();
@@ -321,6 +360,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _sendToAI(text, chatWithBoth);
   }
 
+  // ===========================================================================
+  // MESSAGE CREATION HELPERS
+  // ===========================================================================
+
   Message _createUserMessage(
     String content, {
     String? base64Data,
@@ -351,6 +394,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       model: model ?? selectedModelId,
     );
   }
+
+  // ===========================================================================
+  // REGENERATE RESPONSE
+  // ===========================================================================
 
   Future<void> _regenerateResponse(String messageId) async {
     final chat = currentChat;
@@ -412,6 +459,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     _sendToAI(userMessage.content, chatWithNewPlaceholder);
   }
+
+  // ===========================================================================
+  // AI STREAMING METHODS
+  // ===========================================================================
 
   Future<void> _sendToAI(String userMessage, [Chat? providedChat]) async {
     final chat = providedChat ?? currentChat;
@@ -548,6 +599,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       modelSettings: settings,
     );
   }
+
+  // ===========================================================================
+  // STREAMING RESPONSE HANDLER
+  // ===========================================================================
 
   Future<void> _handleStreamingResponse({
     required Chat chat,
@@ -725,6 +780,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
   }
 
+  // ===========================================================================
+  // ERROR HANDLING
+  // ===========================================================================
+
   Future<void> _handleStreamingError(Object error) async {
     final errorMessage = ChatErrorUtils.formatError(error);
     if (currentChat != null && currentChat!.messages.isNotEmpty) {
@@ -756,10 +815,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
   }
 
+  // ===========================================================================
+  // STREAMING CONTROL
+  // ===========================================================================
+
   void _stopStreaming() {
     ref.read(chatScreenProvider.notifier).setStreaming(false);
     ref.read(streamingContentProvider.notifier).reset();
   }
+
+  // ===========================================================================
+  // REFRESH CHAT MESSAGES
+  // ===========================================================================
 
   void _refreshChatMessages() async {
     FocusScope.of(context).unfocus();
@@ -776,6 +843,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       }
     }
   }
+
+  // ===========================================================================
+  // MESSAGE EDIT HANDLERS
+  // ===========================================================================
 
   Future<void> _handleMessageEdited(String messageId, String newContent) async {
     if (currentChat == null) return;
@@ -874,6 +945,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
   }
 
+  // ===========================================================================
+  // NAVIGATOR HANDLERS
+  // ===========================================================================
+
   void _onHeadingsUpdated(List<MarkdownHeadingInfoWithKey> headings) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -898,6 +973,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
     ref.read(chatScreenUIProvider.notifier).setNavigatorVisible(false);
   }
+
+  // ===========================================================================
+  // CONTINUATION RESPONSE HANDLERS
+  // ===========================================================================
 
   void _continueAIResponse(String lastMessageId) async {
     if (currentChat == null) return;
@@ -960,6 +1039,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
   }
 
+  // ===========================================================================
+  // MODEL SELECTION
+  // ===========================================================================
+
   void _updateSelectedModel(String modelId, OpenRouterModel? modelObject) {
     ref.read(modelProvider.notifier).setSelectedModel(modelId);
   }
@@ -979,6 +1062,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   bool _hasHeadings() {
     return ref.read(chatScreenUIProvider).navigatorHeadings.isNotEmpty;
   }
+
+  // ===========================================================================
+  // UI BUILDERS
+  // ===========================================================================
 
   Widget _buildSidebarDrawer({required double width}) {
     final isCollapsed = ref.read(chatScreenUIProvider).isSidebarCollapsed;
@@ -1000,6 +1087,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       ),
     );
   }
+
+  // ===========================================================================
+  // BUILD CHAT MESSAGES
+  // ===========================================================================
 
   Widget _buildChatMessages({bool wrapWithGesture = false}) {
     final chatState = ref.watch(chatScreenProvider);
@@ -1046,6 +1137,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     return chatMessages;
   }
 
+  // ===========================================================================
+  // MAIN BUILD METHOD
+  // ===========================================================================
+
   @override
   Widget build(BuildContext context) {
     final isStreaming = ref.watch(
@@ -1061,7 +1156,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       onStopStreaming: _stopStreaming,
       isStreaming: isStreaming,
       focusNode: _chatInputFocusNode,
-      onSpeechStateChanged: (_, __) {},
+      onSpeechStateChanged: (state, message) {
+        setState(() {
+          _speechUiState = state;
+          _speechStatusMessage = message;
+        });
+      },
+      onSoundLevelChanged: (level) {
+        setState(() {
+          _speechSoundLevel = (level / 30).clamp(0.0, 1.0);
+        });
+      },
       checkModelSupportsImages: (_) =>
           ref.read(modelProvider.notifier).modelSupportsImagesSelected(),
     );
@@ -1069,6 +1174,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     Widget baseLayout = isMobile
         ? _buildMobileLayout(chatInput)
         : _buildDesktopLayout(chatInput);
+
+    // Wrap with speech overlay if speech is active
+    if (_speechUiState != SpeechUiState.idle) {
+      baseLayout = Stack(
+        children: [
+          baseLayout,
+          SpeechOverlayWidget(
+            state: _speechUiState,
+            message: _speechStatusMessage,
+            soundLevel: _speechSoundLevel,
+          ),
+        ],
+      );
+    }
 
     final uiState = ref.watch(chatScreenUIProvider);
     if (uiState.navigatorHeadings.isNotEmpty) {
@@ -1089,14 +1208,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     return baseLayout;
   }
 
+  // ===========================================================================
+  // LAYOUT BUILDERS
+  // ===========================================================================
+
   Widget _buildMobileLayout(Widget chatInput) {
+    final hasHeadings = _hasHeadings();
     return Scaffold(
       key: _scaffoldKey,
       drawer: _buildSidebarDrawer(width: ChatScreenConstants.sidebarWidth),
       body: GestureDetector(
         onHorizontalDragStart: (details) {
-          if (details.globalPosition.dx < 50)
+          if (details.globalPosition.dx < 50) {
+            FocusScope.of(context).unfocus();
             _scaffoldKey.currentState?.openDrawer();
+          }
         },
         child: Column(
           children: [
@@ -1104,9 +1230,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
               key: _slidingAppBarKey,
               selectedModel: selectedModelId,
               selectedModelObject: selectedModelObject,
-              onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
+              onMenuPressed: () {
+                FocusScope.of(context).unfocus();
+                _scaffoldKey.currentState?.openDrawer();
+              },
               onModelSelected: _showModelSelection,
-              hasHeadings: _hasHeadings,
+              hasHeadings: () => hasHeadings,
               onNavigatorPressed: _toggleNavigator,
               isMobile: true,
             ),
@@ -1127,13 +1256,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   }
 
   Widget _buildDesktopLayout(Widget chatInput) {
+    final hasHeadings = _hasHeadings();
     return Scaffold(
+      key: _scaffoldKey,
       appBar: ChatAppBar(
         selectedModel: selectedModelId,
         selectedModelObject: selectedModelObject,
-        hasHeadings: _hasHeadings,
+        hasHeadings: () => hasHeadings,
         onToggleNavigator: _toggleNavigator,
         onModelSelected: _updateSelectedModel,
+        onMenuPressed: () {
+          FocusScope.of(context).unfocus();
+          _scaffoldKey.currentState?.openDrawer();
+        },
       ),
       drawer: _buildSidebarDrawer(width: ChatScreenConstants.sidebarWidth),
       body: Column(
@@ -1152,6 +1287,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       ),
     );
   }
+
+  // ===========================================================================
+  // CONTENT WRAPPER
+  // ===========================================================================
 
   Widget _buildChatContentWrapper({required Widget child}) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -1188,6 +1327,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
     return content;
   }
+
+  // ===========================================================================
+  // CONTINUATION SUGGESTIONS
+  // ===========================================================================
 
   Future<void> _showContinuationSuggestions(Message message) async {
     final chatState = ref.read(chatScreenProvider);

@@ -12,6 +12,10 @@ import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/widgets/chat/model_settings_sheet.dart';
 
+// ===========================================================================
+// MESSAGE DATA
+// ===========================================================================
+
 /// Data class for sending messages with optional media
 class MessageData {
   final String text;
@@ -26,6 +30,10 @@ class MessageData {
     this.base64Data,
   });
 }
+
+// ===========================================================================
+// HELPER FUNCTIONS
+// ===========================================================================
 
 /// Helper function to extract file name from file
 /// Works for both File and WebFile
@@ -58,6 +66,10 @@ String _getFilePath(dynamic file) {
   return 'unknown';
 }
 
+// ===========================================================================
+// CHAT INPUT WIDGET
+// ===========================================================================
+
 class ChatInput extends ConsumerStatefulWidget {
   final Function(MessageData) onSendMessage;
   final Function(bool) onToggleStreaming;
@@ -68,6 +80,7 @@ class ChatInput extends ConsumerStatefulWidget {
   onSpeechStateChanged; // Callback for speech state
   final bool Function(String)?
   checkModelSupportsImages; // Callback to check model support
+  final Function(double)? onSoundLevelChanged; // Callback for sound level
 
   const ChatInput({
     super.key,
@@ -78,11 +91,16 @@ class ChatInput extends ConsumerStatefulWidget {
     this.focusNode,
     this.onSpeechStateChanged,
     this.checkModelSupportsImages,
+    this.onSoundLevelChanged,
   });
 
   @override
   ConsumerState<ChatInput> createState() => _ChatInputState();
 }
+
+// ===========================================================================
+// CHAT INPUT STATE
+// ===========================================================================
 
 class _ChatInputState extends ConsumerState<ChatInput>
     with AutomaticKeepAliveClientMixin {
@@ -183,6 +201,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
       msgErrorTooManyRequests: localizations.speechErrorTooManyRequests,
       msgErrorUnknown: localizations.speechErrorUnknown,
       msgAutoRestart: localizations.micAutoRestart,
+      onSoundLevelChange: widget.onSoundLevelChanged,
     );
   }
 

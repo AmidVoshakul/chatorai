@@ -1,6 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 
+// ===========================================================================
+// STATE
+// ===========================================================================
+
 class ChatScreenUIState {
   final bool isSidebarCollapsed;
   final bool isNavigatorVisible;
@@ -28,6 +32,10 @@ class ChatScreenUIState {
     );
   }
 }
+
+// ===========================================================================
+// NOTIFIER
+// ===========================================================================
 
 class ChatScreenUINotifier extends Notifier<ChatScreenUIState> {
   @override
@@ -69,6 +77,10 @@ class ChatScreenUINotifier extends Notifier<ChatScreenUIState> {
     state = state.copyWith(navigatorHeadings: [], activeHeadingIndex: -1);
   }
 }
+
+// ===========================================================================
+// PROVIDER
+// ===========================================================================
 
 final chatScreenUIProvider =
     NotifierProvider<ChatScreenUINotifier, ChatScreenUIState>(

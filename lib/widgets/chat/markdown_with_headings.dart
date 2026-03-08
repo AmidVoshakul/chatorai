@@ -4,6 +4,10 @@ import 'package:markdown/markdown.dart' as md;
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 import 'package:chatorai/themes/app_theme.dart';
 
+// ===========================================================================
+// PUBLIC WIDGET
+// ===========================================================================
+
 class MarkdownWithHeadings extends StatelessWidget {
   final String data;
   final List<MarkdownHeadingInfoWithKey> headings;
@@ -15,6 +19,10 @@ class MarkdownWithHeadings extends StatelessWidget {
     required this.headings,
     this.messageId,
   });
+
+  // =======================================================================
+  // BUILD METHOD
+  // =======================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +76,10 @@ class MarkdownWithHeadings extends StatelessWidget {
   }
 }
 
+// ===========================================================================
+// PRIVATE: HEADING BUILDER
+// ===========================================================================
+
 class _HeadingBuilder extends MarkdownElementBuilder {
   final List<MarkdownHeadingInfoWithKey> headings;
   final int level;
@@ -78,6 +90,10 @@ class _HeadingBuilder extends MarkdownElementBuilder {
     required this.level,
     required this.messageId,
   });
+
+  // =======================================================================
+  // BUILD METHOD
+  // =======================================================================
 
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {

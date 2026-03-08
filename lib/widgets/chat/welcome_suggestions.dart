@@ -5,6 +5,10 @@ import 'package:chatorai/providers/language_provider.dart';
 import 'package:chatorai/widgets/chat/welcome_questions_data.dart';
 import 'package:chatorai/widgets/chat/welcome_greetings_data.dart';
 
+// ===========================================================================
+// WELCOME SUGGESTIONS WIDGET
+// ===========================================================================
+
 class WelcomeSuggestions extends ConsumerStatefulWidget {
   final List<String> suggestions;
   final Function(String) onSuggestionTap;
@@ -22,6 +26,10 @@ class WelcomeSuggestions extends ConsumerStatefulWidget {
   @override
   ConsumerState<WelcomeSuggestions> createState() => _WelcomeSuggestionsState();
 }
+
+// ===========================================================================
+// WELCOME SUGGESTIONS STATE
+// ===========================================================================
 
 class _WelcomeSuggestionsState extends ConsumerState<WelcomeSuggestions>
     with TickerProviderStateMixin {
@@ -357,23 +365,6 @@ class _WelcomeSuggestionsState extends ConsumerState<WelcomeSuggestions>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Welcome icon
-                    // Container(
-                    //   padding: const EdgeInsets.all(8),
-                    //   decoration: BoxDecoration(
-                    //     color: theme.colorScheme.primary.withValues(
-                    //       alpha: 0.15,
-                    //     ),
-                    //     borderRadius: BorderRadius.circular(12),
-                    //   ),
-                    //   // child: Icon(
-                    //   //   Icons.waving_hand,
-                    //   //   size: 24,
-                    //   //   color: theme.colorScheme.primary,
-                    //   // ),
-                    // ),
-                    const SizedBox(height: 12),
-
                     // Welcome text
                     Text(
                       _randomGreeting,

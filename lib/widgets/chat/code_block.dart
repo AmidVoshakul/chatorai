@@ -6,6 +6,10 @@ import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
+// ===========================================================================
+// WIDGET CLASS
+// ===========================================================================
+
 class CodeBlock extends StatefulWidget {
   final String code;
   final String language;
@@ -16,8 +20,16 @@ class CodeBlock extends StatefulWidget {
   State<CodeBlock> createState() => _CodeBlockState();
 }
 
+// ===========================================================================
+// STATE CLASS
+// ===========================================================================
+
 class _CodeBlockState extends State<CodeBlock> {
   bool _isCollapsed = false;
+
+  // =======================================================================
+  // BUILD METHOD
+  // =======================================================================
 
   @override
   Widget build(BuildContext context) {
