@@ -11,6 +11,7 @@ import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/themes/app_theme.dart';
+import 'package:chatorai/constants/chat_constants.dart';
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 import 'package:chatorai/utils/format_time.dart';
 
@@ -139,7 +140,7 @@ class _ChatMessageState extends State<ChatMessage>
     final localizations = AppLocalizations.of(context)!;
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
-    final isMobile = screenWidth < 800;
+    final isMobile = screenWidth < ChatScreenConstants.mobileBreakpoint;
     final isUser = widget.message.role == MessageRole.user;
     final isAssistant = widget.message.role == MessageRole.assistant;
     final hasImage = widget.message.imageData != null;
@@ -638,6 +639,13 @@ class _ChatMessageState extends State<ChatMessage>
   Widget _buildCustomMarkdownContent(BuildContext context) {
     final lines = widget.message.content.split('\n');
     final styleSheet = ChatoraiMarkdownStyles.getMarkdownStyles(context);
+
+    final messageHeadings =
+        widget.headings
+            ?.where((h) => h.messageId == widget.message.id)
+            .toList() ??
+        [];
+
     final List<Widget> contentWidgets = [];
     String currentTextBlock = '';
     bool inCodeBlock = false;
@@ -648,15 +656,13 @@ class _ChatMessageState extends State<ChatMessage>
       final line = lines[i];
 
       if (line.startsWith('```')) {
-        // Handle code block start/end
         if (inCodeBlock) {
-          // End of code block
           if (currentTextBlock.isNotEmpty) {
             contentWidgets.add(
-              MarkdownBody(
-                data: currentTextBlock,
-                styleSheet: styleSheet,
-                selectable: true,
+              _buildMarkdownBlock(
+                currentTextBlock,
+                styleSheet,
+                messageHeadings,
               ),
             );
             currentTextBlock = '';
@@ -669,13 +675,12 @@ class _ChatMessageState extends State<ChatMessage>
           }
           inCodeBlock = false;
         } else {
-          // Start of code block
           if (currentTextBlock.isNotEmpty) {
             contentWidgets.add(
-              MarkdownBody(
-                data: currentTextBlock,
-                styleSheet: styleSheet,
-                selectable: true,
+              _buildMarkdownBlock(
+                currentTextBlock,
+                styleSheet,
+                messageHeadings,
               ),
             );
             currentTextBlock = '';
@@ -685,22 +690,15 @@ class _ChatMessageState extends State<ChatMessage>
           if (currentLanguage.isEmpty) currentLanguage = 'text';
         }
       } else if (inCodeBlock) {
-        // Inside code block
         currentCodeBlock += '$line\n';
       } else {
-        // Regular text
         currentTextBlock += '$line\n';
       }
     }
 
-    // Add remaining text or code
     if (currentTextBlock.isNotEmpty) {
       contentWidgets.add(
-        MarkdownBody(
-          data: currentTextBlock,
-          styleSheet: styleSheet,
-          selectable: true,
-        ),
+        _buildMarkdownBlock(currentTextBlock, styleSheet, messageHeadings),
       );
     }
     if (currentCodeBlock.isNotEmpty) {
@@ -712,6 +710,54 @@ class _ChatMessageState extends State<ChatMessage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: contentWidgets,
+    );
+  }
+
+  Widget _buildMarkdownBlock(
+    String data,
+    MarkdownStyleSheet styleSheet,
+    List<MarkdownHeadingInfoWithKey> messageHeadings,
+  ) {
+    if (messageHeadings.isEmpty) {
+      return MarkdownBody(data: data, styleSheet: styleSheet, selectable: true);
+    }
+
+    return MarkdownBody(
+      data: data,
+      styleSheet: styleSheet,
+      selectable: true,
+      builders: {
+        'h1': _HeadingBuilder(
+          messageHeadings,
+          level: 1,
+          messageId: widget.message.id,
+        ),
+        'h2': _HeadingBuilder(
+          messageHeadings,
+          level: 2,
+          messageId: widget.message.id,
+        ),
+        'h3': _HeadingBuilder(
+          messageHeadings,
+          level: 3,
+          messageId: widget.message.id,
+        ),
+        'h4': _HeadingBuilder(
+          messageHeadings,
+          level: 4,
+          messageId: widget.message.id,
+        ),
+        'h5': _HeadingBuilder(
+          messageHeadings,
+          level: 5,
+          messageId: widget.message.id,
+        ),
+        'h6': _HeadingBuilder(
+          messageHeadings,
+          level: 6,
+          messageId: widget.message.id,
+        ),
+      },
     );
   }
 
@@ -812,7 +858,9 @@ class _ChatMessageState extends State<ChatMessage>
   Widget _buildEditInterface(BuildContext context) {
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context)!;
-    final isMobile = MediaQuery.of(context).size.width < 800;
+    final isMobile =
+        MediaQuery.of(context).size.width <
+        ChatScreenConstants.mobileBreakpoint;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -979,27 +1027,85 @@ class _HeadingBuilder extends MarkdownElementBuilder {
 
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
-    final text = element.textContent.trim();
-
-    // Find the matching heading with key
-    final heading = headings.firstWhere(
-      (h) => h.text == text && h.level == level && h.messageId == messageId,
-      orElse: () {
-        return MarkdownHeadingInfoWithKey(
-          text: text,
-          level: level,
-          lineIndex: 0,
-          rawLine: '',
-          key: GlobalKey(debugLabel: 'fallback_$messageId'),
-          messageId: messageId,
-        );
-      },
+    final rawText = element.textContent.trim();
+    final text = stripMarkdownFormatting(rawText);
+    debugPrint(
+      '_HeadingBuilder: building for "$text", level=$level, msgId=$messageId',
     );
 
-    return Container(
-      key: heading.key,
-      padding: const EdgeInsets.only(top: 16, bottom: 8),
-      child: Text(text, style: preferredStyle),
-    );
+    MarkdownHeadingInfoWithKey? heading;
+    try {
+      heading = headings.firstWhere(
+        (h) => h.text == text && h.level == level && h.messageId == messageId,
+      );
+    } catch (e) {
+      heading = null;
+    }
+
+    if (heading != null) {
+      debugPrint(
+        '_HeadingBuilder: found heading, returning _HeadingAnchorWidget',
+      );
+      return _HeadingAnchorWidget(
+        key: ValueKey('heading_${messageId}_${level}_$text'),
+        anchor: heading.anchor,
+        child: Container(
+          padding: const EdgeInsets.only(top: 16, bottom: 8),
+          child: Text(rawText, style: preferredStyle),
+        ),
+      );
+    } else {
+      debugPrint(
+        '_HeadingBuilder: NO heading found, returning plain Container',
+      );
+      return Container(
+        padding: const EdgeInsets.only(top: 16, bottom: 8),
+        child: Text(rawText, style: preferredStyle),
+      );
+    }
+  }
+}
+
+class _HeadingAnchorWidget extends StatefulWidget {
+  final HeadingAnchor? anchor;
+  final Widget child;
+
+  const _HeadingAnchorWidget({super.key, this.anchor, required this.child});
+
+  @override
+  State<_HeadingAnchorWidget> createState() => _HeadingAnchorWidgetState();
+}
+
+class _HeadingAnchorWidgetState extends State<_HeadingAnchorWidget> {
+  static final _registry = HeadingAnchorRegistry();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.anchor != null) {
+      _registry.registerAnchor(widget.anchor!);
+      debugPrint('Anchor registered in initState: ${widget.anchor!.id}');
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.anchor != null) {
+      widget.anchor!.context = context;
+      _registry.registerAnchor(widget.anchor!);
+      debugPrint(
+        'Anchor context updated in didChangeDependencies: ${widget.anchor!.id}',
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.anchor != null) {
+      widget.anchor!.context = context;
+      _registry.registerAnchor(widget.anchor!);
+    }
+    return widget.child;
   }
 }

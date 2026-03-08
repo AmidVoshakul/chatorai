@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:chatorai/constants/chat_constants.dart';
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 
 // ===========================================================================
@@ -37,6 +38,7 @@ class MarkdownNavigatorSidebar extends StatefulWidget {
 class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -58,16 +60,43 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
     if (widget.isOpen != oldWidget.isOpen) {
       if (widget.isOpen) {
         _animationController.forward();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToActiveHeading();
+        });
       } else {
         _animationController.reverse();
       }
     }
-    // Active index is controlled by parent - no local state needed
+
+    if (widget.activeHeadingIndex != oldWidget.activeHeadingIndex &&
+        widget.activeHeadingIndex >= 0 &&
+        widget.isOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToActiveHeading();
+      });
+    }
+  }
+
+  void _scrollToActiveHeading() {
+    if (widget.activeHeadingIndex >= 0 &&
+        widget.activeHeadingIndex < widget.headings.length &&
+        _scrollController.hasClients) {
+      const itemHeight = 48.0;
+      final targetOffset = widget.activeHeadingIndex * itemHeight;
+      final maxOffset = _scrollController.position.maxScrollExtent;
+
+      _scrollController.animateTo(
+        targetOffset.clamp(0.0, maxOffset),
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -203,6 +232,7 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
                                   ),
                                 )
                               : ListView.separated(
+                                  controller: _scrollController,
                                   padding: EdgeInsets.only(
                                     top: _isDesktop() ? 12 : 8,
                                     bottom: _isDesktop() ? 12 : 8,
@@ -254,6 +284,7 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
                                               Expanded(
                                                 child: MarkdownBody(
                                                   data: heading.text,
+                                                  shrinkWrap: true,
                                                   styleSheet: MarkdownStyleSheet(
                                                     p: theme
                                                         .textTheme
@@ -296,6 +327,6 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
 
   bool _isDesktop() {
     final width = MediaQuery.of(context).size.width;
-    return width >= 800;
+    return width >= ChatScreenConstants.mobileBreakpoint;
   }
 }

@@ -71,6 +71,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   static const _scrollThrottleDuration = Duration(milliseconds: 16);
   late final FocusNode _chatInputFocusNode;
 
+  // Cached values for performance
+  double _cachedScreenWidth = 0;
+  bool _isMobile = false;
+
   // Speech state
   SpeechUiState _speechUiState = SpeechUiState.idle;
   String _speechStatusMessage = '';
@@ -131,8 +135,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     if (!_messageScrollController.hasClients) return;
 
     final offset = _messageScrollController.offset;
-    final screenWidth = MediaQuery.of(context).size.width;
-    if (screenWidth >= ChatScreenConstants.mobileBreakpoint) return;
+    if (_cachedScreenWidth >= ChatScreenConstants.mobileBreakpoint) return;
 
     _slidingAppBarKey.currentState?.handleScroll(offset);
   }
@@ -145,7 +148,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
     _lastScrollUpdate = now;
 
-    final uiState = ref.read(chatScreenUIProvider);
+    final uiState = ref.watch(chatScreenUIProvider);
     if (!_messageScrollController.hasClients ||
         uiState.navigatorHeadings.isEmpty) {
       return;
@@ -154,11 +157,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final currentOffset = _messageScrollController.offset;
     final viewportHeight = _messageScrollController.position.viewportDimension;
 
+    final registry = HeadingAnchorRegistry();
     int newActiveIndex = -1;
+
     for (int i = 0; i < uiState.navigatorHeadings.length; i++) {
       final heading = uiState.navigatorHeadings[i];
-      final context = heading.key.currentContext;
-      if (context != null) {
+      final anchorId = '${heading.messageId}_${heading.level}_${heading.text}';
+      final anchor = registry.getAnchor(anchorId);
+      final context = anchor?.context ?? heading.context;
+
+      if (context == null || !context.mounted) {
+        continue;
+      }
+
+      try {
         final RenderBox? box = context.findRenderObject() as RenderBox?;
         if (box != null && box.hasSize) {
           final position = box.localToGlobal(Offset.zero);
@@ -167,6 +179,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             break;
           }
         }
+      } catch (e) {
+        // Ignore render errors
       }
     }
 
@@ -174,12 +188,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       final scrollMax = _messageScrollController.position.maxScrollExtent;
       if (currentOffset >= scrollMax - 100) {
         newActiveIndex = uiState.navigatorHeadings.length - 1;
+      } else if (currentOffset < 100) {
+        newActiveIndex = 0;
       }
     }
 
-    if (newActiveIndex != uiState.activeHeadingIndex) {
+    if (newActiveIndex != -1 && newActiveIndex != uiState.activeHeadingIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && newActiveIndex != uiState.activeHeadingIndex) {
+        if (mounted && newActiveIndex != -1) {
           ref
               .read(chatScreenUIProvider.notifier)
               .setActiveHeadingIndex(newActiveIndex);
@@ -297,7 +313,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _chatScrollUtils?.resetAutoScrollLock();
     ref.read(chatScreenProvider.notifier).hideAllSuggestions();
 
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = _cachedScreenWidth;
     final uiState = ref.read(chatScreenUIProvider);
     if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
       if (!uiState.isSidebarCollapsed) {
@@ -575,7 +591,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   }
 
   Future<void> _streamAIResponse(Chat chat) async {
-    final messages = chat.messages
+    // Limit message history to last N messages for performance
+    // LLM doesn't need the entire conversation history
+    const int maxHistoryMessages = 20;
+    final recentMessages = chat.messages.length > maxHistoryMessages
+        ? chat.messages.sublist(chat.messages.length - maxHistoryMessages)
+        : chat.messages;
+
+    final messages = recentMessages
         .where((m) => !m.isError)
         .map(
           (msg) => ref
@@ -620,10 +643,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     ref.read(chatScreenProvider.notifier).setStreaming(true);
     ref.read(streamingContentProvider.notifier).startStreaming(chat.id);
 
-    String accumulatedContent = '';
-    String accumulatedReasoning = '';
-    String _pendingContent = '';
-    String _pendingReasoning = '';
+    final StringBuffer pendingContent = StringBuffer();
+    final StringBuffer fullContent = StringBuffer();
+    final StringBuffer pendingReasoning = StringBuffer();
+    final StringBuffer fullReasoning = StringBuffer();
 
     DateTime lastUpdateTime = DateTime.now();
     const updateIntervalMs = 250;
@@ -650,32 +673,41 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       final now = DateTime.now();
       final elapsed = now.difference(lastUpdateTime).inMilliseconds;
 
+      final pendingContentStr = pendingContent.toString();
+      final pendingReasoningStr = pendingReasoning.toString();
+
       final shouldUpdate =
           forceUpdate ||
           elapsed >= updateIntervalMs ||
-          _isWordBoundary(_pendingContent) ||
-          _isWordBoundary(_pendingReasoning);
+          _isWordBoundary(pendingContentStr) ||
+          _isWordBoundary(pendingReasoningStr);
 
       if (shouldUpdate) {
         if (mounted && chat.messages.isNotEmpty) {
-          accumulatedContent = _pendingContent;
-          accumulatedReasoning = _pendingReasoning;
+          fullContent.write(pendingContentStr);
+          fullReasoning.write(pendingReasoningStr);
           ref
               .read(streamingContentProvider.notifier)
               .updateContent(
-                accumulatedContent,
-                reasoning: accumulatedReasoning.isNotEmpty
-                    ? accumulatedReasoning
+                fullContent.toString(),
+                reasoning: fullReasoning.isNotEmpty
+                    ? fullReasoning.toString()
                     : null,
               );
+          pendingContent.clear();
+          pendingReasoning.clear();
           lastUpdateTime = now;
         }
       }
     }
 
     void flushPendingUpdates() {
-      accumulatedContent = _pendingContent;
-      accumulatedReasoning = _pendingReasoning;
+      final pendingContentStr = pendingContent.toString();
+      final pendingReasoningStr = pendingReasoning.toString();
+      fullContent.write(pendingContentStr);
+      fullReasoning.write(pendingReasoningStr);
+      pendingContent.clear();
+      pendingReasoning.clear();
       throttleUpdate(forceUpdate: true);
     }
 
@@ -696,12 +728,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           includeReasoning: true,
           onChunk: (content) {
             if (content.isEmpty) return;
-            _pendingContent += content;
+            pendingContent.write(content);
             throttleUpdate();
           },
           onReasoning: (reasoning) {
             if (reasoning.isEmpty) return;
-            _pendingReasoning += reasoning;
+            pendingReasoning.write(reasoning);
             throttleUpdate();
           },
           onCompletion: (fullContent) async {
@@ -710,8 +742,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             if (mounted && chat.messages.isNotEmpty) {
               final lastMessage = chat.messages.last;
               final completedMessage = lastMessage.copyWith(
-                content: accumulatedContent,
-                reasoning: accumulatedReasoning,
+                content: fullContent.toString(),
+                reasoning: fullReasoning.isNotEmpty
+                    ? fullReasoning.toString()
+                    : null,
                 isComplete: true,
               );
               final newMessages = List<Message>.from(chat.messages);
@@ -820,6 +854,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   // ===========================================================================
 
   void _stopStreaming() {
+    // Stop the AI service streaming
+    final aiService = ref.read(chatAiServiceProvider);
+    aiService.stopGeneration();
+
+    // Update UI state
     ref.read(chatScreenProvider.notifier).setStreaming(false);
     ref.read(streamingContentProvider.notifier).reset();
   }
@@ -962,14 +1001,77 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   }
 
   void _onHeadingTap(String headingText, String messageId, int level) {
-    final uiState = ref.read(chatScreenUIProvider);
+    final uiState = ref.watch(chatScreenUIProvider);
+
+    final normalizedTapText = stripMarkdownFormatting(headingText);
     final headingIndex = uiState.navigatorHeadings.indexWhere(
-      (h) => h.text == headingText,
+      (h) =>
+          h.messageId == messageId &&
+          h.level == level &&
+          stripMarkdownFormatting(h.text) == normalizedTapText,
     );
+
+    debugPrint(
+      '_onHeadingTap: looking for msgId=$messageId, level=$level, text="$normalizedTapText", found index: $headingIndex',
+    );
+
     if (headingIndex >= 0) {
       ref
           .read(chatScreenUIProvider.notifier)
           .setActiveHeadingIndex(headingIndex);
+
+      final heading = uiState.navigatorHeadings[headingIndex];
+
+      final registry = HeadingAnchorRegistry();
+      final normalizedText = stripMarkdownFormatting(headingText);
+      final anchorId = '${messageId}_${level}_$normalizedText';
+      final anchor = registry.getAnchor(anchorId);
+      final context = anchor?.context ?? heading.context;
+
+      debugPrint(
+        '_onHeadingTap: heading=$headingText, context=${context != null}',
+      );
+
+      void performScroll() {
+        final ctx = anchor?.context ?? heading.context;
+        if (ctx != null && ctx.mounted) {
+          Scrollable.ensureVisible(
+            ctx,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+          return;
+        }
+
+        if (_messageScrollController.hasClients) {
+          final chat = currentChat;
+          if (chat != null) {
+            final messageIndex = chat.messages.indexWhere(
+              (m) => m.id == messageId,
+            );
+            if (messageIndex >= 0) {
+              final estimatedItemHeight = 150.0;
+              final estimatedOffset = messageIndex * estimatedItemHeight;
+              final maxOffset =
+                  _messageScrollController.position.maxScrollExtent;
+
+              _messageScrollController.animateTo(
+                estimatedOffset.clamp(0.0, maxOffset),
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+          }
+        }
+      }
+
+      if (context != null && context.mounted) {
+        performScroll();
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          performScroll();
+        });
+      }
     }
     ref.read(chatScreenUIProvider.notifier).setNavigatorVisible(false);
   }
@@ -1009,11 +1111,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   Future<void> _streamContinuationResponse(
     String previousContent,
-    Chat chat,
+    Chat chatArg,
   ) async {
-    final chat = currentChat;
-    if (chat == null) return;
-
     final continuationPrompt = [
       {'role': 'user', 'content': 'Please continue your previous response.'},
       {'role': 'assistant', 'content': previousContent},
@@ -1031,7 +1130,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
 
     await _handleStreamingResponse(
-      chat: chat,
+      chat: chatArg,
       messages: continuationPrompt,
       isContinuation: true,
       modelId: selectedModelId,
@@ -1068,8 +1167,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   // ===========================================================================
 
   Widget _buildSidebarDrawer({required double width}) {
-    final isCollapsed = ref.read(chatScreenUIProvider).isSidebarCollapsed;
+    final isCollapsed = ref.watch(
+      chatScreenUIProvider.select((s) => s.isSidebarCollapsed),
+    );
     return Drawer(
+      key: ValueKey('sidebar_drawer_$isCollapsed'),
       width: width,
       child: Sidebar(
         width: width,
@@ -1146,8 +1248,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final isStreaming = ref.watch(
       chatScreenProvider.select((s) => s.isStreaming),
     );
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 800;
+    _cachedScreenWidth = MediaQuery.of(context).size.width;
+    _isMobile = _cachedScreenWidth < ChatScreenConstants.mobileBreakpoint;
 
     final chatInput = ChatInput(
       key: const ValueKey('chat_input_widget'),
@@ -1171,7 +1273,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           ref.read(modelProvider.notifier).modelSupportsImagesSelected(),
     );
 
-    Widget baseLayout = isMobile
+    Widget baseLayout = _isMobile
         ? _buildMobileLayout(chatInput)
         : _buildDesktopLayout(chatInput);
 
@@ -1293,7 +1395,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   // ===========================================================================
 
   Widget _buildChatContentWrapper({required Widget child}) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = _cachedScreenWidth;
     final isNavigatorVisible = ref.watch(
       chatScreenUIProvider.select((s) => s.isNavigatorVisible),
     );

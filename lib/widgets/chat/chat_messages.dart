@@ -355,7 +355,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                 physics: const BouncingScrollPhysics(),
                 // Performance optimizations
                 addAutomaticKeepAlives: false,
-                addRepaintBoundaries: false,
+                addRepaintBoundaries: true,
                 padding: EdgeInsets.only(
                   left: ChatMessagesConstants.horizontalPadding,
                   right: ChatMessagesConstants.horizontalPadding,

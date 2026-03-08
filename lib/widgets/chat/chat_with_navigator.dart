@@ -55,8 +55,8 @@ class _ChatWithNavigatorState extends State<ChatWithNavigator> {
     );
 
     // Используем Scrollable.ensureVisible (правильный подход)
-    final context = heading.key.currentContext;
-    if (context != null) {
+    final context = heading.context;
+    if (context != null && context.mounted) {
       Scrollable.ensureVisible(
         context,
         duration: const Duration(milliseconds: 500),
