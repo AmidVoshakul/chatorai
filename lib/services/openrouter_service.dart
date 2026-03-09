@@ -420,6 +420,8 @@ abstract class OpenRouterClient {
   });
 
   bool isReady();
+
+  void stopGeneration();
 }
 
 /// Configuration for OpenRouterService
@@ -449,6 +451,7 @@ class OpenRouterService implements OpenRouterClient {
   final String _baseUrl;
   final OpenRouterConfig _config;
   Dio? _dio;
+  CancelToken? _cancelToken;
 
   // Caching
   final Map<String, List<OpenRouterModel>> _modelsCache = {};
@@ -639,6 +642,14 @@ class OpenRouterService implements OpenRouterClient {
         return await operation();
       } catch (e) {
         lastException = e as Exception;
+
+        // Don't retry on user cancellation
+        if (e is DioException && e.type == DioExceptionType.cancel) {
+          _logger.logInfo(
+            '[OpenRouter] Request cancelled by user, not retrying',
+          );
+          rethrow;
+        }
 
         if (e is DioException && e.response?.statusCode == 429) {
           // Rate limit - wait longer
@@ -889,106 +900,129 @@ class OpenRouterService implements OpenRouterClient {
     Function(String)? onReasoning,
     VoidCallback? onStopped,
   }) async {
-    _logger.logInfo('[OpenRouter] Starting REAL streaming chat completion...');
-    _logger.logDebug('[OpenRouter] Model: $model');
-    _logger.logDebug('[OpenRouter] Messages: ${messages.length} messages');
-    _logger.logDebug('[OpenRouter] Include reasoning: $includeReasoning');
+    // Cancel any previous streaming operation
+    _cancelToken?.cancel();
+    _cancelToken = CancelToken();
 
-    // Проверка наличия интернет-соединения
-    if (!_isConnected) {
-      _logger.logWarning(
-        '[OpenRouter] No internet connection, aborting models fetch',
+    try {
+      _logger.logInfo(
+        '[OpenRouter] Starting REAL streaming chat completion...',
       );
-      throw Exception('No internet connection');
-    }
+      _logger.logDebug('[OpenRouter] Model: $model');
+      _logger.logDebug('[OpenRouter] Messages: ${messages.length} messages');
+      _logger.logDebug('[OpenRouter] Include reasoning: $includeReasoning');
 
-    if (_apiKey == null || _apiKey!.isEmpty) {
-      _logger.logError('[OpenRouter] API key not configured');
-      throw Exception('OpenRouter API key not configured');
-    }
-
-    await _waitForInitialization();
-    _logger.logInfo('[OpenRouter] Dio initialized');
-
-    return _retryWithBackoff(
-      operationName: 'streamChatCompletion',
-      operation: () async {
-        // Build request data with all parameters
-        final data = {
-          'model': model,
-          'messages': messages,
-          'stream': true,
-          if (maxTokens != null) 'max_tokens': maxTokens,
-          if (temperature != null) 'temperature': temperature,
-          if (topP != null) 'top_p': topP,
-          if (frequencyPenalty != null) 'frequency_penalty': frequencyPenalty,
-          if (presencePenalty != null) 'presence_penalty': presencePenalty,
-          if (includeReasoning) 'include_reasoning': true,
-        };
-
-        _logger.logInfo('[OpenRouter] Making API request to OpenRouter...');
-        _logger.logVerbose('[OpenRouter] Request data: ${jsonEncode(data)}');
-
-        final response = await _dio!.post(
-          OpenRouterConstants.completionsEndpoint,
-          data: data,
-          options: Options(responseType: ResponseType.stream),
+      // Проверка наличия интернет-соединения
+      if (!_isConnected) {
+        _logger.logWarning(
+          '[OpenRouter] No internet connection, aborting models fetch',
         );
+        throw Exception('No internet connection');
+      }
 
-        if (response.statusCode != 200) {
-          final errorMessage = await _extractErrorMessage(
-            DioException(
-              requestOptions: RequestOptions(
-                path: OpenRouterConstants.completionsEndpoint,
+      if (_apiKey == null || _apiKey!.isEmpty) {
+        _logger.logError('[OpenRouter] API key not configured');
+        throw Exception('OpenRouter API key not configured');
+      }
+
+      await _waitForInitialization();
+      _logger.logInfo('[OpenRouter] Dio initialized');
+
+      return await _retryWithBackoff(
+        operationName: 'streamChatCompletion',
+        operation: () async {
+          // Build request data with all parameters
+          final data = {
+            'model': model,
+            'messages': messages,
+            'stream': true,
+            if (maxTokens != null) 'max_tokens': maxTokens,
+            if (temperature != null) 'temperature': temperature,
+            if (topP != null) 'top_p': topP,
+            if (frequencyPenalty != null) 'frequency_penalty': frequencyPenalty,
+            if (presencePenalty != null) 'presence_penalty': presencePenalty,
+            if (includeReasoning) 'include_reasoning': true,
+          };
+
+          _logger.logInfo('[OpenRouter] Making API request to OpenRouter...');
+          _logger.logVerbose('[OpenRouter] Request data: ${jsonEncode(data)}');
+
+          final response = await _dio!.post(
+            OpenRouterConstants.completionsEndpoint,
+            data: data,
+            options: Options(responseType: ResponseType.stream),
+            cancelToken: _cancelToken,
+          );
+
+          if (response.statusCode != 200) {
+            final errorMessage = await _extractErrorMessage(
+              DioException(
+                requestOptions: RequestOptions(
+                  path: OpenRouterConstants.completionsEndpoint,
+                ),
+                response: response,
               ),
-              response: response,
-            ),
-          );
-          _logger.logError(
-            '[OpenRouter] Streaming failed with status: ${response.statusCode}',
-          );
-          _logger.logError('[OpenRouter] Error message: $errorMessage');
-          throw Exception('Server error: $errorMessage');
-        }
-
-        _logger.logInfo('[OpenRouter] Streaming started successfully!');
-
-        final stream = response.data;
-
-        if (stream is ResponseBody) {
-          return await _processSSEStream(
-            stream,
-            onChunk,
-            onCompletion,
-            onReasoning,
-            includeReasoning,
-            onStopped,
-          );
-        } else {
-          _logger.logWarning(
-            '[OpenRouter] Unknown stream type: ${stream.runtimeType}',
-          );
-
-          // Try to process as raw response
-          if (response.data is String) {
-            final responseText = response.data as String;
-            _logger.logVerbose(
-              '[OpenRouter] Raw response: ${responseText.substring(0, responseText.length > 200 ? 200 : responseText.length)}...',
             );
+            _logger.logError(
+              '[OpenRouter] Streaming failed with status: ${response.statusCode}',
+            );
+            _logger.logError('[OpenRouter] Error message: $errorMessage');
+            throw Exception('Server error: $errorMessage');
           }
 
-          // Fallback to simulated streaming
-          _logger.logWarning('[OpenRouter] Using simulation fallback');
-          await _simulateStreamingResponse(onChunk, onCompletion);
-        }
-      },
-    );
+          _logger.logInfo('[OpenRouter] Streaming started successfully!');
+
+          final stream = response.data;
+
+          if (stream is ResponseBody) {
+            return await _processSSEStream(
+              stream,
+              onChunk,
+              onCompletion,
+              onReasoning,
+              includeReasoning,
+              onStopped,
+            );
+          } else {
+            _logger.logWarning(
+              '[OpenRouter] Unknown stream type: ${stream.runtimeType}',
+            );
+
+            // Try to process as raw response
+            if (response.data is String) {
+              final responseText = response.data as String;
+              _logger.logVerbose(
+                '[OpenRouter] Raw response: ${responseText.substring(0, responseText.length > 200 ? 200 : responseText.length)}...',
+              );
+            }
+
+            // Fallback to simulated streaming
+            _logger.logWarning('[OpenRouter] Using simulation fallback');
+            await _simulateStreamingResponse(onChunk, onCompletion);
+          }
+        },
+      );
+    } finally {
+      // Clean up cancel token after operation completes
+      _cancelToken = null;
+    }
   }
 
   @override
   /// Check if OpenRouterService is ready for API calls
   bool isReady() {
     return _dio != null && _apiKey != null && _apiKey!.isNotEmpty;
+  }
+
+  @override
+  /// Stop the current generation/streaming
+  void stopGeneration() {
+    if (_cancelToken != null) {
+      _logger.logInfo('[OpenRouter] Stopping generation...');
+      _cancelToken!.cancel('Generation stopped by user');
+      _cancelToken = null;
+      _logger.logInfo('[OpenRouter] Generation stopped');
+    }
   }
 
   // ===========================================================================

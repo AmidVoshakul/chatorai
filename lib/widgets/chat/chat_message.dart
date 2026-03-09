@@ -599,21 +599,6 @@ class _ChatMessageState extends State<ChatMessage>
               level: 3,
               messageId: widget.message.id,
             ),
-            'h4': _HeadingBuilder(
-              messageHeadings,
-              level: 4,
-              messageId: widget.message.id,
-            ),
-            'h5': _HeadingBuilder(
-              messageHeadings,
-              level: 5,
-              messageId: widget.message.id,
-            ),
-            'h6': _HeadingBuilder(
-              messageHeadings,
-              level: 6,
-              messageId: widget.message.id,
-            ),
           },
           onTapLink: (text, href, title) {
             if (href != null) {
@@ -718,10 +703,6 @@ class _ChatMessageState extends State<ChatMessage>
     MarkdownStyleSheet styleSheet,
     List<MarkdownHeadingInfoWithKey> messageHeadings,
   ) {
-    if (messageHeadings.isEmpty) {
-      return MarkdownBody(data: data, styleSheet: styleSheet, selectable: true);
-    }
-
     return MarkdownBody(
       data: data,
       styleSheet: styleSheet,
@@ -740,21 +721,6 @@ class _ChatMessageState extends State<ChatMessage>
         'h3': _HeadingBuilder(
           messageHeadings,
           level: 3,
-          messageId: widget.message.id,
-        ),
-        'h4': _HeadingBuilder(
-          messageHeadings,
-          level: 4,
-          messageId: widget.message.id,
-        ),
-        'h5': _HeadingBuilder(
-          messageHeadings,
-          level: 5,
-          messageId: widget.message.id,
-        ),
-        'h6': _HeadingBuilder(
-          messageHeadings,
-          level: 6,
           messageId: widget.message.id,
         ),
       },
@@ -817,14 +783,11 @@ class _ChatMessageState extends State<ChatMessage>
   void _startEditing() {
     setState(() {
       _isEditing = true;
-      // Обновляем текст в контроллере актуальным содержимым сообщения
       _textController.text = widget.message.content;
       _textController.selection = TextSelection.fromPosition(
         TextPosition(offset: _textController.text.length),
       );
     });
-    // Фокус на текстовом поле
-    FocusScope.of(context).requestFocus(FocusNode());
   }
 
   /// Отмена редактирования
@@ -876,7 +839,6 @@ class _ChatMessageState extends State<ChatMessage>
             controller: _textController,
             maxLines: null,
             minLines: 3,
-            autofocus: true,
             decoration: InputDecoration(
               hintText: localizations.enterYourMessage,
               border: InputBorder.none,
@@ -1028,41 +990,31 @@ class _HeadingBuilder extends MarkdownElementBuilder {
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
     final rawText = element.textContent.trim();
-    final text = stripMarkdownFormatting(rawText);
-    debugPrint(
-      '_HeadingBuilder: building for "$text", level=$level, msgId=$messageId',
-    );
+    final normalizedText = stripMarkdownFormatting(rawText);
 
-    MarkdownHeadingInfoWithKey? heading;
-    try {
-      heading = headings.firstWhere(
-        (h) => h.text == text && h.level == level && h.messageId == messageId,
+    final anchorId = '${messageId}_${level}_$normalizedText';
+    var anchor = HeadingAnchorRegistry().getAnchor(anchorId);
+
+    if (anchor == null) {
+      anchor = HeadingAnchor(
+        id: anchorId,
+        text: normalizedText,
+        level: level,
+        lineIndex: 0,
+        rawLine: rawText,
+        messageId: messageId,
       );
-    } catch (e) {
-      heading = null;
+      HeadingAnchorRegistry().registerAnchor(anchor);
     }
 
-    if (heading != null) {
-      debugPrint(
-        '_HeadingBuilder: found heading, returning _HeadingAnchorWidget',
-      );
-      return _HeadingAnchorWidget(
-        key: ValueKey('heading_${messageId}_${level}_$text'),
-        anchor: heading.anchor,
-        child: Container(
-          padding: const EdgeInsets.only(top: 16, bottom: 8),
-          child: Text(rawText, style: preferredStyle),
-        ),
-      );
-    } else {
-      debugPrint(
-        '_HeadingBuilder: NO heading found, returning plain Container',
-      );
-      return Container(
+    return _HeadingAnchorWidget(
+      key: ValueKey('heading_$anchorId'),
+      anchor: anchor,
+      child: Container(
         padding: const EdgeInsets.only(top: 16, bottom: 8),
         child: Text(rawText, style: preferredStyle),
-      );
-    }
+      ),
+    );
   }
 }
 
@@ -1084,7 +1036,6 @@ class _HeadingAnchorWidgetState extends State<_HeadingAnchorWidget> {
     super.initState();
     if (widget.anchor != null) {
       _registry.registerAnchor(widget.anchor!);
-      debugPrint('Anchor registered in initState: ${widget.anchor!.id}');
     }
   }
 
@@ -1094,18 +1045,11 @@ class _HeadingAnchorWidgetState extends State<_HeadingAnchorWidget> {
     if (widget.anchor != null) {
       widget.anchor!.context = context;
       _registry.registerAnchor(widget.anchor!);
-      debugPrint(
-        'Anchor context updated in didChangeDependencies: ${widget.anchor!.id}',
-      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.anchor != null) {
-      widget.anchor!.context = context;
-      _registry.registerAnchor(widget.anchor!);
-    }
     return widget.child;
   }
 }

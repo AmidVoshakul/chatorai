@@ -258,12 +258,9 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
                                         hoverColor: theme.colorScheme.primary
                                             .withValues(alpha: 0.1),
                                         child: Container(
-                                          padding: EdgeInsets.only(
-                                            left:
-                                                16 + (heading.level - 1) * 12.0,
-                                            right: 16,
-                                            top: 12,
-                                            bottom: 12,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
                                           ),
                                           decoration: BoxDecoration(
                                             color: isActive

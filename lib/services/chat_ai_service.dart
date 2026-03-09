@@ -155,4 +155,8 @@ class ChatAiService {
   // ===========================================================================
 
   String formatError(Object error) => ChatErrorUtils.formatError(error);
+
+  void stopGeneration() {
+    _client.stopGeneration();
+  }
 }

@@ -117,35 +117,45 @@ class MarkdownParser {
   static List<MarkdownHeadingInfo> parseHeadings(String content) {
     final lines = content.split('\n');
     final headings = <MarkdownHeadingInfo>[];
+    bool inCodeBlock = false;
 
     for (int i = 0; i < lines.length; i++) {
-      final line = lines[i].trim();
+      final line = lines[i];
 
-      if (line.startsWith('# ')) {
+      if (line.startsWith('```')) {
+        inCodeBlock = !inCodeBlock;
+        continue;
+      }
+
+      if (inCodeBlock) continue;
+
+      final trimmedLine = line.trim();
+
+      if (trimmedLine.startsWith('# ')) {
         headings.add(
           MarkdownHeadingInfo(
-            text: stripMarkdownFormatting(line.substring(2)),
+            text: stripMarkdownFormatting(trimmedLine.substring(2)),
             level: 1,
             lineIndex: i,
-            rawLine: line,
+            rawLine: trimmedLine,
           ),
         );
-      } else if (line.startsWith('## ')) {
+      } else if (trimmedLine.startsWith('## ')) {
         headings.add(
           MarkdownHeadingInfo(
-            text: stripMarkdownFormatting(line.substring(3)),
+            text: stripMarkdownFormatting(trimmedLine.substring(3)),
             level: 2,
             lineIndex: i,
-            rawLine: line,
+            rawLine: trimmedLine,
           ),
         );
-      } else if (line.startsWith('### ')) {
+      } else if (trimmedLine.startsWith('### ')) {
         headings.add(
           MarkdownHeadingInfo(
-            text: stripMarkdownFormatting(line.substring(4)),
+            text: stripMarkdownFormatting(trimmedLine.substring(4)),
             level: 3,
             lineIndex: i,
-            rawLine: line,
+            rawLine: trimmedLine,
           ),
         );
       }

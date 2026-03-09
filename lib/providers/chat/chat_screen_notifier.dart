@@ -139,6 +139,8 @@ class ChatScreenNotifier extends StateNotifier<ChatScreenState> {
     state = state.copyWith(
       showWelcomeSuggestions: suggestions.isNotEmpty,
       welcomeSuggestions: suggestions,
+      showSuggestions: false,
+      continuationSuggestions: [],
     );
   }
 

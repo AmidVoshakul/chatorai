@@ -99,7 +99,7 @@ class _HeadingBuilder extends MarkdownElementBuilder {
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
     final text = element.textContent.trim();
 
-    final heading = headings.firstWhere(
+    headings.firstWhere(
       (h) => h.text == text && h.level == level && h.messageId == messageId,
       orElse: () {
         return MarkdownHeadingInfoWithKey(
@@ -107,14 +107,13 @@ class _HeadingBuilder extends MarkdownElementBuilder {
           level: level,
           lineIndex: 0,
           rawLine: '',
-          key: GlobalKey(debugLabel: 'heading_fallback_${messageId}_$level'),
           messageId: messageId,
         );
       },
     );
 
     return Container(
-      key: heading.key,
+      key: ValueKey('heading_${messageId}_${level}_$text'),
       padding: const EdgeInsets.only(top: 16, bottom: 8),
       child: Text(text, style: preferredStyle),
     );

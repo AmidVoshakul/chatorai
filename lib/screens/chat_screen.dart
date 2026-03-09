@@ -17,6 +17,7 @@ import 'package:chatorai/providers.dart'
         chatScreenUIProvider,
         openRouterServiceProvider;
 import 'package:chatorai/providers/chat/chat_screen_provider.dart';
+import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/models/chat_models.dart';
@@ -275,22 +276,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final localizations = AppLocalizations.of(context)!;
     final shouldDelete = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(localizations.deleteChat),
-        content: Text(localizations.confirmDeleteMessage(chat.title)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(localizations.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              localizations.delete,
-              style: const TextStyle(color: Colors.red),
+      builder: (dialogContext) => KeyboardHandlerDialog(
+        onEnter: () => Navigator.pop(dialogContext, true),
+        onEscape: () => Navigator.pop(dialogContext, false),
+        child: AlertDialog(
+          title: Text(localizations.deleteChat),
+          content: Text(localizations.confirmDeleteMessage(chat.title)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(localizations.cancel),
             ),
-          ),
-        ],
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(
+                localizations.delete,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        ),
       ),
     );
 
@@ -1011,10 +1016,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           stripMarkdownFormatting(h.text) == normalizedTapText,
     );
 
-    debugPrint(
-      '_onHeadingTap: looking for msgId=$messageId, level=$level, text="$normalizedTapText", found index: $headingIndex',
-    );
-
     if (headingIndex >= 0) {
       ref
           .read(chatScreenUIProvider.notifier)
@@ -1028,12 +1029,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       final anchor = registry.getAnchor(anchorId);
       final context = anchor?.context ?? heading.context;
 
-      debugPrint(
-        '_onHeadingTap: heading=$headingText, context=${context != null}',
-      );
-
       void performScroll() {
-        final ctx = anchor?.context ?? heading.context;
+        var ctx = anchor?.context ?? heading.context;
+
+        if (ctx == null || !ctx.mounted) {
+          final registry = HeadingAnchorRegistry();
+          for (final a in registry.allAnchors) {
+            if (a.messageId == messageId &&
+                a.context != null &&
+                a.context!.mounted) {
+              ctx = a.context;
+              break;
+            }
+          }
+        }
+
         if (ctx != null && ctx.mounted) {
           Scrollable.ensureVisible(
             ctx,
@@ -1050,13 +1060,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
               (m) => m.id == messageId,
             );
             if (messageIndex >= 0) {
-              final estimatedItemHeight = 150.0;
-              final estimatedOffset = messageIndex * estimatedItemHeight;
-              final maxOffset =
+              final viewportHeight =
+                  _messageScrollController.position.viewportDimension;
+              final maxScroll =
                   _messageScrollController.position.maxScrollExtent;
 
+              final avgItemHeight =
+                  viewportHeight > 0 && chat.messages.isNotEmpty
+                  ? viewportHeight / min(chat.messages.length, 5)
+                  : 150.0;
+
+              final estimatedOffset = messageIndex * avgItemHeight;
+              final targetOffset = estimatedOffset.clamp(0.0, maxScroll);
+
               _messageScrollController.animateTo(
-                estimatedOffset.clamp(0.0, maxOffset),
+                targetOffset,
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
               );

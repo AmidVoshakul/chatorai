@@ -191,6 +191,8 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
   void _updateHeadings() {
     final messages = widget.chat?.messages ?? [];
 
+    HeadingAnchorRegistry().clear();
+
     _headings = MarkdownParserWithKeys.parseAllMessagesHeadings(
       messages,
       existingHeadings: _headings.isNotEmpty ? _headings : null,
