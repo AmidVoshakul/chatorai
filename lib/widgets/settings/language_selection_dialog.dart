@@ -16,7 +16,9 @@ void showLanguageSelectionDialog(
     builder: (BuildContext dialogContext) {
       return Consumer(
         builder: (context, ref, child) {
-          final languageState = ref.watch(languageProvider);
+          final selectedLanguage = ref.watch(
+            languageProvider.select((s) => s.selectedLanguage),
+          );
 
           final languages = <String, String>{
             'en': localizations.english,
@@ -74,8 +76,7 @@ void showLanguageSelectionDialog(
                           ),
                           itemBuilder: (context, index) {
                             final entry = languages.entries.elementAt(index);
-                            final isSelected =
-                                languageState.selectedLanguage == entry.key;
+                            final isSelected = selectedLanguage == entry.key;
 
                             return _buildDialogOption(
                               context: context,
@@ -142,7 +143,9 @@ Widget _buildDialogOption({
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           color: isSelected
-              ? (isDark ? ChatoraiColors.darkSurface : ChatoraiColors.lightSurface)
+              ? (isDark
+                    ? ChatoraiColors.darkSurface
+                    : ChatoraiColors.lightSurface)
               : Colors.transparent,
           border: isSelected
               ? Border.all(color: ChatoraiColors.orange, width: 1)

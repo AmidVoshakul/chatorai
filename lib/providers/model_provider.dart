@@ -62,9 +62,14 @@ class ModelNotifier extends Notifier<ModelState> {
   static const String _selectedModelKey = 'selected_model_id';
   static const String _favoriteModelsKey = 'favorite_models';
 
+  bool _settingsLoaded = false;
+
   @override
   ModelState build() {
-    _loadSettingsAsync();
+    if (!_settingsLoaded) {
+      _settingsLoaded = true;
+      _loadSettingsAsync();
+    }
     return const ModelState();
   }
 

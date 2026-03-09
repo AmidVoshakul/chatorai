@@ -235,7 +235,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   Future<void> _createNewChat() async {
     final newChat = await ref.read(chatListProvider.notifier).createNewChat();
     ref.read(currentChatIdProvider.notifier).state = newChat.id;
-    ref.read(chatScreenProvider.notifier).setCurrentChat(newChat);
     _slidingAppBarKey.currentState?.reset();
     _showWelcomeSuggestions();
   }
@@ -254,7 +253,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     if (chat == null) return;
 
     ref.read(currentChatIdProvider.notifier).state = chatId;
-    ref.read(chatScreenProvider.notifier).setCurrentChat(chat);
     _chatScrollUtils?.reset();
     _slidingAppBarKey.currentState?.reset();
 
@@ -304,7 +302,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       await ref.read(chatListProvider.notifier).deleteChat(chatId);
       if (wasCurrentChat && mounted) {
         ref.read(currentChatIdProvider.notifier).state = null;
-        ref.read(chatScreenProvider.notifier).setCurrentChat(null);
         _showWelcomeSuggestions();
       }
     }
@@ -338,7 +335,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       if (chats.isEmpty) return;
       final newChat = chats.first;
       ref.read(currentChatIdProvider.notifier).state = newChat.id;
-      ref.read(chatScreenProvider.notifier).setCurrentChat(newChat);
       // Use newChat directly
       await _handleAddMessagesAndStream(newChat, messageData.text);
       return;
@@ -370,8 +366,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     _chatStorageService.addMessageToChat(chatFromStorage.id, assistantMessage);
 
-    // Update both providers with the chat that includes assistant message
-    ref.read(chatScreenProvider.notifier).setCurrentChat(chatWithBoth);
+    // Update chat list provider with the chat that includes assistant message
     ref.read(chatListProvider.notifier).updateChat(chatWithBoth);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -470,9 +465,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     _chatStorageService.addMessageToChat(chat.id, newAssistantMessage);
     ref.read(chatListProvider.notifier).updateChat(chatWithNewPlaceholder);
-    ref
-        .read(chatScreenProvider.notifier)
-        .setCurrentChat(chatWithNewPlaceholder);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _chatScrollUtils?.scrollToIndicator();
@@ -501,7 +493,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       await _chatStorageService.addMessageToChat(chat.id, errorMessage);
       final chatFromStorage = await _chatStorageService.getChat(chat.id);
       if (chatFromStorage != null) {
-        ref.read(chatScreenProvider.notifier).setCurrentChat(chatFromStorage);
+        // Chat is already updated in chatListProvider below
       }
       ref
           .read(chatListProvider.notifier)
@@ -761,7 +753,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
               );
 
               ref.read(chatListProvider.notifier).updateChat(newChat);
-              ref.read(chatScreenProvider.notifier).setCurrentChat(newChat);
               ref.read(chatScreenProvider.notifier).setStreaming(false);
               ref.read(streamingContentProvider.notifier).stopStreaming();
 
@@ -878,7 +869,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       final updatedChat = await _chatStorageService.getChat(currentChat!.id);
       if (updatedChat != null) {
         ref.read(chatListProvider.notifier).updateChat(updatedChat);
-        ref.read(chatScreenProvider.notifier).setCurrentChat(updatedChat);
         ref.read(chatScreenProvider.notifier).hideSuggestions();
         if (updatedChat.messages.isEmpty) {
           ref.read(chatScreenProvider.notifier).hideAllSuggestions();
@@ -911,7 +901,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       updatedAt: DateTime.now(),
     );
     ref.read(chatListProvider.notifier).updateChat(updatedChat);
-    ref.read(chatScreenProvider.notifier).setCurrentChat(updatedChat);
 
     final localizations = AppLocalizations.of(context);
     SnackbarUtils.showSuccessSnackBar(
@@ -971,7 +960,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
 
     ref.read(chatListProvider.notifier).updateChat(chatWithAssistant);
-    ref.read(chatScreenProvider.notifier).setCurrentChat(chatWithAssistant);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _chatScrollUtils?.scrollToIndicator();
@@ -1117,7 +1105,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final chatFromStorage = await _chatStorageService.getChat(currentChat!.id);
     if (chatFromStorage != null) {
       ref.read(chatListProvider.notifier).updateChat(chatFromStorage);
-      ref.read(chatScreenProvider.notifier).setCurrentChat(chatFromStorage);
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1214,12 +1201,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   Widget _buildChatMessages({bool wrapWithGesture = false}) {
     final chatState = ref.watch(chatScreenProvider);
+    final currentChat = this.currentChat;
     final chatMessages = ChatMessages(
       key: _chatMessagesKey,
       openRouterService: ref.read(openRouterServiceProvider),
       chatStorageService: _chatStorageService,
-      chat: chatState.currentChat,
-      selectedModel: chatState.selectedModelId,
+      chat: currentChat,
+      selectedModel: selectedModelId,
       onSendMessage: _handleSendMessage,
       onMessageDeleted: _refreshChatMessages,
       onMessageEdited: _handleMessageEdited,
@@ -1233,9 +1221,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       onSuggestionsClose: () =>
           ref.read(chatScreenProvider.notifier).hideSuggestions(),
       onSuggestionsRefresh: () {
-        if (chatState.currentChat != null &&
-            chatState.currentChat!.messages.isNotEmpty) {
-          _showContinuationSuggestions(chatState.currentChat!.messages.last);
+        if (currentChat != null && currentChat.messages.isNotEmpty) {
+          _showContinuationSuggestions(currentChat.messages.last);
         }
       },
       welcomeSuggestions: chatState.welcomeSuggestions,

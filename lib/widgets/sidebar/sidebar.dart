@@ -35,17 +35,18 @@ class Sidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final languageState = ref.watch(languageProvider);
+    final language = ref.watch(
+      languageProvider.select((s) => s.selectedLanguage),
+    );
     final themeNotifier = ref.read(themeProvider.notifier);
-    final sidebarState = ref.watch(sidebarProvider);
+    final searchQuery = ref.watch(sidebarProvider.select((s) => s.searchQuery));
     final filteredChats = ref.watch(filteredChatsProvider);
     final isLoading = ref.watch(chatListLoadingProvider);
 
     final theme = themeNotifier.getTheme();
-    final language = languageState.selectedLanguage;
     final localizations = AppLocalizations.of(context)!;
 
-    final currentChat = ref.watch(currentChatProvider);
+    final currentChatId = ref.watch(currentChatProvider.select((c) => c?.id));
 
     return AnimatedContainer(
       width: width,
@@ -76,7 +77,7 @@ class Sidebar extends ConsumerWidget {
                     theme,
                     language,
                     localizations,
-                    sidebarState.searchQuery,
+                    searchQuery,
                   )
                 : ListView.builder(
                     padding: EdgeInsets.zero,
@@ -90,7 +91,7 @@ class Sidebar extends ConsumerWidget {
                         theme,
                         language,
                         localizations,
-                        currentChat,
+                        currentChatId,
                       );
                     },
                   ),
@@ -261,9 +262,9 @@ class Sidebar extends ConsumerWidget {
     ThemeData theme,
     String language,
     AppLocalizations localizations,
-    Chat? currentChat,
+    String? currentChatId,
   ) {
-    final isSelected = currentChat?.id == chat.id;
+    final isSelected = currentChatId == chat.id;
 
     return Material(
       color: Colors.transparent,

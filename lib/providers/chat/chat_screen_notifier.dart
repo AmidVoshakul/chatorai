@@ -1,16 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/models/chat_models.dart';
-import 'package:chatorai/services/chat_storage_service.dart';
-import 'package:chatorai/constants/chat_constants.dart';
 
 // ===========================================================================
 // CHAT SCREEN STATE
 // ===========================================================================
 
 class ChatScreenState {
-  final Chat? currentChat;
-  final String selectedModelId;
-  final List<Chat> chats;
   final bool isStreaming;
   final bool isSuggestionsLoading;
   final bool showSuggestions;
@@ -23,9 +17,6 @@ class ChatScreenState {
   final int activeHeadingIndex;
 
   const ChatScreenState({
-    this.currentChat,
-    this.selectedModelId = ChatScreenConstants.defaultModelId,
-    this.chats = const [],
     this.isStreaming = false,
     this.isSuggestionsLoading = false,
     this.showSuggestions = false,
@@ -39,10 +30,6 @@ class ChatScreenState {
   });
 
   ChatScreenState copyWith({
-    Chat? currentChat,
-    bool clearCurrentChat = false,
-    String? selectedModelId,
-    List<Chat>? chats,
     bool? isStreaming,
     bool? isSuggestionsLoading,
     bool? showSuggestions,
@@ -55,9 +42,6 @@ class ChatScreenState {
     int? activeHeadingIndex,
   }) {
     return ChatScreenState(
-      currentChat: clearCurrentChat ? null : (currentChat ?? this.currentChat),
-      selectedModelId: selectedModelId ?? this.selectedModelId,
-      chats: chats ?? this.chats,
       isStreaming: isStreaming ?? this.isStreaming,
       isSuggestionsLoading: isSuggestionsLoading ?? this.isSuggestionsLoading,
       showSuggestions: showSuggestions ?? this.showSuggestions,
@@ -79,42 +63,7 @@ class ChatScreenState {
 // ===========================================================================
 
 class ChatScreenNotifier extends StateNotifier<ChatScreenState> {
-  final ChatStorageService _storageService;
-
-  ChatScreenNotifier(this._storageService) : super(const ChatScreenState());
-
-  Future<void> loadChats() async {
-    final chats = await _storageService.getChats();
-    state = state.copyWith(chats: chats);
-  }
-
-  void setCurrentChat(Chat? chat) {
-    state = state.copyWith(currentChat: chat, clearCurrentChat: chat == null);
-  }
-
-  void updateCurrentChat(Chat chat) {
-    state = state.copyWith(currentChat: chat);
-    final index = state.chats.indexWhere((c) => c.id == chat.id);
-    if (index != -1) {
-      final newChats = List<Chat>.from(state.chats);
-      newChats[index] = chat;
-      state = state.copyWith(chats: newChats);
-    }
-  }
-
-  void addChat(Chat chat) {
-    state = state.copyWith(chats: [chat, ...state.chats]);
-  }
-
-  void removeChat(String chatId) {
-    final newChats = state.chats.where((c) => c.id != chatId).toList();
-    final clearCurrent = state.currentChat?.id == chatId;
-    state = state.copyWith(chats: newChats, clearCurrentChat: clearCurrent);
-  }
-
-  void setSelectedModel(String modelId) {
-    state = state.copyWith(selectedModelId: modelId);
-  }
+  ChatScreenNotifier() : super(const ChatScreenState());
 
   void setStreaming(bool isStreaming) {
     state = state.copyWith(isStreaming: isStreaming);

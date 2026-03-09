@@ -73,9 +73,14 @@ class LanguageState {
 class LanguageNotifier extends Notifier<LanguageState> {
   static const String _languageKey = 'selected_language';
 
+  bool _settingsLoaded = false;
+
   @override
   LanguageState build() {
-    _loadSettings();
+    if (!_settingsLoaded) {
+      _settingsLoaded = true;
+      _loadSettings();
+    }
     return const LanguageState();
   }
 

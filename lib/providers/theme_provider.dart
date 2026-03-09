@@ -148,13 +148,18 @@ class ThemeNotifier extends Notifier<ThemeState> {
   static const String _fontSizeKey = 'font_size';
   static const String _wideScreenModeKey = 'wide_screen_mode';
 
+  bool _settingsLoaded = false;
+
   // ===========================================================================
   // BUILD
   // ===========================================================================
 
   @override
   ThemeState build() {
-    _loadSettings();
+    if (!_settingsLoaded) {
+      _settingsLoaded = true;
+      _loadSettings();
+    }
     return const ThemeState();
   }
 

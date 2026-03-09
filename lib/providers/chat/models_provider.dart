@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/services/openrouter_service.dart';
 import 'package:chatorai/providers.dart';
@@ -48,11 +47,14 @@ class ModelsScreenState {
 // ===========================================================================
 
 class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
+  bool _modelsLoaded = false;
+
   @override
   ModelsScreenState build() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      loadModels();
-    });
+    if (!_modelsLoaded) {
+      _modelsLoaded = true;
+      Future.microtask(() => loadModels());
+    }
     return const ModelsScreenState();
   }
 

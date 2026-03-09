@@ -16,7 +16,7 @@ void showThemeSelectionDialog(
     builder: (BuildContext dialogContext) {
       return Consumer(
         builder: (context, ref, child) {
-          final themeState = ref.watch(themeProvider);
+          final themeMode = ref.watch(themeProvider.select((s) => s.themeMode));
 
           return Dialog(
             backgroundColor: isDark
@@ -56,7 +56,7 @@ void showThemeSelectionDialog(
                         icon: Icons.brightness_6,
                         title: localizations.system,
                         subtitle: localizations.useSystemTheme,
-                        isSelected: themeState.themeMode == AppThemeMode.system,
+                        isSelected: themeMode == AppThemeMode.system,
                         onTap: () {
                           ref
                               .read(themeProvider.notifier)
@@ -74,7 +74,7 @@ void showThemeSelectionDialog(
                         icon: Icons.wb_sunny,
                         title: localizations.light,
                         subtitle: localizations.useLightTheme,
-                        isSelected: themeState.themeMode == AppThemeMode.light,
+                        isSelected: themeMode == AppThemeMode.light,
                         onTap: () {
                           ref
                               .read(themeProvider.notifier)
@@ -92,7 +92,7 @@ void showThemeSelectionDialog(
                         icon: Icons.nightlight,
                         title: localizations.dark,
                         subtitle: localizations.useDarkTheme,
-                        isSelected: themeState.themeMode == AppThemeMode.dark,
+                        isSelected: themeMode == AppThemeMode.dark,
                         onTap: () {
                           ref
                               .read(themeProvider.notifier)
@@ -149,7 +149,9 @@ Widget _buildDialogOption({
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           color: isSelected
-              ? (isDark ? ChatoraiColors.darkSurface : ChatoraiColors.lightSurface)
+              ? (isDark
+                    ? ChatoraiColors.darkSurface
+                    : ChatoraiColors.lightSurface)
               : Colors.transparent,
           border: isSelected
               ? Border.all(color: ChatoraiColors.orange, width: 1)
