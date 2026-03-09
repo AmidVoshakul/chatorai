@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/providers/chat/chat_providers.dart';
@@ -25,16 +26,25 @@ class SidebarState {
 // ===========================================================================
 
 class SidebarNotifier extends Notifier<SidebarState> {
+  Timer? _debounceTimer;
+
   @override
   SidebarState build() {
+    ref.onDispose(() {
+      _debounceTimer?.cancel();
+    });
     return const SidebarState();
   }
 
   void setSearchQuery(String query) {
-    state = state.copyWith(searchQuery: query, isSearching: query.isNotEmpty);
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      state = state.copyWith(searchQuery: query, isSearching: query.isNotEmpty);
+    });
   }
 
   void clearSearch() {
+    _debounceTimer?.cancel();
     state = state.copyWith(searchQuery: '', isSearching: false);
   }
 

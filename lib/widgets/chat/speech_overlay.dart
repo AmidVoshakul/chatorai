@@ -85,7 +85,6 @@ class _SpeechOverlayWidgetState extends State<SpeechOverlayWidget>
         // ===================================================================
         // GLASS BLUR BACKGROUND
         // ===================================================================
-
         Positioned.fill(
           child: BackdropFilter(
             filter: ImageFilter.blur(
@@ -101,7 +100,6 @@ class _SpeechOverlayWidgetState extends State<SpeechOverlayWidget>
         // ===================================================================
         // CENTER CONTENT
         // ===================================================================
-
         Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.xl),
@@ -111,7 +109,6 @@ class _SpeechOverlayWidgetState extends State<SpeechOverlayWidget>
                 // ===========================================================
                 // SIRI STYLE WAVE
                 // ===========================================================
-
                 SizedBox(
                   height: 90,
                   width: double.infinity,
@@ -127,7 +124,6 @@ class _SpeechOverlayWidgetState extends State<SpeechOverlayWidget>
                 // ===========================================================
                 // STATUS
                 // ===========================================================
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -167,11 +163,7 @@ class _SpeechOverlayWidgetState extends State<SpeechOverlayWidget>
             return LinearGradient(
               begin: Alignment(-1 + progress * 2, 0),
               end: Alignment(1 + progress * 2, 0),
-              colors: const [
-                shimmerColor,
-                shimmerHighlight,
-                shimmerColor,
-              ],
+              colors: const [shimmerColor, shimmerHighlight, shimmerColor],
             ).createShader(bounds);
           },
           blendMode: BlendMode.srcIn,
@@ -250,23 +242,23 @@ class _SiriWavePainter extends CustomPainter {
   }
 
   void _drawWave(
-      Canvas canvas,
-      Size size,
-      double amplitude,
-      double frequency,
-      double phase,
-      double opacity,
-      ) {
+    Canvas canvas,
+    Size size,
+    double amplitude,
+    double frequency,
+    double phase,
+    double opacity,
+  ) {
     final centerY = size.height / 2;
 
     final paint = Paint()
-      ..color = color.withOpacity(opacity)
+      ..color = color.withValues(alpha: opacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3
       ..strokeCap = StrokeCap.round;
 
     final glowPaint = Paint()
-      ..color = color.withOpacity(opacity * 0.25)
+      ..color = color.withValues(alpha: opacity * 0.25)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 8
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
@@ -280,13 +272,13 @@ class _SiriWavePainter extends CustomPainter {
 
       final y =
           centerY +
-              math.sin(
+          math.sin(
                 (progress * frequency * math.pi * 2) +
                     animationValue * math.pi * 2 +
                     phase,
               ) *
-                  amplitude *
-                  fade;
+              amplitude *
+              fade;
 
       if (x == 0) {
         path.moveTo(x, y);

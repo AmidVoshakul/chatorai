@@ -51,9 +51,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       leading: Builder(
         builder: (context) => IconButton(
           icon: Icon(Icons.menu, size: ChatoraiIconSizes.buttonIcon),
-          onPressed: onMenuPressed != null
-              ? onMenuPressed
-              : () => Scaffold.of(context).openDrawer(),
+          onPressed: onMenuPressed ?? () => Scaffold.of(context).openDrawer(),
         ),
       ),
       actions: [

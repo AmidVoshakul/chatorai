@@ -82,6 +82,7 @@ class Sidebar extends ConsumerWidget {
                 : ListView.builder(
                     padding: EdgeInsets.zero,
                     itemCount: filteredChats.length,
+                    itemExtent: ChatoraiSpacing.sidebarItemHeight,
                     itemBuilder: (context, index) {
                       final chat = filteredChats[index];
                       return _buildChatItem(

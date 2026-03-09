@@ -523,6 +523,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 ChatScreenConstants.baseRetryDelaySeconds *
                 pow(2, retryCount).toInt(),
           );
+          if (!mounted) return;
           final localizations = AppLocalizations.of(context);
           final retryMessageContent =
               localizations?.rateLimitRetryMessage(delay.inSeconds) ??
@@ -902,6 +903,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
     ref.read(chatListProvider.notifier).updateChat(updatedChat);
 
+    if (!mounted) return;
     final localizations = AppLocalizations.of(context);
     SnackbarUtils.showSuccessSnackBar(
       context: context,
@@ -967,6 +969,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     _sendToAI(newContent, chatWithAssistant);
 
+    if (!mounted) return;
     final localizations = AppLocalizations.of(context);
     SnackbarUtils.showSuccessSnackBar(
       context: context,
@@ -1458,6 +1461,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             .showContinuationSuggestions(suggestions);
       }
     } catch (e) {
+      if (!mounted) return;
       final localizations = AppLocalizations.of(context);
       SnackbarUtils.showErrorSnackBar(
         context: context,
@@ -1511,6 +1515,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           );
       return parseSuggestions(response.content);
     } catch (e) {
+      if (!mounted) {
+        return ['Tell me more', 'Examples?', 'Alternatives?'];
+      }
       final localizations = AppLocalizations.of(context);
       return [
         localizations?.defaultSuggestion1 ?? 'Tell me more',

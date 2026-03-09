@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path/path.dart' as path;
 import '../utils/logger.dart';
@@ -566,7 +566,6 @@ class OpenRouterService implements OpenRouterClient {
         _logger.logError(
           '[OpenRouter] API key not found in .env file. Please add ${OpenRouterConstants.envApiKey} to your .env file.',
         );
-        _logger.logDebug('[OpenRouter] Available environment variables:');
         dotenv.env.forEach((key, value) {
           _logger.logDebug(
             '[OpenRouter]   $key: ${value.length > 10 ? '${value.substring(0, 10)}...' : value}',
@@ -1064,17 +1063,26 @@ class OpenRouterService implements OpenRouterClient {
     bool includeReasoning,
     VoidCallback? onStopped,
   ) async {
-    String fullContent = '';
+    final StringBuffer fullContent = StringBuffer();
     bool hasReasoning = false;
+    String buffer = '';
 
     try {
       await for (final chunk in stream.stream) {
-        final decoded = utf8.decode(chunk);
-        final lines = decoded.split('\n');
+        buffer += utf8.decode(chunk);
+
+        // Normalize line endings: handle both \r\n and \n
+        buffer = buffer.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+
+        // Split buffer into lines - more efficient than contains/indexOf loop
+        final lines = buffer.split('\n');
+        // Keep unprocessed part in buffer
+        buffer = lines.removeLast();
 
         for (final line in lines) {
-          if (line.startsWith('data: ')) {
-            final dataStr = line.substring(6).trim();
+          final trimmedLine = line.trim();
+          if (trimmedLine.startsWith('data: ')) {
+            final dataStr = trimmedLine.substring(6).trim();
 
             if (dataStr.isEmpty || dataStr == '[DONE]') {
               if (dataStr == '[DONE]') {
@@ -1090,23 +1098,23 @@ class OpenRouterService implements OpenRouterClient {
                   ? choices[0]
                   : null;
               final delta = choice?['delta'] ?? {};
-              final content = delta['content'];
-              final reasoning = delta['reasoning'];
 
-              if (content != null && content is String) {
-                fullContent += content;
-                onChunk(content);
-                _logger.logVerbose('[OpenRouter] Content chunk: "$content"');
+              if (delta.containsKey('content')) {
+                final content = delta['content'];
+                if (content != null && content is String) {
+                  fullContent.write(content);
+                  onChunk(content);
+                }
               }
 
-              if (reasoning != null && reasoning is String) {
-                hasReasoning = true;
-                if (onReasoning != null) {
-                  onReasoning(reasoning);
+              if (delta.containsKey('reasoning')) {
+                final reasoning = delta['reasoning'];
+                if (reasoning != null && reasoning is String) {
+                  hasReasoning = true;
+                  if (onReasoning != null) {
+                    onReasoning(reasoning);
+                  }
                 }
-                _logger.logVerbose(
-                  '[OpenRouter] Reasoning chunk: "$reasoning"',
-                );
               }
 
               if (choice?['finish_reason'] != null) {
@@ -1135,9 +1143,10 @@ class OpenRouterService implements OpenRouterClient {
       );
     }
 
-    onCompletion(fullContent);
+    final finalContent = fullContent.toString();
+    onCompletion(finalContent);
     _logger.logInfo(
-      '[OpenRouter] Streaming completed, total content length: ${fullContent.length}',
+      '[OpenRouter] Streaming completed, total content length: ${finalContent.length}',
     );
   }
 

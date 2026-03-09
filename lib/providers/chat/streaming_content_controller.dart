@@ -56,20 +56,12 @@ class StreamingContentState {
 // ===========================================================================
 
 class StreamingContentNotifier extends Notifier<StreamingContentState> {
-  static const updateIntervalMs = 250;
-  DateTime _lastUiUpdate = DateTime.now();
-  String _pendingContent = '';
-  String _pendingReasoning = '';
-
   @override
   StreamingContentState build() {
     return StreamingContentState(lastUpdate: DateTime.now());
   }
 
   void startStreaming(String chatId) {
-    _pendingContent = '';
-    _pendingReasoning = '';
-    _lastUiUpdate = DateTime.now();
     state = StreamingContentState(
       currentChatId: chatId,
       content: '',
@@ -82,44 +74,23 @@ class StreamingContentNotifier extends Notifier<StreamingContentState> {
   void updateContent(String content, {String? reasoning}) {
     if (!state.isStreaming) return;
 
-    _pendingContent = content;
-    if (reasoning != null) {
-      _pendingReasoning = reasoning;
-    }
-
-    final now = DateTime.now();
-    final elapsed = now.difference(_lastUiUpdate).inMilliseconds;
-
-    if (elapsed >= updateIntervalMs) {
-      _flushPendingUpdates();
-    }
-  }
-
-  void _flushPendingUpdates() {
-    if (!state.isStreaming) return;
-
+    // Immediately update state - throttling is handled in chat_screen
     state = state.copyWith(
-      content: _pendingContent,
-      reasoning: _pendingReasoning,
+      content: content,
+      reasoning: reasoning,
       lastUpdate: DateTime.now(),
     );
-    _lastUiUpdate = DateTime.now();
   }
 
   void stopStreaming() {
-    _flushPendingUpdates();
     state = state.copyWith(isStreaming: false);
   }
 
   Future<void> flushAndStop() async {
-    _flushPendingUpdates();
     state = state.copyWith(isStreaming: false);
   }
 
   void reset() {
-    _pendingContent = '';
-    _pendingReasoning = '';
-    _lastUiUpdate = DateTime.now();
     state = StreamingContentState(lastUpdate: DateTime.now());
   }
 }
