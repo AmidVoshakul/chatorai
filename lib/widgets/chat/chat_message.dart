@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:chatorai/widgets/chat/code_block.dart';
@@ -14,12 +15,13 @@ import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/constants/chat_constants.dart';
 import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 import 'package:chatorai/utils/format_time.dart';
+import 'package:chatorai/providers/chat/chat_message_provider.dart';
 
 // ===========================================================================
 // CHAT MESSAGE WIDGET
 // ===========================================================================
 
-class ChatMessage extends StatefulWidget {
+class ChatMessage extends ConsumerStatefulWidget {
   final Message message;
   final bool isStreaming;
   final VoidCallback onRetry;
@@ -56,21 +58,20 @@ class ChatMessage extends StatefulWidget {
   });
 
   @override
-  State<ChatMessage> createState() => _ChatMessageState();
+  ConsumerState<ChatMessage> createState() => _ChatMessageState();
 }
 
 // ===========================================================================
 // CHAT MESSAGE STATE
 // ===========================================================================
 
-class _ChatMessageState extends State<ChatMessage>
+class _ChatMessageState extends ConsumerState<ChatMessage>
     with TickerProviderStateMixin {
   AnimationController? _fadeController;
   Animation<double>? _fadeAnimation;
   AnimationController? _slideController;
   Animation<Offset>? _slideAnimation;
 
-  bool _isEditing = false;
   late TextEditingController _textController;
   bool _animationsInitialized = false;
 
@@ -82,7 +83,8 @@ class _ChatMessageState extends State<ChatMessage>
   }
 
   void _onTextChanged() {
-    if (!_isEditing && _textController.text != widget.message.content) {
+    final isEditing = ref.watch(chatMessageProvider.select((s) => s.isEditing));
+    if (!isEditing && _textController.text != widget.message.content) {
       _textController.text = widget.message.content;
     }
   }
@@ -562,7 +564,8 @@ class _ChatMessageState extends State<ChatMessage>
     }
 
     // Режим inline редактирования
-    if (_isEditing) {
+    final isEditing = ref.watch(chatMessageProvider.select((s) => s.isEditing));
+    if (isEditing) {
       return _buildEditInterface(context);
     }
 
@@ -781,39 +784,29 @@ class _ChatMessageState extends State<ChatMessage>
 
   /// Переключение в режим редактирования
   void _startEditing() {
-    setState(() {
-      _isEditing = true;
-      _textController.text = widget.message.content;
-      _textController.selection = TextSelection.fromPosition(
-        TextPosition(offset: _textController.text.length),
-      );
-    });
+    ref.read(chatMessageProvider.notifier).startEditing(widget.message.content);
+    _textController.text = widget.message.content;
+    _textController.selection = TextSelection.fromPosition(
+      TextPosition(offset: _textController.text.length),
+    );
   }
 
   /// Отмена редактирования
   void _cancelEditing() {
-    setState(() {
-      _isEditing = false;
-    });
+    ref.read(chatMessageProvider.notifier).cancelEditing();
     // Восстанавливаем оригинальный текст
     _textController.text = widget.message.content;
   }
 
   /// Сохранение изменений
   Future<void> _saveEditing() async {
-    setState(() {
-      _isEditing = false;
-    });
-
+    ref.read(chatMessageProvider.notifier).saveEditing();
     await _handleEditMessage(_textController.text);
   }
 
   /// Сохранение и отправка
   Future<void> _saveAndSend() async {
-    setState(() {
-      _isEditing = false;
-    });
-
+    ref.read(chatMessageProvider.notifier).saveEditing();
     await _handleEditAndSend(_textController.text);
   }
 
@@ -950,9 +943,7 @@ class _ChatMessageState extends State<ChatMessage>
     _textController.text = newContent;
 
     // Выходим из режима редактирования
-    setState(() {
-      _isEditing = false;
-    });
+    ref.read(chatMessageProvider.notifier).saveEditing();
   }
 
   /// Обработка редактирования и отправки сообщения
@@ -970,9 +961,7 @@ class _ChatMessageState extends State<ChatMessage>
     _textController.text = newContent;
 
     // Выходим из режима редактирования
-    setState(() {
-      _isEditing = false;
-    });
+    ref.read(chatMessageProvider.notifier).saveEditing();
   }
 }
 

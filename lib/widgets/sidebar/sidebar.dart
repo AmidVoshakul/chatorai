@@ -35,18 +35,26 @@ class Sidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final language = ref.watch(
-      languageProvider.select((s) => s.selectedLanguage),
-    );
+    // Оптимизация: минимизируем количество watch вызовов
+    // Используем select для отслеживания только нужных полей
     final themeNotifier = ref.read(themeProvider.notifier);
-    final searchQuery = ref.watch(sidebarProvider.select((s) => s.searchQuery));
-    final filteredChats = ref.watch(filteredChatsProvider);
-    final isLoading = ref.watch(chatListLoadingProvider);
-
     final theme = themeNotifier.getTheme();
     final localizations = AppLocalizations.of(context)!;
 
+    // Отслеживаем только searchQuery, а не весь sidebarState
+    final searchQuery = ref.watch(sidebarProvider.select((s) => s.searchQuery));
+
+    // Отслеживаем только необходимые данные с оптимизацией
+    final filteredChats = ref.watch(filteredChatsProvider);
+    final isLoading = ref.watch(
+      chatListLoadingProvider.select((value) => value),
+    );
     final currentChatId = ref.watch(currentChatProvider.select((c) => c?.id));
+
+    // Язык используется для форматирования даты в sidebar
+    final language = ref.watch(
+      languageProvider.select((s) => s.selectedLanguage),
+    );
 
     return AnimatedContainer(
       width: width,

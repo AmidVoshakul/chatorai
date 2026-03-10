@@ -39,16 +39,24 @@ final chatListProvider =
 class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
   bool _isLoadingChats = false;
   bool _hasLoadedOnce = false;
+  Future<void>? _loadFuture;
 
   @override
   AsyncValue<List<Chat>> build() {
     final repository = ref.watch(chatRepositoryProvider);
-    _loadChats(repository);
-    return const AsyncValue.loading();
+    // Only start loading if we haven't loaded yet
+    if (!_hasLoadedOnce) {
+      _loadFuture = _loadChats(repository);
+      return const AsyncValue.loading();
+    }
+    // Return current state if already loaded
+    return state;
   }
 
   Future<void> _loadChats(ChatRepository repository) async {
-    if (_isLoadingChats) {
+    // If already loading, wait for the existing load to complete
+    if (_isLoadingChats && _loadFuture != null) {
+      await _loadFuture;
       return;
     }
 
@@ -65,6 +73,7 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
       state = AsyncValue.error(e, st);
     } finally {
       _isLoadingChats = false;
+      _loadFuture = null;
     }
   }
 
@@ -77,7 +86,8 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
   }
 
   Future<Chat> createNewChat() async {
-    // Ensure chats are loaded first if not already loaded
+    // Wait for initial load to complete if not already loaded
+    // This prevents race condition where new chat gets overwritten
     if (!_hasLoadedOnce) {
       final repository = ref.read(chatRepositoryProvider);
       await _loadChats(repository);
@@ -86,13 +96,13 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
     final repository = ref.read(chatRepositoryProvider);
     final newChat = await repository.createNewChat();
 
-    // Handle all states - loading, data, or error
+    // Get current state AFTER load completes
     final currentState = state;
     if (currentState.hasValue) {
       final chats = currentState.value!;
       state = AsyncValue.data([newChat, ...chats]);
     } else if (currentState.isLoading) {
-      // If still loading, rebuild after load completes
+      // This should not happen after waiting for load
       state = AsyncValue.data([newChat]);
     } else if (currentState.hasError) {
       // If there was an error, start with the new chat
@@ -127,6 +137,8 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
 
   void updateChat(Chat updatedChat) {
     final currentState = state;
+
+    // Handle case where state has value
     if (currentState.hasValue) {
       final chats = currentState.value!;
       final index = chats.indexWhere((c) => c.id == updatedChat.id);
@@ -137,6 +149,16 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
         // Persist to storage
         ref.read(chatRepositoryProvider).updateChat(updatedChat);
       }
+    }
+    // Handle case where state is loading - store update for later
+    else if (currentState.isLoading) {
+      // Queue the update by creating a new state with the updated chat
+      // This ensures the update is not lost
+      state = AsyncValue.data([updatedChat]);
+    }
+    // Handle case where state has error - start fresh with updated chat
+    else if (currentState.hasError) {
+      state = AsyncValue.data([updatedChat]);
     }
   }
 }
@@ -153,13 +175,35 @@ final currentChatProvider = Provider<Chat?>((ref) {
 
   if (chatId == null) return null;
 
-  return chatsAsync.whenOrNull(
+  // Handle all states properly
+  return chatsAsync.when(
     data: (chats) {
       try {
         return chats.firstWhere((c) => c.id == chatId);
       } catch (_) {
         return null;
       }
+    },
+    loading: () {
+      // While loading, try to find chat in current state if available
+      // This prevents UI from losing current chat during reloads
+      try {
+        final currentChats = chatsAsync.value;
+        if (currentChats != null) {
+          return currentChats.firstWhere((c) => c.id == chatId);
+        }
+      } catch (_) {}
+      return null;
+    },
+    error: (e, st) {
+      // On error, try to keep the current chat if possible
+      try {
+        final currentChats = chatsAsync.value;
+        if (currentChats != null) {
+          return currentChats.firstWhere((c) => c.id == chatId);
+        }
+      } catch (_) {}
+      return null;
     },
   );
 });

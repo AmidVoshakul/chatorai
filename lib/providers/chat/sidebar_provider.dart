@@ -66,28 +66,27 @@ final sidebarProvider = NotifierProvider<SidebarNotifier, SidebarState>(
 );
 
 final chatListLoadingProvider = Provider<bool>((ref) {
-  final chatsAsync = ref.watch(chatListProvider);
+  final chatsAsync = ref.watch(chatListProvider.select((value) => value));
   return chatsAsync.isLoading;
 });
 
 final filteredChatsProvider = Provider<List<Chat>>((ref) {
-  final sidebarState = ref.watch(sidebarProvider);
-  final chatsAsync = ref.watch(chatListProvider);
+  // Оптимизация: используем select чтобы следить только за searchQuery
+  final searchQuery = ref.watch(sidebarProvider.select((s) => s.searchQuery));
+  // Use select to minimize rebuilds - only watch the data, not the entire AsyncValue
+  final chatsAsync = ref.watch(chatListProvider.select((value) => value));
 
   return chatsAsync.when(
     data: (chats) {
-      if (sidebarState.searchQuery.isEmpty) {
+      if (searchQuery.isEmpty) {
         return chats;
       }
+      final lowerQuery = searchQuery.toLowerCase();
       return chats
-          .where(
-            (chat) => chat.title.toLowerCase().contains(
-              sidebarState.searchQuery.toLowerCase(),
-            ),
-          )
+          .where((chat) => chat.title.toLowerCase().contains(lowerQuery))
           .toList();
     },
-    loading: () => [],
-    error: (e, st) => [],
+    loading: () => const [],
+    error: (e, st) => const [],
   );
 });

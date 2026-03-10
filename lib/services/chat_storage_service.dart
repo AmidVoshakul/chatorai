@@ -73,14 +73,7 @@ class ChatStorageService {
     return allChats.sublist(startIndex, endIndex);
   }
 
-  /// Get total chat count
-  Future<int> getChatsCount() async {
-    final prefs = await _getPrefs();
-    final allChats = await _getChatsFromStorage(prefs);
-    return allChats.length;
-  }
-
-  /// Get all chats (legacy method)
+  /// Get all chats (legacy method, used internally)
   Future<List<Chat>> getAllChats() async {
     final prefs = await _getPrefs();
     return await _getChatsFromStorage(prefs);
@@ -194,8 +187,18 @@ class ChatStorageService {
     }
   }
 
-  /// Get chat by ID
+  /// Get chat by ID (optimized to use caching)
   Future<Chat?> getChat(String chatId) async {
+    // Try to find in cached chats first (more efficient)
+    if (_isCacheValid() && _chatsCache != null) {
+      try {
+        return _chatsCache!.firstWhere((c) => c.id == chatId);
+      } catch (e) {
+        // Not in cache, continue to fetch from storage
+      }
+    }
+
+    // Fetch from storage
     final chats = await getAllChats();
     try {
       return chats.firstWhere((c) => c.id == chatId);

@@ -42,6 +42,48 @@ import 'package:chatorai/utils/markdown_parser_with_keys.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
 // ===========================================================================
+// SIDEBAR WRAPPER - Оптимизированный виджет для предотвращения пересоздания
+// ===========================================================================
+
+class SidebarWrapper extends ConsumerStatefulWidget {
+  final double width;
+  final VoidCallback onToggleSidebar;
+  final Function(String) onChatSelect;
+  final Function(String) onChatDelete;
+  final Function() onNewChat;
+
+  const SidebarWrapper({
+    super.key,
+    required this.width,
+    required this.onToggleSidebar,
+    required this.onChatSelect,
+    required this.onChatDelete,
+    required this.onNewChat,
+  });
+
+  @override
+  ConsumerState<SidebarWrapper> createState() => _SidebarWrapperState();
+}
+
+class _SidebarWrapperState extends ConsumerState<SidebarWrapper> {
+  @override
+  Widget build(BuildContext context) {
+    final isCollapsed = ref.watch(
+      chatScreenUIProvider.select((s) => s.isSidebarCollapsed),
+    );
+
+    return Sidebar(
+      width: widget.width,
+      isCollapsed: isCollapsed,
+      onToggleSidebar: widget.onToggleSidebar,
+      onChatSelect: widget.onChatSelect,
+      onChatDelete: widget.onChatDelete,
+      onNewChat: widget.onNewChat,
+    );
+  }
+}
+
+// ===========================================================================
 // CHAT SCREEN WIDGET
 // ===========================================================================
 
@@ -75,6 +117,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   // Cached values for performance
   double _cachedScreenWidth = 0;
   bool _isMobile = false;
+
+  // Cached sidebar drawer for performance
+  Widget? _cachedSidebarDrawer;
+  double _cachedDrawerWidth = 0;
+  String? _cachedChatListHash;
 
   // Speech state
   SpeechUiState _speechUiState = SpeechUiState.idle;
@@ -328,14 +375,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
 
     if (currentChat == null) {
-      await _createNewChat();
-      // After creating new chat, get it directly from chatListProvider since currentChat getter may not be updated yet
-      final chatsAsync = ref.read(chatListProvider);
-      final chats = chatsAsync.whenOrNull(data: (d) => d) ?? [];
-      if (chats.isEmpty) return;
-      final newChat = chats.first;
+      // Create new chat and get the returned chat directly
+      final newChat = await ref.read(chatListProvider.notifier).createNewChat();
+      // Set current chat ID immediately
       ref.read(currentChatIdProvider.notifier).state = newChat.id;
-      // Use newChat directly
+      // Use the newChat that was returned from createNewChat
       await _handleAddMessagesAndStream(newChat, messageData.text);
       return;
     }
@@ -1175,27 +1219,41 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   // ===========================================================================
 
   Widget _buildSidebarDrawer({required double width}) {
-    final isCollapsed = ref.watch(
-      chatScreenUIProvider.select((s) => s.isSidebarCollapsed),
+    // Получаем хэш состояния чатов для проверки необходимости обновления кэша
+    // Используем хэш вместо количества, чтобы отслеживать изменения в содержимом
+    final chatListState = ref.watch(chatListProvider);
+    final chatListHash = chatListState.when(
+      data: (chats) =>
+          chats.fold<String>('', (hash, chat) => '$hash${chat.id}'),
+      loading: () => 'loading',
+      error: (e, st) => 'error',
     );
-    return Drawer(
-      key: ValueKey('sidebar_drawer_$isCollapsed'),
-      width: width,
-      child: Sidebar(
+
+    // Проверяем, нужно ли обновить кэш
+    // Обновляем кэш если: нет кэша, изменилась ширина, изменилось состояние чатов
+    if (_cachedSidebarDrawer == null ||
+        _cachedDrawerWidth != width ||
+        _cachedChatListHash != chatListHash) {
+      _cachedDrawerWidth = width;
+      _cachedChatListHash = chatListHash;
+      _cachedSidebarDrawer = Drawer(
         width: width,
-        isCollapsed: isCollapsed,
-        onToggleSidebar: () => Navigator.pop(context),
-        onChatSelect: (chatId) {
-          _selectChat(chatId);
-          Navigator.of(context).pop();
-        },
-        onChatDelete: _deleteChat,
-        onNewChat: () {
-          _createNewChat();
-          Navigator.of(context).pop();
-        },
-      ),
-    );
+        child: SidebarWrapper(
+          width: width,
+          onToggleSidebar: () => Navigator.pop(context),
+          onChatSelect: (chatId) {
+            _selectChat(chatId);
+            Navigator.of(context).pop();
+          },
+          onChatDelete: _deleteChat,
+          onNewChat: () {
+            _createNewChat();
+            Navigator.of(context).pop();
+          },
+        ),
+      );
+    }
+    return _cachedSidebarDrawer!;
   }
 
   // ===========================================================================
