@@ -134,6 +134,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get apiKeyCopied => 'API key copied';
 
   @override
+  String get apiKeySaved => 'API key saved successfully';
+
+  @override
   String get settingsSaved => 'Settings saved!';
 
   @override

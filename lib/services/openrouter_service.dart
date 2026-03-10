@@ -3,9 +3,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show VoidCallback;
+import 'package:flutter/foundation.dart' show kIsWeb, VoidCallback;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path/path.dart' as path;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/logger.dart';
 
 // Initialize logger for this service
@@ -457,14 +458,96 @@ class OpenRouterService implements OpenRouterClient {
   final Map<String, List<OpenRouterModel>> _modelsCache = {};
   DateTime? _modelsCacheTimestamp;
 
+  // Initialization tracking
+  Completer<void> _initCompleter = Completer<void>();
+  bool _isInitialized = false;
+
   OpenRouterService({
     OpenRouterConfig? config,
     String? baseUrl,
     bool isConnected = true,
   }) : _config = config ?? const OpenRouterConfig(),
-       _baseUrl = baseUrl ?? OpenRouterConstants.baseUrl,
-       _isConnected = isConnected {
+       _isConnected = isConnected,
+       _baseUrl = baseUrl ?? OpenRouterConstants.baseUrl {
     _initializeService();
+  }
+
+  /// Reinitialize service after API key or baseUrl change
+  Future<void> reinitialize() async {
+    _isInitialized = false;
+    _dio = null;
+    // Complete previous completer if it hasn't been completed yet
+    if (!_initCompleter.isCompleted) {
+      _initCompleter.complete();
+    }
+    // Create new completer for the next initialization
+    _initCompleter = Completer<void>();
+    await _initializeService();
+    // Wait for the new initialization to complete
+    await _initCompleter.future;
+  }
+
+  static const String _prefApiKey = 'openrouter_api_key';
+  static const String _prefBaseUrl = 'openrouter_base_url';
+
+  // ===========================================================================
+  // PUBLIC API: Save API key to SharedPreferences (for release builds)
+  // ===========================================================================
+
+  /// Save API key and optional base URL to SharedPreferences
+  /// This allows users to configure the API key in the app without .env file
+  Future<void> saveApiKey(String apiKey, {String? baseUrl}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefApiKey, apiKey);
+      if (baseUrl != null) {
+        await prefs.setString(_prefBaseUrl, baseUrl);
+      }
+      _apiKey = apiKey;
+      _logger.logInfo('[OpenRouter] API key saved to SharedPreferences');
+    } catch (e) {
+      _logger.logError('[OpenRouter] Failed to save API key: $e');
+      rethrow;
+    }
+  }
+
+  /// Get API key from SharedPreferences (if available)
+  Future<String?> _getApiKeyFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_prefApiKey);
+    } catch (e) {
+      _logger.logDebug(
+        '[OpenRouter] Could not read API key from SharedPreferences: $e',
+      );
+      return null;
+    }
+  }
+
+  /// Get base URL from SharedPreferences (if available)
+  Future<String?> _getBaseUrlFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_prefBaseUrl);
+    } catch (e) {
+      _logger.logDebug(
+        '[OpenRouter] Could not read base URL from SharedPreferences: $e',
+      );
+      return null;
+    }
+  }
+
+  /// Clear saved API key (for logout/reset)
+  Future<void> clearSavedApiKey() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_prefApiKey);
+      await prefs.remove(_prefBaseUrl);
+      _apiKey = null;
+      _logger.logInfo('[OpenRouter] Saved API key cleared');
+    } catch (e) {
+      _logger.logError('[OpenRouter] Failed to clear API key: $e');
+    }
   }
 
   // ===========================================================================
@@ -476,49 +559,91 @@ class OpenRouterService implements OpenRouterClient {
   }
 
   Future<void> _initializeService() async {
-    await _loadApiKey();
+    try {
+      await _loadApiKey();
 
-    // Get base URL from environment variables, fallback to default
-    final baseUrl = dotenv.env[OpenRouterConstants.envBaseUrl] ?? _baseUrl;
+      // Get base URL: first from SharedPreferences, then from .env (if available), then fallback to default
+      String? baseUrl = await _getBaseUrlFromPrefs();
+      if (baseUrl == null || baseUrl.isEmpty) {
+        try {
+          baseUrl = dotenv.env[OpenRouterConstants.envBaseUrl];
+        } catch (e) {
+          // dotenv not initialized (e.g., on mobile/desktop without .env file)
+          _logger.logDebug('[OpenRouter] .env not available for baseUrl: $e');
+        }
+      }
+      baseUrl ??= _baseUrl;
 
-    _logger.logInfo('[OpenRouter] Initializing Dio with base URL: $baseUrl');
+      _logger.logInfo('[OpenRouter] Initializing Dio with base URL: $baseUrl');
 
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: baseUrl,
-        connectTimeout: _config.connectTimeout,
-        receiveTimeout: _config.receiveTimeout,
-        headers: {
-          'Content-Type': 'application/json',
-          if (_apiKey != null) 'Authorization': 'Bearer $_apiKey',
-        },
-      ),
-    );
+      _dio = Dio(
+        BaseOptions(
+          baseUrl: baseUrl,
+          connectTimeout: _config.connectTimeout,
+          receiveTimeout: _config.receiveTimeout,
+          headers: {
+            'Content-Type': 'application/json',
+            if (_apiKey != null) 'Authorization': 'Bearer $_apiKey',
+          },
+        ),
+      );
 
-    _logger.logInfo('[OpenRouter] Service initialization complete');
+      _isInitialized = true;
+      _initCompleter.complete();
+      _logger.logInfo('[OpenRouter] Service initialization complete');
+    } catch (e, stack) {
+      _isInitialized = false;
+      _initCompleter.completeError(e, stack);
+      _logger.logError('[OpenRouter] Service initialization failed: $e');
+      rethrow;
+    }
   }
 
   Future<void> _loadApiKey() async {
     try {
-      _logger.logDebug('[OpenRouter] Loading API key from .env file...');
+      _logger.logDebug('[OpenRouter] Loading API key...');
 
-      // Load environment variables from .env file
-      // Try multiple paths to find the .env file
+      String? apiKey;
+      String? baseUrl;
 
-      // Try 1: Current working directory
+      // Strategy 1: Load from SharedPreferences (works on all platforms)
+      try {
+        apiKey = await _getApiKeyFromPrefs();
+        baseUrl = await _getBaseUrlFromPrefs();
+        if (apiKey != null && apiKey.isNotEmpty) {
+          _logger.logInfo('[OpenRouter] API key loaded from SharedPreferences');
+          _apiKey = apiKey;
+          if (baseUrl != null && baseUrl.isNotEmpty) {
+            _logger.logInfo(
+              '[OpenRouter] Base URL loaded from SharedPreferences: $baseUrl',
+            );
+          }
+          return;
+        }
+      } catch (e) {
+        _logger.logDebug(
+          '[OpenRouter] Could not load from SharedPreferences: $e',
+        );
+      }
+
+      // Strategy 2: Try to load from .env file (only on platforms where it's available)
+      // This is for development convenience on desktop platforms
       bool loaded = false;
       try {
-        await dotenv.load(fileName: '.env');
-        loaded = true;
-        _logger.logDebug('[OpenRouter] Loaded .env from current directory');
+        // Only try to load .env if we're on a platform that supports file access
+        // and not on Web (where .env is not bundled)
+        if (!kIsWeb) {
+          await dotenv.load(fileName: '.env');
+          loaded = true;
+          _logger.logDebug('[OpenRouter] Loaded .env from current directory');
+        }
       } catch (e) {
         _logger.logDebug(
           '[OpenRouter] Could not load .env from current directory: $e',
         );
       }
 
-      // Try 2: Project root (common for Flutter projects)
-      if (!loaded) {
+      if (!loaded && !kIsWeb) {
         try {
           await dotenv.load(fileName: '../.env');
           loaded = true;
@@ -530,8 +655,7 @@ class OpenRouterService implements OpenRouterClient {
         }
       }
 
-      // Try 3: Try to find it relative to the script location
-      if (!loaded) {
+      if (!loaded && !kIsWeb) {
         try {
           final scriptDir = File(Platform.script.toFilePath()).parent.path;
           final envPath = path.join(scriptDir, '.env');
@@ -547,38 +671,47 @@ class OpenRouterService implements OpenRouterClient {
         }
       }
 
-      if (!loaded) {
-        throw Exception('Could not find .env file in any location');
-      }
+      // Get API key from environment variables (only if .env was loaded)
+      if (loaded) {
+        apiKey = dotenv.env[OpenRouterConstants.envApiKey];
+        baseUrl = dotenv.env[OpenRouterConstants.envBaseUrl];
 
-      // Get API key from environment variables
-      _apiKey = dotenv.env[OpenRouterConstants.envApiKey];
-      final baseUrl = dotenv.env[OpenRouterConstants.envBaseUrl];
-
-      if (_apiKey != null && _apiKey!.isNotEmpty) {
-        _logger.logInfo(
-          '[OpenRouter] API key loaded successfully from .env file',
-        );
-        if (baseUrl != null && baseUrl.isNotEmpty) {
-          _logger.logInfo('[OpenRouter] Base URL loaded: $baseUrl');
-        }
-      } else {
-        _logger.logError(
-          '[OpenRouter] API key not found in .env file. Please add ${OpenRouterConstants.envApiKey} to your .env file.',
-        );
-        dotenv.env.forEach((key, value) {
-          _logger.logDebug(
-            '[OpenRouter]   $key: ${value.length > 10 ? '${value.substring(0, 10)}...' : value}',
+        if (apiKey != null && apiKey.isNotEmpty) {
+          _logger.logInfo(
+            '[OpenRouter] API key loaded successfully from .env file',
           );
-        });
-        throw Exception(
-          'OpenRouter API key not configured. Please add ${OpenRouterConstants.envApiKey} to your .env file.',
-        );
+          if (baseUrl != null && baseUrl.isNotEmpty) {
+            _logger.logInfo('[OpenRouter] Base URL loaded: $baseUrl');
+          }
+          _apiKey = apiKey;
+          return;
+        }
       }
+
+      // If we reach here, no API key was found
+      // This is OK - user will enter it in settings later
+      _logger.logWarning(
+        '[OpenRouter] API key not configured. User will need to enter it in settings.',
+      );
+      _apiKey = null;
     } catch (e) {
-      _logger.logError('[OpenRouter] Error loading .env file: $e');
-      throw Exception('Failed to load .env file: $e');
+      _logger.logError('[OpenRouter] Error loading API key: $e');
+      _apiKey = null;
     }
+  }
+
+  // ===========================================================================
+  // PUBLIC API KEY MANAGEMENT
+  // ===========================================================================
+
+  /// Check if API key is currently configured (loaded from .env or SharedPreferences)
+  bool get hasApiKey => _apiKey != null && _apiKey!.isNotEmpty;
+
+  /// Get current API key (masked for security)
+  String? get maskedApiKey {
+    if (_apiKey == null || _apiKey!.isEmpty) return null;
+    if (_apiKey!.length <= 8) return '****';
+    return '${_apiKey!.substring(0, 4)}...${_apiKey!.substring(_apiKey!.length - 4)}';
   }
 
   // ===========================================================================
@@ -725,7 +858,7 @@ class OpenRouterService implements OpenRouterClient {
 
     _logger.logInfo('[OpenRouter] Fetching models from OpenRouter API...');
     _logger.logDebug(
-      '[OpenRouter] API URL: ${dotenv.env[OpenRouterConstants.envBaseUrl] ?? _baseUrl}${OpenRouterConstants.modelsEndpoint}',
+      '[OpenRouter] API URL: $_baseUrl${OpenRouterConstants.modelsEndpoint}',
     );
 
     return _retryWithBackoff(
@@ -1010,8 +1143,11 @@ class OpenRouterService implements OpenRouterClient {
   @override
   /// Check if OpenRouterService is ready for API calls
   bool isReady() {
-    return _dio != null && _apiKey != null && _apiKey!.isNotEmpty;
+    return _isInitialized && _dio != null;
   }
+
+  /// Wait for service initialization to complete
+  Future<void> get initializationComplete => _initCompleter.future;
 
   @override
   /// Stop the current generation/streaming

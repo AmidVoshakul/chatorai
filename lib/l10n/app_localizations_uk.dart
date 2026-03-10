@@ -134,6 +134,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get apiKeyCopied => 'API ключ скопійовано';
 
   @override
+  String get apiKeySaved => 'API ключ успішно збережено';
+
+  @override
   String get settingsSaved => 'Налаштування збережено!';
 
   @override
@@ -837,10 +840,10 @@ class AppLocalizationsUk extends AppLocalizations {
   String get tapHeartToAddFavorites => 'Натисніть на сердечко біля моделей, щоб додати їх до вибраних';
 
   @override
-  String get addToFavorites => 'Add to favorites';
+  String get addToFavorites => 'Додати в обране';
 
   @override
-  String get removeFromFavorites => 'Remove from favorites';
+  String get removeFromFavorites => 'Видалити з обраного';
 
   @override
   String get startListening => 'Почати голосовий ввід';

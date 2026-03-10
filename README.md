@@ -20,11 +20,16 @@ A modern AI chat interface with support for multiple models, voice input, and ca
 
 ### 1. Configuration
 
-Create `.env` file in project root:
+**For Development (optional):**
+You can create a `.env` file in the project root to avoid entering the API key each time:
 ```env
 OPENROUTER_API_KEY=your_api_key_here
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 ```
+Copy `.env.example` to `.env` and add your API key.
+
+**For Release Builds:**
+The `.env` file is NOT included in release builds for security. Users must enter their API key in the app settings after first launch. The API key is stored locally in SharedPreferences.
 
 ### 2. Development
 

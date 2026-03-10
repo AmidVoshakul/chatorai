@@ -40,6 +40,7 @@
 "close": "Close",
 "copy": "Copy",
 "apiKeyCopied": "API key copied",
+"apiKeySaved": "API key saved successfully",
 "settingsSaved": "Settings saved!",
 "settingsReset": "Settings reset to default values",
 "appInfo": "App Info",
@@ -347,5 +348,7 @@
     "welcomeGreeting9": "Curiosity is welcome.",
     "welcomeGreeting10": "Your question is my next answer.",
     "welcomeGreeting11": "Let's turn an idea into an answer.",
-    "welcomeGreeting12": "Enter a question. The rest is my job."
+    "welcomeGreeting12": "Enter a question. The rest is my job.",
+    "addToFavorites": "Add to favorites",
+    "removeFromFavorites": "Remove from favorites"
   }

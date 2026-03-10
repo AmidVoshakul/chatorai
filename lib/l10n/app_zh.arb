@@ -40,6 +40,7 @@
   "close": "关闭",
   "copy": "复制",
   "apiKeyCopied": "API 密钥已复制",
+  "apiKeySaved": "API 密钥保存成功",
   "settingsSaved": "设置已保存！",
   "settingsReset": "设置已重置为默认值",
   "appInfo": "应用信息",
@@ -148,8 +149,10 @@
   "showAllModels": "显示所有模型",
   "showFavoritesOnly": "仅显示收藏",
   "noFavoriteModels": "无收藏模型",
-  "tapHeartToAddFavorites": "点击模型上的爱心图标将其添加到收藏",
-  "welcomeQuestion1": "用简单的术语解释量子计算",
+"tapHeartToAddFavorites": "点击模型上的爱心图标将其添加到收藏",
+"addToFavorites": "添加到收藏",
+"removeFromFavorites": "从收藏中移除",
+"welcomeQuestion1": "用简单的术语解释量子计算",
   "welcomeQuestion2": "人工智能的最新趋势是什么？",
   "welcomeQuestion3": "帮助我写一封专业的团队邮件",
   "welcomeQuestion4": "我应该学习什么才能成为更好的程序员？",
@@ -345,5 +348,7 @@
     "welcomeGreeting9": "好奇心是受欢迎的。",
     "welcomeGreeting10": "你的问题是我下一个答案。",
     "welcomeGreeting11": "让我们把想法变成答案。",
-    "welcomeGreeting12": "输入问题。其他的是我的工作。"
+    "welcomeGreeting12": "输入问题。其他的是我的工作。",
+    "addToFavorites": "添加到收藏",
+    "removeFromFavorites": "从收藏中移除"
   }

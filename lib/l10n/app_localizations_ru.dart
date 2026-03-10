@@ -134,6 +134,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get apiKeyCopied => 'API ключ скопирован';
 
   @override
+  String get apiKeySaved => 'API ключ успешно сохранен';
+
+  @override
   String get settingsSaved => 'Настройки сохранены!';
 
   @override
@@ -837,10 +840,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get tapHeartToAddFavorites => 'Нажмите на сердечко у моделей, чтобы добавить их в избранные';
 
   @override
-  String get addToFavorites => 'Add to favorites';
+  String get addToFavorites => 'Добавить в избранное';
 
   @override
-  String get removeFromFavorites => 'Remove from favorites';
+  String get removeFromFavorites => 'Удалить из избранного';
 
   @override
   String get startListening => 'Начать голосовой ввод';

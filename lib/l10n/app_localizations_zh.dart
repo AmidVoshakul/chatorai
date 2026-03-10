@@ -134,6 +134,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get apiKeyCopied => 'API 密钥已复制';
 
   @override
+  String get apiKeySaved => 'API 密钥保存成功';
+
+  @override
   String get settingsSaved => '设置已保存！';
 
   @override

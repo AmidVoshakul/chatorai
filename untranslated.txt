@@ -1,0 +1,26 @@
+{
+  "ar": [
+    "addToFavorites",
+    "removeFromFavorites"
+  ],
+
+  "ja": [
+    "addToFavorites",
+    "removeFromFavorites"
+  ],
+
+  "ru": [
+    "addToFavorites",
+    "removeFromFavorites"
+  ],
+
+  "uk": [
+    "addToFavorites",
+    "removeFromFavorites"
+  ],
+
+  "zh": [
+    "addToFavorites",
+    "removeFromFavorites"
+  ]
+}

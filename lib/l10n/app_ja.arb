@@ -40,6 +40,7 @@
   "close": "閉じる",
   "copy": "コピー",
   "apiKeyCopied": "API キーがコピーされました",
+  "apiKeySaved": "API キーが保存されました",
   "settingsSaved": "設定が保存されました！",
   "settingsReset": "設定がデフォルト値にリセットされました",
   "appInfo": "アプリ情報",
@@ -269,6 +270,8 @@
   "showFavoritesOnly": "お気に入りのみを表示",
   "noFavoriteModels": "お気に入りのモデルがありません",
   "tapHeartToAddFavorites": "モデルの心臓アイコンをタップしてお気に入りに追加",
+"addToFavorites": "お気に入りに追加",
+"removeFromFavorites": "お気に入りから削除",
 "startListening": "音声入力を開始",
 "stopListening": "音声入力を停止",
 "listening": "話してください...",
@@ -345,5 +348,7 @@
     "welcomeGreeting9": "好奇心は大歓迎です。",
     "welcomeGreeting10": "あなたの質問が次の私の答えです。",
     "welcomeGreeting11": "アイデアを答えに変えましょう。",
-    "welcomeGreeting12": "質問を入力してください。残りは私の仕事です。"
+    "welcomeGreeting12": "質問を入力してください。残りは私の仕事です。",
+    "addToFavorites": "お気に入りに追加",
+    "removeFromFavorites": "お気に入りから削除"
   }

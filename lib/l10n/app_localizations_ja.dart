@@ -134,6 +134,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get apiKeyCopied => 'API キーがコピーされました';
 
   @override
+  String get apiKeySaved => 'API キーが保存されました';
+
+  @override
   String get settingsSaved => '設定が保存されました！';
 
   @override

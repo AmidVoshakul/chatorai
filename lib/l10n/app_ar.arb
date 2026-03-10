@@ -40,6 +40,7 @@
   "close": "إغلاق",
   "copy": "نسخ",
   "apiKeyCopied": "تم نسخ مفتاح API",
+  "apiKeySaved": "تم حفظ مفتاح API بنجاح",
   "settingsSaved": "تم حفظ الإعدادات!",
   "settingsReset": "تمت إعادة تعيين الإعدادات إلى القيم الافتراضية",
   "appInfo": "معلومات التطبيق",
@@ -269,6 +270,8 @@
   "showFavoritesOnly": "إظهار المفضلة فقط",
   "noFavoriteModels": "لا توجد نماذج مفضلة",
   "tapHeartToAddFavorites": "اضغط على أيقونة القلب على النماذج لإضافتها إلى المفضلة",
+"addToFavorites": "إضافة إلى المفضلة",
+"removeFromFavorites": "إزالة من المفضلة",
 "startListening": "بدء الإدخال الصوتي",
 "stopListening": "إيقاف الإدخال الصوتي",
 "listening": "تحدث الآن...",
@@ -345,5 +348,7 @@
     "welcomeGreeting9": "الفضول مرحب به.",
     "welcomeGreeting10": "سؤالك هو إجابتي التالية.",
     "welcomeGreeting11": "دعنا نحول الفكرة إلى إجابة.",
-    "welcomeGreeting12": "أدخل سؤالًا. الباقي عملي."
+    "welcomeGreeting12": "أدخل سؤالًا. الباقي عملي.",
+    "addToFavorites": "إضافة إلى المفضلة",
+    "removeFromFavorites": "إزالة من المفضلة"
   }

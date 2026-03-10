@@ -134,6 +134,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get apiKeyCopied => 'تم نسخ مفتاح API';
 
   @override
+  String get apiKeySaved => 'تم حفظ مفتاح API بنجاح';
+
+  @override
   String get settingsSaved => 'تم حفظ الإعدادات!';
 
   @override

@@ -118,22 +118,17 @@ class ModelNotifier extends Notifier<ModelState> {
       final openRouterService = _openRouterService;
 
       // Wait for service to be ready (includes waiting for async initialization)
-      int retryCount = 0;
-      const maxRetries = 30; // 15 seconds max wait
-
-      while (retryCount < maxRetries) {
-        if (openRouterService.isReady()) {
-          _logger.logInfo(
-            '[ModelNotifier] Service is ready, loading models...',
-          );
-          break;
-        }
-        await Future<void>.delayed(const Duration(milliseconds: 500));
-        retryCount++;
+      try {
+        await (openRouterService as OpenRouterService).initializationComplete;
+      } catch (e) {
+        _logger.logError('[ModelNotifier] Service initialization failed: $e');
+        state = state.copyWith(modelsLoaded: true, isLoadingModels: false);
+        return;
       }
 
-      if (!(openRouterService as OpenRouterService).isReady()) {
-        _logger.logError('[ModelNotifier] Service not ready after max retries');
+      // Double-check that service is ready
+      if (!openRouterService.isReady()) {
+        _logger.logError('[ModelNotifier] Service not ready after initialization');
         state = state.copyWith(modelsLoaded: true, isLoadingModels: false);
         return;
       }

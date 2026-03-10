@@ -40,6 +40,7 @@
 "close": "Закрыть",
 "copy": "Скопировать",
 "apiKeyCopied": "API ключ скопирован",
+"apiKeySaved": "API ключ успешно сохранен",
 "settingsSaved": "Настройки сохранены!",
 "settingsReset": "Настройки сброшены к значениям по умолчанию",
 "appInfo": "Информация",
@@ -271,6 +272,8 @@
 "showFavoritesOnly": "Показать только избранные",
 "noFavoriteModels": "Нет избранных моделей",
 "tapHeartToAddFavorites": "Нажмите на сердечко у моделей, чтобы добавить их в избранные",
+"addToFavorites": "Добавить в избранное",
+"removeFromFavorites": "Удалить из избранного",
 "startListening": "Начать голосовой ввод",
 "stopListening": "Остановить голосовой ввод",
 "listening": "Говорите...",
@@ -347,5 +350,7 @@
     "welcomeGreeting9": "Любопытство приветствуется.",
     "welcomeGreeting10": "Ваш вопрос — мой следующий ответ.",
     "welcomeGreeting11": "Давайте превратим идею в ответ.",
-    "welcomeGreeting12": "Введите вопрос. Остальное — моя работа."
+    "welcomeGreeting12": "Введите вопрос. Остальное — моя работа.",
+    "addToFavorites": "Добавить в избранное",
+    "removeFromFavorites": "Удалить из избранного"
   }
