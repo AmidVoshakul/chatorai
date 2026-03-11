@@ -693,7 +693,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     DateTime lastUpdateTime = DateTime.now();
     const updateIntervalMs = 250;
 
-    bool _isWordBoundary(String text) {
+    bool isWordBoundary(String text) {
       if (text.isEmpty) return false;
       final lastChar = text[text.length - 1];
       return lastChar == ' ' ||
@@ -721,8 +721,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       final shouldUpdate =
           forceUpdate ||
           elapsed >= updateIntervalMs ||
-          _isWordBoundary(pendingContentStr) ||
-          _isWordBoundary(pendingReasoningStr);
+          isWordBoundary(pendingContentStr) ||
+          isWordBoundary(pendingReasoningStr);
 
       if (shouldUpdate) {
         if (mounted && chat.messages.isNotEmpty) {

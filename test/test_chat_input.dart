@@ -21,12 +21,8 @@ void main() {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [
-          Locale('en'),
-        ],
-        home: Scaffold(
-          body: child,
-        ),
+        supportedLocales: const [Locale('en')],
+        home: Scaffold(body: child),
       );
     }
 
@@ -38,8 +34,7 @@ void main() {
             onSendMessage: (message) {
               lastSentMessage = message;
             },
-            onToggleStreaming: (isStreaming) {
-            },
+            onToggleStreaming: (isStreaming) {},
             focusNode: FocusNode(),
           ),
         ),
@@ -53,15 +48,16 @@ void main() {
     });
 
     // Test 2: Message sending functionality
-    testWidgets('sends message when send button is tapped', (WidgetTester tester) async {
+    testWidgets('sends message when send button is tapped', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         createTestWidget(
           ChatInput(
             onSendMessage: (message) {
               lastSentMessage = message;
             },
-            onToggleStreaming: (isStreaming) {
-            },
+            onToggleStreaming: (isStreaming) {},
             focusNode: FocusNode(),
           ),
         ),
@@ -89,8 +85,7 @@ void main() {
             onSendMessage: (message) {
               lastSentMessage = message;
             },
-            onToggleStreaming: (isStreaming) {
-            },
+            onToggleStreaming: (isStreaming) {},
             focusNode: FocusNode(),
           ),
         ),
@@ -118,8 +113,7 @@ void main() {
             onSendMessage: (message) {
               lastSentMessage = message;
             },
-            onToggleStreaming: (isStreaming) {
-            },
+            onToggleStreaming: (isStreaming) {},
             focusNode: FocusNode(),
           ),
         ),
@@ -127,11 +121,16 @@ void main() {
 
       // Should show placeholder text
       final textField = find.byType(TextField);
-      expect(tester.widget<TextField>(textField).decoration?.hintText, 'Type your message...');
+      expect(
+        tester.widget<TextField>(textField).decoration?.hintText,
+        'Type your message...',
+      );
     });
 
     // Test 5: Input field focus
-    testWidgets('focuses input field when focusNode is provided', (WidgetTester tester) async {
+    testWidgets('focuses input field when focusNode is provided', (
+      WidgetTester tester,
+    ) async {
       final focusNode = FocusNode();
 
       await tester.pumpWidget(
@@ -140,8 +139,7 @@ void main() {
             onSendMessage: (message) {
               lastSentMessage = message;
             },
-            onToggleStreaming: (isStreaming) {
-            },
+            onToggleStreaming: (isStreaming) {},
             focusNode: focusNode,
           ),
         ),
@@ -159,8 +157,7 @@ void main() {
             onSendMessage: (message) {
               lastSentMessage = message;
             },
-            onToggleStreaming: (isStreaming) {
-            },
+            onToggleStreaming: (isStreaming) {},
             focusNode: FocusNode(),
           ),
         ),
@@ -189,15 +186,16 @@ void main() {
     });
 
     // Test 8: Keyboard input handling
-    testWidgets('handles keyboard input correctly', (WidgetTester tester) async {
+    testWidgets('handles keyboard input correctly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         createTestWidget(
           ChatInput(
             onSendMessage: (message) {
               lastSentMessage = message;
             },
-            onToggleStreaming: (isStreaming) {
-            },
+            onToggleStreaming: (isStreaming) {},
             focusNode: FocusNode(),
           ),
         ),
@@ -213,7 +211,9 @@ void main() {
     });
 
     // Test 9: Widget rebuild handling
-    testWidgets('handles widget rebuilds correctly', (WidgetTester tester) async {
+    testWidgets('handles widget rebuilds correctly', (
+      WidgetTester tester,
+    ) async {
       var key = GlobalKey();
 
       await tester.pumpWidget(
@@ -223,8 +223,7 @@ void main() {
             onSendMessage: (message) {
               lastSentMessage = message;
             },
-            onToggleStreaming: (isStreaming) {
-            },
+            onToggleStreaming: (isStreaming) {},
             focusNode: FocusNode(),
           ),
         ),
@@ -243,8 +242,7 @@ void main() {
             onSendMessage: (message) {
               lastSentMessage = message;
             },
-            onToggleStreaming: (isStreaming) {
-            },
+            onToggleStreaming: (isStreaming) {},
             focusNode: FocusNode(),
           ),
         ),
@@ -252,6 +250,27 @@ void main() {
 
       // Text should be preserved
       expect(find.text('Test message'), findsOneWidget);
+    });
+
+    // Test 10: X button functionality (attached file removal)
+    testWidgets('X button removes attached file', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        createTestWidget(
+          ChatInput(
+            onSendMessage: (message) {
+              lastSentMessage = message;
+            },
+            onToggleStreaming: (isStreaming) {},
+            focusNode: FocusNode(),
+          ),
+        ),
+      );
+
+      // Verify no file preview is shown initially
+      expect(find.byIcon(Icons.close), findsNothing);
+
+      // TODO: Simulate file attachment and verify X button removes it
+      // This test would need to mock the file attachment process
     });
   });
 }

@@ -81,16 +81,24 @@ class ChatInputNotifier extends Notifier<ChatInputState> {
     String? imageType,
     String? base64Data,
   }) {
-    state = state.copyWith(
-      attachedFilePath: path,
-      attachedFileName: name,
-      attachedImageType: imageType,
-      attachedBase64Data: base64Data,
+    state = ChatInputState(
+      speechUiState: state.speechUiState,
+      speechStatusMessage: state.speechStatusMessage,
+      isSending: state.isSending,
+      plusActive: state.plusActive,
+      attachedFilePath: path ?? state.attachedFilePath,
+      attachedFileName: name ?? state.attachedFileName,
+      attachedImageType: imageType ?? state.attachedImageType,
+      attachedBase64Data: base64Data ?? state.attachedBase64Data,
     );
   }
 
   void clearAttachedFile() {
-    state = state.copyWith(
+    state = ChatInputState(
+      speechUiState: state.speechUiState,
+      speechStatusMessage: state.speechStatusMessage,
+      isSending: state.isSending,
+      plusActive: state.plusActive,
       attachedFilePath: null,
       attachedFileName: null,
       attachedImageType: null,

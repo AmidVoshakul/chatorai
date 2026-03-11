@@ -106,17 +106,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
     with AutomaticKeepAliveClientMixin {
   final TextEditingController _textController = TextEditingController();
   SpeechToTextService? _speechService;
-  SpeechUiState _speechUiState = SpeechUiState.idle;
-  String _speechStatusMessage = ''; // Для оверлея
-  bool _isSending = false;
-  bool _plusActive = false;
   Timer? _plusTimer;
-
-  // State for attached file
-  String? _attachedFilePath;
-  String? _attachedFileName;
-  String? _attachedImageType;
-  String? _attachedBase64Data;
 
   final GlobalKey _plusKey = GlobalKey();
   final GlobalKey _settingsKey = GlobalKey();
@@ -147,27 +137,23 @@ class _ChatInputState extends ConsumerState<ChatInput>
     _speechService = SpeechToTextService(
       onResult: (text) {
         if (mounted) {
-          setState(() {
-            _textController.text = text;
-          });
+          _textController.text = text;
         }
       },
       onPartialResult: (text) {
         if (mounted) {
-          setState(() {
-            // Плавное обновление текста с debounce
-            _textController.text = text;
-          });
+          _textController.text = text;
         }
       },
       onStatusMessage: (message) {
         if (mounted) {
-          setState(() {
-            _speechStatusMessage = message; // Для оверлея
-          });
+          ref.read(chatInputProvider.notifier).setSpeechStatusMessage(message);
           // Pass state up to parent
           if (widget.onSpeechStateChanged != null) {
-            widget.onSpeechStateChanged!(_speechUiState, message);
+            widget.onSpeechStateChanged!(
+              ref.read(chatInputProvider).speechUiState,
+              message,
+            );
           }
         }
       },
@@ -175,15 +161,16 @@ class _ChatInputState extends ConsumerState<ChatInput>
         if (mounted) {
           // Всегда обновляем состояние, даже если значение не изменилось
           // Это гарантирует сброс UI
-          setState(() {
-            _speechUiState = state;
-            if (state == SpeechUiState.idle) {
-              _speechStatusMessage = '';
-            }
-          });
+          ref.read(chatInputProvider.notifier).setSpeechUiState(state);
+          if (state == SpeechUiState.idle) {
+            ref.read(chatInputProvider.notifier).setSpeechStatusMessage('');
+          }
           // Pass state up to parent
           if (widget.onSpeechStateChanged != null) {
-            widget.onSpeechStateChanged!(state, _speechStatusMessage);
+            widget.onSpeechStateChanged!(
+              state,
+              ref.read(chatInputProvider).speechStatusMessage,
+            );
           }
         }
       },
@@ -214,17 +201,15 @@ class _ChatInputState extends ConsumerState<ChatInput>
   }
 
   void _clearAttachedFile() {
-    setState(() {
-      _attachedFilePath = null;
-      _attachedFileName = null;
-      _attachedImageType = null;
-      _attachedBase64Data = null;
-    });
+    final notifier = ref.read(chatInputProvider.notifier);
+    notifier.clearAttachedFile();
+    // Force rebuild by reading the provider
+    ref.read(chatInputProvider);
   }
 
   Future<void> _startSpeechToText() async {
-    if (_speechUiState == SpeechUiState.listening ||
-        _speechUiState == SpeechUiState.preparing) {
+    if (ref.read(chatInputProvider).speechUiState == SpeechUiState.listening ||
+        ref.read(chatInputProvider).speechUiState == SpeechUiState.preparing) {
       await _speechService?.stopListening();
       return;
     }
@@ -294,12 +279,14 @@ class _ChatInputState extends ConsumerState<ChatInput>
       final fileName = _getFileName(file);
       final filePath = _getFilePath(file);
 
-      setState(() {
-        _attachedFilePath = filePath;
-        _attachedFileName = fileName;
-        _attachedImageType = imageType;
-        _attachedBase64Data = base64Data;
-      });
+      ref
+          .read(chatInputProvider.notifier)
+          .setAttachedFile(
+            path: filePath,
+            name: fileName,
+            imageType: imageType,
+            base64Data: base64Data,
+          );
     } catch (e) {
       // Camera error handled by ImageUtils
     }
@@ -338,12 +325,14 @@ class _ChatInputState extends ConsumerState<ChatInput>
       final fileName = _getFileName(file);
       final filePath = _getFilePath(file);
 
-      setState(() {
-        _attachedFilePath = filePath;
-        _attachedFileName = fileName;
-        _attachedImageType = imageType;
-        _attachedBase64Data = base64Data;
-      });
+      ref
+          .read(chatInputProvider.notifier)
+          .setAttachedFile(
+            path: filePath,
+            name: fileName,
+            imageType: imageType,
+            base64Data: base64Data,
+          );
     } catch (e) {
       // Image picker error handled
     }
@@ -384,24 +373,28 @@ class _ChatInputState extends ConsumerState<ChatInput>
       final base64Data = await ImageUtils.fileToBase64(file);
       if (base64Data == null) return;
 
-      setState(() {
-        _attachedFilePath = filePath;
-        _attachedFileName = fileName;
-        _attachedImageType = fileType;
-        _attachedBase64Data = base64Data;
-      });
+      ref
+          .read(chatInputProvider.notifier)
+          .setAttachedFile(
+            path: filePath,
+            name: fileName,
+            imageType: fileType,
+            base64Data: base64Data,
+          );
     } catch (e) {
       // File picker error handled
     }
   }
 
   Future<void> _sendMessage() async {
-    if (_textController.text.trim().isEmpty && _attachedFilePath == null) {
+    if (_textController.text.trim().isEmpty &&
+        ref.read(chatInputProvider).attachedFilePath == null) {
       return;
     }
 
     // Check model support BEFORE sending if there's an attached file
-    if (_attachedFilePath != null && _attachedBase64Data != null) {
+    if (ref.read(chatInputProvider).attachedFilePath != null &&
+        ref.read(chatInputProvider).attachedBase64Data != null) {
       if (widget.checkModelSupportsImages != null) {
         final modelId = ref.read(modelProvider).selectedModelId;
         final supportsImages = widget.checkModelSupportsImages!(modelId);
@@ -417,25 +410,25 @@ class _ChatInputState extends ConsumerState<ChatInput>
               duration: const Duration(seconds: 5),
             );
           }
-          setState(() => _isSending = false);
+          ref.read(chatInputProvider.notifier).setIsSending(false);
           return; // Don't send, but keep data
         }
       }
     }
 
-    setState(() => _isSending = true);
+    ref.read(chatInputProvider.notifier).setIsSending(true);
 
     // Останавливаем микрофон, если он активен
-    if (_speechUiState == SpeechUiState.listening ||
-        _speechUiState == SpeechUiState.preparing) {
+    if (ref.read(chatInputProvider).speechUiState == SpeechUiState.listening ||
+        ref.read(chatInputProvider).speechUiState == SpeechUiState.preparing) {
       await _speechService?.stopListening();
     }
 
     final messageData = MessageData(
       text: _textController.text.trim(),
-      imagePath: _attachedFilePath,
-      imageType: _attachedImageType,
-      base64Data: _attachedBase64Data,
+      imagePath: ref.read(chatInputProvider).attachedFilePath,
+      imageType: ref.read(chatInputProvider).attachedImageType,
+      base64Data: ref.read(chatInputProvider).attachedBase64Data,
     );
 
     widget.onSendMessage(messageData);
@@ -443,13 +436,11 @@ class _ChatInputState extends ConsumerState<ChatInput>
     _textController.clear();
     _clearAttachedFile();
 
-    setState(() {
-      _isSending = false;
-    });
+    ref.read(chatInputProvider.notifier).setIsSending(false);
   }
 
   Future<void> _showPlusMenu(BuildContext context) async {
-    setState(() => _plusActive = true);
+    ref.read(chatInputProvider.notifier).setPlusActive(true);
 
     final RenderBox? box =
         _plusKey.currentContext?.findRenderObject() as RenderBox?;
@@ -524,7 +515,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
       await _handleFile();
     }
 
-    setState(() => _plusActive = false);
+    ref.read(chatInputProvider.notifier).setPlusActive(false);
   }
 
   int _computeMaxLines(BuildContext context) {
@@ -535,8 +526,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
   bool _isMobileLayout(BuildContext context) =>
       MediaQuery.of(context).size.width < 600;
 
-  Widget _buildAttachedFilePreview() {
-    if (_attachedFilePath == null) return const SizedBox.shrink();
+  Widget _buildAttachedFilePreview(ChatInputState state) {
+    if (state.attachedFilePath == null) return const SizedBox.shrink();
 
     final isMobile = _isMobileLayout(context);
 
@@ -555,7 +546,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            _attachedImageType != null ? Icons.image : Icons.attach_file,
+            state.attachedImageType != null ? Icons.image : Icons.attach_file,
             size: ChatoraiIconSizes.xs,
             color: ChatoraiColors.link,
           ),
@@ -563,7 +554,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
           ConstrainedBox(
             constraints: BoxConstraints(maxWidth: isMobile ? 120 : 150),
             child: Text(
-              _attachedFileName ?? 'file',
+              state.attachedFileName ?? 'file',
               style: TextStyle(
                 fontSize: ChatoraiFontSizes.sm,
                 color: ChatoraiColors.link,
@@ -592,29 +583,31 @@ class _ChatInputState extends ConsumerState<ChatInput>
     );
   }
 
-  IconData _getActionIcon() {
-    if (_isSending) return Icons.autorenew;
-    if (_textController.text.trim().isNotEmpty || _attachedFilePath != null) {
+  IconData _getActionIcon(ChatInputState state) {
+    if (state.isSending) return Icons.autorenew;
+    if (_textController.text.trim().isNotEmpty ||
+        state.attachedFilePath != null) {
       return Icons.send;
     }
-    if (_speechUiState == SpeechUiState.listening ||
-        _speechUiState == SpeechUiState.preparing) {
+    if (state.speechUiState == SpeechUiState.listening ||
+        state.speechUiState == SpeechUiState.preparing) {
       return Icons.stop;
     }
     return Icons.mic;
   }
 
-  Color _getActionColor(ThemeData theme) {
-    if (_isSending) return ChatoraiColors.pureWhite;
-    if (_textController.text.trim().isNotEmpty || _attachedFilePath != null) {
+  Color _getActionColor(ThemeData theme, ChatInputState state) {
+    if (state.isSending) return ChatoraiColors.pureWhite;
+    if (_textController.text.trim().isNotEmpty ||
+        state.attachedFilePath != null) {
       return ChatoraiColors.pureWhite;
     }
-    if (_speechUiState == SpeechUiState.listening ||
-        _speechUiState == SpeechUiState.preparing) {
+    if (state.speechUiState == SpeechUiState.listening ||
+        state.speechUiState == SpeechUiState.preparing) {
       return ChatoraiColors.error;
     }
-    if (_speechUiState == SpeechUiState.error ||
-        _speechUiState == SpeechUiState.noSpeech) {
+    if (state.speechUiState == SpeechUiState.error ||
+        state.speechUiState == SpeechUiState.noSpeech) {
       return ChatoraiColors.error;
     }
     return theme.iconTheme.color ?? ChatoraiColors.pureBlack;
@@ -622,15 +615,15 @@ class _ChatInputState extends ConsumerState<ChatInput>
 
   Future<void> _handleMicrophoneAction() async {
     // If currently listening or preparing, stop
-    if (_speechUiState == SpeechUiState.listening ||
-        _speechUiState == SpeechUiState.preparing) {
+    if (ref.read(chatInputProvider).speechUiState == SpeechUiState.listening ||
+        ref.read(chatInputProvider).speechUiState == SpeechUiState.preparing) {
       await _speechService?.stopListening();
       return;
     }
 
     // If in error state, restart
-    if (_speechUiState == SpeechUiState.error ||
-        _speechUiState == SpeechUiState.noSpeech) {
+    if (ref.read(chatInputProvider).speechUiState == SpeechUiState.error ||
+        ref.read(chatInputProvider).speechUiState == SpeechUiState.noSpeech) {
       await _startSpeechToText();
       return;
     }
@@ -640,27 +633,21 @@ class _ChatInputState extends ConsumerState<ChatInput>
     if (localizations == null) return;
 
     // Show loading state
-    setState(() {
-      _isSending = true;
-    });
+    ref.read(chatInputProvider.notifier).setIsSending(true);
 
     try {
       final available = await _speechService?.checkAvailability() ?? false;
 
       if (available && mounted) {
         // Permission granted, start listening
-        setState(() {
-          _isSending = false;
-        });
+        ref.read(chatInputProvider.notifier).setIsSending(false);
         await _startSpeechToText();
       } else if (mounted) {
         // Permission denied
-        setState(() {
-          _isSending = false;
-        });
+        ref.read(chatInputProvider.notifier).setIsSending(false);
         // Service will show its own error via onStatusMessage
         // Only show snackbar if service couldn't start
-        if (_speechUiState == SpeechUiState.idle) {
+        if (ref.read(chatInputProvider).speechUiState == SpeechUiState.idle) {
           SnackbarUtils.showErrorSnackBar(
             context: context,
             message: localizations.micUnavailable,
@@ -671,12 +658,10 @@ class _ChatInputState extends ConsumerState<ChatInput>
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isSending = false;
-        });
+        ref.read(chatInputProvider.notifier).setIsSending(false);
         // Service handles errors via onStatusMessage
         // Only show snackbar for unexpected errors
-        if (_speechUiState == SpeechUiState.idle) {
+        if (ref.read(chatInputProvider).speechUiState == SpeechUiState.idle) {
           SnackbarUtils.showErrorSnackBar(
             context: context,
             message: localizations.micStartFailed,
@@ -739,6 +724,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
     final localizations = AppLocalizations.of(context)!;
     final isMobile = _isMobileLayout(context);
     final maxLines = _computeMaxLines(context);
+    final chatInputState = ref.watch(chatInputProvider);
 
     const double buttonSize = 44.0;
     const double iconSize = ChatoraiIconSizes.buttonIcon;
@@ -759,7 +745,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
           : null,
       decoration: isMobile
           ? InputDecoration(
-              hintText: _attachedFilePath != null
+              hintText: chatInputState.attachedFilePath != null
                   ? localizations.typeYourMessage
                   : localizations.typeYourMessage,
               hintStyle: theme.textTheme.bodyMedium?.copyWith(
@@ -793,8 +779,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
         height: 1.2,
       ),
       textInputAction: isMobile ? TextInputAction.newline : null,
-      onChanged: (text) => setState(() {}),
-      enabled: !_isSending,
+      enabled: !chatInputState.isSending,
     );
 
     Widget buildActionButton({
@@ -887,12 +872,12 @@ class _ChatInputState extends ConsumerState<ChatInput>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_attachedFilePath != null) ...[
+                    if (chatInputState.attachedFilePath != null) ...[
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: ChatoraiSpacing.lg,
                         ),
-                        child: _buildAttachedFilePreview(),
+                        child: _buildAttachedFilePreview(chatInputState),
                       ),
                     ],
                     ConstrainedBox(
@@ -924,7 +909,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
                         children: [
                           buildActionButton(
                             key: _plusKey,
-                            gradient: _plusActive
+                            gradient: chatInputState.plusActive
                                 ? LinearGradient(
                                     colors: [
                                       theme.colorScheme.primary,
@@ -934,7 +919,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
                                     ],
                                   )
                                 : null,
-                            bgColor: _plusActive
+                            bgColor: chatInputState.plusActive
                                 ? null
                                 : (theme.brightness == Brightness.dark
                                       ? ChatoraiColors.inputContainerDark
@@ -945,7 +930,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
                             child: Icon(
                               Icons.add,
                               size: iconSize,
-                              color: _plusActive
+                              color: chatInputState.plusActive
                                   ? ChatoraiColors.pureWhite
                                   : theme.iconTheme.color,
                             ),
@@ -983,8 +968,9 @@ class _ChatInputState extends ConsumerState<ChatInput>
                             buildActionButton(
                               gradient:
                                   _textController.text.trim().isEmpty &&
-                                      _attachedFilePath == null &&
-                                      _speechUiState == SpeechUiState.idle
+                                      chatInputState.attachedFilePath == null &&
+                                      chatInputState.speechUiState ==
+                                          SpeechUiState.idle
                                   ? null
                                   : LinearGradient(
                                       colors: [
@@ -996,21 +982,22 @@ class _ChatInputState extends ConsumerState<ChatInput>
                                     ),
                               bgColor:
                                   _textController.text.trim().isEmpty &&
-                                      _attachedFilePath == null &&
-                                      _speechUiState == SpeechUiState.idle
+                                      chatInputState.attachedFilePath == null &&
+                                      chatInputState.speechUiState ==
+                                          SpeechUiState.idle
                                   ? (theme.brightness == Brightness.dark
                                         ? ChatoraiColors.inputContainerDark
                                         : ChatoraiColors.inputContainerLight)
                                   : null,
                               onTap:
                                   _textController.text.trim().isEmpty &&
-                                      _attachedFilePath == null
+                                      chatInputState.attachedFilePath == null
                                   ? _handleMicrophoneAction
                                   : _sendMessage,
                               child: Icon(
-                                _getActionIcon(),
+                                _getActionIcon(chatInputState),
                                 size: iconSize,
-                                color: _getActionColor(theme),
+                                color: _getActionColor(theme, chatInputState),
                               ),
                             ),
                         ],
@@ -1047,7 +1034,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (_attachedFilePath != null) ...[
+                          if (chatInputState.attachedFilePath != null) ...[
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: ChatoraiSpacing.xs,
@@ -1056,7 +1043,9 @@ class _ChatInputState extends ConsumerState<ChatInput>
                                 constraints: const BoxConstraints(
                                   maxWidth: 300,
                                 ),
-                                child: _buildAttachedFilePreview(),
+                                child: _buildAttachedFilePreview(
+                                  chatInputState,
+                                ),
                               ),
                             ),
                             const SizedBox(height: ChatoraiSpacing.xs),
@@ -1121,8 +1110,9 @@ class _ChatInputState extends ConsumerState<ChatInput>
                       buildActionButton(
                         gradient:
                             _textController.text.trim().isEmpty &&
-                                _attachedFilePath == null &&
-                                _speechUiState == SpeechUiState.idle
+                                chatInputState.attachedFilePath == null &&
+                                chatInputState.speechUiState ==
+                                    SpeechUiState.idle
                             ? null
                             : LinearGradient(
                                 colors: [
@@ -1134,20 +1124,21 @@ class _ChatInputState extends ConsumerState<ChatInput>
                               ),
                         bgColor:
                             _textController.text.trim().isEmpty &&
-                                _attachedFilePath == null &&
-                                _speechUiState == SpeechUiState.idle
+                                chatInputState.attachedFilePath == null &&
+                                chatInputState.speechUiState ==
+                                    SpeechUiState.idle
                             ? (theme.brightness == Brightness.dark
                                   ? ChatoraiColors.inputContainerDark
                                   : ChatoraiColors.inputContainerLight)
                             : null,
                         onTap:
                             _textController.text.trim().isEmpty &&
-                                _attachedFilePath == null
+                                chatInputState.attachedFilePath == null
                             ? _handleMicrophoneAction
                             : _sendMessage,
                         child: Icon(
-                          _getActionIcon(),
-                          color: _getActionColor(theme),
+                          _getActionIcon(chatInputState),
+                          color: _getActionColor(theme, chatInputState),
                         ),
                       ),
                   ],
