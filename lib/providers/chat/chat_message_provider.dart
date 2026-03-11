@@ -1,4 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+
+// ===========================================================================
+// IMAGE CACHE PROVIDER (for decoded base64 images)
+// ===========================================================================
+
+final imageCacheProvider = Provider.family<Uint8List, String>((
+  ref,
+  base64Data,
+) {
+  return base64Decode(base64Data);
+});
 
 // ===========================================================================
 // STATE

@@ -12,41 +12,38 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
-  font_awesome_flutter: ^10.8.0
   
   # Internationalization
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
-  
+   
   # State Management
   flutter_riverpod: ^2.6.1
-  
+   
   # UI and Animation
   flutter_spinkit: ^5.2.2
-  
+   
   # Markdown and Code Highlighting
   flutter_markdown_plus: ^1.0.5
   flutter_highlight: ^0.7.0
   markdown: ^7.2.2
 
-  
+   
   # Speech to Text
   speech_to_text: ^7.3.0
-  
+   
   # Camera and Image Picker
   image_picker: ^1.1.2
-  
+   
   # HTTP and Networking
   dio: ^5.9.0
-  
+   
   # Local Storage
   shared_preferences: ^2.5.4
-  hive: ^2.2.3
   path: ^1.9.1
-  
+   
   # Utilities
-  uuid: ^4.5.2
   logger: ^2.6.2
   connectivity_plus: ^7.0.0
 

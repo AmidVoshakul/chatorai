@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -82,6 +81,14 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
     _textController.addListener(_onTextChanged);
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_animationsInitialized) {
+      _initAnimations();
+    }
+  }
+
   void _onTextChanged() {
     final isEditing = ref.watch(chatMessageProvider.select((s) => s.isEditing));
     if (!isEditing && _textController.text != widget.message.content) {
@@ -160,16 +167,12 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
         onMessageDeleted: widget.onMessageDeleted,
         onDelete: widget.onDelete,
         onMessageUpdated: widget.onMessageUpdated,
-        isStreaming: widget.isStreaming, // Передаем флаг загрузки
-        showLoadingFirst: widget
-            .isStreaming, // Показываем загрузку перед ошибкой если идет потоковая передача
+        isStreaming: widget.isStreaming,
+        showLoadingFirst: widget.isStreaming,
       );
     }
 
-    // If message has reasoning, parent handles it - no need to log
-
-    // Ensure animations are initialized before build
-    _initAnimations();
+    // Убрали вызов _initAnimations() отсюда - теперь в didChangeDependencies()
 
     return RepaintBoundary(
       child: SlideTransition(
@@ -535,26 +538,35 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
       return const SizedBox.shrink();
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-        border: Border.all(
-          color: ChatoraiColors.neonBlue.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 200),
-          child: Image.memory(
-            base64Decode(widget.message.imageData!),
-            fit: BoxFit.contain,
-            width: double.infinity,
+    return Consumer(
+      builder: (context, ref, child) {
+        // Кэшированное декодирование через provider
+        final decodedImage = ref.watch(
+          imageCacheProvider(widget.message.imageData!),
+        );
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8.0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+            border: Border.all(
+              color: ChatoraiColors.neonBlue.withValues(alpha: 0.3),
+              width: 1.0,
+            ),
           ),
-        ),
-      ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 200.0),
+              child: Image.memory(
+                decodedImage,
+                fit: BoxFit.contain,
+                width: double.infinity,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
