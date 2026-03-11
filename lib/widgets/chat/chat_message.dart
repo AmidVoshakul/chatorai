@@ -13,7 +13,7 @@ import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/constants/chat_constants.dart';
-import 'package:chatorai/utils/markdown_parser_with_keys.dart';
+import 'package:chatorai/utils/markdown_parser.dart';
 import 'package:chatorai/utils/format_time.dart';
 import 'package:chatorai/providers/chat/chat_message_provider.dart';
 

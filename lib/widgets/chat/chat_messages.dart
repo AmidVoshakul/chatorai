@@ -12,7 +12,7 @@ import 'package:chatorai/widgets/chat/reasoning_message.dart' as reasoning_msg;
 import 'package:chatorai/widgets/chat/loading_indicator.dart';
 import 'package:chatorai/widgets/chat/continuation_suggestions.dart';
 import 'package:chatorai/widgets/chat/welcome_suggestions.dart';
-import 'package:chatorai/utils/markdown_parser_with_keys.dart';
+import 'package:chatorai/utils/markdown_parser.dart';
 import 'package:chatorai/widgets/chat/chat_input.dart' show MessageData;
 
 // ===========================================================================
@@ -488,7 +488,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                               },
                               onDelete: () {},
                               onContinueResponse: null,
-                              headings: _headings,
+                              headings: _headings.isEmpty ? null : _headings,
                             ),
                           ],
                         ),
@@ -615,7 +615,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                     onContinueResponse: message.role == MessageRole.assistant
                         ? () => widget.onContinueResponse?.call(message.id)
                         : null,
-                    headings: _headings,
+                    headings: _headings.isEmpty ? null : _headings,
                   );
                 },
               ),

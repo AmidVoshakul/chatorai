@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/utils/markdown_parser.dart';
 
 // ===========================================================================
-// CHAT SCREEN STATE
+// CHAT SCREEN STATE (UNIFIED)
 // ===========================================================================
 
 class ChatScreenState {
@@ -13,7 +14,7 @@ class ChatScreenState {
   final List<String> welcomeSuggestions;
   final bool isSidebarCollapsed;
   final bool isNavigatorVisible;
-  final List<String> navigatorHeadings;
+  final List<MarkdownHeadingInfoWithKey> navigatorHeadings;
   final int activeHeadingIndex;
 
   const ChatScreenState({
@@ -23,7 +24,7 @@ class ChatScreenState {
     this.showWelcomeSuggestions = false,
     this.continuationSuggestions = const [],
     this.welcomeSuggestions = const [],
-    this.isSidebarCollapsed = true,
+    this.isSidebarCollapsed = false,
     this.isNavigatorVisible = false,
     this.navigatorHeadings = const [],
     this.activeHeadingIndex = -1,
@@ -38,7 +39,7 @@ class ChatScreenState {
     List<String>? welcomeSuggestions,
     bool? isSidebarCollapsed,
     bool? isNavigatorVisible,
-    List<String>? navigatorHeadings,
+    List<MarkdownHeadingInfoWithKey>? navigatorHeadings,
     int? activeHeadingIndex,
   }) {
     return ChatScreenState(
@@ -59,12 +60,14 @@ class ChatScreenState {
 }
 
 // ===========================================================================
-// CHAT SCREEN NOTIFIER
+// CHAT SCREEN NOTIFIER (UNIFIED)
 // ===========================================================================
 
-class ChatScreenNotifier extends StateNotifier<ChatScreenState> {
-  ChatScreenNotifier() : super(const ChatScreenState());
+class ChatScreenNotifier extends Notifier<ChatScreenState> {
+  @override
+  ChatScreenState build() => const ChatScreenState();
 
+  // Streaming & Suggestions
   void setStreaming(bool isStreaming) {
     state = state.copyWith(isStreaming: isStreaming);
   }
@@ -109,23 +112,48 @@ class ChatScreenNotifier extends StateNotifier<ChatScreenState> {
     );
   }
 
-  void setSidebarCollapsed(bool collapsed) {
-    state = state.copyWith(isSidebarCollapsed: collapsed);
+  // Sidebar
+  void toggleSidebar() {
+    state = state.copyWith(isSidebarCollapsed: !state.isSidebarCollapsed);
   }
 
+  void setSidebarCollapsed(bool collapsed) {
+    if (state.isSidebarCollapsed != collapsed) {
+      state = state.copyWith(isSidebarCollapsed: collapsed);
+    }
+  }
+
+  // Navigator
   void toggleNavigator() {
     state = state.copyWith(isNavigatorVisible: !state.isNavigatorVisible);
   }
 
   void setNavigatorVisible(bool visible) {
-    state = state.copyWith(isNavigatorVisible: visible);
+    if (state.isNavigatorVisible != visible) {
+      state = state.copyWith(isNavigatorVisible: visible);
+    }
   }
 
-  void setNavigatorHeadings(List<String> headings) {
+  void setNavigatorHeadings(List<MarkdownHeadingInfoWithKey> headings) {
     state = state.copyWith(navigatorHeadings: headings);
   }
 
   void setActiveHeadingIndex(int index) {
-    state = state.copyWith(activeHeadingIndex: index);
+    if (state.activeHeadingIndex != index) {
+      state = state.copyWith(activeHeadingIndex: index);
+    }
+  }
+
+  void clearNavigator() {
+    state = state.copyWith(navigatorHeadings: [], activeHeadingIndex: -1);
   }
 }
+
+// ===========================================================================
+// PROVIDER
+// ===========================================================================
+
+final chatScreenProvider =
+    NotifierProvider<ChatScreenNotifier, ChatScreenState>(
+      ChatScreenNotifier.new,
+    );

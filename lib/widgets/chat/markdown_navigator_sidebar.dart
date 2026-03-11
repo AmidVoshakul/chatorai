@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:chatorai/constants/chat_constants.dart';
-import 'package:chatorai/utils/markdown_parser_with_keys.dart';
+import 'package:chatorai/utils/markdown_parser.dart';
 
 // ===========================================================================
 // MARKDOWN NAVIGATOR SIDEBAR WIDGET

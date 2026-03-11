@@ -14,9 +14,8 @@ import 'package:chatorai/providers.dart'
         chatAiServiceProvider,
         currentChatIdProvider,
         currentChatProvider,
-        chatScreenUIProvider,
+        chatScreenProvider,
         openRouterServiceProvider;
-import 'package:chatorai/providers/chat/chat_screen_provider.dart';
 import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/services/openrouter_service.dart';
@@ -38,7 +37,7 @@ import 'package:chatorai/utils/chat_error_utils.dart';
 import 'package:chatorai/utils/chat_language_utils.dart';
 import 'package:chatorai/utils/chat_suggestion_utils.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
-import 'package:chatorai/utils/markdown_parser_with_keys.dart';
+import 'package:chatorai/utils/markdown_parser.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
 // ===========================================================================
@@ -69,7 +68,7 @@ class _SidebarWrapperState extends ConsumerState<SidebarWrapper> {
   @override
   Widget build(BuildContext context) {
     final isCollapsed = ref.watch(
-      chatScreenUIProvider.select((s) => s.isSidebarCollapsed),
+      chatScreenProvider.select((s) => s.isSidebarCollapsed),
     );
 
     return Sidebar(
@@ -196,7 +195,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
     _lastScrollUpdate = now;
 
-    final uiState = ref.watch(chatScreenUIProvider);
+    final uiState = ref.watch(chatScreenProvider);
     if (!_messageScrollController.hasClients ||
         uiState.navigatorHeadings.isEmpty) {
       return;
@@ -245,7 +244,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && newActiveIndex != -1) {
           ref
-              .read(chatScreenUIProvider.notifier)
+              .read(chatScreenProvider.notifier)
               .setActiveHeadingIndex(newActiveIndex);
         }
       });
@@ -363,14 +362,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     ref.read(chatScreenProvider.notifier).hideAllSuggestions();
 
     final screenWidth = _cachedScreenWidth;
-    final uiState = ref.read(chatScreenUIProvider);
+    final uiState = ref.read(chatScreenProvider);
     if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
       if (!uiState.isSidebarCollapsed) {
-        ref.read(chatScreenUIProvider.notifier).setSidebarCollapsed(true);
+        ref.read(chatScreenProvider.notifier).setSidebarCollapsed(true);
       }
     } else {
       if (uiState.isSidebarCollapsed) {
-        ref.read(chatScreenUIProvider.notifier).setSidebarCollapsed(false);
+        ref.read(chatScreenProvider.notifier).setSidebarCollapsed(false);
       }
     }
 
@@ -1031,17 +1030,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void _onHeadingsUpdated(List<MarkdownHeadingInfoWithKey> headings) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(chatScreenUIProvider.notifier).setNavigatorHeadings(headings);
+        ref.read(chatScreenProvider.notifier).setNavigatorHeadings(headings);
       }
     });
   }
 
   void _toggleNavigator() {
-    ref.read(chatScreenUIProvider.notifier).toggleNavigator();
+    ref.read(chatScreenProvider.notifier).toggleNavigator();
   }
 
   void _onHeadingTap(String headingText, String messageId, int level) {
-    final uiState = ref.watch(chatScreenUIProvider);
+    final uiState = ref.watch(chatScreenProvider);
 
     final normalizedTapText = stripMarkdownFormatting(headingText);
     final headingIndex = uiState.navigatorHeadings.indexWhere(
@@ -1053,7 +1052,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     if (headingIndex >= 0) {
       ref
-          .read(chatScreenUIProvider.notifier)
+          .read(chatScreenProvider.notifier)
           .setActiveHeadingIndex(headingIndex);
 
       final heading = uiState.navigatorHeadings[headingIndex];
@@ -1126,7 +1125,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         });
       }
     }
-    ref.read(chatScreenUIProvider.notifier).setNavigatorVisible(false);
+    ref.read(chatScreenProvider.notifier).setNavigatorVisible(false);
   }
 
   // ===========================================================================
@@ -1211,7 +1210,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   }
 
   bool _hasHeadings() {
-    return ref.read(chatScreenUIProvider).navigatorHeadings.isNotEmpty;
+    return ref.read(chatScreenProvider).navigatorHeadings.isNotEmpty;
   }
 
   // ===========================================================================
@@ -1357,7 +1356,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       );
     }
 
-    final uiState = ref.watch(chatScreenUIProvider);
+    final uiState = ref.watch(chatScreenProvider);
     if (uiState.navigatorHeadings.isNotEmpty) {
       return Stack(
         children: [
@@ -1463,7 +1462,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   Widget _buildChatContentWrapper({required Widget child}) {
     final screenWidth = _cachedScreenWidth;
     final isNavigatorVisible = ref.watch(
-      chatScreenUIProvider.select((s) => s.isNavigatorVisible),
+      chatScreenProvider.select((s) => s.isNavigatorVisible),
     );
     final wideScreenMode = ref.watch(
       themeProvider.select((s) => s.wideScreenMode),
