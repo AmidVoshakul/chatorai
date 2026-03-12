@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers/chat/models_provider.dart';
-import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/services/openrouter/openrouter_service.dart';
 import 'package:chatorai/widgets/models/model_card_widget.dart';
 import 'package:chatorai/widgets/models/model_details_dialog_widget.dart';
 import 'package:chatorai/widgets/models/models_empty_state_widget.dart';

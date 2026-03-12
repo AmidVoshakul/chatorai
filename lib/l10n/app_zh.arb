@@ -44,7 +44,7 @@
   "settingsSaved": "设置已保存！",
   "settingsReset": "设置已重置为默认值",
   "appInfo": "应用信息",
-  "appDescription": "通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n版本: 1.0.1.1\n\n使用 Flutter 开发",
+  "appDescription": "通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n使用 Flutter 开发",
   "shareChat": "分享聊天",
   "copyChat": "复制聊天",
   "renameChat": "重命名聊天",
@@ -349,6 +349,7 @@
     "welcomeGreeting10": "你的问题是我下一个答案。",
     "welcomeGreeting11": "让我们把想法变成答案。",
     "welcomeGreeting12": "输入问题。其他的是我的工作。",
+    "versionLabel": "版本:",
     "addToFavorites": "添加到收藏",
     "removeFromFavorites": "从收藏中移除"
   }

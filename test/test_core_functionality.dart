@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/services/openrouter/openrouter_service.dart';
 import 'package:chatorai/models/chat_models.dart';
 
 void main() {

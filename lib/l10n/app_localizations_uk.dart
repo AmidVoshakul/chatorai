@@ -146,7 +146,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get appInfo => 'Інформація';
 
   @override
-  String get appDescription => 'Додаток для спілкування з AI моделями через OpenRouter API.\n\nМожливості:\n• Спілкування з різними AI моделями\n• Збереження історії чатів\n• Темна та світла теми\n• Адаптивний інтерфейс\n\nВерсія: 1.0.1.1\n\nРозроблено з ❤️ з використанням Flutter';
+  String get appDescription => 'Додаток для спілкування з AI моделями через OpenRouter API.\n\nМожливості:\n• Спілкування з різними AI моделями\n• Збереження історії чатів\n• Темна та світла теми\n• Адаптивний інтерфейс\n\nРозроблено з ❤️ з використанням Flutter';
 
   @override
   String get shareChat => 'Поділитися чатом';
@@ -1081,4 +1081,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get welcomeGreeting12 => 'Введи питання. Решта — моя робота.';
+
+  @override
+  String get versionLabel => 'Версія:';
 }

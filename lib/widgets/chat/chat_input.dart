@@ -119,6 +119,15 @@ class _ChatInputState extends ConsumerState<ChatInput>
     super.initState();
     // Restore text from controller if it was preserved
     updateKeepAlive();
+    // Listen to text changes to update UI (e.g., icon)
+    _textController.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    // Trigger UI update to reflect changes in text (e.g., icon change)
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -194,6 +203,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
 
   @override
   void dispose() {
+    _textController.removeListener(_onTextChanged);
     _textController.dispose();
     _plusTimer?.cancel();
     _speechService?.dispose();
@@ -387,6 +397,9 @@ class _ChatInputState extends ConsumerState<ChatInput>
   }
 
   Future<void> _sendMessage() async {
+    // Unfocus to close keyboard
+    FocusScope.of(context).unfocus();
+
     if (_textController.text.trim().isEmpty &&
         ref.read(chatInputProvider).attachedFilePath == null) {
       return;
@@ -732,7 +745,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
     const double bottomPadding = ChatoraiSpacing.md;
 
     final isSpellCheckSupported =
-        kIsWeb || Platform.isAndroid || Platform.isIOS;
+        !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
     final textField = TextField(
       controller: _textController,

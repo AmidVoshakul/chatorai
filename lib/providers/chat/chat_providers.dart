@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/providers/chat/chat_repository.dart';
 import 'package:chatorai/services/chat_storage_service.dart';

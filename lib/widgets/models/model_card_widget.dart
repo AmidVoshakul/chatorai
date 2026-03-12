@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:chatorai/themes/app_theme.dart' show ChatoraiColors;
 import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/services/openrouter/openrouter_service.dart';
 import 'package:chatorai/widgets/models/model_features_widget.dart';
 
 // ===========================================================================

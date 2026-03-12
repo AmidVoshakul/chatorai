@@ -146,7 +146,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appInfo => '应用信息';
 
   @override
-  String get appDescription => '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n版本: 1.0.1.1\n\n使用 Flutter 开发';
+  String get appDescription => '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n使用 Flutter 开发';
 
   @override
   String get shareChat => '分享聊天';
@@ -840,10 +840,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tapHeartToAddFavorites => '点击模型上的爱心图标将其添加到收藏';
 
   @override
-  String get addToFavorites => 'Add to favorites';
+  String get addToFavorites => '添加到收藏';
 
   @override
-  String get removeFromFavorites => 'Remove from favorites';
+  String get removeFromFavorites => '从收藏中移除';
 
   @override
   String get startListening => '开始语音输入';
@@ -1081,4 +1081,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get welcomeGreeting12 => '输入问题。其他的是我的工作。';
+
+  @override
+  String get versionLabel => '版本:';
 }

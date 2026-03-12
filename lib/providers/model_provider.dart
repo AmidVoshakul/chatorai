@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/services/openrouter/openrouter_service.dart';
 import 'package:chatorai/services/network_service.dart';
 import 'package:chatorai/utils/logger.dart';
 
@@ -128,7 +128,9 @@ class ModelNotifier extends Notifier<ModelState> {
 
       // Double-check that service is ready
       if (!openRouterService.isReady()) {
-        _logger.logError('[ModelNotifier] Service not ready after initialization');
+        _logger.logError(
+          '[ModelNotifier] Service not ready after initialization',
+        );
         state = state.copyWith(modelsLoaded: true, isLoadingModels: false);
         return;
       }
@@ -297,9 +299,21 @@ class _OpenRouterServiceProvider {
   static bool _initialized = false;
 
   static OpenRouterService getService(NetworkState networkState) {
+    _logger.logInfo(
+      '[OpenRouterProvider] getService: networkState.isConnected = ${networkState.isConnected}',
+    );
     if (!_initialized) {
+      _logger.logInfo(
+        '[OpenRouterProvider] Creating new OpenRouterService instance with isConnected: ${networkState.isConnected}',
+      );
       _instance = OpenRouterService(isConnected: networkState.isConnected);
       _initialized = true;
+    } else {
+      // Update connectivity status if instance already exists
+      _logger.logInfo(
+        '[OpenRouterProvider] Updating connectivity to: ${networkState.isConnected}',
+      );
+      _instance?.setConnectivityStatus(networkState.isConnected);
     }
     return _instance!;
   }
@@ -315,9 +329,15 @@ class _OpenRouterServiceProvider {
 
 final openRouterServiceProvider = Provider<OpenRouterClient>((ref) {
   final networkState = ref.watch(networkServiceProvider);
+  _logger.logInfo(
+    '[OpenRouterProvider] Network state isConnected: ${networkState.isConnected}',
+  );
   final service = _OpenRouterServiceProvider.getService(networkState);
 
   ref.listen<NetworkState>(networkServiceProvider, (previous, next) {
+    _logger.logInfo(
+      '[OpenRouterProvider] Network state changed: ${previous?.isConnected} -> ${next.isConnected}',
+    );
     _OpenRouterServiceProvider.updateConnectivity(next.isConnected);
   });
 

@@ -18,7 +18,7 @@ import 'package:chatorai/providers.dart'
         openRouterServiceProvider;
 import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
-import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/services/openrouter/openrouter_service.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/models/model_settings.dart';
 import 'package:chatorai/widgets/sidebar/sidebar.dart';
@@ -361,17 +361,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _chatScrollUtils?.resetAutoScrollLock();
     ref.read(chatScreenProvider.notifier).hideAllSuggestions();
 
-    final screenWidth = _cachedScreenWidth;
-    final uiState = ref.read(chatScreenProvider);
-    if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
-      if (!uiState.isSidebarCollapsed) {
-        ref.read(chatScreenProvider.notifier).setSidebarCollapsed(true);
-      }
-    } else {
-      if (uiState.isSidebarCollapsed) {
-        ref.read(chatScreenProvider.notifier).setSidebarCollapsed(false);
-      }
-    }
+    // Optional: Keep sidebar state as is
+    // final screenWidth = _cachedScreenWidth;
+    // final uiState = ref.read(chatScreenProvider);
+    // if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
+    //   if (!uiState.isSidebarCollapsed) {
+    //     ref.read(chatScreenProvider.notifier).setSidebarCollapsed(true);
+    //   }
+    // } else {
+    //   if (uiState.isSidebarCollapsed) {
+    //     ref.read(chatScreenProvider.notifier).setSidebarCollapsed(false);
+    //   }
+    // }
 
     if (currentChat == null) {
       // Create new chat and get the returned chat directly
@@ -1051,9 +1052,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
 
     if (headingIndex >= 0) {
-      ref
-          .read(chatScreenProvider.notifier)
-          .setActiveHeadingIndex(headingIndex);
+      ref.read(chatScreenProvider.notifier).setActiveHeadingIndex(headingIndex);
 
       final heading = uiState.navigatorHeadings[headingIndex];
 

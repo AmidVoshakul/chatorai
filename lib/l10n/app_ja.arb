@@ -44,7 +44,7 @@
   "settingsSaved": "設定が保存されました！",
   "settingsReset": "設定がデフォルト値にリセットされました",
   "appInfo": "アプリ情報",
-  "appDescription": "AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nVersion: 1.0.1.1\n\nDeveloped with ❤️ using Flutter",
+  "appDescription": "AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nDeveloped with ❤️ using Flutter",
   "shareChat": "チャットを共有",
   "copyChat": "チャットをコピー",
   "renameChat": "チャットを名前変更",
@@ -349,6 +349,7 @@
     "welcomeGreeting10": "あなたの質問が次の私の答えです。",
     "welcomeGreeting11": "アイデアを答えに変えましょう。",
     "welcomeGreeting12": "質問を入力してください。残りは私の仕事です。",
+    "versionLabel": "バージョン:",
     "addToFavorites": "お気に入りに追加",
     "removeFromFavorites": "お気に入りから削除"
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/models/chat_models.dart';
-import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/services/openrouter/openrouter_service.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/providers.dart' show streamingContentProvider;
 import 'package:chatorai/utils/message_utils.dart';

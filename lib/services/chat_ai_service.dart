@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/models/model_settings.dart';
-import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/services/openrouter/openrouter_service.dart';
 import 'package:chatorai/utils/chat_error_utils.dart';
 
 // ===========================================================================

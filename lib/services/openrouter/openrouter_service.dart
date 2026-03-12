@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart' show kIsWeb, VoidCallback;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../utils/logger.dart';
+import '../../utils/logger.dart';
 
 // Initialize logger for this service
 final _logger = LogTags.openRouter;
@@ -555,10 +555,16 @@ class OpenRouterService implements OpenRouterClient {
   // ===========================================================================
 
   void setConnectivityStatus(bool isConnected) {
+    _logger.logInfo(
+      '[OpenRouter] setConnectivityStatus: $isConnected (previous: $_isConnected)',
+    );
     _isConnected = isConnected;
   }
 
   Future<void> _initializeService() async {
+    _logger.logInfo(
+      '[OpenRouter] OpenRouterService created with _isConnected: $_isConnected',
+    );
     try {
       await _loadApiKey();
 
@@ -833,7 +839,10 @@ class OpenRouterService implements OpenRouterClient {
     }
 
     // Проверка наличия интернет-соединения
-    if (!_isConnected) {
+    _logger.logDebug(
+      '[OpenRouter] _isConnected: $_isConnected, kIsWeb: $kIsWeb',
+    );
+    if (!_isConnected && !kIsWeb) {
       _logger.logWarning(
         '[OpenRouter] No internet connection, aborting models fetch',
       );
@@ -977,12 +986,12 @@ class OpenRouterService implements OpenRouterClient {
         final data = {
           'model': model,
           'messages': messages,
-          if (maxTokens != null) 'max_tokens': maxTokens,
-          if (temperature != null) 'temperature': temperature,
-          if (topP != null) 'top_p': topP,
-          if (frequencyPenalty != null) 'frequency_penalty': frequencyPenalty,
-          if (presencePenalty != null) 'presence_penalty': presencePenalty,
-          if (includeReasoning) 'include_reasoning': true,
+          ...{'max_tokens': ?maxTokens},
+          ...{'temperature': ?temperature},
+          ...{'top_p': ?topP},
+          ...{'frequency_penalty': ?frequencyPenalty},
+          ...{'presence_penalty': ?presencePenalty},
+          ...{if (includeReasoning) 'include_reasoning': true},
         };
 
         if (reason != null) {
@@ -1045,9 +1054,9 @@ class OpenRouterService implements OpenRouterClient {
       _logger.logDebug('[OpenRouter] Include reasoning: $includeReasoning');
 
       // Проверка наличия интернет-соединения
-      if (!_isConnected) {
+      if (!_isConnected && !kIsWeb) {
         _logger.logWarning(
-          '[OpenRouter] No internet connection, aborting models fetch',
+          '[OpenRouter] No internet connection, aborting streaming',
         );
         throw Exception('No internet connection');
       }
@@ -1068,11 +1077,11 @@ class OpenRouterService implements OpenRouterClient {
             'model': model,
             'messages': messages,
             'stream': true,
-            if (maxTokens != null) 'max_tokens': maxTokens,
-            if (temperature != null) 'temperature': temperature,
-            if (topP != null) 'top_p': topP,
-            if (frequencyPenalty != null) 'frequency_penalty': frequencyPenalty,
-            if (presencePenalty != null) 'presence_penalty': presencePenalty,
+            'max_tokens': ?maxTokens,
+            'temperature': ?temperature,
+            'top_p': ?topP,
+            'frequency_penalty': ?frequencyPenalty,
+            'presence_penalty': ?presencePenalty,
             if (includeReasoning) 'include_reasoning': true,
           };
 

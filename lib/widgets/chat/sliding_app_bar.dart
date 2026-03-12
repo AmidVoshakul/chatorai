@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:chatorai/services/openrouter_service.dart';
+import 'package:chatorai/services/openrouter/openrouter_service.dart';
 import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/constants/sliding_app_bar_constants.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
