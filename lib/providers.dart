@@ -1,4 +1,4 @@
-// Barrel file for all providers - Riverpod 2.x Pure Notifiers
+// Barrel file for all providers - Riverpod 3.x Notifiers
 
 export 'package:chatorai/providers/theme_provider.dart';
 export 'package:chatorai/providers/language_provider.dart';

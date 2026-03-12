@@ -280,7 +280,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   Future<void> _createNewChat() async {
     final newChat = await ref.read(chatListProvider.notifier).createNewChat();
-    ref.read(currentChatIdProvider.notifier).state = newChat.id;
+    ref.read(currentChatIdProvider.notifier).setChatId(newChat.id);
     _slidingAppBarKey.currentState?.reset();
     _showWelcomeSuggestions();
   }
@@ -298,7 +298,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
     if (chat == null) return;
 
-    ref.read(currentChatIdProvider.notifier).state = chatId;
+    ref.read(currentChatIdProvider.notifier).setChatId(chatId);
     _chatScrollUtils?.reset();
     _slidingAppBarKey.currentState?.reset();
 
@@ -347,7 +347,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       final wasCurrentChat = currentChat != null && currentChat!.id == chatId;
       await ref.read(chatListProvider.notifier).deleteChat(chatId);
       if (wasCurrentChat && mounted) {
-        ref.read(currentChatIdProvider.notifier).state = null;
+        ref.read(currentChatIdProvider.notifier).setChatId(null);
         _showWelcomeSuggestions();
       }
     }
@@ -378,7 +378,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       // Create new chat and get the returned chat directly
       final newChat = await ref.read(chatListProvider.notifier).createNewChat();
       // Set current chat ID immediately
-      ref.read(currentChatIdProvider.notifier).state = newChat.id;
+      ref.read(currentChatIdProvider.notifier).setChatId(newChat.id);
       // Use the newChat that was returned from createNewChat
       await _handleAddMessagesAndStream(newChat, messageData.text);
       return;

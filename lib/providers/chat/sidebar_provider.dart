@@ -66,15 +66,13 @@ final sidebarProvider = NotifierProvider<SidebarNotifier, SidebarState>(
 );
 
 final chatListLoadingProvider = Provider<bool>((ref) {
-  final chatsAsync = ref.watch(chatListProvider.select((value) => value));
+  final chatsAsync = ref.watch(chatListProvider);
   return chatsAsync.isLoading;
 });
 
 final filteredChatsProvider = Provider<List<Chat>>((ref) {
-  // Оптимизация: используем select чтобы следить только за searchQuery
   final searchQuery = ref.watch(sidebarProvider.select((s) => s.searchQuery));
-  // Use select to minimize rebuilds - only watch the data, not the entire AsyncValue
-  final chatsAsync = ref.watch(chatListProvider.select((value) => value));
+  final chatsAsync = ref.watch(chatListProvider);
 
   return chatsAsync.when(
     data: (chats) {

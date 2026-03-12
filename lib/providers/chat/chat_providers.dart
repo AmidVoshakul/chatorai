@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/providers/chat/chat_repository.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
@@ -165,10 +164,29 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
 }
 
 // ===========================================================================
-// CURRENT CHAT PROVIDERS
+// CURRENT CHAT ID STATE
 // ===========================================================================
 
-final currentChatIdProvider = StateProvider<String?>((ref) => null);
+class CurrentChatIdNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void setChatId(String? chatId) {
+    state = chatId;
+  }
+
+  void clearChatId() {
+    state = null;
+  }
+}
+
+final currentChatIdProvider = NotifierProvider<CurrentChatIdNotifier, String?>(
+  CurrentChatIdNotifier.new,
+);
+
+// ===========================================================================
+// CURRENT CHAT PROVIDER
+// ===========================================================================
 
 final currentChatProvider = Provider<Chat?>((ref) {
   final chatId = ref.watch(currentChatIdProvider);
@@ -176,7 +194,6 @@ final currentChatProvider = Provider<Chat?>((ref) {
 
   if (chatId == null) return null;
 
-  // Handle all states properly
   return chatsAsync.when(
     data: (chats) {
       try {
@@ -186,8 +203,6 @@ final currentChatProvider = Provider<Chat?>((ref) {
       }
     },
     loading: () {
-      // While loading, try to find chat in current state if available
-      // This prevents UI from losing current chat during reloads
       try {
         final currentChats = chatsAsync.value;
         if (currentChats != null) {
@@ -197,7 +212,6 @@ final currentChatProvider = Provider<Chat?>((ref) {
       return null;
     },
     error: (e, st) {
-      // On error, try to keep the current chat if possible
       try {
         final currentChats = chatsAsync.value;
         if (currentChats != null) {
