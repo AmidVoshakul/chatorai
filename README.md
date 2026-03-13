@@ -267,14 +267,21 @@ You can then:
 
 ## 📋 Dependencies
 
-- `provider` - State management
+- `flutter_riverpod` - State management (Riverpod 3.x)
 - `speech_to_text` - Voice input
 - `image_picker` - Camera and gallery access
 - `file_picker` - File selection
 - `permission_handler` - Runtime permissions
 - `flutter_markdown_plus` - Markdown rendering
+- `flutter_highlight` - Code syntax highlighting
+- `markdown` - Markdown parsing
 - `dio` - HTTP client
 - `shared_preferences` - Local storage
+- `connectivity_plus` - Network status monitoring
+- `logger` - Logging
+- `flutter_dotenv` - Environment variables
+- `path_provider` - File system paths
+- `package_info_plus` - App version info
 - `flutter_launcher_icons` - Icon generation
 
 ## 🛠️ Development
