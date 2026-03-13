@@ -44,6 +44,7 @@ dependencies:
   # Utilities
   logger: ^2.6.2
   connectivity_plus: ^7.0.0
+  share_plus: ^10.1.4
 
   # Environment Variables
   flutter_dotenv: ^6.0.0

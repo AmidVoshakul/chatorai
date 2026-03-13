@@ -6,6 +6,7 @@ import 'package:chatorai/models/chat_models.dart' as chat_models;
 import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:share_plus/share_plus.dart';
 
 // ===========================================================================
 // KEYBOARD HANDLER DIALOG
@@ -311,15 +312,15 @@ class MessageUtils {
     // Сохраняем локализации до асинхронной операции
     final AppLocalizations localizations = AppLocalizations.of(context)!;
 
-    // Здесь должна быть логика分享
-    // await Share.share(content);
-
-    if (!context.mounted) return;
-    SnackbarUtils.showSuccessSnackBar(
-      context: context,
-      message: localizations.messageShared,
-      icon: Icons.share,
-    );
+    try {
+      await Share.share(content);
+    } catch (e) {
+      if (!context.mounted) return;
+      SnackbarUtils.showErrorSnackBar(
+        context: context,
+        message: localizations.failedToShareMessage,
+      );
+    }
   }
 
   /// Копировать весь чат в буфер обмена

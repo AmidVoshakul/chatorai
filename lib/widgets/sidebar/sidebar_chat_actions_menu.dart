@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:share_plus/share_plus.dart';
 
 // ===========================================================================
 // CHAT ACTIONS MENU WIDGET
@@ -145,13 +147,59 @@ class ChatActionsMenu extends StatelessWidget {
     );
   }
 
-  void _handleShareChat(BuildContext context) {
+  Future<void> _handleShareChat(BuildContext context) async {
     final localizations = AppLocalizations.of(context)!;
-    SnackbarUtils.showSecondarySnackBar(
+
+    if (chat.messages.isEmpty) {
+      SnackbarUtils.showErrorSnackBar(
+        context: context,
+        message: 'No messages to share',
+      );
+      return;
+    }
+
+    final chatText = _formatChatForSharing(chat);
+    bool shared = false;
+
+    try {
+      final result = await Share.share(chatText, subject: chat.title);
+      if (result.status == ShareResultStatus.success) {
+        shared = true;
+      }
+    } catch (e) {
+      try {
+        await Clipboard.setData(ClipboardData(text: chatText));
+        if (!context.mounted) return;
+        SnackbarUtils.showSuccessSnackBar(
+          context: context,
+          message: localizations.copyChat,
+          icon: Icons.copy,
+        );
+        return;
+      } catch (_) {}
+    }
+
+    if (!shared) return;
+
+    if (!context.mounted) return;
+    SnackbarUtils.showSuccessSnackBar(
       context: context,
-      message: localizations.chatSharingNotImplemented,
+      message: localizations.shareChat,
       icon: Icons.share,
     );
+  }
+
+  String _formatChatForSharing(Chat chat) {
+    final buffer = StringBuffer();
+    buffer.writeln('# ${chat.title}');
+    buffer.writeln('');
+    for (final message in chat.messages) {
+      final role = message.role == MessageRole.user ? 'You' : 'AI';
+      buffer.writeln('**$role:**');
+      buffer.writeln(message.content);
+      buffer.writeln('');
+    }
+    return buffer.toString();
   }
 
   void _handleRenameChat(BuildContext context) async {
