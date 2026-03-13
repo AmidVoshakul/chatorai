@@ -73,7 +73,14 @@ cp -r build/linux/x64/release/bundle/* /usr/local/lib/chatorai/
 # ---------------------------------------------------------
 echo "Step 3: Installing icon..."
 
-ICON_SRC="assets/chatorai_logo.png"
+# Try different icon filenames
+for ICON_NAME in "chatorai_logo_black.png" "chatorai_logo.png" "chatorai_logo"; do
+    if [ -f "assets/$ICON_NAME" ]; then
+        ICON_SRC="assets/$ICON_NAME"
+        break
+    fi
+done
+
 ICON_DST="/usr/share/icons/hicolor/256x256/apps/chatorai.png"
 
 mkdir -p "$(dirname "$ICON_DST")"
@@ -86,7 +93,8 @@ if [ -f "$ICON_SRC" ]; then
     fi
 else
     echo "⚠️ Icon not found, creating placeholder"
-    echo "AI" > "$ICON_DST"
+    # Create a simple PNG placeholder (1x1 pixel transparent)
+    printf '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82' > "$ICON_DST"
 fi
 
 # ---------------------------------------------------------

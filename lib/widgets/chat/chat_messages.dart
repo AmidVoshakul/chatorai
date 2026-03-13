@@ -427,35 +427,29 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                       return const SizedBox.shrink();
                     }
 
-                    if (hasReasoning && !hasContent) {
-                      // Show only reasoning (streaming) - content not started yet
-                      return RepaintBoundary(
-                        child: reasoning_msg.ReasoningMessage(
-                          key: ValueKey(message.id),
-                          reasoning: effectiveReasoning,
-                          isStreaming: true,
-                        ),
-                      );
-                    } else if (hasReasoning && hasContent) {
-                      // Show both reasoning and content - content already started, stop shimmer
-                      final streamingMessage = message.copyWith(
-                        content: effectiveContent,
-                        reasoning: effectiveReasoning,
-                      );
-                      return RepaintBoundary(
-                        child: Column(
-                          key: ValueKey(message.id),
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                    // Always show Column structure to prevent flicker when content starts streaming
+                    // This prevents widget recreation when transitioning from reasoning-only to reasoning+content
+                    final streamingMessage = message.copyWith(
+                      content: effectiveContent,
+                      reasoning: effectiveReasoning,
+                    );
+                    return RepaintBoundary(
+                      child: Column(
+                        key: ValueKey('${message.id}_streaming'),
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (hasReasoning)
                             reasoning_msg.ReasoningMessage(
                               key: ValueKey('${message.id}_reasoning'),
                               reasoning: effectiveReasoning,
-                              isStreaming: false,
+                              isStreaming: !hasContent,
                             ),
+                          if (hasReasoning && hasContent)
                             const SizedBox(
                               height: ChatMessagesConstants.messageSpacing,
                             ),
+                          if (hasContent)
                             chat_msg.ChatMessage(
                               key: ValueKey('${message.id}_content'),
                               message: streamingMessage,
@@ -490,12 +484,9 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                               onContinueResponse: null,
                               headings: _headings.isEmpty ? null : _headings,
                             ),
-                          ],
-                        ),
-                      );
-                    }
-                    // No reasoning yet, skip this message (waiting animation shown separately)
-                    return const SizedBox.shrink();
+                        ],
+                      ),
+                    );
                   }
 
                   // Show reasoning first if present
