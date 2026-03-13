@@ -85,10 +85,13 @@ jobs:
         with:
           name: release-apk
 
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk chatorai-release-${{ github.ref_name }}.apk
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: app-release.apk
+          files: chatorai-release-${{ github.ref_name }}.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
