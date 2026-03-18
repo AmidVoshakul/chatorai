@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/themes/app_theme.dart';
 
@@ -132,7 +133,7 @@ class _ReasoningMessageState extends State<ReasoningMessage>
               _buildHeader(localizations, theme),
               if (_isExpanded) ...[
                 const SizedBox(height: ChatoraiSpacing.sm),
-                _buildExpandedContent(theme),
+                _buildExpandedContent(context),
               ],
             ],
           ),
@@ -145,20 +146,20 @@ class _ReasoningMessageState extends State<ReasoningMessage>
   // HELPER WIDGETS
   // =======================================================================
 
-  Widget _buildExpandedContent(ThemeData theme) {
-    final textColor = theme.textTheme.bodyMedium?.color ?? Colors.grey.shade700;
-
+  Widget _buildExpandedContent(BuildContext context) {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 200),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        child: Text(
-          widget.reasoning,
-          style: TextStyle(
-            fontSize: ChatoraiFontSizes.sm,
-            height: 1.4,
-            color: textColor,
-          ),
+        child: MarkdownBody(
+          data: widget.reasoning,
+          styleSheet: ChatoraiMarkdownStyles.getMarkdownStyles(context),
+          selectable: true,
+          onTapLink: (text, href, title) {
+            if (href != null) {
+              // Link handling reserved for future
+            }
+          },
         ),
       ),
     );

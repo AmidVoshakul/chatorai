@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
 /// Welcome questions data for new chats
-/// 
+///
 /// This file contains a curated list of popular questions that users can start with.
 /// Questions are loaded from localization files for multi-language support.
 class WelcomeQuestionsData {
@@ -10,7 +10,7 @@ class WelcomeQuestionsData {
   static List<String> getAllQuestions(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     if (l10n == null) return [];
-    
+
     return [
       l10n.welcomeQuestion1,
       l10n.welcomeQuestion2,
@@ -136,12 +136,15 @@ class WelcomeQuestionsData {
   }
 
   /// Get a random subset of questions
-  static List<String> getRandomQuestions(BuildContext context, {int count = 4}) {
+  static List<String> getRandomQuestions(
+    BuildContext context, {
+    int count = 4,
+  }) {
     final allQuestions = getAllQuestions(context);
     if (count >= allQuestions.length) {
       return allQuestions;
     }
-    
+
     // Create a copy to avoid modifying the original
     final shuffled = List<String>.from(allQuestions)..shuffle();
     return shuffled.take(count).toList();

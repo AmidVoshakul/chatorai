@@ -69,7 +69,7 @@ class MarkdownWithHeadings extends StatelessWidget {
       },
       onTapLink: (text, href, title) {
         if (href != null) {
-          // TODO: Handle link tapping
+          // Link handling reserved for future
         }
       },
     );

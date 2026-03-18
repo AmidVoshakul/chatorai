@@ -18,6 +18,8 @@ class StreamingContentState {
   final String content;
   final String reasoning;
   final bool isStreaming;
+  final bool justEnded;
+  final bool hasReceivedContentChunk;
   final DateTime? lastUpdate;
 
   StreamingContentState({
@@ -25,6 +27,8 @@ class StreamingContentState {
     this.content = '',
     this.reasoning = '',
     this.isStreaming = false,
+    this.justEnded = false,
+    this.hasReceivedContentChunk = false,
     this.lastUpdate,
   });
 
@@ -35,6 +39,8 @@ class StreamingContentState {
     String? content,
     String? reasoning,
     bool? isStreaming,
+    bool? justEnded,
+    bool? hasReceivedContentChunk,
     DateTime? lastUpdate,
   }) {
     return StreamingContentState(
@@ -42,6 +48,9 @@ class StreamingContentState {
       content: content ?? this.content,
       reasoning: reasoning ?? this.reasoning,
       isStreaming: isStreaming ?? this.isStreaming,
+      justEnded: justEnded ?? this.justEnded,
+      hasReceivedContentChunk:
+          hasReceivedContentChunk ?? this.hasReceivedContentChunk,
       lastUpdate: lastUpdate ?? this.lastUpdate,
     );
   }
@@ -74,20 +83,41 @@ class StreamingContentNotifier extends Notifier<StreamingContentState> {
   void updateContent(String content, {String? reasoning}) {
     if (!state.isStreaming) return;
 
-    // Immediately update state - throttling is handled in chat_screen
     state = state.copyWith(
       content: content,
       reasoning: reasoning,
+      hasReceivedContentChunk: true,
       lastUpdate: DateTime.now(),
     );
   }
 
   void stopStreaming() {
-    state = state.copyWith(isStreaming: false);
+    if (!state.isStreaming) return;
+    state = state.copyWith(
+      isStreaming: false,
+      justEnded: true,
+      lastUpdate: DateTime.now(),
+    );
+    Future.delayed(const Duration(milliseconds: 100), () {
+      reset();
+    });
   }
 
   Future<void> flushAndStop() async {
-    state = state.copyWith(isStreaming: false);
+    if (!state.isStreaming) return;
+    state = state.copyWith(
+      isStreaming: false,
+      justEnded: true,
+      lastUpdate: DateTime.now(),
+    );
+    await Future.delayed(const Duration(milliseconds: 100));
+    reset();
+  }
+
+  void clearJustEnded() {
+    if (state.justEnded) {
+      state = state.copyWith(justEnded: false);
+    }
   }
 
   void reset() {

@@ -147,7 +147,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       animationDuration: ChatScreenConstants.scrollAnimationDuration,
       animationCurve: Curves.easeOut,
     );
-    _chatScrollUtils!.initialize();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _slidingAppBarKey.currentState != null) {
@@ -162,7 +161,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _messageScrollController.removeListener(_handleScroll);
     _messageScrollController.removeListener(_handleHeadingSync);
     _messageScrollController.dispose();
-    _chatScrollUtils?.dispose();
     _chatInputFocusNode.dispose();
     super.dispose();
   }
@@ -299,7 +297,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     if (chat == null) return;
 
     ref.read(currentChatIdProvider.notifier).setChatId(chatId);
-    _chatScrollUtils?.reset();
     _slidingAppBarKey.currentState?.reset();
 
     if (chat.messages.isEmpty) {
@@ -358,7 +355,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   // ===========================================================================
 
   void _handleSendMessage(MessageData messageData) async {
-    _chatScrollUtils?.resetAutoScrollLock();
     ref.read(chatScreenProvider.notifier).hideAllSuggestions();
 
     // Optional: Keep sidebar state as is
@@ -498,8 +494,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       messages: updatedMessages,
       updatedAt: DateTime.now(),
     );
-
-    _chatScrollUtils?.resetAutoScrollLock();
 
     final newAssistantMessage = _createAssistantMessage();
     final chatWithNewPlaceholder = updatedChat.copyWith(

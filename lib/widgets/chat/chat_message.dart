@@ -432,7 +432,7 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
                             ),
                           ),
                           onPressed: () {
-                            // TODO: Voice message
+                            // Voice message feature - reserved for future
                           },
                           tooltip: localizations.listen,
                           splashRadius: 20,
@@ -497,7 +497,7 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
                             ),
                           ),
                           onPressed: () {
-                            // TODO: Like message
+                            // Like message feature - reserved for future
                           },
                           tooltip: localizations.like,
                           splashRadius: 20,
@@ -513,7 +513,7 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
                             ),
                           ),
                           onPressed: () {
-                            // TODO: Dislike message
+                            // Dislike message feature - reserved for future
                           },
                           tooltip: localizations.dislike,
                           splashRadius: 20,
@@ -617,7 +617,7 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
           },
           onTapLink: (text, href, title) {
             if (href != null) {
-              // TODO: Handle link tapping
+              // Link handling reserved for future
             }
           },
         );

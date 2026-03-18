@@ -311,6 +311,12 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     final streamingReasoning = ref.watch(
       streamingContentProvider.select((s) => s.reasoning),
     );
+    final streamingJustEnded = ref.watch(
+      streamingContentProvider.select((s) => s.justEnded),
+    );
+    final hasReceivedContentChunk = ref.watch(
+      streamingContentProvider.select((s) => s.hasReceivedContentChunk),
+    );
 
     final theme = Theme.of(context);
 
@@ -404,13 +410,38 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                       isAssistantMessage && message.content.isEmpty;
 
                   // During streaming: handle assistant message with reasoning
-                  // Use streaming content from controller if available
+                  // Use streaming content from controller only while actively streaming
+                  // When streaming just ended, keep using streaming content to prevent flicker
+                  // until provider resets completely
+                  //
+                  // RULES:
+                  // 1. Normal reasoning: onChunk -> content, onReasoning -> reasoning (show both blocks)
+                  // 2. No reasoning: onChunk -> content, onReasoning -> empty (show only content block)
+                  // 3. Bugged model (content in reasoning): onChunk -> empty, onReasoning -> content
+                  //    FIX: show content in main block, hide reasoning block
+                  //
+                  // IMPORTANT: Only detect "content in reasoning" AFTER streaming ends OR
+                  // after receiving content chunks. Don't decide during active reasoning stream.
+                  final bool contentFromReasoningStream =
+                      !hasReceivedContentChunk &&
+                      streamingContent.isEmpty &&
+                      streamingReasoning.isNotEmpty &&
+                      isLastMessage &&
+                      (!isStreaming || streamingJustEnded);
+
                   final effectiveContent =
-                      (streamingContent.isNotEmpty && isLastMessage)
+                      (streamingContent.isNotEmpty &&
+                          isLastMessage &&
+                          (isStreaming || streamingJustEnded))
                       ? streamingContent
+                      : (contentFromReasoningStream)
+                      ? streamingReasoning
                       : message.content;
                   final effectiveReasoning =
-                      (streamingReasoning.isNotEmpty && isLastMessage)
+                      (streamingReasoning.isNotEmpty &&
+                          isLastMessage &&
+                          (isStreaming || streamingJustEnded) &&
+                          !contentFromReasoningStream)
                       ? streamingReasoning
                       : message.reasoning;
 
