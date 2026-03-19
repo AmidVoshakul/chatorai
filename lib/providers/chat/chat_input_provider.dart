@@ -81,11 +81,7 @@ class ChatInputNotifier extends Notifier<ChatInputState> {
     String? imageType,
     String? base64Data,
   }) {
-    state = ChatInputState(
-      speechUiState: state.speechUiState,
-      speechStatusMessage: state.speechStatusMessage,
-      isSending: state.isSending,
-      plusActive: state.plusActive,
+    state = state.copyWith(
       attachedFilePath: path ?? state.attachedFilePath,
       attachedFileName: name ?? state.attachedFileName,
       attachedImageType: imageType ?? state.attachedImageType,
@@ -94,11 +90,7 @@ class ChatInputNotifier extends Notifier<ChatInputState> {
   }
 
   void clearAttachedFile() {
-    state = ChatInputState(
-      speechUiState: state.speechUiState,
-      speechStatusMessage: state.speechStatusMessage,
-      isSending: state.isSending,
-      plusActive: state.plusActive,
+    state = state.copyWith(
       attachedFilePath: null,
       attachedFileName: null,
       attachedImageType: null,

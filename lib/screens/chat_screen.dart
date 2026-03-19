@@ -793,7 +793,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
               ref.read(chatListProvider.notifier).updateChat(newChat);
               ref.read(chatScreenProvider.notifier).setStreaming(false);
-              ref.read(streamingContentProvider.notifier).stopStreaming();
+              ref.read(streamingContentProvider.notifier).flushAndStop();
 
               await _chatStorageService.updateMessageInChat(
                 newChat.id,

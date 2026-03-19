@@ -8,6 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/logger.dart';
+import '../../utils/model_utils.dart';
 
 // Initialize logger for this service
 final _logger = LogTags.openRouter;
@@ -931,7 +932,7 @@ class OpenRouterService implements OpenRouterClient {
           throw Exception('Unexpected API response format');
         }
 
-        final uniqueModels = _deduplicateModels(models);
+        final uniqueModels = ModelUtils.deduplicateModels(models);
 
         _logger.logInfo(
           '[OpenRouter] Successfully parsed ${uniqueModels.length} unique models (removed ${models.length - uniqueModels.length} duplicates)',
@@ -1313,16 +1314,5 @@ class OpenRouterService implements OpenRouterClient {
     }
 
     onCompletion(simulatedResponse);
-  }
-
-  /// Remove duplicate models using a more robust approach
-  List<OpenRouterModel> _deduplicateModels(List<OpenRouterModel> models) {
-    final Map<String, OpenRouterModel> uniqueModels = {};
-
-    for (final model in models) {
-      uniqueModels[model.id] = model;
-    }
-
-    return uniqueModels.values.toList();
   }
 }

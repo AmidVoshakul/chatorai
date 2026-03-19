@@ -52,22 +52,31 @@ void main() {
       expect(state.content, '');
     });
 
-    test('stopStreaming stops streaming', () {
+    test('stopStreaming stops streaming and sets justEnded', () {
       container
           .read(streamingContentProvider.notifier)
           .startStreaming('chat-123');
       container.read(streamingContentProvider.notifier).stopStreaming();
       final state = container.read(streamingContentProvider);
       expect(state.isStreaming, false);
+      expect(state.justEnded, true);
     });
 
-    test('flushAndStop stops streaming', () async {
+    test('flushAndStop stops streaming and schedules reset', () async {
       container
           .read(streamingContentProvider.notifier)
           .startStreaming('chat-123');
-      await container.read(streamingContentProvider.notifier).flushAndStop();
-      final state = container.read(streamingContentProvider);
+      container.read(streamingContentProvider.notifier).updateContent('Hello');
+      container.read(streamingContentProvider.notifier).flushAndStop();
+      // After flushAndStop is called, justEnded is set immediately
+      var state = container.read(streamingContentProvider);
       expect(state.isStreaming, false);
+      expect(state.justEnded, true);
+      // Wait for reset to happen
+      await Future.delayed(const Duration(milliseconds: 350));
+      state = container.read(streamingContentProvider);
+      expect(state.content, '');
+      expect(state.justEnded, false);
     });
 
     test('reset clears all state', () {
@@ -92,6 +101,15 @@ void main() {
       expect(newState.content, 'test');
       expect(newState.reasoning, 'thought');
       expect(newState.isStreaming, false);
+      expect(newState.justEnded, false);
+    });
+
+    test('copyWith can set justEnded flag', () {
+      final state = StreamingContentState();
+      final newState = state.copyWith(justEnded: true);
+
+      expect(newState.justEnded, true);
+      expect(newState.content, '');
     });
 
     test('effectiveLastUpdate returns lastUpdate or current time', () {
@@ -108,12 +126,14 @@ void main() {
         currentChatId: 'chat-123',
         content: 'test',
         isStreaming: true,
+        justEnded: true,
       );
       final resetState = state.reset();
 
       expect(resetState.currentChatId, '');
       expect(resetState.content, '');
       expect(resetState.isStreaming, false);
+      expect(resetState.justEnded, false);
       expect(resetState.lastUpdate, isNotNull);
     });
   });

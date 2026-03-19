@@ -18,8 +18,8 @@ class StreamingContentState {
   final String content;
   final String reasoning;
   final bool isStreaming;
-  final bool justEnded;
   final bool hasReceivedContentChunk;
+  final bool justEnded;
   final DateTime? lastUpdate;
 
   StreamingContentState({
@@ -27,8 +27,8 @@ class StreamingContentState {
     this.content = '',
     this.reasoning = '',
     this.isStreaming = false,
-    this.justEnded = false,
     this.hasReceivedContentChunk = false,
+    this.justEnded = false,
     this.lastUpdate,
   });
 
@@ -39,8 +39,8 @@ class StreamingContentState {
     String? content,
     String? reasoning,
     bool? isStreaming,
-    bool? justEnded,
     bool? hasReceivedContentChunk,
+    bool? justEnded,
     DateTime? lastUpdate,
   }) {
     return StreamingContentState(
@@ -48,9 +48,9 @@ class StreamingContentState {
       content: content ?? this.content,
       reasoning: reasoning ?? this.reasoning,
       isStreaming: isStreaming ?? this.isStreaming,
-      justEnded: justEnded ?? this.justEnded,
       hasReceivedContentChunk:
           hasReceivedContentChunk ?? this.hasReceivedContentChunk,
+      justEnded: justEnded ?? this.justEnded,
       lastUpdate: lastUpdate ?? this.lastUpdate,
     );
   }
@@ -98,9 +98,6 @@ class StreamingContentNotifier extends Notifier<StreamingContentState> {
       justEnded: true,
       lastUpdate: DateTime.now(),
     );
-    Future.delayed(const Duration(milliseconds: 100), () {
-      reset();
-    });
   }
 
   Future<void> flushAndStop() async {
@@ -110,14 +107,12 @@ class StreamingContentNotifier extends Notifier<StreamingContentState> {
       justEnded: true,
       lastUpdate: DateTime.now(),
     );
-    await Future.delayed(const Duration(milliseconds: 100));
-    reset();
-  }
-
-  void clearJustEnded() {
-    if (state.justEnded) {
-      state = state.copyWith(justEnded: false);
-    }
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    state = state.copyWith(
+      isStreaming: false,
+      justEnded: false,
+      lastUpdate: DateTime.now(),
+    );
   }
 
   void reset() {
