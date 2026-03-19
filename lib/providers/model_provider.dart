@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/services/openrouter/openrouter_service.dart';
 import 'package:chatorai/services/network_service.dart';
 import 'package:chatorai/utils/logger.dart';
+import 'package:chatorai/utils/model_utils.dart';
 
 final _logger = LogTags.settings;
 
@@ -136,7 +137,7 @@ class ModelNotifier extends Notifier<ModelState> {
       }
 
       final models = await openRouterService.getAvailableModels();
-      final availableModels = _deduplicateModels(models);
+      final availableModels = ModelUtils.deduplicateModels(models);
 
       String selectedModelId = state.selectedModelId;
       OpenRouterModel? selectedModelObject;
@@ -176,7 +177,7 @@ class ModelNotifier extends Notifier<ModelState> {
       try {
         final retryModels = await (_openRouterService as OpenRouterService)
             .getAvailableModels();
-        final availableModels = _deduplicateModels(retryModels);
+        final availableModels = ModelUtils.deduplicateModels(retryModels);
 
         OpenRouterModel? selectedModelObject;
         if (availableModels.isNotEmpty) {
@@ -202,14 +203,6 @@ class ModelNotifier extends Notifier<ModelState> {
         state = state.copyWith(modelsLoaded: true, isLoadingModels: false);
       }
     }
-  }
-
-  List<OpenRouterModel> _deduplicateModels(List<OpenRouterModel> models) {
-    final Map<String, OpenRouterModel> uniqueModels = {};
-    for (final model in models) {
-      uniqueModels[model.id] = model;
-    }
-    return uniqueModels.values.toList();
   }
 
   Future<void> reloadModels() async {

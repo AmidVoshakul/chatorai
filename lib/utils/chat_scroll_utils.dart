@@ -1,4 +1,7 @@
 import 'package:flutter/widgets.dart';
+import 'package:chatorai/utils/logger.dart';
+
+final _logger = LogTags.ui;
 
 class ChatScrollUtils {
   final ScrollController scrollController;
@@ -26,8 +29,12 @@ class ChatScrollUtils {
         duration: animationDuration,
         curve: animationCurve,
       );
-    } catch (e) {
-      // Тихий промах - скролл не критичен
+    } catch (e, stackTrace) {
+      _logger.logDebug(
+        'ChatScrollUtils: Error scrolling to bottom: $e',
+        e,
+        stackTrace,
+      );
     }
   }
 

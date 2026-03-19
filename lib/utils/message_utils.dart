@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/models/chat_models.dart' as chat_models;
 import 'package:chatorai/utils/snackbar_utils.dart';
@@ -325,7 +324,7 @@ class MessageUtils {
 
   /// Копировать весь чат в буфер обмена
   static Future<void> copyChat({
-    required List<Message> messages,
+    required List<chat_models.Message> messages,
     required String chatTitle,
     required BuildContext context,
   }) async {
@@ -399,7 +398,7 @@ class MessageUtils {
   }
 
   /// Проверить, может ли сообщение быть удалено
-  static bool canDeleteMessage(Message message) {
+  static bool canDeleteMessage(chat_models.Message message) {
     // Системные сообщения нельзя удалять
     if (message.role == chat_models.MessageRole.system) {
       return false;
@@ -412,7 +411,7 @@ class MessageUtils {
   }
 
   /// Проверить, может ли сообщение быть отредактировано
-  static bool canEditMessage(Message message) {
+  static bool canEditMessage(chat_models.Message message) {
     // Можно добавить логику, например:
     // - Можно редактировать только свои сообщения
     // - Можно редактировать только в течение N минут
@@ -421,7 +420,7 @@ class MessageUtils {
   }
 
   /// Проверить, может ли сообщение быть перегенерировано
-  static bool canRegenerateMessage(Message message) {
+  static bool canRegenerateMessage(chat_models.Message message) {
     // Можно перегенерировать только AI сообщения
     return message.role == chat_models.MessageRole.assistant;
   }
@@ -451,7 +450,7 @@ class MessageUtils {
   }
 
   /// Получить список доступных действий для сообщения
-  static List<MessageAction> getMessageActions(Message message) {
+  static List<MessageAction> getMessageActions(chat_models.Message message) {
     final List<MessageAction> actions = [];
 
     if (canDeleteMessage(message)) {

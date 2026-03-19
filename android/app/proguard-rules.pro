@@ -40,6 +40,17 @@
 # R8 full mode rules
 -allowaccessmodification
 -repackageclasses
+-overloadaggressively
+-dontusemixedcaseclassnames
+
+# Remove logging in release
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int i(...);
+    public static int w(...);
+    public static int d(...);
+}
 
 # Keep enum classes
 -keepclassmembers enum * {
