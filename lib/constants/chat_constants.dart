@@ -13,24 +13,6 @@ class ChatScreenConstants {
   static const int mobileBreakpoint = 800;
 
   // =======================================================================
-  // RETRY CONFIGURATION
-  // =======================================================================
-  static const int maxRetryAttempts = 3;
-  static const int baseRetryDelaySeconds = 2;
-
-  // =======================================================================
-  // TOKEN MANAGEMENT
-  // =======================================================================
-  static const int defaultMaxTokens = 32000;
-  static const int absoluteMinTokens = 256;
-
-  // =======================================================================
-  // ADAPTIVE ROLLBACK
-  // =======================================================================
-  static const int maxTokenReductionAttempts = 10;
-  static const double reductionFactor = 0.97;
-
-  // =======================================================================
   // ERROR HANDLING
   // =======================================================================
   static const int maxErrorLength = 500;
@@ -43,11 +25,6 @@ class ChatScreenConstants {
   static const Duration scrollAnimationDuration = Duration(milliseconds: 300);
   static const Duration sidebarUpdateDelay = Duration(milliseconds: 10);
   static const Duration modelLoadWaitTime = Duration(milliseconds: 500);
-
-  // =======================================================================
-  // MODEL DEFAULTS
-  // =======================================================================
-  static const String defaultModelId = 'nvidia/nemotron-3-nano-30b-a3b:free';
 
   // =======================================================================
   // STREAMING

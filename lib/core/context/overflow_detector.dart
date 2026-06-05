@@ -6,11 +6,34 @@ class OverflowDetector {
   final int maxOutputTokens;
   final int reservedBuffer;
 
+  const OverflowDetector._internal(
+    this.contextLimit, {
+    this.maxOutputTokens = 4096,
+    required this.reservedBuffer,
+  });
+
+  /// Default constructor kept for backward compatibility.
   const OverflowDetector({
     required this.contextLimit,
     this.maxOutputTokens = 4096,
     this.reservedBuffer = 20000,
   });
+
+  /// Creates an [OverflowDetector] sized for a specific model context window.
+  ///
+  /// Falls back to 200 000 tokens when [contextLength] is null or non-positive.
+  /// The reserved buffer is derived as `min(20 000, contextLimit ~/ 10)`.
+  factory OverflowDetector.forModel(int? contextLength) {
+    final limit = (contextLength != null && contextLength > 0)
+        ? contextLength
+        : 200000;
+    final reserved = min(20000, limit ~/ 10);
+    return OverflowDetector._internal(
+      limit,
+      maxOutputTokens: 4096,
+      reservedBuffer: reserved,
+    );
+  }
 
   /// Available tokens for input context after reserving buffer.
   int get usable => max(0, contextLimit - reservedBuffer);
