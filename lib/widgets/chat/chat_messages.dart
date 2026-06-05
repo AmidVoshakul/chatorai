@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/models/chat_models.dart';
-import 'package:chatorai/services/openrouter/openrouter_service.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/providers.dart' show streamingContentProvider;
 import 'package:chatorai/utils/message_utils.dart';
@@ -28,7 +27,6 @@ final _logger = LogTags.chatService;
 
 class ChatMessages extends ConsumerStatefulWidget {
   final Chat? chat;
-  final OpenRouterClient openRouterService;
   final ChatStorageService chatStorageService;
   final String? selectedModel;
   final Function(MessageData)
@@ -62,7 +60,6 @@ class ChatMessages extends ConsumerStatefulWidget {
 
   const ChatMessages({
     super.key,
-    required this.openRouterService,
     required this.chatStorageService,
     this.chat,
     this.selectedModel,
@@ -356,9 +353,6 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
           Expanded(
             child: RepaintBoundary(
               child: ListView.builder(
-                controller: _scrollController,
-                // Cache visible items and some offscreen items for better performance
-                cacheExtent: 200,
                 // Add physics for better scroll performance
                 physics: const BouncingScrollPhysics(),
                 // Performance optimizations

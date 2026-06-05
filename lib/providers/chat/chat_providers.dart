@@ -3,7 +3,18 @@ import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/providers/chat/chat_repository.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/services/chat_ai_service.dart';
-import 'package:chatorai/providers/model_provider.dart';
+import 'package:chatorai/providers/ai_provider.dart';
+
+// ===========================================================================
+// RETRY COUNTDOWN PROVIDER
+// ===========================================================================
+
+/// Emits a progress value (1.0 → 0.0) during retry backoff waits.
+/// Null when not retrying, 0.0 when idle.
+final retryCountdownProvider = StreamProvider.autoDispose<double>((ref) {
+  final aiService = ref.watch(chatAiServiceProvider);
+  return aiService.retryCountdown;
+});
 
 // ===========================================================================
 // SERVICE PROVIDERS
@@ -14,8 +25,8 @@ final chatStorageServiceProvider = Provider<ChatStorageService>((ref) {
 });
 
 final chatAiServiceProvider = Provider<ChatAiService>((ref) {
-  final client = ref.watch(openRouterServiceProvider);
-  return ChatAiService(client: client);
+  final providerAsync = ref.watch(openRouterAiProvider);
+  return ChatAiService(provider: providerAsync.asData?.value);
 });
 
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {

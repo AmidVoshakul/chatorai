@@ -199,19 +199,21 @@ git push -f origin main:gh-pages
 
 ## 🧪 Testing
 
-### Unit Tests
+### Unit + Widget Tests
 ```bash
-flutter test test/unit/
+# All tests (flat test/ directory, no subfolders)
+flutter test
+
+# Single file
+flutter test test/test_chat_input_provider.dart
 ```
 
-### Widget Tests
+### Integration Test
 ```bash
-flutter test test/widgets/
-```
+# Standalone Dart script (requires .env)
+dart integration_test/api_test.dart
 
-### Integration Tests
-```bash
-flutter test integration_test/
+# NOT: flutter test integration_test/
 ```
 
 ### Test Coverage

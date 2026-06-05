@@ -1,28 +1,20 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/services/openrouter/openrouter_service.dart';
-import 'package:flutter/foundation.dart' show VoidCallback;
+import 'package:chatorai/models/openrouter_model.dart';
+import 'package:chatorai/services/chat_ai_service.dart';
 
-/// Fake OpenRouterClient that simulates 400 errors when maxTokens > threshold.
-/// This is used to test the adaptive retry logic in isolation (no UI).
-class FakeOpenRouterClient implements OpenRouterClient {
+/// Fake client that simulates 400 errors when maxTokens > threshold.
+class FakeRetryClient {
   final int threshold;
   final List<int> callMaxTokens = [];
   final List<List<Map<String, dynamic>>> callMessages = [];
 
-  FakeOpenRouterClient({required this.threshold});
+  FakeRetryClient({required this.threshold});
 
-  @override
   Future<ChatCompletionResponse> getChatCompletion({
     required String model,
     required List<Map<String, dynamic>> messages,
     int? maxTokens,
-    double? temperature,
-    double? topP,
-    double? frequencyPenalty,
-    double? presencePenalty,
-    String? reason,
-    bool includeReasoning = false,
   }) async {
     callMessages.add(messages);
     callMaxTokens.add(maxTokens ?? 0);
@@ -34,20 +26,12 @@ class FakeOpenRouterClient implements OpenRouterClient {
     return ChatCompletionResponse(content: 'OK');
   }
 
-  @override
   Future<void> streamChatCompletion({
     required List<Map<String, dynamic>> messages,
     required String model,
     int? maxTokens,
-    double? temperature,
-    double? topP,
-    double? frequencyPenalty,
-    double? presencePenalty,
-    bool includeReasoning = false,
     required Function(String) onChunk,
     required Function(String) onCompletion,
-    Function(String)? onReasoning,
-    VoidCallback? onStopped,
   }) async {
     callMessages.add(messages);
     callMaxTokens.add(maxTokens ?? 0);
@@ -56,17 +40,10 @@ class FakeOpenRouterClient implements OpenRouterClient {
       throw Exception('400 Bad Request');
     }
 
-    // Simulate streaming chunks
     await Future<void>.delayed(Duration(milliseconds: 10));
     onChunk('hello');
     onCompletion('done');
   }
-
-  @override
-  bool isReady() => true;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 /// Minimal ThemeProvider stub for unit tests (only what the retry logic needs).
@@ -91,7 +68,7 @@ OpenRouterModel fakeModel(String id, int contextLength) => OpenRouterModel(
 /// A small testable wrapper that performs the same adaptive retry logic
 /// as ChatScreen._handleStreamingResponse, but without any UI.
 class RetryTestHelper {
-  final OpenRouterClient client;
+  final FakeRetryClient client;
   final FakeThemeProvider themeProvider;
 
   RetryTestHelper(this.client, this.themeProvider);
@@ -125,7 +102,6 @@ class RetryTestHelper {
           messages: dynamicMessages,
           model: modelId,
           maxTokens: currentMaxTokens,
-          includeReasoning: true,
           onChunk: (content) {},
           onCompletion: (content) {},
         );
@@ -206,7 +182,7 @@ void main() {
           final model = fakeModel(modelId, contextLength);
           final themeProvider = FakeThemeProvider({modelId: model});
           // Threshold that will be reached after a few 5% reductions
-          final client = FakeOpenRouterClient(threshold: 200000);
+          final client = FakeRetryClient(threshold: 200000);
           final helper = RetryTestHelper(client, themeProvider);
 
           // Act
@@ -270,7 +246,7 @@ void main() {
       final modelId = 'test/model';
       final model = fakeModel(modelId, 262144);
       final themeProvider = FakeThemeProvider({modelId: model});
-      final client = FakeOpenRouterClient(
+      final client = FakeRetryClient(
         threshold: 200000,
       ); // Will trigger multiple reductions
       final helper = RetryTestHelper(client, themeProvider);
@@ -314,7 +290,7 @@ void main() {
         final modelId = 'test/model';
         final model = fakeModel(modelId, 262144);
         final themeProvider = FakeThemeProvider({modelId: model});
-        final client = FakeOpenRouterClient(threshold: 1000); // very low
+        final client = FakeRetryClient(threshold: 1000); // very low
         final helper = RetryTestHelper(client, themeProvider);
 
         // Act & Assert: should throw because we cannot reduce below 8000 and still exceed threshold

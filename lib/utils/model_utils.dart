@@ -1,4 +1,4 @@
-import 'package:chatorai/services/openrouter/openrouter_service.dart';
+import 'package:chatorai/models/openrouter_model.dart';
 
 /// Utility functions for model-related operations
 class ModelUtils {

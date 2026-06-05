@@ -439,19 +439,24 @@ class Sidebar extends ConsumerWidget {
             thickness: ChatoraiBorderWidth.thinBold,
             color: theme.dividerColor,
           ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: Text(localizations.settings),
-            minLeadingWidth: 0,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: ChatoraiSpacing.lg,
+          Material(
+            color: Colors.transparent,
+            child: ListTile(
+              leading: const Icon(Icons.settings),
+              title: Text(localizations.settings),
+              minLeadingWidth: 0,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: ChatoraiSpacing.lg,
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
+              },
             ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
           ),
         ],
       ),

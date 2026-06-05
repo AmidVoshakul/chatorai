@@ -2,7 +2,7 @@
 
 ![Screenshot of ChatORAI interface](https://github.com/AmidVoshakul/chatorai/blob/main/screenshots/Screenshot_2025-12-30_01-04-32.png)
 
-A modern AI chat interface with support for multiple models, voice input, and camera functionality.
+A multi-provider AI chat interface built on Flutter and Riverpod 3.x. Supports any OpenAI-compatible API (OpenRouter, local models, custom endpoints) via `ai_sdk_dart` v1.1.0.
 
 **🇷🇺 Русская версия**: [README_RU.md](README_RU.md)
 
@@ -18,30 +18,46 @@ A modern AI chat interface with support for multiple models, voice input, and ca
 
 ## 🚀 Quick Start
 
+### Prerequisites
+
+- Flutter 3.41.0 (stable)
+- Dart SDK 3.11.0+
+- For Linux runtime: `libgtk-3-0 libgdk-pixbuf-2.0-0 libpango-1.0-0 libcairo2`
+
 ### 1. Configuration
 
-**For Development (optional):**
-You can create a `.env` file in the project root to avoid entering the API key each time:
+**Development** — copy `.env.example` to `.env` and add your API key:
 ```env
 OPENROUTER_API_KEY=your_api_key_here
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 ```
-Copy `.env.example` to `.env` and add your API key.
+`.env` is gitignored and **not bundled into release builds**.
 
-**For Release Builds:**
-The `.env` file is NOT included in release builds for security. Users must enter their API key in the app settings after first launch. The API key is stored locally in SharedPreferences.
+**Release / runtime** — users paste the API key and base URL in-app settings. Values are stored in `SharedPreferences`.
 
-### 2. Development
+### 2. Fetch & Generate
 
 ```bash
-# Get dependencies
 flutter pub get
+# After editing any file under lib/l10n/*.arb only:
+flutter gen-l10n
+```
 
-# Run app
-flutter run
+### 3. Verify
 
-# Build for Linux
-flutter build linux
+```bash
+flutter analyze
+flutter test
+```
+
+### 4. Run
+
+```bash
+flutter run -d linux
+flutter run -d windows
+flutter run -d chrome
+flutter run -d android
+# iOS requires macOS
+flutter run -d ios
 ```
 
 ## 📦 Linux Installation
@@ -299,6 +315,38 @@ flutter analyze
 # Generate icons
 flutter pub run flutter_launcher_icons:main
 ```
+
+## 🏗️ Architecture
+
+### AI Layer
+
+- `ai_sdk_dart` v1.1.0 — streaming (`streamText`) and non-streaming (`generateText`) completions
+- `ai_sdk_openai` — `OpenAIProvider` adapter, pointed at any OpenAI-compatible base URL
+- `ai_sdk_provider` — shared provider utilities
+
+### Multi-Provider Model
+
+Models are identified as `provider/model_id` (e.g. `openrouter/anthropic/claude-sonnet-4`). The app stores a base URL + model ID pair, so it works with OpenRouter, local LLM servers, or any OpenAI-compatible endpoint.
+
+### State Management
+
+Riverpod 3.x providers in `lib/providers/` (barrel via `lib/providers.dart`).
+
+### Data Flow
+
+```
+UI → providers → ChatAiService → streamText() / generateText() → OpenAIProvider → API
+Models  → Dio → OpenRouter /models endpoint → OpenRouterModel
+Config → SharedPreferences (runtime API key, baseUrl, model settings)
+```
+
+## ⚠️ Known Gotchas
+
+- `.env` is **dev-only**. It is not bundled in release builds. Runtime users enter credentials in settings.
+- `integration_test/` directory has been removed. The standalone script at `integration_test/api_test.dart` runs via `dart integration_test/api_test.dart` (requires `.env`), NOT `flutter test integration_test/`.
+- `analysis_options.yaml` excludes `test/**` from the analyzer. `flutter analyze` passing does not guarantee tests are lint-clean.
+- Linux desktop requires system libraries: `libgtk-3-0 libgdk-pixbuf-2.0-0 libpango-1.0-0 libcairo2`.
+- Windows desktop requires Visual C++ workload + Windows 10/11 SDK.
 
 ## 🐛 Troubleshooting
 

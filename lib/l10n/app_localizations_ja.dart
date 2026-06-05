@@ -146,7 +146,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get appInfo => 'アプリ情報';
 
   @override
-  String get appDescription => 'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nDeveloped with ❤️ using Flutter';
+  String get appDescription =>
+      'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nDeveloped with ❤️ using Flutter';
 
   @override
   String get shareChat => 'チャットを共有';
@@ -301,7 +302,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get features => '特徴';
 
   @override
-  String get featuresDisplayedBasedOnActualModelCapabilities => '実際のモデルの機能に基づいて特徴が表示されます';
+  String get featuresDisplayedBasedOnActualModelCapabilities =>
+      '実際のモデルの機能に基づいて特徴が表示されます';
 
   @override
   String get noModelsFound => 'モデルが見つかりません';
@@ -313,7 +315,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tryADifferentSearchQuery => '異なる検索クエリを試してください';
 
   @override
-  String get tryRefreshingOrCheckYourInternetConnection => '更新またはインターネット接続を確認してください';
+  String get tryRefreshingOrCheckYourInternetConnection =>
+      '更新またはインターネット接続を確認してください';
 
   @override
   String get aiIsTyping => 'AI が入力中です';
@@ -351,7 +354,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get areYouSureYouWantToRegenerateThisMessage => 'このメッセージを再生成してもよろしいですか？';
+  String get areYouSureYouWantToRegenerateThisMessage =>
+      'このメッセージを再生成してもよろしいですか？';
 
   @override
   String modelDoesNotSupportImages(Object modelId) {
@@ -876,24 +880,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get maxTokensDescription => '生成される応答の最大長';
 
   @override
-  String get topP => 'Top P';
-
-  @override
-  String get topPDescription => '核サンプリング: 低=より集中、高=より多様';
-
-  @override
-  String get frequencyPenalty => '頻度ペナルティ';
-
-  @override
-  String get frequencyPenaltyDescription => '類似トークンの繰り返しを減らす';
-
-  @override
-  String get presencePenalty => '存在ペナルティ';
-
-  @override
-  String get presencePenaltyDescription => '新しいトピックを促進';
-
-  @override
   String get systemPrompt => 'システムプロンプト';
 
   @override
@@ -978,7 +964,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get errorProcessingRequest => '申し訳ありません。リクエストの処理中にエラーが発生しました。もう一度お試しください。';
+  String get errorProcessingRequest =>
+      '申し訳ありません。リクエストの処理中にエラーが発生しました。もう一度お試しください。';
 
   @override
   String rateLimitRetryMessage(Object seconds) {
@@ -1018,10 +1005,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get defaultSuggestion4 => 'これは実際にどのように適用されますか？';
 
   @override
-  String get systemPromptSuggestion => 'あなたは有用なアシスタントです。会話を続け、最後のメッセージに対して3つの具体的で論理的な続きを提案してください。ユーザーと同じ言語で回答してください。';
+  String get systemPromptSuggestion =>
+      'あなたは有用なアシスタントです。会話を続け、最後のメッセージに対して3つの具体的で論理的な続きを提案してください。ユーザーと同じ言語で回答してください。';
 
   @override
-  String get userPromptSuggestion => 'このメッセージに対して3つの具体的で論理的な続きを提案してください。リストのみで回答し、追加テキストは含めないでください。';
+  String get userPromptSuggestion =>
+      'このメッセージに対して3つの具体的で論理的な続きを提案してください。リストのみで回答し、追加テキストは含めないでください。';
 
   @override
   String get refreshQuestions => '質問を更新';
@@ -1056,7 +1045,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get welcomeGreeting3 => '質問するか、探索を始めましょう。';
 
   @override
-  String get welcomeGreeting4 => 'どんな質問でも、アイデアを共有しても、助けてと言っても — ここにいるので助けになります。';
+  String get welcomeGreeting4 =>
+      'どんな質問でも、アイデアを共有しても、助けてと言っても — ここにいるので助けになります。';
 
   @override
   String get welcomeGreeting5 => 'アイデアがありますか？一緒に考えましょう。';

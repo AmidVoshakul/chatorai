@@ -116,7 +116,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get resetSettings => 'إعادة تعيين الإعدادات';
 
   @override
-  String get resetAllSettings => 'إعادة تعيين جميع الإعدادات إلى القيم الافتراضية';
+  String get resetAllSettings =>
+      'إعادة تعيين جميع الإعدادات إلى القيم الافتراضية';
 
   @override
   String get save => 'حفظ';
@@ -146,7 +147,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appInfo => 'معلومات التطبيق';
 
   @override
-  String get appDescription => 'تطبيق دردشة مع نماذج الذكاء الاصطناعي عبر OpenRouter API.\n\nالميزات:\n• الدردشة مع نماذج ذكاء اصطناعي مختلفة\n• تخزين سجل الدردشة\n• السمات الداكنة والفاتحة\n• واجهة تكيفية\n\nتم التطوير ب ❤️ باستخدام Flutter';
+  String get appDescription =>
+      'تطبيق دردشة مع نماذج الذكاء الاصطناعي عبر OpenRouter API.\n\nالميزات:\n• الدردشة مع نماذج ذكاء اصطناعي مختلفة\n• تخزين سجل الدردشة\n• السمات الداكنة والفاتحة\n• واجهة تكيفية\n\nتم التطوير ب ❤️ باستخدام Flutter';
 
   @override
   String get shareChat => 'مشاركة الدردشة';
@@ -179,7 +181,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noChatsYet => 'لا توجد دردشات بعد';
 
   @override
-  String get startConversation => 'ابدأ محادثة عن طريق النقر على \"دردشة جديدة\"';
+  String get startConversation =>
+      'ابدأ محادثة عن طريق النقر على \"دردشة جديدة\"';
 
   @override
   String get reasoning => 'التفكير';
@@ -301,7 +304,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get features => 'الميزات';
 
   @override
-  String get featuresDisplayedBasedOnActualModelCapabilities => 'يتم عرض الميزات بناءً على قدرات النموذج الفعلية';
+  String get featuresDisplayedBasedOnActualModelCapabilities =>
+      'يتم عرض الميزات بناءً على قدرات النموذج الفعلية';
 
   @override
   String get noModelsFound => 'لم يتم العثور على نماذج';
@@ -313,7 +317,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tryADifferentSearchQuery => 'جرب استعلام بحث مختلف';
 
   @override
-  String get tryRefreshingOrCheckYourInternetConnection => 'حاول التحديث أو تحقق من اتصال الإنترنت';
+  String get tryRefreshingOrCheckYourInternetConnection =>
+      'حاول التحديث أو تحقق من اتصال الإنترنت';
 
   @override
   String get aiIsTyping => 'الذكاء الاصطناعي يكتب';
@@ -337,13 +342,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get failedToEditMessage => 'فشل في تعديل الرسالة';
 
   @override
-  String get messageEditedAndResponseRegenerated => 'تم تعديل الرسالة وإعادة توليد الاستجابة';
+  String get messageEditedAndResponseRegenerated =>
+      'تم تعديل الرسالة وإعادة توليد الاستجابة';
 
   @override
   String get failedToEditAndSendMessage => 'فشل في تعديل وإرسال الرسالة';
 
   @override
-  String get areYouSureYouWantToDeleteThisMessage => 'هل أنت متأكد أنك تريد حذف هذه الرسالة؟';
+  String get areYouSureYouWantToDeleteThisMessage =>
+      'هل أنت متأكد أنك تريد حذف هذه الرسالة؟';
 
   @override
   String confirmDeleteMessage(Object chatTitle) {
@@ -351,7 +358,8 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get areYouSureYouWantToRegenerateThisMessage => 'هل أنت متأكد أنك تريد إعادة توليد هذه الرسالة؟';
+  String get areYouSureYouWantToRegenerateThisMessage =>
+      'هل أنت متأكد أنك تريد إعادة توليد هذه الرسالة؟';
 
   @override
   String modelDoesNotSupportImages(Object modelId) {
@@ -457,7 +465,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion9 => 'ما هي أفضل الممارسات لتطوير Flutter؟';
 
   @override
-  String get welcomeQuestion10 => 'اشرح الفرق بين البرمجة غير المتزامنة والمتزامنة';
+  String get welcomeQuestion10 =>
+      'اشرح الفرق بين البرمجة غير المتزامنة والمتزامنة';
 
   @override
   String get welcomeQuestion11 => 'كيف أحسّن أداء الكود الخاص بي؟';
@@ -493,7 +502,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion21 => 'كيف أستعد لمقابلة هندسة البرمجيات؟';
 
   @override
-  String get welcomeQuestion22 => 'ما هي المهارات الأكثر قيمة في صناعة التكنولوجيا؟';
+  String get welcomeQuestion22 =>
+      'ما هي المهارات الأكثر قيمة في صناعة التكنولوجيا؟';
 
   @override
   String get welcomeQuestion23 => 'كيف أتفاوض على زيادة الراتب؟';
@@ -526,13 +536,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion32 => 'كيف أحافظ على الحافز عند تعلم شيء صعب؟';
 
   @override
-  String get welcomeQuestion33 => 'ما هي أفضل لغات البرمجة لتعلمها في عام 2025؟';
+  String get welcomeQuestion33 =>
+      'ما هي أفضل لغات البرمجة لتعلمها في عام 2025؟';
 
   @override
   String get welcomeQuestion34 => 'كيف أبني محفظة قوية لوظائف التكنولوجيا؟';
 
   @override
-  String get welcomeQuestion35 => 'ما هي أفضل أدوات الذكاء الاصطناعي للإنتاجية؟';
+  String get welcomeQuestion35 =>
+      'ما هي أفضل أدوات الذكاء الاصطناعي للإنتاجية؟';
 
   @override
   String get welcomeQuestion36 => 'كيف يعمل التعلم الآلي فعلياً؟';
@@ -556,7 +568,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion42 => 'كيف أستعد للمقابلات التقنية؟';
 
   @override
-  String get welcomeQuestion43 => 'ما هي المهارات الناعمة التي يحتاجها كل مطور؟';
+  String get welcomeQuestion43 =>
+      'ما هي المهارات الناعمة التي يحتاجها كل مطور؟';
 
   @override
   String get welcomeQuestion44 => 'كيف أتفاوض على الراتب كمطور؟';
@@ -577,7 +590,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion49 => 'ما هي أفضل الكتب عن القيادة؟';
 
   @override
-  String get welcomeQuestion50 => 'كيف أطلق شركة ناشئة ناجحة في مجال التكنولوجيا؟';
+  String get welcomeQuestion50 =>
+      'كيف أطلق شركة ناشئة ناجحة في مجال التكنولوجيا؟';
 
   @override
   String get welcomeQuestion51 => 'ما هي أحدث الاتجاهات في تطوير الويب؟';
@@ -601,7 +615,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion57 => 'ما هي أخلاقيات الذكاء الاصطناعي؟';
 
   @override
-  String get welcomeQuestion58 => 'كيف سيغير الذكاء الاصطناعي الوظائف في المستقبل؟';
+  String get welcomeQuestion58 =>
+      'كيف سيغير الذكاء الاصطناعي الوظائف في المستقبل؟';
 
   @override
   String get welcomeQuestion59 => 'ما هي أفضل ممارسات الأمن السيبراني؟';
@@ -634,7 +649,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion68 => 'كيف أنشئ محتوى جذاباً؟';
 
   @override
-  String get welcomeQuestion69 => 'ما هي أفضل استراتيجيات وسائل التواصل الاجتماعي؟';
+  String get welcomeQuestion69 =>
+      'ما هي أفضل استراتيجيات وسائل التواصل الاجتماعي؟';
 
   @override
   String get welcomeQuestion70 => 'كيف أبني علامة تجارية شخصية؟';
@@ -787,7 +803,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion119 => 'ما هي أفضل ممارسات التسجيل؟';
 
   @override
-  String get welcomeQuestion120 => 'كيف أنفذ معالجة الأخطاء في الأنظمة الموزعة؟';
+  String get welcomeQuestion120 =>
+      'كيف أنفذ معالجة الأخطاء في الأنظمة الموزعة؟';
 
   @override
   String get continueConversation => 'متابعة المحادثة';
@@ -837,7 +854,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noFavoriteModels => 'لا توجد نماذج مفضلة';
 
   @override
-  String get tapHeartToAddFavorites => 'اضغط على أيقونة القلب على النماذج لإضافتها إلى المفضلة';
+  String get tapHeartToAddFavorites =>
+      'اضغط على أيقونة القلب على النماذج لإضافتها إلى المفضلة';
 
   @override
   String get addToFavorites => 'إضافة إلى المفضلة';
@@ -867,31 +885,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get temperature => 'درجة الحرارة';
 
   @override
-  String get temperatureDescription => 'التحكم في العشوائية: أقل = أكثر تركيزًا، أعلى = أكثر إبداعًا';
+  String get temperatureDescription =>
+      'التحكم في العشوائية: أقل = أكثر تركيزًا، أعلى = أكثر إبداعًا';
 
   @override
   String get maxTokens => 'الحد الأقصى للرموز';
 
   @override
   String get maxTokensDescription => 'الحد الأقصى لطول الاستجابة المولدة';
-
-  @override
-  String get topP => 'Top P';
-
-  @override
-  String get topPDescription => 'العينة النواة: أقل = أكثر تركيزًا، أعلى = أكثر تنوعًا';
-
-  @override
-  String get frequencyPenalty => 'عقوبة التكرار';
-
-  @override
-  String get frequencyPenaltyDescription => 'يقلل من تكرار الرموز المتشابهة';
-
-  @override
-  String get presencePenalty => 'عقوبة الوجود';
-
-  @override
-  String get presencePenaltyDescription => 'يشجع على المواضيع الجديدة';
 
   @override
   String get systemPrompt => 'موجه النظام';
@@ -943,13 +944,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get speechErrorNetwork => 'خطأ في الشبكة. تحقق من اتصال الإنترنت.';
 
   @override
-  String get speechErrorNotAuthorized => 'لا يوجد وصول إلى الميكروفون. تحقق من الأذونات في الإعدادات.';
+  String get speechErrorNotAuthorized =>
+      'لا يوجد وصول إلى الميكروفون. تحقق من الأذونات في الإعدادات.';
 
   @override
   String get speechErrorServer => 'خطأ في خادم التعرف. حاول مرة أخرى لاحقًا.';
 
   @override
-  String get speechErrorTooManyRequests => 'الطلبات كثيرة جدًا. حاول مرة أخرى لاحقًا.';
+  String get speechErrorTooManyRequests =>
+      'الطلبات كثيرة جدًا. حاول مرة أخرى لاحقًا.';
 
   @override
   String get speechErrorUnknown => 'خطأ التعرف على الكلام';
@@ -978,7 +981,8 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get errorProcessingRequest => 'عذرًا، حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.';
+  String get errorProcessingRequest =>
+      'عذرًا، حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.';
 
   @override
   String rateLimitRetryMessage(Object seconds) {
@@ -1018,10 +1022,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get defaultSuggestion4 => 'كيف يتم تطبيق هذا في الممارسة العملية؟';
 
   @override
-  String get systemPromptSuggestion => 'أنت مساعد مفيد. استمر في المحادثة من خلال تقديم 3 استمرارات محددة ومنطقية لآخر رسالة. رد باللغة نفسها التي يستخدمها المستخدم.';
+  String get systemPromptSuggestion =>
+      'أنت مساعد مفيد. استمر في المحادثة من خلال تقديم 3 استمرارات محددة ومنطقية لآخر رسالة. رد باللغة نفسها التي يستخدمها المستخدم.';
 
   @override
-  String get userPromptSuggestion => 'قدم 3 استمرارات محددة ومنطقية لهذه الرسالة. أجب بالقائمة فقط، بدون نص إضافي.';
+  String get userPromptSuggestion =>
+      'قدم 3 استمرارات محددة ومنطقية لهذه الرسالة. أجب بالقائمة فقط، بدون نص إضافي.';
 
   @override
   String get refreshQuestions => 'تحديث الأسئلة';
@@ -1035,7 +1041,8 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get fileAttachedButNotSupported => 'تم إرفاق الملف ولكن النموذج الحالي لا يدعمه';
+  String get fileAttachedButNotSupported =>
+      'تم إرفاق الملف ولكن النموذج الحالي لا يدعمه';
 
   @override
   String get copyCodeTooltip => 'نسخ الكود';
@@ -1056,7 +1063,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeGreeting3 => 'اطرح سؤالًا أو ابدأ استكشافًا.';
 
   @override
-  String get welcomeGreeting4 => 'اطرح أي سؤال، شارك فكرة، أو اطلب المساعدة — أنا هنا للمساعدة.';
+  String get welcomeGreeting4 =>
+      'اطرح أي سؤال، شارك فكرة، أو اطلب المساعدة — أنا هنا للمساعدة.';
 
   @override
   String get welcomeGreeting5 => 'لديك فكرة؟ دعنا نكتشف.';

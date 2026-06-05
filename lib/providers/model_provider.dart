@@ -1,15 +1,14 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:chatorai/services/openrouter/openrouter_service.dart';
-import 'package:chatorai/services/network_service.dart';
+import 'package:chatorai/models/openrouter_model.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/utils/model_utils.dart';
 
 final _logger = LogTags.settings;
 
-// ===========================================================================
-// MODEL STATE
-// ===========================================================================
+const _defaultBaseUrl = 'https://openrouter.ai/api/v1';
+const _prefBaseUrl = 'openrouter_base_url';
 
 class ModelState {
   final List<OpenRouterModel> availableModels;
@@ -55,13 +54,10 @@ class ModelState {
   }
 }
 
-// ===========================================================================
-// MODEL NOTIFIER
-// ===========================================================================
-
 class ModelNotifier extends Notifier<ModelState> {
   static const String _selectedModelKey = 'selected_model_id';
   static const String _favoriteModelsKey = 'favorite_models';
+  static const String _apiKeyPref = 'openrouter_api_key';
 
   bool _settingsLoaded = false;
 
@@ -74,8 +70,10 @@ class ModelNotifier extends Notifier<ModelState> {
     return const ModelState();
   }
 
-  OpenRouterClient get _openRouterService =>
-      ref.read(openRouterServiceProvider);
+  Future<String?> _getApiKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_apiKeyPref);
+  }
 
   Future<void> _loadSettingsAsync() async {
     try {
@@ -108,6 +106,53 @@ class ModelNotifier extends Notifier<ModelState> {
     }
   }
 
+  Future<List<OpenRouterModel>> _fetchModels() async {
+    final apiKey = await _getApiKey();
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('OpenRouter API key not configured');
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final baseUrl = prefs.getString(_prefBaseUrl)?.trim();
+    final effectiveBaseUrl = (baseUrl == null || baseUrl.isEmpty)
+        ? _defaultBaseUrl
+        : baseUrl;
+
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: effectiveBaseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 30),
+        headers: {
+          'Authorization': 'Bearer $apiKey',
+          'HTTP-Referer': 'https://chatorai.app',
+          'X-Title': 'ChatORAI',
+        },
+      ),
+    );
+
+    final response = await dio.get('/models');
+    final data = response.data;
+
+    List<OpenRouterModel> models;
+    if (data is Map && data.containsKey('data')) {
+      final modelsData = data['data'] is List
+          ? data['data'] as List
+          : [data['data']];
+      models = modelsData
+          .map((m) => OpenRouterModel.fromJson(m as Map<String, dynamic>))
+          .toList();
+    } else if (data is List) {
+      models = data
+          .map((m) => OpenRouterModel.fromJson(m as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception('Unexpected API response format');
+    }
+
+    return models;
+  }
+
   Future<void> _loadModelsAsync() async {
     if (state.modelsLoaded || state.isLoadingModels) return;
 
@@ -116,27 +161,7 @@ class ModelNotifier extends Notifier<ModelState> {
     try {
       _logger.logInfo('[ModelNotifier] Loading models from OpenRouter...');
 
-      final openRouterService = _openRouterService;
-
-      // Wait for service to be ready (includes waiting for async initialization)
-      try {
-        await (openRouterService as OpenRouterService).initializationComplete;
-      } catch (e) {
-        _logger.logError('[ModelNotifier] Service initialization failed: $e');
-        state = state.copyWith(modelsLoaded: true, isLoadingModels: false);
-        return;
-      }
-
-      // Double-check that service is ready
-      if (!openRouterService.isReady()) {
-        _logger.logError(
-          '[ModelNotifier] Service not ready after initialization',
-        );
-        state = state.copyWith(modelsLoaded: true, isLoadingModels: false);
-        return;
-      }
-
-      final models = await openRouterService.getAvailableModels();
+      final models = await _fetchModels();
       final availableModels = ModelUtils.deduplicateModels(models);
 
       String selectedModelId = state.selectedModelId;
@@ -175,8 +200,7 @@ class ModelNotifier extends Notifier<ModelState> {
       await Future<void>.delayed(const Duration(seconds: 2));
 
       try {
-        final retryModels = await (_openRouterService as OpenRouterService)
-            .getAvailableModels();
+        final retryModels = await _fetchModels();
         final availableModels = ModelUtils.deduplicateModels(retryModels);
 
         OpenRouterModel? selectedModelObject;
@@ -245,10 +269,8 @@ class ModelNotifier extends Notifier<ModelState> {
     final favoriteModelIds = List<String>.from(state.favoriteModelIds);
     if (favoriteModelIds.contains(modelId)) {
       favoriteModelIds.remove(modelId);
-      _logger.logInfo('[ModelNotifier] Removed model from favorites: $modelId');
     } else {
       favoriteModelIds.add(modelId);
-      _logger.logInfo('[ModelNotifier] Added model to favorites: $modelId');
     }
 
     state = state.copyWith(favoriteModelIds: favoriteModelIds);
@@ -257,16 +279,12 @@ class ModelNotifier extends Notifier<ModelState> {
 
   bool modelSupportsImages(String modelId) {
     final model = getModelById(modelId);
-    if (model == null) {
-      return false;
-    }
+    if (model == null) return false;
     return model.capabilities.multimodal || model.capabilities.vision;
   }
 
   bool modelSupportsImagesSelected() {
-    if (state.selectedModelId.isEmpty) {
-      return false;
-    }
+    if (state.selectedModelId.isEmpty) return false;
     return modelSupportsImages(state.selectedModelId);
   }
 
@@ -274,7 +292,6 @@ class ModelNotifier extends Notifier<ModelState> {
     Duration timeout = const Duration(seconds: 10),
   }) async {
     if (state.modelsLoaded) return;
-
     final stopwatch = Stopwatch()..start();
     while (!state.modelsLoaded && stopwatch.elapsed < timeout) {
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -282,60 +299,6 @@ class ModelNotifier extends Notifier<ModelState> {
     stopwatch.stop();
   }
 }
-
-// ===========================================================================
-// SERVICE PROVIDER HELPER
-// ===========================================================================
-
-class _OpenRouterServiceProvider {
-  static OpenRouterService? _instance;
-  static bool _initialized = false;
-
-  static OpenRouterService getService(NetworkState networkState) {
-    _logger.logInfo(
-      '[OpenRouterProvider] getService: networkState.isConnected = ${networkState.isConnected}',
-    );
-    if (!_initialized) {
-      _logger.logInfo(
-        '[OpenRouterProvider] Creating new OpenRouterService instance with isConnected: ${networkState.isConnected}',
-      );
-      _instance = OpenRouterService(isConnected: networkState.isConnected);
-      _initialized = true;
-    } else {
-      // Update connectivity status if instance already exists
-      _logger.logInfo(
-        '[OpenRouterProvider] Updating connectivity to: ${networkState.isConnected}',
-      );
-      _instance?.setConnectivityStatus(networkState.isConnected);
-    }
-    return _instance!;
-  }
-
-  static void updateConnectivity(bool isConnected) {
-    _instance?.setConnectivityStatus(isConnected);
-  }
-}
-
-// ===========================================================================
-// PROVIDERS
-// ===========================================================================
-
-final openRouterServiceProvider = Provider<OpenRouterClient>((ref) {
-  final networkState = ref.watch(networkServiceProvider);
-  _logger.logInfo(
-    '[OpenRouterProvider] Network state isConnected: ${networkState.isConnected}',
-  );
-  final service = _OpenRouterServiceProvider.getService(networkState);
-
-  ref.listen<NetworkState>(networkServiceProvider, (previous, next) {
-    _logger.logInfo(
-      '[OpenRouterProvider] Network state changed: ${previous?.isConnected} -> ${next.isConnected}',
-    );
-    _OpenRouterServiceProvider.updateConnectivity(next.isConnected);
-  });
-
-  return service;
-});
 
 final modelProvider = NotifierProvider<ModelNotifier, ModelState>(
   ModelNotifier.new,

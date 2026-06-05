@@ -146,7 +146,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appInfo => '应用信息';
 
   @override
-  String get appDescription => '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n使用 Flutter 开发';
+  String get appDescription =>
+      '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n使用 Flutter 开发';
 
   @override
   String get shareChat => '分享聊天';
@@ -876,24 +877,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get maxTokensDescription => '生成响应的最大长度';
 
   @override
-  String get topP => 'Top P';
-
-  @override
-  String get topPDescription => '核心采样: 低=更集中, 高=更多样化';
-
-  @override
-  String get frequencyPenalty => '频率惩罚';
-
-  @override
-  String get frequencyPenaltyDescription => '减少相似令牌的重复';
-
-  @override
-  String get presencePenalty => '存在惩罚';
-
-  @override
-  String get presencePenaltyDescription => '鼓励新主题';
-
-  @override
   String get systemPrompt => '系统提示';
 
   @override
@@ -1018,7 +1001,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get defaultSuggestion4 => '这在实践中如何应用？';
 
   @override
-  String get systemPromptSuggestion => '你是一个有用的助手。继续对话，为最后一条消息提供3个具体且合乎逻辑的延续。用中文回答。';
+  String get systemPromptSuggestion =>
+      '你是一个有用的助手。继续对话，为最后一条消息提供3个具体且合乎逻辑的延续。用中文回答。';
 
   @override
   String get userPromptSuggestion => '为这条消息提供3个具体且合乎逻辑的延续。只回答列表，不要额外文本。';

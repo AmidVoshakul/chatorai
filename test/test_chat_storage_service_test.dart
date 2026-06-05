@@ -29,9 +29,9 @@ void main() {
 
     test('adds chat to storage', () async {
       final chat = storage.newChat();
-      
+
       await storage.addChat(chat);
-      
+
       final retrievedChat = await storage.getChat(chat.id);
       expect(retrievedChat, isNotNull);
       expect(retrievedChat!.id, chat.id);
@@ -254,9 +254,9 @@ void main() {
     test('updates chat timestamp on modification', () async {
       final chat = storage.newChat();
       final originalTime = chat.updatedAt;
-      
+
       await storage.addChat(chat);
-      
+
       // Wait a bit to ensure timestamp difference
       await Future.delayed(Duration(milliseconds: 10));
 
@@ -339,10 +339,7 @@ void main() {
         isComplete: true,
       );
 
-      final updated = chat.copyWith(
-        title: 'Updated',
-        messages: [message],
-      );
+      final updated = chat.copyWith(title: 'Updated', messages: [message]);
 
       expect(updated.id, chat.id);
       expect(updated.title, 'Updated');

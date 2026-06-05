@@ -250,12 +250,6 @@ class _ChatInputState extends ConsumerState<ChatInput>
     );
   }
 
-  void _handleStopStreaming() {
-    if (widget.onStopStreaming != null) {
-      widget.onStopStreaming!();
-    }
-  }
-
   Future<void> _handleCamera() async {
     final localizations = AppLocalizations.of(context)!;
 
@@ -823,6 +817,60 @@ class _ChatInputState extends ConsumerState<ChatInput>
       );
     }
 
+    Widget buildStopButton(BuildContext context, WidgetRef ref) {
+      final retryAsync = ref.watch(retryCountdownProvider);
+      final retryProgress = retryAsync.hasValue ? retryAsync.value : null;
+      final isRetrying =
+          retryProgress != null && retryProgress > 0 && retryProgress < 1;
+
+      return AnimatedContainer(
+        duration: ChatoraiDurations.normal,
+        curve: Curves.easeInOut,
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          gradient: isRetrying
+              ? null
+              : LinearGradient(
+                  colors: [
+                    ChatoraiColors.error,
+                    ChatoraiColors.error.withValues(alpha: 0.8),
+                  ],
+                ),
+          color: isRetrying ? Colors.transparent : null,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isRetrying ? ChatoraiColors.error : Colors.transparent,
+            width: isRetrying ? ChatoraiBorderWidth.medium : 0.0,
+          ),
+          boxShadow: isRetrying ? null : ChatoraiShadows.cardShadow,
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (isRetrying)
+              CircularProgressIndicator(
+                value: retryProgress,
+                strokeWidth: ChatoraiBorderWidth.medium,
+                backgroundColor: ChatoraiColors.error.withValues(alpha: 0.12),
+                valueColor: AlwaysStoppedAnimation<Color>(ChatoraiColors.error),
+              ),
+            IconButton(
+              onPressed: widget.onStopStreaming,
+              icon: Icon(
+                Icons.stop,
+                size: isRetrying ? ChatoraiIconSizes.md : ChatoraiIconSizes.lg,
+                color: ChatoraiColors.pureWhite,
+              ),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              tooltip: isRetrying ? 'Cancelling retry...' : 'Stop generation',
+            ),
+          ],
+        ),
+      );
+    }
+
     return Stack(
       children: [
         Container(
@@ -963,20 +1011,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
                           ),
                           const Spacer(),
                           if (widget.isStreaming)
-                            buildActionButton(
-                              gradient: LinearGradient(
-                                colors: [
-                                  ChatoraiColors.error,
-                                  ChatoraiColors.error.withValues(alpha: 0.8),
-                                ],
-                              ),
-                              onTap: _handleStopStreaming,
-                              child: Icon(
-                                Icons.stop,
-                                size: iconSize,
-                                color: ChatoraiColors.pureWhite,
-                              ),
-                            )
+                            buildStopButton(context, ref)
                           else
                             buildActionButton(
                               gradient:
@@ -1106,19 +1141,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
                     ),
                     const SizedBox(width: ChatoraiSpacing.md),
                     if (widget.isStreaming)
-                      buildActionButton(
-                        gradient: LinearGradient(
-                          colors: [
-                            ChatoraiColors.error,
-                            ChatoraiColors.error.withValues(alpha: 0.8),
-                          ],
-                        ),
-                        onTap: _handleStopStreaming,
-                        child: Icon(
-                          Icons.stop,
-                          color: ChatoraiColors.pureWhite,
-                        ),
-                      )
+                      buildStopButton(context, ref)
                     else
                       buildActionButton(
                         gradient:

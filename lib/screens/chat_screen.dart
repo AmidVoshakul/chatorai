@@ -14,20 +14,18 @@ import 'package:chatorai/providers.dart'
         chatAiServiceProvider,
         currentChatIdProvider,
         currentChatProvider,
-        chatScreenProvider,
-        openRouterServiceProvider;
+        chatScreenProvider;
 import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
-import 'package:chatorai/services/openrouter/openrouter_service.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/models/model_settings.dart';
+import 'package:chatorai/models/openrouter_model.dart';
 import 'package:chatorai/widgets/sidebar/sidebar.dart';
 import 'package:chatorai/widgets/chat/chat_input.dart';
 import 'package:chatorai/widgets/chat/chat_messages.dart';
 import 'package:chatorai/widgets/chat/markdown_navigator_sidebar.dart';
 import 'package:chatorai/widgets/chat/welcome_questions_data.dart';
 import 'package:chatorai/widgets/chat/chat_app_bar.dart';
-import 'package:chatorai/widgets/chat/sliding_app_bar.dart';
 import 'package:chatorai/widgets/chat/speech_overlay.dart';
 import 'package:chatorai/services/speech_to_text_service.dart';
 import 'package:chatorai/screens/models_screen.dart';
@@ -105,8 +103,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   final GlobalKey<ChatMessagesState> _chatMessagesKey =
       GlobalKey<ChatMessagesState>();
-  final GlobalKey<SlidingAppBarState> _slidingAppBarKey =
-      GlobalKey<SlidingAppBarState>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   DateTime? _lastScrollUpdate;
@@ -149,9 +145,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _slidingAppBarKey.currentState != null) {
-        _slidingAppBarKey.currentState?.show();
-      }
       _showWelcomeSuggestions();
     });
   }
@@ -179,10 +172,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     if (!_messageScrollController.hasClients) return;
 
-    final offset = _messageScrollController.offset;
+    // _messageScrollController.offset used in scroll behavior
     if (_cachedScreenWidth >= ChatScreenConstants.mobileBreakpoint) return;
-
-    _slidingAppBarKey.currentState?.handleScroll(offset);
   }
 
   void _handleHeadingSync() {
@@ -279,7 +270,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   Future<void> _createNewChat() async {
     final newChat = await ref.read(chatListProvider.notifier).createNewChat();
     ref.read(currentChatIdProvider.notifier).setChatId(newChat.id);
-    _slidingAppBarKey.currentState?.reset();
     _showWelcomeSuggestions();
   }
 
@@ -297,7 +287,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     if (chat == null) return;
 
     ref.read(currentChatIdProvider.notifier).setChatId(chatId);
-    _slidingAppBarKey.currentState?.reset();
 
     if (chat.messages.isEmpty) {
       _showWelcomeSuggestions();
@@ -520,7 +509,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     if (chat == null) return;
 
     try {
-      _sendToAIWithRetry(userMessage, chat);
+      await _streamAIResponse(chat);
     } catch (e) {
       final errorMessage = Message(
         role: MessageRole.assistant,
@@ -544,88 +533,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
   }
 
-  Future<void> _sendToAIWithRetry(
-    String userMessage,
-    Chat chat, {
-    int retryCount = 0,
-  }) async {
-    try {
-      await _streamAIResponse(chat);
-    } catch (e) {
-      if (e.toString().contains('429') ||
-          e.toString().contains('Rate limit') ||
-          e.toString().contains('bad response')) {
-        if (retryCount < ChatScreenConstants.maxRetryAttempts) {
-          final delay = Duration(
-            seconds:
-                ChatScreenConstants.baseRetryDelaySeconds *
-                pow(2, retryCount).toInt(),
-          );
-          if (!mounted) return;
-          final localizations = AppLocalizations.of(context);
-          final retryMessageContent =
-              localizations?.rateLimitRetryMessage(delay.inSeconds) ??
-              'Retrying...';
-          final retryMessage = Message(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            role: MessageRole.assistant,
-            content: retryMessageContent,
-            timestamp: DateTime.now(),
-            isComplete: true,
-          );
-
-          await _chatStorageService.addMessageToChat(chat.id, retryMessage);
-          ref
-              .read(chatListProvider.notifier)
-              .updateChat(
-                chat.copyWith(
-                  messages: [...chat.messages, retryMessage],
-                  updatedAt: DateTime.now(),
-                ),
-              );
-
-          await Future.delayed(delay);
-
-          final messagesWithoutRetry = chat.messages
-              .where((msg) => msg.content != retryMessage.content)
-              .toList();
-          ref
-              .read(chatListProvider.notifier)
-              .updateChat(
-                chat.copyWith(
-                  messages: messagesWithoutRetry,
-                  updatedAt: DateTime.now(),
-                ),
-              );
-
-          await _sendToAIWithRetry(
-            userMessage,
-            chat,
-            retryCount: retryCount + 1,
-          );
-        } else {
-          final errorMessage = Message(
-            role: MessageRole.assistant,
-            content: ChatScreenConstants.rateLimitMessage,
-            timestamp: DateTime.now(),
-            isComplete: true,
-          );
-          await _chatStorageService.addMessageToChat(chat.id, errorMessage);
-          ref
-              .read(chatListProvider.notifier)
-              .updateChat(
-                chat.copyWith(
-                  messages: [...chat.messages, errorMessage],
-                  updatedAt: DateTime.now(),
-                ),
-              );
-        }
-      } else {
-        rethrow;
-      }
-    }
-  }
-
   Future<void> _streamAIResponse(Chat chat) async {
     // Limit message history to last N messages for performance
     // LLM doesn't need the entire conversation history
@@ -634,14 +541,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         ? chat.messages.sublist(chat.messages.length - maxHistoryMessages)
         : chat.messages;
 
-    final messages = recentMessages
-        .where((m) => !m.isError)
-        .map(
-          (msg) => ref
-              .read(chatAiServiceProvider)
-              .convertMessageToOpenRouterFormat(msg),
-        )
-        .toList();
+    final messages = recentMessages.where((m) => !m.isError).map((msg) {
+      final result = <String, dynamic>{'role': msg.role.name};
+      if (msg.imageData != null && msg.imageType != null) {
+        result['content'] = [
+          {'type': 'text', 'text': msg.content},
+          {
+            'type': 'image_url',
+            'image_url': {
+              'url': 'data:${msg.imageType};base64:${msg.imageData}',
+            },
+          },
+        ];
+      } else {
+        result['content'] = msg.content;
+      }
+      return result;
+    }).toList();
 
     final modelSettingsNotifier = ref.read(modelSettingsProvider.notifier);
     final settings = await modelSettingsNotifier.getSettings(selectedModelId);
@@ -670,23 +586,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     required String modelId,
     required ModelSettings modelSettings,
   }) async {
-    final modelContextLength = ChatScreenConstants.defaultMaxTokens;
-    int currentMaxTokens = min(modelSettings.maxTokens, modelContextLength);
-    final effectiveMinTokens = min(8000, modelContextLength ~/ 2);
-    const reductionFactor = ChatScreenConstants.reductionFactor;
-    int tokenReductionAttempts = 0;
-
     ref.read(chatScreenProvider.notifier).setStreaming(true);
     ref.read(streamingContentProvider.notifier).startStreaming(chat.id);
-
     final StringBuffer pendingContent = StringBuffer();
     final StringBuffer fullContent = StringBuffer();
     final StringBuffer pendingReasoning = StringBuffer();
     final StringBuffer fullReasoning = StringBuffer();
-
     DateTime lastUpdateTime = DateTime.now();
     const updateIntervalMs = 250;
-
     bool isWordBoundary(String text) {
       if (text.isEmpty) return false;
       final lastChar = text[text.length - 1];
@@ -708,16 +615,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     void throttleUpdate({bool forceUpdate = false}) {
       final now = DateTime.now();
       final elapsed = now.difference(lastUpdateTime).inMilliseconds;
-
       final pendingContentStr = pendingContent.toString();
       final pendingReasoningStr = pendingReasoning.toString();
-
       final shouldUpdate =
           forceUpdate ||
           elapsed >= updateIntervalMs ||
           isWordBoundary(pendingContentStr) ||
           isWordBoundary(pendingReasoningStr);
-
       if (shouldUpdate) {
         if (mounted && chat.messages.isNotEmpty) {
           fullContent.write(pendingContentStr);
@@ -749,109 +653,56 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     final aiService = ref.read(chatAiServiceProvider);
     final attemptMsgs = aiService.sanitizeMessages(messages);
-    final client = aiService.client;
-
-    while (true) {
-      try {
-        await client.streamChatCompletion(
-          messages: attemptMsgs,
-          model: modelId,
-          maxTokens: currentMaxTokens,
-          temperature: modelSettings.temperature,
-          topP: modelSettings.topP,
-          frequencyPenalty: modelSettings.frequencyPenalty,
-          presencePenalty: modelSettings.presencePenalty,
-          includeReasoning: true,
-          onChunk: (content) {
-            if (content.isEmpty) return;
-            pendingContent.write(content);
-            throttleUpdate();
-          },
-          onReasoning: (reasoning) {
-            if (reasoning.isEmpty) return;
-            pendingReasoning.write(reasoning);
-            throttleUpdate();
-          },
-          onCompletion: (fullContent) async {
-            flushPendingUpdates();
-
-            if (mounted && chat.messages.isNotEmpty) {
-              final lastMessage = chat.messages.last;
-              final completedMessage = lastMessage.copyWith(
-                content: fullContent.toString(),
-                reasoning: fullReasoning.isNotEmpty
-                    ? fullReasoning.toString()
-                    : null,
-                isComplete: true,
-              );
-              final newMessages = List<Message>.from(chat.messages);
-              newMessages[newMessages.length - 1] = completedMessage;
-              final newChat = chat.copyWith(
-                messages: newMessages,
-                updatedAt: DateTime.now(),
-              );
-
-              ref.read(chatListProvider.notifier).updateChat(newChat);
-              ref.read(chatScreenProvider.notifier).setStreaming(false);
-              ref.read(streamingContentProvider.notifier).flushAndStop();
-
-              await _chatStorageService.updateMessageInChat(
-                newChat.id,
-                completedMessage.id,
-                completedMessage,
-              );
-
-              _showContinuationSuggestions(completedMessage);
-            }
-          },
-        );
-        break;
-      } catch (e) {
-        final err = e.toString();
-        final isBadRequest =
-            err.contains('400') || err.toLowerCase().contains('bad response');
-        if (!isBadRequest) {
-          ref.read(chatScreenProvider.notifier).setStreaming(false);
-          ref.read(streamingContentProvider.notifier).reset();
-          await _handleStreamingError(e);
-          break;
-        }
-
-        if (tokenReductionAttempts <
-                ChatScreenConstants.maxTokenReductionAttempts &&
-            currentMaxTokens > effectiveMinTokens) {
-          int newTokens = (currentMaxTokens * reductionFactor).floor();
-          if (newTokens < effectiveMinTokens) newTokens = effectiveMinTokens;
-          if (newTokens < currentMaxTokens) {
-            tokenReductionAttempts++;
-            currentMaxTokens = newTokens;
-            continue;
+    try {
+      await aiService.streamChatCompletion(
+        messages: attemptMsgs,
+        model: modelId,
+        temperature: modelSettings.temperature,
+        onChunk: (content) {
+          if (content.isEmpty) return;
+          pendingContent.write(content);
+          throttleUpdate();
+        },
+        onReasoning: (reasoning) {
+          if (reasoning.isEmpty) return;
+          pendingReasoning.write(reasoning);
+          throttleUpdate();
+        },
+        onCompletion: (fullContent) async {
+          flushPendingUpdates();
+          if (mounted && chat.messages.isNotEmpty) {
+            final lastMessage = chat.messages.last;
+            final completedMessage = lastMessage.copyWith(
+              content: fullContent.toString(),
+              reasoning: fullReasoning.isNotEmpty
+                  ? fullReasoning.toString()
+                  : null,
+              isComplete: true,
+            );
+            final newMessages = List<Message>.from(chat.messages);
+            newMessages[newMessages.length - 1] = completedMessage;
+            final newChat = chat.copyWith(
+              messages: newMessages,
+              updatedAt: DateTime.now(),
+            );
+            ref.read(chatListProvider.notifier).updateChat(newChat);
+            ref.read(chatScreenProvider.notifier).setStreaming(false);
+            ref.read(streamingContentProvider.notifier).flushAndStop();
+            await _chatStorageService.updateMessageInChat(
+              newChat.id,
+              completedMessage.id,
+              completedMessage,
+            );
+            _showContinuationSuggestions(completedMessage);
           }
-        }
-
-        if (attemptMsgs.length <= 1) {
-          ref.read(chatScreenProvider.notifier).setStreaming(false);
-          ref.read(streamingContentProvider.notifier).reset();
-          await _handleStreamingError(e);
-          break;
-        }
-
-        int removedCount = 0;
-        for (int i = 0; i < attemptMsgs.length && removedCount < 2; i++) {
-          if (attemptMsgs[i]['role'] != 'system') {
-            attemptMsgs.removeAt(i);
-            removedCount++;
-            i--;
-          }
-        }
-        tokenReductionAttempts = 0;
-      }
+        },
+      );
+    } catch (e) {
+      ref.read(chatScreenProvider.notifier).setStreaming(false);
+      ref.read(streamingContentProvider.notifier).reset();
+      await _handleStreamingError(e);
     }
   }
-
-  // ===========================================================================
-  // ERROR HANDLING
-  // ===========================================================================
 
   Future<void> _handleStreamingError(Object error) async {
     final errorMessage = ChatErrorUtils.formatError(error);
@@ -891,7 +742,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void _stopStreaming() {
     // Stop the AI service streaming
     final aiService = ref.read(chatAiServiceProvider);
-    aiService.stopGeneration();
+    aiService.cancelAllRequests();
 
     // Update UI state
     ref.read(chatScreenProvider.notifier).setStreaming(false);
@@ -1186,10 +1037,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   // MODEL SELECTION
   // ===========================================================================
 
-  void _updateSelectedModel(String modelId, OpenRouterModel? modelObject) {
+  void _updateSelectedModel(String modelId, dynamic modelObject) {
     ref.read(modelProvider.notifier).setSelectedModel(modelId);
   }
 
+  // Unused but kept for manual model selection from ChatAppBar if needed
   void _showModelSelection() {
     Navigator.push(
       context,
@@ -1257,7 +1109,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final currentChat = this.currentChat;
     final chatMessages = ChatMessages(
       key: _chatMessagesKey,
-      openRouterService: ref.read(openRouterServiceProvider),
       chatStorageService: _chatStorageService,
       chat: currentChat,
       selectedModel: selectedModelId,
@@ -1386,18 +1237,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         },
         child: Column(
           children: [
-            SlidingAppBar(
-              key: _slidingAppBarKey,
+            ChatAppBar(
               selectedModel: selectedModelId,
               selectedModelObject: selectedModelObject,
+              hasHeadings: () => hasHeadings,
+              onToggleNavigator: _toggleNavigator,
+              onModelSelected: _updateSelectedModel,
               onMenuPressed: () {
                 FocusScope.of(context).unfocus();
                 _scaffoldKey.currentState?.openDrawer();
               },
-              onModelSelected: _showModelSelection,
-              hasHeadings: () => hasHeadings,
-              onNavigatorPressed: _toggleNavigator,
-              isMobile: true,
             ),
             Expanded(
               child: _buildChatContentWrapper(
@@ -1543,10 +1392,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final settings = await ref
         .read(modelSettingsProvider.notifier)
         .getSettings(selectedModelId);
-    final suggestionSettings = settings.copyWith(
-      maxTokens: 500,
-      temperature: 0.7,
-    );
+    final suggestionSettings = settings.copyWith(temperature: 0.7);
 
     if (suggestionSettings.systemPrompt != null) {
       suggestionPrompt.insert(0, {
@@ -1558,12 +1404,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     try {
       final response = await ref
           .read(chatAiServiceProvider)
-          .getChatCompletionWithAdaptiveRollback(
+          .generateCompletion(
             model: selectedModelId,
             messages: suggestionPrompt,
-            modelSettings: suggestionSettings,
+            temperature: suggestionSettings.temperature,
           );
-      return parseSuggestions(response.content);
+      return parseSuggestions(response);
     } catch (e) {
       if (!mounted) {
         return ['Tell me more', 'Examples?', 'Alternatives?'];

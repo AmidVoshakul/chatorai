@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/services/openrouter/openrouter_service.dart';
+import 'package:chatorai/models/openrouter_model.dart';
 import 'package:chatorai/providers.dart';
 
 // ===========================================================================
