@@ -5,26 +5,26 @@ sealed class ChatError {
 
 class RateLimitError extends ChatError {
   final Duration? retryAfter;
-  const RateLimitError(String message, {this.retryAfter}) : super(message);
+  const RateLimitError(super.message, {this.retryAfter});
 }
 
 class AuthFailureError extends ChatError {
-  const AuthFailureError(String message) : super(message);
+  const AuthFailureError(super.message);
 }
 
 class ContextOverflowError extends ChatError {
-  const ContextOverflowError(String message) : super(message);
+  const ContextOverflowError(super.message);
 }
 
 class ServerError extends ChatError {
   final int? statusCode;
-  const ServerError(String message, {this.statusCode}) : super(message);
+  const ServerError(super.message, {this.statusCode});
 }
 
 class NetworkError extends ChatError {
-  const NetworkError(String message) : super(message);
+  const NetworkError(super.message);
 }
 
 class UnknownError extends ChatError {
-  const UnknownError(String message) : super(message);
+  const UnknownError(super.message);
 }

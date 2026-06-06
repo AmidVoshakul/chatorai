@@ -33,8 +33,14 @@ dependencies:
   ai_sdk_dart: ^1.1.0
   ai_sdk_openai: ^1.1.0
   ai_sdk_provider: ^1.1.0
+  ai_sdk_mcp: ^1.1.0
   retry: ^3.1.2
   flutter_secure_storage: ^10.3.1
+  html: ^0.15.4
+  glob: ^2.1.2
+  json_schema: ^5.2.2
+  collection: ^1.19.1
+  flutter_svg: ^2.0.10+1
 
 dev_dependencies:
   flutter_test:

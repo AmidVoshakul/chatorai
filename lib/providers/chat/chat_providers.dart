@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/providers/chat/chat_repository.dart';
+import 'package:chatorai/providers/ai_provider.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/services/chat_ai_service.dart';
-import 'package:chatorai/providers/ai_provider.dart';
+import 'package:chatorai/core/ai/openrouter_config.dart'
+    show kOpenRouterHeaders;
 
 // ===========================================================================
 // RETRY COUNTDOWN PROVIDER
@@ -26,7 +28,11 @@ final chatStorageServiceProvider = Provider<ChatStorageService>((ref) {
 
 final chatAiServiceProvider = Provider<ChatAiService>((ref) {
   final providerAsync = ref.watch(openRouterAiProvider);
-  return ChatAiService(provider: providerAsync.asData?.value);
+  final provider = providerAsync.asData?.value;
+  return ChatAiService(
+    modelFactory: (model) => provider!(model),
+    headers: kOpenRouterHeaders,
+  );
 });
 
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {

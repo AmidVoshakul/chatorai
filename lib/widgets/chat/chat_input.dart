@@ -10,24 +10,27 @@ import 'package:chatorai/utils/image_utils.dart';
 import 'package:chatorai/services/speech_to_text_service.dart';
 import 'package:chatorai/utils/snackbar_utils.dart';
 import 'package:chatorai/providers.dart';
+import 'package:chatorai/agents/agent_registry.dart';
+import 'package:chatorai/widgets/chat/agent_mention_popup.dart';
 import 'package:chatorai/widgets/chat/model_settings_sheet.dart';
 
 // ===========================================================================
 // MESSAGE DATA
 // ===========================================================================
 
-/// Data class for sending messages with optional media
 class MessageData {
   final String text;
   final String? imagePath;
   final String? imageType;
   final String? base64Data;
+  final String? delegateAgentId;
 
   MessageData({
     required this.text,
     this.imagePath,
     this.imageType,
     this.base64Data,
+    this.delegateAgentId,
   });
 }
 
@@ -110,6 +113,12 @@ class _ChatInputState extends ConsumerState<ChatInput>
 
   final GlobalKey _plusKey = GlobalKey();
   final GlobalKey _settingsKey = GlobalKey();
+  final GlobalKey _agentKey = GlobalKey();
+
+  // @-mention agent popup
+  String _agentQuery = '';
+  int _selectedAgentIndex = 0;
+  OverlayEntry? _agentOverlay;
 
   @override
   bool get wantKeepAlive => true;
@@ -124,9 +133,127 @@ class _ChatInputState extends ConsumerState<ChatInput>
   }
 
   void _onTextChanged() {
-    // Trigger UI update to reflect changes in text (e.g., icon change)
     if (mounted) {
       setState(() {});
+    }
+    _detectAgentMention();
+  }
+
+  void _detectAgentMention() {
+    final text = _textController.text;
+    final cursorPos = _textController.selection.baseOffset;
+    if (cursorPos < 0) {
+      _hideAgentPopup();
+      return;
+    }
+
+    // Find '@' before cursor
+    final beforeCursor = text.substring(0, cursorPos);
+    final atIndex = beforeCursor.lastIndexOf('@');
+    if (atIndex == -1 ||
+        (atIndex > 0 && beforeCursor[atIndex - 1] != ' ' && atIndex != 0)) {
+      _hideAgentPopup();
+      return;
+    }
+
+    final query = beforeCursor.substring(atIndex + 1);
+    if (query.contains(' ')) {
+      _hideAgentPopup();
+      return;
+    }
+
+    _agentQuery = query;
+    _selectedAgentIndex = 0;
+    _showAgentPopup();
+  }
+
+  List<AgentDefinition> _filteredAgents() {
+    final all = AgentRegistry().getSubagents();
+    if (_agentQuery.isEmpty) return all.take(10).toList();
+    final q = _agentQuery.toLowerCase();
+    return all
+        .where(
+          (a) =>
+              a.name.toLowerCase().contains(q) ||
+              (a.description?.toLowerCase().contains(q) ?? false),
+        )
+        .take(10)
+        .toList();
+  }
+
+  void _showAgentPopup() {
+    if (_agentOverlay != null) return;
+    if (!mounted) return;
+
+    final overlay = Overlay.of(context);
+
+    final inputBox = context.findRenderObject() as RenderBox?;
+    if (inputBox == null) return;
+
+    final inputOffset = inputBox.localToGlobal(Offset.zero);
+
+    _agentOverlay = OverlayEntry(
+      builder: (context) => Positioned(
+        bottom: MediaQuery.of(context).size.height - inputOffset.dy + 8,
+        left: inputOffset.dx + ChatoraiSpacing.lg,
+        width: 340,
+        child: AgentMentionPopup(
+          agents: _filteredAgents(),
+          selectedIndex: _selectedAgentIndex,
+          onSelected: _insertAgentMention,
+        ),
+      ),
+    );
+
+    overlay.insert(_agentOverlay!);
+  }
+
+  void _hideAgentPopup() {
+    _agentOverlay?.remove();
+    _agentOverlay = null;
+  }
+
+  void _insertAgentMention(AgentDefinition agent) {
+    final text = _textController.text;
+    final cursorPos = _textController.selection.baseOffset;
+    if (cursorPos < 0) return;
+
+    final beforeCursor = text.substring(0, cursorPos);
+    final atIndex = beforeCursor.lastIndexOf('@');
+    if (atIndex == -1) return;
+
+    final afterCursor = text.substring(cursorPos);
+
+    final newText = '${text.substring(0, atIndex)}@${agent.id} $afterCursor';
+    _textController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: atIndex + agent.id.length + 2),
+    );
+    _hideAgentPopup();
+  }
+
+  void _navigateAgentPopup(bool down) {
+    final agents = _filteredAgents();
+    if (agents.isEmpty) return;
+    if (down) {
+      _selectedAgentIndex = (_selectedAgentIndex + 1) % agents.length;
+    } else {
+      _selectedAgentIndex =
+          (_selectedAgentIndex - 1 + agents.length) % agents.length;
+    }
+    setState(() {});
+    _refreshAgentPopup();
+  }
+
+  void _refreshAgentPopup() {
+    _hideAgentPopup();
+    _showAgentPopup();
+  }
+
+  void _selectCurrentAgent() {
+    final agents = _filteredAgents();
+    if (_selectedAgentIndex < agents.length) {
+      _insertAgentMention(agents[_selectedAgentIndex]);
     }
   }
 
@@ -203,6 +330,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
 
   @override
   void dispose() {
+    _hideAgentPopup();
     _textController.removeListener(_onTextChanged);
     _textController.dispose();
     _plusTimer?.cancel();
@@ -431,8 +559,22 @@ class _ChatInputState extends ConsumerState<ChatInput>
       await _speechService?.stopListening();
     }
 
+    var text = _textController.text.trim();
+    String? delegateAgentId;
+
+    // Check for @agent delegation
+    final agentMatch = RegExp(r'^@(\S+)\s*').firstMatch(text);
+    if (agentMatch != null) {
+      final agentId = agentMatch.group(1);
+      if (AgentRegistry().get(agentId!) != null) {
+        delegateAgentId = agentId;
+        text = text.substring(agentMatch.end);
+      }
+    }
+
     final messageData = MessageData(
-      text: _textController.text.trim(),
+      text: text,
+      delegateAgentId: delegateAgentId,
       imagePath: ref.read(chatInputProvider).attachedFilePath,
       imageType: ref.read(chatInputProvider).attachedImageType,
       base64Data: ref.read(chatInputProvider).attachedBase64Data,
@@ -523,6 +665,80 @@ class _ChatInputState extends ConsumerState<ChatInput>
     }
 
     ref.read(chatInputProvider.notifier).setPlusActive(false);
+  }
+
+  void _showAgentSwitcher(BuildContext context) {
+    final currentAgent = ref.read(currentAgentProvider);
+    final primaryAgents = AgentRegistry().getPrimaryAgents();
+
+    final RenderBox? box =
+        _agentKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+
+    final offset = box.localToGlobal(Offset.zero);
+    final size = box.size;
+
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy - 120,
+        offset.dx + size.width,
+        offset.dy,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+      ),
+      items: primaryAgents.map((agent) {
+        final isActive = agent.id == currentAgent.id;
+        return PopupMenuItem<String>(
+          value: agent.id,
+          enabled: !isActive,
+          child: Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isActive
+                      ? Theme.of(context).colorScheme.primary
+                      : (agent.color != null
+                            ? Color(
+                                int.parse(
+                                  agent.color!.replaceFirst('#', '0xFF'),
+                                ),
+                              )
+                            : Theme.of(context).colorScheme.outline),
+                ),
+              ),
+              const SizedBox(width: ChatoraiSpacing.sm),
+              Text(
+                agent.name,
+                style: TextStyle(
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              if (isActive) ...[
+                const Spacer(),
+                Icon(
+                  Icons.check,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ],
+            ],
+          ),
+        );
+      }).toList(),
+    ).then((agentId) {
+      if (agentId != null && mounted) {
+        final agent = AgentRegistry().get(agentId);
+        if (agent != null) {
+          ref.read(currentAgentProvider.notifier).setAgent(agent);
+        }
+      }
+    });
   }
 
   int _computeMaxLines(BuildContext context) {
@@ -724,6 +940,39 @@ class _ChatInputState extends ConsumerState<ChatInput>
     );
   }
 
+  Widget _buildAgentButton(ThemeData theme) {
+    final currentAgent = ref.watch(currentAgentProvider);
+    return Container(
+      key: _agentKey,
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? ChatoraiColors.inputContainerDark
+            : ChatoraiColors.inputContainerLight,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(22),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () => _showAgentSwitcher(context),
+          child: Center(
+            child: Text(
+              currentAgent.name,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -741,53 +990,100 @@ class _ChatInputState extends ConsumerState<ChatInput>
     final isSpellCheckSupported =
         !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
-    final textField = TextField(
-      controller: _textController,
-      focusNode: widget.focusNode,
-      keyboardType: TextInputType.multiline,
-      minLines: 1,
-      maxLines: maxLines,
-      spellCheckConfiguration: isSpellCheckSupported
-          ? const SpellCheckConfiguration()
-          : null,
-      decoration: isMobile
-          ? InputDecoration(
-              hintText: chatInputState.attachedFilePath != null
-                  ? localizations.typeYourMessage
-                  : localizations.typeYourMessage,
-              hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.textTheme.bodyMedium?.color?.withValues(
-                  alpha: 0.6,
-                ),
-              ),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              filled: false,
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: ChatoraiSpacing.lg,
-                vertical: ChatoraiSpacing.md,
-              ),
-            )
-          : InputDecoration(
-              hintText: localizations.typeYourMessage,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              filled: false,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: ChatoraiSpacing.lg,
-                vertical: ChatoraiSpacing.md,
-              ),
+    Widget buildTextField() {
+      return CallbackShortcuts(
+        bindings: {
+          SingleActivator(LogicalKeyboardKey.tab): () {
+            if (_agentOverlay != null) {
+              _navigateAgentPopup(true);
+            }
+          },
+          SingleActivator(LogicalKeyboardKey.tab, shift: true): () {
+            if (_agentOverlay != null) {
+              _navigateAgentPopup(false);
+            }
+          },
+          SingleActivator(LogicalKeyboardKey.enter): () {
+            if (_agentOverlay != null) {
+              _selectCurrentAgent();
+            } else if (!HardwareKeyboard.instance.isShiftPressed) {
+              _sendMessage();
+            }
+          },
+          SingleActivator(LogicalKeyboardKey.escape): () {
+            if (_agentOverlay != null) {
+              _hideAgentPopup();
+            }
+          },
+          SingleActivator(LogicalKeyboardKey.arrowDown): () {
+            if (_agentOverlay != null) {
+              _navigateAgentPopup(true);
+            }
+          },
+          SingleActivator(LogicalKeyboardKey.arrowUp): () {
+            if (_agentOverlay != null) {
+              _navigateAgentPopup(false);
+            }
+          },
+        },
+        child: Focus(
+          onKeyEvent: (node, event) {
+            return KeyEventResult.ignored;
+          },
+          child: TextField(
+            controller: _textController,
+            focusNode: widget.focusNode,
+            keyboardType: TextInputType.multiline,
+            minLines: 1,
+            maxLines: maxLines,
+            spellCheckConfiguration: isSpellCheckSupported
+                ? const SpellCheckConfiguration()
+                : null,
+            decoration: isMobile
+                ? InputDecoration(
+                    hintText: chatInputState.attachedFilePath != null
+                        ? localizations.typeYourMessage
+                        : localizations.typeYourMessage,
+                    hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.textTheme.bodyMedium?.color?.withValues(
+                        alpha: 0.6,
+                      ),
+                    ),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: ChatoraiSpacing.lg,
+                      vertical: ChatoraiSpacing.md,
+                    ),
+                  )
+                : InputDecoration(
+                    hintText: localizations.typeYourMessage,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: ChatoraiSpacing.lg,
+                      vertical: ChatoraiSpacing.md,
+                    ),
+                  ),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontSize: ChatoraiFontSizes.lg,
+              height: 1.2,
             ),
-      style: theme.textTheme.bodyMedium?.copyWith(
-        fontSize: ChatoraiFontSizes.lg,
-        height: 1.2,
-      ),
-      textInputAction: isMobile ? TextInputAction.newline : null,
-      enabled: !chatInputState.isSending,
-    );
+            textInputAction: isMobile
+                ? TextInputAction.newline
+                : TextInputAction.newline,
+            enabled: !chatInputState.isSending,
+          ),
+        ),
+      );
+    }
+
+    final textField = buildTextField();
 
     Widget buildActionButton({
       Key? key,
@@ -821,7 +1117,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
       final retryAsync = ref.watch(retryCountdownProvider);
       final retryProgress = retryAsync.hasValue ? retryAsync.value : null;
       final isRetrying =
-          retryProgress != null && retryProgress > 0 && retryProgress < 1;
+          retryProgress != null && retryProgress > 0 && retryProgress <= 1;
 
       return AnimatedContainer(
         duration: ChatoraiDurations.normal,
@@ -1009,6 +1305,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
                               color: theme.iconTheme.color,
                             ),
                           ),
+                          const SizedBox(width: ChatoraiSpacing.sm),
+                          _buildAgentButton(theme),
                           const Spacer(),
                           if (widget.isStreaming)
                             buildStopButton(context, ref)
@@ -1076,6 +1374,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
                         color: theme.iconTheme.color,
                       ),
                     ),
+                    const SizedBox(width: ChatoraiSpacing.sm),
+                    _buildAgentButton(theme),
                     const SizedBox(width: ChatoraiSpacing.md),
                     Expanded(
                       child: Column(
@@ -1119,21 +1419,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
                                   width: ChatoraiBorderWidth.thinBold,
                                 ),
                               ),
-                              child: Focus(
-                                onKeyEvent: (node, event) {
-                                  if (event is KeyDownEvent &&
-                                      event.logicalKey ==
-                                          LogicalKeyboardKey.enter &&
-                                      !HardwareKeyboard
-                                          .instance
-                                          .isShiftPressed) {
-                                    _sendMessage();
-                                    return KeyEventResult.handled;
-                                  }
-                                  return KeyEventResult.ignored;
-                                },
-                                child: textField,
-                              ),
+                              child: textField,
                             ),
                           ),
                         ],

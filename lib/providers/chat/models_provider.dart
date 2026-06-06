@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/models/openrouter_model.dart';
+import 'package:chatorai/models/chat_model.dart';
 import 'package:chatorai/providers.dart';
 
 // ===========================================================================
@@ -7,8 +7,8 @@ import 'package:chatorai/providers.dart';
 // ===========================================================================
 
 class ModelsScreenState {
-  final List<OpenRouterModel> models;
-  final List<OpenRouterModel> filteredModels;
+  final List<ChatModel> models;
+  final List<ChatModel> filteredModels;
   final bool isLoading;
   final bool showFavoritesOnly;
   final String searchQuery;
@@ -24,8 +24,8 @@ class ModelsScreenState {
   });
 
   ModelsScreenState copyWith({
-    List<OpenRouterModel>? models,
-    List<OpenRouterModel>? filteredModels,
+    List<ChatModel>? models,
+    List<ChatModel>? filteredModels,
     bool? isLoading,
     bool? showFavoritesOnly,
     String? searchQuery,
@@ -127,10 +127,10 @@ class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
     state = state.copyWith(filteredModels: filtered);
   }
 
-  List<OpenRouterModel> _applyFilters(List<OpenRouterModel> models) {
+  List<ChatModel> _applyFilters(List<ChatModel> models) {
     final modelNotifier = ref.read(modelProvider.notifier);
 
-    List<OpenRouterModel> filtered = state.showFavoritesOnly
+    List<ChatModel> filtered = state.showFavoritesOnly
         ? models
               .where((model) => modelNotifier.isFavoriteModel(model.id))
               .toList()

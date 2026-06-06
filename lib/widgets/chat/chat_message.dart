@@ -73,6 +73,7 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
 
   late TextEditingController _textController;
   bool _animationsInitialized = false;
+  bool _isEditing = false;
 
   @override
   void initState() {
@@ -90,8 +91,7 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
   }
 
   void _onTextChanged() {
-    final isEditing = ref.watch(chatMessageProvider.select((s) => s.isEditing));
-    if (!isEditing && _textController.text != widget.message.content) {
+    if (!_isEditing && _textController.text != widget.message.content) {
       _textController.text = widget.message.content;
     }
   }
@@ -487,37 +487,37 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
                             splashRadius: 20,
                           ),
 
-                        // Like button
-                        IconButton(
-                          icon: Icon(
-                            Icons.thumb_up,
-                            size: ChatoraiIconSizes.actionIcon,
-                            color: theme.iconTheme.color?.withValues(
-                              alpha: ChatoraiIconOpacity.medium,
-                            ),
-                          ),
-                          onPressed: () {
-                            // Like message feature - reserved for future
-                          },
-                          tooltip: localizations.like,
-                          splashRadius: 20,
-                        ),
+                        // // Like button
+                        // IconButton(
+                        //   icon: Icon(
+                        //     Icons.thumb_up,
+                        //     size: ChatoraiIconSizes.actionIcon,
+                        //     color: theme.iconTheme.color?.withValues(
+                        //       alpha: ChatoraiIconOpacity.medium,
+                        //     ),
+                        //   ),
+                        //   onPressed: () {
+                        //     // Like message feature - reserved for future
+                        //   },
+                        //   tooltip: localizations.like,
+                        //   splashRadius: 20,
+                        // ),
 
-                        // Dislike button
-                        IconButton(
-                          icon: Icon(
-                            Icons.thumb_down,
-                            size: ChatoraiIconSizes.actionIcon,
-                            color: theme.iconTheme.color?.withValues(
-                              alpha: ChatoraiIconOpacity.medium,
-                            ),
-                          ),
-                          onPressed: () {
-                            // Dislike message feature - reserved for future
-                          },
-                          tooltip: localizations.dislike,
-                          splashRadius: 20,
-                        ),
+                        // // Dislike button
+                        // IconButton(
+                        //   icon: Icon(
+                        //     Icons.thumb_down,
+                        //     size: ChatoraiIconSizes.actionIcon,
+                        //     color: theme.iconTheme.color?.withValues(
+                        //       alpha: ChatoraiIconOpacity.medium,
+                        //     ),
+                        //   ),
+                        //   onPressed: () {
+                        //     // Dislike message feature - reserved for future
+                        //   },
+                        //   tooltip: localizations.dislike,
+                        //   splashRadius: 20,
+                        // ),
                       ],
                     ],
                   ),
@@ -576,8 +576,7 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
     }
 
     // Режим inline редактирования
-    final isEditing = ref.watch(chatMessageProvider.select((s) => s.isEditing));
-    if (isEditing) {
+    if (_isEditing) {
       return _buildEditInterface(context);
     }
 
@@ -794,31 +793,26 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
   // EDITING METHODS
   // ===========================================================================
 
-  /// Переключение в режим редактирования
   void _startEditing() {
-    ref.read(chatMessageProvider.notifier).startEditing(widget.message.content);
+    setState(() => _isEditing = true);
     _textController.text = widget.message.content;
     _textController.selection = TextSelection.fromPosition(
       TextPosition(offset: _textController.text.length),
     );
   }
 
-  /// Отмена редактирования
   void _cancelEditing() {
-    ref.read(chatMessageProvider.notifier).cancelEditing();
-    // Восстанавливаем оригинальный текст
+    setState(() => _isEditing = false);
     _textController.text = widget.message.content;
   }
 
-  /// Сохранение изменений
   Future<void> _saveEditing() async {
-    ref.read(chatMessageProvider.notifier).saveEditing();
+    setState(() => _isEditing = false);
     await _handleEditMessage(_textController.text);
   }
 
-  /// Сохранение и отправка
   Future<void> _saveAndSend() async {
-    ref.read(chatMessageProvider.notifier).saveEditing();
+    setState(() => _isEditing = false);
     await _handleEditAndSend(_textController.text);
   }
 
@@ -954,11 +948,9 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
     // Обновляем текст в контроллере
     _textController.text = newContent;
 
-    // Выходим из режима редактирования
-    ref.read(chatMessageProvider.notifier).saveEditing();
+    setState(() => _isEditing = false);
   }
 
-  /// Обработка редактирования и отправки сообщения
   Future<void> _handleEditAndSend(String newContent) async {
     // Уведомляем родительский компонент об изменении и необходимости regeneration
     // Вся логика (сохранение, удаление ответов, генерация) будет в ChatScreen
@@ -972,8 +964,7 @@ class _ChatMessageState extends ConsumerState<ChatMessage>
     // Обновляем текст в контроллере
     _textController.text = newContent;
 
-    // Выходим из режима редактирования
-    ref.read(chatMessageProvider.notifier).saveEditing();
+    setState(() => _isEditing = false);
   }
 }
 

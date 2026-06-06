@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/models/openrouter_model.dart';
+import 'package:chatorai/models/chat_model.dart';
 
 class ModelFeaturesWidget extends StatelessWidget {
-  final OpenRouterModel model;
+  final ChatModel model;
 
   const ModelFeaturesWidget({super.key, required this.model});
 

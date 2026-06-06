@@ -43,7 +43,7 @@ class ModelCapabilities {
   };
 }
 
-class OpenRouterModel {
+class ChatModel {
   final String id;
   final String name;
   final String description;
@@ -53,7 +53,7 @@ class OpenRouterModel {
   final int? contextLength;
   final ModelCapabilities capabilities;
 
-  const OpenRouterModel({
+  const ChatModel({
     required this.id,
     required this.name,
     required this.description,
@@ -68,7 +68,7 @@ class OpenRouterModel {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other.runtimeType != runtimeType) return false;
-    return other is OpenRouterModel &&
+    return other is ChatModel &&
         other.id == id &&
         other.name == name &&
         other.description == description &&
@@ -93,7 +93,7 @@ class OpenRouterModel {
     );
   }
 
-  factory OpenRouterModel.fromJson(Map<String, dynamic> json) {
+  factory ChatModel.fromJson(Map<String, dynamic> json) {
     Map<String, dynamic> modelData;
     if (json.containsKey('data')) {
       modelData = json['data'] is Map<String, dynamic> ? json['data'] : json;
@@ -163,7 +163,7 @@ class OpenRouterModel {
       parsedContextLength = null;
     }
 
-    return OpenRouterModel(
+    return ChatModel(
       id: modelData['id'] ?? '',
       name: modelName,
       description: description,

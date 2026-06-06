@@ -343,5 +343,9 @@
     "welcomeGreeting12": "Введи питання. Решта — моя робота.",
     "versionLabel": "Версія:",
     "addToFavorites": "Додати в обране",
-    "removeFromFavorites": "Видалити з обраного"
+"removeFromFavorites": "Видалити з обраного",
+"permissionDialogPatterns": "Запит доступу до:",
+"permissionOnce": "Один раз",
+"permissionAlways": "Завжди дозволяти",
+"permissionReject": "Відхилити"
   }

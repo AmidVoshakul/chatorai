@@ -1138,4 +1138,32 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get versionLabel => 'Версія:';
+
+  @override
+  String get permissionDialogPatterns => 'Запит доступу до:';
+
+  @override
+  String get permissionOnce => 'Один раз';
+
+  @override
+  String get permissionAlways => 'Завжди дозволяти';
+
+  @override
+  String get permissionReject => 'Відхилити';
+
+  @override
+  String get providers => 'Providers';
+
+  @override
+  String get manageProviders => 'Manage AI providers';
+
+  @override
+  String get openaiCompatibleApi => 'AI Providers';
+
+  @override
+  String get openaiCompatibleApiDescription =>
+      'Configure AI providers and manage their API keys and models';
+
+  @override
+  String get addProvider => 'Add Provider';
 }

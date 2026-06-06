@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers/chat/models_provider.dart';
-import 'package:chatorai/models/openrouter_model.dart';
+import 'package:chatorai/models/chat_model.dart';
 import 'package:chatorai/widgets/models/model_card_widget.dart';
 import 'package:chatorai/widgets/models/model_details_dialog_widget.dart';
 import 'package:chatorai/widgets/models/models_empty_state_widget.dart';
@@ -16,7 +16,7 @@ import 'package:chatorai/widgets/models/models_empty_state_widget.dart';
 // ===========================================================================
 
 class ModelsScreen extends ConsumerWidget {
-  final Function(String, OpenRouterModel?)? onModelSelected;
+  final Function(String, ChatModel?)? onModelSelected;
   final String? currentModel;
 
   const ModelsScreen({super.key, this.onModelSelected, this.currentModel});

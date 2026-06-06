@@ -1092,4 +1092,32 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get versionLabel => 'الإصدار:';
+
+  @override
+  String get permissionDialogPatterns => 'طلب الوصول إلى:';
+
+  @override
+  String get permissionOnce => 'مرة واحدة';
+
+  @override
+  String get permissionAlways => 'السماح دائماً';
+
+  @override
+  String get permissionReject => 'رفض';
+
+  @override
+  String get providers => 'Providers';
+
+  @override
+  String get manageProviders => 'Manage AI providers';
+
+  @override
+  String get openaiCompatibleApi => 'AI Providers';
+
+  @override
+  String get openaiCompatibleApiDescription =>
+      'Configure AI providers and manage their API keys and models';
+
+  @override
+  String get addProvider => 'Add Provider';
 }

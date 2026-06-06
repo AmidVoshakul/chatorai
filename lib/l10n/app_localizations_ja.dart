@@ -1074,4 +1074,32 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get versionLabel => 'バージョン:';
+
+  @override
+  String get permissionDialogPatterns => 'アクセス要求:';
+
+  @override
+  String get permissionOnce => '一度のみ';
+
+  @override
+  String get permissionAlways => '常に許可';
+
+  @override
+  String get permissionReject => '拒否';
+
+  @override
+  String get providers => 'Providers';
+
+  @override
+  String get manageProviders => 'Manage AI providers';
+
+  @override
+  String get openaiCompatibleApi => 'AI Providers';
+
+  @override
+  String get openaiCompatibleApiDescription =>
+      'Configure AI providers and manage their API keys and models';
+
+  @override
+  String get addProvider => 'Add Provider';
 }

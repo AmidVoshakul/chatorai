@@ -1133,4 +1133,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get versionLabel => 'Version:';
+
+  @override
+  String get permissionDialogPatterns => 'Requesting access to:';
+
+  @override
+  String get permissionOnce => 'Once';
+
+  @override
+  String get permissionAlways => 'Always allow';
+
+  @override
+  String get permissionReject => 'Reject';
+
+  @override
+  String get providers => 'Providers';
+
+  @override
+  String get manageProviders => 'Manage AI providers';
+
+  @override
+  String get openaiCompatibleApi => 'AI Providers';
+
+  @override
+  String get openaiCompatibleApiDescription =>
+      'Configure AI providers and manage their API keys and models';
+
+  @override
+  String get addProvider => 'Add Provider';
 }

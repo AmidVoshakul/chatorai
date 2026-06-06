@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:chatorai/themes/app_theme.dart' show ChatoraiColors;
 import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/models/openrouter_model.dart';
+import 'package:chatorai/models/chat_model.dart';
 import 'package:chatorai/widgets/models/model_features_widget.dart';
 
 // ===========================================================================
@@ -9,7 +9,7 @@ import 'package:chatorai/widgets/models/model_features_widget.dart';
 // ===========================================================================
 
 class ModelCardWidget extends StatelessWidget {
-  final OpenRouterModel model;
+  final ChatModel model;
   final bool isSelected;
   final bool isFavorite;
   final VoidCallback onTap;

@@ -1068,4 +1068,32 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get versionLabel => '版本:';
+
+  @override
+  String get permissionDialogPatterns => '请求访问:';
+
+  @override
+  String get permissionOnce => '仅一次';
+
+  @override
+  String get permissionAlways => '始终允许';
+
+  @override
+  String get permissionReject => '拒绝';
+
+  @override
+  String get providers => 'Providers';
+
+  @override
+  String get manageProviders => 'Manage AI providers';
+
+  @override
+  String get openaiCompatibleApi => 'AI Providers';
+
+  @override
+  String get openaiCompatibleApiDescription =>
+      'Configure AI providers and manage their API keys and models';
+
+  @override
+  String get addProvider => 'Add Provider';
 }

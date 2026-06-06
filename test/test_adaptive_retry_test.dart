@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/models/openrouter_model.dart';
+import 'package:chatorai/models/chat_model.dart';
 import 'package:chatorai/services/chat_ai_service.dart';
 
 /// Fake client that simulates 400 errors when maxTokens > threshold.
@@ -48,15 +48,15 @@ class FakeRetryClient {
 
 /// Minimal ThemeProvider stub for unit tests (only what the retry logic needs).
 class FakeThemeProvider {
-  final Map<String, OpenRouterModel> _models;
+  final Map<String, ChatModel> _models;
 
   FakeThemeProvider(this._models);
 
-  OpenRouterModel? getModelById(String id) => _models[id];
+  ChatModel? getModelById(String id) => _models[id];
 }
 
-/// Helper to build a fake OpenRouterModel with a given context length.
-OpenRouterModel fakeModel(String id, int contextLength) => OpenRouterModel(
+/// Helper to build a fake ChatModel with a given context length.
+ChatModel fakeModel(String id, int contextLength) => ChatModel(
   id: id,
   name: id,
   description: 'fake',

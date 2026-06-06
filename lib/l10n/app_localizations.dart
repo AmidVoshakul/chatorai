@@ -2163,6 +2163,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Version:'**
   String get versionLabel;
+
+  /// No description provided for @permissionDialogPatterns.
+  ///
+  /// In en, this message translates to:
+  /// **'Requesting access to:'**
+  String get permissionDialogPatterns;
+
+  /// No description provided for @permissionOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'Once'**
+  String get permissionOnce;
+
+  /// No description provided for @permissionAlways.
+  ///
+  /// In en, this message translates to:
+  /// **'Always allow'**
+  String get permissionAlways;
+
+  /// No description provided for @permissionReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get permissionReject;
+
+  /// No description provided for @providers.
+  ///
+  /// In en, this message translates to:
+  /// **'Providers'**
+  String get providers;
+
+  /// No description provided for @manageProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage AI providers'**
+  String get manageProviders;
+
+  /// No description provided for @openaiCompatibleApi.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Providers'**
+  String get openaiCompatibleApi;
+
+  /// No description provided for @openaiCompatibleApiDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure AI providers and manage their API keys and models'**
+  String get openaiCompatibleApiDescription;
+
+  /// No description provided for @addProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Provider'**
+  String get addProvider;
 }
 
 class _AppLocalizationsDelegate

@@ -1,7 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:chatorai/models/openrouter_model.dart';
+import 'package:chatorai/models/chat_model.dart';
+import 'package:chatorai/providers/provider_settings_provider.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/utils/model_utils.dart';
 
@@ -11,9 +12,9 @@ const _defaultBaseUrl = 'https://openrouter.ai/api/v1';
 const _prefBaseUrl = 'openrouter_base_url';
 
 class ModelState {
-  final List<OpenRouterModel> availableModels;
+  final List<ChatModel> availableModels;
   final String selectedModelId;
-  final OpenRouterModel? selectedModelObject;
+  final ChatModel? selectedModelObject;
   final List<String> favoriteModelIds;
   final bool modelsLoaded;
   final bool isLoadingModels;
@@ -29,14 +30,14 @@ class ModelState {
     this.isLoading = true,
   });
 
-  List<OpenRouterModel> get favoriteModels => availableModels
+  List<ChatModel> get favoriteModels => availableModels
       .where((model) => favoriteModelIds.contains(model.id))
       .toList();
 
   ModelState copyWith({
-    List<OpenRouterModel>? availableModels,
+    List<ChatModel>? availableModels,
     String? selectedModelId,
-    OpenRouterModel? selectedModelObject,
+    ChatModel? selectedModelObject,
     List<String>? favoriteModelIds,
     bool? modelsLoaded,
     bool? isLoadingModels,
@@ -71,6 +72,15 @@ class ModelNotifier extends Notifier<ModelState> {
   }
 
   Future<String?> _getApiKey() async {
+    // Try provider settings first (new system)
+    try {
+      final providerSettings = ref.read(providerSettingsProvider);
+      final openRouter = providerSettings.getSettings('openrouter');
+      if (openRouter.apiKey != null && openRouter.apiKey!.isNotEmpty) {
+        return openRouter.apiKey;
+      }
+    } catch (_) {}
+    // Fallback to legacy SharedPreferences key
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_apiKeyPref);
   }
@@ -106,17 +116,28 @@ class ModelNotifier extends Notifier<ModelState> {
     }
   }
 
-  Future<List<OpenRouterModel>> _fetchModels() async {
+  Future<List<ChatModel>> _fetchModels() async {
     final apiKey = await _getApiKey();
     if (apiKey == null || apiKey.isEmpty) {
-      throw Exception('OpenRouter API key not configured');
+      throw StateError('OpenRouter API key not configured');
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final baseUrl = prefs.getString(_prefBaseUrl)?.trim();
-    final effectiveBaseUrl = (baseUrl == null || baseUrl.isEmpty)
-        ? _defaultBaseUrl
-        : baseUrl;
+    String? effectiveBaseUrl;
+    // Try provider settings first (new system)
+    try {
+      final providerSettings = ref.read(providerSettingsProvider);
+      final openRouter = providerSettings.getSettings('openrouter');
+      if (openRouter.baseUrl != null && openRouter.baseUrl!.isNotEmpty) {
+        effectiveBaseUrl = openRouter.baseUrl!.trim();
+      }
+    } catch (_) {}
+    if (effectiveBaseUrl == null || effectiveBaseUrl.isEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      final baseUrl = prefs.getString(_prefBaseUrl)?.trim();
+      effectiveBaseUrl = (baseUrl == null || baseUrl.isEmpty)
+          ? _defaultBaseUrl
+          : baseUrl;
+    }
 
     final dio = Dio(
       BaseOptions(
@@ -134,17 +155,17 @@ class ModelNotifier extends Notifier<ModelState> {
     final response = await dio.get('/models');
     final data = response.data;
 
-    List<OpenRouterModel> models;
+    List<ChatModel> models;
     if (data is Map && data.containsKey('data')) {
       final modelsData = data['data'] is List
           ? data['data'] as List
           : [data['data']];
       models = modelsData
-          .map((m) => OpenRouterModel.fromJson(m as Map<String, dynamic>))
+          .map((m) => ChatModel.fromJson(m as Map<String, dynamic>))
           .toList();
     } else if (data is List) {
       models = data
-          .map((m) => OpenRouterModel.fromJson(m as Map<String, dynamic>))
+          .map((m) => ChatModel.fromJson(m as Map<String, dynamic>))
           .toList();
     } else {
       throw Exception('Unexpected API response format');
@@ -162,10 +183,11 @@ class ModelNotifier extends Notifier<ModelState> {
       _logger.logInfo('[ModelNotifier] Loading models from OpenRouter...');
 
       final models = await _fetchModels();
-      final availableModels = ModelUtils.deduplicateModels(models);
+      var availableModels = ModelUtils.deduplicateModels(models);
+      availableModels = _filterByProviderSettings(availableModels);
 
       String selectedModelId = state.selectedModelId;
-      OpenRouterModel? selectedModelObject;
+      ChatModel? selectedModelObject;
 
       if (selectedModelId.isEmpty && availableModels.isNotEmpty) {
         selectedModelId = availableModels.first.id;
@@ -201,9 +223,10 @@ class ModelNotifier extends Notifier<ModelState> {
 
       try {
         final retryModels = await _fetchModels();
-        final availableModels = ModelUtils.deduplicateModels(retryModels);
+        var availableModels = ModelUtils.deduplicateModels(retryModels);
+        availableModels = _filterByProviderSettings(availableModels);
 
-        OpenRouterModel? selectedModelObject;
+        ChatModel? selectedModelObject;
         if (availableModels.isNotEmpty) {
           try {
             selectedModelObject = availableModels.firstWhere(
@@ -227,6 +250,31 @@ class ModelNotifier extends Notifier<ModelState> {
         state = state.copyWith(modelsLoaded: true, isLoadingModels: false);
       }
     }
+  }
+
+  List<ChatModel> _filterByProviderSettings(List<ChatModel> models) {
+    try {
+      final providerSettings = ref.read(providerSettingsProvider);
+      final selectedIds = <String>{};
+      for (final entry in providerSettings.providers.entries) {
+        if (!entry.value.enabled) continue;
+        selectedIds.addAll(entry.value.selectedModelIds);
+      }
+      if (selectedIds.isEmpty) return models;
+      return models.where((m) => selectedIds.contains(m.id)).toList();
+    } catch (_) {
+      return models;
+    }
+  }
+
+  /// Reset all model state and force a fresh reload.
+  Future<void> resetAndReloadModels() async {
+    state = state.copyWith(
+      modelsLoaded: false,
+      availableModels: [],
+      selectedModelObject: null,
+    );
+    await _loadModelsAsync();
   }
 
   Future<void> reloadModels() async {
@@ -253,7 +301,7 @@ class ModelNotifier extends Notifier<ModelState> {
     }
   }
 
-  OpenRouterModel? getModelById(String modelId) {
+  ChatModel? getModelById(String modelId) {
     try {
       return state.availableModels.firstWhere((model) => model.id == modelId);
     } catch (e) {

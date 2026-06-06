@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:chatorai/models/openrouter_model.dart';
+import 'package:chatorai/models/chat_model.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/screens/models_screen.dart';
 import 'package:chatorai/themes/app_theme.dart';
@@ -11,10 +11,10 @@ import 'package:chatorai/constants/chat_constants.dart';
 
 class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String selectedModel;
-  final OpenRouterModel? selectedModelObject;
+  final ChatModel? selectedModelObject;
   final bool Function() hasHeadings;
   final VoidCallback onToggleNavigator;
-  final Function(String modelId, OpenRouterModel? modelObject) onModelSelected;
+  final Function(String modelId, ChatModel? modelObject) onModelSelected;
   final VoidCallback? onMenuPressed;
 
   const ChatAppBar({
@@ -90,10 +90,9 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               context,
               MaterialPageRoute(
                 builder: (context) => ModelsScreen(
-                  onModelSelected:
-                      (String modelId, OpenRouterModel? modelObject) {
-                        onModelSelected(modelId, modelObject);
-                      },
+                  onModelSelected: (String modelId, ChatModel? modelObject) {
+                    onModelSelected(modelId, modelObject);
+                  },
                   currentModel: selectedModel,
                 ),
               ),

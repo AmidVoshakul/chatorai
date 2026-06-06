@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:chatorai/themes/app_theme.dart' show ChatoraiColors;
 import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/models/openrouter_model.dart';
+import 'package:chatorai/models/chat_model.dart';
 
 class ModelDetailsDialogWidget extends StatelessWidget {
-  final OpenRouterModel model;
+  final ChatModel model;
 
   const ModelDetailsDialogWidget({super.key, required this.model});
 
@@ -233,7 +233,7 @@ class ModelDetailsDialogWidget extends StatelessWidget {
   }
 }
 
-void showModelDetailsDialog(BuildContext context, OpenRouterModel model) {
+void showModelDetailsDialog(BuildContext context, ChatModel model) {
   showDialog(
     context: context,
     builder: (BuildContext context) => ModelDetailsDialogWidget(model: model),

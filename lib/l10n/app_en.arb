@@ -345,5 +345,14 @@
     "welcomeGreeting12": "Enter a question. The rest is my job.",
     "versionLabel": "Version:",
     "addToFavorites": "Add to favorites",
-    "removeFromFavorites": "Remove from favorites"
-  }
+"removeFromFavorites": "Remove from favorites",
+"permissionDialogPatterns": "Requesting access to:",
+"permissionOnce": "Once",
+"permissionAlways": "Always allow",
+"permissionReject": "Reject",
+"providers": "Providers",
+"manageProviders": "Manage AI providers",
+"openaiCompatibleApi": "AI Providers",
+"openaiCompatibleApiDescription": "Configure AI providers and manage their API keys and models",
+"addProvider": "Add Provider"
+}

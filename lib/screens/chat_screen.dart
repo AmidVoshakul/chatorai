@@ -3,23 +3,27 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/core/context/compaction_service.dart';
 import 'package:chatorai/providers.dart'
     show
         themeProvider,
         modelProvider,
         modelSettingsProvider,
-        streamingContentProvider,
+        streamingMessageProvider,
         chatListProvider,
         chatStorageServiceProvider,
         chatAiServiceProvider,
         currentChatIdProvider,
         currentChatProvider,
-        chatScreenProvider;
+        chatScreenProvider,
+        toolRegistryProvider,
+        currentAgentProvider;
+import 'package:chatorai/agents/agent_registry.dart';
 import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/models/chat_models.dart';
 import 'package:chatorai/models/model_settings.dart';
-import 'package:chatorai/models/openrouter_model.dart';
+import 'package:chatorai/models/chat_model.dart';
 import 'package:chatorai/widgets/sidebar/sidebar.dart';
 import 'package:chatorai/widgets/chat/chat_input.dart';
 import 'package:chatorai/widgets/chat/chat_messages.dart';
@@ -28,7 +32,6 @@ import 'package:chatorai/widgets/chat/welcome_questions_data.dart';
 import 'package:chatorai/widgets/chat/chat_app_bar.dart';
 import 'package:chatorai/widgets/chat/speech_overlay.dart';
 import 'package:chatorai/services/speech_to_text_service.dart';
-import 'package:chatorai/screens/models_screen.dart';
 import 'package:chatorai/utils/chat_scroll_utils.dart';
 import 'package:chatorai/constants/chat_constants.dart';
 import 'package:chatorai/utils/chat_error_utils.dart';
@@ -248,7 +251,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   String get selectedModelId => ref.watch(modelProvider).selectedModelId;
 
-  OpenRouterModel? get selectedModelObject =>
+  ChatModel? get selectedModelObject =>
       ref.watch(modelProvider).selectedModelObject;
 
   // ===========================================================================
@@ -346,33 +349,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void _handleSendMessage(MessageData messageData) async {
     ref.read(chatScreenProvider.notifier).hideAllSuggestions();
 
-    // Optional: Keep sidebar state as is
-    // final screenWidth = _cachedScreenWidth;
-    // final uiState = ref.read(chatScreenProvider);
-    // if (screenWidth < ChatScreenConstants.mobileBreakpoint) {
-    //   if (!uiState.isSidebarCollapsed) {
-    //     ref.read(chatScreenProvider.notifier).setSidebarCollapsed(true);
-    //   }
-    // } else {
-    //   if (uiState.isSidebarCollapsed) {
-    //     ref.read(chatScreenProvider.notifier).setSidebarCollapsed(false);
-    //   }
-    // }
-
     if (currentChat == null) {
-      // Create new chat and get the returned chat directly
       final newChat = await ref.read(chatListProvider.notifier).createNewChat();
-      // Set current chat ID immediately
       ref.read(currentChatIdProvider.notifier).setChatId(newChat.id);
-      // Use the newChat that was returned from createNewChat
-      await _handleAddMessagesAndStream(newChat, messageData.text);
+      await _handleAddMessagesAndStream(
+        newChat,
+        messageData.text,
+        delegateAgentId: messageData.delegateAgentId,
+      );
       return;
     }
 
-    await _handleAddMessagesAndStream(currentChat!, messageData.text);
+    await _handleAddMessagesAndStream(
+      currentChat!,
+      messageData.text,
+      delegateAgentId: messageData.delegateAgentId,
+    );
   }
 
-  Future<void> _handleAddMessagesAndStream(Chat chat, String text) async {
+  Future<void> _handleAddMessagesAndStream(
+    Chat chat,
+    String text, {
+    String? delegateAgentId,
+  }) async {
     final userMessage = _createUserMessage(
       text,
       base64Data: null,
@@ -386,23 +385,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       return;
     }
 
+    // Save empty assistant message to storage for crash recovery,
+    // but do NOT add it to chatListProvider — streaming bubble handles display.
     final assistantMessage = _createAssistantMessage();
-    final allMessages = [...chatFromStorage.messages, assistantMessage];
-    final chatWithBoth = chatFromStorage.copyWith(
-      messages: allMessages,
-      updatedAt: DateTime.now(),
+    await _chatStorageService.addMessageToChat(
+      chatFromStorage.id,
+      assistantMessage,
     );
 
-    _chatStorageService.addMessageToChat(chatFromStorage.id, assistantMessage);
-
-    // Update chat list provider with the chat that includes assistant message
-    ref.read(chatListProvider.notifier).updateChat(chatWithBoth);
+    // Only show user message in the list; streaming bubble renders separately.
+    ref.read(chatListProvider.notifier).updateChat(chatFromStorage);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _chatScrollUtils?.scrollToIndicator();
     });
 
-    _sendToAI(text, chatWithBoth);
+    _sendToAI(
+      text,
+      providedChat: chatFromStorage,
+      delegateAgentId: delegateAgentId,
+    );
   }
 
   // ===========================================================================
@@ -429,6 +431,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     String content = '',
     bool isComplete = false,
     String? model,
+    String? reasoning,
   }) {
     return Message(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -437,6 +440,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       timestamp: DateTime.now(),
       isComplete: isComplete,
       model: model ?? selectedModelId,
+      reasoning: reasoning,
     );
   }
 
@@ -497,19 +501,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       _chatScrollUtils?.scrollToIndicator();
     });
 
-    _sendToAI(userMessage.content, chatWithNewPlaceholder);
+    _sendToAI(userMessage.content, providedChat: chatWithNewPlaceholder);
   }
 
   // ===========================================================================
   // AI STREAMING METHODS
   // ===========================================================================
 
-  Future<void> _sendToAI(String userMessage, [Chat? providedChat]) async {
+  Future<void> _sendToAI(
+    String userMessage, {
+    Chat? providedChat,
+    String? delegateAgentId,
+  }) async {
     final chat = providedChat ?? currentChat;
     if (chat == null) return;
 
     try {
-      await _streamAIResponse(chat);
+      await _streamAIResponse(chat, delegateAgentId: delegateAgentId);
     } catch (e) {
       final errorMessage = Message(
         role: MessageRole.assistant,
@@ -533,9 +541,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
   }
 
-  Future<void> _streamAIResponse(Chat chat) async {
-    // Limit message history to last N messages for performance
-    // LLM doesn't need the entire conversation history
+  Future<void> _streamAIResponse(Chat chat, {String? delegateAgentId}) async {
     const int maxHistoryMessages = 20;
     final recentMessages = chat.messages.length > maxHistoryMessages
         ? chat.messages.sublist(chat.messages.length - maxHistoryMessages)
@@ -562,8 +568,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final modelSettingsNotifier = ref.read(modelSettingsProvider.notifier);
     final settings = await modelSettingsNotifier.getSettings(selectedModelId);
 
-    if (settings.systemPrompt != null && messages.isNotEmpty) {
-      messages.insert(0, {'role': 'system', 'content': settings.systemPrompt!});
+    // Agent delegation: override system prompt with agent's prompt
+    if (delegateAgentId != null) {
+      final agent = AgentRegistry().get(delegateAgentId);
+      if (agent != null && agent.systemPrompt != null) {
+        messages.insert(0, {'role': 'system', 'content': agent.systemPrompt!});
+      }
+    } else {
+      final currentAgent = ref.read(currentAgentProvider);
+      final isDefault = currentAgent.id == 'build';
+      if (!isDefault && currentAgent.systemPrompt != null) {
+        messages.insert(0, {
+          'role': 'system',
+          'content': currentAgent.systemPrompt!,
+        });
+      } else if (settings.systemPrompt != null && messages.isNotEmpty) {
+        messages.insert(0, {
+          'role': 'system',
+          'content': settings.systemPrompt!,
+        });
+      }
     }
 
     await _handleStreamingResponse(
@@ -587,7 +611,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     required ModelSettings modelSettings,
   }) async {
     ref.read(chatScreenProvider.notifier).setStreaming(true);
-    ref.read(streamingContentProvider.notifier).startStreaming(chat.id);
+    ref.read(streamingMessageProvider.notifier).startStreaming(chat.id);
     final StringBuffer pendingContent = StringBuffer();
     final StringBuffer fullContent = StringBuffer();
     final StringBuffer pendingReasoning = StringBuffer();
@@ -624,16 +648,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           isWordBoundary(pendingReasoningStr);
       if (shouldUpdate) {
         if (mounted && chat.messages.isNotEmpty) {
+          if (pendingContentStr.isNotEmpty) {
+            ref
+                .read(streamingMessageProvider.notifier)
+                .onChunk(pendingContentStr);
+          }
+          if (pendingReasoningStr.isNotEmpty) {
+            ref
+                .read(streamingMessageProvider.notifier)
+                .onReasoning(pendingReasoningStr);
+          }
           fullContent.write(pendingContentStr);
           fullReasoning.write(pendingReasoningStr);
-          ref
-              .read(streamingContentProvider.notifier)
-              .updateContent(
-                fullContent.toString(),
-                reasoning: fullReasoning.isNotEmpty
-                    ? fullReasoning.toString()
-                    : null,
-              );
           pendingContent.clear();
           pendingReasoning.clear();
           lastUpdateTime = now;
@@ -644,20 +670,76 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     void flushPendingUpdates() {
       final pendingContentStr = pendingContent.toString();
       final pendingReasoningStr = pendingReasoning.toString();
-      fullContent.write(pendingContentStr);
-      fullReasoning.write(pendingReasoningStr);
+      if (pendingContentStr.isNotEmpty) {
+        ref.read(streamingMessageProvider.notifier).onChunk(pendingContentStr);
+        fullContent.write(pendingContentStr);
+      }
+      if (pendingReasoningStr.isNotEmpty) {
+        ref
+            .read(streamingMessageProvider.notifier)
+            .onReasoning(pendingReasoningStr);
+        fullReasoning.write(pendingReasoningStr);
+      }
       pendingContent.clear();
       pendingReasoning.clear();
-      throttleUpdate(forceUpdate: true);
+      lastUpdateTime = DateTime.now();
     }
 
+    final toolRegistry = await ref.read(toolRegistryProvider.future);
     final aiService = ref.read(chatAiServiceProvider);
     final attemptMsgs = aiService.sanitizeMessages(messages);
+
+    if (aiService.isOverflow && attemptMsgs.length > 4) {
+      final compactionService = const CompactionService();
+      final compactedApiMessages = await compactionService.compact(
+        messages: attemptMsgs,
+        aiService: aiService,
+        model: modelId,
+      );
+      if (compactedApiMessages.isNotEmpty) {
+        attemptMsgs.clear();
+        attemptMsgs.addAll(compactedApiMessages);
+        final chatMessages = compactedApiMessages.map((m) {
+          final roleName = m['role'] as String? ?? 'system';
+          final content = m['content'] as String? ?? '';
+          return Message(
+            role: MessageRole.values.firstWhere(
+              (r) => r.name == roleName,
+              orElse: () => MessageRole.system,
+            ),
+            content: content,
+            timestamp: DateTime.now(),
+            isComplete: true,
+          );
+        }).toList();
+        final newChat = chat.copyWith(
+          messages: chatMessages,
+          updatedAt: DateTime.now(),
+        );
+        ref.read(chatListProvider.notifier).updateChat(newChat);
+      }
+    }
     try {
       await aiService.streamChatCompletion(
         messages: attemptMsgs,
         model: modelId,
         temperature: modelSettings.temperature,
+        tools: toolRegistry.toSDKTools(),
+        onToolStart: (toolCallId, toolName, input) {
+          ref
+              .read(streamingMessageProvider.notifier)
+              .onToolStart(toolCallId, toolName, input);
+        },
+        onToolEnd: (toolCallId, toolName, result) {
+          ref
+              .read(streamingMessageProvider.notifier)
+              .onToolEnd(toolCallId, toolName, result.toString());
+        },
+        onToolError: (toolCallId, toolName, error) {
+          ref
+              .read(streamingMessageProvider.notifier)
+              .onToolError(toolCallId, toolName, error.toString());
+        },
         onChunk: (content) {
           if (content.isEmpty) return;
           pendingContent.write(content);
@@ -670,44 +752,73 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         },
         onCompletion: (fullContent) async {
           flushPendingUpdates();
-          if (mounted && chat.messages.isNotEmpty) {
-            final lastMessage = chat.messages.last;
-            final completedMessage = lastMessage.copyWith(
-              content: fullContent.toString(),
-              reasoning: fullReasoning.isNotEmpty
-                  ? fullReasoning.toString()
-                  : null,
-              isComplete: true,
-            );
-            final newMessages = List<Message>.from(chat.messages);
-            newMessages[newMessages.length - 1] = completedMessage;
+          if (mounted) {
+            final content = fullContent.toString();
+            final reasoning = fullReasoning.isNotEmpty
+                ? fullReasoning.toString()
+                : null;
+
+            // If the last message is an incomplete assistant (continuation),
+            // update it in-place; otherwise create a new message.
+            final lastIsIncomplete =
+                chat.messages.isNotEmpty &&
+                chat.messages.last.role == MessageRole.assistant &&
+                !chat.messages.last.isComplete;
+
+            Message completedMessage;
+            List<Message> newMessages;
+
+            if (lastIsIncomplete) {
+              final lastMsg = chat.messages.last;
+              completedMessage = lastMsg.copyWith(
+                content: content,
+                reasoning: reasoning,
+                isComplete: true,
+              );
+              newMessages = [
+                for (int i = 0; i < chat.messages.length - 1; i++)
+                  chat.messages[i],
+                completedMessage,
+              ];
+            } else {
+              completedMessage = _createAssistantMessage(
+                content: content,
+                reasoning: reasoning,
+                isComplete: true,
+              );
+              newMessages = [...chat.messages, completedMessage];
+            }
+
             final newChat = chat.copyWith(
               messages: newMessages,
               updatedAt: DateTime.now(),
             );
             ref.read(chatListProvider.notifier).updateChat(newChat);
             ref.read(chatScreenProvider.notifier).setStreaming(false);
-            ref.read(streamingContentProvider.notifier).flushAndStop();
+            ref.read(streamingMessageProvider.notifier).flushAndStop();
+
             await _chatStorageService.updateMessageInChat(
               newChat.id,
               completedMessage.id,
               completedMessage,
             );
+
             _showContinuationSuggestions(completedMessage);
           }
         },
       );
     } catch (e) {
       ref.read(chatScreenProvider.notifier).setStreaming(false);
-      ref.read(streamingContentProvider.notifier).reset();
+      ref.read(streamingMessageProvider.notifier).reset();
       await _handleStreamingError(e);
     }
   }
 
   Future<void> _handleStreamingError(Object error) async {
     final errorMessage = ChatErrorUtils.formatError(error);
-    if (currentChat != null && currentChat!.messages.isNotEmpty) {
-      final lastMessage = currentChat!.messages.last;
+    final chat = currentChat;
+    if (chat != null && chat.messages.isNotEmpty) {
+      final lastMessage = chat.messages.last;
       if (lastMessage.role == MessageRole.assistant) {
         final errorResponseMessage = lastMessage.copyWith(
           content: errorMessage,
@@ -715,21 +826,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           isError: true,
         );
         await _chatStorageService.updateMessageInChat(
-          currentChat!.id,
+          chat.id,
           errorResponseMessage.id,
           errorResponseMessage,
         );
         final newMessages = [
-          ...currentChat!.messages.take(currentChat!.messages.length - 1),
+          ...chat.messages.take(chat.messages.length - 1),
           errorResponseMessage,
         ];
         ref
             .read(chatListProvider.notifier)
             .updateChat(
-              currentChat!.copyWith(
-                messages: newMessages,
-                updatedAt: DateTime.now(),
-              ),
+              chat.copyWith(messages: newMessages, updatedAt: DateTime.now()),
             );
       }
     }
@@ -746,7 +854,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     // Update UI state
     ref.read(chatScreenProvider.notifier).setStreaming(false);
-    ref.read(streamingContentProvider.notifier).reset();
+    ref.read(streamingMessageProvider.notifier).reset();
   }
 
   // ===========================================================================
@@ -856,7 +964,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       _chatScrollUtils?.scrollToIndicator();
     });
 
-    _sendToAI(newContent, chatWithAssistant);
+    _sendToAI(newContent, providedChat: chatWithAssistant);
 
     if (!mounted) return;
     final localizations = AppLocalizations.of(context);
@@ -993,9 +1101,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       continuationMessage,
     );
     final chatFromStorage = await _chatStorageService.getChat(currentChat!.id);
-    if (chatFromStorage != null) {
-      ref.read(chatListProvider.notifier).updateChat(chatFromStorage);
-    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _chatScrollUtils?.scrollToIndicator();
@@ -1039,19 +1144,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   void _updateSelectedModel(String modelId, dynamic modelObject) {
     ref.read(modelProvider.notifier).setSelectedModel(modelId);
-  }
-
-  // Unused but kept for manual model selection from ChatAppBar if needed
-  void _showModelSelection() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ModelsScreen(
-          onModelSelected: _updateSelectedModel,
-          currentModel: selectedModelId,
-        ),
-      ),
-    );
   }
 
   bool _hasHeadings() {
