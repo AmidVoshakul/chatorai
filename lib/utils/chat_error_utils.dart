@@ -1,7 +1,11 @@
 import 'dart:convert';
 
+import 'package:chatorai/core/error/error_classifier.dart';
+
 class ChatErrorUtils {
   ChatErrorUtils._();
+
+  static const _errorClassifier = ErrorClassifier();
 
   static const List<String> _errorPrefixes = [
     'DioException [bad response]: ',
@@ -103,17 +107,14 @@ class ChatErrorUtils {
   }
 
   static bool isRateLimitError(Object error) {
-    final err = error.toString();
-    return err.contains('429') ||
-        err.contains('Rate limit') ||
-        err.contains('bad response');
+    return _errorClassifier.classify(error) is RateLimitError;
   }
 
   static bool isBadRequestError(Object error) {
-    final err = error.toString();
-    return err.contains('400') ||
-        err.toLowerCase().contains('bad response') ||
-        err.toLowerCase().contains('client error') ||
-        err.toLowerCase().contains('bad request');
+    final classified = _errorClassifier.classify(error);
+    return classified is ServerError &&
+        classified.statusCode != null &&
+        classified.statusCode! >= 400 &&
+        classified.statusCode! < 500;
   }
 }
