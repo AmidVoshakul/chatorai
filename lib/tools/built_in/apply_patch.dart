@@ -73,8 +73,9 @@ ToolDef createApplyPatchTool() {
       for (final line in hunkLines) {
         if (line.startsWith('---') ||
             line.startsWith('+++') ||
-            line.startsWith('@@'))
+            line.startsWith('@@')) {
           break;
+        }
         if (line.startsWith(' ') || line.startsWith('-')) {
           final expectedLine = line.isNotEmpty ? line.substring(1) : '';
           if (currentFileIdx < 0 || currentFileIdx >= originalLines.length) {
@@ -100,8 +101,9 @@ ToolDef createApplyPatchTool() {
       for (final line in hunkLines) {
         if (line.startsWith('---') ||
             line.startsWith('+++') ||
-            line.startsWith('@@'))
+            line.startsWith('@@')) {
           break;
+        }
         if (line.startsWith('-') || line.startsWith('\\')) {
           continue;
         }

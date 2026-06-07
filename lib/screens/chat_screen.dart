@@ -728,7 +728,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         onToolStart: (toolCallId, toolName, input) {
           ref
               .read(streamingMessageProvider.notifier)
-              .onToolStart(toolCallId, toolName, input);
+              .onToolCall(toolCallId, toolName, input);
         },
         onToolEnd: (toolCallId, toolName, result) {
           ref
@@ -795,7 +795,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             );
             ref.read(chatListProvider.notifier).updateChat(newChat);
             ref.read(chatScreenProvider.notifier).setStreaming(false);
-            ref.read(streamingMessageProvider.notifier).flushAndStop();
+            await ref.read(streamingMessageProvider.notifier).stopStreaming();
 
             await _chatStorageService.updateMessageInChat(
               newChat.id,

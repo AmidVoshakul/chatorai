@@ -72,29 +72,30 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
 
     return Align(
       alignment: Alignment.centerLeft,
-      child: FractionallySizedBox(
-        widthFactor: 0.65,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(ChatoraiSpacing.md),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.secondary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-            border: Border.all(
-              color: theme.dividerColor.withValues(alpha: 0.3),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(ChatoraiSpacing.md),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHeader(localizations, theme),
+            AnimatedCrossFade(
+              firstChild: const SizedBox.shrink(),
+              secondChild: Padding(
+                padding: const EdgeInsets.only(top: ChatoraiSpacing.sm),
+                child: _buildContent(),
+              ),
+              crossFadeState: _isExpanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 200),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildHeader(localizations, theme),
-              if (_isExpanded) ...[
-                const SizedBox(height: ChatoraiSpacing.sm),
-                _buildContent(),
-              ],
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -130,31 +131,34 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
           dotsText = '';
         }
 
-        Widget header = Row(
-          children: [
-            const SizedBox(width: ChatoraiSpacing.xs),
-            Expanded(
-              child: Text(
-                '$headerText$dotsText',
-                style: TextStyle(
-                  fontSize: ChatoraiFontSizes.sm,
-                  fontWeight: FontWeight.w600,
-                  height: 1.4,
+        Widget header = GestureDetector(
+          onTap: () => setState(() => _isExpanded = !_isExpanded),
+          behavior: HitTestBehavior.opaque,
+          child: Row(
+            children: [
+              AnimatedRotation(
+                turns: _isExpanded ? 0.5 : 0,
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  Icons.keyboard_arrow_down,
+                  size: ChatoraiIconSizes.md,
                   color: textColor,
                 ),
               ),
-            ),
-            GestureDetector(
-              onTap: () => setState(() => _isExpanded = !_isExpanded),
-              child: Icon(
-                _isExpanded
-                    ? Icons.keyboard_arrow_up
-                    : Icons.keyboard_arrow_down,
-                size: ChatoraiIconSizes.md,
-                color: textColor,
+              const SizedBox(width: ChatoraiSpacing.xs),
+              Expanded(
+                child: Text(
+                  '$headerText$dotsText',
+                  style: TextStyle(
+                    fontSize: ChatoraiFontSizes.sm,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                    color: textColor,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
 
         if (isStreaming) {

@@ -4,7 +4,6 @@ import 'package:chatorai/models/chat_message.dart';
 // ===========================================================================
 // PROVIDER
 // ===========================================================================
-
 final streamingMessageProvider =
     NotifierProvider<StreamingMessageNotifier, StreamingMessageState>(
       StreamingMessageNotifier.new,
@@ -13,7 +12,6 @@ final streamingMessageProvider =
 // ===========================================================================
 // STATE
 // ===========================================================================
-
 class StreamingMessageState {
   final String chatId;
   final List<MessagePart> accumulatedParts;
@@ -41,20 +39,15 @@ class StreamingMessageState {
     );
   }
 
-  StreamingMessageState reset() {
-    return const StreamingMessageState();
-  }
+  StreamingMessageState reset() => const StreamingMessageState();
 }
 
 // ===========================================================================
 // NOTIFIER
 // ===========================================================================
-
 class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
   @override
-  StreamingMessageState build() {
-    return const StreamingMessageState();
-  }
+  StreamingMessageState build() => const StreamingMessageState();
 
   void startStreaming(String chatId) {
     state = StreamingMessageState(
@@ -94,33 +87,30 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
     state = state.copyWith(accumulatedParts: parts);
   }
 
-  void onToolStart(
+  void onToolCall(
     String toolCallId,
     String toolName,
     Map<String, dynamic> input,
   ) {
     if (!state.isStreaming) return;
     final parts = List<MessagePart>.from(state.accumulatedParts);
-    final existingIdx = parts.indexWhere(
-      (p) => p is ToolResultPart && p.toolCallId == toolCallId,
+    parts.add(
+      ToolCallPart(
+        toolCallId: toolCallId,
+        toolName: toolName,
+        input: input,
+        createdAt: DateTime.now(),
+      ),
     );
-    if (existingIdx != -1) {
-      parts[existingIdx] = ToolResultPart(
+    parts.add(
+      ToolResultPart(
         toolCallId: toolCallId,
         toolName: toolName,
         state: ToolState.running,
         input: input,
-      );
-    } else {
-      parts.add(
-        ToolResultPart(
-          toolCallId: toolCallId,
-          toolName: toolName,
-          state: ToolState.running,
-          input: input,
-        ),
-      );
-    }
+        isStreaming: true,
+      ),
+    );
     state = state.copyWith(accumulatedParts: parts);
   }
 
@@ -162,13 +152,35 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
     state = state.copyWith(accumulatedParts: parts);
   }
 
-  void stopStreaming() {
+  void onTodo(List<TodoItem> todos) {
+    if (!state.isStreaming) return;
+    final parts = List<MessagePart>.from(state.accumulatedParts);
+    parts.add(TodoPart(todos: todos));
+    state = state.copyWith(accumulatedParts: parts);
+  }
+
+  Future<void> stopStreaming() async {
     if (!state.isStreaming) return;
     final parts = List<MessagePart>.from(state.accumulatedParts).map((p) {
-      if (p is TextPart)
+      if (p is TextPart) {
         return TextPart(content: p.content, isStreaming: false);
-      if (p is ReasoningPart)
+      }
+      if (p is ReasoningPart) {
         return ReasoningPart(content: p.content, isStreaming: false);
+      }
+      if (p is ToolResultPart) {
+        return ToolResultPart(
+          toolCallId: p.toolCallId,
+          toolName: p.toolName,
+          result: p.result,
+          error: p.error,
+          state: p.state,
+          duration: p.duration,
+          input: p.input,
+          isStreaming: false,
+        );
+      }
+      if (p is TodoPart) return TodoPart(todos: p.todos, isStreaming: false);
       return p;
     }).toList();
     state = state.copyWith(
@@ -176,10 +188,8 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
       isStreaming: false,
       justEnded: true,
     );
-  }
-
-  void flushAndStop() {
-    stopStreaming();
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    state = state.copyWith(justEnded: false);
   }
 
   void reset() {

@@ -184,8 +184,9 @@ class ChatAiService {
         }
         final statusCode = response.statusCode;
         if (statusCode == 429 || statusCode == 503) return true;
-        if (statusCode != null && statusCode < 500)
+        if (statusCode != null && statusCode < 500) {
           return false; // 4xx non-retryable
+        }
       }
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||

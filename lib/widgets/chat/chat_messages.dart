@@ -5,14 +5,11 @@ import 'package:chatorai/services/chat_storage_service.dart';
 import 'package:chatorai/providers.dart' show streamingMessageProvider;
 import 'package:chatorai/models/chat_message.dart';
 import 'package:chatorai/widgets/chat/parts/chat_message_bubble.dart';
-import 'package:chatorai/utils/message_utils.dart';
 import 'package:chatorai/utils/logger.dart';
 import 'package:chatorai/constants/chat_messages_constants.dart';
-import 'package:chatorai/widgets/chat/chat_message.dart' as chat_msg;
-import 'package:chatorai/widgets/chat/reasoning_message.dart' as reasoning_msg;
-import 'package:chatorai/widgets/chat/loading_indicator.dart';
 import 'package:chatorai/widgets/chat/continuation_suggestions.dart';
 import 'package:chatorai/widgets/chat/welcome_suggestions.dart';
+import 'package:chatorai/widgets/chat/loading_indicator.dart';
 import 'package:chatorai/utils/markdown_parser.dart';
 import 'package:chatorai/widgets/chat/chat_input.dart' show MessageData;
 
@@ -258,19 +255,6 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     setState(() {});
   }
 
-  void _handleDeleteMessage(Message message) async {
-    final bool deleted = await MessageUtils.deleteMessage(
-      chatId: widget.chat?.id ?? '',
-      messageId: message.id,
-      chatStorageService: widget.chatStorageService,
-      context: context,
-    );
-
-    if (deleted) {
-      widget.onMessageDeleted();
-    }
-  }
-
   // ===========================================================================
   // WAITING ANIMATION
   // ===========================================================================
@@ -308,28 +292,35 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     final streamingParts = streamingState.accumulatedParts;
     final streamingIsActive = streamingState.isStreaming;
 
+    // ChatLoadingIndicator показывается когда:
+    // 1. streaming начался (isStreaming) И ещё нет частей (жду начала) ИЛИ
+    // 2. есть только ReasoningPart и ещё нет TextPart (показываем индикатор пока думает)
+    final isWaitingForStream = streamingIsActive && streamingParts.isEmpty;
+    final hasReasoningOnly =
+        streamingIsActive &&
+        streamingParts.isNotEmpty &&
+        streamingParts.every((p) => p is ReasoningPart);
+
     final theme = Theme.of(context);
 
     final messages = widget.chat?.messages ?? [];
     final hasMessages = messages.isNotEmpty;
     final hasAssistantMessage =
         hasMessages && messages.last.role == MessageRole.assistant;
-    final isStreaming = hasAssistantMessage && !messages.last.isComplete;
 
     final lastMessageIsComplete =
         hasAssistantMessage && messages.last.isComplete;
     final showStreamingBubble =
         streamingParts.isNotEmpty &&
-        (streamingIsActive || streamingState.justEnded) &&
+        streamingIsActive &&
         !lastMessageIsComplete;
 
     final shouldShowWaitingAnimation =
+        (isWaitingForStream || hasReasoningOnly) &&
         hasMessages &&
         hasAssistantMessage &&
         messages.last.content.isEmpty &&
-        (messages.last.reasoning == null || messages.last.reasoning!.isEmpty) &&
-        !messages.last.isComplete &&
-        !showStreamingBubble;
+        !messages.last.isComplete;
 
     // Show welcome suggestions when chat is empty and welcome suggestions are enabled
     final shouldShowWelcome =
@@ -380,130 +371,33 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                   if (msgIndex >= 0 && msgIndex < messages.length) {
                     final message = messages[msgIndex];
                     final isLastMessage = msgIndex == messages.length - 1;
-                    final isAssistantMessage =
-                        message.role == MessageRole.assistant;
+
                     final isEmptyAssistantMessage =
-                        isAssistantMessage && message.content.isEmpty;
+                        message.role == MessageRole.assistant &&
+                        message.content.isEmpty;
 
-                    if (isEmptyAssistantMessage && isLastMessage) {
+if (isEmptyAssistantMessage && isLastMessage) {
                       return const SizedBox.shrink();
                     }
 
-                    if (message.reasoning != null &&
-                        message.reasoning!.isNotEmpty) {
-                      return Column(
-                        key: ValueKey(message.id),
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          reasoning_msg.ReasoningMessage(
-                            key: ValueKey('${message.id}_reasoning'),
-                            reasoning: message.reasoning!,
-                            isStreaming: isStreaming && isLastMessage,
-                          ),
-                          const SizedBox(
-                            height: ChatMessagesConstants.messageSpacing,
-                          ),
-                          chat_msg.ChatMessage(
-                            key: ValueKey(message.id),
-                            message: message,
-                            isStreaming: isStreaming && isLastMessage,
-                            isLastMessage: isLastMessage,
-                            onRetry: () {
-                              if (message.role == MessageRole.user) {
-                                widget.onSendMessage(
-                                  MessageData(
-                                    text: message.content,
-                                    imagePath: null,
-                                    imageType: message.imageType,
-                                    base64Data: message.imageData,
-                                  ),
-                                );
-                              }
-                            },
-                            chatId: widget.chat?.id ?? '',
-                            chatStorageService: widget.chatStorageService,
-                            onMessageDeleted: widget.onMessageDeleted,
-                            onMessageEdited:
-                                (String messageId, String newContent) {
-                                  widget.onMessageEdited?.call(
-                                    messageId,
-                                    newContent,
-                                  );
-                                },
-                            onMessageEditAndSend:
-                                (String messageId, String newContent) {
-                                  widget.onMessageEditAndSend?.call(
-                                    messageId,
-                                    newContent,
-                                  );
-                                },
-                            onMessageUpdated: (newContent) {
-                              if (newContent == 'REGENERATE') {
-                                widget.onRegenerateResponse?.call(message.id);
-                              }
-                            },
-                            onDelete: () {
-                              _handleDeleteMessage(message);
-                            },
-                            onContinueResponse:
-                                message.role == MessageRole.assistant
-                                ? () => widget.onContinueResponse?.call(
-                                    message.id,
-                                  )
-                                : null,
-                            headings: _headings,
-                          ),
-                        ],
-                      );
-                    }
-
-                    if (isAssistantMessage && message.content.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-
-                    return chat_msg.ChatMessage(
+                    return ChatMessageBubble(
                       key: ValueKey(message.id),
-                      message: message,
-                      isStreaming: isStreaming && isLastMessage,
-                      isLastMessage: isLastMessage,
-                      onRetry: () {
-                        if (message.role == MessageRole.user) {
-                          widget.onSendMessage(
-                            MessageData(
-                              text: message.content,
-                              imagePath: null,
-                              imageType: message.imageType,
-                              base64Data: message.imageData,
-                            ),
-                          );
-                        }
-                      },
-                      chatId: widget.chat?.id ?? '',
+                      message: messageToChatMessage(message),
+                      chatId: widget.chat!.id,
+                      messageId: message.id,
                       chatStorageService: widget.chatStorageService,
+                      onContinuationSelected:
+                          message.role == MessageRole.assistant
+                              ? (suggestion) =>
+                                    widget.onContinueResponse?.call(suggestion)
+                              : null,
                       onMessageDeleted: widget.onMessageDeleted,
-                      onMessageEdited: (String messageId, String newContent) {
-                        widget.onMessageEdited?.call(messageId, newContent);
-                      },
-                      onMessageEditAndSend:
-                          (String messageId, String newContent) {
-                            widget.onMessageEditAndSend?.call(
-                              messageId,
-                              newContent,
-                            );
-                          },
-                      onMessageUpdated: (newContent) {
-                        if (newContent == 'REGENERATE') {
-                          widget.onRegenerateResponse?.call(message.id);
-                        }
-                      },
-                      onDelete: () {
-                        _handleDeleteMessage(message);
-                      },
-                      onContinueResponse: message.role == MessageRole.assistant
-                          ? () => widget.onContinueResponse?.call(message.id)
+                      onMessageRegenerate: widget.onRegenerateResponse != null
+                          ? () => widget.onRegenerateResponse!(message.id)
                           : null,
-                      headings: _headings.isEmpty ? null : _headings,
+                      onMessageEdited: widget.onMessageEdited,
+                      onMessageEditedAndSend: widget.onMessageEditAndSend,
+                      isLastMessage: isLastMessage,
                     );
                   }
 
@@ -526,6 +420,9 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                             isStreaming: streamingIsActive,
                             timestamp: lastMessage?.timestamp ?? DateTime.now(),
                           ),
+                          chatId: widget.chat?.id ?? '',
+                          messageId: lastMessage?.id ?? 'streaming',
+                          chatStorageService: widget.chatStorageService,
                         ),
                       );
                     }
@@ -553,10 +450,6 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
       ),
     );
   }
-
-  // ===========================================================================
-  // SUGGESTION BUILDERS
-  // ===========================================================================
 
   // ===========================================================================
   // SUGGESTION BUILDERS

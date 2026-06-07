@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:chatorai/models/chat_message.dart';
 import 'package:chatorai/themes/app_theme.dart';
 import 'package:chatorai/widgets/chat/parts/_tool_icon.dart';
@@ -23,7 +24,10 @@ class ToolCallPartWidget extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _PendingSpinner(color: theme.colorScheme.primary),
+          SpinKitThreeBounce(
+            color: theme.colorScheme.primary.withValues(alpha: 0.6),
+            size: 10,
+          ),
           const SizedBox(width: 6),
           ToolIcon(toolName: part.toolName),
           const SizedBox(width: 6),
@@ -39,23 +43,6 @@ class ToolCallPartWidget extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PendingSpinner extends StatelessWidget {
-  final Color color;
-  const _PendingSpinner({required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 14,
-      height: 14,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        valueColor: AlwaysStoppedAnimation<Color>(color.withValues(alpha: 0.5)),
       ),
     );
   }
