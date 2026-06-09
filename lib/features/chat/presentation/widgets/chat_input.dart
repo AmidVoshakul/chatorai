@@ -1,0 +1,305 @@
+import 'dart:async';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/features/chat/domain/services/speech_to_text_service.dart';
+import 'package:chatorai/providers.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/message_data.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/agent_mention_handler.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/speech_input_handler.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/attachment_input_handler.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/send_message_handler.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/input_widget_builders.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/input_layout_builder.dart';
+
+export 'package:chatorai/features/chat/presentation/widgets/chat_input/message_data.dart';
+
+class ChatInput extends ConsumerStatefulWidget {
+  final Function(MessageData) onSendMessage;
+  final Function(bool) onToggleStreaming;
+  final VoidCallback? onStopStreaming;
+  final bool isStreaming;
+  final FocusNode? focusNode;
+  final Function(SpeechUiState, String)? onSpeechStateChanged;
+  final bool Function(String)? checkModelSupportsImages;
+  final Function(double)? onSoundLevelChanged;
+
+  const ChatInput({
+    super.key,
+    required this.onSendMessage,
+    required this.onToggleStreaming,
+    this.onStopStreaming,
+    this.isStreaming = false,
+    this.focusNode,
+    this.onSpeechStateChanged,
+    this.checkModelSupportsImages,
+    this.onSoundLevelChanged,
+  });
+
+  @override
+  ConsumerState<ChatInput> createState() => _ChatInputState();
+}
+
+class _ChatInputState extends ConsumerState<ChatInput>
+    with
+        AutomaticKeepAliveClientMixin,
+        AgentMentionHandler,
+        SpeechInputHandler,
+        AttachmentInputHandler,
+        SendMessageHandler {
+  final TextEditingController _textController = TextEditingController();
+  Timer? _plusTimer;
+  SpeechToTextService? _speechService;
+  final GlobalKey _plusKey = GlobalKey();
+  final GlobalKey _settingsKey = GlobalKey();
+  final GlobalKey _agentKey = GlobalKey();
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  TextEditingController get textController => _textController;
+
+  @override
+  bool Function(String)? get checkModelSupportsImages =>
+      widget.checkModelSupportsImages;
+
+  @override
+  SpeechToTextService? get speechService => _speechService;
+
+  @override
+  void Function(SpeechUiState, String)? get onSpeechStateChanged =>
+      widget.onSpeechStateChanged;
+
+  @override
+  void Function(double)? get onSoundLevelChanged => widget.onSoundLevelChanged;
+
+  @override
+  void initState() {
+    super.initState();
+    updateKeepAlive();
+    _textController.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    if (mounted) setState(() {});
+    detectAgentMentionListener();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_speechService == null) {
+      initSpeechService();
+      _speechService = speechService;
+    }
+  }
+
+  @override
+  void dispose() {
+    hideAgentPopup();
+    _textController.removeListener(_onTextChanged);
+    _textController.dispose();
+    _plusTimer?.cancel();
+    disposeSpeechService();
+    super.dispose();
+  }
+
+  Future<void> _showPlusMenu(BuildContext context) async {
+    ref.read(chatInputProvider.notifier).setPlusActive(true);
+    final RenderBox? box =
+        _plusKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    final offset = box.localToGlobal(Offset.zero);
+    final size = box.size;
+    final localizations = AppLocalizations.of(context);
+    final isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+    final menuItems = <PopupMenuEntry<String>>[
+      if (isMobile)
+        PopupMenuItem(
+          value: 'add_camera',
+          child: Row(
+            children: [
+              Icon(Icons.camera_alt, size: ChatoraiIconSizes.buttonIcon),
+              SizedBox(width: ChatoraiSpacing.sm),
+              Text(localizations.addCamera),
+            ],
+          ),
+        ),
+      PopupMenuItem(
+        value: 'add_image',
+        child: Row(
+          children: [
+            Icon(Icons.image, size: ChatoraiIconSizes.buttonIcon),
+            SizedBox(width: ChatoraiSpacing.sm),
+            Text(localizations.addImage),
+          ],
+        ),
+      ),
+      PopupMenuItem(
+        value: 'add_file',
+        child: Row(
+          children: [
+            Icon(Icons.attach_file, size: ChatoraiIconSizes.buttonIcon),
+            SizedBox(width: ChatoraiSpacing.sm),
+            Text(localizations.addFile),
+          ],
+        ),
+      ),
+    ];
+    final selected = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy - 170,
+        offset.dx + size.width,
+        offset.dy - 40,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+      ),
+      items: menuItems,
+    );
+    if (selected == 'add_camera') {
+      await handleCamera();
+    } else if (selected == 'add_image') {
+      await handleImage();
+    } else if (selected == 'add_file') {
+      await handleFile();
+    }
+    ref.read(chatInputProvider.notifier).setPlusActive(false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context);
+    final isMobile = InputWidgetBuilders.isMobileLayout(context);
+    final maxLines = InputWidgetBuilders.computeMaxLines(context);
+    final chatInputState = ref.watch(chatInputProvider);
+    const double buttonSize = 44.0;
+    const double iconSize = ChatoraiIconSizes.buttonIcon;
+    const double sidePadding = ChatoraiSpacing.lg;
+    const double bottomPadding = ChatoraiSpacing.md;
+
+    final keyboardBindings = <ShortcutActivator, VoidCallback>{
+      SingleActivator(LogicalKeyboardKey.tab): () {
+        if (isAgentPopupVisible) navigateAgentPopup(true);
+      },
+      SingleActivator(LogicalKeyboardKey.tab, shift: true): () {
+        if (isAgentPopupVisible) navigateAgentPopup(false);
+      },
+      SingleActivator(LogicalKeyboardKey.enter): () {
+        if (isAgentPopupVisible) {
+          selectCurrentAgent();
+        } else if (!HardwareKeyboard.instance.isShiftPressed) {
+          performSend(
+            onSendMessage: widget.onSendMessage,
+            onToggleStreaming: widget.onToggleStreaming,
+            onClearAttachedFile: clearAttachedFile,
+          );
+        }
+      },
+      SingleActivator(LogicalKeyboardKey.escape): () {
+        if (isAgentPopupVisible) hideAgentPopup();
+      },
+      SingleActivator(LogicalKeyboardKey.arrowDown): () {
+        if (isAgentPopupVisible) navigateAgentPopup(true);
+      },
+      SingleActivator(LogicalKeyboardKey.arrowUp): () {
+        if (isAgentPopupVisible) navigateAgentPopup(false);
+      },
+    };
+
+    final textField = InputWidgetBuilders.buildTextField(
+      controller: _textController,
+      focusNode: widget.focusNode,
+      maxLines: maxLines,
+      isMobile: isMobile,
+      enabled: !chatInputState.isSending,
+      theme: theme,
+      localizations: localizations,
+      hintText: localizations.typeYourMessage,
+      keyboardBindings: keyboardBindings,
+    );
+
+    final hasText = _textController.text.trim().isNotEmpty;
+    final hasAttachment = chatInputState.attachedFilePath != null;
+    final currentAgent = ref.watch(currentAgentProvider);
+
+    final layoutChild = isMobile
+        ? InputLayoutBuilder.buildMobileLayout(
+            context: context,
+            theme: theme,
+            chatInputState: chatInputState,
+            textField: textField,
+            isMobile: isMobile,
+            hasText: hasText,
+            hasAttachment: hasAttachment,
+            buttonSize: buttonSize,
+            iconSize: iconSize,
+            sidePadding: sidePadding,
+            bottomPadding: bottomPadding,
+            onClearAttachedFile: clearAttachedFile,
+            onPlusMenu: () => _showPlusMenu(context),
+            onModelSettings: handleModelSettings,
+            onAgentSwitcher: () => showAgentSwitcher(context, _agentKey),
+            onMicrophoneAction: handleMicrophoneAction,
+            onSend: () => performSend(
+              onSendMessage: widget.onSendMessage,
+              onToggleStreaming: widget.onToggleStreaming,
+              onClearAttachedFile: clearAttachedFile,
+            ),
+            onStopStreaming: widget.onStopStreaming,
+            ref: ref,
+            plusKey: _plusKey,
+            settingsKey: _settingsKey,
+            agentKey: _agentKey,
+            isStreaming: widget.isStreaming,
+            currentAgent: currentAgent,
+          )
+        : InputLayoutBuilder.buildDesktopLayout(
+            context: context,
+            theme: theme,
+            chatInputState: chatInputState,
+            textField: textField,
+            isMobile: isMobile,
+            hasText: hasText,
+            hasAttachment: hasAttachment,
+            buttonSize: buttonSize,
+            iconSize: iconSize,
+            onClearAttachedFile: clearAttachedFile,
+            onPlusMenu: () => _showPlusMenu(context),
+            onModelSettings: handleModelSettings,
+            onAgentSwitcher: () => showAgentSwitcher(context, _agentKey),
+            onMicrophoneAction: handleMicrophoneAction,
+            onSend: () => performSend(
+              onSendMessage: widget.onSendMessage,
+              onToggleStreaming: widget.onToggleStreaming,
+              onClearAttachedFile: clearAttachedFile,
+            ),
+            onStopStreaming: widget.onStopStreaming,
+            ref: ref,
+            plusKey: _plusKey,
+            settingsKey: _settingsKey,
+            agentKey: _agentKey,
+            isStreaming: widget.isStreaming,
+            currentAgent: currentAgent,
+          );
+
+    return Stack(
+      children: [
+        InputLayoutBuilder.buildContainer(
+          isMobile: isMobile,
+          theme: theme,
+          child: layoutChild,
+        ),
+      ],
+    );
+  }
+}

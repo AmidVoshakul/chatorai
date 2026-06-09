@@ -1,14 +1,14 @@
+import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
+import 'package:chatorai/features/settings/presentation/screens/settings_screen.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/providers.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/shared/widgets/network_aware_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/screens/chat_screen.dart';
-import 'package:chatorai/screens/settings_screen.dart';
-import 'package:chatorai/providers.dart';
-import 'package:chatorai/widgets/network_aware_widget.dart';
-import 'package:chatorai/utils/logger.dart';
-import 'package:chatorai/themes/app_theme.dart';
-import 'package:chatorai/l10n/app_localizations.dart';
 
 // ===========================================================================
 // MAIN ENTRY POINT

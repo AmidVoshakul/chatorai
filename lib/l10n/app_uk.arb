@@ -347,5 +347,6 @@
 "permissionDialogPatterns": "Запит доступу до:",
 "permissionOnce": "Один раз",
 "permissionAlways": "Завжди дозволяти",
+  "permissionAlwaysConfirm": "Always allow",
 "permissionReject": "Відхилити"
   }

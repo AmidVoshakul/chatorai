@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/services/chat_storage_service.dart';
-import 'package:chatorai/models/chat_models.dart';
+import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
+import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

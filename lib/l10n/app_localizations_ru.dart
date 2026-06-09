@@ -1153,6 +1153,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get permissionReject => 'Отклонить';
 
   @override
+  String get permissionAlwaysConfirm => 'Always allow';
+
+  @override
   String get providers => 'Провайдеры';
 
   @override

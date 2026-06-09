@@ -275,6 +275,7 @@
 "permissionDialogPatterns": "アクセス要求:",
 "permissionOnce": "一度のみ",
 "permissionAlways": "常に許可",
+  "permissionAlwaysConfirm": "Always allow",
 "permissionReject": "拒否",
 "startListening": "音声入力を開始",
 "stopListening": "音声入力を停止",

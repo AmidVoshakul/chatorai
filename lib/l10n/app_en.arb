@@ -350,6 +350,7 @@
 "permissionOnce": "Once",
 "permissionAlways": "Always allow",
 "permissionReject": "Reject",
+  "permissionAlwaysConfirm": "Always allow",
 "providers": "Providers",
 "manageProviders": "Manage AI providers",
 "openaiCompatibleApi": "AI Providers",

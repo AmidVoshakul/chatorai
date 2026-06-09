@@ -1082,6 +1082,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get permissionReject => '拒绝';
 
   @override
+  String get permissionAlwaysConfirm => 'Always allow';
+
+  @override
   String get providers => 'Providers';
 
   @override

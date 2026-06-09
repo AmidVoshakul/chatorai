@@ -277,6 +277,7 @@
 "permissionDialogPatterns": "Запрос доступа к:",
 "permissionOnce": "Один раз",
 "permissionAlways": "Всегда разрешать",
+  "permissionAlwaysConfirm": "Always allow",
 "permissionReject": "Отклонить",
 "providers": "Провайдеры",
 "manageProviders": "Управление AI провайдерами",

@@ -71,8 +71,8 @@ abstract class AppLocalizations {
 
   final String localeName;
 
-  static AppLocalizations? of(BuildContext context) {
-    return Localizations.of<AppLocalizations>(context, AppLocalizations);
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
   }
 
   static const LocalizationsDelegate<AppLocalizations> delegate =
@@ -2187,6 +2187,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reject'**
   String get permissionReject;
+
+  /// No description provided for @permissionAlwaysConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Always allow'**
+  String get permissionAlwaysConfirm;
 
   /// No description provided for @providers.
   ///

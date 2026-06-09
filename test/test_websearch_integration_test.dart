@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-import 'package:chatorai/tools/built_in/websearch.dart';
-import 'package:chatorai/tools/tool.dart';
+import 'package:chatorai/features/tools/built_in/websearch.dart';
+import 'package:chatorai/features/tools/data/models/tool.dart';
 
 /// Integration tests for the DuckDuckGo websearch tool (`websearch.dart`).
 ///

@@ -1,4 +1,4 @@
-import 'package:chatorai/services/chat_ai_service.dart';
+import 'package:chatorai/features/chat/domain/services/chat_ai_service.dart';
 
 /// OpenCode-style context compaction.
 ///

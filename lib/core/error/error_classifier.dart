@@ -45,7 +45,8 @@ class RateLimitError extends ClassifiedError {
   bool get isRetryable => true;
 
   @override
-  String get message => 'Rate limit exceeded'
+  String get message =>
+      'Rate limit exceeded'
       '${retryAfter != null ? ' — retry after ${retryAfter!.inSeconds}s' : ''}';
 }
 
@@ -65,7 +66,8 @@ class AuthenticationError extends ClassifiedError {
   bool get isRetryable => false;
 
   @override
-  String get message => 'Authentication failed'
+  String get message =>
+      'Authentication failed'
       '${statusCode != null ? ' ($statusCode)' : ''}'
       '${detail != null ? ': $detail' : ''}';
 }
@@ -86,7 +88,8 @@ class ServerError extends ClassifiedError {
   bool get isRetryable => statusCode != null && statusCode! >= 500;
 
   @override
-  String get message => 'Server error'
+  String get message =>
+      'Server error'
       '${statusCode != null ? ' ($statusCode)' : ''}'
       '${detail != null ? ': $detail' : ''}';
 }
@@ -107,7 +110,8 @@ class NetworkError extends ClassifiedError {
   int? get statusCode => null;
 
   @override
-  String get message => 'Network error'
+  String get message =>
+      'Network error'
       '${detail != null ? ': $detail' : ''}';
 }
 
@@ -127,7 +131,8 @@ class UnknownError extends ClassifiedError {
   int? get statusCode => null;
 
   @override
-  String get message => 'Unknown error'
+  String get message =>
+      'Unknown error'
       '${original != null ? ': $original' : ''}';
 }
 

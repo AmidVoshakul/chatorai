@@ -1152,6 +1152,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get permissionReject => 'Відхилити';
 
   @override
+  String get permissionAlwaysConfirm => 'Always allow';
+
+  @override
   String get providers => 'Providers';
 
   @override

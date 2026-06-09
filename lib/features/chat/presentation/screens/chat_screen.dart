@@ -1,0 +1,211 @@
+// ignore_for_file: avoid_print
+
+import 'dart:math';
+
+import 'package:chatorai/core/constants/chat_constants.dart';
+import 'package:chatorai/core/context/compaction_service.dart';
+import 'package:chatorai/features/agents/data/models/agent_registry.dart';
+import 'package:chatorai/features/chat/data/models/chat_model.dart';
+import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/data/models/chat_models.dart';
+import 'package:chatorai/features/chat/data/models/model_settings.dart';
+import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
+import 'package:chatorai/features/chat/domain/services/continuation_suggestion_service.dart';
+import 'package:chatorai/features/chat/domain/services/speech_to_text_service.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_app_bar.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_messages.dart';
+import 'package:chatorai/features/chat/presentation/widgets/markdown_navigator_sidebar.dart';
+import 'package:chatorai/features/chat/presentation/widgets/sidebar_wrapper.dart';
+import 'package:chatorai/features/chat/presentation/widgets/speech_overlay.dart';
+import 'package:chatorai/features/chat/presentation/widgets/welcome_questions_data.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/providers.dart'
+    show
+        themeProvider,
+        modelProvider,
+        modelSettingsProvider,
+        streamingMessageProvider,
+        chatListProvider,
+        chatStorageServiceProvider,
+        chatAiServiceProvider,
+        currentChatIdProvider,
+        currentChatProvider,
+        chatScreenProvider,
+        toolRegistryProvider,
+        currentAgentProvider;
+import 'package:chatorai/shared/utils/chat_error_utils.dart';
+import 'package:chatorai/shared/utils/chat_scroll_utils.dart';
+import 'package:chatorai/shared/utils/markdown_parser.dart';
+import 'package:chatorai/shared/utils/message_utils.dart';
+import 'package:chatorai/shared/utils/snackbar_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+part 'chat_screen_ai.dart';
+part 'chat_screen_build.dart';
+part 'chat_screen_edits.dart';
+part 'chat_screen_management.dart';
+part 'chat_screen_messaging.dart';
+part 'chat_screen_navigator.dart';
+part 'chat_screen_scroll.dart';
+part 'chat_screen_streaming.dart';
+
+class ChatScreen extends ConsumerStatefulWidget {
+  const ChatScreen({super.key});
+
+  @override
+  ConsumerState<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends ConsumerState<ChatScreen>
+    with TickerProviderStateMixin {
+  late ChatStorageService _chatStorageService;
+  late ScrollController _messageScrollController;
+  ChatScrollUtils? _chatScrollUtils;
+
+  final GlobalKey<ChatMessagesState> _chatMessagesKey =
+      GlobalKey<ChatMessagesState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  DateTime? _lastScrollUpdate;
+  static const _scrollThrottleDuration = Duration(milliseconds: 16);
+  late final FocusNode _chatInputFocusNode;
+
+  double _cachedScreenWidth = 0;
+  bool _isMobile = false;
+
+  Widget? _cachedSidebarDrawer;
+  double _cachedDrawerWidth = 0;
+  String? _cachedChatListHash;
+
+  SpeechUiState _speechUiState = SpeechUiState.idle;
+  String _speechStatusMessage = '';
+  double _speechSoundLevel = 0.0;
+
+  final ContinuationSuggestionService _suggestionService =
+      ContinuationSuggestionService();
+
+  Chat? get currentChat => ref.watch(currentChatProvider);
+  String get selectedModelId => ref.watch(modelProvider).selectedModelId;
+  ChatModel? get selectedModelObject =>
+      ref.watch(modelProvider).selectedModelObject;
+
+  @override
+  void initState() {
+    super.initState();
+    _chatStorageService = ref.read(chatStorageServiceProvider);
+    _messageScrollController = ScrollController();
+    _messageScrollController.addListener(_handleScroll);
+    _messageScrollController.addListener(_handleHeadingSync);
+    _chatInputFocusNode = FocusNode();
+    _chatScrollUtils = ChatScrollUtils(
+      scrollController: _messageScrollController,
+      animationDuration: ChatScreenConstants.scrollAnimationDuration,
+      animationCurve: Curves.easeOut,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showWelcomeSuggestions();
+    });
+  }
+
+  @override
+  void dispose() {
+    _messageScrollController.removeListener(_handleScroll);
+    _messageScrollController.removeListener(_handleHeadingSync);
+    _messageScrollController.dispose();
+    _chatInputFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _showWelcomeSuggestions() {
+    final questions = WelcomeQuestionsData.getRandomQuestions(
+      context,
+      count: 4,
+    );
+    ref.read(chatScreenProvider.notifier).showWelcomeSuggestions(questions);
+  }
+
+  void _updateSelectedModel(String modelId, dynamic modelObject) {
+    ref.read(modelProvider.notifier).setSelectedModel(modelId);
+  }
+
+  bool _hasHeadings() {
+    return ref.read(chatScreenProvider).navigatorHeadings.isNotEmpty;
+  }
+
+  Future<void> _showContinuationSuggestions(Message message) async {
+    await _suggestionService.showSuggestions(
+      ref: ref,
+      context: context,
+      messageContent: message.content,
+      selectedModelId: selectedModelId,
+      mounted: mounted,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isStreaming = ref.watch(
+      chatScreenProvider.select((s) => s.isStreaming),
+    );
+    _cachedScreenWidth = MediaQuery.of(context).size.width;
+    _isMobile = _cachedScreenWidth < ChatScreenConstants.mobileBreakpoint;
+
+    final chatInput = ChatInput(
+      key: const ValueKey('chat_input_widget'),
+      onSendMessage: _handleSendMessage,
+      onToggleStreaming: (_) {},
+      onStopStreaming: _stopStreaming,
+      isStreaming: isStreaming,
+      focusNode: _chatInputFocusNode,
+      onSpeechStateChanged: (state, message) {
+        setState(() {
+          _speechUiState = state;
+          _speechStatusMessage = message;
+        });
+      },
+      onSoundLevelChanged: (level) {
+        setState(() {
+          _speechSoundLevel = (level / 30).clamp(0.0, 1.0);
+        });
+      },
+      checkModelSupportsImages: (_) =>
+          ref.read(modelProvider.notifier).modelSupportsImagesSelected(),
+    );
+
+    Widget baseLayout = _isMobile
+        ? _buildMobileLayout(chatInput)
+        : _buildDesktopLayout(chatInput);
+
+    if (_speechUiState != SpeechUiState.idle) {
+      baseLayout = Stack(
+        children: [
+          baseLayout,
+          SpeechOverlayWidget(
+            state: _speechUiState,
+            message: _speechStatusMessage,
+            soundLevel: _speechSoundLevel,
+          ),
+        ],
+      );
+    }
+
+    final uiState = ref.watch(chatScreenProvider);
+    if (uiState.navigatorHeadings.isNotEmpty) {
+      return Stack(
+        children: [
+          baseLayout,
+          MarkdownNavigatorSidebar(
+            headings: uiState.navigatorHeadings,
+            activeHeadingIndex: uiState.activeHeadingIndex,
+            isOpen: uiState.isNavigatorVisible,
+            onClose: _toggleNavigator,
+            onHeadingTap: _onHeadingTap,
+          ),
+        ],
+      );
+    }
+    return baseLayout;
+  }
+}

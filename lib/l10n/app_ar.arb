@@ -275,6 +275,7 @@
 "permissionDialogPatterns": "طلب الوصول إلى:",
 "permissionOnce": "مرة واحدة",
 "permissionAlways": "السماح دائماً",
+  "permissionAlwaysConfirm": "Always allow",
 "permissionReject": "رفض",
 "startListening": "بدء الإدخال الصوتي",
 "stopListening": "إيقاف الإدخال الصوتي",

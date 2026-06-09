@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/widgets/chat/chat_input.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart';
 
 void main() {
   group('ChatInput Model Support Tests', () {

@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:chatorai/tools/tool_title.dart';
+import 'package:chatorai/features/tools/data/models/tool_title.dart';
 
 void main() {
   group('Tool title formatters', () {

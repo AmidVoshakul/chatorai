@@ -1147,6 +1147,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get permissionReject => 'Reject';
 
   @override
+  String get permissionAlwaysConfirm => 'Always allow';
+
+  @override
   String get providers => 'Providers';
 
   @override

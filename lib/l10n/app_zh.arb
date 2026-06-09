@@ -155,6 +155,7 @@
 "permissionDialogPatterns": "请求访问:",
 "permissionOnce": "仅一次",
 "permissionAlways": "始终允许",
+  "permissionAlwaysConfirm": "Always allow",
 "permissionReject": "拒绝",
 "welcomeQuestion1": "用简单的术语解释量子计算",
   "welcomeQuestion2": "人工智能的最新趋势是什么？",

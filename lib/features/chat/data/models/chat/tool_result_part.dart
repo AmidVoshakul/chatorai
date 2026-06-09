@@ -1,0 +1,76 @@
+import 'message_part.dart';
+
+// ── ToolResultPart ───────────────────────────────────────────
+
+class ToolResultPart extends MessagePart {
+  final String toolCallId;
+  final String toolName;
+  final String? result;
+  final String? error;
+  final ToolState state;
+  final Duration? duration;
+  final Map<String, dynamic>? input;
+  final bool isStreaming;
+  const ToolResultPart({
+    required this.toolCallId,
+    required this.toolName,
+    this.result,
+    this.error,
+    this.state = ToolState.running,
+    this.duration,
+    this.input,
+    this.isStreaming = false,
+  });
+
+  ToolResultPart copyWith({
+    String? toolCallId,
+    String? toolName,
+    String? result,
+    String? error,
+    ToolState? state,
+    Duration? duration,
+    Map<String, dynamic>? input,
+    bool? isStreaming,
+  }) {
+    return ToolResultPart(
+      toolCallId: toolCallId ?? this.toolCallId,
+      toolName: toolName ?? this.toolName,
+      result: result ?? this.result,
+      error: error ?? this.error,
+      state: state ?? this.state,
+      duration: duration ?? this.duration,
+      input: input ?? this.input,
+      isStreaming: isStreaming ?? this.isStreaming,
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': 'tool_result',
+    'toolCallId': toolCallId,
+    'toolName': toolName,
+    'result': result,
+    'error': error,
+    'state': state.name,
+    'duration': duration?.inMilliseconds,
+    'input': input,
+    'isStreaming': isStreaming,
+  };
+
+  factory ToolResultPart.fromJson(Map<String, dynamic> json) {
+    return ToolResultPart(
+      toolCallId: json['toolCallId'] as String,
+      toolName: json['toolName'] as String,
+      result: json['result'] as String?,
+      error: json['error'] as String?,
+      state: (json['state'] as String?) != null
+          ? ToolState.values.byName(json['state'] as String)
+          : ToolState.completed,
+      duration: json['duration'] != null
+          ? Duration(milliseconds: json['duration'] as int)
+          : null,
+      input: json['input'] as Map<String, dynamic>?,
+      isStreaming: json['isStreaming'] as bool? ?? false,
+    );
+  }
+}
