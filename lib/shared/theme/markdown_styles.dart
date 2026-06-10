@@ -72,7 +72,7 @@ class ChatoraiMarkdownStyles {
       ),
       a: baseStyle.a?.copyWith(
         color: ChatoraiColors.orange,
-        decoration: TextDecoration.underline,
+        decoration: TextDecoration.none,
       ),
       h1: baseStyle.h1?.copyWith(
         color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,

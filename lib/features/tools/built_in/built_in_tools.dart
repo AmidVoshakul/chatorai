@@ -1,5 +1,6 @@
 import 'package:chatorai/features/chat/domain/services/chat_ai_service.dart';
 import 'package:chatorai/features/tools/data/models/tool_registry.dart';
+import 'package:chatorai/features/skills/domain/services/skill_service.dart';
 import 'bash.dart';
 import 'read.dart';
 import 'glob.dart';
@@ -15,6 +16,8 @@ import 'todo_write.dart';
 void registerBuiltInTools(
   ToolRegistry registry, {
   ChatAiService? chatAiService,
+  ToolRegistry? toolRegistry,
+  SkillService? skillService,
 }) {
   registry.register(createBashTool());
   registry.register(createReadTool());
@@ -25,6 +28,13 @@ void registerBuiltInTools(
   registry.register(createWebfetchTool());
   registry.register(createWebsearchTool());
   registry.register(createApplyPatchTool());
-  registry.register(createTaskTool(chatAiService: chatAiService));
   registry.register(createTodoWriteTool());
+  // Task tool needs multiple services
+  registry.register(
+    createTaskTool(
+      chatAiService: chatAiService,
+      toolRegistry: toolRegistry,
+      skillService: skillService,
+    ),
+  );
 }

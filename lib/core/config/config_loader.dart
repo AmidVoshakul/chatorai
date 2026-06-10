@@ -30,12 +30,23 @@ class ConfigValidationError extends ConfigError {
 
 /// Responsible for finding and reading `chatorai.json`.
 ///
-/// Search order:
-/// 1. `~/.config/chatorai/chatorai.json`
-/// 2. `./chatorai.json` (project root)
+/// Search order (first found wins):
+/// 1. `./.chatorai/chatorai.json` (project-specific, highest priority)
+/// 2. `~/.config/chatorai/chatorai.json` (global user config, fallback)
 /// 3. Fallback: empty config object `{}`
 class ConfigLoader {
   static Future<String> load() async {
+    // 1. Project-specific config (highest priority)
+    final projectConfig = File('.chatorai/chatorai.json');
+    if (await projectConfig.exists()) {
+      try {
+        return await projectConfig.readAsString();
+      } on IOException catch (e) {
+        throw ConfigReadError(path: projectConfig.path, original: e.toString());
+      }
+    }
+
+    // 2. Global user config (fallback)
     final home = Platform.environment['HOME'];
     if (home != null) {
       final userConfig = File('$home/.config/chatorai/chatorai.json');
@@ -48,16 +59,7 @@ class ConfigLoader {
       }
     }
 
-    final projectConfig = File('chatorai.json');
-    if (await projectConfig.exists()) {
-      try {
-        return await projectConfig.readAsString();
-      } on IOException catch (e) {
-        throw ConfigReadError(path: projectConfig.path, original: e.toString());
-      }
-    }
-
-    // Fallback: empty config
+    // 3. Fallback: empty config
     return '{}';
   }
 }

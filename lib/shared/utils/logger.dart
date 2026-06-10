@@ -103,4 +103,5 @@ class LogTags {
   static final Logger sidebar = Logger('Sidebar');
   static final Logger errorMessage = Logger('ErrorMessage');
   static final Logger permission = Logger('Permission');
+  static final Logger skills = Logger('Skills');
 }

@@ -3,7 +3,6 @@ import 'package:chatorai/features/chat/data/models/chat_model.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/features/models_browser/presentation/screens/models_screen.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
-import 'package:chatorai/core/constants/chat_constants.dart';
 
 // ===========================================================================
 // WIDGET CLASS
@@ -37,8 +36,6 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final isMobile = screenWidth < ChatScreenConstants.mobileBreakpoint;
     final isDark = theme.brightness == Brightness.dark;
 
     final modelTextColor = isDark ? Colors.grey[700] : theme.iconTheme.color;
@@ -56,50 +53,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         if (selectedModelObject != null)
-          isMobile
-              ? SizedBox(
-                  width: screenWidth * 0.50,
-                  child: Center(
-                    child: Text(
-                      selectedModelObject!.name,
-                      style: TextStyle(
-                        fontSize: ChatoraiFontSizes.sm,
-                        fontWeight: FontWeight.w500,
-                        color: modelTextColor,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                )
-              : Text(
-                  selectedModelObject!.name,
-                  style: TextStyle(
-                    fontSize: ChatoraiFontSizes.sm,
-                    fontWeight: FontWeight.w600,
-                    color: modelTextColor,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-        IconButton(
-          icon: Icon(Icons.smart_toy, size: ChatoraiIconSizes.buttonIcon),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ModelsScreen(
-                  onModelSelected: (String modelId, ChatModel? modelObject) {
-                    onModelSelected(modelId, modelObject);
-                  },
-                  currentModel: selectedModel,
-                ),
-              ),
-            );
-          },
-          tooltip: localizations.selectModelTooltip,
-        ),
+          _buildModelButton(context, modelTextColor),
         if (hasHeadings())
           IconButton(
             icon: Icon(
@@ -110,6 +64,34 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             tooltip: localizations.toggleNavigatorTooltip,
           ),
       ],
+    );
+  }
+
+  Widget _buildModelButton(BuildContext context, Color? modelTextColor) {
+    return TextButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ModelsScreen(
+              onModelSelected: (String modelId, ChatModel? modelObject) {
+                onModelSelected(modelId, modelObject);
+              },
+              currentModel: selectedModel,
+            ),
+          ),
+        );
+      },
+      child: Text(
+        selectedModelObject!.name,
+        style: TextStyle(
+          fontSize: ChatoraiFontSizes.sm,
+          fontWeight: FontWeight.w600,
+          color: modelTextColor,
+        ),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
     );
   }
 }

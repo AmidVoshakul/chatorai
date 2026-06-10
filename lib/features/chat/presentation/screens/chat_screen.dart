@@ -5,8 +5,8 @@ import 'dart:math';
 import 'package:chatorai/core/constants/chat_constants.dart';
 import 'package:chatorai/core/context/compaction_service.dart';
 import 'package:chatorai/features/agents/data/models/agent_registry.dart';
-import 'package:chatorai/features/chat/data/models/chat_model.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/data/models/chat_model.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/models/model_settings.dart';
 import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
@@ -36,6 +36,8 @@ import 'package:chatorai/providers.dart'
         currentAgentProvider;
 import 'package:chatorai/shared/utils/chat_error_utils.dart';
 import 'package:chatorai/shared/utils/chat_scroll_utils.dart';
+
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:chatorai/shared/utils/message_utils.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
@@ -85,6 +87,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   final ContinuationSuggestionService _suggestionService =
       ContinuationSuggestionService();
+  bool _userStopped = false;
 
   Chat? get currentChat => ref.watch(currentChatProvider);
   String get selectedModelId => ref.watch(modelProvider).selectedModelId;

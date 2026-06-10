@@ -80,11 +80,13 @@ ToolDef createGrepTool() {
           try {
             final content = await entity.readAsString(encoding: utf8);
             final lines = content.split('\n');
-            for (final line in lines) {
+            for (int lineNum = 0; lineNum < lines.length; lineNum++) {
               if (results.length >= maxMatches) break;
+              final line = lines[lineNum];
               if (regex.hasMatch(line)) {
                 final relative = p.relative(entity.path, from: safeRoot);
-                results.add('$relative: $line');
+                // Format: path:lineNumber: line (1-indexed line numbers)
+                results.add('$relative:${lineNum + 1}: $line');
               }
             }
           } catch (_) {}

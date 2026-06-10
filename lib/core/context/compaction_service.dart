@@ -40,7 +40,7 @@ class CompactionService {
   Future<List<Map<String, dynamic>>> compact({
     required List<Map<String, dynamic>> messages,
     required ChatAiService aiService,
-    String model = 'openrouter/auto',
+    required String model,
   }) async {
     if (messages.length < 4) return messages;
 

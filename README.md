@@ -340,6 +340,16 @@ Models  → Dio → OpenRouter /models endpoint → OpenRouterModel
 Config → SharedPreferences (runtime API key, baseUrl, model settings)
 ```
 
+### Reliability & Security
+
+- **Retry & Error Handling**: Transient network errors are automatically retried with unbounded exponential backoff and jitter, respecting `Retry-After` headers. Partial streamed content is preserved across retries to avoid losing user progress.
+- **Permission System**: A granular permission model controls tool access. By default, `read`, `glob`, and `grep` are allowed, while other tools (`bash`, `edit`, `write`, etc.) require user confirmation. Permissions can be customized via `chatorai.json`.
+- **Tool Output**: Standardized formats ensure consistency; for example, `grep` outputs `relative/path:lineNumber: content` with 1-indexed line numbers.
+- **Markdown Rendering**: Links are displayed without underlines for a cleaner appearance.
+- **UI Consistency**: The model selector in the app bar is a compact text button, providing a uniform experience across desktop and mobile.
+- **Streaming UX**: The reasoning header features a shimmer effect on the "Reasoning" text only, with separate Jennings dots. Tool results are fully preserved and expandable without truncation.
+- **Logging Sanitization**: Sensitive data (API keys, tokens) is never logged. Error messages shown to users are sanitized (truncated, stack traces removed) to avoid leaking implementation details.
+
 ## ⚠️ Known Gotchas
 
 - `.env` is **dev-only**. It is not bundled in release builds. Runtime users enter credentials in settings.

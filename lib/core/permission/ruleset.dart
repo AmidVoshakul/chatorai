@@ -106,7 +106,7 @@ class PermissionRuleset {
         const PermissionRule(
           permission: 'webfetch',
           pattern: '*',
-          action: PermissionAction.ask,
+          action: PermissionAction.allow,
         ),
         const PermissionRule(
           permission: 'websearch',

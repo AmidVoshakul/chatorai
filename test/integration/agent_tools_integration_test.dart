@@ -198,6 +198,9 @@ void main() {
       test('executes subagent when ChatAiService provided', () async {
         // Create a fake ChatAiService that immediately completes
         final fakeService = _FakeChatAiService();
+        // Set the current model and temperature to simulate parent call state
+        fakeService.currentModelForTesting = 'openrouter/free';
+        fakeService.currentTemperatureForTesting = 0.7;
         final toolWithService = createTaskTool(chatAiService: fakeService);
         final recording = createRecordingContext(sessionId: defaultSessionId);
 

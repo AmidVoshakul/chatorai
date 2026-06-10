@@ -28,5 +28,35 @@ const Map<String, dynamic> chatoraiSchema = {
     },
     'provider': {'type': 'object'},
     'keybinding': {'type': 'object'},
+    'skills': {
+      'type': 'object',
+      'properties': {
+        'paths': {
+          'type': 'array',
+          'items': {'type': 'string'},
+          'description':
+              'List of directories to scan for skills (SKILL.md files)',
+        },
+        'urls': {
+          'type': 'array',
+          'items': {
+            'oneOf': [
+              {'type': 'string'},
+              {
+                'type': 'object',
+                'properties': {
+                  'url': {'type': 'string'},
+                  'cache_ttl': {'type': 'integer', 'minimum': 60},
+                  'api_key': {'type': 'string'},
+                },
+                'required': ['url'],
+              },
+            ],
+          },
+          'description': 'List of remote skill sources (URLs to index.json)',
+        },
+      },
+      'additionalProperties': false,
+    },
   },
 };

@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_call_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 class ReasoningPartWidget extends StatefulWidget {
   final ReasoningPart part;
@@ -39,7 +39,7 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
       duration: const Duration(milliseconds: 1800),
     );
 
-    if (widget.part.isStreaming && widget.part.content.isEmpty) {
+    if (widget.part.isStreaming) {
       _shimmerController.repeat();
       _dotsController.repeat();
     }
@@ -48,12 +48,10 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
   @override
   void didUpdateWidget(ReasoningPartWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final isReasoningPhase =
-        widget.part.isStreaming && widget.part.content.isEmpty;
-    if (isReasoningPhase) {
+    if (widget.part.isStreaming) {
       if (!_shimmerController.isAnimating) _shimmerController.repeat();
       if (!_dotsController.isAnimating) _dotsController.repeat();
-    } else if (!widget.part.isStreaming) {
+    } else {
       _shimmerController.stop();
       _shimmerController.value = 0;
       _dotsController.stop();
@@ -84,7 +82,7 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
         ),
         child: Opacity(
           // Уменьшаем заметность всего reasoning (и мыслей, и инструментов)
-          opacity: 0.6,
+          opacity: 0.5,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -111,7 +109,7 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
   Widget _buildContent() {
     final theme = Theme.of(context);
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 200),
+      constraints: const BoxConstraints(maxHeight: 350),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: DefaultTextStyle(
@@ -152,15 +150,8 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
       animation: Listenable.merge([_shimmerAnimation, _dotsController]),
       builder: (context, child) {
         final isStreaming = widget.part.isStreaming;
-        final String dotsText;
-        if (isStreaming) {
-          final dotIndex = (_dotsController.value * 3).floor() % 4;
-          dotsText = '.' * dotIndex;
-        } else {
-          dotsText = '';
-        }
 
-        Widget header = GestureDetector(
+        return GestureDetector(
           onTap: () => setState(() => _isExpanded = !_isExpanded),
           behavior: HitTestBehavior.opaque,
           child: Row(
@@ -175,9 +166,34 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
                 ),
               ),
               const SizedBox(width: ChatoraiSpacing.xs),
-              Expanded(
-                child: Text(
-                  '$headerText$dotsText',
+              if (isStreaming)
+                ShaderMask(
+                  shaderCallback: (bounds) {
+                    return LinearGradient(
+                      begin: Alignment(-1 + _shimmerAnimation.value, 0),
+                      end: Alignment(1 + _shimmerAnimation.value, 0),
+                      colors: [
+                        textColor.withValues(alpha: 0.35),
+                        textColor,
+                        textColor.withValues(alpha: 0.35),
+                      ],
+                      stops: const [0.25, 0.5, 0.75],
+                    ).createShader(bounds);
+                  },
+                  blendMode: BlendMode.srcIn,
+                  child: Text(
+                    headerText,
+                    style: TextStyle(
+                      fontSize: ChatoraiFontSizes.sm,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                      color: textColor,
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  headerText,
                   style: TextStyle(
                     fontSize: ChatoraiFontSizes.sm,
                     fontWeight: FontWeight.w600,
@@ -185,30 +201,28 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
                     color: textColor,
                   ),
                 ),
+              // Dots (without shimmer)
+              AnimatedBuilder(
+                animation: _dotsController,
+                builder: (context, child) {
+                  final dotIndex = isStreaming
+                      ? (_dotsController.value * 3).floor() % 4
+                      : 0;
+                  final dots = '.' * dotIndex;
+                  return Text(
+                    dots,
+                    style: TextStyle(
+                      fontSize: ChatoraiFontSizes.sm,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                      color: textColor,
+                    ),
+                  );
+                },
               ),
             ],
           ),
         );
-
-        if (isStreaming) {
-          return ShaderMask(
-            shaderCallback: (bounds) {
-              return LinearGradient(
-                begin: Alignment(-1 + _shimmerAnimation.value, 0),
-                end: Alignment(1 + _shimmerAnimation.value, 0),
-                colors: [
-                  textColor.withValues(alpha: 0.35),
-                  textColor,
-                  textColor.withValues(alpha: 0.35),
-                ],
-                stops: const [0.25, 0.5, 0.75],
-              ).createShader(bounds);
-            },
-            blendMode: BlendMode.srcIn,
-            child: header,
-          );
-        }
-        return header;
       },
     );
   }

@@ -634,8 +634,8 @@ void main() {
       final lines = output.output.split('\n');
       // file3.txt has 2 lines with 'test'
       expect(lines.length, equals(2));
-      expect(lines, contains('file3.txt: This is a test file'));
-      expect(lines, contains('file3.txt: Another line with test'));
+      expect(lines, contains('file3.txt:1: This is a test file'));
+      expect(lines, contains('file3.txt:2: Another line with test'));
       expect(output.metadata?['count'], equals(2));
     });
 
@@ -662,8 +662,8 @@ void main() {
       final lines = output.output.split('\n');
       // Should match the two lines in file3.txt (contain 'test' lowercase)
       expect(lines.length, equals(2));
-      expect(lines, contains('file3.txt: This is a test file'));
-      expect(lines, contains('file3.txt: Another line with test'));
+      expect(lines, contains('file3.txt:1: This is a test file'));
+      expect(lines, contains('file3.txt:2: Another line with test'));
     });
 
     test('respects include filter (glob)', () async {
@@ -679,8 +679,8 @@ void main() {
       // file2.dart: 'void bar()' -> 1 line
       // sub/file4.dart: no 'void'
       expect(lines.length, equals(2));
-      expect(lines, contains('file1.dart: void main() { print("Hello"); }'));
-      expect(lines, contains('file2.dart: class Foo { void bar() {} }'));
+      expect(lines, contains('file1.dart:1: void main() { print("Hello"); }'));
+      expect(lines, contains('file2.dart:1: class Foo { void bar() {} }'));
     });
 
     test('limits results with max_matches', () async {
@@ -752,7 +752,7 @@ void main() {
 
       // The output will include the relative path from the subdirectory root,
       // which is just the filename.
-      expect(output.output, contains('file5.txt: No matches here'));
+      expect(output.output, contains('file5.txt:1: No matches here'));
     });
   });
 }

@@ -1,3 +1,4 @@
+import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 
 enum AgentMode { primary, subagent, all }
@@ -106,6 +107,51 @@ class AgentRegistry {
       systemPrompt:
           'Generate a PR-style summary: Key Decisions, Files Changed, Commands Run, Outcomes.',
       maxSteps: 1,
+    ),
+    'code-reviewer': AgentDefinition(
+      id: 'code-reviewer',
+      name: 'Code Reviewer',
+      description:
+          'Specialist for code reviews focusing on best practices, performance, and security.',
+      mode: AgentMode.subagent,
+      hidden: false,
+      systemPrompt:
+          'You are an elite code review expert. Analyze code for best practices, performance, maintainability, and security. Provide actionable feedback with line-specific comments. NEVER modify files directly; only review.',
+      maxSteps: 10,
+      permissions: const PermissionRuleset(
+        rules: [
+          PermissionRule(
+            permission: 'read',
+            pattern: '*',
+            action: PermissionAction.allow,
+          ),
+          PermissionRule(
+            permission: 'glob',
+            pattern: '*',
+            action: PermissionAction.allow,
+          ),
+          PermissionRule(
+            permission: 'grep',
+            pattern: '*',
+            action: PermissionAction.allow,
+          ),
+          PermissionRule(
+            permission: 'edit',
+            pattern: '*',
+            action: PermissionAction.deny,
+          ),
+          PermissionRule(
+            permission: 'write',
+            pattern: '*',
+            action: PermissionAction.deny,
+          ),
+          PermissionRule(
+            permission: 'skill',
+            pattern: '*',
+            action: PermissionAction.allow,
+          ),
+        ],
+      ),
     ),
   };
 

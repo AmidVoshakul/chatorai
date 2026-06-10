@@ -42,11 +42,26 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _chatScrollUtils?.scrollToIndicator();
     });
-    _sendToAI(
-      text,
-      providedChat: chatFromStorage,
-      delegateAgentId: delegateAgentId,
-    );
+    try {
+      await _sendToAI(
+        text,
+        providedChat: chatFromStorage,
+        delegateAgentId: delegateAgentId,
+      );
+    } catch (e, s) {
+      ref.read(chatScreenProvider.notifier).setStreaming(false);
+      ref.read(streamingMessageProvider.notifier).reset();
+      try {
+        await _handleStreamingError(e);
+      } catch (e2) {
+        LogTags.chatService.logError(
+          '_handleStreamingError threw after main exception',
+          e2,
+          s,
+        );
+        // Even if error handling fails, we still reset state above.
+      }
+    }
   }
 
   Message _createUserMessage(
@@ -88,10 +103,92 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     );
   }
 
-  void _stopStreaming() {
+  void _stopStreaming() async {
+    _userStopped = true;
     final aiService = ref.read(chatAiServiceProvider);
     aiService.cancelAllRequests();
+
+    final streamingState = ref.read(streamingMessageProvider);
+    if (!streamingState.isStreaming) {
+      return;
+    }
+
+    final chat = currentChat;
+    if (chat != null && chat.messages.isNotEmpty) {
+      final content = streamingState.accumulatedParts
+          .whereType<TextPart>()
+          .map((p) => (p).content)
+          .join();
+      final reasoning = streamingState.accumulatedParts
+          .whereType<ReasoningPart>()
+          .map((p) => (p).content)
+          .join();
+      final toolParts = streamingState.accumulatedParts
+          .where((p) => p is ToolResultPart || p is TodoPart || p is TaskPart)
+          .toList();
+      final partsJson = toolParts.isNotEmpty
+          ? toolParts.map((p) => p.toJson()).toList()
+          : null;
+
+      final lastMessage = chat.messages.last;
+      Message completedMessage;
+      List<Message> newMessages;
+
+      if (lastMessage.role == MessageRole.assistant &&
+          !lastMessage.isComplete) {
+        completedMessage = lastMessage.copyWith(
+          content: content,
+          reasoning: reasoning.isNotEmpty ? reasoning : null,
+          isComplete: true,
+          partsJson: partsJson,
+          cumulativeTokens: aiService.tokenCounter.totalTokens,
+          contextLength: ref
+              .read(modelProvider)
+              .selectedModelObject
+              ?.contextLength,
+        );
+        newMessages = [
+          for (int i = 0; i < chat.messages.length - 1; i++) chat.messages[i],
+          completedMessage,
+        ];
+      } else {
+        completedMessage = _createAssistantMessage(
+          content: content,
+          reasoning: reasoning.isNotEmpty ? reasoning : null,
+          isComplete: true,
+          cumulativeTokens: aiService.tokenCounter.totalTokens,
+          partsJson: partsJson,
+          contextLength: ref
+              .read(modelProvider)
+              .selectedModelObject
+              ?.contextLength,
+        );
+        newMessages = [...chat.messages, completedMessage];
+      }
+
+      final newChat = chat.copyWith(
+        messages: newMessages,
+        updatedAt: DateTime.now(),
+      );
+      ref.read(chatListProvider.notifier).updateChat(newChat);
+      if (lastMessage.role == MessageRole.assistant &&
+          !lastMessage.isComplete) {
+        await _chatStorageService.updateMessageInChat(
+          newChat.id,
+          lastMessage.id,
+          completedMessage,
+        );
+      } else {
+        await _chatStorageService.addMessageToChat(
+          newChat.id,
+          completedMessage,
+        );
+      }
+      _showContinuationSuggestions(completedMessage);
+    }
+
     ref.read(chatScreenProvider.notifier).setStreaming(false);
+    await ref.read(streamingMessageProvider.notifier).stopStreaming();
     ref.read(streamingMessageProvider.notifier).reset();
   }
 

@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/shared/utils/logger.dart';
 
 // ===========================================================================
 // PROVIDER
@@ -62,10 +61,20 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
     if (!state.isStreaming) return;
     final parts = List<MessagePart>.from(state.accumulatedParts);
     _markReasoningAsDone(parts);
-    if (parts.isNotEmpty && parts.last is TextPart) {
-      final last = parts.last as TextPart;
-      parts[parts.length - 1] = TextPart(
-        content: last.content + content,
+
+    // Find any streaming TextPart (not necessarily last, e.g., after ToolResultPart)
+    int? openTextIdx;
+    for (int i = parts.length - 1; i >= 0; i--) {
+      if (parts[i] is TextPart && (parts[i] as TextPart).isStreaming) {
+        openTextIdx = i;
+        break;
+      }
+    }
+
+    if (openTextIdx != null) {
+      final existing = parts[openTextIdx] as TextPart;
+      parts[openTextIdx] = TextPart(
+        content: existing.content + content,
         isStreaming: true,
       );
     } else {
@@ -78,10 +87,21 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
     if (!state.isStreaming) return;
     final parts = List<MessagePart>.from(state.accumulatedParts);
     _markTextAsDone(parts);
-    if (parts.isNotEmpty && parts.last is ReasoningPart) {
-      final last = parts.last as ReasoningPart;
-      parts[parts.length - 1] = ReasoningPart(
-        content: last.content + reasoning,
+
+    // Find any streaming ReasoningPart (not necessarily last, e.g., after ToolResultPart)
+    int? openReasoningIdx;
+    for (int i = parts.length - 1; i >= 0; i--) {
+      if (parts[i] is ReasoningPart &&
+          (parts[i] as ReasoningPart).isStreaming) {
+        openReasoningIdx = i;
+        break;
+      }
+    }
+
+    if (openReasoningIdx != null) {
+      final existing = parts[openReasoningIdx] as ReasoningPart;
+      parts[openReasoningIdx] = ReasoningPart(
+        content: existing.content + reasoning,
         isStreaming: true,
       );
     } else {
@@ -125,9 +145,6 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
     );
     if (existingIdx != -1) {
       // Update existing part (e.g. tool-input-start → tool-call reuse)
-      LogTags.chatService.logDebug(
-        'onToolCall: duplicate toolCallId=$toolCallId, updating existing',
-      );
       parts[existingIdx] = ToolResultPart(
         toolCallId: toolCallId,
         toolName: toolName,
@@ -163,6 +180,7 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
         result: result,
         state: ToolState.completed,
         input: existing.input,
+        isStreaming: false,
       );
     }
     state = state.copyWith(accumulatedParts: parts);
@@ -182,6 +200,7 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
         error: error,
         state: ToolState.error,
         input: existing.input,
+        isStreaming: false,
       );
     }
     state = state.copyWith(accumulatedParts: parts);

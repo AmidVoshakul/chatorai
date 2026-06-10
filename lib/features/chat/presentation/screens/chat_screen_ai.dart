@@ -58,6 +58,10 @@ extension _ChatScreenAiExt on _ChatScreenState {
     try {
       await _streamAIResponse(chat, delegateAgentId: delegateAgentId);
     } catch (e) {
+      if (_userStopped) {
+        _userStopped = false;
+        return;
+      }
       final errorMessage = Message(
         role: MessageRole.assistant,
         content: ChatScreenConstants.defaultErrorMessage,

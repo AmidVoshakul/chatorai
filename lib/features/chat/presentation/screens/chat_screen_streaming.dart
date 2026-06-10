@@ -8,6 +8,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     required String modelId,
     required ModelSettings modelSettings,
   }) async {
+    LogTags.chatScreen.logInfo(
+      '_handleStreamingResponse START: chatId=${chat.id}, model=$modelId, isContinuation=$isContinuation',
+    );
     ref.read(chatScreenProvider.notifier).setStreaming(true);
     ref.read(streamingMessageProvider.notifier).startStreaming(chat.id);
     final StringBuffer pendingContent = StringBuffer();
@@ -88,7 +91,10 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     final aiService = ref.read(chatAiServiceProvider);
     final attemptMsgs = aiService.sanitizeMessages(messages);
     int latestCumulativeTokens = 0;
-    final modelContextLength = ref.read(modelProvider).selectedModelObject?.contextLength;
+    final modelContextLength = ref
+        .read(modelProvider)
+        .selectedModelObject
+        ?.contextLength;
 
     if (aiService.isOverflow && attemptMsgs.length > 4) {
       final compactionService = const CompactionService();
@@ -131,7 +137,20 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         tools: toolRegistry.toSDKTools(),
         onRetry: (attempt, error) {
           flushPendingUpdates();
-          ref.read(streamingMessageProvider.notifier).startStreaming(chat.id);
+          // Preserve accumulated text in the request to avoid restarting from scratch
+          final streamingState = ref.read(streamingMessageProvider);
+          final partialText = streamingState.accumulatedParts
+              .whereType<TextPart>()
+              .map((p) => p.content)
+              .join();
+          if (partialText.isNotEmpty) {
+            // Replace any partial assistant message at the end
+            if (attemptMsgs.isNotEmpty &&
+                attemptMsgs.last['role'] == 'assistant') {
+              attemptMsgs.removeLast();
+            }
+            attemptMsgs.add({'role': 'assistant', 'content': partialText});
+          }
         },
         onUsage: (input, output) {
           latestCumulativeTokens = aiService.tokenCounter.totalTokens;
@@ -163,69 +182,94 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         },
         onCompletion: (sdkText) async {
           flushPendingUpdates();
-          if (mounted) {
-            final content = fullContent.isNotEmpty
-                ? fullContent.toString()
-                : sdkText;
-            final reasoning = fullReasoning.isNotEmpty
-                ? fullReasoning.toString()
-                : null;
-            final streamingState = ref.read(streamingMessageProvider);
-            final allParts = streamingState.accumulatedParts;
-            final toolParts = allParts
-                .where(
-                  (p) => p is ToolResultPart || p is TodoPart || p is TaskPart,
-                )
-                .toList();
-            final partsJson = toolParts.isNotEmpty
-                ? toolParts.map((p) => p.toJson()).toList()
-                : null;
-            final lastIsIncomplete =
-                chat.messages.isNotEmpty &&
-                chat.messages.last.role == MessageRole.assistant &&
-                !chat.messages.last.isComplete;
-            Message completedMessage;
-            List<Message> newMessages;
-            if (lastIsIncomplete) {
-              final lastMsg = chat.messages.last;
-               completedMessage = lastMsg.copyWith(
-                 content: content,
-                 reasoning: reasoning,
-                 isComplete: true,
-                 partsJson: partsJson,
-                 cumulativeTokens: latestCumulativeTokens,
-                 contextLength: modelContextLength ?? lastMsg.contextLength,
-               );
-              newMessages = [
-                for (int i = 0; i < chat.messages.length - 1; i++)
-                  chat.messages[i],
-                completedMessage,
-              ];
-            } else {
-               completedMessage = _createAssistantMessage(
-                 content: content,
-                 reasoning: reasoning,
-                 isComplete: true,
-                 cumulativeTokens: latestCumulativeTokens,
-                 partsJson: partsJson,
-                 contextLength: modelContextLength,
-               );
-              newMessages = [...chat.messages, completedMessage];
+          if (!mounted) return;
+          LogTags.chatScreen.logInfo(
+            'onCompletion: flushing done, proceeding to finalize message',
+          );
+          final streamingState = ref.read(streamingMessageProvider);
+          final allParts = streamingState.accumulatedParts;
+          LogTags.chatScreen.logDebug(
+            'onCompletion: totalParts=${allParts.length}, will extract text+reasoning',
+          );
+
+          // Extract text content from all TextParts
+          final textBuffer = StringBuffer();
+          final reasoningBuffer = StringBuffer();
+          for (final part in allParts) {
+            if (part is TextPart) {
+              textBuffer.write(part.content);
+            } else if (part is ReasoningPart) {
+              reasoningBuffer.write(part.content);
             }
-            final newChat = chat.copyWith(
-              messages: newMessages,
-              updatedAt: DateTime.now(),
-            );
-            ref.read(chatListProvider.notifier).updateChat(newChat);
-            ref.read(chatScreenProvider.notifier).setStreaming(false);
-            await ref.read(streamingMessageProvider.notifier).stopStreaming();
-            await _chatStorageService.updateMessageInChat(
-              newChat.id,
-              completedMessage.id,
-              completedMessage,
-            );
-            _showContinuationSuggestions(completedMessage);
           }
+          final content = textBuffer.toString().isNotEmpty
+              ? textBuffer.toString()
+              : sdkText;
+          final reasoning = reasoningBuffer.toString().isNotEmpty
+              ? reasoningBuffer.toString()
+              : null;
+
+          LogTags.chatScreen.logDebug(
+            'onCompletion: extracted contentLen=${content.length}, reasoningLen=${reasoning?.length ?? 0}',
+          );
+
+          final toolParts = allParts
+              .where(
+                (p) => p is ToolResultPart || p is TodoPart || p is TaskPart,
+              )
+              .toList();
+          final partsJson = toolParts.isNotEmpty
+              ? toolParts.map((p) => p.toJson()).toList()
+              : null;
+
+          final lastIsIncomplete =
+              chat.messages.isNotEmpty &&
+              chat.messages.last.role == MessageRole.assistant &&
+              !chat.messages.last.isComplete;
+          Message completedMessage;
+          List<Message> newMessages;
+          if (lastIsIncomplete) {
+            final lastMsg = chat.messages.last;
+            completedMessage = lastMsg.copyWith(
+              content: content,
+              reasoning: reasoning,
+              isComplete: true,
+              partsJson: partsJson,
+              cumulativeTokens: latestCumulativeTokens,
+              contextLength: modelContextLength ?? lastMsg.contextLength,
+            );
+            newMessages = [
+              for (int i = 0; i < chat.messages.length - 1; i++)
+                chat.messages[i],
+              completedMessage,
+            ];
+          } else {
+            completedMessage = _createAssistantMessage(
+              content: content,
+              reasoning: reasoning,
+              isComplete: true,
+              cumulativeTokens: latestCumulativeTokens,
+              partsJson: partsJson,
+              contextLength: modelContextLength,
+            );
+            newMessages = [...chat.messages, completedMessage];
+          }
+          final newChat = chat.copyWith(
+            messages: newMessages,
+            updatedAt: DateTime.now(),
+          );
+          LogTags.chatScreen.logInfo(
+            'onCompletion: saving message id=${completedMessage.id}, partsCount=${toolParts.length}',
+          );
+          ref.read(chatListProvider.notifier).updateChat(newChat);
+          ref.read(chatScreenProvider.notifier).setStreaming(false);
+          await ref.read(streamingMessageProvider.notifier).stopStreaming();
+          await _chatStorageService.updateMessageInChat(
+            newChat.id,
+            completedMessage.id,
+            completedMessage,
+          );
+          _showContinuationSuggestions(completedMessage);
         },
       );
     } catch (e) {

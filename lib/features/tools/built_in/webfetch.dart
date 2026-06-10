@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data'; // for BytesBuilder
 
 import 'package:chatorai/features/tools/data/models/tool.dart';
 import 'package:chatorai/shared/utils/logger.dart';
@@ -57,24 +56,20 @@ ToolDef createWebfetchTool() {
       }
 
       try {
-        final client = HttpClient();
+        final client = HttpClient()
+          ..userAgent =
+              'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
         client.connectionTimeout = const Duration(seconds: 10);
         final request = await client
             .getUrl(uri)
             .timeout(const Duration(seconds: 10));
+        request.followRedirects = true;
+        request.maxRedirects = 5;
         final response = await request.close();
-        final byteBuffer = BytesBuilder();
-        await for (final chunk in response) {
-          byteBuffer.add(chunk);
-           if (byteBuffer.length >= maxChars * 2) {
-             break; // rough estimate for bytes
-           }
-        }
+        final text = await response.transform(utf8.decoder).join();
         client.close();
-        // Decode as UTF-8 to properly handle UTF-8 encoded content (Russian, Chinese, etc.)
-        final text = utf8.decode(byteBuffer.takeBytes(), allowMalformed: true);
         LogTags.network.logInfo(
-          'webfetch: Content fetched and decoded (${text.length} chars)',
+          'webfetch: Content fetched (${text.length} chars) from $url',
         );
         return ToolOutput(text.substring(0, text.length.clamp(0, maxChars)));
       } on TimeoutException {

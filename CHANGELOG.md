@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Retry & Rate Limiting**: Unbounded exponential backoff retry with jitter, `Retry-After` header support, and context preservation across retries.
+- **Permission System**: Default rules (`read`, `glob`, `grep` allow; others ask) with user-configurable `chatorai.json` and Once/Always/Reject prompts.
+- **Tool Output Format**: Standardized output, including `grep`'s `relative/path:lineNumber: content` format (1-indexed).
+- **Markdown Rendering**: Links no longer have underlines for a cleaner look.
+- **ChatAppBar**: Model selector is now a clickable text button with uniform design across desktop and mobile.
+- **Streaming UX**: Reasoning shimmer effect (on "Reasoning" word only) with separate Jennings dots; tool results preserved without truncation when expanded.
+- **Error Handling**: Clear error messages for rate limits and failures; automatic retries with user-friendly feedback.
+
 ## [1.0.0] - 2025-12-30
 
 ### Added

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/features/chat/data/models/provider_settings.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/shared/utils/secure_storage_service.dart';
 
 final _logger = LogTags.settings;
 
@@ -38,6 +39,8 @@ class ProviderSettingsState {
 // =============================================================================
 
 class ProviderSettingsNotifier extends Notifier<ProviderSettingsState> {
+  final SecureStorageService _secureStorage = SecureStorageService();
+
   @override
   ProviderSettingsState build() {
     _loadAll();
@@ -45,7 +48,7 @@ class ProviderSettingsNotifier extends Notifier<ProviderSettingsState> {
   }
 
   // ---------------------------------------------------------------------------
-  // SharedPreferences helpers
+  // SharedPreferences helpers (for non-sensitive settings)
   // ---------------------------------------------------------------------------
 
   Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
@@ -54,6 +57,27 @@ class ProviderSettingsNotifier extends Notifier<ProviderSettingsState> {
   String _apiKeyKey(String id) => 'provider_api_key_$id';
   String _baseUrlKey(String id) => 'provider_base_url_$id';
   String _modelsKey(String id) => 'provider_models_$id';
+
+  // Get API key from secure storage, migrating from SharedPreferences if needed
+  Future<String?> _getOrMigrateApiKey(
+    String id,
+    SharedPreferences prefs,
+  ) async {
+    final secureKey = await _secureStorage.read(key: _apiKeyKey(id));
+    if (secureKey != null) return secureKey;
+
+    // Migrate from SharedPreferences (legacy)
+    final legacyKey = prefs.getString(_apiKeyKey(id));
+    if (legacyKey != null) {
+      await _secureStorage.write(key: _apiKeyKey(id), value: legacyKey);
+      await prefs.remove(_apiKeyKey(id));
+      _logger.logInfo(
+        '[ProviderSettings] Migrated API key for $id to secure storage',
+      );
+      return legacyKey;
+    }
+    return null;
+  }
 
   // ---------------------------------------------------------------------------
   // Load
@@ -75,7 +99,8 @@ class ProviderSettingsNotifier extends Notifier<ProviderSettingsState> {
       final map = <String, ProviderSettings>{};
       for (final id in providerIds) {
         final enabled = prefs.getBool(_enabledKey(id)) ?? false;
-        final apiKey = prefs.getString(_apiKeyKey(id));
+        // API key from secure storage (with migration fallback)
+        final apiKey = await _getOrMigrateApiKey(id, prefs);
         final baseUrl = prefs.getString(_baseUrlKey(id));
         final selectedModelIds =
             prefs.getStringList(_modelsKey(id)) ?? <String>[];
@@ -118,8 +143,7 @@ class ProviderSettingsNotifier extends Notifier<ProviderSettingsState> {
 
   Future<void> saveApiKey(String id, String apiKey) async {
     try {
-      final prefs = await _prefs;
-      await prefs.setString(_apiKeyKey(id), apiKey);
+      await _secureStorage.write(key: _apiKeyKey(id), value: apiKey);
 
       final current = state.providers[id] ?? const ProviderSettings();
       final updated = current.copyWith(apiKey: apiKey);
@@ -173,7 +197,7 @@ class ProviderSettingsNotifier extends Notifier<ProviderSettingsState> {
     try {
       final prefs = await _prefs;
       await prefs.remove(_enabledKey(id));
-      await prefs.remove(_apiKeyKey(id));
+      await _secureStorage.delete(key: _apiKeyKey(id)); // Secure delete
       await prefs.remove(_baseUrlKey(id));
       await prefs.remove(_modelsKey(id));
 

@@ -147,11 +147,6 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
     final desc = input['description'] as String?;
     final result = part.result ?? '';
 
-    final truncatedResult = _truncateOutput(
-      result,
-      _maxShellLines,
-      _maxShellChars,
-    );
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Column(
@@ -181,11 +176,11 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
                 ),
               ),
             ),
-          if (truncatedResult.isNotEmpty)
+          if (result.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 4, left: 12),
+              padding: const EdgeInsets.only(left: 12),
               child: SelectableText(
-                truncatedResult,
+                result,
                 style: TextStyle(
                   fontFamily: 'monospace',
                   fontSize: ChatoraiFontSizes.sm,
@@ -287,23 +282,8 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
     return _genericBody(theme, part.result ?? '');
   }
 
-  static const int _maxGenericLines = 3;
-  static const int _maxShellLines = 10;
-  static const int _maxGenericChars = 2000;
-  static const int _maxShellChars = 10000;
-
-  Widget _genericBody(
-    ThemeData theme,
-    String body, {
-    bool isError = false,
-    bool isShell = false,
-  }) {
+  Widget _genericBody(ThemeData theme, String body, {bool isError = false}) {
     if (body.isEmpty) return const SizedBox.shrink();
-
-    final maxLines = isShell ? _maxShellLines : _maxGenericLines;
-    final maxChars = isShell ? _maxShellChars : _maxGenericChars;
-    final truncated = _truncateOutput(body, maxLines, maxChars);
-    final wasTruncated = truncated != body;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -312,7 +292,7 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
         Padding(
           padding: const EdgeInsets.only(left: 12),
           child: SelectableText(
-            truncated,
+            body,
             style: TextStyle(
               fontFamily: 'monospace',
               fontSize: ChatoraiFontSizes.sm,
@@ -322,8 +302,7 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
             ),
           ),
         ),
-        if (wasTruncated || true)
-          _buildResultFooter(theme, body, wasTruncated, isError),
+        _buildResultFooter(theme, body, false, isError),
       ],
     );
   }
@@ -383,20 +362,5 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
 
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text));
-  }
-
-  String _truncateOutput(String output, int maxLines, int maxChars) {
-    var result = output;
-    final lines = result.split('\n');
-    if (lines.length > maxLines) {
-      result = lines.take(maxLines).join('\n');
-    }
-    if (result.length > maxChars) {
-      result = result.substring(0, maxChars - 1);
-    }
-    if (result != output) {
-      result = '$result…';
-    }
-    return result;
   }
 }

@@ -3,6 +3,7 @@ import 'package:chatorai/features/agents/data/models/agent_registry.dart';
 import 'package:chatorai/features/chat/domain/services/chat_ai_service.dart';
 import 'package:chatorai/features/tools/data/models/tool.dart';
 import 'package:chatorai/features/tools/data/models/tool_registry.dart';
+import 'package:chatorai/features/skills/domain/services/skill_service.dart';
 
 /// Tools always denied to subagents (prevents infinite delegation loops).
 const _subagentDeniedTools = {'task', 'todowrite'};
@@ -10,6 +11,7 @@ const _subagentDeniedTools = {'task', 'todowrite'};
 ToolDef createTaskTool({
   ChatAiService? chatAiService,
   ToolRegistry? toolRegistry,
+  SkillService? skillService,
 }) {
   return ToolDef(
     id: 'task',
@@ -105,13 +107,13 @@ ToolDef createTaskTool({
           '<task_result>[Subagent MVP not yet wired to ChatAiService. Agent: ${agent.name}]\n'
           'Prompt: $prompt</task_result>'
           '</task>',
-           metadata: {
-             'subagent_type': subagentType,
-             'agent_name': agent.name,
-             'description': description,
-             'session_id': sessionId,
-             ...(taskId != null ? {'task_id': taskId} : {}),
-           },
+          metadata: {
+            'subagent_type': subagentType,
+            'agent_name': agent.name,
+            'description': description,
+            'session_id': sessionId,
+            ...(taskId != null ? {'task_id': taskId} : {}),
+          },
         );
       }
 
@@ -126,10 +128,20 @@ ToolDef createTaskTool({
 
       final sb = StringBuffer();
 
+      final currentModel = chatAiService.currentModel;
+      if (currentModel == null) {
+        return ToolOutput(
+          'Error: No model selected in ChatAiService',
+          metadata: {'error': true},
+        );
+      }
+
+      final temperatureToUse = chatAiService.currentTemperature ?? 0.7;
+
       await chatAiService.streamChatCompletion(
         messages: messages,
-        model: 'openrouter/auto',
-        temperature: 0.7,
+        model: currentModel,
+        temperature: temperatureToUse,
         tools: subagentTools,
         maxSteps: agent.maxSteps,
         onChunk: (chunk) => sb.write(chunk),
@@ -151,13 +163,13 @@ ToolDef createTaskTool({
         '<summary>$description</summary>'
         '<task_result>$result</task_result>'
         '</task>',
-         metadata: {
-           'subagent_type': subagentType,
-           'agent_name': agent.name,
-           'description': description,
-           'session_id': sessionId,
-           ...(taskId != null ? {'task_id': taskId} : {}),
-         },
+        metadata: {
+          'subagent_type': subagentType,
+          'agent_name': agent.name,
+          'description': description,
+          'session_id': sessionId,
+          ...(taskId != null ? {'task_id': taskId} : {}),
+        },
       );
     },
   );

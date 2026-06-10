@@ -33,6 +33,26 @@ class PermissionService {
   Stream<PermissionRequest> get onAsked => _controller.stream;
   List<PermissionRule> get approvedRules => List.unmodifiable(_approved);
 
+  /// Seed the default rules from configuration.
+  /// This is called once at startup to load the permission rules from chatorai.json.
+  void seedRules(PermissionRuleset ruleset) {
+    if (!_rulesSeeded && ruleset.rules.isNotEmpty) {
+      _defaultRules.addAll(ruleset.rules);
+      _rulesSeeded = true;
+      LogTags.permission.logInfo(
+        'PermissionService seeded with ${ruleset.rules.length} rules',
+      );
+    }
+  }
+
+  bool isAllowed(String permission, String pattern) {
+    final rule = evaluate(permission, pattern, [
+      PermissionRuleset(rules: _defaultRules),
+      PermissionRuleset(sessionApproved: _approved),
+    ]);
+    return rule.action == PermissionAction.allow;
+  }
+
   Future<void> ask(PermissionRequest req, PermissionRuleset ruleset) async {
     LogTags.permission.logInfo(
       'PermissionService.ask: START for tool=${req.toolName}, permission=${req.permission}, patterns=${req.patterns}',

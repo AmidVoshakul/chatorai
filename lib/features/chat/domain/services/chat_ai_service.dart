@@ -90,6 +90,17 @@ class ChatAiService {
   int get totalTokens => _tokenCounter.totalTokens;
   bool get isOverflow =>
       _overflowDetector.isOverflow(_tokenCounter.totalTokens);
+  String? _currentModel;
+  String? get currentModel => _currentModel;
+  set currentModelForTesting(String? model) {
+    _currentModel = model;
+  }
+
+  double? _currentTemperature;
+  double? get currentTemperature => _currentTemperature;
+  set currentTemperatureForTesting(double? temp) {
+    _currentTemperature = temp;
+  }
 
   void _startProgressTimer() {
     _progressTimer?.cancel();
@@ -122,6 +133,9 @@ class ChatAiService {
   /// Retries on transient errors forever until success or cancellation.
   /// Emits progress via [retryCountdown] stream during backoff waits.
   /// [onRetry] is called before each retry attempt (not before the first attempt).
+  /// NOTE: We intentionally do NOT impose a max retry limit. In OpenCode, the
+  /// retry loop is unbounded to handle extended rate limits or network issues.
+  /// The system will keep retrying until the user cancels or the operation succeeds.
   Future<T> _retry<T>(
     Future<T> Function() operation, {
     Duration? baseDelay,
@@ -292,6 +306,8 @@ class ChatAiService {
     void Function(int attempt, Object error)? onRetry,
     void Function(List<Map<String, dynamic>> messages)? onOverflow,
   }) async {
+    _currentModel = model;
+    _currentTemperature = temperature;
     _isRetrying = false;
     _startProgressTimer();
     for (final m in messages) {
