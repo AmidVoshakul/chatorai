@@ -1,3 +1,8 @@
+String _breakablePath(String path) {
+  // Insert zero-width space after '/' to allow line breaking at slashes
+  return path.replaceAll('/', '/\u200B');
+}
+
 String _formatArgs(Map<String, dynamic> input, {int maxArgs = 3}) {
   final omit = {
     'path',
@@ -14,43 +19,38 @@ String _formatArgs(Map<String, dynamic> input, {int maxArgs = 3}) {
     if (entry.value is Map || entry.value is List) continue;
     if (args.length >= maxArgs) break;
     final val = entry.value.toString();
-    final display = val.length > 30 ? '${val.substring(0, 27)}...' : val;
-    args.add('${entry.key}=$display');
+    args.add('${entry.key}=$val');
   }
   return args.isEmpty ? '' : ' [${args.join(', ')}]';
 }
 
 String toolTitle(String toolName, Map<String, dynamic> input) {
   final path = input['path'] as String? ?? input['filePath'] as String? ?? '';
+  final url = input['url'] as String? ?? '';
+  final pattern = input['pattern'] as String? ?? '';
   final args = _formatArgs(input);
   switch (toolName.toLowerCase()) {
     case 'read':
-      return 'Read $path$args';
+      return 'Read ${_breakablePath(path)}$args';
     case 'edit':
-      return 'Edit $path$args';
+      return 'Edit ${_breakablePath(path)}$args';
     case 'write':
-      return 'Write $path';
+      return 'Write ${_breakablePath(path)}';
     case 'bash':
       final cmd = input['command'] as String? ?? '';
-      return '\$${cmd.length > 60 ? ' ${cmd.substring(0, 57)}...' : ' $cmd'}';
+      return '\$ $cmd';
     case 'glob':
-      final pattern = input['pattern'] as String? ?? '';
-      return 'Glob "$pattern"$args';
+      return 'Glob "${_breakablePath(pattern)}"$args';
     case 'grep':
-      final pattern = input['pattern'] as String? ?? '';
-      return 'Grep "$pattern"$args';
+      return 'Grep "${_breakablePath(pattern)}"$args';
     case 'webfetch':
-      final url = input['url'] as String? ?? '';
-      return 'WebFetch $url';
+      return 'WebFetch ${_breakablePath(url)}';
     case 'websearch':
       final query = input['query'] as String? ?? '';
-      final display = query.length > 40
-          ? '${query.substring(0, 37)}...'
-          : query;
-      return 'websearch "$display"$args';
+      return 'websearch "$query"$args';
     case 'task':
       final desc = input['description'] as String? ?? toolName;
-      return desc.length > 60 ? '${desc.substring(0, 57)}...' : desc;
+      return desc;
     case 'todowrite':
       return 'Updating todos...';
     case 'apply_patch':
@@ -58,7 +58,7 @@ String toolTitle(String toolName, Map<String, dynamic> input) {
     case 'question':
       return 'Asked questions';
     case 'skill':
-      return 'Skill "$path';
+      return 'Skill "${_breakablePath(path)}"';
     default:
       return toolName;
   }

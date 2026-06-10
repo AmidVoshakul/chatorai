@@ -105,13 +105,13 @@ ToolDef createTaskTool({
           '<task_result>[Subagent MVP not yet wired to ChatAiService. Agent: ${agent.name}]\n'
           'Prompt: $prompt</task_result>'
           '</task>',
-          metadata: {
-            'subagent_type': subagentType,
-            'agent_name': agent.name,
-            'description': description,
-            'session_id': sessionId,
-            if (taskId != null) 'task_id': taskId,
-          },
+           metadata: {
+             'subagent_type': subagentType,
+             'agent_name': agent.name,
+             'description': description,
+             'session_id': sessionId,
+             ...(taskId != null ? {'task_id': taskId} : {}),
+           },
         );
       }
 
@@ -151,13 +151,13 @@ ToolDef createTaskTool({
         '<summary>$description</summary>'
         '<task_result>$result</task_result>'
         '</task>',
-        metadata: {
-          'subagent_type': subagentType,
-          'agent_name': agent.name,
-          'description': description,
-          'session_id': sessionId,
-          if (taskId != null) 'task_id': taskId,
-        },
+         metadata: {
+           'subagent_type': subagentType,
+           'agent_name': agent.name,
+           'description': description,
+           'session_id': sessionId,
+           ...(taskId != null ? {'task_id': taskId} : {}),
+         },
       );
     },
   );

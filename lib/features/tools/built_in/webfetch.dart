@@ -66,8 +66,9 @@ ToolDef createWebfetchTool() {
         final byteBuffer = BytesBuilder();
         await for (final chunk in response) {
           byteBuffer.add(chunk);
-          if (byteBuffer.length >= maxChars * 2)
-            break; // rough estimate for bytes
+           if (byteBuffer.length >= maxChars * 2) {
+             break; // rough estimate for bytes
+           }
         }
         client.close();
         // Decode as UTF-8 to properly handle UTF-8 encoded content (Russian, Chinese, etc.)

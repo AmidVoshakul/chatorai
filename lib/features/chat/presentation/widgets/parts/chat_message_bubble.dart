@@ -266,13 +266,14 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         .map((p) => p.content)
         .join('\n');
 
-    // Group tool parts under preceding reasoning
+    // Group tool parts under preceding reasoning, wrapping tools without reasoning in a virtual ReasoningPart
     List<Widget> groupedParts = [];
     ReasoningPart? currentReasoning;
     List<MessagePart> toolChildren = [];
 
     for (final part in m.parts) {
       if (part is ReasoningPart) {
+        // Flush previous reasoning (if any)
         if (currentReasoning != null) {
           groupedParts.add(
             ReasoningPartWidget(
@@ -284,12 +285,9 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         }
         currentReasoning = part;
       } else if (part is ToolCallPart || part is ToolResultPart) {
-        if (currentReasoning != null) {
-          toolChildren.add(part);
-        } else {
-          groupedParts.add(_buildPart(part, context));
-        }
+        toolChildren.add(part);
       } else {
+        // Any other part (TextPart, etc.)
         if (currentReasoning != null) {
           groupedParts.add(
             ReasoningPartWidget(
@@ -299,15 +297,32 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
           );
           currentReasoning = null;
           toolChildren = [];
+        } else if (toolChildren.isNotEmpty) {
+          // Tools without any preceding reasoning: wrap in a virtual empty reasoning
+          groupedParts.add(
+            ReasoningPartWidget(
+              part: ReasoningPart(content: '', isStreaming: false),
+              toolParts: List<MessagePart>.unmodifiable(toolChildren),
+            ),
+          );
+          toolChildren = [];
         }
         groupedParts.add(_buildPart(part, context));
       }
     }
 
+    // Flush at end
     if (currentReasoning != null) {
       groupedParts.add(
         ReasoningPartWidget(
           part: currentReasoning,
+          toolParts: List<MessagePart>.unmodifiable(toolChildren),
+        ),
+      );
+    } else if (toolChildren.isNotEmpty) {
+      groupedParts.add(
+        ReasoningPartWidget(
+          part: ReasoningPart(content: '', isStreaming: false),
           toolParts: List<MessagePart>.unmodifiable(toolChildren),
         ),
       );
@@ -345,6 +360,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
           contextLength: m.contextLength,
           agentName: widget.agentName,
           model: m.model,
+          timestamp: m.timestamp,
         ),
         if (!m.isStreaming && m.continuationSuggestions.isNotEmpty)
           Padding(
@@ -740,11 +756,15 @@ class _ActionMenuButton extends StatelessWidget {
       case 'edit':
         onEdit?.call();
       case 'copy':
-        if (content != null)
+        if (content != null) {
           MessageUtils.copyMessage(content: content!, context: context);
+        }
+        break;
       case 'share':
-        if (content != null)
+        if (content != null) {
           MessageUtils.shareMessage(content: content!, context: context);
+        }
+        break;
       case 'delete':
         FocusScope.of(context).unfocus();
         final deleted = await MessageUtils.deleteMessage(

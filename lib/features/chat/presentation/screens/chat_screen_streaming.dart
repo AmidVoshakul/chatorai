@@ -88,6 +88,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     final aiService = ref.read(chatAiServiceProvider);
     final attemptMsgs = aiService.sanitizeMessages(messages);
     int latestCumulativeTokens = 0;
+    final modelContextLength = ref.read(modelProvider).selectedModelObject?.contextLength;
 
     if (aiService.isOverflow && attemptMsgs.length > 4) {
       final compactionService = const CompactionService();
@@ -120,6 +121,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
       }
     }
     try {
+      if (modelContextLength != null) {
+        aiService.updateModelContextLength(modelContextLength);
+      }
       await aiService.streamChatCompletion(
         messages: attemptMsgs,
         model: modelId,
@@ -184,26 +188,28 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             List<Message> newMessages;
             if (lastIsIncomplete) {
               final lastMsg = chat.messages.last;
-              completedMessage = lastMsg.copyWith(
-                content: content,
-                reasoning: reasoning,
-                isComplete: true,
-                partsJson: partsJson,
-                cumulativeTokens: latestCumulativeTokens,
-              );
+               completedMessage = lastMsg.copyWith(
+                 content: content,
+                 reasoning: reasoning,
+                 isComplete: true,
+                 partsJson: partsJson,
+                 cumulativeTokens: latestCumulativeTokens,
+                 contextLength: modelContextLength ?? lastMsg.contextLength,
+               );
               newMessages = [
                 for (int i = 0; i < chat.messages.length - 1; i++)
                   chat.messages[i],
                 completedMessage,
               ];
             } else {
-              completedMessage = _createAssistantMessage(
-                content: content,
-                reasoning: reasoning,
-                isComplete: true,
-                cumulativeTokens: latestCumulativeTokens,
-                partsJson: partsJson,
-              );
+               completedMessage = _createAssistantMessage(
+                 content: content,
+                 reasoning: reasoning,
+                 isComplete: true,
+                 cumulativeTokens: latestCumulativeTokens,
+                 partsJson: partsJson,
+                 contextLength: modelContextLength,
+               );
               newMessages = [...chat.messages, completedMessage];
             }
             final newChat = chat.copyWith(

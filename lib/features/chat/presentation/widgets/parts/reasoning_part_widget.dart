@@ -145,7 +145,7 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
   }
 
   Widget _buildHeader(AppLocalizations? localizations, ThemeData theme) {
-    final textColor = theme.textTheme.bodyMedium?.color ?? Colors.grey.shade700;
+    final textColor = theme.colorScheme.onSurface;
     final headerText = localizations?.reasoning ?? 'Reasoning';
 
     return AnimatedBuilder(
