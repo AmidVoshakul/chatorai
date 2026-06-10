@@ -3,11 +3,14 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/features/chat/presentation/widgets/parts/tool_call_part_widget.dart';
+import 'package:chatorai/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
 
 class ReasoningPartWidget extends StatefulWidget {
   final ReasoningPart part;
+  final List<MessagePart>? toolParts;
 
-  const ReasoningPartWidget({super.key, required this.part});
+  const ReasoningPartWidget({super.key, required this.part, this.toolParts});
 
   @override
   State<ReasoningPartWidget> createState() => _ReasoningPartWidgetState();
@@ -79,40 +82,66 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
           borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
           border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(localizations, theme),
-            AnimatedCrossFade(
-              firstChild: const SizedBox.shrink(),
-              secondChild: Padding(
-                padding: const EdgeInsets.only(top: ChatoraiSpacing.sm),
-                child: _buildContent(),
+        child: Opacity(
+          // Уменьшаем заметность всего reasoning (и мыслей, и инструментов)
+          opacity: 0.6,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeader(localizations, theme),
+              AnimatedCrossFade(
+                firstChild: const SizedBox.shrink(),
+                secondChild: Padding(
+                  padding: const EdgeInsets.only(top: ChatoraiSpacing.sm),
+                  child: _buildContent(),
+                ),
+                crossFadeState: _isExpanded
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 200),
               ),
-              crossFadeState: _isExpanded
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-              duration: const Duration(milliseconds: 200),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildContent() {
+    final theme = Theme.of(context);
     return ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 200),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        child: MarkdownBody(
-          data: widget.part.content,
-          styleSheet: ChatoraiMarkdownStyles.getMarkdownStyles(context),
-          selectable: true,
+        child: DefaultTextStyle(
+          style: theme.textTheme.bodySmall ?? const TextStyle(fontSize: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              MarkdownBody(
+                data: widget.part.content,
+                styleSheet: ChatoraiMarkdownStyles.getMarkdownStyles(context),
+                selectable: true,
+              ),
+              if (widget.toolParts != null && widget.toolParts!.isNotEmpty)
+                const SizedBox(height: ChatoraiSpacing.md),
+              if (widget.toolParts != null)
+                ...widget.toolParts!.map(_buildToolWidget),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildToolWidget(MessagePart part) {
+    if (part is ToolCallPart) {
+      return ToolCallPartWidget(part: part);
+    } else if (part is ToolResultPart) {
+      return ToolResultPartWidget(part: part);
+    }
+    return const SizedBox.shrink();
   }
 
   Widget _buildHeader(AppLocalizations? localizations, ThemeData theme) {

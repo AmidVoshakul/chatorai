@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:chatorai/features/tools/data/models/tool.dart';
@@ -114,7 +115,7 @@ ToolDef createReadTool() {
         );
       }
 
-      final text = String.fromCharCodes(bytes);
+      final text = utf8.decode(bytes, allowMalformed: true);
       final lines = text.split('\n');
       final start = offset.clamp(0, lines.length);
       final end = (offset + limit).clamp(start, lines.length);

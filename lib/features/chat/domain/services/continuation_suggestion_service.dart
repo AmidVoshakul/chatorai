@@ -42,8 +42,7 @@ class ContinuationSuggestionService {
       final localizations = AppLocalizations.of(context);
       SnackbarUtils.showErrorSnackBar(
         context: context,
-        message:
-            localizations.generatingSuggestionsFailed('Error'),
+        message: localizations.generatingSuggestionsFailed('Error'),
         icon: Icons.error,
       );
     } finally {
@@ -60,10 +59,8 @@ class ContinuationSuggestionService {
     required bool mounted,
   }) async {
     final localizations = AppLocalizations.of(context);
-    final systemPrompt =
-        localizations.systemPromptSuggestion;
-    final userPrompt =
-        localizations.userPromptSuggestion;
+    final systemPrompt = localizations.systemPromptSuggestion;
+    final userPrompt = localizations.userPromptSuggestion;
 
     final suggestionPrompt = [
       {'role': 'system', 'content': systemPrompt},

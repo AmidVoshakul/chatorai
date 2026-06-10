@@ -47,7 +47,7 @@ String toolTitle(String toolName, Map<String, dynamic> input) {
       final display = query.length > 40
           ? '${query.substring(0, 37)}...'
           : query;
-      return 'Search "$display"$args';
+      return 'websearch "$display"$args';
     case 'task':
       final desc = input['description'] as String? ?? toolName;
       return desc.length > 60 ? '${desc.substring(0, 57)}...' : desc;

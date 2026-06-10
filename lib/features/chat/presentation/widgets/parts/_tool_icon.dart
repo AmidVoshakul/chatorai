@@ -39,15 +39,21 @@ IconData toolIconForState(String toolName, ToolState state) {
 class ToolIcon extends StatelessWidget {
   final String toolName;
   final double size;
+  final Color? color;
 
   const ToolIcon({
     super.key,
     required this.toolName,
     this.size = ChatoraiIconSizes.md,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Icon(toolIcon(toolName), size: size);
+    return Icon(
+      toolIcon(toolName),
+      size: size,
+      color: color ?? Theme.of(context).colorScheme.onSurfaceVariant,
+    );
   }
 }

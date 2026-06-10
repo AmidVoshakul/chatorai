@@ -125,6 +125,10 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         model: modelId,
         temperature: modelSettings.temperature,
         tools: toolRegistry.toSDKTools(),
+        onRetry: (attempt, error) {
+          flushPendingUpdates();
+          ref.read(streamingMessageProvider.notifier).startStreaming(chat.id);
+        },
         onUsage: (input, output) {
           latestCumulativeTokens = aiService.tokenCounter.totalTokens;
         },

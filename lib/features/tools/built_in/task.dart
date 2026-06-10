@@ -44,13 +44,29 @@ ToolDef createTaskTool({
       'required': ['description', 'prompt', 'subagent_type'],
     },
     execute: (input, ctx) async {
-      final subagentType = input['subagent_type'] as String? ?? 'general';
+      // Validate required fields
+      final description = input['description'] as String?;
       final prompt = input['prompt'] as String?;
-      final description = input['description'] as String? ?? 'Subagent task';
+      final subagentType = input['subagent_type'] as String?;
+      final taskId = input['task_id'] as String?;
 
-      if (prompt == null || prompt.isEmpty) {
+      if (description == null ||
+          description.isEmpty ||
+          prompt == null ||
+          prompt.isEmpty ||
+          subagentType == null ||
+          subagentType.isEmpty) {
         return ToolOutput(
-          'Error: prompt is required',
+          'Error: Missing required fields: description, prompt, subagent_type',
+          metadata: {'error': true},
+        );
+      }
+
+      // Ensure session ID is available
+      final sessionId = ctx.sessionId;
+      if (sessionId == null) {
+        return ToolOutput(
+          'Error: Missing session ID',
           metadata: {'error': true},
         );
       }
@@ -78,8 +94,13 @@ ToolDef createTaskTool({
 
       // If no ChatAiService provided, return placeholder (MVP fallback)
       if (chatAiService == null) {
+        final idAttr = taskId != null
+            ? 'id="$taskId"'
+            : 'id="sub-${DateTime.now().millisecondsSinceEpoch}"';
+        final sessionIdAttr = 'session_id="$sessionId"';
+        final taskIdAttr = taskId != null ? 'task_id="$taskId"' : '';
         return ToolOutput(
-          '<task id="sub-${DateTime.now().millisecondsSinceEpoch}" state="completed">'
+          '<task $idAttr $sessionIdAttr $taskIdAttr state="completed">'
           '<summary>$description</summary>'
           '<task_result>[Subagent MVP not yet wired to ChatAiService. Agent: ${agent.name}]\n'
           'Prompt: $prompt</task_result>'
@@ -88,6 +109,8 @@ ToolDef createTaskTool({
             'subagent_type': subagentType,
             'agent_name': agent.name,
             'description': description,
+            'session_id': sessionId,
+            if (taskId != null) 'task_id': taskId,
           },
         );
       }
@@ -118,8 +141,13 @@ ToolDef createTaskTool({
       );
 
       final result = sb.toString();
+      final idAttr = taskId != null
+          ? 'id="$taskId"'
+          : 'id="sub-${DateTime.now().millisecondsSinceEpoch}"';
+      final sessionIdAttr = 'session_id="$sessionId"';
+      final taskIdAttr = taskId != null ? 'task_id="$taskId"' : '';
       return ToolOutput(
-        '<task id="sub-${DateTime.now().millisecondsSinceEpoch}" state="completed">'
+        '<task $idAttr $sessionIdAttr $taskIdAttr state="completed">'
         '<summary>$description</summary>'
         '<task_result>$result</task_result>'
         '</task>',
@@ -127,6 +155,8 @@ ToolDef createTaskTool({
           'subagent_type': subagentType,
           'agent_name': agent.name,
           'description': description,
+          'session_id': sessionId,
+          if (taskId != null) 'task_id': taskId,
         },
       );
     },

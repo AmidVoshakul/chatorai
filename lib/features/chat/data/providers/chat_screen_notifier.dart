@@ -16,6 +16,8 @@ class ChatScreenState {
   final bool isNavigatorVisible;
   final List<MarkdownHeadingInfoWithKey> navigatorHeadings;
   final int activeHeadingIndex;
+  final bool isRetrying;
+  final double retryProgress;
 
   const ChatScreenState({
     this.isStreaming = false,
@@ -28,6 +30,8 @@ class ChatScreenState {
     this.isNavigatorVisible = false,
     this.navigatorHeadings = const [],
     this.activeHeadingIndex = -1,
+    this.isRetrying = false,
+    this.retryProgress = 1.0,
   });
 
   ChatScreenState copyWith({
@@ -41,6 +45,8 @@ class ChatScreenState {
     bool? isNavigatorVisible,
     List<MarkdownHeadingInfoWithKey>? navigatorHeadings,
     int? activeHeadingIndex,
+    bool? isRetrying,
+    double? retryProgress,
   }) {
     return ChatScreenState(
       isStreaming: isStreaming ?? this.isStreaming,
@@ -55,6 +61,8 @@ class ChatScreenState {
       isNavigatorVisible: isNavigatorVisible ?? this.isNavigatorVisible,
       navigatorHeadings: navigatorHeadings ?? this.navigatorHeadings,
       activeHeadingIndex: activeHeadingIndex ?? this.activeHeadingIndex,
+      isRetrying: isRetrying ?? this.isRetrying,
+      retryProgress: retryProgress ?? this.retryProgress,
     );
   }
 }
@@ -146,6 +154,19 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
 
   void clearNavigator() {
     state = state.copyWith(navigatorHeadings: [], activeHeadingIndex: -1);
+  }
+
+  // Retry UI state
+  void setRetrying(bool retrying) {
+    if (state.isRetrying != retrying) {
+      state = state.copyWith(isRetrying: retrying);
+    }
+  }
+
+  void setRetryProgress(double progress) {
+    if (state.retryProgress != progress) {
+      state = state.copyWith(retryProgress: progress);
+    }
   }
 }
 

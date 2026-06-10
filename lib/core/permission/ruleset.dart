@@ -111,7 +111,7 @@ class PermissionRuleset {
         const PermissionRule(
           permission: 'websearch',
           pattern: '*',
-          action: PermissionAction.ask,
+          action: PermissionAction.allow,
         ),
         const PermissionRule(
           permission: 'doom_loop',

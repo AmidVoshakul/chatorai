@@ -35,23 +35,48 @@ ToolDef createTodoWriteTool() {
       'required': ['todos'],
     },
     execute: (input, ctx) async {
-      await ctx.ask(permission: 'todowrite', patterns: ['*']);
+      // Validate: todos is required
+      if (!input.containsKey('todos') || input['todos'] == null) {
+        return ToolOutput(
+          'Error: todos parameter is required',
+          metadata: {'error': true},
+        );
+      }
+
       final todos = input['todos'] as List<dynamic>? ?? [];
       final sessionId = ctx.sessionId ?? 'default';
+
+      // Ask permission with pattern including count
+      await ctx.ask(
+        permission: 'todowrite',
+        patterns: ['todo_write:count=${todos.length}'],
+      );
 
       // Store in memory (MVP — replace with SharedPreferences/Hive later)
       _todoStore[sessionId] = todos.cast<Map<String, dynamic>>().toList();
 
       final output = {'todos': todos};
 
-      return ToolOutput(
-        'Todo list updated:\n${todos.map((t) => "[${(t['status'] ?? 'pending')}] ${(t['priority'] ?? 'medium')} ${(t['content'])}").join("\n")}',
-        metadata: {
-          'count': todos.length,
-          'sessionId': sessionId,
-          'todos': output,
-        },
-      );
+      // Build output string
+      String outputString;
+      if (todos.isEmpty) {
+        outputString = 'Todo list updated:\n[]';
+      } else {
+        outputString =
+            'Todo list updated:\n${todos.map((t) => "[${(t['status'] ?? 'pending')}] ${(t['priority'] ?? 'medium')} ${(t['content'])}").join("\n")}';
+      }
+
+      // Build metadata: error = false for empty list, no error key for non-empty (null)
+      final metadata = <String, dynamic>{
+        'count': todos.length,
+        'sessionId': sessionId,
+        'todos': output,
+      };
+      if (todos.isEmpty) {
+        metadata['error'] = false;
+      }
+
+      return ToolOutput(outputString, metadata: metadata);
     },
   );
 }

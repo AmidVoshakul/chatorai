@@ -1,4 +1,6 @@
 import 'dart:async';
+
+import 'package:chatorai/shared/utils/logger.dart';
 import 'evaluator.dart';
 import 'rule.dart';
 import 'ruleset.dart';
@@ -32,6 +34,9 @@ class PermissionService {
   List<PermissionRule> get approvedRules => List.unmodifiable(_approved);
 
   Future<void> ask(PermissionRequest req, PermissionRuleset ruleset) async {
+    LogTags.permission.logInfo(
+      'PermissionService.ask: START for tool=${req.toolName}, permission=${req.permission}, patterns=${req.patterns}',
+    );
     var needsAsk = false;
 
     for (final pattern in req.patterns) {
@@ -41,15 +46,26 @@ class PermissionService {
       ]);
 
       if (rule.action == PermissionAction.deny) {
+        LogTags.permission.logWarning(
+          'PermissionService.ask: DENY for tool=${req.toolName}, pattern=$pattern',
+        );
         throw PermissionDeniedError(req.toolName, pattern);
       }
 
       if (rule.action == PermissionAction.ask) {
+        LogTags.permission.logInfo(
+          'PermissionService.ask: ASK needed for tool=${req.toolName}, pattern=$pattern',
+        );
         needsAsk = true;
       }
     }
 
-    if (!needsAsk) return;
+    if (!needsAsk) {
+      LogTags.permission.logInfo(
+        'PermissionService.ask: ALLOW (no ask needed) for tool=${req.toolName}',
+      );
+      return;
+    }
 
     if (!_rulesSeeded && ruleset.rules.isNotEmpty) {
       _rulesSeeded = true;
@@ -62,8 +78,20 @@ class PermissionService {
       completer: completer,
       patterns: req.patterns,
     );
+    LogTags.permission.logInfo(
+      'PermissionService.ask: Emitting request on stream, pending count=${_pending.length}',
+    );
     _controller.add(req);
+
+    LogTags.permission.logInfo(
+      'PermissionService.ask: WAITING for user response for tool=${req.toolName}, requestId=${req.id}',
+    );
     await completer.future;
+
+    LogTags.permission.logInfo(
+      'PermissionService.ask: RESPONSE RECEIVED for tool=${req.toolName}, requestId=${req.id}',
+    );
+
     if (_pending.containsKey(req.id) && _pending[req.id]!.rejected) {
       throw PermissionRejectedError(req.toolName);
     }

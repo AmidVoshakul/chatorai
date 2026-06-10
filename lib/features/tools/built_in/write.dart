@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:chatorai/features/tools/data/models/tool.dart';
@@ -24,15 +25,34 @@ ToolDef createWriteTool() {
           input['file_path'] as String? ?? input['path'] as String?;
       final content = input['content'] as String?;
 
-      if (filePath == null) throw ArgumentError('file_path is required');
-      if (content == null) throw ArgumentError('content is required');
+      if (filePath == null) {
+        return ToolOutput(
+          'Error: file_path is required',
+          metadata: {'error': true},
+        );
+      }
+      if (content == null) {
+        return ToolOutput(
+          'Error: content is required',
+          metadata: {'error': true},
+        );
+      }
 
-      final safePath = resolveSafePath(filePath);
-      await ctx.ask(permission: 'write', patterns: [safePath]);
+      String safePath;
+      try {
+        safePath = resolveSafePath(filePath);
+      } catch (e) {
+        return ToolOutput('Error: ${e.toString()}', metadata: {'error': true});
+      }
+
+      await ctx.ask(
+        permission: 'write',
+        patterns: ['write:file_path=$filePath'],
+      );
 
       final file = File(safePath);
       await file.parent.create(recursive: true);
-      await file.writeAsString(content);
+      await file.writeAsBytes(utf8.encode(content));
 
       return ToolOutput(
         'File written successfully',

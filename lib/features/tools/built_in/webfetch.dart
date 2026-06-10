@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data'; // for BytesBuilder
 
 import 'package:chatorai/features/tools/data/models/tool.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 
 ToolDef createWebfetchTool() {
   return ToolDef(
@@ -19,10 +22,17 @@ ToolDef createWebfetchTool() {
       'required': ['url'],
     },
     execute: (input, ctx) async {
+      LogTags.permission.logInfo('webfetch.execute: START');
       final url = input['url'] as String?;
       if (url == null) throw ArgumentError('url is required');
 
-      await ctx.ask(permission: 'webfetch', patterns: [url]);
+      LogTags.permission.logInfo(
+        'webfetch.execute: About to call ctx.ask for url=$url',
+      );
+      await ctx.ask(permission: 'webfetch', patterns: ['webfetch:url=$url']);
+      LogTags.permission.logInfo(
+        'webfetch.execute: ctx.ask returned, permission granted',
+      );
 
       final maxChars = input['max_chars'] as int? ?? 50000;
 
@@ -53,20 +63,26 @@ ToolDef createWebfetchTool() {
             .getUrl(uri)
             .timeout(const Duration(seconds: 10));
         final response = await request.close();
-        final buffer = StringBuffer();
+        final byteBuffer = BytesBuilder();
         await for (final chunk in response) {
-          buffer.write(chunk);
-          if (buffer.length >= maxChars) break;
+          byteBuffer.add(chunk);
+          if (byteBuffer.length >= maxChars * 2)
+            break; // rough estimate for bytes
         }
         client.close();
-        final text = buffer.toString();
+        // Decode as UTF-8 to properly handle UTF-8 encoded content (Russian, Chinese, etc.)
+        final text = utf8.decode(byteBuffer.takeBytes(), allowMalformed: true);
+        LogTags.network.logInfo(
+          'webfetch: Content fetched and decoded (${text.length} chars)',
+        );
         return ToolOutput(text.substring(0, text.length.clamp(0, maxChars)));
       } on TimeoutException {
         return ToolOutput(
           'Error fetching $url: request timed out',
           metadata: {'error': true, 'timeout': true},
         );
-      } catch (e) {
+      } catch (e, s) {
+        LogTags.network.logError('webfetch: error fetching $url', e, s);
         return ToolOutput('Error fetching $url: $e', metadata: {'error': true});
       }
     },

@@ -41,6 +41,7 @@ dependencies:
   json_schema: ^5.2.2
   collection: ^1.19.1
   flutter_svg: ^2.0.10+1
+  ddgs: ^0.3.2
 
 dev_dependencies:
   flutter_test:

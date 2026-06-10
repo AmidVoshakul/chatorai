@@ -78,7 +78,7 @@ void main() {
       );
       await tool.execute({'query': 'flutter widgets'}, ctx);
       expect(capturedPermission, equals('websearch'));
-      expect(capturedPatterns, contains('flutter widgets'));
+      expect(capturedPatterns, equals(['websearch:query=flutter widgets']));
     });
 
     test('execute network error returns error metadata (no throw)', () async {

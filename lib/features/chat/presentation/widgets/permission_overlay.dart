@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/permission_provider.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 
 /// Bridges [PermissionService.onAsked] → UI dialog.
 class PermissionOverlay extends ConsumerStatefulWidget {
@@ -29,9 +30,21 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
   }
 
   Future<void> _onRequest(PermissionRequest req) async {
-    if (!mounted) return;
+    LogTags.permission.logInfo(
+      'PermissionOverlay._onRequest: START for tool=${req.toolName}',
+    );
+    if (!mounted) {
+      LogTags.permission.logWarning(
+        'PermissionOverlay._onRequest: Widget not mounted, aborting',
+      );
+      return;
+    }
 
     final l10n = AppLocalizations.of(context);
+    LogTags.permission.logInfo(
+      'PermissionOverlay._onRequest: Showing dialog for tool=${req.toolName}',
+    );
+
     final reply = await showDialog<PermissionReply>(
       context: context,
       barrierDismissible: false,
@@ -77,12 +90,27 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
       ),
     );
 
-    if (!mounted) return;
+    LogTags.permission.logInfo(
+      'PermissionOverlay._onRequest: Dialog closed with reply=$reply for tool=${req.toolName}',
+    );
+
+    if (!mounted) {
+      LogTags.permission.logWarning(
+        'PermissionOverlay._onRequest: Widget not mounted after dialog, aborting reply',
+      );
+      return;
+    }
 
     final service = ref.read(permissionServiceProvider);
     if (reply == null) {
+      LogTags.permission.logInfo(
+        'PermissionOverlay._onRequest: Reply=reject (null) for tool=${req.toolName}',
+      );
       service.reply(req.id, PermissionReply.reject);
     } else {
+      LogTags.permission.logInfo(
+        'PermissionOverlay._onRequest: Reply=$reply for tool=${req.toolName}',
+      );
       service.reply(req.id, reply);
     }
   }

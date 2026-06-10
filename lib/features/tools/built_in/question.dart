@@ -8,55 +8,95 @@ ToolDef createQuestionTool() {
     inputSchema: {
       'type': 'object',
       'properties': {
-        'question': {
-          'type': 'string',
-          'description': 'The question to ask the user',
-        },
-        'options': {
+        'questions': {
           'type': 'array',
-          'items': {'type': 'string'},
-          'description':
-              'Optional list of predefined options for the user to choose from',
-        },
-        'multiSelect': {
-          'type': 'boolean',
-          'description': 'Allow selecting multiple options (default: false)',
+          'items': {
+            'type': 'object',
+            'properties': {
+              'question': {
+                'type': 'string',
+                'description': 'The question text',
+              },
+              'options': {
+                'type': 'array',
+                'items': {'type': 'string'},
+                'description':
+                    'Optional list of predefined options for the user to choose from',
+              },
+              'multiple': {
+                'type': 'boolean',
+                'description': 'Allow selecting multiple options',
+              },
+            },
+            'required': ['question'],
+          },
+          'description': 'List of questions to ask the user',
         },
       },
-      'required': ['question'],
+      'required': ['questions'],
     },
     execute: (input, ctx) async {
-      final question = input['question'] as String?;
-      final options = (input['options'] as List?)?.cast<String>();
-      final multiSelect = input['multiSelect'] as bool? ?? false;
-
-      if (question == null || question.isEmpty) {
+      final questions = input['questions'] as List?;
+      if (questions == null || questions.isEmpty) {
         return ToolOutput(
-          'Error: question is required',
+          'Error: questions is required and must be a non-empty list',
           metadata: {'error': true},
         );
       }
 
+      // Validate each question has required 'question' field
+      for (final q in questions) {
+        if (q is! Map<String, dynamic>) {
+          return ToolOutput(
+            'Error: each question must be an object',
+            metadata: {'error': true},
+          );
+        }
+        final questionText = q['question'] as String?;
+        if (questionText == null || questionText.isEmpty) {
+          return ToolOutput(
+            'Error: each question must have a non-empty "question" field',
+            metadata: {'error': true},
+          );
+        }
+      }
+
+      // Build prompt for user
+      final prompt = _buildPrompt(questions);
+
+      // Call ctx.ask with the required pattern
       await ctx.ask(
         permission: 'question',
-        patterns: [question],
-        metadata: {
-          'question': question,
-          'options': options ?? [],
-          'multiSelect': multiSelect,
-          'awaiting_response': true,
-        },
+        patterns: ['question:count=${questions.length}'],
+        metadata: {'questions': questions, 'awaiting_response': true},
       );
 
       return ToolOutput(
-        question,
-        metadata: {
-          'question': question,
-          'options': options ?? [],
-          'multiSelect': multiSelect,
-          'awaiting_response': true,
-        },
+        prompt,
+        metadata: {'questions': questions, 'awaiting_response': true},
       );
     },
   );
+}
+
+String _buildPrompt(List<dynamic> questions) {
+  final buffer = StringBuffer();
+  for (int i = 0; i < questions.length; i++) {
+    final q = questions[i] as Map<String, dynamic>;
+    final questionText = q['question'] as String;
+    final options = (q['options'] as List?)?.cast<String>();
+    final multiple = q['multiple'] as bool? ?? false;
+
+    buffer.writeln('${i + 1}. $questionText');
+    if (options != null && options.isNotEmpty) {
+      buffer.write('   Options: ${options.join(', ')}');
+      if (multiple) {
+        buffer.write(' (multiple selection allowed)');
+      }
+      buffer.writeln();
+    } else {
+      buffer.writeln();
+    }
+  }
+  return buffer.toString().trim();
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/_tool_icon.dart';
@@ -31,22 +30,8 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
       onTap: canExpand
           ? () => setState(() => _isExpanded = !_isExpanded)
           : null,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 2),
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isError
-              ? theme.colorScheme.errorContainer.withValues(alpha: 0.12)
-              : theme.colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.6,
-                ),
-          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xs),
-          border: Border.all(
-            color: isError
-                ? theme.colorScheme.error.withValues(alpha: 0.3)
-                : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 1),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,86 +70,61 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
     ToolResultPart part,
     bool canExpand,
   ) {
-    final isPending = part.state == ToolState.pending;
+    final toolColor = isError
+        ? theme.colorScheme.error
+        : theme.colorScheme.onSurface;
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 16,
-          height: 16,
-          child: _buildStateIcon(
-            theme,
-            isPending,
-            isRunning,
-            isCompleted,
-            isError,
+        if (isRunning)
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(toolColor),
+            ),
           ),
-        ),
-        const SizedBox(width: 6),
-        ToolIcon(toolName: part.toolName),
+        if (isRunning) const SizedBox(width: 4),
+        ToolIcon(toolName: part.toolName, color: toolColor, size: 14),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             toolTitle(part.toolName, part.input ?? {}),
             style: theme.textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w500,
-              color: isError
-                  ? theme.colorScheme.onErrorContainer
-                  : isPending
-                  ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
-                  : theme.colorScheme.onSurfaceVariant,
+              color: toolColor,
+              fontSize: ChatoraiFontSizes.sm,
+              height: 1.4,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ),
         if (part.duration != null && isCompleted)
-          Text(
-            '${part.duration!.inMilliseconds}ms',
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontSize: 10,
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              '${part.duration!.inMilliseconds}ms',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: 10,
+                color: toolColor.withValues(alpha: 0.5),
+              ),
             ),
           ),
         if (canExpand)
-          AnimatedRotation(
-            turns: _isExpanded ? 0.5 : 0,
-            duration: const Duration(milliseconds: 200),
-            child: Icon(
-              Icons.keyboard_arrow_down,
-              size: 14,
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: AnimatedRotation(
+              turns: _isExpanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                Icons.keyboard_arrow_down,
+                size: 14,
+                color: toolColor.withValues(alpha: 0.5),
+              ),
             ),
           ),
       ],
     );
-  }
-
-  Widget _buildStateIcon(
-    ThemeData theme,
-    bool isPending,
-    bool isRunning,
-    bool isCompleted,
-    bool isError,
-  ) {
-    if (isPending) {
-      return Text(
-        '~',
-        style: TextStyle(
-          fontSize: 14,
-          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-        ),
-      );
-    }
-    if (isRunning) {
-      return SpinKitCircle(color: theme.colorScheme.primary, size: 14);
-    }
-    if (isError) {
-      return Icon(Icons.close, size: 14, color: theme.colorScheme.error);
-    }
-    if (isCompleted) {
-      return Icon(Icons.check, size: 14, color: theme.colorScheme.primary);
-    }
-    return const SizedBox.shrink();
   }
 
   Widget _buildBody(ThemeData theme, bool isError, ToolResultPart part) {
@@ -187,51 +147,53 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
     final desc = input['description'] as String?;
     final result = part.result ?? '';
 
-    return Container(
-      constraints: const BoxConstraints(maxHeight: 300),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-        ),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (desc != null && desc.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
-                child: Text(
-                  '# $desc',
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: ChatoraiFontSizes.sm,
-                    color: theme.colorScheme.onSurfaceVariant.withValues(
-                      alpha: 0.7,
-                    ),
-                    fontStyle: FontStyle.italic,
-                  ),
+    final truncatedResult = _truncateOutput(
+      result,
+      _maxShellLines,
+      _maxShellChars,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (desc != null && desc.isNotEmpty)
+            Text(
+              '# $desc',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: ChatoraiFontSizes.sm,
+                color: theme.colorScheme.onSurface,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          if (cmd.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                r'$ ' + cmd,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: ChatoraiFontSizes.sm,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
-            if (cmd.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 2, 8, 6),
-                child: Text(
-                  r'$ ' + cmd,
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: ChatoraiFontSizes.sm,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
+            ),
+          if (truncatedResult.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 12),
+              child: SelectableText(
+                truncatedResult,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: ChatoraiFontSizes.sm,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
-            if (result.isNotEmpty) _genericBody(theme, result, isShell: true),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -252,60 +214,35 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
       subtitle = '[${parts.join(', ')}]';
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          constraints: const BoxConstraints(maxHeight: 300),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (subtitle.isNotEmpty)
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: ChatoraiFontSizes.sm,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (subtitle.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
-                    child: Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: ChatoraiFontSizes.sm,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.7,
-                        ),
-                      ),
-                    ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: SelectableText(
-                    result,
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: ChatoraiFontSizes.sm,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
+          if (result.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: SelectableText(
+                result,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: ChatoraiFontSizes.sm,
+                  color: theme.colorScheme.onSurface,
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-        _buildResultFooter(
-          theme,
-          result,
-          result.length > _maxGenericChars,
-          false,
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -316,61 +253,33 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
 
     if (result.isEmpty) return const SizedBox.shrink();
 
-    final matchCount = '\n'.allMatches(result).length;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          constraints: const BoxConstraints(maxHeight: 300),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '✱ $pattern',
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: ChatoraiFontSizes.sm,
+              color: theme.colorScheme.onSurface,
             ),
           ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
-                  child: Text(
-                    '✱ $pattern${matchCount > 0 ? ' ($matchCount matches)' : ''}',
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: ChatoraiFontSizes.sm,
-                      color: theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.7,
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: SelectableText(
-                    result,
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: ChatoraiFontSizes.sm,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: SelectableText(
+              result,
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: ChatoraiFontSizes.sm,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
           ),
-        ),
-        _buildResultFooter(
-          theme,
-          result,
-          result.length > _maxGenericChars,
-          false,
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -396,34 +305,20 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
     final truncated = _truncateOutput(body, maxLines, maxChars);
     final wasTruncated = truncated != body;
 
-    final int effectiveMaxHeight = 50 + (maxLines.clamp(1, 20)) * 16;
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          constraints: BoxConstraints(maxHeight: effectiveMaxHeight.toDouble()),
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(
+        Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: SelectableText(
+            truncated,
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: ChatoraiFontSizes.sm,
               color: isError
-                  ? theme.colorScheme.error.withValues(alpha: 0.3)
-                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-            ),
-          ),
-          child: SingleChildScrollView(
-            child: SelectableText(
-              truncated,
-              style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: ChatoraiFontSizes.sm,
-                color: isError
-                    ? theme.colorScheme.onErrorContainer
-                    : theme.colorScheme.onSurface,
-              ),
+                  ? theme.colorScheme.error
+                  : theme.colorScheme.onSurface,
             ),
           ),
         ),
@@ -453,7 +348,7 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
             subtitle,
             style: TextStyle(
               fontSize: 10,
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           InkWell(
@@ -467,18 +362,14 @@ class _ToolResultPartWidgetState extends State<ToolResultPartWidget> {
                   Icon(
                     Icons.copy,
                     size: 12,
-                    color: theme.colorScheme.onSurfaceVariant.withValues(
-                      alpha: 0.5,
-                    ),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                   const SizedBox(width: 2),
                   Text(
                     'Copy',
                     style: TextStyle(
                       fontSize: 10,
-                      color: theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.5,
-                      ),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ],

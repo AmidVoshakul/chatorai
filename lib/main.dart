@@ -1,4 +1,5 @@
 import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
+import 'package:chatorai/features/chat/presentation/widgets/permission_overlay.dart';
 import 'package:chatorai/features/settings/presentation/screens/settings_screen.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
@@ -60,7 +61,9 @@ class ChatoraiApp extends ConsumerWidget {
       locale: locale,
       theme: theme,
       debugShowCheckedModeBanner: false,
-      home: const NetworkAwareWidget(child: ChatScreen()),
+      home: const PermissionOverlay(
+        child: NetworkAwareWidget(child: ChatScreen()),
+      ),
       routes: {'/settings': (context) => const SettingsScreen()},
       builder: (context, child) {
         WidgetsBinding.instance.addPostFrameCallback((_) {

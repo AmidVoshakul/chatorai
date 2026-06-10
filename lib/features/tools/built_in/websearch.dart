@@ -1,12 +1,8 @@
 import 'package:chatorai/features/tools/data/models/tool.dart';
-import 'package:dio/dio.dart';
-import 'package:html/parser.dart' as html;
+import 'package:chatorai/shared/utils/logger.dart';
+import 'package:ddgs/ddgs.dart';
 
 class WebSearchTool {
-  static const _liteUrl = 'https://lite.duckduckgo.com/lite/';
-  static const _userAgent =
-      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
-
   ToolDef get definition => ToolDef(
     id: 'websearch',
     description:
@@ -23,10 +19,12 @@ class WebSearchTool {
       'required': ['query'],
     },
     execute: (input, ctx) async {
+      LogTags.permission.logInfo('websearch.execute: START');
       final query = input['query'] as String?;
-      if (query == null || query.isEmpty) {
+      if (query == null || query.trim().isEmpty) {
+        LogTags.network.logWarning('websearch: empty query');
         return ToolOutput(
-          'Error: query is required',
+          'Error: query is required and cannot be empty',
           metadata: {'error': true},
         );
       }
@@ -40,40 +38,102 @@ class WebSearchTool {
         numResults = 5;
       }
 
+      LogTags.network.logInfo(
+        'websearch: searching for "$query" (max $numResults)',
+      );
+      LogTags.permission.logInfo('websearch.execute: About to call ctx.ask');
       await ctx.ask(
         permission: 'websearch',
-        patterns: [query],
+        patterns: ['websearch:query=$query'],
         metadata: {'query': query, 'numResults': numResults},
+      );
+      LogTags.permission.logInfo(
+        'websearch.execute: ctx.ask returned, permission granted',
       );
 
       try {
-        final results = await _search(query, numResults);
-        if (results.isEmpty) {
+        final client = DDGS(timeout: const Duration(seconds: 10));
+        LogTags.network.logInfo(
+          'websearch: Created DDGS client with 10s timeout',
+        );
+
+        // Add comprehensive logging for debugging
+        LogTags.network.logInfo(
+          'websearch: Starting search for query: $query with $numResults results',
+        );
+        final raw = await client
+            .text(query, maxResults: numResults, backend: 'duckduckgo')
+            .timeout(
+              const Duration(seconds: 15),
+              onTimeout: () {
+                LogTags.network.logWarning('websearch: timeout for "$query"');
+                LogTags.network.logInfo(
+                  'websearch: Closing client due to timeout',
+                );
+                client.close();
+                throw TimeoutException('Search timed out after 15s');
+              },
+            );
+        LogTags.network.logInfo(
+          'websearch: Search completed successfully with ${raw.length} results',
+        );
+        client.close();
+        LogTags.network.logInfo(
+          'websearch: Got ${raw.length} results for query: $query',
+        );
+        LogTags.network.logInfo(
+          'websearch: Search completed successfully with ${raw.length} results for "$query"',
+        );
+        if (raw.isEmpty) {
           return ToolOutput(
             'No results found for: $query',
             metadata: {
               'query': query,
-              'provider': 'duckduckgo_lite',
+              'provider': 'duckduckgo',
               'count': 0,
               'results': <Map<String, dynamic>>[],
             },
           );
         }
+        final results = raw
+            .map((r) {
+              var url = (r['href'] as String?) ?? '';
+              if (url.isNotEmpty &&
+                  !url.startsWith('http://') &&
+                  !url.startsWith('https://')) {
+                url = 'https://$url';
+              }
+              return _SearchResult(
+                title: (r['title'] as String?) ?? '',
+                url: url,
+                snippet: (r['body'] as String?) ?? 'No description available.',
+              );
+            })
+            .where((r) => r.title.isNotEmpty && r.url.isNotEmpty)
+            .toList();
+
         final formatted = results
-            .map(
-              (r) => 'Title: ${r.title}\nURL: ${r.url}\nSnippet: ${r.snippet}',
-            )
-            .join('\n---\n\n');
+            .asMap()
+            .entries
+            .map((e) {
+              final i = e.key + 1;
+              final r = e.value;
+              return '$i. ${r.title}\n'
+                  '   URL: ${r.url}\n'
+                  '   ${r.snippet}';
+            })
+            .join('\n\n');
         return ToolOutput(
           'Search results for "$query":\n\n$formatted',
           metadata: {
             'query': query,
-            'provider': 'duckduckgo_lite',
+            'provider': 'duckduckgo',
             'count': results.length,
             'results': results.map((r) => r.toJson()).toList(),
           },
         );
-      } catch (e) {
+      } catch (e, s) {
+        LogTags.network.logError('websearch: search failed for "$query"', e, s);
         return ToolOutput(
           'Search failed: $e',
           metadata: {'error': true, 'query': query},
@@ -82,69 +142,8 @@ class WebSearchTool {
     },
   );
 
-  Future<List<_SearchResult>> _search(String query, int count) async {
-    final dio = Dio(
-      BaseOptions(
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 15),
-        headers: {
-          'User-Agent': _userAgent,
-          'Accept':
-              'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Referer': _liteUrl,
-        },
-        followRedirects: true,
-        validateStatus: (s) => s != null && s >= 200 && s < 400,
-      ),
-    );
-    try {
-      final response = await dio.post(
-        _liteUrl,
-        data: {'q': query},
-        options: Options(contentType: Headers.formUrlEncodedContentType),
-      );
-      if (response.statusCode != 200) {
-        throw Exception('HTTP ${response.statusCode}');
-      }
-      final htmlStr = response.data?.toString() ?? '';
-      return _parseHtmlResults(htmlStr, count);
-    } finally {
-      dio.close();
-    }
-  }
-
-  List<_SearchResult> _parseHtmlResults(String htmlStr, int count) {
-    final results = <_SearchResult>[];
-    final document = html.parse(htmlStr);
-
-    final links = document.querySelectorAll('a.result-link');
-    for (final a in links) {
-      if (results.length >= count) break;
-
-      final url = a.attributes['href'] ?? '';
-      final title = a.text.trim();
-      if (title.isEmpty || url.isEmpty) continue;
-
-      final snippet = () {
-        var next = a.parent?.parent?.parent;
-        if (next == null) return '';
-        var sib = next.nextElementSibling;
-        if (sib == null) return '';
-        final td = sib.querySelector('.result-snippet');
-        return td?.text.trim() ?? '';
-      }();
-
-      results.add(
-        _SearchResult(
-          title: title,
-          url: url,
-          snippet: snippet.isEmpty ? 'No description available.' : snippet,
-        ),
-      );
-    }
-
-    return results;
+  void dispose() {
+    // No need to dispose since we're creating a new client for each request
   }
 }
 

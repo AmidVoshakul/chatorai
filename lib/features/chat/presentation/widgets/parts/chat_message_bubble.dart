@@ -248,7 +248,11 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
             ),
           ),
         ),
-        _buildActionRow(isUser: true, content: m.content, timestamp: m.timestamp),
+        _buildActionRow(
+          isUser: true,
+          content: m.content,
+          timestamp: m.timestamp,
+        ),
       ],
     );
   }
@@ -261,6 +265,53 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         .whereType<TextPart>()
         .map((p) => p.content)
         .join('\n');
+
+    // Group tool parts under preceding reasoning
+    List<Widget> groupedParts = [];
+    ReasoningPart? currentReasoning;
+    List<MessagePart> toolChildren = [];
+
+    for (final part in m.parts) {
+      if (part is ReasoningPart) {
+        if (currentReasoning != null) {
+          groupedParts.add(
+            ReasoningPartWidget(
+              part: currentReasoning,
+              toolParts: List<MessagePart>.unmodifiable(toolChildren),
+            ),
+          );
+          toolChildren = [];
+        }
+        currentReasoning = part;
+      } else if (part is ToolCallPart || part is ToolResultPart) {
+        if (currentReasoning != null) {
+          toolChildren.add(part);
+        } else {
+          groupedParts.add(_buildPart(part, context));
+        }
+      } else {
+        if (currentReasoning != null) {
+          groupedParts.add(
+            ReasoningPartWidget(
+              part: currentReasoning,
+              toolParts: List<MessagePart>.unmodifiable(toolChildren),
+            ),
+          );
+          currentReasoning = null;
+          toolChildren = [];
+        }
+        groupedParts.add(_buildPart(part, context));
+      }
+    }
+
+    if (currentReasoning != null) {
+      groupedParts.add(
+        ReasoningPartWidget(
+          part: currentReasoning,
+          toolParts: List<MessagePart>.unmodifiable(toolChildren),
+        ),
+      );
+    }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -283,9 +334,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: [
-              ...m.parts.map((part) => _buildPart(part, context)),
-            ],
+            children: groupedParts,
           ),
         ),
         _buildActionRow(
@@ -447,89 +496,95 @@ class _ActionRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        if (!isUser) const SizedBox(width: 4),
-        // ===== Assistant: agent · model · [⋮] =====
-        if (!isUser) ...[
-          if (agentName != null)
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          if (!isUser) const SizedBox(width: 4),
+          // ===== Assistant: agent · model · [⋮] =====
+          if (!isUser) ...[
+            if (agentName != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Text(
+                  agentName!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            if (model != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 4, left: 8),
+                child: Text(
+                  '•  $model',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.textTheme.bodySmall?.color?.withValues(
+                      alpha: 0.6,
+                    ),
+                  ),
+                ),
+              ),
+            _ActionMenuButton(
+              isUser: false,
+              content: content,
+              chatId: chatId,
+              messageId: messageId,
+              chatStorageService: chatStorageService,
+              onMessageDeleted: onMessageDeleted,
+              onMessageRegenerate: onMessageRegenerate,
+              onContinuationSelected: onContinuationSelected,
+              isLastMessage: isLastMessage,
+              localizations: localizations,
+              theme: theme,
+            ),
+          ],
+
+          const Spacer(),
+
+          // ===== User: timestamp  [⋮] =====
+          if (isUser) ...[
+            if (formattedTimestamp != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Text(
+                  formattedTimestamp,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.textTheme.bodySmall?.color?.withValues(
+                      alpha: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            _ActionMenuButton(
+              isUser: true,
+              content: content,
+              chatId: chatId,
+              messageId: messageId,
+              chatStorageService: chatStorageService,
+              onEdit: onEdit,
+              onMessageDeleted: onMessageDeleted,
+              theme: theme,
+              localizations: localizations,
+            ),
+          ],
+
+          // Token count (assistant only, right-aligned)
+          if (!isUser && cumulativeTokens != null)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(left: 8, right: 8),
               child: Text(
-                agentName!,
+                _tokenDisplay(cumulativeTokens!, contextLength),
                 style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w400,
+                  color: theme.textTheme.bodySmall?.color?.withValues(
+                    alpha: 0.5,
+                  ),
                 ),
               ),
             ),
-          if (model != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: Text(
-                '•  $model',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                ),
-              ),
-            ),
-          _ActionMenuButton(
-            isUser: false,
-            content: content,
-            chatId: chatId,
-            messageId: messageId,
-            chatStorageService: chatStorageService,
-            onMessageDeleted: onMessageDeleted,
-            onMessageRegenerate: onMessageRegenerate,
-            onContinuationSelected: onContinuationSelected,
-            isLastMessage: isLastMessage,
-            localizations: localizations,
-            theme: theme,
-          ),
         ],
-
-        const Spacer(),
-
-        // ===== User: timestamp  [⋮] =====
-        if (isUser) ...[
-          if (formattedTimestamp != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: Text(
-                formattedTimestamp,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
-                ),
-              ),
-            ),
-          _ActionMenuButton(
-            isUser: true,
-            content: content,
-            chatId: chatId,
-            messageId: messageId,
-            chatStorageService: chatStorageService,
-            onEdit: onEdit,
-            onMessageDeleted: onMessageDeleted,
-            theme: theme,
-            localizations: localizations,
-          ),
-        ],
-
-        // Token count (assistant only, right-aligned)
-        if (!isUser && cumulativeTokens != null)
-          Padding(
-            padding: const EdgeInsets.only(left: 8, right: 8),
-            child: Text(
-              _tokenDisplay(cumulativeTokens!, contextLength),
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w400,
-                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-      ],
-    ),
-  );
+      ),
+    );
   }
 }
 
@@ -592,37 +647,83 @@ class _ActionMenuButton extends StatelessWidget {
     final position = RelativeRect.fromRect(
       Rect.fromPoints(
         renderBox.localToGlobal(Offset.zero, ancestor: overlay),
-        renderBox.localToGlobal(renderBox.size.bottomRight(Offset.zero), ancestor: overlay),
+        renderBox.localToGlobal(
+          renderBox.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
       ),
       Offset.zero & overlay.size,
     );
 
     final items = <PopupMenuEntry<String>>[
       if (isUser && onEdit != null) ...[
-        PopupMenuItem(value: 'edit', child: Row(
-          children: [Icon(Icons.edit, size: 18), const SizedBox(width: 8), Text(localizations.edit)],
-        )),
+        PopupMenuItem(
+          value: 'edit',
+          child: Row(
+            children: [
+              Icon(Icons.edit, size: 18),
+              const SizedBox(width: 8),
+              Text(localizations.edit),
+            ],
+          ),
+        ),
       ],
-      PopupMenuItem(value: 'copy', child: Row(
-        children: [Icon(Icons.copy_all, size: 18), const SizedBox(width: 8), Text(localizations.copyMessage)],
-      )),
+      PopupMenuItem(
+        value: 'copy',
+        child: Row(
+          children: [
+            Icon(Icons.copy_all, size: 18),
+            const SizedBox(width: 8),
+            Text(localizations.copyMessage),
+          ],
+        ),
+      ),
       if (!isUser) ...[
-        PopupMenuItem(value: 'share', child: Row(
-          children: [Icon(Icons.share, size: 18), const SizedBox(width: 8), Text(localizations.share)],
-        )),
-        PopupMenuItem(value: 'regenerate', child: Row(
-          children: [Icon(Icons.refresh, size: 18), const SizedBox(width: 8), Text(localizations.regenerate)],
-        )),
-        if (isLastMessage && content != null && content!.isNotEmpty &&
+        PopupMenuItem(
+          value: 'share',
+          child: Row(
+            children: [
+              Icon(Icons.share, size: 18),
+              const SizedBox(width: 8),
+              Text(localizations.share),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'regenerate',
+          child: Row(
+            children: [
+              Icon(Icons.refresh, size: 18),
+              const SizedBox(width: 8),
+              Text(localizations.regenerate),
+            ],
+          ),
+        ),
+        if (isLastMessage &&
+            content != null &&
+            content!.isNotEmpty &&
             (content!.endsWith('...') || content!.split(' ').length > 30))
-          PopupMenuItem(value: 'continue', child: Row(
-            children: [Icon(Icons.play_arrow, size: 18), const SizedBox(width: 8), Text(localizations.continueResponse)],
-          )),
+          PopupMenuItem(
+            value: 'continue',
+            child: Row(
+              children: [
+                Icon(Icons.play_arrow, size: 18),
+                const SizedBox(width: 8),
+                Text(localizations.continueResponse),
+              ],
+            ),
+          ),
       ],
-      PopupMenuItem(value: 'delete', child: Row(
-        children: [Icon(Icons.delete, size: 18, color: Colors.red), const SizedBox(width: 8),
-          Text(localizations.delete, style: TextStyle(color: Colors.red))],
-      )),
+      PopupMenuItem(
+        value: 'delete',
+        child: Row(
+          children: [
+            Icon(Icons.delete, size: 18, color: Colors.red),
+            const SizedBox(width: 8),
+            Text(localizations.delete, style: TextStyle(color: Colors.red)),
+          ],
+        ),
+      ),
     ];
 
     final result = await showMenu<String>(
@@ -639,19 +740,24 @@ class _ActionMenuButton extends StatelessWidget {
       case 'edit':
         onEdit?.call();
       case 'copy':
-        if (content != null) MessageUtils.copyMessage(content: content!, context: context);
+        if (content != null)
+          MessageUtils.copyMessage(content: content!, context: context);
       case 'share':
-        if (content != null) MessageUtils.shareMessage(content: content!, context: context);
+        if (content != null)
+          MessageUtils.shareMessage(content: content!, context: context);
       case 'delete':
         FocusScope.of(context).unfocus();
         final deleted = await MessageUtils.deleteMessage(
-          chatId: chatId, messageId: messageId,
-          chatStorageService: chatStorageService, context: context,
+          chatId: chatId,
+          messageId: messageId,
+          chatStorageService: chatStorageService,
+          context: context,
         );
         if (deleted) onMessageDeleted?.call();
       case 'regenerate':
         await MessageUtils.regenerateMessage(
-          chatId: chatId, messageId: messageId,
+          chatId: chatId,
+          messageId: messageId,
           chatStorageService: chatStorageService,
           onRegenerate: () => onMessageRegenerate?.call(),
         );

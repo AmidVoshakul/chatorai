@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:chatorai/features/tools/data/models/tool.dart';
 
@@ -17,6 +18,10 @@ ToolDef createEditTool() {
         },
         'old_string': {'type': 'string', 'description': 'Text to replace'},
         'new_string': {'type': 'string', 'description': 'Replacement text'},
+        'replace_all': {
+          'type': 'boolean',
+          'description': 'Replace all occurrences (default: true)',
+        },
       },
       'required': ['file_path', 'old_string', 'new_string'],
     },
@@ -28,12 +33,28 @@ ToolDef createEditTool() {
       final newString =
           input['new_string'] as String? ?? input['newString'] as String?;
 
-      if (filePath == null) throw ArgumentError('file_path is required');
-      if (oldString == null) throw ArgumentError('old_string is required');
-      if (newString == null) throw ArgumentError('new_string is required');
+      if (filePath == null) {
+        return ToolOutput(
+          'Error: file_path is required',
+          metadata: {'error': true},
+        );
+      }
+      if (oldString == null) {
+        return ToolOutput(
+          'Error: old_string is required',
+          metadata: {'error': true},
+        );
+      }
+      if (newString == null) {
+        return ToolOutput(
+          'Error: new_string is required',
+          metadata: {'error': true},
+        );
+      }
 
       final safePath = resolveSafePath(filePath);
-      await ctx.ask(permission: 'edit', patterns: [safePath]);
+      // Use pattern 'edit:file_path=$safePath' as required
+      await ctx.ask(permission: 'edit', patterns: ['edit:file_path=$safePath']);
       final file = File(safePath);
       if (!await file.exists()) {
         return ToolOutput(
@@ -42,7 +63,7 @@ ToolDef createEditTool() {
         );
       }
 
-      var content = await file.readAsString();
+      var content = await file.readAsString(encoding: utf8);
       if (!content.contains(oldString)) {
         return ToolOutput(
           'Error: old_string not found in file',
@@ -50,8 +71,11 @@ ToolDef createEditTool() {
         );
       }
 
-      final newContent = content.replaceFirst(oldString, newString);
-      await file.writeAsString(newContent);
+      final replaceAll = input['replace_all'] as bool? ?? true;
+      final newContent = replaceAll
+          ? content.replaceAll(oldString, newString)
+          : content.replaceFirst(oldString, newString);
+      await file.writeAsString(newContent, encoding: utf8);
 
       return ToolOutput(
         'File edited successfully',

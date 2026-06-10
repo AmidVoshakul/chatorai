@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 
 // ===========================================================================
 // PROVIDER
@@ -119,15 +120,32 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
   ) {
     if (!state.isStreaming) return;
     final parts = List<MessagePart>.from(state.accumulatedParts);
-    parts.add(
-      ToolResultPart(
+    final existingIdx = parts.indexWhere(
+      (p) => p is ToolResultPart && p.toolCallId == toolCallId,
+    );
+    if (existingIdx != -1) {
+      // Update existing part (e.g. tool-input-start → tool-call reuse)
+      LogTags.chatService.logDebug(
+        'onToolCall: duplicate toolCallId=$toolCallId, updating existing',
+      );
+      parts[existingIdx] = ToolResultPart(
         toolCallId: toolCallId,
         toolName: toolName,
         state: ToolState.running,
         input: input,
         isStreaming: true,
-      ),
-    );
+      );
+    } else {
+      parts.add(
+        ToolResultPart(
+          toolCallId: toolCallId,
+          toolName: toolName,
+          state: ToolState.running,
+          input: input,
+          isStreaming: true,
+        ),
+      );
+    }
     state = state.copyWith(accumulatedParts: parts);
   }
 

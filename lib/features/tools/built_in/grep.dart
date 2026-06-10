@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:chatorai/features/tools/data/models/tool.dart';
@@ -17,6 +18,10 @@ ToolDef createGrepTool() {
           'type': 'string',
           'description': 'Root directory to search in',
         },
+        'include': {
+          'type': 'string',
+          'description': 'Glob pattern to include files (e.g., "*.dart")',
+        },
         'case_sensitive': {
           'type': 'boolean',
           'description': 'Case sensitive search',
@@ -30,9 +35,17 @@ ToolDef createGrepTool() {
     },
     execute: (input, ctx) async {
       final pattern = input['pattern'] as String?;
-      if (pattern == null) throw ArgumentError('pattern is required');
+      if (pattern == null) {
+        return const ToolOutput(
+          'Error: pattern is required',
+          metadata: {'error': true},
+        );
+      }
+
+      await ctx.ask(permission: 'grep', patterns: [pattern]);
 
       final root = input['path'] as String? ?? Directory.current.path;
+      final includePattern = input['include'] as String?;
       final regex = RegExp(
         pattern,
         caseSensitive: input['case_sensitive'] == true,
@@ -55,8 +68,17 @@ ToolDef createGrepTool() {
       )) {
         if (results.length >= maxMatches) break;
         if (entity is File) {
+          // Apply include filter if provided
+          if (includePattern != null) {
+            final relative = p.relative(entity.path, from: safeRoot);
+            // Simple glob matching: convert glob to regex
+            final globRegex = _globToRegex(includePattern);
+            if (!RegExp(globRegex).hasMatch(relative)) {
+              continue;
+            }
+          }
           try {
-            final content = await entity.readAsString();
+            final content = await entity.readAsString(encoding: utf8);
             final lines = content.split('\n');
             for (final line in lines) {
               if (results.length >= maxMatches) break;
@@ -75,4 +97,27 @@ ToolDef createGrepTool() {
       );
     },
   );
+}
+
+// Convert a simple glob pattern to a regex string
+// Supports: *, ?, [seq], [!seq]
+String _globToRegex(String glob) {
+  final escaped = glob
+      .replaceAll(r'$', r'\$')
+      .replaceAll(r'^', r'\^')
+      .replaceAll(r'.', r'\.')
+      .replaceAll(r'|', r'\|')
+      .replaceAll(r'(', r'\(')
+      .replaceAll(r')', r'\)')
+      .replaceAll(r'[', r'\[')
+      .replaceAll(r']', r'\]')
+      .replaceAll(r'+', r'\+')
+      .replaceAll(r'{', r'\{')
+      .replaceAll(r'}', r'\}')
+      .replaceAll(r'/', r'\/');
+  final star = '.*';
+  final question = '.';
+  // Handle * and ? after escaping other special chars
+  final regex = escaped.replaceAll('*', star).replaceAll('?', question);
+  return '^$regex\$';
 }

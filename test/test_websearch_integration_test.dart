@@ -28,9 +28,9 @@ Future<bool> _isDdgReachable() async {
         .getUrl(Uri.parse('https://html.duckduckgo.com/html/?q=test'))
         .timeout(const Duration(seconds: 10));
     final resp = await req.close().timeout(const Duration(seconds: 10));
-    await resp.drain<String>();
+    await resp.drain<String?>().catchError((_) => null);
     client.close();
-    return resp.statusCode == 200;
+    return resp.statusCode >= 200 && resp.statusCode < 300;
   } on SocketException catch (_) {
     try {
       client.close();
@@ -258,7 +258,7 @@ void main() {
         'result titles contain no raw HTML tags',
         () async {
           final output = await _searchFlutterDart();
-          if (_kSearchSkipped != null) {
+          if (_kSearchSkipped.isNotEmpty) {
             markTestSkipped(_kSearchSkipped);
             return;
           }
@@ -287,7 +287,7 @@ void main() {
         'title URLs are fully unwrapped (no DDG redirect)',
         () async {
           final output = await _searchFlutterDart();
-          if (_kSearchSkipped != null) {
+          if (_kSearchSkipped.isNotEmpty) {
             markTestSkipped(_kSearchSkipped);
             return;
           }
@@ -295,7 +295,6 @@ void main() {
             fail('Unexpected search error: ${output.output}');
           }
 
-          // No URL line should still be a DDG redirect wrapper.
           final redirectCount = RegExp(
             r'duckduckgo\.com/l/\?',
           ).allMatches(output.output).length;
@@ -312,7 +311,7 @@ void main() {
         'HTML entities in titles are decoded',
         () async {
           final output = await _searchFlutterDart();
-          if (_kSearchSkipped != null) {
+          if (_kSearchSkipped.isNotEmpty) {
             markTestSkipped(_kSearchSkipped);
             return;
           }
@@ -451,7 +450,7 @@ void main() {
               .getUrl(uri)
               .timeout(const Duration(seconds: 10));
           final resp = await req.close().timeout(const Duration(seconds: 10));
-          await resp.drain<String>();
+          await resp.drain<String?>().catchError((_) => null);
           client.close();
 
           if (resp.statusCode != 200) {

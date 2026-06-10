@@ -50,7 +50,7 @@ class ChatAiService {
   final Map<String, String> _headers;
   var _cancelToken = CancellationToken();
   Timer? _progressTimer;
-  StreamController<double>? _retryController;
+  final _retryController = StreamController<double>.broadcast();
   bool _retryCancelled = false;
   final TokenCounter _tokenCounter = TokenCounter();
   late OverflowDetector _overflowDetector;
@@ -71,12 +71,7 @@ class ChatAiService {
     _overflowDetector = OverflowDetector.forModel(contextLength);
   }
 
-  StreamController<double> get _ensureRetryController {
-    if (_retryController == null || _retryController!.isClosed) {
-      _retryController = StreamController<double>.broadcast();
-    }
-    return _retryController!;
-  }
+  StreamController<double> get _ensureRetryController => _retryController;
 
   /// Strips the provider prefix from a model ID.
   /// Model IDs follow the format `{providerId}/{actualModelId}`.
@@ -156,7 +151,7 @@ class ChatAiService {
           LogTags.chatService.logWarning(
             '_retry attempt $attempt: cancelled, aborting',
           );
-          _ensureRetryController.close();
+          _isRetrying = false;
           throw Exception('cancelled');
         }
         _stopProgressTimer();
@@ -176,7 +171,7 @@ class ChatAiService {
             LogTags.chatService.logWarning(
               '_retry attempt $attempt: cancelled during wait',
             );
-            _ensureRetryController.close();
+            _isRetrying = false;
             throw Exception('cancelled');
           }
           final elapsed =
@@ -358,7 +353,7 @@ class ChatAiService {
                 :final preliminary,
               ):
                 if (!preliminary) {
-                  final text = switch (toolResult.output) {
+                  final outputText = switch (toolResult.output) {
                     ToolResultOutputText(:final text) => text,
                     ToolResultOutputContent(:final parts) =>
                       parts.map((p) => p.toString()).join(),
@@ -366,7 +361,7 @@ class ChatAiService {
                   onToolEnd?.call(
                     toolResult.toolCallId,
                     toolResult.toolName,
-                    text,
+                    outputText,
                   );
                 }
               case StreamTextToolErrorEvent(

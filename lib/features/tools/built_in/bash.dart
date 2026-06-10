@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:chatorai/core/permission/arity.dart';
 import 'package:chatorai/features/tools/data/models/tool.dart';
 
 ToolDef createBashTool() {
@@ -27,17 +26,16 @@ ToolDef createBashTool() {
     },
     execute: (input, ctx) async {
       final command = input['command'] as String?;
-      if (command == null) throw ArgumentError('command is required');
+      if (command == null || command.isEmpty) {
+        return ToolOutput('command is required', metadata: {'error': true});
+      }
 
       final timeout = input['timeout'] as int? ?? 30000;
-      final tokens = command.split(RegExp(r'\s+'));
-      final prefix = bashPrefix(tokens);
-      final pattern = '${prefix.join(' ')} *';
 
       await ctx.ask(
         permission: 'bash',
-        patterns: [pattern],
-        always: ['${prefix.join(' ')} *'],
+        patterns: ['bash:command=$command'],
+        always: ['bash:command=$command'],
       );
 
       try {
@@ -75,7 +73,10 @@ ToolDef createBashTool() {
             ? '${output.substring(0, 50000)}\n... (truncated)'
             : output;
 
-        return ToolOutput(truncated, metadata: {'exit_code': exitCode});
+        return ToolOutput(
+          truncated,
+          metadata: {'exit_code': exitCode, if (exitCode != 0) 'error': true},
+        );
       } catch (e) {
         return ToolOutput(
           'Error executing command: $e',
@@ -84,8 +85,4 @@ ToolDef createBashTool() {
       }
     },
   );
-}
-
-List<String> bashPrefix(List<String> tokens) {
-  return prefix(tokens);
 }

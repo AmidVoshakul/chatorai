@@ -14,11 +14,13 @@ String resolveSafePath(String userPath) {
   final absolute = p.isAbsolute(normalized)
       ? normalized
       : p.join(Directory.current.path, normalized);
+  final normalizedAbsolute = p.normalize(absolute);
   final projectRoot = Directory.current.path;
-  if (!p.isWithin(projectRoot, absolute)) {
+  if (normalizedAbsolute != projectRoot &&
+      !p.isWithin(projectRoot, normalizedAbsolute)) {
     throw ArgumentError('Path denied: $userPath (outside project root)');
   }
-  return absolute;
+  return normalizedAbsolute;
 }
 
 bool isPathAllowed(String userPath) {
