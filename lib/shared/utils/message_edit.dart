@@ -9,7 +9,7 @@ Future<EditMessageResult> editMessage({
   final TextEditingController controller = TextEditingController(
     text: currentContent,
   );
-  final AppLocalizations localizations = AppLocalizations.of(context);
+  final localizations = AppLocalizations.of(context)!;
 
   final EditMessageResult? result = await showDialog<EditMessageResult>(
     context: context,
@@ -67,7 +67,7 @@ Future<EditMessageResultWithContent> editMessageWithResult({
   final TextEditingController controller = TextEditingController(
     text: currentContent,
   );
-  final AppLocalizations localizations = AppLocalizations.of(context);
+  final localizations = AppLocalizations.of(context)!;
 
   final EditMessageResult? result = await showDialog<EditMessageResult>(
     context: context,

@@ -93,6 +93,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get useFullScreenWidth => 'Использовать полную ширину экрана для чата';
 
   @override
+  String get autoScrollDuringStreaming => 'Автоскролл во время стриминга';
+
+  @override
+  String get autoScrollDuringStreamingDesc =>
+      'Прокручивать список вниз при появлении нового контента';
+
+  @override
   String get language => 'Язык';
 
   @override

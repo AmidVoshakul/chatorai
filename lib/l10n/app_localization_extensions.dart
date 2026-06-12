@@ -6,8 +6,5 @@ import 'app_localizations.dart';
 extension LocalizationExtension on BuildContext {
   /// Get AppLocalizations with fallback to English
   /// Usage: context.l.deleteChat
-  AppLocalizations get l {
-    final loc = AppLocalizations.of(this);
-    return loc;
-  }
+  AppLocalizations get l => AppLocalizations.of(this)!;
 }

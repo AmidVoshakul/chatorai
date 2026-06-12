@@ -80,7 +80,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
   void _applySettings() {
     final settingsState = ref.read(modelSettingsProvider);
     final settingsNotifier = ref.read(modelSettingsProvider.notifier);
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
 
     if (settingsState.activeSettings == null) {
       SnackbarUtils.showErrorSnackBar(
@@ -123,7 +123,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
   void _resetToDefaults() {
     final settingsState = ref.read(modelSettingsProvider);
     final settingsNotifier = ref.read(modelSettingsProvider.notifier);
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
 
     if (settingsState.activeSettings == null) return;
 
@@ -144,7 +144,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final modelState = ref.watch(modelProvider);
     final settingsState = ref.watch(modelSettingsProvider);
 

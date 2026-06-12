@@ -92,6 +92,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get useFullScreenWidth => 'チャットコンテンツのために全画面幅を使用';
 
   @override
+  String get autoScrollDuringStreaming => 'ストリーミング中の自動スクロール';
+
+  @override
+  String get autoScrollDuringStreamingDesc => '新しいコンテンツが追加されるとリストを自動的に下にスクロール';
+
+  @override
   String get language => '言語';
 
   @override

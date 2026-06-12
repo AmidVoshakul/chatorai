@@ -27,7 +27,7 @@ class ModelsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final state = ref.watch(modelsScreenProvider);
 
     return Scaffold(

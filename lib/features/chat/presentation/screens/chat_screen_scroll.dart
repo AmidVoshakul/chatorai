@@ -2,15 +2,53 @@ part of 'chat_screen.dart';
 
 extension _ChatScreenScrollExt on _ChatScreenState {
   void _handleScroll() {
-    final now = DateTime.now();
-    if (_lastScrollUpdate != null &&
-        now.difference(_lastScrollUpdate!) <
-            _ChatScreenState._scrollThrottleDuration) {
+    if (!_messageScrollController.hasClients) return;
+
+    final offset = _messageScrollController.offset;
+    final max = _messageScrollController.position.maxScrollExtent;
+    final distanceFromBottom = max - offset;
+    final newAutoScroll = distanceFromBottom <= 150;
+
+    // Update state only if changed to avoid unnecessary rebuilds
+    if (_autoScrollEnabled != newAutoScroll) {
+      _autoScrollEnabled = newAutoScroll;
+    }
+  }
+
+  void _scrollToBottom({bool force = false}) {
+    if (!_messageScrollController.hasClients) {
       return;
     }
-    _lastScrollUpdate = now;
-    if (!_messageScrollController.hasClients) return;
-    if (_cachedScreenWidth >= ChatScreenConstants.mobileBreakpoint) return;
+
+    final position = _messageScrollController.position;
+    if (!position.hasContentDimensions) {
+      return;
+    }
+
+    final maxScroll = position.maxScrollExtent;
+    final currentScroll = _messageScrollController.offset;
+    final diff = (maxScroll - currentScroll).abs();
+
+    // If not forcing and already near bottom (within 5px), skip
+    if (!force && diff < 5) {
+      return;
+    }
+
+    if (force) {
+      // Smooth animation after sending a message
+      _messageScrollController.animateTo(
+        maxScroll,
+        duration: ChatScreenConstants.scrollAnimationDuration,
+        curve: Curves.easeOut,
+      );
+    } else {
+      // Smooth animation during streaming synchronized with bubble expansion (150ms)
+      _messageScrollController.animateTo(
+        maxScroll,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   void _handleHeadingSync() {

@@ -116,7 +116,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
     if (box == null) return;
     final offset = box.localToGlobal(Offset.zero);
     final size = box.size;
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
     final menuItems = <PopupMenuEntry<String>>[
       if (isMobile)
@@ -178,7 +178,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
   Widget build(BuildContext context) {
     super.build(context);
     final theme = Theme.of(context);
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final isMobile = InputWidgetBuilders.isMobileLayout(context);
     final maxLines = InputWidgetBuilders.computeMaxLines(context);
     final chatInputState = ref.watch(chatInputProvider);

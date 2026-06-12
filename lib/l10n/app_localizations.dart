@@ -71,8 +71,8 @@ abstract class AppLocalizations {
 
   final String localeName;
 
-  static AppLocalizations of(BuildContext context) {
-    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+  static AppLocalizations? of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
   static const LocalizationsDelegate<AppLocalizations> delegate =
@@ -267,6 +267,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use full screen width for chat content'**
   String get useFullScreenWidth;
+
+  /// No description provided for @autoScrollDuringStreaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-scroll during streaming'**
+  String get autoScrollDuringStreaming;
+
+  /// No description provided for @autoScrollDuringStreamingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically scroll down as new content arrives'**
+  String get autoScrollDuringStreamingDesc;
 
   /// No description provided for @language.
   ///

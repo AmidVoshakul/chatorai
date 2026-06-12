@@ -9,7 +9,7 @@ class ModelFeaturesWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
 
     return Wrap(
       spacing: 6,

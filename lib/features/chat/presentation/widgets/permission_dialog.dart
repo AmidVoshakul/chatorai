@@ -30,7 +30,7 @@ class _PermissionDialogState extends ConsumerState<PermissionDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_showAlwaysConfirmation) {

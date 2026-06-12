@@ -26,6 +26,8 @@
   "increaseContrast": "增加对比度以提高可读性",
   "wideScreenMode": "宽屏模式",
   "useFullScreenWidth": "使用全屏宽度显示聊天内容",
+  "autoScrollDuringStreaming": "流式传输期间自动滚动",
+  "autoScrollDuringStreamingDesc": "出现新内容时自动向下滚动列表",
   "language": "语言",
   "english": "英语",
   "russian": "俄语",

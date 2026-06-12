@@ -28,13 +28,13 @@ class MessageAction {
   });
 
   String getLocalizedLabel(BuildContext context) {
-    final AppLocalizations localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     return localizedLabel[localizations.localeName] ?? label;
   }
 }
 
 List<MessageAction> getChatActions(BuildContext context) {
-  final AppLocalizations localizations = AppLocalizations.of(context);
+  final localizations = AppLocalizations.of(context)!;
 
   return [
     MessageAction(

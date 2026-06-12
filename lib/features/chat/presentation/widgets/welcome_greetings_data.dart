@@ -3,7 +3,7 @@ import 'package:chatorai/l10n/app_localizations.dart';
 
 class WelcomeGreetingsData {
   static List<String> getAllGreetings(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return [
       l10n.welcomeGreeting1,

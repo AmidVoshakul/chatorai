@@ -38,7 +38,7 @@ class ActionRow extends StatelessWidget {
     final iconColor = theme.iconTheme.color?.withValues(
       alpha: ChatoraiIconOpacity.medium,
     );
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
 
     return Row(
       mainAxisSize: MainAxisSize.min,

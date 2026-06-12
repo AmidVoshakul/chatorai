@@ -181,7 +181,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return AnimatedBuilder(
       animation: _animationController,
@@ -299,7 +299,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
   // =======================================================================
 
   Widget _buildLoading() {
-    final l10n = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         const SizedBox(

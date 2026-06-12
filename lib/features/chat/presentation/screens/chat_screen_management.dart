@@ -25,7 +25,7 @@ extension _ChatScreenManagementExt on _ChatScreenState {
     } else {
       ref.read(chatScreenProvider.notifier).hideAllSuggestions();
     }
-    _chatScrollUtils?.scrollToBottom();
+    _scrollToBottom(force: true);
   }
 
   Future<void> _deleteChat(String chatId) async {
@@ -35,7 +35,7 @@ extension _ChatScreenManagementExt on _ChatScreenState {
     );
     if (chat == null) return;
 
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => KeyboardHandlerDialog(

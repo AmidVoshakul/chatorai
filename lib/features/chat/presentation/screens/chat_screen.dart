@@ -35,7 +35,6 @@ import 'package:chatorai/providers.dart'
         toolRegistryProvider,
         currentAgentProvider;
 import 'package:chatorai/shared/utils/chat_error_utils.dart';
-import 'package:chatorai/shared/utils/chat_scroll_utils.dart';
 
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
@@ -54,7 +53,10 @@ part 'chat_screen_scroll.dart';
 part 'chat_screen_streaming.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key});
+  const ChatScreen({super.key, this.testScrollController});
+
+  /// Test-only injection for ScrollController.
+  final ScrollController? testScrollController;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -64,7 +66,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     with TickerProviderStateMixin {
   late ChatStorageService _chatStorageService;
   late ScrollController _messageScrollController;
-  ChatScrollUtils? _chatScrollUtils;
 
   final GlobalKey<ChatMessagesState> _chatMessagesKey =
       GlobalKey<ChatMessagesState>();
@@ -88,6 +89,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   final ContinuationSuggestionService _suggestionService =
       ContinuationSuggestionService();
   bool _userStopped = false;
+  bool _autoScrollEnabled = true; // Auto-scroll enabled by default
+
+  /// Test-only accessor for auto-scroll state.
+  bool get autoScrollEnabledForTest => _autoScrollEnabled;
+
+  /// Test-only accessor for the scroll controller.
+  ScrollController get testScrollController => _messageScrollController;
 
   Chat? get currentChat => ref.watch(currentChatProvider);
   String get selectedModelId => ref.watch(modelProvider).selectedModelId;
@@ -98,15 +106,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void initState() {
     super.initState();
     _chatStorageService = ref.read(chatStorageServiceProvider);
-    _messageScrollController = ScrollController();
+    _messageScrollController =
+        widget.testScrollController ?? ScrollController();
     _messageScrollController.addListener(_handleScroll);
     _messageScrollController.addListener(_handleHeadingSync);
     _chatInputFocusNode = FocusNode();
-    _chatScrollUtils = ChatScrollUtils(
-      scrollController: _messageScrollController,
-      animationDuration: ChatScreenConstants.scrollAnimationDuration,
-      animationCurve: Curves.easeOut,
-    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showWelcomeSuggestions();
     });

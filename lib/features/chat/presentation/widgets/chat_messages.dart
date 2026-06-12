@@ -92,7 +92,10 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    // Only dispose if we created the controller (widget.scrollController was null)
+    if (widget.scrollController == null) {
+      _scrollController.dispose();
+    }
     super.dispose();
   }
 
@@ -249,6 +252,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                         ? 1
                         : 0) +
                     (shouldShowWelcome ? 1 : 0),
+                controller: _scrollController,
                 itemBuilder: (context, index) {
                   int welcomeOffset = 0;
 

@@ -39,7 +39,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final modelTextColor = isDark ? Colors.grey[700] : theme.iconTheme.color;
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
 
     return AppBar(
       title: const Text(''),

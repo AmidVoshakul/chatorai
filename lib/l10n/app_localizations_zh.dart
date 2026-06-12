@@ -92,6 +92,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get useFullScreenWidth => '使用全屏宽度显示聊天内容';
 
   @override
+  String get autoScrollDuringStreaming => '流式传输期间自动滚动';
+
+  @override
+  String get autoScrollDuringStreamingDesc => '出现新内容时自动向下滚动列表';
+
+  @override
   String get language => '语言';
 
   @override

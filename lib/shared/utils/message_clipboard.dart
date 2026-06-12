@@ -15,7 +15,7 @@ Future<void> copyMessage({
   String? senderName,
 }) async {
   try {
-    final AppLocalizations localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
 
     final String formattedContent = senderName != null
         ? '### $senderName\n\n$content'
@@ -35,7 +35,7 @@ Future<void> copyMessage({
   } catch (e) {
     _logger.logError('[MessageUtils] Error copying message: $e');
 
-    final AppLocalizations localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     if (!context.mounted) return;
     SnackbarUtils.showErrorSnackBar(
       context: context,
@@ -49,7 +49,7 @@ Future<void> shareMessage({
   required String content,
   required BuildContext context,
 }) async {
-  final AppLocalizations localizations = AppLocalizations.of(context);
+  final localizations = AppLocalizations.of(context)!;
 
   try {
     await Share.share(content);
@@ -68,7 +68,7 @@ Future<void> copyChat({
   required BuildContext context,
 }) async {
   try {
-    final AppLocalizations localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
 
     final StringBuffer chatContent = StringBuffer();
 
@@ -118,7 +118,7 @@ Future<void> copyChat({
   } catch (e) {
     _logger.logError('[MessageUtils] Error copying chat: $e');
 
-    final AppLocalizations localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     if (!context.mounted) return;
     SnackbarUtils.showErrorSnackBar(
       context: context,

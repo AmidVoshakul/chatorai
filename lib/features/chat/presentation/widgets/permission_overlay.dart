@@ -40,7 +40,7 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
       return;
     }
 
-    final l10n = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context)!;
     LogTags.permission.logInfo(
       'PermissionOverlay._onRequest: Showing dialog for tool=${req.toolName}',
     );

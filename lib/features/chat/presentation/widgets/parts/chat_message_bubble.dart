@@ -121,7 +121,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
 
   Widget _buildEditInterface() {
     final theme = Theme.of(context);
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Column(
@@ -332,24 +332,28 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: ChatoraiSpacing.md,
-            vertical: ChatoraiSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-            boxShadow: ChatoraiShadows.cardShadow,
-            border: Border.all(
-              color: theme.dividerColor.withValues(alpha: 0.3),
-              width: ChatoraiBorderWidth.thinBold,
+        AnimatedSize(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: ChatoraiSpacing.md,
+              vertical: ChatoraiSpacing.sm,
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: groupedParts,
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+              boxShadow: ChatoraiShadows.cardShadow,
+              border: Border.all(
+                color: theme.dividerColor.withValues(alpha: 0.3),
+                width: ChatoraiBorderWidth.thinBold,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: groupedParts,
+            ),
           ),
         ),
         _buildActionRow(
@@ -503,7 +507,7 @@ class _ActionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
 
     final formattedTimestamp = timestamp != null
         ? formatMessageTime(timestamp!, context: context)

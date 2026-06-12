@@ -26,6 +26,8 @@
   "increaseContrast": "زيادة التباين لتحسين القراءة",
   "wideScreenMode": "وضع الشاشة العريضة",
   "useFullScreenWidth": "استخدام عرض الشاشة بالكامل لمحتوى الدردشة",
+  "autoScrollDuringStreaming": "التمرير التلقائي أثناء البث",
+  "autoScrollDuringStreamingDesc": "التمرير لأسفل القائمة تلقائيًا عند ظهور محتوى جديد",
   "language": "اللغة",
   "english": "الإنجليزية",
   "russian": "الروسية",

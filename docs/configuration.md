@@ -86,9 +86,9 @@ Reserved for future multi-provider registry configuration. Currently not used.
 
 ### `keybinding`
 
-Customizes keyboard shortcuts. See the [Keybinds System](keybinds.md) documentation for details.
+Customizes keyboard shortcuts. **Note:** The keybinds system is not yet implemented. This section is reserved for future use.
 
-Example:
+Example (planned structure):
 
 ```json
 {

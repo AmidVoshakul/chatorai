@@ -22,7 +22,7 @@ extension _ChatScreenEditsExt on _ChatScreenState {
     ref.read(chatListProvider.notifier).updateChat(updatedChat);
 
     if (!mounted) return;
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     SnackbarUtils.showSuccessSnackBar(
       context: context,
       message: localizations.messageEditedSuccessfully,
@@ -75,12 +75,12 @@ extension _ChatScreenEditsExt on _ChatScreenState {
     );
     ref.read(chatListProvider.notifier).updateChat(chatWithAssistant);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _chatScrollUtils?.scrollToIndicator();
+      _scrollToBottom(force: true);
     });
     _sendToAI(newContent, providedChat: chatWithAssistant);
 
     if (!mounted) return;
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     SnackbarUtils.showSuccessSnackBar(
       context: context,
       message: localizations.messageEditedAndResponseRegenerated,

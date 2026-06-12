@@ -1,1 +1,3 @@
-void main() { print("new"); }
+void main() {
+  print("new");
+}

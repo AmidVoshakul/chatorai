@@ -21,12 +21,14 @@ class ThemeState {
   final AppThemeMode themeMode;
   final double fontSize;
   final bool wideScreenMode;
+  final bool autoScrollDuringStreaming;
   final bool isLoading;
 
   const ThemeState({
     this.themeMode = AppThemeMode.system,
     this.fontSize = 1.0,
     this.wideScreenMode = false,
+    this.autoScrollDuringStreaming = false,
     this.isLoading = true,
   });
 
@@ -48,12 +50,15 @@ class ThemeState {
     AppThemeMode? themeMode,
     double? fontSize,
     bool? wideScreenMode,
+    bool? autoScrollDuringStreaming,
     bool? isLoading,
   }) {
     return ThemeState(
       themeMode: themeMode ?? this.themeMode,
       fontSize: fontSize ?? this.fontSize,
       wideScreenMode: wideScreenMode ?? this.wideScreenMode,
+      autoScrollDuringStreaming:
+          autoScrollDuringStreaming ?? this.autoScrollDuringStreaming,
       isLoading: isLoading ?? this.isLoading,
     );
   }
@@ -147,6 +152,8 @@ class ThemeNotifier extends Notifier<ThemeState> {
   static const String _themeModeKey = 'theme_mode';
   static const String _fontSizeKey = 'font_size';
   static const String _wideScreenModeKey = 'wide_screen_mode';
+  static const String _autoScrollDuringStreamingKey =
+      'auto_scroll_during_streaming';
 
   bool _settingsLoaded = false;
 
@@ -177,11 +184,14 @@ class ThemeNotifier extends Notifier<ThemeState> {
       );
       final fontSize = prefs.getDouble(_fontSizeKey) ?? 1.0;
       final wideScreenMode = prefs.getBool(_wideScreenModeKey) ?? false;
+      final autoScrollDuringStreaming =
+          prefs.getBool(_autoScrollDuringStreamingKey) ?? false;
 
       state = ThemeState(
         themeMode: themeMode,
         fontSize: fontSize,
         wideScreenMode: wideScreenMode,
+        autoScrollDuringStreaming: autoScrollDuringStreaming,
         isLoading: false,
       );
       _logger.logInfo('[ThemeNotifier] Settings loaded');
@@ -200,6 +210,10 @@ class ThemeNotifier extends Notifier<ThemeState> {
       );
       await prefs.setDouble(_fontSizeKey, state.fontSize);
       await prefs.setBool(_wideScreenModeKey, state.wideScreenMode);
+      await prefs.setBool(
+        _autoScrollDuringStreamingKey,
+        state.autoScrollDuringStreaming,
+      );
       _logger.logVerbose('[ThemeNotifier] Settings saved');
     } catch (e) {
       _logger.logError('[ThemeNotifier] Error saving settings: $e');
@@ -227,6 +241,13 @@ class ThemeNotifier extends Notifier<ThemeState> {
   void setWideScreenMode(bool value) {
     if (state.wideScreenMode != value) {
       state = state.copyWith(wideScreenMode: value);
+      _saveSettings();
+    }
+  }
+
+  void setAutoScrollDuringStreaming(bool value) {
+    if (state.autoScrollDuringStreaming != value) {
+      state = state.copyWith(autoScrollDuringStreaming: value);
       _saveSettings();
     }
   }

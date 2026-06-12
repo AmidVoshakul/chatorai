@@ -39,7 +39,7 @@ class Sidebar extends ConsumerWidget {
     // Используем select для отслеживания только нужных полей
     final themeNotifier = ref.read(themeProvider.notifier);
     final theme = themeNotifier.getTheme();
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
 
     // Отслеживаем только searchQuery, а не весь sidebarState
     final searchQuery = ref.watch(sidebarProvider.select((s) => s.searchQuery));

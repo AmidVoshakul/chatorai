@@ -39,7 +39,7 @@ class ContinuationSuggestionService {
     } catch (e) {
       if (!mounted) return;
       if (!context.mounted) return;
-      final localizations = AppLocalizations.of(context);
+      final localizations = AppLocalizations.of(context)!;
       SnackbarUtils.showErrorSnackBar(
         context: context,
         message: localizations.generatingSuggestionsFailed('Error'),
@@ -58,7 +58,7 @@ class ContinuationSuggestionService {
     required String selectedModelId,
     required bool mounted,
   }) async {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final systemPrompt = localizations.systemPromptSuggestion;
     final userPrompt = localizations.userPromptSuggestion;
 
@@ -96,7 +96,7 @@ class ContinuationSuggestionService {
       if (!context.mounted) {
         return ['Tell me more', 'Examples?', 'Alternatives?'];
       }
-      final localizations = AppLocalizations.of(context);
+      final localizations = AppLocalizations.of(context)!;
       return [
         localizations.defaultSuggestion1,
         localizations.defaultSuggestion2,

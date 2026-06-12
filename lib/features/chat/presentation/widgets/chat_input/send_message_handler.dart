@@ -77,7 +77,7 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     final modelState = ref.read(modelProvider);
     final settingsState = ref.read(modelSettingsProvider);
     final settingsNotifier = ref.read(modelSettingsProvider.notifier);
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     if (modelState.selectedModelId.isEmpty) {
       SnackbarUtils.showErrorSnackBar(
         context: context,

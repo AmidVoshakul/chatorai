@@ -36,7 +36,7 @@ class _NetworkAwareWidgetState extends ConsumerState<NetworkAwareWidget> {
         child: Material(
           color: Colors.transparent,
           child: _NetworkSnackBar(
-            message: AppLocalizations.of(context).noInternetConnection,
+            message: AppLocalizations.of(context)!.noInternetConnection,
             onDismiss: () {
               ref.read(networkServiceProvider.notifier).dismissSnackbar();
               _hideNetworkSnackBar();

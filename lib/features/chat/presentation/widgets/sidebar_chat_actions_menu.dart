@@ -53,7 +53,7 @@ class ChatActionsMenu extends StatelessWidget {
   // ===========================================================================
 
   void _showChatActionsMenu(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final RenderBox overlay =
         Overlay.of(context).context.findRenderObject() as RenderBox;
     final RenderBox button = context.findRenderObject()! as RenderBox;
@@ -148,7 +148,7 @@ class ChatActionsMenu extends StatelessWidget {
   }
 
   Future<void> _handleShareChat(BuildContext context) async {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
 
     if (chat.messages.isEmpty) {
       SnackbarUtils.showErrorSnackBar(
@@ -203,7 +203,7 @@ class ChatActionsMenu extends StatelessWidget {
   }
 
   void _handleRenameChat(BuildContext context) async {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final TextEditingController controller = TextEditingController(
       text: chat.title,
     );
@@ -285,7 +285,7 @@ class ChatActionsMenu extends StatelessWidget {
   }
 
   void _handleCopyChat(BuildContext context) async {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     try {
       await MessageUtils.copyChat(
         messages: chat.messages,

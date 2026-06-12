@@ -12,7 +12,7 @@ mixin SpeechInputHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   void Function(double)? get onSoundLevelChanged;
 
   void initSpeechService() {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     speechService = SpeechToTextService(
       onResult: (text) {
         if (mounted) {
@@ -73,7 +73,7 @@ mixin SpeechInputHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       await speechService?.stopListening();
       return;
     }
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final available = await speechService?.checkAvailability() ?? false;
     if (!available) {
       if (mounted) {
@@ -104,7 +104,7 @@ mixin SpeechInputHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       await startSpeechToText();
       return;
     }
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     ref.read(chatInputProvider.notifier).setIsSending(true);
     try {
       final available = await speechService?.checkAvailability() ?? false;

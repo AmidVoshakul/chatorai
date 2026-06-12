@@ -8,5 +8,4 @@ export 'model_utils.dart';
 export 'snackbar_utils.dart';
 export 'chat_error_utils.dart';
 export 'chat_language_utils.dart';
-export 'chat_scroll_utils.dart';
 export 'chat_suggestion_utils.dart';

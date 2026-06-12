@@ -65,6 +65,25 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           pendingContent.clear();
           pendingReasoning.clear();
           lastUpdateTime = now;
+
+          // Auto-scroll during streaming if enabled
+          if (mounted &&
+              _autoScrollEnabled &&
+              ref.read(themeProvider).autoScrollDuringStreaming) {
+            LogTags.chatService.logInfo(
+              'ChatScreen.throttleUpdate: streaming auto-scroll triggered (_autoScrollEnabled=$_autoScrollEnabled, setting=${ref.read(themeProvider).autoScrollDuringStreaming})',
+            );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              LogTags.chatService.logInfo(
+                'ChatScreen.throttleUpdate: calling scrollToBottom',
+              );
+              _scrollToBottom(force: false);
+            });
+          } else {
+            LogTags.chatService.logInfo(
+              'ChatScreen.throttleUpdate: streaming auto-scroll skipped (mounted=$mounted, _autoScrollEnabled=$_autoScrollEnabled, setting=${ref.read(themeProvider).autoScrollDuringStreaming})',
+            );
+          }
         }
       }
     }
@@ -183,6 +202,13 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         onCompletion: (sdkText) async {
           flushPendingUpdates();
           if (!mounted) return;
+          // Auto-scroll to bottom when streaming completes (if enabled)
+          if (_autoScrollEnabled &&
+              ref.read(themeProvider).autoScrollDuringStreaming) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollToBottom(force: false);
+            });
+          }
           LogTags.chatScreen.logInfo(
             'onCompletion: flushing done, proceeding to finalize message',
           );
@@ -269,6 +295,15 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             completedMessage.id,
             completedMessage,
           );
+          LogTags.chatService.logInfo(
+            'ChatScreen.onCompletion: message saved, scrolling to bottom',
+          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            LogTags.chatService.logInfo(
+              'ChatScreen.onCompletion: postFrame scrollToBottom call',
+            );
+            _scrollToBottom(force: true);
+          });
           _showContinuationSuggestions(completedMessage);
         },
       );

@@ -43,7 +43,7 @@ extension _ChatScreenAiExt on _ChatScreenState {
     _chatStorageService.addMessageToChat(chat.id, newAssistantMessage);
     ref.read(chatListProvider.notifier).updateChat(chatWithNewPlaceholder);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _chatScrollUtils?.scrollToIndicator();
+      _scrollToBottom(force: true);
     });
     _sendToAI(userMessage.content, providedChat: chatWithNewPlaceholder);
   }
@@ -158,7 +158,7 @@ extension _ChatScreenAiExt on _ChatScreenState {
     );
     final chatFromStorage = await _chatStorageService.getChat(currentChat!.id);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _chatScrollUtils?.scrollToIndicator();
+      _scrollToBottom(force: true);
     });
     await _streamContinuationResponse(lastMessage.content, chatFromStorage!);
   }

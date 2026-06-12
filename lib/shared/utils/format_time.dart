@@ -10,7 +10,7 @@ String formatTimeAgo(
   required BuildContext context,
   bool useShortFormat = false,
 }) {
-  final localizations = AppLocalizations.of(context);
+  final localizations = AppLocalizations.of(context)!;
   final now = DateTime.now();
   final difference = now.difference(dateTime);
 

@@ -21,7 +21,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final theme = ref.watch(themeProvider);
     final language = ref.watch(languageProvider);
 
@@ -147,6 +147,16 @@ class SettingsScreen extends ConsumerWidget {
           value: theme.wideScreenMode,
           onChanged: (value) =>
               ref.read(themeProvider.notifier).setWideScreenMode(value),
+        ),
+        const SizedBox(height: ChatoraiSpacing.lg),
+        SettingsToggleTile(
+          context: context,
+          title: localizations.autoScrollDuringStreaming,
+          subtitle: localizations.autoScrollDuringStreamingDesc,
+          value: theme.autoScrollDuringStreaming,
+          onChanged: (value) => ref
+              .read(themeProvider.notifier)
+              .setAutoScrollDuringStreaming(value),
         ),
       ],
     );

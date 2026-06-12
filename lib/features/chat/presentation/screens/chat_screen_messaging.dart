@@ -39,8 +39,17 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       assistantMessage,
     );
     ref.read(chatListProvider.notifier).updateChat(chatFromStorage);
+    LogTags.chatService.logInfo(
+      'ChatScreen._handleAddMessagesAndStream: after storage update, scheduling scroll',
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _chatScrollUtils?.scrollToIndicator();
+      // After user sends a message, they expect to see the assistant's response
+      _autoScrollEnabled = true;
+      LogTags.chatService.logInfo(
+        'ChatScreen._handleAddMessagesAndStream: _autoScrollEnabled set to true',
+      );
+      // Scroll to bottom (force = true to ensure visibility)
+      _scrollToBottom(force: true);
     });
     try {
       await _sendToAI(

@@ -8,7 +8,7 @@ import 'package:chatorai/l10n/app_localizations.dart';
 class WelcomeQuestionsData {
   /// Get all available welcome questions using localization
   static List<String> getAllQuestions(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return [
       l10n.welcomeQuestion1,
@@ -111,26 +111,6 @@ class WelcomeQuestionsData {
       l10n.welcomeQuestion98,
       l10n.welcomeQuestion99,
       l10n.welcomeQuestion100,
-      l10n.welcomeQuestion101,
-      l10n.welcomeQuestion102,
-      l10n.welcomeQuestion103,
-      l10n.welcomeQuestion104,
-      l10n.welcomeQuestion105,
-      l10n.welcomeQuestion106,
-      l10n.welcomeQuestion107,
-      l10n.welcomeQuestion108,
-      l10n.welcomeQuestion109,
-      l10n.welcomeQuestion110,
-      l10n.welcomeQuestion111,
-      l10n.welcomeQuestion112,
-      l10n.welcomeQuestion113,
-      l10n.welcomeQuestion114,
-      l10n.welcomeQuestion115,
-      l10n.welcomeQuestion116,
-      l10n.welcomeQuestion117,
-      l10n.welcomeQuestion118,
-      l10n.welcomeQuestion119,
-      l10n.welcomeQuestion120,
     ];
   }
 

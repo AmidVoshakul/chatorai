@@ -11,7 +11,7 @@ mixin AttachmentInputHandler<T extends ConsumerStatefulWidget>
   bool Function(String)? get checkModelSupportsImages;
 
   Future<void> handleCamera() async {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     if (checkModelSupportsImages != null) {
       final modelId = ref.read(modelProvider).selectedModelId;
       final supportsImages = checkModelSupportsImages!(modelId);
@@ -48,7 +48,7 @@ mixin AttachmentInputHandler<T extends ConsumerStatefulWidget>
   }
 
   Future<void> handleImage() async {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     if (checkModelSupportsImages != null) {
       final modelId = ref.read(modelProvider).selectedModelId;
       final supportsImages = checkModelSupportsImages!(modelId);
@@ -85,7 +85,7 @@ mixin AttachmentInputHandler<T extends ConsumerStatefulWidget>
   }
 
   Future<void> handleFile() async {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     if (checkModelSupportsImages != null) {
       final modelId = ref.read(modelProvider).selectedModelId;
       final supportsImages = checkModelSupportsImages!(modelId);

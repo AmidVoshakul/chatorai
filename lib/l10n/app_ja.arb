@@ -26,6 +26,8 @@
   "increaseContrast": "コントラストを増加させて読みやすさを向上",
   "wideScreenMode": "ワイドスクリーン モード",
   "useFullScreenWidth": "チャットコンテンツのために全画面幅を使用",
+  "autoScrollDuringStreaming": "ストリーミング中の自動スクロール",
+  "autoScrollDuringStreamingDesc": "新しいコンテンツが追加されるとリストを自動的に下にスクロール",
   "language": "言語",
   "english": "英語",
   "russian": "ロシア語",

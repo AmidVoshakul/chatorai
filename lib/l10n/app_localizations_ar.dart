@@ -92,6 +92,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get useFullScreenWidth => 'استخدام عرض الشاشة بالكامل لمحتوى الدردشة';
 
   @override
+  String get autoScrollDuringStreaming => 'التمرير التلقائي أثناء البث';
+
+  @override
+  String get autoScrollDuringStreamingDesc =>
+      'التمرير لأسفل القائمة تلقائيًا عند ظهور محتوى جديد';
+
+  @override
   String get language => 'اللغة';
 
   @override
