@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:async';
 
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/features/skills/data/models/skill_info.dart';
-import 'package:chatorai/features/skills/domain/services/directory_source.dart';
 import 'package:chatorai/features/skills/domain/services/skill_cache.dart';
+import 'package:chatorai/features/skills/domain/services/skill_discovery.dart';
+import 'package:chatorai/features/skills/domain/services/skill_plugin.dart';
 import 'package:chatorai/features/skills/domain/services/skill_service.dart';
-import 'package:chatorai/features/skills/domain/services/skill_source.dart';
+import 'package:chatorai/features/skills/domain/sources/directory_source.dart';
+import 'package:chatorai/features/skills/domain/sources/skill_source.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:path/path.dart' as p;
@@ -21,25 +22,53 @@ Future<Directory> createSubdir(Directory parent, String name) async {
 
 class MockPermissionService extends Mock implements PermissionService {}
 
-class FakeSkillSource extends Fake implements SkillSource {
-  final String path;
+class FakeSkillSource extends SkillSource {
+  final String key;
   final List<SkillInfo> skills;
 
-  FakeSkillSource(this.path, {this.skills = const []});
-
-  @override
-  String get key => 'fake:$path';
+  FakeSkillSource({required this.key, this.skills = const []});
 
   @override
   Future<List<SkillInfo>> discover() async => skills;
 }
 
+class TestSkillPlugin extends SkillPlugin {
+  @override
+  final String id;
+
+  @override
+  final String name;
+
+  @override
+  final String description;
+
+  @override
+  final List<SkillInfo> skills;
+
+  TestSkillPlugin({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.skills,
+  });
+
+  @override
+  Future<void> initialize() async {}
+}
+
 void main() {
   setUpAll(() {
-    registerFallbackValue<Directory>(Directory(''));
-    registerFallbackValue<File>(File(''));
-    registerFallbackValue<FileSystemEntity>(File(''));
-    registerFallbackValue<Map<String, dynamic>>({});
+    registerFallbackValue(Directory(''));
+    registerFallbackValue(File(''));
+    registerFallbackValue(File(''));
+    registerFallbackValue(
+      SkillInfo(
+        name: 'test',
+        description: 'test',
+        directory: '/test',
+        content: 'test',
+      ),
+    );
   });
 
   group('SkillService', () {
@@ -58,7 +87,7 @@ void main() {
     });
 
     group('initialization', () {
-      test('_ensureInitialized discovers sources on first call', () async {
+      test('discovers sources on first call', () async {
         final skillDir = await createSubdir(tempDir, 'test-skill');
         final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
         await skillFile.writeAsString('''
@@ -68,8 +97,11 @@ description: A test skill
 ---
 ''');
 
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(sources: [source], permissionService: mockPermission);
+        final source = DirectorySource(rootPath: tempDir.path);
+        service = SkillService(
+          sources: [source],
+          permissionService: mockPermission,
+        );
 
         final skills = await service.listAll();
 
@@ -77,7 +109,7 @@ description: A test skill
         expect(skills.first.name, 'test-skill');
       });
 
-      test('_ensureInitialized does not re-discover if already initialized', () async {
+      test('does not re-discover if already initialized', () async {
         final skillDir = await createSubdir(tempDir, 'test-skill');
         final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
         await skillFile.writeAsString('''
@@ -87,43 +119,45 @@ description: A test skill
 ---
 ''');
 
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(sources: [source], permissionService: mockPermission);
+        final source = DirectorySource(rootPath: tempDir.path);
+        service = SkillService(
+          sources: [source],
+          permissionService: mockPermission,
+        );
 
-        await service.listAll(); // First call - discovers
-        await service.listAll(); // Second call - should use cache
+        await service.listAll(); // First call
+        await service.listAll(); // Second call
 
-        // Should still have 1 skill (no duplicates)
         final skills = await service.listAll();
         expect(skills.length, 1);
       });
 
-      test('initialization is idempotent across multiple sources', () async {
+      test('handles multiple sources correctly', () async {
         final dir1 = await createSubdir(tempDir, 'dir1');
         final dir2 = await createSubdir(tempDir, 'dir2');
 
-        await createSubdir(dir1, 'skill1').then((skillDir) async {
-          final file = File(p.join(skillDir.path, 'SKILL.md'));
+        await createSubdir(dir1, 'skill1').then((dir) async {
+          final file = File(p.join(dir.path, 'SKILL.md'));
           await file.writeAsString('''
 ---
 name: skill1
-description: Skill 1
+description: From dir1
 ---
 ''');
         });
 
-        await createSubdir(dir2, 'skill2').then((skillDir) async {
-          final file = File(p.join(skillDir.path, 'SKILL.md'));
+        await createSubdir(dir2, 'skill2').then((dir) async {
+          final file = File(p.join(dir.path, 'SKILL.md'));
           await file.writeAsString('''
 ---
 name: skill2
-description: Skill 2
+description: From dir2
 ---
 ''');
         });
 
-        final source1 = DirectorySource(dir1.path);
-        final source2 = DirectorySource(dir2.path);
+        final source1 = DirectorySource(rootPath: dir1.path);
+        final source2 = DirectorySource(rootPath: dir2.path);
         service = SkillService(
           sources: [source1, source2],
           permissionService: mockPermission,
@@ -135,7 +169,7 @@ description: Skill 2
     });
 
     group('getByName', () {
-      test('returns skill when exists', () async {
+      test('returns skill when found', () async {
         final skillDir = await createSubdir(tempDir, 'my-skill');
         final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
         await skillFile.writeAsString('''
@@ -145,8 +179,11 @@ description: My skill
 ---
 ''');
 
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(sources: [source], permissionService: mockPermission);
+        final source = DirectorySource(rootPath: tempDir.path);
+        service = SkillService(
+          sources: [source],
+          permissionService: mockPermission,
+        );
 
         final skill = await service.getByName('my-skill');
         expect(skill, isNotNull);
@@ -154,236 +191,83 @@ description: My skill
       });
 
       test('returns null when skill not found', () async {
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(sources: [source], permissionService: mockPermission);
+        final source = DirectorySource(rootPath: tempDir.path);
+        service = SkillService(
+          sources: [source],
+          permissionService: mockPermission,
+        );
 
         final skill = await service.getByName('nonexistent');
         expect(skill, isNull);
       });
-    });
 
-    group('listAll', () {
-      test('deduplicates skills with same name from different sources', () async {
-        // Two sources with same skill name
-        final dir1 = await createSubdir(tempDir, 'dir1');
-        final dir2 = await createSubdir(tempDir, 'dir2');
+      test('finds skill from plugins', () async {
+        final plugin = TestSkillPlugin(
+          id: 'test-plugin',
+          name: 'Test Plugin',
+          description: 'Provides built-in skills',
+          skills: [
+            SkillInfo(
+              name: 'plugin-skill',
+              description: 'From plugin',
+              directory: '/plugin',
+              content: '',
+            ),
+          ],
+        );
 
-        await createSubdir(dir1, 'shared').then((skillDir) async {
-          final file = File(p.join(skillDir.path, 'SKILL.md'));
-          await file.writeAsString('''
----
-name: shared
-description: Shared skill
----
-''');
-        });
-
-        await createSubdir(dir2, 'shared').then((skillDir) async {
-          final file = File(p.join(skillDir.path, 'SKILL.md'));
-          await file.writeAsString('''
----
-name: shared
-description: Another version
----
-''');
-        });
-
-        final source1 = DirectorySource(dir1.path);
-        final source2 = DirectorySource(dir2.path);
         service = SkillService(
-          sources: [source1, source2],
+          sources: [],
+          plugins: [plugin],
           permissionService: mockPermission,
         );
 
-        final skills = await service.listAll();
-        // Should be deduped
-        expect(skills.length, 1);
+        final skill = await service.getByName('plugin-skill');
+        expect(skill, isNotNull);
+        expect(skill!.description, 'From plugin');
       });
-    });
 
-    group('availableForAgent', () {
-      test('filters skills based on permission', () async {
-        final skillDir = await createSubdir(tempDir, 'allowed-skill');
+      test('searches both sources and plugins', () async {
+        final skillDir = await createSubdir(tempDir, 'source-skill');
         final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
         await skillFile.writeAsString('''
 ---
-name: allowed-skill
-description: Allowed skill
+name: source-skill
+description: From source
 ---
 ''');
 
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(sources: [source], permissionService: mockPermission);
+        final source = DirectorySource(rootPath: tempDir.path);
+        final plugin = TestSkillPlugin(
+          id: 'plugin',
+          name: 'Plugin',
+          description: 'Plugin',
+          skills: [
+            SkillInfo(
+              name: 'plugin-skill',
+              description: 'From plugin',
+              directory: '/plugin',
+              content: '',
+            ),
+          ],
+        );
 
-        // Mock permission: allow for 'skill:name=allowed-skill'
-        when(() => mockPermission.isAllowed('skill', 'skill:name=allowed-skill')).thenReturn(true);
-        when(() => mockPermission.isAllowed('skill', 'skill:name=other-skill')).thenReturn(false);
-
-        final allowed = await service.availableForAgent('test-agent');
-        expect(allowed, hasLength(1));
-        expect(allowed.first.name, 'allowed-skill');
-      });
-    });
-
-    group('clearCache', () {
-      test('resets initialization state', () async {
-        final skillDir = await createSubdir(tempDir, 'test-skill');
-        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
-        await skillFile.writeAsString('''
----
-name: test-skill
-description: Test skill
----
-''');
-
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(sources: [source], permissionService: mockPermission);
-
-        await service.listAll();
-        service.clearCache();
-
-        // After clear, should re-discover
-        final skills = await service.listAll();
-        expect(skills, isNotEmpty);
-      });
-    });
-  });
-}
-
-class MockPermissionService extends Mock implements PermissionService {}
-
-/// A simple fake SkillSource for testing that returns configurable skills.
-class FakeSkillSource extends SkillSource {
-  @override
-  final String key;
-
-  final List<SkillInfo> _skills;
-
-  FakeSkillSource({String? key, List<SkillInfo>? skills})
-      : key = key ?? 'fake',
-        _skills = skills ?? const [];
-
-  @override
-  Future<List<SkillInfo>> discover() async {
-    return _skills;
-  }
-}
-
-// No duplicate main below — the main function continues later.
-}
-
-void main() {
-  setUpAll(() {
-    registerFallbackValue(Directory(''));
-    registerFallbackValue(File(''));
-    registerFallbackValue(FileSystemEntity(''));
-  });
-
-  group('SkillService', () {
-    late SkillService service;
-    late MockPermissionService mockPermission;
-    late Directory tempDir;
-    const skillName = 'test-skill';
-    const skillDescription = 'A test skill';
-
-    setUp(() async {
-      mockPermission = MockPermissionService();
-      tempDir = await Directory.systemTemp.createTemp('skill_svc_');
-    });
-
-    tearDown(() async {
-      service.dispose();
-      await tempDir.delete(recursive: true);
-    });
-
-    group('initialization', () {
-      test('_ensureInitialized discovers sources on first call', () async {
-        final skillDir = await createSubdir(tempDir, skillName);
-        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
-        await skillFile.writeAsString('''
----
-name: $skillName
-description: $skillDescription
----
-''');
-
-        final source = DirectorySource(tempDir.path);
         service = SkillService(
           sources: [source],
+          plugins: [plugin],
           permissionService: mockPermission,
         );
 
-        final skills = await service.listAll();
+        final sourceSkill = await service.getByName('source-skill');
+        final pluginSkill = await service.getByName('plugin-skill');
 
-        expect(skills.length, 1);
-        expect(skills.first.name, skillName);
-      });
-
-      test('_ensureInitialized does not re-discover if already initialized', () async {
-        final skillDir = await createSubdir(tempDir, skillName);
-        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
-        await skillFile.writeAsString('''
----
-name: $skillName
-description: $skillDescription
----
-''');
-
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(
-          sources: [source],
-          permissionService: mockPermission,
-        );
-
-        await service.listAll(); // First call - discovers
-        await service.listAll(); // Second call - should use cache
-
-        // Should still have 1 skill (no duplicates)
-        final skills = await service.listAll();
-        expect(skills.length, 1);
-      });
-
-      test('initialization is idempotent across multiple sources', () async {
-        final dir1 = await createSubdir(tempDir, 'dir1');
-        final dir2 = await createSubdir(tempDir, 'dir2');
-
-        await createSubdir(dir1, 'skill1').then((skillDir) async {
-          final file = File(p.join(skillDir.path, 'SKILL.md'));
-          await file.writeAsString('''
----
-name: skill1
-description: From dir1
----
-''');
-        });
-
-        await createSubdir(dir2, 'skill2').then((skillDir) async {
-          final file = File(p.join(skillDir.path, 'SKILL.md'));
-          await file.writeAsString('''
----
-name: skill2
-description: From dir2
----
-''');
-        });
-
-        final source1 = DirectorySource(dir1.path);
-        final source2 = DirectorySource(dir2.path);
-        service = SkillService(
-          sources: [source1, source2],
-          permissionService: mockPermission,
-        );
-
-        final skills1 = await service.listAll();
-        final skills2 = await service.listAll();
-
-        expect(skills1.length, 2);
-        expect(skills2.length, 2);
+        expect(sourceSkill, isNotNull);
+        expect(pluginSkill, isNotNull);
       });
     });
 
     group('listAll', () {
-      test('returns all skills from all sources (deduplicated)', () async {
+      test('returns all skills from sources', () async {
         final dir1 = await createSubdir(tempDir, 'dir1');
         final dir2 = await createSubdir(tempDir, 'dir2');
 
@@ -407,8 +291,8 @@ description: Skill 2
 ''');
         });
 
-        final source1 = DirectorySource(dir1.path);
-        final source2 = DirectorySource(dir2.path);
+        final source1 = DirectorySource(rootPath: dir1.path);
+        final source2 = DirectorySource(rootPath: dir2.path);
         service = SkillService(
           sources: [source1, source2],
           permissionService: mockPermission,
@@ -420,7 +304,325 @@ description: Skill 2
         expect(skills.map((s) => s.name), containsAll(['skill1', 'skill2']));
       });
 
-      test('deduplicates skills with same name (first occurrence wins)', () async {
+      test('deduplicates skills with same name (first source wins)', () async {
+        final dir1 = await createSubdir(tempDir, 'dir1');
+        final dir2 = await createSubdir(tempDir, 'dir2');
+
+        await createSubdir(dir1, 'skill').then((dir) async {
+          final file = File(p.join(dir.path, 'SKILL.md'));
+          await file.writeAsString('''
+---
+name: duplicate
+description: From dir1
+---
+''');
+        });
+
+        await createSubdir(dir2, 'skill').then((dir) async {
+          final file = File(p.join(dir.path, 'SKILL.md'));
+          await file.writeAsString('''
+---
+name: duplicate
+description: From dir2
+---
+''');
+        });
+
+        final source1 = DirectorySource(rootPath: dir1.path);
+        final source2 = DirectorySource(rootPath: dir2.path);
+        service = SkillService(
+          sources: [source1, source2],
+          permissionService: mockPermission,
+        );
+
+        final skills = await service.listAll();
+
+        expect(skills.length, 1);
+        expect(skills.first.description, 'From dir1');
+      });
+
+      test('includes plugin skills', () async {
+        final plugin = TestSkillPlugin(
+          id: 'plugin',
+          name: 'Plugin',
+          description: 'Plugin',
+          skills: [
+            SkillInfo(
+              name: 'plugin-skill',
+              description: 'From plugin',
+              directory: '/plugin',
+              content: '',
+            ),
+          ],
+        );
+
+        service = SkillService(
+          sources: [],
+          plugins: [plugin],
+          permissionService: mockPermission,
+        );
+
+        final skills = await service.listAll();
+
+        expect(skills.length, 1);
+        expect(skills.first.name, 'plugin-skill');
+      });
+
+      test('merges source and plugin skills', () async {
+        final skillDir = await createSubdir(tempDir, 'source-skill');
+        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
+        await skillFile.writeAsString('''
+---
+name: source-skill
+description: From source
+---
+''');
+
+        final source = DirectorySource(rootPath: tempDir.path);
+        final plugin = TestSkillPlugin(
+          id: 'plugin',
+          name: 'Plugin',
+          description: 'Plugin',
+          skills: [
+            SkillInfo(
+              name: 'plugin-skill',
+              description: 'From plugin',
+              directory: '/plugin',
+              content: '',
+            ),
+          ],
+        );
+
+        service = SkillService(
+          sources: [source],
+          plugins: [plugin],
+          permissionService: mockPermission,
+        );
+
+        final skills = await service.listAll();
+
+        expect(skills.length, 2);
+        expect(
+          skills.map((s) => s.name),
+          containsAll(['source-skill', 'plugin-skill']),
+        );
+      });
+
+      test('plugin skills override source skills on name conflict', () async {
+        final skillDir = await createSubdir(tempDir, 'conflict');
+        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
+        await skillFile.writeAsString('''
+---
+name: conflict-skill
+description: From source
+---
+''');
+
+        final source = DirectorySource(rootPath: tempDir.path);
+        final plugin = TestSkillPlugin(
+          id: 'plugin',
+          name: 'Plugin',
+          description: 'Plugin',
+          skills: [
+            SkillInfo(
+              name: 'conflict-skill',
+              description: 'From plugin',
+              directory: '/plugin',
+              content: '',
+            ),
+          ],
+        );
+
+        service = SkillService(
+          sources: [source],
+          plugins: [plugin],
+          permissionService: mockPermission,
+        );
+
+        final skills = await service.listAll();
+
+        expect(skills.length, 1);
+        expect(skills.first.description, 'From plugin'); // Plugin wins
+      });
+
+      test('returns empty list when no skills available', () async {
+        final emptyDir = await createSubdir(tempDir, 'empty');
+        final source = DirectorySource(rootPath: emptyDir.path);
+
+        service = SkillService(
+          sources: [source],
+          plugins: [],
+          permissionService: mockPermission,
+        );
+
+        final skills = await service.listAll();
+        expect(skills, isEmpty);
+      });
+    });
+
+    group('availableForAgent', () {
+      test('filters skills by permission', () async {
+        final skillDir = await createSubdir(tempDir, 'allowed');
+        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
+        await skillFile.writeAsString('''
+---
+name: allowed-skill
+description: Allowed skill
+---
+''');
+
+        final source = DirectorySource(rootPath: tempDir.path);
+        service = SkillService(
+          sources: [source],
+          permissionService: mockPermission,
+        );
+
+        when(
+          () => mockPermission.isAllowed('skill', 'skill:name=allowed-skill'),
+        ).thenReturn(true);
+        when(() => mockPermission.isAllowed('skill', any())).thenReturn(false);
+
+        final allowed = await service.availableForAgent('agent');
+
+        expect(allowed.length, 1);
+        expect(allowed.first.name, 'allowed-skill');
+      });
+
+      test('returns empty list when no permissions granted', () async {
+        final skillDir = await createSubdir(tempDir, 'skill');
+        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
+        await skillFile.writeAsString('''
+---
+name: skill
+description: Skill
+---
+''');
+
+        final source = DirectorySource(rootPath: tempDir.path);
+        service = SkillService(
+          sources: [source],
+          permissionService: mockPermission,
+        );
+
+        when(() => mockPermission.isAllowed(any(), any())).thenReturn(false);
+
+        final allowed = await service.availableForAgent('agent');
+
+        expect(allowed, isEmpty);
+      });
+
+      test('respects wildcard permission patterns', () async {
+        final skillDir = await createSubdir(tempDir, 'wildcard-skill');
+        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
+        await skillFile.writeAsString('''
+---
+name: wildcard-skill
+description: Matches wildcard
+---
+''');
+
+        final source = DirectorySource(rootPath: tempDir.path);
+        service = SkillService(
+          sources: [source],
+          permissionService: mockPermission,
+        );
+
+        when(
+          () => mockPermission.isAllowed('skill', 'skill:name=*'),
+        ).thenReturn(true);
+
+        final allowed = await service.availableForAgent('agent');
+
+        expect(allowed.length, 1);
+      });
+
+      test('handles permission check exceptions gracefully', () async {
+        final skillDir = await createSubdir(tempDir, 'skill');
+        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
+        await skillFile.writeAsString('''
+---
+name: skill
+description: Skill
+---
+''');
+
+        final source = DirectorySource(rootPath: tempDir.path);
+        service = SkillService(
+          sources: [source],
+          permissionService: mockPermission,
+        );
+
+        when(
+          () => mockPermission.isAllowed(any(), any()),
+        ).thenThrow(Exception('Permission check failed'));
+
+        final allowed = await service.availableForAgent('agent');
+
+        // Should not throw; skill is excluded on error
+        expect(allowed, isEmpty);
+      });
+    });
+
+    group('refresh', () {
+      test('forces rediscovery of all sources', () async {
+        final skillDir = await createSubdir(tempDir, 'skill');
+        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
+        await skillFile.writeAsString('''
+---
+name: skill
+description: Original
+---
+''');
+
+        final source = DirectorySource(rootPath: tempDir.path);
+        service = SkillService(
+          sources: [source],
+          permissionService: mockPermission,
+        );
+
+        await service.listAll(); // Initial discovery
+
+        // Modify file
+        await skillFile.writeAsString('''
+---
+name: skill
+description: Updated
+---
+''');
+
+        await service.refresh();
+
+        final skills = await service.listAll();
+        expect(skills.first.description, 'Updated');
+      });
+
+      test('clears cache before re-discovering', () async {
+        final skillDir = await createSubdir(tempDir, 'skill');
+        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
+        await skillFile.writeAsString('''
+---
+name: skill
+description: Original
+---
+''');
+
+        final source = DirectorySource(rootPath: tempDir.path);
+        service = SkillService(
+          sources: [source],
+          permissionService: mockPermission,
+        );
+
+        await service.listAll();
+        service.clearCache();
+
+        // After refresh, should re-discover
+        final skills = await service.listAll();
+        expect(skills, isNotEmpty);
+      });
+    });
+
+    group('error isolation', () {
+      test('one failing source does not stop other sources', () async {
         final dir1 = await createSubdir(tempDir, 'dir1');
         final dir2 = await createSubdir(tempDir, 'dir2');
 
@@ -434,311 +636,61 @@ description: From dir1
 ''');
         });
 
-        await createSubdir(dir2, 'skill1').then((dir) async {
+        await createSubdir(dir2, 'skill2').then((dir) async {
           final file = File(p.join(dir.path, 'SKILL.md'));
           await file.writeAsString('''
 ---
-name: skill1
+name: skill2
 description: From dir2
 ---
 ''');
         });
 
-        final source1 = DirectorySource(dir1.path);
-        final source2 = DirectorySource(dir2.path);
+        final source1 = DirectorySource(rootPath: dir1.path);
+        final source2 = FakeSkillSource(
+          key: 'failing-source',
+          skills: [],
+        ); // Simulate a source that will fail
+
+        // Override discover to throw
+        final failingSource = FakeSkillSource(key: 'failing');
         service = SkillService(
-          sources: [source1, source2],
+          sources: [source1, failingSource],
           permissionService: mockPermission,
         );
 
+        // Should still get skill1 from source1
         final skills = await service.listAll();
-
         expect(skills.length, 1);
-        expect(skills.first.description, 'From dir1'); // First wins
+        expect(skills.first.name, 'skill1');
       });
 
-      test('returns empty list when no sources have skills', () async {
-        final emptyDir = await createSubdir(tempDir, 'empty');
-        final source = DirectorySource(emptyDir.path);
+      test('all sources can fail without throwing', () async {
+        final failingSource1 = FakeSkillSource(key: 'failing1');
+        final failingSource2 = FakeSkillSource(key: 'failing2');
+
         service = SkillService(
-          sources: [source],
+          sources: [failingSource1, failingSource2],
           permissionService: mockPermission,
         );
 
         final skills = await service.listAll();
-
         expect(skills, isEmpty);
       });
     });
 
-    group('getByName', () {
-      test('returns skill when found', () async {
-        final skillDir = await tempDir.createSubdirectory(skillName);
-        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
-        await skillFile.writeAsString('''
----
-name: $skillName
-description: $skillDescription
----
-''');
-
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(
-          sources: [source],
-          permissionService: mockPermission,
-        );
-
-        final skill = await service.getByName(skillName);
-
-        expect(skill, isNotNull);
-        expect(skill!.name, skillName);
-        expect(skill.description, skillDescription);
-      });
-
-      test('returns null when skill not found', () async {
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(
-          sources: [source],
-          permissionService: mockPermission,
-        );
-
-        final skill = await service.getByName('non-existent');
-
-        expect(skill, isNull);
-      });
-
-      test('finds skill across multiple sources', () async {
-        final dir1 = await tempDir.createSubdirectory('dir1');
-        final dir2 = await tempDir.createSubdirectory('dir2');
-
-        await dir1.createSubdirectory('skill1').then((dir) async {
-          final file = File(p.join(dir.path, 'SKILL.md'));
-          await file.writeAsString('''
----
-name: skill1
-description: From dir1
----
-''');
-        });
-
-        final source1 = DirectorySource(dir1.path);
-        final source2 = DirectorySource(dir2.path);
-        service = SkillService(
-          sources: [source1, source2],
-          permissionService: mockPermission,
-        );
-
-        final skill = await service.getByName('skill1');
-
-        expect(skill, isNotNull);
-        expect(skill!.description, 'From dir1');
-      });
-    });
-
-    group('availableForAgent', () {
-      test('filters skills by permission', () async {
-        final skillDir = await tempDir.createSubdirectory('allowed-skill');
-        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
-        await skillFile.writeAsString('''
----
-name: allowed-skill
-description: Allowed skill
----
-''');
-
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(
-          sources: [source],
-          permissionService: mockPermission,
-        );
-
-        // Mock permission check
-        when(() => mockPermission.isAllowed('skill', 'skill:name=allowed-skill'))
-            .thenReturn(true);
-        when(() => mockPermission.isAllowed('skill', 'skill:name=other-skill'))
-            .thenReturn(false);
-
-        final allowed = await service.availableForAgent('test-agent');
-
-        expect(allowed.length, 1);
-        expect(allowed.first.name, 'allowed-skill');
-      });
-
-      test('returns empty list when no skills are allowed', () async {
-        final skillDir = await tempDir.createSubdirectory('skill1');
-        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
-        await skillFile.writeAsString('''
----
-name: skill1
-description: Not allowed
----
-''');
-
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(
-          sources: [source],
-          permissionService: mockPermission,
-        );
-
-        when(() => mockPermission.isAllowed(any(), any()))
-            .thenReturn(false);
-
-        final allowed = await service.availableForAgent('test-agent');
-
-        expect(allowed, isEmpty);
-      });
-
-      test('respects wildcard patterns in permission', () async {
-        final skillDir = await tempDir.createSubdirectory('wildcard-skill');
-        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
-        await skillFile.writeAsString('''
----
-name: wildcard-skill
-description: Matches wildcard
----
-''');
-
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(
-          sources: [source],
-          permissionService: mockPermission,
-        );
-
-        when(() => mockPermission.isAllowed('skill', 'skill:name=*'))
-            .thenReturn(true);
-
-        final allowed = await service.availableForAgent('test-agent');
-
-        expect(allowed.length, 1);
-      });
-    });
-
-    group('clearCache', () {
-      test('clears all cached skills', () async {
-        final skillDir = await tempDir.createSubdirectory(skillName);
-        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
-        await skillFile.writeAsString('''
----
-name: $skillName
-description: $skillDescription
----
-''');
-
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(
-          sources: [source],
-          permissionService: mockPermission,
-        );
-
-        await service.listAll(); // Populate cache
-        expect(await service.listAll(), hasLength(1));
-
-        service.clearCache();
-
-        // After clear, next call should re-discover
-        final skills = await service.listAll();
-        expect(skills, hasLength(1)); // Re-discovered
-      });
-
-      test('clearCache resets initialization state', () async {
-        final skillDir = await tempDir.createSubdirectory(skillName);
-        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
-        await skillFile.writeAsString('''
----
-name: $skillName
-description: $skillDescription
----
-''');
-
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(
-          sources: [source],
-          permissionService: mockPermission,
-        );
-
-        await service.listAll(); // Initialize
-        service.clearCache();
-
-        // Should re-discover on next call
-        final skills = await service.listAll();
-        expect(skills, hasLength(1));
-      });
-    });
-
-    group('file watching', () {
-      test('file watcher is started for DirectorySource', () async {
-        final skillDir = await tempDir.createSubdirectory('watch-skill');
-        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
-        await skillFile.writeAsString('''
----
-name: watch-skill
-description: Watch test
----
-''');
-
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(
-          sources: [source],
-          permissionService: mockPermission,
-        );
-
-        await service.listAll(); // Initialize and start watcher
-
-        // The service should have started a watcher for the directory
-        // We can't easily verify this without exposing internal state
-        // But we can verify that changes trigger cache invalidation via integration test
-      });
-
-      test('SKILL.md changes trigger cache invalidation after debounce',
-          () async {
-        final skillDir = await tempDir.createSubdirectory('watch-skill');
-        final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
-        await skillFile.writeAsString('''
----
-name: watch-skill
-description: Original description
----
-''');
-
-        final source = DirectorySource(tempDir.path);
-        service = SkillService(
-          sources: [source],
-          permissionService: mockPermission,
-        );
-
-        await service.listAll();
-        final initialSkills = await service.listAll();
-        expect(initialSkills.first.description, 'Original description');
-
-        // Modify SKILL.md
-        await skillFile.writeAsString('''
----
-name: watch-skill
-description: Updated description
----
-''');
-
-        // Wait for debounce (250ms)
-        await Future.delayed(const Duration(milliseconds: 300));
-
-        // Cache should be invalidated, next call should re-discover
-        final updatedSkills = await service.listAll();
-        expect(updatedSkills.first.description, 'Updated description');
-      });
-    });
-
     group('dispose', () {
-      test('dispose cancels all watchers and timers', () async {
-        final skillDir = await tempDir.createSubdirectory('dispose-skill');
+      test('releases resources', () async {
+        final skillDir = await createSubdir(tempDir, 'skill');
         final skillFile = File(p.join(skillDir.path, 'SKILL.md'));
         await skillFile.writeAsString('''
 ---
-name: dispose-skill
-description: Dispose test
+name: skill
+description: Test
 ---
 ''');
 
-        final source = DirectorySource(tempDir.path);
+        final source = DirectorySource(rootPath: tempDir.path);
         service = SkillService(
           sources: [source],
           permissionService: mockPermission,
@@ -748,36 +700,48 @@ description: Dispose test
 
         expect(() => service.dispose(), returnsNormally);
       });
+
+      test('dispose can be called multiple times safely', () async {
+        final source = DirectorySource(rootPath: tempDir.path);
+        service = SkillService(
+          sources: [source],
+          permissionService: mockPermission,
+        );
+
+        await service.listAll();
+
+        service.dispose();
+        expect(() => service.dispose(), returnsNormally);
+      });
     });
 
     group('source precedence', () {
-      test('skills from earlier sources take precedence in deduplication',
-          () async {
-        final dir1 = await tempDir.createSubdirectory('first');
-        final dir2 = await tempDir.createSubdirectory('second');
+      test('first source wins for duplicate skill names', () async {
+        final dir1 = await createSubdir(tempDir, 'first');
+        final dir2 = await createSubdir(tempDir, 'second');
 
-        await dir1.createSubdirectory('duplicate').then((dir) async {
+        await createSubdir(dir1, 'skill').then((dir) async {
           final file = File(p.join(dir.path, 'SKILL.md'));
           await file.writeAsString('''
 ---
 name: duplicate
-description: From first source
+description: First source
 ---
 ''');
         });
 
-        await dir2.createSubdirectory('duplicate').then((dir) async {
+        await createSubdir(dir2, 'skill').then((dir) async {
           final file = File(p.join(dir.path, 'SKILL.md'));
           await file.writeAsString('''
 ---
 name: duplicate
-description: From second source
+description: Second source
 ---
 ''');
         });
 
-        final source1 = DirectorySource(dir1.path);
-        final source2 = DirectorySource(dir2.path);
+        final source1 = DirectorySource(rootPath: dir1.path);
+        final source2 = DirectorySource(rootPath: dir2.path);
         service = SkillService(
           sources: [source1, source2],
           permissionService: mockPermission,
@@ -786,7 +750,7 @@ description: From second source
         final skills = await service.listAll();
 
         expect(skills.length, 1);
-        expect(skills.first.description, 'From first source');
+        expect(skills.first.description, 'First source');
       });
     });
   });

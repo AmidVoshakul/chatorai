@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:chatorai/features/chat/data/models/ai_provider.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 
@@ -133,8 +134,10 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
 
             // If provider requires API key, validate it's not empty.
             if (_selectedProvider.requiresApiKey && apiKey.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('API key is required')),
+              SnackbarUtils.showErrorSnackBar(
+                context: context,
+                message: 'API key is required',
+                duration: const Duration(seconds: 2),
               );
               return;
             }

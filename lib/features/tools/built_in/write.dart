@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:chatorai/features/tools/data/models/tool.dart';
 
-import 'path_sandbox.dart';
+import 'package:chatorai/shared/utils/path_sandbox.dart';
 
 ToolDef createWriteTool() {
   return ToolDef(

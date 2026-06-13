@@ -87,7 +87,7 @@ void main() {
       await testFile.writeAsString('test');
       await tool.execute({'file_path': testFile.path}, ctx);
       expect(capturedPermission, equals('read'));
-      expect(capturedPatterns, contains(testFile.path));
+      expect(capturedPatterns, contains(testFile.absolute.path));
     });
 
     test('execute with non-existent file returns error', () async {
@@ -167,10 +167,7 @@ void main() {
 
       // Verify we got exactly 2000 lines
       final outputLines = output.output.split('\n').length;
-      expect(
-        outputLines,
-        equals(2001),
-      ); // +1 because split includes trailing empty sometimes
+      expect(outputLines, equals(2000));
     });
   });
 }

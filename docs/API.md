@@ -180,8 +180,9 @@ All tools implement the `Tool` interface from `ai_sdk_dart`. The `ToolRegistry` 
 | `todowrite` | Update todo list | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }` | ask |
 | `skill` | Load specialized skill | `{ "name": string, "params": object }` | ask |
 | `apply_patch` | Apply unified diff | `{ "patch": string, "dryRun": bool }` | ask |
+| `question` | Ask user questions | `{ "questions": [{ "question": string, "options": [string], "multiple": bool }] }` | ask |
 
-**Note:** The `question` tool exists but is not registered. All tool outputs render via `ToolResultPartWidget`; there is no separate `ApplyPatchPartWidget` or `SkillPartWidget`.
+**Note:** All tool outputs are truncated to 2000 lines or 50KB when displayed. There is no separate `ApplyPatchPartWidget` or `SkillPartWidget`.
 
 ---
 

@@ -179,6 +179,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       },
       checkModelSupportsImages: (_) =>
           ref.read(modelProvider.notifier).modelSupportsImagesSelected(),
+      onMessageAdded: () {
+        // Scroll to bottom when a new message is added (e.g., from skill execution)
+        _scrollToBottom(force: true);
+      },
     );
 
     Widget baseLayout = _isMobile

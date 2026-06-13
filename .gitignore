@@ -46,6 +46,7 @@ app.*.map.json
 
 .env
 .opencode/
+.chatorai/
 AGENTS.md
 callgraph.db
 chatorai_memory.jsonl

@@ -14,13 +14,16 @@ class PermissionRuleset {
   });
 
   static List<PermissionRule> fromConfig(
-    Map<String, PermissionRuleConfig> permissionConfig,
+    Map<String, dynamic> permissionConfig,
   ) {
     final rules = <PermissionRule>[];
 
     for (final entry in permissionConfig.entries) {
       final permission = entry.key;
-      final config = entry.value;
+      final value = entry.value;
+      final config = value is PermissionRuleConfig
+          ? value
+          : PermissionRuleConfig.fromJson(value);
 
       if (config.defaultAction != null) {
         final action = _parseAction(config.defaultAction!);
@@ -117,6 +120,11 @@ class PermissionRuleset {
           permission: 'doom_loop',
           pattern: '*',
           action: PermissionAction.ask,
+        ),
+        const PermissionRule(
+          permission: 'skill',
+          pattern: '*',
+          action: PermissionAction.allow,
         ),
       ],
     );

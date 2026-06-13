@@ -1,39 +1,33 @@
 import 'package:chatorai/features/skills/data/models/skill_info.dart';
 
-/// Simple cache for discovered skills per source.
+/// In-memory cache for discovered skills.
+///
+/// Keys are source identifiers (e.g., directory paths). Values are immutable
+/// lists of [SkillInfo]. Cache is not persistent across app restarts.
 class SkillCache {
-  final Map<String, List<SkillInfo>> _bySource = {};
+  final Map<String, List<SkillInfo>> _cache = {};
 
-  List<SkillInfo>? get(String sourceKey) => _bySource[sourceKey];
+  /// Retrieves cached skills for [sourceId], or null if not cached.
+  List<SkillInfo>? get(String sourceId) => _cache[sourceId];
 
-  void set(String sourceKey, List<SkillInfo> skills) {
-    _bySource[sourceKey] = List.unmodifiable(skills);
+  /// Stores skills for a source, replacing any existing entry.
+  void set(String sourceId, List<SkillInfo> skills) {
+    _cache[sourceId] = List.unmodifiable(skills);
   }
 
+  /// Removes and returns cached skills for [sourceId].
+  List<SkillInfo>? removeSource(String sourceId) {
+    return _cache.remove(sourceId);
+  }
+
+  /// Clears entire cache.
   void clear() {
-    _bySource.clear();
+    _cache.clear();
   }
 
-  /// Remove a specific source from the cache.
-  void removeSource(String sourceKey) {
-    _bySource.remove(sourceKey);
-  }
+  /// Checks whether a source is currently cached.
+  bool has(String sourceId) => _cache.containsKey(sourceId);
 
-  /// Get all skills from all sources (merged).
-  List<SkillInfo> mergeAll(Iterable<List<SkillInfo>> allLists) {
-    final all = <SkillInfo>[];
-    for (final list in allLists) {
-      all.addAll(list);
-    }
-    // Deduplicate by name (last write wins, but here just keep first)
-    final seen = <String>{};
-    final unique = <SkillInfo>[];
-    for (final skill in all) {
-      if (!seen.contains(skill.name)) {
-        seen.add(skill.name);
-        unique.add(skill);
-      }
-    }
-    return unique;
-  }
+  /// Number of cached sources (for diagnostics).
+  int get sourceCount => _cache.length;
 }

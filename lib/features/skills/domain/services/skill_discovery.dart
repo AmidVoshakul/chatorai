@@ -1,109 +1,119 @@
-import 'dart:io';
+import 'dart:async';
 
 import 'package:chatorai/features/skills/data/models/skill_info.dart';
+import 'package:chatorai/features/skills/domain/errors/skill_error.dart';
+import 'package:chatorai/features/skills/domain/sources/directory_source.dart';
+import 'package:chatorai/features/skills/domain/sources/skill_source.dart';
+import 'package:chatorai/features/skills/domain/watchers/skill_file_watcher.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
 
-/// Discovers skills from filesystem paths.
+import 'skill_cache.dart';
+
+/// Orchestrates skill discovery from multiple sources with caching and file watching.
+///
+/// Responsibilities:
+/// - Manage a collection of [SkillSource] objects.
+/// - Discover skills from all sources (with error isolation).
+/// - Cache results per-source to avoid rescanning.
+/// - Watch skill directories for changes and automatically invalidate cache.
+/// - Provide merged list of all skills.
 class SkillDiscovery {
-  final List<String> searchPaths;
+  final List<SkillSource> sources;
+  final SkillCache _cache;
+  final SkillFileWatcher _watcher;
+  Future<void>? _initialization;
+  final void Function()? _onChanged;
+  final Set<String> _watchedPaths = {};
 
-  SkillDiscovery({required this.searchPaths});
+  SkillDiscovery({
+    required this.sources,
+    SkillCache? cache,
+    SkillFileWatcher? watcher,
+    void Function()? onChanged,
+  }) : _cache = cache ?? SkillCache(),
+       _watcher = watcher ?? SkillFileWatcher(),
+       _onChanged = onChanged;
 
-  /// Discover all skills from filesystem paths.
-  /// Scans each path recursively for `<skill-name>/SKILL.md`.
-  Future<List<SkillInfo>> discover() async {
-    final skills = <SkillInfo>[];
+  /// Returns all discovered skills from all sources.
+  ///
+  /// Discovery happens lazily on first call. Subsequent calls return cached
+  /// results unless a file change invalidates the cache.
+  Future<List<SkillInfo>> getAll() async {
+    await _ensureInitialized();
 
-    for (final searchPath in searchPaths) {
-      final dir = Directory(searchPath);
-      if (!await dir.exists()) continue;
-
-      await for (final entity in dir.list(recursive: true)) {
-        if (entity is! File) continue;
-        if (p.basename(entity.path) != 'SKILL.md') continue;
-
-        final skillDir = p.dirname(entity.path);
-        final skillName = p.basename(skillDir);
+    final allSkills = <SkillInfo>[];
+    for (final source in sources) {
+      final cached = _cache.get(source.key);
+      if (cached != null) {
+        allSkills.addAll(cached);
+      } else {
+        // Cache miss: discover this source now
         try {
-          final content = await entity.readAsString();
-          final info = _parseSkillFile(skillName, skillDir, content);
-          if (info != null) {
-            skills.add(info);
-          }
-        } catch (e) {
-          debugPrint('Failed to parse skill at ${entity.path}: $e');
+          final skills = await source.discover();
+          _cache.set(source.key, skills);
+          allSkills.addAll(skills);
+        } on SkillError catch (e) {
+          // Log and continue; return whatever we have
+          debugPrint('[SkillDiscovery] Error from source "$source": $e');
         }
       }
     }
-
-    return skills;
+    // Deduplicate by skill name, first source wins
+    final deduped = <String, SkillInfo>{};
+    for (final skill in allSkills) {
+      deduped.putIfAbsent(skill.name, () => skill);
+    }
+    return deduped.values.toList();
   }
 
-  /// Parse a SKILL.md file, extracting frontmatter and body.
-  /// Returns null if required fields are missing.
-  SkillInfo? _parseSkillFile(
-    String skillName,
-    String skillDir,
-    String content,
-  ) {
-    // Expect YAML frontmatter delimited by `---`
-    final lines = content.split('\n');
-    int frontMatterStart = -1;
-    int frontMatterEnd = -1;
-    for (int i = 0; i < lines.length; i++) {
-      if (lines[i].trim() == '---') {
-        if (frontMatterStart == -1) {
-          frontMatterStart = i;
-        } else {
-          frontMatterEnd = i;
-          break;
+  Future<void> _ensureInitialized() async {
+    _initialization ??= _discoverAll().whenComplete(() {});
+    await _initialization;
+  }
+
+  /// Forces a full rediscovery, bypassing cache.
+  Future<void> refresh() async {
+    _initialization = null;
+    _cache.clear();
+    // Next getAll() will trigger rediscovery
+  }
+
+  Future<void> _discoverAll() async {
+    for (final source in sources) {
+      try {
+        final skills = await source.discover();
+        _cache.set(source.key, skills);
+        // Setup watching for this source if it's a DirectorySource
+        if (source is DirectorySource) {
+          final path = source.rootPath;
+          if (!_watchedPaths.contains(path)) {
+            _watcher.watch(path, () {
+              _cache.removeSource(source.key);
+              if (_onChanged != null) _onChanged();
+            });
+            _watchedPaths.add(path);
+          }
         }
+      } on SkillError catch (e) {
+        debugPrint('[SkillDiscovery] Initial discovery failed for $source: $e');
       }
     }
-    if (frontMatterStart == -1 || frontMatterEnd == -1) return null;
-    if (frontMatterEnd - frontMatterStart <= 1) {
-      return null; // No content between delimiters
-    }
+  }
 
-    final frontMatterLines = lines.sublist(
-      frontMatterStart + 1,
-      frontMatterEnd,
-    );
-    // Body not needed for now (content kept entire file)
-    // final bodyLines = lines.sublist(frontMatterEnd + 1);
+  /// Number of cached source entries (for diagnostics).
+  int get cacheSize => _cache.sourceCount;
 
-    // Parse frontmatter (simple: key: value)
-    String? description;
-    for (final line in frontMatterLines) {
-      final trimmed = line.trim();
-      if (trimmed.startsWith('description:')) {
-        description = trimmed.substring('description:'.length).trim();
-      }
-    }
+  /// Clear all caches without reinitializing.
+  Future<void> clearCache() async {
+    _watcher.stopAll();
+    _cache.clear();
+    // Restart watchers after clearing?
+    // We'll restart on next discovery attempt
+  }
 
-    if (description == null || description.isEmpty) return null;
-
-    // Gather auxiliary files in skill directory (excluding SKILL.md)
-    final auxFiles = <String>[];
-    try {
-      final dir = Directory(skillDir);
-      final entities = dir.listSync();
-      for (final entity in entities) {
-        if (entity is File && p.basename(entity.path) != 'SKILL.md') {
-          auxFiles.add(p.relative(entity.path, from: skillDir));
-        }
-      }
-      // Sort and limit to 10
-      auxFiles.sort();
-    } catch (_) {}
-
-    return SkillInfo(
-      name: skillName,
-      description: description,
-      directory: skillDir,
-      content: content,
-      files: auxFiles.take(10).toList(),
-    );
+  /// Dispose resources.
+  void dispose() {
+    _watcher.stopAll();
+    _cache.clear();
   }
 }

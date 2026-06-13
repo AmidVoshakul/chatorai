@@ -59,6 +59,13 @@ This roadmap outlines completed milestones, current sprint goals, and planned fu
 - Static `AgentRegistry` provides predefined agents (only subagents): `explore`, `general`, etc.
 - Subagents receive full user message as context with appropriate permissions.
 
+### Tool Registration & Output Truncation (Implemented)
+
+- Centralized built-in tool registration in `built_in_tools.dart`, including `question` tool.
+- `skill` tool moved to built_in and registered centrally.
+- Output truncation for tool results (2000 lines / 50KB) to prevent performance issues.
+- `path_sandbox` utility moved to `lib/shared/utils/`.
+
 ---
 
 ## Current Sprint (Q2 2026)

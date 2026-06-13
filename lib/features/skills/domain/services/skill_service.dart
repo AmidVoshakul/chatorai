@@ -1,65 +1,68 @@
 import 'dart:async';
-import 'dart:io';
+import 'package:flutter/foundation.dart';
+
 import 'package:chatorai/core/permission/permission_service.dart';
+import 'package:chatorai/features/skills/domain/sources/skill_source.dart';
+import 'package:chatorai/features/skills/domain/watchers/skill_file_watcher.dart';
 import 'package:chatorai/features/skills/data/models/skill_info.dart';
-import 'package:chatorai/features/skills/domain/services/skill_cache.dart';
-import 'package:chatorai/features/skills/domain/services/skill_source.dart';
-import 'package:chatorai/features/skills/domain/services/directory_source.dart';
-import 'package:chatorai/shared/utils/logger.dart';
-import 'package:path/path.dart' as p;
+import 'skill_cache.dart';
+import 'skill_plugin.dart';
+import 'skill_discovery.dart';
 
 /// Central service for skill discovery, caching, and retrieval.
+///
+/// Combines filesystem discovery (via SkillDiscovery) with static SkillPlugin
+/// contributions. Provides permission filtering and change detection.
 class SkillService {
-  final List<SkillSource> _sources;
-  final SkillCache _cache;
+  final List<SkillSource> sources;
+  final List<SkillPlugin> plugins;
   final PermissionService _permissionService;
+
+  late final SkillDiscovery _discovery;
   bool _initialized = false;
-  final Map<String, StreamSubscription> _watchers = {};
-  final Map<String, Timer> _debounceTimers = {};
 
   SkillService({
-    required List<SkillSource> sources,
+    required this.sources,
+    this.plugins = const [],
     required PermissionService permissionService,
-  }) : _sources = List.unmodifiable(sources),
-       _cache = SkillCache(),
-       _permissionService = permissionService {
-    // Start watching all directory sources immediately
-    for (final source in _sources) {
-      if (source is DirectorySource) {
-        _startWatching(source);
-      }
-    }
+  }) : _permissionService = permissionService {
+    _discovery = SkillDiscovery(
+      sources: sources,
+      cache: SkillCache(),
+      watcher: SkillFileWatcher(),
+      onChanged: () => _initialized = false,
+    );
   }
 
-  /// Ensure all sources have been discovered and cached.
+  /// Ensure discovery is initialized.
   Future<void> _ensureInitialized() async {
-    if (_initialized) return;
-
-    for (final source in _sources) {
-      final cached = _cache.get(source.key);
-      if (cached != null) continue;
-      try {
-        final skills = await source.discover();
-        _cache.set(source.key, skills);
-      } catch (e) {
-        LogTags.skills.logWarning(
-          'Failed to discover from source ${source.key}: $e',
-        );
-      }
+    if (!_initialized) {
+      await _discovery.getAll();
+      _initialized = true;
     }
-    _initialized = true;
   }
 
-  /// List all skills from all sources (deduplicated).
+  /// List all skills from all sources and plugins (deduplicated by name).
+  /// Plugin skills take precedence over discovered skills on name conflict.
   Future<List<SkillInfo>> listAll() async {
     await _ensureInitialized();
-    final allLists = _sources.map((s) => _cache.get(s.key) ?? const []);
-    return _cache.mergeAll(allLists);
+
+    final discovered = await _discovery.getAll();
+    final pluginSkills = plugins.expand((p) => p.skills).toList();
+
+    final map = <String, SkillInfo>{};
+    for (final s in discovered) {
+      map[s.name] = s;
+    }
+    for (final s in pluginSkills) {
+      map[s.name] = s;
+    }
+
+    return map.values.toList();
   }
 
-  /// Get a skill by name across all sources.
+  /// Get a skill by exact name.
   Future<SkillInfo?> getByName(String name) async {
-    await _ensureInitialized();
     final all = await listAll();
     try {
       return all.firstWhere((s) => s.name == name);
@@ -68,91 +71,42 @@ class SkillService {
     }
   }
 
-  /// Get available skills for an agent (filtered by permission).
-  /// The [agentName] is used to scope permission checks (e.g., "code-reviewer").
+  /// Get skills available for a given agent, filtered by permission.
   Future<List<SkillInfo>> availableForAgent(String agentName) async {
     await _ensureInitialized();
     final all = await listAll();
     final allowed = <SkillInfo>[];
+
     for (final skill in all) {
-      // Check permission: pattern "skill:name=<skill.name>"
-      final pattern = 'skill:name=${skill.name}';
-      if (_permissionService.isAllowed('skill', pattern)) {
-        allowed.add(skill);
+      try {
+        final pattern = 'skill:name=${skill.name}';
+        if (_permissionService.isAllowed('skill', pattern)) {
+          allowed.add(skill);
+        }
+      } catch (e) {
+        debugPrint(
+          '[SkillService] Permission check failed for skill ${skill.name}: $e',
+        );
       }
     }
     return allowed;
   }
 
-  /// Clear the cache and reset initialization state.
-  void clearCache() {
-    _cache.clear();
+  /// Refresh all sources (bypass cache).
+  Future<void> refresh() async {
     _initialized = false;
+    await _discovery.refresh();
+    _initialized = true;
   }
 
-  /// Clear the cache for a specific source (used by file watcher).
-  void _clearSourceCache(String sourceKey) {
-    LogTags.skills.logInfo(
-      'Invalidating cache for source $sourceKey due to file changes',
-    );
-    _cache.removeSource(sourceKey);
-    // Mark as uninitialized so next call re-discovers all sources
-    _initialized = false;
-  }
-
-  /// Set up file watcher for a directory source.
-  void _startWatching(DirectorySource source) {
-    try {
-      final dir = Directory(source.path);
-      if (!dir.existsSync()) return;
-
-      // Debounce timer duration
-      const debounceDuration = Duration(milliseconds: 250);
-
-      final subscription = dir
-          .watch(recursive: true)
-          .listen(
-            (event) {
-              // Only care about SKILL.md changes
-              if (p.basename(event.path) != 'SKILL.md') return;
-
-              // Cancel previous timer
-              final key = source.key;
-              _debounceTimers[key]?.cancel();
-
-              // Set new debounce timer
-              final timer = Timer(debounceDuration, () {
-                _clearSourceCache(key);
-                // Also mark as uninitialized so next call re-discovers
-                _initialized = false;
-              });
-              _debounceTimers[key] = timer;
-            },
-            onError: (e) {
-              LogTags.skills.logWarning(
-                'File watcher error for ${source.path}: $e',
-              );
-            },
-          );
-
-      _watchers[source.key] = subscription;
-      LogTags.skills.logInfo('Started file watcher for ${source.path}');
-    } catch (e) {
-      LogTags.skills.logWarning(
-        'Failed to start file watcher for ${source.path}: $e',
-      );
-    }
-  }
-
-  /// Dispose resources (call when app shuts down).
+  /// Release resources.
   void dispose() {
-    for (final timer in _debounceTimers.values) {
-      timer.cancel();
-    }
-    _debounceTimers.clear();
-    for (final sub in _watchers.values) {
-      sub.cancel();
-    }
-    _watchers.clear();
+    _discovery.dispose();
+  }
+
+  /// Clear all caches and reset initialization state.
+  Future<void> clearCache() async {
+    _initialized = false;
+    await _discovery.clearCache();
   }
 }

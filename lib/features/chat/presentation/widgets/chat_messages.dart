@@ -38,6 +38,7 @@ class ChatMessages extends ConsumerStatefulWidget {
   final VoidCallback? onWelcomeSuggestionsClose;
   final Function(List<MarkdownHeadingInfoWithKey> headings)? onHeadingsUpdated;
   final Function()? onToggleNavigator;
+  final Function(String messageId, String answer)? onQuestionAnswer;
 
   const ChatMessages({
     super.key,
@@ -61,6 +62,7 @@ class ChatMessages extends ConsumerStatefulWidget {
     this.onWelcomeSuggestionsClose,
     this.onHeadingsUpdated,
     this.onToggleNavigator,
+    this.onQuestionAnswer,
   });
 
   @override

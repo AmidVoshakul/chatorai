@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:chatorai/features/tools/data/models/tool.dart';
 import 'package:path/path.dart' as p;
 
-import 'path_sandbox.dart';
+import 'package:chatorai/shared/utils/path_sandbox.dart';
 
 ToolDef createGrepTool() {
   return ToolDef(

@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/skills/data/models/skill_info.dart';
-import 'package:chatorai/features/skills/domain/services/directory_source.dart';
+
+import 'package:chatorai/features/skills/domain/sources/directory_source.dart';
 import 'package:chatorai/features/skills/domain/services/skill_service.dart';
-import 'package:chatorai/features/skills/domain/services/skill_source.dart';
+import 'package:chatorai/features/skills/domain/sources/skill_source.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -52,8 +52,8 @@ void main() {
       );
 
       final sources = <SkillSource>[
-        DirectorySource(projectSkills.path),
-        DirectorySource(p.join(tempGlobalDir.path, 'skills')),
+        DirectorySource(rootPath: projectSkills.path),
+        DirectorySource(rootPath: p.join(tempGlobalDir.path, 'skills')),
       ];
 
       service = SkillService(
@@ -355,8 +355,8 @@ description: Valid skill
 
       // Create sources: one non-existent, one valid
       final sources = <SkillSource>[
-        DirectorySource('/non/existent/path'),
-        DirectorySource(tempProjectRoot.path),
+        DirectorySource(rootPath: '/non/existent/path'),
+        DirectorySource(rootPath: tempProjectRoot.path),
       ];
 
       final failingService = SkillService(

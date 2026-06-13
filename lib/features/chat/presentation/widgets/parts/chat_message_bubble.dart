@@ -25,6 +25,7 @@ class ChatMessageBubble extends StatefulWidget {
   final Function(String, String)? onMessageEdited;
   final Function(String, String)? onMessageEditedAndSend;
   final bool isLastMessage;
+  final Function(String messageId, String answer)? onQuestionAnswer;
 
   const ChatMessageBubble({
     super.key,
@@ -39,6 +40,7 @@ class ChatMessageBubble extends StatefulWidget {
     this.onMessageEdited,
     this.onMessageEditedAndSend,
     this.isLastMessage = false,
+    this.onQuestionAnswer,
   });
 
   @override
@@ -388,7 +390,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
       ToolCallPart p => ToolCallPartWidget(part: p),
       ToolResultPart p => ToolResultPartWidget(part: p),
       TaskPart p => TaskPartWidget(part: p),
-      QuestionPart p => QuestionPartWidget(part: p),
+      QuestionPart p => QuestionPartWidget(part: p, onAnswer: (answer) => widget.onQuestionAnswer?.call(widget.messageId, answer)),
       TodoPart p => TodoPartWidget(part: p),
       MessagePart() => const SizedBox.shrink(),
     };

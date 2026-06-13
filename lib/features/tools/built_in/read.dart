@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:chatorai/features/tools/data/models/tool.dart';
 import 'package:path/path.dart' as p;
 
-import 'path_sandbox.dart';
+import 'package:chatorai/shared/utils/path_sandbox.dart';
 
 const _binaryExtensions = {
   '.png',
@@ -87,7 +87,12 @@ ToolDef createReadTool() {
     execute: (input, ctx) async {
       final filePath =
           input['file_path'] as String? ?? input['path'] as String?;
-      if (filePath == null) throw ArgumentError('file_path is required');
+      if (filePath == null) {
+        return ToolOutput(
+          'Error: file_path is required',
+          metadata: {'error': true},
+        );
+      }
 
       final safePath = resolveSafePath(filePath);
       await ctx.ask(permission: 'read', patterns: [safePath]);

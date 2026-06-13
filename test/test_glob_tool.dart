@@ -76,7 +76,7 @@ void main() {
       final tool = createGlobTool();
       final ctx = _mockCtx();
 
-      final testDir = Directory('test/temp_glob');
+      final testDir = Directory('test/glob_test');
       if (!testDir.existsSync()) testDir.createSync(recursive: true);
       final dir1 = Directory('${testDir.path}/subdir')..createSync();
       final file1 = File('${testDir.path}/file1.txt')
@@ -104,7 +104,7 @@ void main() {
       final tool = createGlobTool();
       final ctx = _mockCtx();
 
-      final testDir = Directory('test/temp_glob_sort');
+      final testDir = Directory('test/glob_sort');
       if (!testDir.existsSync()) testDir.createSync(recursive: true);
       final file1 = File('${testDir.path}/a.txt')..writeAsStringSync('a');
       await Future.delayed(Duration(milliseconds: 10));
@@ -112,7 +112,10 @@ void main() {
       await Future.delayed(Duration(milliseconds: 10));
       final file3 = File('${testDir.path}/c.txt')..writeAsStringSync('c');
 
-      final output = await tool.execute({'pattern': '*.txt'}, ctx);
+      final output = await tool.execute({
+        'pattern': '*.txt',
+        'path': testDir.path,
+      }, ctx);
 
       final lines = output.output
           .split('\n')
@@ -131,14 +134,14 @@ void main() {
       final tool = createGlobTool();
       final ctx = _mockCtx();
 
-      final testDir = Directory('test/temp_glob_empty');
+      final testDir = Directory('test/glob_empty');
       if (!testDir.existsSync()) testDir.createSync(recursive: true);
       final file1 = File('${testDir.path}/file.txt')..writeAsStringSync('test');
 
       final output = await tool.execute({'pattern': '*.nonexistent'}, ctx);
 
       expect(output.metadata?['error'], isNull);
-      expect(output.output, isEmpty);
+      expect(output.output, 'No files matching pattern: *.nonexistent');
 
       file1.deleteSync();
       testDir.deleteSync(recursive: true);

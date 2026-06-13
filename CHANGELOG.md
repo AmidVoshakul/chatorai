@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Error Handling**: Clear error messages for rate limits and failures; automatic retries with user-friendly feedback.
 - **Compaction Service**: Automatic context summarization when token budget is exceeded (already integrated).
 - **Multi-Provider Registry**: UI for managing multiple AI providers (OpenRouter, local, custom endpoints).
+- **Tool Registration Centralization**: All built-in tools now registered exclusively in `built_in_tools.dart`; `question` tool registered; `skill` tool moved from separate provider.
+- **Compaction Agent**: Changed mode to primary and hidden to true (internal agent).
+- **Output Truncation**: Tool result outputs truncated to 2000 lines or 50KB to manage memory; expandable UI preserves full content in copy.
+- **Utility Refactoring**: Moved `path_sandbox` utility to `lib/shared/utils/` for broader reuse.
 
 ## [1.0.0] - 2025-12-30
 

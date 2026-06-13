@@ -283,7 +283,12 @@
 "permissionReject": "Отклонить",
 "providers": "Провайдеры",
 "manageProviders": "Управление AI провайдерами",
-"openaiCompatibleApi": "AI Провайдеры",
-"openaiCompatibleApiDescription": "Настройте AI провайдеров и управляйте их API ключами и моделями",
-"addProvider": "Добавить провайдера"
+  "openaiCompatibleApi": "AI Провайдеры",
+  "openaiCompatibleApiDescription": "Настройте AI провайдеров и управляйте их API ключами и моделями",
+  "addProvider": "Добавить провайдера",
+  "loadingSkills": "Загрузка навыков...",
+  "noSkillsInstalled": "Нет установленных навыков. Добавьте в .chatorai/skills/",
+  "noSkillsMatchSearch": "Нет навыков, соответствующих поиску",
+  "allSkillsRequirePermission": "Все навыки требуют разрешения",
+  "skillExecuted": "Навык выполнен: {name}"
 }

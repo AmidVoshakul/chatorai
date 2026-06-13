@@ -1,7 +1,7 @@
 part of 'chat_screen.dart';
 
 extension _ChatScreenMessagingExt on _ChatScreenState {
-  void _handleSendMessage(MessageData messageData) async {
+  Future<void> _handleSendMessage(MessageData messageData) async {
     ref.read(chatScreenProvider.notifier).hideAllSuggestions();
     if (currentChat == null) {
       final newChat = await ref.read(chatListProvider.notifier).createNewChat();
@@ -19,6 +19,59 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       delegateAgentId: messageData.delegateAgentId,
     );
   }
+
+  Future<void> _handleQuestionAnswer(String messageId, String answer) async {
+    final chat = currentChat;
+    if (chat == null) return;
+    final messageIndex = chat.messages.indexWhere((m) => m.id == messageId);
+    if (messageIndex == -1) return;
+    final message = chat.messages[messageIndex];
+
+    // Only assistant messages can have QuestionPart
+    if (message.role != MessageRole.assistant) return;
+
+    // Deserialize parts from partsJson
+    List<MessagePart> parts = [];
+    if (message.partsJson != null && message.partsJson!.isNotEmpty) {
+      parts = message.partsJson!.map((j) => partFromJson(j)).toList();
+    }
+
+    // Find the first unanswered QuestionPart
+    bool found = false;
+    for (int i = 0; i < parts.length; i++) {
+      if (parts[i] is QuestionPart) {
+        final qp = parts[i] as QuestionPart;
+        if (qp.answer == null) {
+          parts[i] = qp.copyWith(answer: answer);
+          found = true;
+          break;
+        }
+      }
+    }
+    if (!found) return;
+
+    // Serialize back
+    final updatedPartsJson = parts.map((p) => p.toJson()).toList();
+
+    // Update storage message
+    final updatedMessage = message.copyWith(
+      partsJson: updatedPartsJson,
+      timestamp: DateTime.now(),
+    );
+
+    await _chatStorageService.updateMessageInChat(chat.id, updatedMessage.id, updatedMessage);
+
+    // Update provider
+    final updatedChat = chat.copyWith(
+      messages: List.of(chat.messages)..[messageIndex] = updatedMessage,
+      updatedAt: DateTime.now(),
+    );
+    ref.read(chatListProvider.notifier).updateChat(updatedChat);
+
+    // Send answer as a new user message
+    await _handleSendMessage(MessageData(text: answer));
+  }
+
 
   Future<void> _handleAddMessagesAndStream(
     Chat chat,

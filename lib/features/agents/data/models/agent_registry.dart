@@ -82,8 +82,8 @@ class AgentRegistry {
       id: 'compaction',
       name: 'Compaction',
       description: 'Context compaction agent. Summarizes conversation.',
-      mode: AgentMode.subagent,
-      hidden: false,
+      mode: AgentMode.primary,
+      hidden: true,
       systemPrompt:
           'Summarize the following conversation context concisely. Preserve key decisions, errors, and code references.',
       maxSteps: 3,

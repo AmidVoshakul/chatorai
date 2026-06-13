@@ -1,9 +1,9 @@
 import 'package:test/test.dart';
 import 'package:chatorai/features/tools/data/models/tool.dart';
 import 'package:chatorai/features/tools/data/models/tool_registry.dart';
-import 'package:chatorai/permissions/permission_service.dart';
-import 'package:chatorai/permissions/ruleset.dart';
-import 'package:chatorai/permissions/rule.dart';
+import 'package:chatorai/core/permission/permission_service.dart';
+import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/core/permission/rule.dart';
 
 ToolDef _fakeTool(String id, {String description = 'fake tool'}) {
   return ToolDef(

@@ -3,10 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chatorai/features/skills/data/models/skill_info.dart';
-import 'package:chatorai/features/skills/domain/services/skill_source.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
+
+import 'skill_source.dart';
 
 /// Optional client injection for testing.
 typedef HttpClientFactory = http.Client Function();

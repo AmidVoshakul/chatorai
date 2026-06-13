@@ -15,6 +15,8 @@ import 'package:chatorai/features/chat/presentation/widgets/chat_input/attachmen
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/send_message_handler.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/input_widget_builders.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/input_layout_builder.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/slash_command_handler.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/popup_controller.dart';
 
 export 'package:chatorai/features/chat/presentation/widgets/chat_input/message_data.dart';
 
@@ -27,6 +29,7 @@ class ChatInput extends ConsumerStatefulWidget {
   final Function(SpeechUiState, String)? onSpeechStateChanged;
   final bool Function(String)? checkModelSupportsImages;
   final Function(double)? onSoundLevelChanged;
+  final VoidCallback? onMessageAdded;
 
   const ChatInput({
     super.key,
@@ -38,6 +41,7 @@ class ChatInput extends ConsumerStatefulWidget {
     this.onSpeechStateChanged,
     this.checkModelSupportsImages,
     this.onSoundLevelChanged,
+    this.onMessageAdded,
   });
 
   @override
@@ -48,21 +52,33 @@ class _ChatInputState extends ConsumerState<ChatInput>
     with
         AutomaticKeepAliveClientMixin,
         AgentMentionHandler,
+        SlashCommandHandler,
         SpeechInputHandler,
         AttachmentInputHandler,
         SendMessageHandler {
   final TextEditingController _textController = TextEditingController();
+  final GlobalKey _textFieldKey = GlobalKey(); // for popup positioning
   Timer? _plusTimer;
   SpeechToTextService? _speechService;
   final GlobalKey _plusKey = GlobalKey();
   final GlobalKey _settingsKey = GlobalKey();
   final GlobalKey _agentKey = GlobalKey();
+  late final ChatInputPopupController _popupController;
+  // Scroll controllers for popups
+  final ScrollController _commandScrollController = ScrollController();
+  final ScrollController _skillsScrollController = ScrollController();
 
   @override
   bool get wantKeepAlive => true;
 
   @override
   TextEditingController get textController => _textController;
+
+  @override
+  PopupController get popupController => _popupController;
+
+  @override
+  VoidCallback? get onMessageAdded => widget.onMessageAdded;
 
   @override
   bool Function(String)? get checkModelSupportsImages =>
@@ -79,15 +95,26 @@ class _ChatInputState extends ConsumerState<ChatInput>
   void Function(double)? get onSoundLevelChanged => widget.onSoundLevelChanged;
 
   @override
+  GlobalKey get textFieldKey => _textFieldKey;
+
+  @override
+  ScrollController get commandScrollController => _commandScrollController;
+
+  @override
+  ScrollController get skillsScrollController => _skillsScrollController;
+
+  @override
   void initState() {
     super.initState();
     updateKeepAlive();
+    _popupController = ChatInputPopupController();
     _textController.addListener(_onTextChanged);
   }
 
   void _onTextChanged() {
     if (mounted) setState(() {});
     detectAgentMentionListener();
+    detectSlashCommandListener();
   }
 
   @override
@@ -101,7 +128,9 @@ class _ChatInputState extends ConsumerState<ChatInput>
 
   @override
   void dispose() {
-    hideAgentPopup();
+    _commandScrollController.dispose();
+    _skillsScrollController.dispose();
+    _popupController.dispose();
     _textController.removeListener(_onTextChanged);
     _textController.dispose();
     _plusTimer?.cancel();
@@ -187,46 +216,85 @@ class _ChatInputState extends ConsumerState<ChatInput>
     const double sidePadding = ChatoraiSpacing.lg;
     const double bottomPadding = ChatoraiSpacing.md;
 
-    final keyboardBindings = <ShortcutActivator, VoidCallback>{
-      SingleActivator(LogicalKeyboardKey.tab): () {
-        if (isAgentPopupVisible) navigateAgentPopup(true);
-      },
-      SingleActivator(LogicalKeyboardKey.tab, shift: true): () {
-        if (isAgentPopupVisible) navigateAgentPopup(false);
-      },
-      SingleActivator(LogicalKeyboardKey.enter): () {
-        if (isAgentPopupVisible) {
-          selectCurrentAgent();
-        } else if (!HardwareKeyboard.instance.isShiftPressed) {
-          performSend(
-            onSendMessage: widget.onSendMessage,
-            onToggleStreaming: widget.onToggleStreaming,
-            onClearAttachedFile: clearAttachedFile,
-          );
-        }
-      },
-      SingleActivator(LogicalKeyboardKey.escape): () {
-        if (isAgentPopupVisible) hideAgentPopup();
-      },
-      SingleActivator(LogicalKeyboardKey.arrowDown): () {
-        if (isAgentPopupVisible) navigateAgentPopup(true);
-      },
-      SingleActivator(LogicalKeyboardKey.arrowUp): () {
-        if (isAgentPopupVisible) navigateAgentPopup(false);
-      },
-    };
+     final keyboardBindings = <ShortcutActivator, VoidCallback>{
+       // Tab: navigate agent, command, or skills popup
+       SingleActivator(LogicalKeyboardKey.tab): () {
+         if (isAgentPopupVisible) {
+           navigateAgentPopup(true);
+         } else if (isCommandPopupVisible) {
+           navigateCommandPopup(true);
+         } else if (isSkillsPopupVisible) {
+           navigateSkillsPopup(true);
+         }
+       },
+       SingleActivator(LogicalKeyboardKey.tab, shift: true): () {
+         if (isAgentPopupVisible) {
+           navigateAgentPopup(false);
+         } else if (isCommandPopupVisible) {
+           navigateCommandPopup(false);
+         } else if (isSkillsPopupVisible) {
+           navigateSkillsPopup(false);
+         }
+       },
+       // Enter: select from any popup or send message
+       SingleActivator(LogicalKeyboardKey.enter): () {
+         if (isAgentPopupVisible) {
+           selectCurrentAgent();
+         } else if (isCommandPopupVisible) {
+           selectCurrentCommand();
+         } else if (isSkillsPopupVisible) {
+           selectCurrentSkillFromPopup();
+         } else if (!HardwareKeyboard.instance.isShiftPressed) {
+           performSend(
+             onSendMessage: widget.onSendMessage,
+             onToggleStreaming: widget.onToggleStreaming,
+             onClearAttachedFile: clearAttachedFile,
+           );
+         }
+       },
+       // Escape: close any popup
+       SingleActivator(LogicalKeyboardKey.escape): () {
+         if (isAgentPopupVisible) {
+           hideAgentPopup();
+         } else if (isCommandPopupVisible) {
+           hideCommandPopup();
+         } else if (isSkillsPopupVisible) {
+           hideSkillsPopup();
+         }
+       },
+       // Arrow keys: navigate popups
+       SingleActivator(LogicalKeyboardKey.arrowDown): () {
+         if (isAgentPopupVisible) {
+           navigateAgentPopup(true);
+         } else if (isCommandPopupVisible) {
+           navigateCommandPopup(true);
+         } else if (isSkillsPopupVisible) {
+           navigateSkillsPopup(true);
+         }
+       },
+       SingleActivator(LogicalKeyboardKey.arrowUp): () {
+         if (isAgentPopupVisible) {
+           navigateAgentPopup(false);
+         } else if (isCommandPopupVisible) {
+           navigateCommandPopup(false);
+         } else if (isSkillsPopupVisible) {
+           navigateSkillsPopup(false);
+         }
+       },
+     };
 
-    final textField = InputWidgetBuilders.buildTextField(
-      controller: _textController,
-      focusNode: widget.focusNode,
-      maxLines: maxLines,
-      isMobile: isMobile,
-      enabled: !chatInputState.isSending,
-      theme: theme,
-      localizations: localizations,
-      hintText: localizations.typeYourMessage,
-      keyboardBindings: keyboardBindings,
-    );
+     final textField = InputWidgetBuilders.buildTextField(
+       key: _textFieldKey,
+       controller: _textController,
+       focusNode: widget.focusNode,
+       maxLines: maxLines,
+       isMobile: isMobile,
+       enabled: !chatInputState.isSending,
+       theme: theme,
+       localizations: localizations,
+       hintText: localizations.typeYourMessage,
+       keyboardBindings: keyboardBindings,
+     );
 
     final hasText = _textController.text.trim().isNotEmpty;
     final hasAttachment = chatInputState.attachedFilePath != null;

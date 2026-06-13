@@ -3,11 +3,13 @@ import 'dart:io';
 import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/permission/permission_provider.dart';
+import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/skills/domain/services/directory_source.dart';
+import 'package:chatorai/features/skills/domain/services/skill_plugin.dart';
 import 'package:chatorai/features/skills/domain/services/skill_service.dart';
-import 'package:chatorai/features/skills/domain/services/skill_source.dart';
-import 'package:chatorai/features/skills/domain/services/url_source.dart';
+import 'package:chatorai/features/skills/domain/sources/directory_source.dart';
+import 'package:chatorai/features/skills/domain/sources/skill_source.dart';
+import 'package:chatorai/features/skills/domain/sources/url_source.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -16,9 +18,17 @@ import 'package:path/path.dart' as p;
 List<String> defaultSkillPaths() {
   return [
     '.chatorai/skills',
+    // временно закоментировано чтобы не конфликтовать с скиллами программы opencode в текущем проекте
     // '.opencode/skills',
     '.agents/skills',
     '.claude/skills',
+  ];
+}
+
+/// Built-in skill plugins (currently empty).
+List<SkillPlugin> defaultSkillPlugins() {
+  return [
+    // Example: WelcomePlugin(), HelpPlugin(), etc.
   ];
 }
 
@@ -50,7 +60,7 @@ List<SkillSource> buildSkillSources(ChatOrAIConfig config) {
 
   // Create DirectorySource for each path
   for (final path in paths) {
-    sources.add(DirectorySource(path));
+    sources.add(DirectorySource(rootPath: path));
   }
 
   // 3. Create UrlSource for configured URLs
@@ -72,9 +82,21 @@ List<SkillSource> buildSkillSources(ChatOrAIConfig config) {
 final skillServiceProvider = FutureProvider<SkillService>((ref) async {
   final config = await ref.watch(configProvider.future);
   final sources = buildSkillSources(config);
+  final plugins = defaultSkillPlugins();
   final permissionService = ref.read(permissionServiceProvider);
-  // Seed permission service with config rules before any permission checks
-  final rulesList = PermissionRuleset.fromConfig(config.permission);
+  // Seed permission service with config rules, or defaults if none provided
+  final permissionConfig = config.permission as Map<String, dynamic>? ?? {};
+  final List<PermissionRule> rulesList;
+  if (permissionConfig.isEmpty) {
+    // No custom permission rules, use built-in defaults (skills allowed)
+    rulesList = PermissionRuleset.defaults().rules;
+  } else {
+    rulesList = PermissionRuleset.fromConfig(permissionConfig);
+  }
   permissionService.seedRules(PermissionRuleset(rules: rulesList));
-  return SkillService(sources: sources, permissionService: permissionService);
+  return SkillService(
+    sources: sources,
+    plugins: plugins,
+    permissionService: permissionService,
+  );
 });

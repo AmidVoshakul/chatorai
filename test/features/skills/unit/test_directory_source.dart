@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:chatorai/features/skills/data/models/skill_info.dart';
-import 'package:chatorai/features/skills/domain/services/directory_source.dart';
+import 'package:chatorai/features/skills/domain/sources/directory_source.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:mocktail/mocktail.dart';
@@ -18,7 +18,7 @@ void main() {
     const testPath = '/test/skills';
 
     setUp(() {
-      source = DirectorySource(testPath);
+      source = DirectorySource(rootPath: testPath);
     });
 
     test('constructor sets key correctly', () {
@@ -50,7 +50,7 @@ description: Test skill from directory
 # Content
 ''');
 
-      final realSource = DirectorySource(skillDir.path);
+      final realSource = DirectorySource(rootPath: skillDir.path);
       final skills = await realSource.discover();
 
       expect(skills.length, 1);
@@ -69,7 +69,7 @@ description: Test skill from directory
       final otherFile = File(p.join(skillDir.path, 'README.md'));
       await otherFile.writeAsString('# Not a skill');
 
-      final realSource = DirectorySource(tempDir.path);
+      final realSource = DirectorySource(rootPath: tempDir.path);
       final skills = await realSource.discover();
 
       expect(skills, isEmpty);
@@ -86,7 +86,7 @@ description: Test skill from directory
 # No frontmatter
 ''');
 
-      final realSource = DirectorySource(tempDir.path);
+      final realSource = DirectorySource(rootPath: tempDir.path);
       final skills = await realSource.discover();
 
       expect(skills, isEmpty);
@@ -107,7 +107,7 @@ name: my-skill
 # No description
 ''');
 
-      final realSource = DirectorySource(tempDir.path);
+      final realSource = DirectorySource(rootPath: tempDir.path);
       final skills = await realSource.discover();
 
       expect(skills, isEmpty);
@@ -129,7 +129,7 @@ description:
 # Empty description
 ''');
 
-      final realSource = DirectorySource(tempDir.path);
+      final realSource = DirectorySource(rootPath: tempDir.path);
       final skills = await realSource.discover();
 
       expect(skills, isEmpty);
@@ -157,7 +157,7 @@ description: Test skill with files
         await file.writeAsString('File $i');
       }
 
-      final realSource = DirectorySource(tempDir.path);
+      final realSource = DirectorySource(rootPath: tempDir.path);
       final skills = await realSource.discover();
 
       expect(skills.length, 1);
@@ -191,7 +191,7 @@ description: Test skill with many files
         await file.writeAsString('File $i');
       }
 
-      final realSource = DirectorySource(tempDir.path);
+      final realSource = DirectorySource(rootPath: tempDir.path);
       final skills = await realSource.discover();
 
       expect(skills.length, 1);
@@ -216,7 +216,7 @@ description: Навык с юникодом 🎉
 # Содержание с юникод: 你好
 ''');
 
-      final realSource = DirectorySource(tempDir.path);
+      final realSource = DirectorySource(rootPath: tempDir.path);
       final skills = await realSource.discover();
 
       expect(skills.length, 1);
@@ -245,7 +245,7 @@ description: Nested skill
 # Nested content
 ''');
 
-      final realSource = DirectorySource(tempDir.path);
+      final realSource = DirectorySource(rootPath: tempDir.path);
       final skills = await realSource.discover();
 
       expect(skills.length, 1);
@@ -274,7 +274,7 @@ description: Test skill with many files
         await file.writeAsString('File $i');
       }
 
-      final realSource = DirectorySource(tempDir.path);
+      final realSource = DirectorySource(rootPath: tempDir.path);
       final skills = await realSource.discover();
 
       expect(skills.length, 1);
@@ -299,7 +299,7 @@ description: Навык с юникодом 🎉
 # Содержание с юникод: 你好
 ''');
 
-      final realSource = DirectorySource(tempDir.path);
+      final realSource = DirectorySource(rootPath: tempDir.path);
       final skills = await realSource.discover();
 
       expect(skills.length, 1);
@@ -328,7 +328,7 @@ description: Nested skill
 # Nested content
 ''');
 
-      final realSource = DirectorySource(tempDir.path);
+      final realSource = DirectorySource(rootPath: tempDir.path);
       final skills = await realSource.discover();
 
       expect(skills.length, 1);
@@ -355,7 +355,7 @@ description: Test skill
       try {
         // On some platforms, we might not be able to change permissions
         // So we'll just verify that the try-catch in discover handles errors
-        final realSource = DirectorySource(tempDir.path);
+        final realSource = DirectorySource(rootPath: tempDir.path);
         final skills = await realSource.discover();
         expect(skills.length, 1); // Should succeed normally
       } finally {
@@ -364,8 +364,8 @@ description: Test skill
     });
 
     test('key property is derived from path', () {
-      final source1 = DirectorySource('/path1');
-      final source2 = DirectorySource('/path2');
+      final source1 = DirectorySource(rootPath: '/path1');
+      final source2 = DirectorySource(rootPath: '/path2');
 
       expect(source1.key, isNot(equals(source2.key)));
     });

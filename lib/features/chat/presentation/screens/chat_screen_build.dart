@@ -66,6 +66,7 @@ extension _ChatScreenBuildExt on _ChatScreenState {
           ref.read(chatScreenProvider.notifier).hideWelcomeSuggestions(),
       onHeadingsUpdated: _onHeadingsUpdated,
       onToggleNavigator: _toggleNavigator,
+      onQuestionAnswer: _handleQuestionAnswer,
     );
 
     if (wrapWithGesture) {

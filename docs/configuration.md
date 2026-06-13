@@ -75,7 +75,8 @@ If no permission configuration is provided, the following defaults apply:
     "write": "ask",
     "webfetch": "allow",
     "websearch": "allow",
-    "doom_loop": "ask"
+    "doom_loop": "ask",
+    "skills": "allow"
   }
 }
 ```

@@ -355,7 +355,12 @@
   "permissionAlwaysConfirm": "Always allow",
 "providers": "Providers",
 "manageProviders": "Manage AI providers",
-"openaiCompatibleApi": "AI Providers",
-"openaiCompatibleApiDescription": "Configure AI providers and manage their API keys and models",
-"addProvider": "Add Provider"
+  "openaiCompatibleApi": "AI Providers",
+  "openaiCompatibleApiDescription": "Configure AI providers and manage their API keys and models",
+  "addProvider": "Add Provider",
+  "loadingSkills": "Loading skills...",
+  "noSkillsInstalled": "No skills installed. Add in .chatorai/skills/",
+  "noSkillsMatchSearch": "No skills match your search",
+  "allSkillsRequirePermission": "All skills require permission",
+  "skillExecuted": "Skill executed: {name}"
 }

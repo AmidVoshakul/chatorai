@@ -4,7 +4,6 @@ export 'built_in/built_in_tools.dart';
 export 'built_in/edit.dart';
 export 'built_in/glob.dart';
 export 'built_in/grep.dart';
-export 'built_in/path_sandbox.dart';
 export 'built_in/question.dart';
 export 'built_in/read.dart';
 export 'built_in/task.dart';

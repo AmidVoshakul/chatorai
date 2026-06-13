@@ -4,7 +4,7 @@ import 'package:chatorai/features/tools/data/models/tool.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
-import 'path_sandbox.dart';
+import 'package:chatorai/shared/utils/path_sandbox.dart';
 
 ToolDef createGlobTool() {
   return ToolDef(
@@ -26,7 +26,12 @@ ToolDef createGlobTool() {
     },
     execute: (input, ctx) async {
       final pattern = input['pattern'] as String?;
-      if (pattern == null) throw ArgumentError('pattern is required');
+      if (pattern == null) {
+        return ToolOutput(
+          'Error: pattern is required',
+          metadata: {'error': true},
+        );
+      }
 
       final root = input['path'] as String? ?? Directory.current.path;
       final safeRoot = resolveSafePath(root);
@@ -41,7 +46,7 @@ ToolDef createGlobTool() {
       await ctx.ask(permission: 'glob', patterns: [pattern]);
 
       final globMatcher = Glob(pattern, recursive: true);
-      final matches = <String>[];
+      final matchFiles = <File>[];
       final gitignore = _loadGitignore(safeRoot);
 
       for (final entity in dir.listSync(recursive: true, followLinks: false)) {
@@ -50,14 +55,23 @@ ToolDef createGlobTool() {
         final relPosix = p.posix.joinAll(p.split(rel));
         if (gitignore.any((g) => g.matches(relPosix))) continue;
         if (globMatcher.matches(rel) || globMatcher.matches(relPosix)) {
-          matches.add(rel);
-          if (matches.length >= 1000) break;
+          matchFiles.add(entity);
+          if (matchFiles.length >= 1000) break;
         }
       }
 
-      if (matches.isEmpty) {
+      if (matchFiles.isEmpty) {
         return ToolOutput('No files matching pattern: $pattern');
       }
+
+      // Sort by modification time descending (most recent first)
+      matchFiles.sort(
+        (a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()),
+      );
+
+      final matches = matchFiles
+          .map((f) => p.relative(f.path, from: safeRoot))
+          .toList();
 
       return ToolOutput(
         matches.join('\n'),

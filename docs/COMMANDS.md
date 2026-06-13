@@ -101,10 +101,11 @@ When the AI invokes tools, they appear inline in the chat stream with icons and 
 | `todowrite`   | Update todo list       | `{ "todos": [{ "content": "...", "status": "pending"/"completed" }] }` | ask                |
 | `skill`       | Load specialized skill | `{ "name": "...", "params": {...} }`                                   | ask                |
 | `apply_patch` | Apply unified diff     | `{ "patch": "diff --git a/... b/...", "dryRun": false }`               | ask                |
+| `question`    | Ask user questions    | `{ "questions": [{ "question": string, "options": [string], "multiple": bool }] }` | ask                |
 
 **States:** `pending` (∼), `running` (spinner), `completed` (✓), `error` (✗). Tool results can be expanded to show full output.
 
-**Note:** The `question` tool exists but is not registered. All tools render via `ToolResultPartWidget`.
+**Note:** All tool outputs are truncated to 2000 lines or 50KB when displayed.
 
 ---
 

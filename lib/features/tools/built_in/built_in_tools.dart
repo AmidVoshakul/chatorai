@@ -12,13 +12,15 @@ import 'websearch.dart';
 import 'apply_patch.dart';
 import 'task.dart';
 import 'todo_write.dart';
+import 'question.dart';
+import 'skill.dart';
 
-void registerBuiltInTools(
+Future<void> registerBuiltInTools(
   ToolRegistry registry, {
   ChatAiService? chatAiService,
   ToolRegistry? toolRegistry,
   SkillService? skillService,
-}) {
+}) async {
   registry.register(createBashTool());
   registry.register(createReadTool());
   registry.register(createGlobTool());
@@ -37,4 +39,13 @@ void registerBuiltInTools(
       skillService: skillService,
     ),
   );
+
+  // Register question tool
+  registry.register(createQuestionTool());
+
+  // Register skill tool if skillService is provided
+  if (skillService != null) {
+    final allSkills = await skillService.listAll();
+    registry.register(createSkillTool(skillService, allSkills));
+  }
 }

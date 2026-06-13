@@ -22,12 +22,12 @@ class TokenCounter {
 
   /// Estimate tokens for a string using CJK-aware heuristic.
   /// Default: length ~/ 4. With CJK: length * 3 ~/ 4 (more accurate).
-  int estimate(String text) {
+  static int estimate(String text) {
     if (text.isEmpty) return 0;
     if (_cjkRegex.hasMatch(text)) {
-      return max(1, (text.length * 3) ~/ 4);
+      return (text.length * 3) ~/ 4;
     }
-    return max(1, text.length ~/ 4);
+    return text.length ~/ 4;
   }
 
   /// Add system prompt tokens.
