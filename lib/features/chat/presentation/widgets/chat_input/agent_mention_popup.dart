@@ -61,10 +61,7 @@ class _AgentMentionPopupState extends State<AgentMentionPopup> {
         child: Container(
           constraints: const BoxConstraints(maxHeight: 300),
           padding: const EdgeInsets.all(16),
-          child: Text(
-            'No agents available',
-            style: theme.textTheme.bodyMedium,
-          ),
+          child: Text('No agents available', style: theme.textTheme.bodyMedium),
         ),
       );
     }

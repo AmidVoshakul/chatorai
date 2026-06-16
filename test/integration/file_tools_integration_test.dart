@@ -5,7 +5,7 @@ import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/features/tools/data/models/tool_registry.dart';
 import 'package:chatorai/features/tools/built_in/built_in_tools.dart';
-import '_test_context.dart';
+import 'helpers/test_context.dart';
 
 /// Integration tests for file-related tools (read, write, edit, glob, grep).
 ///

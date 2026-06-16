@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:chatorai/features/chat/data/models/chat_model.dart';
+import 'package:chatorai/features/models/screens/models_screen.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/features/models_browser/presentation/screens/models_screen.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
 // ===========================================================================
 // WIDGET CLASS

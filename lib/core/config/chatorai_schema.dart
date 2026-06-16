@@ -26,7 +26,6 @@ const Map<String, dynamic> chatoraiSchema = {
         ],
       },
     },
-    'provider': {'type': 'object'},
     'keybinding': {'type': 'object'},
     'skills': {
       'type': 'object',

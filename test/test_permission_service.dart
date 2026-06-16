@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:test/test.dart';
-import 'package:chatorai/permissions/permission_service.dart';
-import 'package:chatorai/permissions/rule.dart';
-import 'package:chatorai/permissions/ruleset.dart';
+import 'package:chatorai/core/permission/permission_service.dart';
+import 'package:chatorai/core/permission/rule.dart';
+import 'package:chatorai/core/permission/ruleset.dart';
 
 void main() {
   group('PermissionService', () {

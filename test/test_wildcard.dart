@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:chatorai/permissions/wildcard.dart';
+import 'package:chatorai/core/permission/wildcard.dart';
 
 void main() {
   group('Wildcard.match', () {

@@ -17,7 +17,12 @@ class ChatScreenState {
   final List<MarkdownHeadingInfoWithKey> navigatorHeadings;
   final int activeHeadingIndex;
   final bool isRetrying;
+
+  /// Kept for backward compatibility; no longer actively updated
+  /// in stream — ChatInput uses retryCountdownProvider directly.
   final double retryProgress;
+  final String? retryMessage;
+  final int retryAttempt;
 
   const ChatScreenState({
     this.isStreaming = false,
@@ -32,6 +37,8 @@ class ChatScreenState {
     this.activeHeadingIndex = -1,
     this.isRetrying = false,
     this.retryProgress = 1.0,
+    this.retryMessage,
+    this.retryAttempt = 0,
   });
 
   ChatScreenState copyWith({
@@ -47,6 +54,8 @@ class ChatScreenState {
     int? activeHeadingIndex,
     bool? isRetrying,
     double? retryProgress,
+    String? retryMessage,
+    int? retryAttempt,
   }) {
     return ChatScreenState(
       isStreaming: isStreaming ?? this.isStreaming,
@@ -63,6 +72,8 @@ class ChatScreenState {
       activeHeadingIndex: activeHeadingIndex ?? this.activeHeadingIndex,
       isRetrying: isRetrying ?? this.isRetrying,
       retryProgress: retryProgress ?? this.retryProgress,
+      retryMessage: retryMessage ?? this.retryMessage,
+      retryAttempt: retryAttempt ?? this.retryAttempt,
     );
   }
 }
@@ -167,6 +178,18 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
     if (state.retryProgress != progress) {
       state = state.copyWith(retryProgress: progress);
     }
+  }
+
+  void setRetryInfo({
+    required bool isRetrying,
+    String? retryMessage,
+    int? retryAttempt,
+  }) {
+    state = state.copyWith(
+      isRetrying: isRetrying,
+      retryMessage: retryMessage,
+      retryAttempt: retryAttempt,
+    );
   }
 }
 

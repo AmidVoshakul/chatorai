@@ -1,15 +1,33 @@
 import 'package:chatorai/core/context/compaction_service.dart';
-import 'package:chatorai/services/chat_ai_service.dart';
+import 'package:chatorai/core/llm/catalog/model_resolver.dart';
+import 'package:chatorai/core/llm/catalog/provider_catalog_service.dart';
+import 'package:chatorai/shared/utils/secure_storage_service.dart';
+import 'package:chatorai/features/chat/domain/services/chat_ai_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class MockSecureStorageService extends Mock implements SecureStorageService {}
+
+class MockSharedPreferences extends Mock implements SharedPreferences {}
 
 class FakeChatAiService extends ChatAiService {
-  final String _fakeSummary;
   FakeChatAiService({String fakeSummary = '## Goal\n- Summary generated.'})
     : _fakeSummary = fakeSummary,
-      super(
-        modelFactory: (_) => throw StateError('Fake modelFactory not used'),
-        headers: {},
-      );
+      super(resolver: _createFakeResolver(), headers: {});
+
+  final String _fakeSummary;
+
+  static ModelResolver _createFakeResolver() {
+    final mockSecureStorage = MockSecureStorageService();
+    final mockPrefs = MockSharedPreferences();
+    final catalog = ProviderCatalogService(
+      secureStorage: mockSecureStorage,
+      prefs: mockPrefs,
+      builtInProviders: [],
+    );
+    return ModelResolver(catalog);
+  }
 
   @override
   Future<String> generateCompletion({

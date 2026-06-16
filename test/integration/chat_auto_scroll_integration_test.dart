@@ -53,8 +53,8 @@ class MockScrollController extends ScrollController {
   }
 }
 
-// Mock ScrollPosition
-class MockScrollPosition extends ScrollPositionWithSingleContext {
+// Mock ScrollPosition - simplified for testing
+class MockScrollPosition extends ScrollPosition {
   MockScrollPosition({
     required double initialScrollOffset,
     required double viewportDimension,
@@ -66,8 +66,18 @@ class MockScrollPosition extends ScrollPositionWithSingleContext {
          keepScrollOffset: false,
        );
 
-  void goTo(double offset) {
-    goToDouble(offset);
+  @override
+  double get minScrollExtent => 0.0;
+
+  @override
+  void applyViewportDimension(double viewportDimension) {}
+
+  @override
+  void applyContentDimensions(double minScrollExtent, double maxScrollExtent) {}
+
+  @override
+  void goToDouble(double offset, {double? alignment}) {
+    forcePixels(offset);
   }
 }
 
@@ -129,17 +139,7 @@ void main() {
           // Override only what's needed; rely on defaults for others
           currentChatIdProvider.overrideWith((ref) => null),
           currentChatProvider.overrideWith((ref) => null),
-          chatScreenProvider.overrideWith(
-            (ref) => Provider<ChatScreenState>(
-              (ref) => const ChatScreenState(
-                isStreaming: false,
-                navigatorHeadings: [],
-                activeHeadingIndex: -1,
-                isNavigatorVisible: false,
-                welcomeSuggestions: [],
-              ),
-            ),
-          ),
+          chatScreenProvider.overrideWith((ref) => ChatScreenNotifier()),
           streamingMessageProvider.overrideWith(
             (ref) => Provider<StreamingMessageState>(
               (ref) => const StreamingMessageState(),
@@ -150,6 +150,7 @@ void main() {
     });
 
     tearDown(() {
+      mockController.dispose();
       container.dispose();
     });
 
@@ -173,6 +174,7 @@ void main() {
           updatedAt: now,
         );
 
+        final chatScreenKey = GlobalKey();
         await tester.pumpWidget(
           UncontrolledProviderScope(
             container: container,
@@ -181,7 +183,7 @@ void main() {
               supportedLocales: AppLocalizations.supportedLocales,
               home: Scaffold(
                 body: ChatScreen(
-                  key: GlobalKey(),
+                  key: chatScreenKey,
                   testScrollController: mockController,
                 ),
               ),
@@ -192,8 +194,7 @@ void main() {
         container.read(currentChatProvider.notifier).state = chat;
         await tester.pumpAndSettle();
 
-        final state =
-            tester.state<ChatScreenState>(find.byType(ChatScreen)) as dynamic;
+        final state = chatScreenKey.currentState as dynamic;
 
         // Attach mock position
         final position = MockScrollPosition(
@@ -206,7 +207,7 @@ void main() {
         // Test force=true
         position.goTo(0);
         mockController.reset();
-        state._scrollToBottom(force: true);
+        state.scrollToBottom(force: true);
         expect(mockController.animateToCalled, isTrue);
         expect(mockController.animateToTarget, 2000);
         expect(
@@ -218,14 +219,19 @@ void main() {
         // Test force=false
         position.goTo(0);
         mockController.reset();
-        state._scrollToBottom(force: false);
-        expect(mockController.jumpToCalled, isTrue);
-        expect(mockController.jumpToTarget, 2000);
+        state.scrollToBottom(force: false);
+        expect(mockController.animateToCalled, isTrue);
+        expect(mockController.animateToTarget, 2000);
+        expect(
+          mockController.animateToDuration,
+          const Duration(milliseconds: 150),
+        );
+        expect(mockController.animateToCurve, Curves.easeOut);
 
         // Test skip when near bottom
         position.goTo(1998);
         mockController.reset();
-        state._scrollToBottom(force: false);
+        state.scrollToBottom(force: false);
         expect(mockController.jumpToCalled, isFalse);
         expect(mockController.animateToCalled, isFalse);
       },
@@ -249,6 +255,7 @@ void main() {
         updatedAt: now,
       );
 
+      final chatScreenKey = GlobalKey();
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
@@ -257,7 +264,7 @@ void main() {
             supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(
               body: ChatScreen(
-                key: GlobalKey(),
+                key: chatScreenKey,
                 testScrollController: mockController,
               ),
             ),
@@ -268,8 +275,7 @@ void main() {
       container.read(currentChatProvider.notifier).state = chat;
       await tester.pumpAndSettle();
 
-      final state =
-          tester.state<ChatScreenState>(find.byType(ChatScreen)) as dynamic;
+      final state = chatScreenKey.currentState as dynamic;
       final position = MockScrollPosition(
         initialScrollOffset: 0,
         viewportDimension: 800,
@@ -279,17 +285,17 @@ void main() {
 
       // At top -> autoScroll false
       position.goTo(0);
-      state._handleScroll();
+      state.handleScroll();
       expect(state.autoScrollEnabledForTest, isFalse);
 
       // Near bottom -> autoScroll true
       position.goTo(1900);
-      state._handleScroll();
+      state.handleScroll();
       expect(state.autoScrollEnabledForTest, isTrue);
 
       // At bottom -> autoScroll true
       position.goTo(2000);
-      state._handleScroll();
+      state.handleScroll();
       expect(state.autoScrollEnabledForTest, isTrue);
     });
   });

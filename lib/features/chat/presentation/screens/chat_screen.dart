@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:chatorai/core/constants/chat_constants.dart';
@@ -96,6 +97,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   /// Test-only accessor for the scroll controller.
   ScrollController get testScrollController => _messageScrollController;
+
+  /// Test-only: scroll to bottom.
+  @visibleForTesting
+  void scrollToBottom({bool force = false}) => _scrollToBottom(force: force);
+
+  /// Test-only: handle scroll event.
+  @visibleForTesting
+  void handleScroll() => _handleScroll();
 
   Chat? get currentChat => ref.watch(currentChatProvider);
   String get selectedModelId => ref.watch(modelProvider).selectedModelId;

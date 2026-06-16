@@ -4,14 +4,12 @@ import 'permission_section.dart';
 class ChatOrAIConfig {
   final int version;
   final Map<String, PermissionRuleConfig> permission;
-  final Map<String, dynamic>? provider;
   final Map<String, dynamic>? keybinding;
   final SkillConfig? skills;
 
   const ChatOrAIConfig({
     required this.version,
     required this.permission,
-    this.provider,
     this.keybinding,
     this.skills,
   });
@@ -25,7 +23,6 @@ class ChatOrAIConfig {
     return ChatOrAIConfig(
       version: json['version'] as int? ?? 0,
       permission: permission,
-      provider: json['provider'] as Map<String, dynamic>?,
       keybinding: json['keybinding'] as Map<String, dynamic>?,
       skills: json['skills'] != null
           ? SkillConfig.fromJson(json['skills'] as Map<String, dynamic>)
@@ -36,7 +33,6 @@ class ChatOrAIConfig {
   Map<String, dynamic> toJson() => {
     'version': version,
     'permission': permission.map((key, value) => MapEntry(key, value.toJson())),
-    if (provider != null) 'provider': provider,
     if (keybinding != null) 'keybinding': keybinding,
     if (skills != null) 'skills': skills!.toJson(),
   };

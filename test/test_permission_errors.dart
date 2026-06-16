@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/permissions/permission_service.dart';
+import 'package:chatorai/core/permission/permission_service.dart';
 
 void main() {
   group('Permission errors', () {

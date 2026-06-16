@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/features/settings/presentation/providers/language_provider.dart';
+import 'package:chatorai/core/i18n/language_provider.dart';
 import 'package:chatorai/features/chat/presentation/widgets/welcome_questions_data.dart';
 import 'package:chatorai/features/chat/presentation/widgets/welcome_greetings_data.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/models/chat_message.dart';
-import 'package:chatorai/models/chat_models.dart';
+import 'package:chatorai/features/chat/data/models/chat/chat_message_export.dart';
+import 'package:chatorai/features/chat/data/models/chat_models.dart';
 
 void main() {
   // ── Enums ──────────────────────────────────────────────────

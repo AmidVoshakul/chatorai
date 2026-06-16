@@ -32,14 +32,14 @@ class InputWidgetBuilders {
     final isSpellCheckSupported =
         !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
-        return CallbackShortcuts(
-          bindings: keyboardBindings ?? const {},
-          child: Focus(
-            onKeyEvent: (node, event) => KeyEventResult.ignored,
-            child: TextField(
-              key: key,
-              controller: controller,
-              focusNode: focusNode,
+    return CallbackShortcuts(
+      bindings: keyboardBindings ?? const {},
+      child: Focus(
+        onKeyEvent: (node, event) => KeyEventResult.ignored,
+        child: TextField(
+          key: key,
+          controller: controller,
+          focusNode: focusNode,
           keyboardType: TextInputType.multiline,
           minLines: 1,
           maxLines: maxLines,

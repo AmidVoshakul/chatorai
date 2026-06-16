@@ -202,24 +202,24 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
                   ),
                 ),
               // Dots (without shimmer)
-              AnimatedBuilder(
-                animation: _dotsController,
-                builder: (context, child) {
-                  final dotIndex = isStreaming
-                      ? (_dotsController.value * 3).floor() % 4
-                      : 0;
-                  final dots = '.' * dotIndex;
-                  return Text(
-                    dots,
-                    style: TextStyle(
-                      fontSize: ChatoraiFontSizes.sm,
-                      fontWeight: FontWeight.w600,
-                      height: 1.4,
-                      color: textColor,
-                    ),
-                  );
-                },
-              ),
+              // AnimatedBuilder(
+              //   animation: _dotsController,
+              //   builder: (context, child) {
+              //     final dotIndex = isStreaming
+              //         ? (_dotsController.value * 3).floor() % 4
+              //         : 0;
+              //     final dots = '.' * dotIndex;
+              //     return Text(
+              //       dots,
+              //       style: TextStyle(
+              //         fontSize: ChatoraiFontSizes.sm,
+              //         fontWeight: FontWeight.w600,
+              //         height: 1.4,
+              //         color: textColor,
+              //       ),
+              //     );
+              //   },
+              // ),
             ],
           ),
         );

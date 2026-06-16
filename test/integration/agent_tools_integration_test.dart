@@ -1,20 +1,39 @@
 import 'dart:io';
 
 import 'package:ai_sdk_dart/ai_sdk_dart.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test/test.dart';
+import 'package:chatorai/core/llm/catalog/model_resolver.dart';
+import 'package:chatorai/core/llm/catalog/models/model_config.dart';
+import 'package:chatorai/core/llm/catalog/provider_catalog_service.dart';
+import 'package:chatorai/shared/utils/secure_storage_service.dart';
 import 'package:chatorai/features/tools/data/models/tool.dart';
 import 'package:chatorai/features/tools/built_in/task.dart';
 import 'package:chatorai/features/tools/built_in/question.dart';
 import 'package:chatorai/features/tools/built_in/apply_patch.dart';
 import 'package:chatorai/features/tools/built_in/todo_write.dart';
+import 'package:chatorai/features/chat/domain/services/chat_retry_service.dart';
 import 'package:chatorai/features/chat/domain/services/chat_ai_service.dart';
+
+class MockSecureStorageService extends Mock implements SecureStorageService {}
+
+class MockSharedPreferences extends Mock implements SharedPreferences {}
 
 /// Fake ChatAiService for testing task tool without real network calls.
 class _FakeChatAiService extends ChatAiService {
-  _FakeChatAiService()
-    : super(
-        modelFactory: (_) => throw UnimplementedError('Fake model factory'),
-      );
+  _FakeChatAiService() : super(resolver: _createFakeResolver());
+
+  static ModelResolver _createFakeResolver() {
+    final mockSecureStorage = MockSecureStorageService();
+    final mockPrefs = MockSharedPreferences();
+    final catalog = ProviderCatalogService(
+      secureStorage: mockSecureStorage,
+      prefs: mockPrefs,
+      builtInProviders: [],
+    );
+    return ModelResolver(catalog);
+  }
 
   @override
   Future<void> streamChatCompletion({
@@ -30,7 +49,7 @@ class _FakeChatAiService extends ChatAiService {
     ToolErrorCallback? onToolError,
     UsageCallback? onUsage,
     int maxSteps = 5,
-    void Function(int attempt, Object error)? onRetry,
+    void Function(RichRetryInfo info)? onRetry,
     void Function(List<Map<String, dynamic>> messages)? onOverflow,
   }) async {
     // Simulate immediate response

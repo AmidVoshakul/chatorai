@@ -154,8 +154,16 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         model: modelId,
         temperature: modelSettings.temperature,
         tools: toolRegistry.toSDKTools(),
-        onRetry: (attempt, error) {
+        onRetry: (info) {
           flushPendingUpdates();
+          // Show retry indicator under the last message
+          ref
+              .read(chatScreenProvider.notifier)
+              .setRetryInfo(
+                isRetrying: true,
+                retryMessage: info.message,
+                retryAttempt: info.attempt,
+              );
           // Preserve accumulated text in the request to avoid restarting from scratch
           final streamingState = ref.read(streamingMessageProvider);
           final partialText = streamingState.accumulatedParts
@@ -202,6 +210,14 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         onCompletion: (sdkText) async {
           flushPendingUpdates();
           if (!mounted) return;
+          // Reset retry state on successful completion
+          ref
+              .read(chatScreenProvider.notifier)
+              .setRetryInfo(
+                isRetrying: false,
+                retryMessage: null,
+                retryAttempt: 0,
+              );
           // Auto-scroll to bottom when streaming completes (if enabled)
           if (_autoScrollEnabled &&
               ref.read(themeProvider).autoScrollDuringStreaming) {
@@ -231,12 +247,13 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           final content = textBuffer.toString().isNotEmpty
               ? textBuffer.toString()
               : sdkText;
-          final reasoning = reasoningBuffer.toString().isNotEmpty
-              ? reasoningBuffer.toString()
+          final reasoningRaw = reasoningBuffer.toString();
+          final reasoning = reasoningRaw.trim().isNotEmpty
+              ? reasoningRaw
               : null;
 
           LogTags.chatScreen.logDebug(
-            'onCompletion: extracted contentLen=${content.length}, reasoningLen=${reasoning?.length ?? 0}',
+            'onCompletion: extracted contentLen=${content.length}, reasoningLen=${reasoning?.length ?? 0} raw=${reasoningRaw.length}',
           );
 
           final toolParts = allParts

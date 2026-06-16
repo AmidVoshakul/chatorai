@@ -1,11 +1,15 @@
+import 'dart:async';
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/permission_overlay.dart';
-import 'package:chatorai/features/settings/presentation/screens/settings_screen.dart';
+import 'package:chatorai/features/settings/screens/settings_screen.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/widgets/network_aware_widget.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -18,6 +22,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 void main() {
   LogConfig.enabled = true;
   LogConfig.minimumLevel = LogLevel.debug;
+
+  // Catch unhandled errors from ai_sdk_dart's internal async contexts.
+  // These originate inside streamText() (which has its own _withRetry), then
+  // escape through the stream's error channel and reach the zone handler.
+  // They are already handled by ChatAiService._retry — we just prevent them
+  // from reaching VSCode's exception breakpoint.
+  final platformHandler = PlatformDispatcher.instance.onError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    if (error is DioException) {
+      LogTags.chatService.logDebug(
+        '[Global] swallowed DioException (handled by _retry)',
+      );
+      return true;
+    }
+    if (error is TimeoutException) {
+      LogTags.chatService.logDebug(
+        '[Global] swallowed TimeoutException (handled by _retry)',
+      );
+      return true;
+    }
+    return platformHandler?.call(error, stack) ?? false;
+  };
 
   runApp(const ProviderScope(child: ChatoraiApp()));
 }

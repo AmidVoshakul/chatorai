@@ -33,7 +33,8 @@ mixin AgentMentionHandler<T extends ConsumerStatefulWidget>
     popupController.hideAllPopups();
 
     final overlay = Overlay.of(context);
-    final textFieldBox = textFieldKey.currentContext?.findRenderObject() as RenderBox?;
+    final textFieldBox =
+        textFieldKey.currentContext?.findRenderObject() as RenderBox?;
     if (textFieldBox == null) return;
     final inputOffset = textFieldBox.localToGlobal(Offset.zero);
     final screenHeight = MediaQuery.of(context).size.height;
@@ -101,9 +102,7 @@ mixin AgentMentionHandler<T extends ConsumerStatefulWidget>
   void navigateAgentPopup(bool down) {
     final agents = filteredAgents();
     if (agents.isEmpty) return;
-    final newIndex = down
-        ? _selectedAgentIndex + 1
-        : _selectedAgentIndex - 1;
+    final newIndex = down ? _selectedAgentIndex + 1 : _selectedAgentIndex - 1;
     if (newIndex >= 0 && newIndex < agents.length) {
       _selectedAgentIndex = newIndex;
       _updateAgentPopup();
@@ -122,7 +121,8 @@ mixin AgentMentionHandler<T extends ConsumerStatefulWidget>
     }
   }
 
-  bool get isAgentPopupVisible => popupController.isPopupVisible(PopupType.agent);
+  bool get isAgentPopupVisible =>
+      popupController.isPopupVisible(PopupType.agent);
 
   void detectAgentMentionListener() => _detectAgentMention();
 

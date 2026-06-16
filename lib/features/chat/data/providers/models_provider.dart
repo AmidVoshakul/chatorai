@@ -1,6 +1,8 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
+
 import 'package:chatorai/features/chat/data/models/chat_model.dart';
 import 'package:chatorai/providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ===========================================================================
 // STATE
@@ -48,6 +50,7 @@ class ModelsScreenState {
 
 class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
   bool _modelsLoaded = false;
+  Timer? _searchDebounce;
 
   @override
   ModelsScreenState build() {
@@ -56,6 +59,14 @@ class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
       Future.microtask(() => loadModels());
     }
     return const ModelsScreenState();
+  }
+
+  void setSearchQuery(String query) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      state = state.copyWith(searchQuery: query);
+      _updateFilteredModels();
+    });
   }
 
   Future<void> loadModels() async {
@@ -89,11 +100,6 @@ class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
-  }
-
-  void setSearchQuery(String query) {
-    state = state.copyWith(searchQuery: query);
-    _updateFilteredModels();
   }
 
   void clearSearch() {

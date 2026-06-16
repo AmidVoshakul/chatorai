@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/models/chat_message.dart';
-import 'package:chatorai/themes/app_theme.dart';
+import 'package:chatorai/features/chat/data/models/chat/chat_message_export.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
 
 /// Widget tests for the ChatMessageBubble component and its sub-widgets.
 ///

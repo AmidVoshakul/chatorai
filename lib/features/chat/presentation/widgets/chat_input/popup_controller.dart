@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Types of popups that can be shown in the chat input.
-enum PopupType {
-  agent,
-  command,
-  skills,
-}
+enum PopupType { agent, command, skills }
 
 /// Abstract controller for managing popup overlays in ChatInput.
 ///

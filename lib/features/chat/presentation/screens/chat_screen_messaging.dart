@@ -59,7 +59,11 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       timestamp: DateTime.now(),
     );
 
-    await _chatStorageService.updateMessageInChat(chat.id, updatedMessage.id, updatedMessage);
+    await _chatStorageService.updateMessageInChat(
+      chat.id,
+      updatedMessage.id,
+      updatedMessage,
+    );
 
     // Update provider
     final updatedChat = chat.copyWith(
@@ -71,7 +75,6 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     // Send answer as a new user message
     await _handleSendMessage(MessageData(text: answer));
   }
-
 
   Future<void> _handleAddMessagesAndStream(
     Chat chat,

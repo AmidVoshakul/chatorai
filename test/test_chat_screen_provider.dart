@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/providers/chat/chat_screen_notifier.dart';
-import 'package:chatorai/utils/markdown_parser.dart';
+import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
+import 'package:chatorai/shared/utils/markdown_parser.dart';
 
 void main() {
   group('ChatScreenNotifier', () {

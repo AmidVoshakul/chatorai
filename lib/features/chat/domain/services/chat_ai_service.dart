@@ -1,12 +1,16 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:ai_sdk_dart/ai_sdk_dart.dart';
 import 'package:ai_sdk_provider/ai_sdk_provider.dart';
 import 'package:chatorai/core/context/overflow_detector.dart';
 import 'package:chatorai/core/context/token_counter.dart';
-import 'package:chatorai/core/error/error_classifier.dart';
+import 'package:chatorai/core/llm/catalog/model_resolver.dart';
+import 'package:chatorai/core/llm/catalog/models/model_config.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:dio/dio.dart';
+
+import 'chat_cancellation.dart';
+import 'chat_retry_service.dart';
 
 // Tool event callbacks surfaced to the chat UI layer.
 typedef ToolStartCallback =
@@ -23,9 +27,6 @@ typedef ToolErrorCallback =
     void Function(String toolCallId, String toolName, String error);
 
 typedef UsageCallback = void Function(int input, int output);
-
-/// A function that creates a [LanguageModelV3] for the given model string.
-typedef ModelFactory = LanguageModelV3 Function(String model);
 
 class ChatCompletionResponse {
   final String content;
@@ -45,25 +46,35 @@ class ChatCompletionResponse {
   });
 }
 
+/// Core AI service for streaming and non‑streaming chat completions.
+///
+/// Uses [ModelResolver] from the catalog for model resolution and
+/// LanguageModel creation (OpenCode‑style). No legacy factory fallback.
 class ChatAiService {
-  final ModelFactory _modelFactory;
+  final ModelResolver _resolver;
   final Map<String, String> _headers;
-  var _cancelToken = CancellationToken();
-  Timer? _progressTimer;
-  final _retryController = StreamController<double>.broadcast();
-  bool _retryCancelled = false;
+
+  late final ChatRetryService _retryService;
+  late final ChatCancellation _cancellation;
   final TokenCounter _tokenCounter = TokenCounter();
   late OverflowDetector _overflowDetector;
   int _modelContextLength = 200000;
 
+  /// Create with catalog‑based resolution.
+  ///
+  /// [resolver] is the [ModelResolver] from the catalog.
+  /// [headers] are optional extra headers merged on top of per‑provider
+  /// default headers from the catalog.
   ChatAiService({
-    required ModelFactory modelFactory,
+    required ModelResolver resolver,
     Map<String, String> headers = const {},
     int? modelContextLength,
-  }) : _modelFactory = modelFactory,
+  }) : _resolver = resolver,
        _headers = headers {
     _modelContextLength = modelContextLength ?? 200000;
     _overflowDetector = OverflowDetector.forModel(_modelContextLength);
+    _cancellation = ChatCancellation();
+    _retryService = ChatRetryService(cancellation: _cancellation);
   }
 
   void updateModelContextLength(int contextLength) {
@@ -71,25 +82,18 @@ class ChatAiService {
     _overflowDetector = OverflowDetector.forModel(contextLength);
   }
 
-  StreamController<double> get _ensureRetryController => _retryController;
-
-  /// Strips the provider prefix from a model ID.
-  /// Model IDs follow the format `{providerId}/{actualModelId}`.
-  /// Example: `openrouter/openrouter/owl-alpha` → `openrouter/owl-alpha`
-  ///          `openai/gpt-4o` → `openai/gpt-4o` (unchanged, no prefix)
-  static String stripProviderPrefix(String modelId) {
-    final firstSlash = modelId.indexOf('/');
-    if (firstSlash == -1) return modelId;
-    final afterFirstSlash = modelId.substring(firstSlash + 1);
-    if (afterFirstSlash.contains('/')) return afterFirstSlash;
-    return modelId;
-  }
-
   TokenCounter get tokenCounter => _tokenCounter;
   OverflowDetector get overflowDetector => _overflowDetector;
   int get totalTokens => _tokenCounter.totalTokens;
   bool get isOverflow =>
       _overflowDetector.isOverflow(_tokenCounter.totalTokens);
+
+  /// Delegates to [ChatRetryService.retryCountdown].
+  Stream<double> get retryCountdown => _retryService.retryCountdown;
+
+  /// Whether a retry backoff is currently in progress.
+  bool get isRetrying => _retryService.isRetrying;
+
   String? _currentModel;
   String? get currentModel => _currentModel;
   set currentModelForTesting(String? model) {
@@ -103,135 +107,11 @@ class ChatAiService {
   }
 
   void _startProgressTimer() {
-    _progressTimer?.cancel();
-    _progressTimer = Timer.periodic(const Duration(seconds: 1), (_) {});
+    // no-op; kept for compatibility
   }
 
   void _stopProgressTimer() {
-    _progressTimer?.cancel();
-    _progressTimer = null;
-  }
-
-  // ===========================================================================
-  // RETRY (OpenCode-style unbounded exponential backoff)
-  // ===========================================================================
-  static const _retryBaseDelay = Duration(milliseconds: 500);
-  static const _retryMaxDelay = Duration(seconds: 30);
-  static const _retryFactor = 1.5;
-
-  bool _isRetrying = false;
-  bool get isRetrying => _isRetrying;
-
-  Duration? _lastRetryAfter;
-
-  /// Stream of retry progress: 1.0 → 0.0 during backoff wait.
-  /// Emits 1.0 immediately when retry starts, counts down to 0.0.
-  /// Cancels when user calls [cancelAllRequests()] or stream completes.
-  Stream<double> get retryCountdown => _ensureRetryController.stream;
-
-  /// Wraps [operation] with OpenCode-style unbounded exponential backoff retry.
-  /// Retries on transient errors forever until success or cancellation.
-  /// Emits progress via [retryCountdown] stream during backoff waits.
-  /// [onRetry] is called before each retry attempt (not before the first attempt).
-  /// NOTE: We intentionally do NOT impose a max retry limit. In OpenCode, the
-  /// retry loop is unbounded to handle extended rate limits or network issues.
-  /// The system will keep retrying until the user cancels or the operation succeeds.
-  Future<T> _retry<T>(
-    Future<T> Function() operation, {
-    Duration? baseDelay,
-    void Function(int attempt, Object error)? onRetry,
-  }) async {
-    _retryCancelled = false;
-    final delay = baseDelay ?? _retryBaseDelay;
-    final rng = Random();
-    int attempt = 0;
-    while (true) {
-      try {
-        LogTags.chatService.logDebug('_retry attempt $attempt starting');
-        final result = await operation();
-        LogTags.chatService.logDebug('_retry attempt $attempt succeeded');
-        return result;
-      } catch (e) {
-        LogTags.chatService.logWarning(
-          '_retry attempt $attempt caught: ${e.runtimeType}: $e',
-        );
-        if (!_isRetryableError(e)) {
-          LogTags.chatService.logWarning(
-            '_retry attempt $attempt: error NOT retryable, rethrowing',
-          );
-          rethrow;
-        }
-        if (_retryCancelled || _cancelToken.isCancelled) {
-          LogTags.chatService.logWarning(
-            '_retry attempt $attempt: cancelled, aborting',
-          );
-          _isRetrying = false;
-          throw Exception('cancelled');
-        }
-        _stopProgressTimer();
-        _isRetrying = true;
-        onRetry?.call(attempt, e);
-        final currentDelay = _nextDelay(delay, attempt, rng);
-        LogTags.chatService.logInfo(
-          '_retry attempt $attempt: retrying after ${currentDelay.inMilliseconds}ms',
-        );
-        final rc = _ensureRetryController;
-        final totalDuration = currentDelay.inMilliseconds.toDouble();
-        final startTime = DateTime.now().millisecondsSinceEpoch;
-        await for (final _ in Stream.periodic(
-          const Duration(milliseconds: 50),
-        )) {
-          if (_retryCancelled || _cancelToken.isCancelled) {
-            LogTags.chatService.logWarning(
-              '_retry attempt $attempt: cancelled during wait',
-            );
-            _isRetrying = false;
-            throw Exception('cancelled');
-          }
-          final elapsed =
-              (DateTime.now().millisecondsSinceEpoch - startTime) /
-              totalDuration;
-          final progress = 1.0 - elapsed.clamp(0.0, 1.0);
-          if (!rc.isClosed) {
-            rc.add(progress);
-          }
-          if (progress <= 0.0) break;
-        }
-        _isRetrying = false;
-        _startProgressTimer();
-        attempt++;
-      }
-    }
-  }
-
-  static const _errorClassifier = ErrorClassifier();
-
-  bool _isRetryableError(Object e) {
-    final classified = _errorClassifier.classify(e);
-
-    // Extract retry-after for RateLimitError to feed into backoff calculation.
-    if (classified is RateLimitError && classified.retryAfter != null) {
-      _lastRetryAfter = classified.retryAfter!;
-    }
-
-    LogTags.chatService.logDebug(
-      '_isRetryableError: $e → ${classified.runtimeType} retryable=${classified.isRetryable}',
-    );
-    return classified.isRetryable;
-  }
-
-  Duration _nextDelay(Duration baseDelay, int attempt, Random rng) {
-    if (_lastRetryAfter != null) {
-      final d = _lastRetryAfter!;
-      _lastRetryAfter = null;
-      return d > _retryMaxDelay ? _retryMaxDelay : d;
-    }
-    final exponential = baseDelay * pow(_retryFactor, attempt);
-    final capped = exponential > _retryMaxDelay ? _retryMaxDelay : exponential;
-    final jitter = capped * rng.nextDouble() * 0.3;
-    return Duration(
-      milliseconds: (capped.inMilliseconds + jitter.inMilliseconds).round(),
-    );
+    // no-op; kept for compatibility
   }
 
   // ===========================================================================
@@ -303,13 +183,13 @@ class ChatAiService {
     ToolErrorCallback? onToolError,
     UsageCallback? onUsage,
     int maxSteps = 5,
-    void Function(int attempt, Object error)? onRetry,
+    void Function(RichRetryInfo info)? onRetry,
     void Function(List<Map<String, dynamic>> messages)? onOverflow,
   }) async {
     _currentModel = model;
     _currentTemperature = temperature;
-    _isRetrying = false;
-    _startProgressTimer();
+    // Cancel any previous retry cycle before starting a new one
+    cancelAllRequests();
     for (final m in messages) {
       final content = m['content'];
       if (m['role'] == 'system') {
@@ -319,46 +199,72 @@ class ChatAiService {
       }
     }
 
+    // ── Build LanguageModel once (before retry loop) ──────────────────────
+    ModelConfig? resolvedConfig;
+    late LanguageModelV3 lm;
+    Map<String, String> activeHeaders = _headers;
+
     try {
-      await _retry(() async {
-        final apiModel = stripProviderPrefix(model);
-        final lm = _modelFactory(apiModel);
+      resolvedConfig = _resolver.resolve(model);
+      activeHeaders = _resolver.getHeadersForModel(
+        resolvedConfig,
+        overrideHeaders: _headers,
+      );
+      lm = await _resolver.buildLanguageModel(resolvedConfig);
+      LogTags.chatService.logDebug(
+        'streamChatCompletion: catalog model ${resolvedConfig.id}',
+      );
+    } catch (e) {
+      LogTags.chatService.logError(
+        'streamChatCompletion: resolver failed for $model',
+        e,
+      );
+      rethrow;
+    }
+
+    try {
+      await _retryService.execute(() async {
         LogTags.chatService.logDebug(
-          'streamChatCompletion: calling streamText model=$apiModel',
+          'streamChatCompletion: calling streamText device=…',
         );
-        late StreamTextResult result;
-        try {
-          result = await streamText(
-            model: lm,
-            messages: _toModelMessages(messages),
-            temperature: temperature,
-            maxRetries: 0, // We handle retries ourselves
-            headers: _headers,
-            abortSignal: _cancelToken,
-            tools: tools,
-            maxSteps: maxSteps,
-            onInputAvailable: (event) {
-              final rawInput = event.input;
-              final inputMap = rawInput is Map<String, dynamic>
-                  ? rawInput
-                  : <String, dynamic>{'raw': rawInput};
-              onToolStart?.call(event.toolCallId, event.toolName, inputMap);
-            },
-          );
-          LogTags.chatService.logDebug(
-            'streamChatCompletion: streamText returned, consuming stream',
-          );
-        } catch (e, s) {
-          LogTags.chatService.logError(
-            'streamChatCompletion: streamText threw',
-            e,
-            s,
-          );
-          rethrow;
-        }
+        final result = await streamText(
+          model: lm,
+          messages: _toModelMessages(messages),
+          temperature: temperature,
+          maxRetries: 0, // We handle retries ourselves
+          headers: activeHeaders,
+          abortSignal: _cancellation.token,
+          tools: tools,
+          maxSteps: maxSteps,
+          onInputAvailable: (event) {
+            final rawInput = event.input;
+            final inputMap = rawInput is Map<String, dynamic>
+                ? rawInput
+                : <String, dynamic>{'raw': rawInput};
+            onToolStart?.call(event.toolCallId, event.toolName, inputMap);
+          },
+        );
+        LogTags.chatService.logDebug(
+          'streamChatCompletion: streamText returned, consuming stream',
+        );
 
         try {
-          await for (final event in result.fullStream) {
+          await for (final event in result.fullStream.handleError((
+            Object error,
+            StackTrace stack,
+          ) {
+            // DioException escapes ai_sdk_dart's internal streams before
+            // reaching our await-for.  Swallow here so it never reaches
+            // the zone handler.  The corresponding StreamTextErrorEvent
+            // data event carries the same error and drives the retry.
+            if (error is DioException) {
+              LogTags.chatService.logDebug(
+                'stream handleError swallowed DioException',
+              );
+              return;
+            }
+            throw error;
+          })) {
             switch (event) {
               case StreamTextTextDeltaEvent(:final delta):
                 onChunk(delta);
@@ -440,7 +346,7 @@ class ChatAiService {
           );
         } catch (e, s) {
           LogTags.chatService.logError(
-            'streamChatCompletion: stream iteration threw',
+            'streamChatCompletion: stream iteration threw (will propagate to retry)',
             e,
             s,
           );
@@ -450,13 +356,12 @@ class ChatAiService {
       }, onRetry: onRetry);
     } catch (e, s) {
       LogTags.chatService.logError(
-        'streamChatCompletion: _retry threw (rethrow to caller)',
+        'streamChatCompletion: unhandled error (should not happen with retry)',
         e,
         s,
       );
-      // Safety net: if _retry somehow doesn't catch the error (e.g. stream-level
-      // DioException from AI SDK's internal _withRetry), rethrow so the caller
-      // can handle it with _handleStreamingError.
+      // Let the error propagate; the caller will handle it via _handleStreamingError.
+      // This path should only execute for non-retryable errors that escaped _retryService.
       rethrow;
     } finally {
       _stopProgressTimer();
@@ -472,16 +377,35 @@ class ChatAiService {
     required double temperature,
   }) async {
     _startProgressTimer();
+
+    // ── Build LanguageModel once (before retry loop) ──────────────────────
+    ModelConfig? resolvedConfig;
+    late LanguageModelV3 lm;
+    Map<String, String> activeHeaders = _headers;
+
     try {
-      final result = await _retry(() async {
-        final apiModel = stripProviderPrefix(model);
-        final lm = _modelFactory(apiModel);
+      resolvedConfig = _resolver.resolve(model);
+      activeHeaders = _resolver.getHeadersForModel(
+        resolvedConfig,
+        overrideHeaders: _headers,
+      );
+      lm = await _resolver.buildLanguageModel(resolvedConfig);
+    } catch (e) {
+      LogTags.chatService.logError(
+        'generateCompletion: resolver failed for $model',
+        e,
+      );
+      rethrow;
+    }
+
+    try {
+      final result = await _retryService.execute(() async {
         return generateText(
           model: lm,
           messages: _toModelMessages(messages),
           temperature: temperature,
-          maxRetries: 0, // We handle retries ourselves
-          headers: _headers,
+          maxRetries: 0,
+          headers: activeHeaders,
         );
       });
       return result.text;
@@ -505,10 +429,12 @@ class ChatAiService {
   }
 
   void cancelAllRequests() {
-    _stopProgressTimer();
-    _isRetrying = false;
-    _retryCancelled = true;
-    _cancelToken.cancel();
-    _cancelToken = CancellationToken();
+    _retryService.cancelRetry();
+    _cancellation.cancel();
+  }
+
+  /// Dispose resources.
+  void dispose() {
+    _cancellation.cancel();
   }
 }

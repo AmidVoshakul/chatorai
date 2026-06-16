@@ -64,12 +64,12 @@ class _SkillsPopupState extends State<SkillsPopup> {
     final filtered = query.isEmpty
         ? widget.skills
         : widget.skills
-            .where(
-              (s) =>
-                  s.name.toLowerCase().contains(query) ||
-                  s.description.toLowerCase().contains(query),
-            )
-            .toList();
+              .where(
+                (s) =>
+                    s.name.toLowerCase().contains(query) ||
+                    s.description.toLowerCase().contains(query),
+              )
+              .toList();
 
     String? emptyMessage;
     if (widget.isLoading) {
@@ -130,7 +130,9 @@ class _SkillsPopupState extends State<SkillsPopup> {
                 itemExtent: _kItemHeight,
                 itemBuilder: (context, index) {
                   final skill = filtered[index];
-                  final isAllowed = widget.allowedSkillNames.contains(skill.name);
+                  final isAllowed = widget.allowedSkillNames.contains(
+                    skill.name,
+                  );
                   final isSelected = index == widget.selectedIndex;
                   return InkWell(
                     onTap: () => widget.onSelected(skill),

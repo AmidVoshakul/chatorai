@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:chatorai/permissions/evaluator.dart';
-import 'package:chatorai/permissions/rule.dart';
-import 'package:chatorai/permissions/ruleset.dart';
+import 'package:chatorai/core/permission/evaluator.dart';
+import 'package:chatorai/core/permission/rule.dart';
+import 'package:chatorai/core/permission/ruleset.dart';
 
 void main() {
   group('PermissionEvaluator.evaluate', () {

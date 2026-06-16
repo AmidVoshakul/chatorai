@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:chatorai/config/config_loader.dart';
-import 'package:chatorai/config/config_manager.dart';
-import 'package:chatorai/config/models/chatorai_config.dart';
-import 'package:chatorai/config/models/permission_section.dart';
+import 'package:chatorai/core/config/config_loader.dart';
+import 'package:chatorai/core/config/config_manager.dart';
+import 'package:chatorai/core/config/models/chatorai_config.dart';
+import 'package:chatorai/core/config/models/permission_section.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -25,15 +25,13 @@ void main() {
       final data = {
         'version': 1,
         'permission': {'bash': 'ask'},
-        'provider': {
-          'openrouter': {'apiKey': 'test'},
-        },
+        'keybinding': {'session_child_next': 'ctrl+right'},
       };
 
       final config = ChatOrAIConfig.fromJson(data);
       expect(config.version, 1);
       expect(config.permission['bash']?.defaultAction, 'ask');
-      expect(config.provider?['openrouter'], isNotNull);
+      expect(config.keybinding?['session_child_next'], 'ctrl+right');
     });
 
     test('permission section roundtrip', () {
@@ -45,7 +43,6 @@ void main() {
             patternActions: {'*.example.com': 'allow', '*': 'ask'},
           ),
         },
-        provider: null,
         keybinding: null,
       );
 

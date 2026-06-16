@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:chatorai/permissions/arity.dart';
+import 'package:chatorai/core/permission/arity.dart';
 
 void main() {
   group('bashArity', () {

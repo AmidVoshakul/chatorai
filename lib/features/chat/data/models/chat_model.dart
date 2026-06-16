@@ -1,3 +1,12 @@
+import 'package:chatorai/core/llm/catalog/models/model_config.dart' as catalog;
+
+/// Legacy capabilities model.
+///
+/// Use [ModelCapabilities] from package:chatorai/core/ai/catalog/models/model_config.dart
+/// instead.
+@Deprecated(
+  'Use ModelCapabilities from package:chatorai/core/ai/catalog/models/model_config.dart',
+)
 class ModelCapabilities {
   final bool reasoning;
   final bool multimodal;
@@ -43,6 +52,13 @@ class ModelCapabilities {
   };
 }
 
+/// Legacy model class for AI model configurations.
+///
+/// Use [ModelConfig] from package:chatorai/core/ai/catalog/models/model_config.dart
+/// instead. This class is kept for backward compatibility with existing UI code.
+@Deprecated(
+  'Use ModelConfig from package:chatorai/core/ai/catalog/models/model_config.dart',
+)
 class ChatModel {
   final String id;
   final String name;
@@ -192,6 +208,28 @@ class ChatModel {
       return pricing.toString();
     }
     return null;
+  }
+
+  /// Creates a [ChatModel] from a catalog [ModelConfig].
+  ///
+  /// This conversion is temporary while UI is migrated from ChatModel to
+  /// ModelConfig. New code should use ModelConfig directly.
+  factory ChatModel.fromModelConfig(catalog.ModelConfig config) {
+    return ChatModel(
+      id: config.id,
+      name: config.displayName,
+      description: config.description ?? '',
+      provider: config.providerId,
+      contextLength: config.contextLength,
+      pricingPrompt: config.pricing?.inputCostPer1k?.toString(),
+      pricingCompletion: config.pricing?.outputCostPer1k?.toString(),
+      capabilities: ModelCapabilities(
+        reasoning: config.capabilities.reasoning,
+        multimodal: config.capabilities.multimodal,
+        vision: config.capabilities.vision,
+        tools: config.capabilities.tools,
+      ),
+    );
   }
 
   bool get isFree =>

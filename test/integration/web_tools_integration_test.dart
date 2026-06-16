@@ -7,7 +7,7 @@ import 'package:chatorai/features/tools/built_in/webfetch.dart';
 import 'package:chatorai/features/tools/built_in/websearch.dart';
 import 'package:chatorai/features/tools/data/models/tool.dart';
 
-import '_test_context.dart';
+import 'helpers/test_context.dart';
 
 /// Integration tests for web tools (webfetch, websearch).
 ///

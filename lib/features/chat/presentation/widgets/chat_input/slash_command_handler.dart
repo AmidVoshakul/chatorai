@@ -1,36 +1,31 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/shared/utils/snackbar_utils.dart';
-
-// Chat models and providers
-import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/chat/data/providers/chat_providers.dart';
-
-// Agents
-import 'package:chatorai/features/agents/data/models/agent_provider.dart'
-    show currentAgentProvider;
-
-// Models (for selectedModelId)
-import 'package:chatorai/features/models_browser/presentation/providers/model_provider.dart'
-    show modelProvider;
-
-// Skills
-import 'package:chatorai/features/skills/data/models/skill_info.dart';
-import 'package:chatorai/features/skills/domain/services/skill_service.dart';
-import 'package:chatorai/features/skills/presentation/providers/skill_providers.dart'
-    show skillServiceProvider;
-
 // Config and Permission
 import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/permission/permission_provider.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
+// Agents
+import 'package:chatorai/features/agents/data/models/agent_provider.dart'
+    show currentAgentProvider;
+// Chat models and providers
+import 'package:chatorai/features/chat/data/models/chat_models.dart';
+import 'package:chatorai/features/chat/data/providers/chat_providers.dart';
+// Models (for selectedModelId)
+import 'package:chatorai/features/models/providers/model_provider.dart'
+    show modelProvider;
+// Skills
+import 'package:chatorai/features/skills/data/models/skill_info.dart';
+import 'package:chatorai/features/skills/domain/services/skill_service.dart';
+import 'package:chatorai/features/skills/presentation/providers/skill_providers.dart'
+    show skillServiceProvider;
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/shared/utils/snackbar_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Popup widgets
-import 'skills_popup.dart';
 import 'command_popup.dart';
 import 'popup_controller.dart';
-import 'package:chatorai/l10n/app_localizations.dart';
+// Popup widgets
+import 'skills_popup.dart';
 
 mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     on ConsumerState<T> {
@@ -100,8 +95,10 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
   void _detectSlashCommand() {
     final text = textController.text;
     final cursorPos = textController.selection.baseOffset;
-    debugPrint('[SlashCommandHandler] _detectSlashCommand: text="$text", cursor=$cursorPos');
-    
+    debugPrint(
+      '[SlashCommandHandler] _detectSlashCommand: text="$text", cursor=$cursorPos',
+    );
+
     if (cursorPos < 0) {
       debugPrint('[SlashCommandHandler] cursor < 0, hiding popups');
       hideCommandPopup();
@@ -112,14 +109,18 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     final slashIndex = beforeCursor.lastIndexOf('/');
     if (slashIndex == -1 ||
         (slashIndex > 0 && beforeCursor[slashIndex - 1] != ' ')) {
-      debugPrint('[SlashCommandHandler] no slash found or not preceded by space, hiding popups');
+      debugPrint(
+        '[SlashCommandHandler] no slash found or not preceded by space, hiding popups',
+      );
       hideCommandPopup();
       hideSkillsPopup();
       return;
     }
     final afterSlash = beforeCursor.substring(slashIndex + 1);
     final command = afterSlash.split(' ').first;
-    debugPrint('[SlashCommandHandler] afterSlash="$afterSlash", command="$command"');
+    debugPrint(
+      '[SlashCommandHandler] afterSlash="$afterSlash", command="$command"',
+    );
 
     if (command.isEmpty) {
       // Just "/" or "/ " → show command palette
@@ -142,13 +143,17 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
         // Exact match found
         if (exactCmd.name == '/skills') {
           // Exact /skills → show skills popup with optional filter
-          debugPrint('[SlashCommandHandler] exact /skills matched, showing skills popup');
+          debugPrint(
+            '[SlashCommandHandler] exact /skills matched, showing skills popup',
+          );
           _slashQuery = afterSlash.length > 6 ? afterSlash.substring(7) : '';
           showSkillsPopup();
           hideCommandPopup();
         } else {
           // Other exact command → show command palette (filtered to this command)
-          debugPrint('[SlashCommandHandler] exact command ${exactCmd.name} matched, showing command palette');
+          debugPrint(
+            '[SlashCommandHandler] exact command ${exactCmd.name} matched, showing command palette',
+          );
           _commandQuery = afterSlash;
           _selectedCommandIndex = 0;
           showCommandPopup();
@@ -165,7 +170,9 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
               descLower.contains(queryLower);
         }).toList();
 
-        debugPrint('[SlashCommandHandler] partialMatches: ${partialMatches.map((c) => c.name).toList()}');
+        debugPrint(
+          '[SlashCommandHandler] partialMatches: ${partialMatches.map((c) => c.name).toList()}',
+        );
 
         if (partialMatches.isEmpty) {
           debugPrint('[SlashCommandHandler] no matches, hiding popups');
@@ -173,7 +180,9 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
           hideSkillsPopup();
         } else {
           // Show command palette with partial matches
-          debugPrint('[SlashCommandHandler] showing command palette (partial matches)');
+          debugPrint(
+            '[SlashCommandHandler] showing command palette (partial matches)',
+          );
           _commandQuery = afterSlash;
           _selectedCommandIndex = 0;
           showCommandPopup();
@@ -192,7 +201,8 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     popupController.hideAllPopups();
 
     final overlay = Overlay.of(context);
-    final textFieldBox = textFieldKey.currentContext?.findRenderObject() as RenderBox?;
+    final textFieldBox =
+        textFieldKey.currentContext?.findRenderObject() as RenderBox?;
     if (textFieldBox == null) return;
     final inputOffset = textFieldBox.localToGlobal(Offset.zero);
     final screenHeight = MediaQuery.of(context).size.height;
@@ -288,7 +298,8 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     }
   }
 
-  bool get isCommandPopupVisible => popupController.isPopupVisible(PopupType.command);
+  bool get isCommandPopupVisible =>
+      popupController.isPopupVisible(PopupType.command);
 
   // ===========================================================================
   // SKILLS POPUP
@@ -309,19 +320,26 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     }
 
     if (_allSkills.isEmpty) {
-      debugPrint('[SlashCommandHandler] Loading skills for agent: ${currentAgent.id}');
+      debugPrint(
+        '[SlashCommandHandler] Loading skills for agent: ${currentAgent.id}',
+      );
       final allSkills = await _skillService!.listAll();
-      final allowedSkills = await _skillService!.availableForAgent(currentAgent.id);
+      final allowedSkills = await _skillService!.availableForAgent(
+        currentAgent.id,
+      );
       _allowedSkillNames = allowedSkills.map((s) => s.name).toSet();
       _allSkills = allSkills;
-      debugPrint('[SlashCommandHandler] Loaded ${allSkills.length} skills (${allowedSkills.length} allowed)');
+      debugPrint(
+        '[SlashCommandHandler] Loaded ${allSkills.length} skills (${allowedSkills.length} allowed)',
+      );
       if (!mounted) return;
     }
 
     _selectedSkillIndex = 0;
 
     final overlay = Overlay.of(context);
-    final textFieldBox = textFieldKey.currentContext?.findRenderObject() as RenderBox?;
+    final textFieldBox =
+        textFieldKey.currentContext?.findRenderObject() as RenderBox?;
     if (textFieldBox == null) return;
     final inputOffset = textFieldBox.localToGlobal(Offset.zero);
     final screenHeight = MediaQuery.of(context).size.height;
@@ -373,9 +391,7 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
   void navigateSkillsPopup(bool down) {
     final skills = _filteredSkills;
     if (skills.isEmpty) return;
-    final newIndex = down
-        ? _selectedSkillIndex + 1
-        : _selectedSkillIndex - 1;
+    final newIndex = down ? _selectedSkillIndex + 1 : _selectedSkillIndex - 1;
     if (newIndex >= 0 && newIndex < skills.length) {
       _selectedSkillIndex = newIndex;
       _updateSkillsPopup();
@@ -416,7 +432,9 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     final isAllowed = _allowedSkillNames.contains(skill.name);
     if (!isAllowed) {
       // Request permission for this skill
-      debugPrint('[SlashCommandHandler] Skill ${skill.name} requires permission, requesting...');
+      debugPrint(
+        '[SlashCommandHandler] Skill ${skill.name} requires permission, requesting...',
+      );
       try {
         final permissionService = ref.read(permissionServiceProvider);
         final config = await ref.read(configProvider.future);
@@ -436,9 +454,13 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
         await permissionService.ask(request, ruleset);
         // Permission granted (or always)
         _allowedSkillNames.add(skill.name);
-        debugPrint('[SlashCommandHandler] Permission granted for skill ${skill.name}');
+        debugPrint(
+          '[SlashCommandHandler] Permission granted for skill ${skill.name}',
+        );
       } on PermissionDeniedError catch (e) {
-        debugPrint('[SlashCommandHandler] Permission denied for skill ${skill.name}: $e');
+        debugPrint(
+          '[SlashCommandHandler] Permission denied for skill ${skill.name}: $e',
+        );
         if (mounted) {
           SnackbarUtils.showErrorSnackBar(
             context: context,
@@ -448,10 +470,14 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
         }
         return;
       } on PermissionRejectedError catch (e) {
-        debugPrint('[SlashCommandHandler] Permission rejected for skill ${skill.name}: $e');
+        debugPrint(
+          '[SlashCommandHandler] Permission rejected for skill ${skill.name}: $e',
+        );
         return;
       } catch (e) {
-        debugPrint('[SlashCommandHandler] Error requesting permission for skill ${skill.name}: $e');
+        debugPrint(
+          '[SlashCommandHandler] Error requesting permission for skill ${skill.name}: $e',
+        );
         return;
       }
     }
@@ -466,81 +492,86 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     }
   }
 
-   Future<void> _executeSkill(String skillName) async {
-     debugPrint('[SlashCommandHandler] Executing skill: $skillName');
-     final service = _skillService;
-     if (service == null) {
-       debugPrint('[SlashCommandHandler] SkillService not ready');
-       return;
-     }
+  Future<void> _executeSkill(String skillName) async {
+    debugPrint('[SlashCommandHandler] Executing skill: $skillName');
+    final service = _skillService;
+    if (service == null) {
+      debugPrint('[SlashCommandHandler] SkillService not ready');
+      return;
+    }
 
-     final skill = await service.getByName(skillName);
-     if (skill == null) {
-       debugPrint('[SlashCommandHandler] Skill not found: $skillName');
-       return;
-     }
+    final skill = await service.getByName(skillName);
+    if (skill == null) {
+      debugPrint('[SlashCommandHandler] Skill not found: $skillName');
+      return;
+    }
 
-     debugPrint('[SlashCommandHandler] Skill found: ${skill.name}, content length: ${skill.content.length}');
+    debugPrint(
+      '[SlashCommandHandler] Skill found: ${skill.name}, content length: ${skill.content.length}',
+    );
 
-     final content = '**Loaded skill: ${skill.name}**\n\n${skill.content}';
-     final storage = ref.read(chatStorageServiceProvider);
-     final chatIdNotifier = ref.read(currentChatIdProvider.notifier);
-     final chatListNotifier = ref.read(chatListProvider.notifier);
-     final modelId = ref.read(modelProvider).selectedModelId;
+    final content = '**Loaded skill: ${skill.name}**\n\n${skill.content}';
+    final storage = ref.read(chatStorageServiceProvider);
+    final chatIdNotifier = ref.read(currentChatIdProvider.notifier);
+    final chatListNotifier = ref.read(chatListProvider.notifier);
+    final modelId = ref.read(modelProvider).selectedModelId;
 
-     final chat = ref.read(currentChatProvider);
-     Message message;
-     if (chat == null) {
-       final newChat = await chatListNotifier.createNewChat();
-       chatIdNotifier.setChatId(newChat.id);
-       message = Message(
-         id: DateTime.now().millisecondsSinceEpoch.toString(),
-         role: MessageRole.assistant,
-         content: content,
-         timestamp: DateTime.now(),
-         isComplete: true,
-         model: modelId,
-       );
-       await storage.addMessageToChat(newChat.id, message);
-       final updatedChat = newChat.copyWith(
-         messages: [message],
-         updatedAt: DateTime.now(),
-       );
-       chatListNotifier.updateChat(updatedChat);
-     } else {
-       message = Message(
-         id: DateTime.now().millisecondsSinceEpoch.toString(),
-         role: MessageRole.assistant,
-         content: content,
-         timestamp: DateTime.now(),
-         isComplete: true,
-         model: modelId,
-       );
-       await storage.addMessageToChat(chat.id, message);
-       final updatedChat = chat.copyWith(
-         messages: [...chat.messages, message],
-         updatedAt: DateTime.now(),
-       );
-       chatListNotifier.updateChat(updatedChat);
-     }
+    final chat = ref.read(currentChatProvider);
+    Message message;
+    if (chat == null) {
+      final newChat = await chatListNotifier.createNewChat();
+      chatIdNotifier.setChatId(newChat.id);
+      message = Message(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        role: MessageRole.assistant,
+        content: content,
+        timestamp: DateTime.now(),
+        isComplete: true,
+        model: modelId,
+      );
+      await storage.addMessageToChat(newChat.id, message);
+      final updatedChat = newChat.copyWith(
+        messages: [message],
+        updatedAt: DateTime.now(),
+      );
+      chatListNotifier.updateChat(updatedChat);
+    } else {
+      message = Message(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        role: MessageRole.assistant,
+        content: content,
+        timestamp: DateTime.now(),
+        isComplete: true,
+        model: modelId,
+      );
+      await storage.addMessageToChat(chat.id, message);
+      final updatedChat = chat.copyWith(
+        messages: [...chat.messages, message],
+        updatedAt: DateTime.now(),
+      );
+      chatListNotifier.updateChat(updatedChat);
+    }
 
-     debugPrint('[SlashCommandHandler] Skill executed: $skillName, message added');
+    debugPrint(
+      '[SlashCommandHandler] Skill executed: $skillName, message added',
+    );
 
-     // Notify that a message was added (for scrolling, etc.)
-     onMessageAdded?.call();
+    // Notify that a message was added (for scrolling, etc.)
+    onMessageAdded?.call();
 
-     // Show toast notification
-     if (mounted) {
-       final localizations = AppLocalizations.of(context)!;
-       SnackbarUtils.showSuccessSnackBar(
-         context: context,
-         message: localizations.skillExecuted(skill.name),
-         duration: const Duration(seconds: 2),
-       );
-     }
-   }
+    // Show toast notification
+    if (mounted) {
+      final localizations = AppLocalizations.of(context)!;
+      SnackbarUtils.showSuccessSnackBar(
+        context: context,
+        message: localizations.skillExecuted(skill.name),
+        duration: const Duration(seconds: 2),
+      );
+    }
+  }
 
-  bool get isSkillsPopupVisible => popupController.isPopupVisible(PopupType.skills);
+  bool get isSkillsPopupVisible =>
+      popupController.isPopupVisible(PopupType.skills);
 
-   void detectSlashCommandListener() => _detectSlashCommand();
- }
+  void detectSlashCommandListener() => _detectSlashCommand();
+}

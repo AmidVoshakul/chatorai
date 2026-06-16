@@ -1,11 +1,11 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/core/llm/catalog/catalog_providers.dart';
+import 'package:chatorai/core/llm/catalog/model_resolver.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/providers/chat_repository.dart';
-import 'package:chatorai/core/ai/ai_provider.dart';
 import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/domain/services/chat_ai_service.dart';
-import 'package:chatorai/core/ai/openrouter_config.dart'
-    show kOpenRouterHeaders;
+import 'package:chatorai/shared/utils/logger.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ===========================================================================
 // RETRY COUNTDOWN PROVIDER
@@ -27,12 +27,30 @@ final chatStorageServiceProvider = Provider<ChatStorageService>((ref) {
 });
 
 final chatAiServiceProvider = Provider<ChatAiService>((ref) {
-  final providerAsync = ref.watch(openRouterAiProvider);
-  final provider = providerAsync.asData?.value;
-  return ChatAiService(
-    modelFactory: (model) => provider!(model),
-    headers: kOpenRouterHeaders,
+  final catalogAsync = ref.watch(catalogInitializationProvider);
+
+  ChatAiService? service;
+
+  catalogAsync.when(
+    data: (catalog) {
+      final resolver = ModelResolver(catalog);
+      service = ChatAiService(resolver: resolver);
+    },
+    loading: () {
+      // Will be null — consumers must handle
+    },
+    error: (err, _) {
+      LogTags.chatService.logWarning('Catalog failed to load: $err');
+    },
   );
+
+  // If catalog not ready, throw — UI should handle loading state
+  if (service == null) {
+    throw StateError('Catalog not yet initialized');
+  }
+
+  ref.onDispose(() => service!.dispose());
+  return service!;
 });
 
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/utils/chat_error_utils.dart';
+import 'package:chatorai/shared/utils/chat_error_utils.dart';
 
 void main() {
   group('ChatErrorUtils', () {

@@ -63,12 +63,12 @@ class _CommandPopupState extends State<CommandPopup> {
     final filtered = query.isEmpty
         ? widget.commands
         : widget.commands
-            .where(
-              (c) =>
-                  c.name.toLowerCase().contains(query) ||
-                  c.description.toLowerCase().contains(query),
-            )
-            .toList();
+              .where(
+                (c) =>
+                    c.name.toLowerCase().contains(query) ||
+                    c.description.toLowerCase().contains(query),
+              )
+              .toList();
 
     if (filtered.isEmpty) {
       return Material(

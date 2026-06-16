@@ -5,7 +5,7 @@ import 'package:chatorai/providers.dart'
     show themeProvider, languageProvider, currentChatProvider;
 import 'package:chatorai/features/chat/data/providers/sidebar_provider.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/settings/presentation/screens/settings_screen.dart';
+import 'package:chatorai/features/settings/screens/settings_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/sidebar_chat_actions_menu.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/utils/format_time.dart';

@@ -216,85 +216,85 @@ class _ChatInputState extends ConsumerState<ChatInput>
     const double sidePadding = ChatoraiSpacing.lg;
     const double bottomPadding = ChatoraiSpacing.md;
 
-     final keyboardBindings = <ShortcutActivator, VoidCallback>{
-       // Tab: navigate agent, command, or skills popup
-       SingleActivator(LogicalKeyboardKey.tab): () {
-         if (isAgentPopupVisible) {
-           navigateAgentPopup(true);
-         } else if (isCommandPopupVisible) {
-           navigateCommandPopup(true);
-         } else if (isSkillsPopupVisible) {
-           navigateSkillsPopup(true);
-         }
-       },
-       SingleActivator(LogicalKeyboardKey.tab, shift: true): () {
-         if (isAgentPopupVisible) {
-           navigateAgentPopup(false);
-         } else if (isCommandPopupVisible) {
-           navigateCommandPopup(false);
-         } else if (isSkillsPopupVisible) {
-           navigateSkillsPopup(false);
-         }
-       },
-       // Enter: select from any popup or send message
-       SingleActivator(LogicalKeyboardKey.enter): () {
-         if (isAgentPopupVisible) {
-           selectCurrentAgent();
-         } else if (isCommandPopupVisible) {
-           selectCurrentCommand();
-         } else if (isSkillsPopupVisible) {
-           selectCurrentSkillFromPopup();
-         } else if (!HardwareKeyboard.instance.isShiftPressed) {
-           performSend(
-             onSendMessage: widget.onSendMessage,
-             onToggleStreaming: widget.onToggleStreaming,
-             onClearAttachedFile: clearAttachedFile,
-           );
-         }
-       },
-       // Escape: close any popup
-       SingleActivator(LogicalKeyboardKey.escape): () {
-         if (isAgentPopupVisible) {
-           hideAgentPopup();
-         } else if (isCommandPopupVisible) {
-           hideCommandPopup();
-         } else if (isSkillsPopupVisible) {
-           hideSkillsPopup();
-         }
-       },
-       // Arrow keys: navigate popups
-       SingleActivator(LogicalKeyboardKey.arrowDown): () {
-         if (isAgentPopupVisible) {
-           navigateAgentPopup(true);
-         } else if (isCommandPopupVisible) {
-           navigateCommandPopup(true);
-         } else if (isSkillsPopupVisible) {
-           navigateSkillsPopup(true);
-         }
-       },
-       SingleActivator(LogicalKeyboardKey.arrowUp): () {
-         if (isAgentPopupVisible) {
-           navigateAgentPopup(false);
-         } else if (isCommandPopupVisible) {
-           navigateCommandPopup(false);
-         } else if (isSkillsPopupVisible) {
-           navigateSkillsPopup(false);
-         }
-       },
-     };
+    final keyboardBindings = <ShortcutActivator, VoidCallback>{
+      // Tab: navigate agent, command, or skills popup
+      SingleActivator(LogicalKeyboardKey.tab): () {
+        if (isAgentPopupVisible) {
+          navigateAgentPopup(true);
+        } else if (isCommandPopupVisible) {
+          navigateCommandPopup(true);
+        } else if (isSkillsPopupVisible) {
+          navigateSkillsPopup(true);
+        }
+      },
+      SingleActivator(LogicalKeyboardKey.tab, shift: true): () {
+        if (isAgentPopupVisible) {
+          navigateAgentPopup(false);
+        } else if (isCommandPopupVisible) {
+          navigateCommandPopup(false);
+        } else if (isSkillsPopupVisible) {
+          navigateSkillsPopup(false);
+        }
+      },
+      // Enter: select from any popup or send message
+      SingleActivator(LogicalKeyboardKey.enter): () {
+        if (isAgentPopupVisible) {
+          selectCurrentAgent();
+        } else if (isCommandPopupVisible) {
+          selectCurrentCommand();
+        } else if (isSkillsPopupVisible) {
+          selectCurrentSkillFromPopup();
+        } else if (!HardwareKeyboard.instance.isShiftPressed) {
+          performSend(
+            onSendMessage: widget.onSendMessage,
+            onToggleStreaming: widget.onToggleStreaming,
+            onClearAttachedFile: clearAttachedFile,
+          );
+        }
+      },
+      // Escape: close any popup
+      SingleActivator(LogicalKeyboardKey.escape): () {
+        if (isAgentPopupVisible) {
+          hideAgentPopup();
+        } else if (isCommandPopupVisible) {
+          hideCommandPopup();
+        } else if (isSkillsPopupVisible) {
+          hideSkillsPopup();
+        }
+      },
+      // Arrow keys: navigate popups
+      SingleActivator(LogicalKeyboardKey.arrowDown): () {
+        if (isAgentPopupVisible) {
+          navigateAgentPopup(true);
+        } else if (isCommandPopupVisible) {
+          navigateCommandPopup(true);
+        } else if (isSkillsPopupVisible) {
+          navigateSkillsPopup(true);
+        }
+      },
+      SingleActivator(LogicalKeyboardKey.arrowUp): () {
+        if (isAgentPopupVisible) {
+          navigateAgentPopup(false);
+        } else if (isCommandPopupVisible) {
+          navigateCommandPopup(false);
+        } else if (isSkillsPopupVisible) {
+          navigateSkillsPopup(false);
+        }
+      },
+    };
 
-     final textField = InputWidgetBuilders.buildTextField(
-       key: _textFieldKey,
-       controller: _textController,
-       focusNode: widget.focusNode,
-       maxLines: maxLines,
-       isMobile: isMobile,
-       enabled: !chatInputState.isSending,
-       theme: theme,
-       localizations: localizations,
-       hintText: localizations.typeYourMessage,
-       keyboardBindings: keyboardBindings,
-     );
+    final textField = InputWidgetBuilders.buildTextField(
+      key: _textFieldKey,
+      controller: _textController,
+      focusNode: widget.focusNode,
+      maxLines: maxLines,
+      isMobile: isMobile,
+      enabled: !chatInputState.isSending,
+      theme: theme,
+      localizations: localizations,
+      hintText: localizations.typeYourMessage,
+      keyboardBindings: keyboardBindings,
+    );
 
     final hasText = _textController.text.trim().isNotEmpty;
     final hasAttachment = chatInputState.attachedFilePath != null;

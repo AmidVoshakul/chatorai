@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/features/settings/presentation/providers/theme_provider.dart';
+import 'package:chatorai/core/theme/theme_provider.dart';
 
 void main() {
   group('ThemeState', () {

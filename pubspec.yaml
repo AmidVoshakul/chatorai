@@ -34,12 +34,15 @@ dependencies:
   ai_sdk_openai: ^1.1.0
   ai_sdk_provider: ^1.1.0
   ai_sdk_mcp: ^1.1.0
+  ai_sdk_anthropic: ^1.1.0
+  ai_sdk_google: ^1.1.0
   retry: ^3.1.2
   flutter_secure_storage: ^10.3.1
   html: ^0.15.4
   glob: ^2.1.2
   json_schema: ^5.2.2
   collection: ^1.19.1
+  equatable: ^2.0.0
   flutter_svg: ^2.0.10+1
   ddgs: ^0.3.2
   http: ^1.2.0
@@ -58,6 +61,7 @@ flutter:
   generate: true
   assets:
     - assets/chatorai_logo_black.png
+    - assets/provider/
 
 l10n:
   arb-dir: lib/l10n

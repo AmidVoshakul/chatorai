@@ -9,11 +9,27 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "93.0.0"
+  ai_sdk_anthropic:
+    dependency: "direct main"
+    description:
+      name: ai_sdk_anthropic
+      sha256: "068e143464748dc7c6a7fbbe15aa25800503ad8a9b33301d84cb452a74c6b717"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   ai_sdk_dart:
     dependency: "direct main"
     description:
       name: ai_sdk_dart
       sha256: "6d3e683fc9ee0609cb32cb21be62544881181bd31b176cf8ec298e0df3c4b012"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
+  ai_sdk_google:
+    dependency: "direct main"
+    description:
+      name: ai_sdk_google
+      sha256: "37711fdd3a1bed5d4e6bf36cb7beda7c3294bba0f640b0613c15b36361d156b9"
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
@@ -225,6 +241,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  equatable:
+    dependency: "direct main"
+    description:
+      name: equatable
+      sha256: "3e0141505477fd8ad55d6eb4e7776d3fe8430be8e497ccb1521370c3f21a3e2b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.8"
   fake_async:
     dependency: transitive
     description:

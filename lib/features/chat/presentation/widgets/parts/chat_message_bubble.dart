@@ -1,4 +1,5 @@
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
 import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/question_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/reasoning_part_widget.dart';
@@ -12,6 +13,7 @@ import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/format_time.dart';
 import 'package:chatorai/shared/utils/message_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ChatMessageBubble extends StatefulWidget {
   final ChatMessage message;
@@ -390,7 +392,11 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
       ToolCallPart p => ToolCallPartWidget(part: p),
       ToolResultPart p => ToolResultPartWidget(part: p),
       TaskPart p => TaskPartWidget(part: p),
-      QuestionPart p => QuestionPartWidget(part: p, onAnswer: (answer) => widget.onQuestionAnswer?.call(widget.messageId, answer)),
+      QuestionPart p => QuestionPartWidget(
+        part: p,
+        onAnswer: (answer) =>
+            widget.onQuestionAnswer?.call(widget.messageId, answer),
+      ),
       TodoPart p => TodoPartWidget(part: p),
       MessagePart() => const SizedBox.shrink(),
     };
@@ -590,19 +596,32 @@ class _ActionRow extends StatelessWidget {
             ),
           ],
 
-          // Token count (assistant only, right-aligned)
-          if (!isUser && cumulativeTokens != null)
-            Padding(
-              padding: const EdgeInsets.only(left: 8, right: 8),
-              child: Text(
-                _tokenDisplay(cumulativeTokens!, contextLength),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w400,
-                  color: theme.textTheme.bodySmall?.color?.withValues(
-                    alpha: 0.5,
-                  ),
-                ),
-              ),
+          // Retry indicator (last assistant message only) or token count
+          if (!isUser && isLastMessage)
+            Consumer(
+              builder: (context, ref, _) {
+                final retryState = ref.watch(chatScreenProvider);
+                if (retryState.isRetrying) {
+                  return _RetryIndicator(
+                    message: retryState.retryMessage ?? 'Retrying…',
+                  );
+                }
+                if (cumulativeTokens != null) {
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 8, right: 8),
+                    child: Text(
+                      _tokenDisplay(cumulativeTokens!, contextLength),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w400,
+                        color: theme.textTheme.bodySmall?.color?.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
             ),
         ],
       ),
@@ -617,6 +636,31 @@ String _tokenDisplay(int cumulativeTokens, int? contextLength) {
     return '$count ($pct%)';
   }
   return count;
+}
+
+class _RetryIndicator extends StatelessWidget {
+  final String message;
+
+  const _RetryIndicator({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = ChatoraiColors.error;
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, right: 8),
+      child: Text(
+        message,
+        style: theme.textTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.w500,
+          color: color,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
 }
 
 class _ActionMenuButton extends StatelessWidget {
