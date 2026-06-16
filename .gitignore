@@ -58,3 +58,4 @@ test/fixtures/skills/valid/SKILL.md
 test/fixtures/skills/invalid/*/SKILL.md
 apply_patch_add_test.txt
 apply_patch_mismatch_test.txt
+.kanban/

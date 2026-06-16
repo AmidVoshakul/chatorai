@@ -1,33 +1,13 @@
+import 'package:chatorai/core/context/completion_provider.dart';
 import 'package:chatorai/core/context/compaction_service.dart';
-import 'package:chatorai/core/llm/catalog/model_resolver.dart';
-import 'package:chatorai/core/llm/catalog/provider_catalog_service.dart';
-import 'package:chatorai/shared/utils/secure_storage_service.dart';
-import 'package:chatorai/features/chat/domain/services/chat_ai_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-class MockSecureStorageService extends Mock implements SecureStorageService {}
+class FakeCompletionProvider implements CompletionProvider {
+  const FakeCompletionProvider({
+    this.fakeSummary = '## Goal\n- Summary generated.',
+  });
 
-class MockSharedPreferences extends Mock implements SharedPreferences {}
-
-class FakeChatAiService extends ChatAiService {
-  FakeChatAiService({String fakeSummary = '## Goal\n- Summary generated.'})
-    : _fakeSummary = fakeSummary,
-      super(resolver: _createFakeResolver(), headers: {});
-
-  final String _fakeSummary;
-
-  static ModelResolver _createFakeResolver() {
-    final mockSecureStorage = MockSecureStorageService();
-    final mockPrefs = MockSharedPreferences();
-    final catalog = ProviderCatalogService(
-      secureStorage: mockSecureStorage,
-      prefs: mockPrefs,
-      builtInProviders: [],
-    );
-    return ModelResolver(catalog);
-  }
+  final String fakeSummary;
 
   @override
   Future<String> generateCompletion({
@@ -35,18 +15,18 @@ class FakeChatAiService extends ChatAiService {
     required String model,
     required double temperature,
   }) async {
-    return _fakeSummary;
+    return fakeSummary;
   }
 }
 
 void main() {
   group('CompactionService', () {
     late CompactionService service;
-    late FakeChatAiService fakeAi;
+    late FakeCompletionProvider fakeAi;
 
     setUp(() {
       service = const CompactionService();
-      fakeAi = FakeChatAiService();
+      fakeAi = const FakeCompletionProvider();
     });
 
     test('returns original messages when count < 4', () async {

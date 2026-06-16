@@ -81,32 +81,61 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     String text, {
     String? delegateAgentId,
   }) async {
+    // Ensure session repository is ready
+    final repo = await _sessionRepositoryFuture;
+    
+    // Create and initialize session runner BEFORE publishing user message
+    final sessionRunner = SessionRunner(repo);
+    final runnerSession = sessionRunner.startSession(
+      agent: ref.read(currentAgentProvider).name,
+      modelRef: selectedModelId,
+    );
+    await runnerSession.initialize();
+    _sessionRunner = runnerSession;
+
     final userMessage = _createUserMessage(
       text,
       base64Data: null,
       imageType: null,
     );
+
+    // Publish user message to Session Core (with error logging)
+    try {
+      await runnerSession.publishUserMessage(
+        content: text,
+        messageId: userMessage.id,
+      );
+    } catch (e) {
+      LogTags.chatService.logError(
+        'Failed to publish user message to session core',
+        e,
+      );
+    }
+
+    // Store in legacy ChatStorageService (still needed for UI until migration complete)
     await _chatStorageService.addMessageToChat(chat.id, userMessage);
+
     final chatFromStorage = await _chatStorageService.getChat(chat.id);
     if (chatFromStorage == null) return;
+    
     final assistantMessage = _createAssistantMessage();
     await _chatStorageService.addMessageToChat(
       chatFromStorage.id,
       assistantMessage,
     );
     ref.read(chatListProvider.notifier).updateChat(chatFromStorage);
+    
     LogTags.chatService.logInfo(
       'ChatScreen._handleAddMessagesAndStream: after storage update, scheduling scroll',
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // After user sends a message, they expect to see the assistant's response
       _autoScrollEnabled = true;
       LogTags.chatService.logInfo(
         'ChatScreen._handleAddMessagesAndStream: _autoScrollEnabled set to true',
       );
-      // Scroll to bottom (force = true to ensure visibility)
       _scrollToBottom(force: true);
     });
+    
     try {
       await _sendToAI(
         text,
@@ -124,7 +153,11 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
           e2,
           s,
         );
-        // Even if error handling fails, we still reset state above.
+      }
+    } finally {
+      runnerSession.dispose();
+      if (_sessionRunner == runnerSession) {
+        _sessionRunner = null;
       }
     }
   }

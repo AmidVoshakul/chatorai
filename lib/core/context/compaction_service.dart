@@ -1,4 +1,4 @@
-import 'package:chatorai/features/chat/domain/services/chat_ai_service.dart';
+import 'package:chatorai/core/context/completion_provider.dart';
 
 /// OpenCode-style context compaction.
 ///
@@ -39,7 +39,7 @@ class CompactionService {
   /// Returns a new message list with the compacted history.
   Future<List<Map<String, dynamic>>> compact({
     required List<Map<String, dynamic>> messages,
-    required ChatAiService aiService,
+    required CompletionProvider aiService,
     required String model,
   }) async {
     if (messages.length < 4) return messages;
@@ -82,7 +82,7 @@ class CompactionService {
   /// Call LLM to produce an anchored summary of the head messages.
   Future<String> _summarize({
     required List<Map<String, dynamic>> head,
-    required ChatAiService aiService,
+    required CompletionProvider aiService,
     required String model,
     String? previousSummary,
   }) async {

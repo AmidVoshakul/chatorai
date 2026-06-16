@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:ai_sdk_dart/ai_sdk_dart.dart';
 import 'package:ai_sdk_provider/ai_sdk_provider.dart';
+import 'package:chatorai/core/context/completion_provider.dart';
 import 'package:chatorai/core/context/overflow_detector.dart';
 import 'package:chatorai/core/context/token_counter.dart';
 import 'package:chatorai/core/llm/catalog/model_resolver.dart';
@@ -50,7 +51,7 @@ class ChatCompletionResponse {
 ///
 /// Uses [ModelResolver] from the catalog for model resolution and
 /// LanguageModel creation (OpenCode‑style). No legacy factory fallback.
-class ChatAiService {
+class ChatAiService implements CompletionProvider {
   final ModelResolver _resolver;
   final Map<String, String> _headers;
 
@@ -371,6 +372,7 @@ class ChatAiService {
   // ===========================================================================
   // NON-STREAMING COMPLETION
   // ===========================================================================
+  @override
   Future<String> generateCompletion({
     required List<Map<String, dynamic>> messages,
     required String model,

@@ -115,6 +115,13 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         .selectedModelObject
         ?.contextLength;
 
+     // ── Session Runner (event sourcing) ──────────────────────────────────
+     // Runner already created and initialized in _handleAddMessagesAndStream
+     final runnerSession = _sessionRunner;
+     if (runnerSession == null) {
+       throw StateError('SessionRunner not initialized — must call _handleAddMessagesAndStream first');
+     }
+
     if (aiService.isOverflow && attemptMsgs.length > 4) {
       final compactionService = const CompactionService();
       final compactedApiMessages = await compactionService.compact(
@@ -183,27 +190,32 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           latestCumulativeTokens = aiService.tokenCounter.totalTokens;
         },
         onToolStart: (toolCallId, toolName, input) {
+          runnerSession.onToolStart(toolCallId, toolName, input);
           ref
               .read(streamingMessageProvider.notifier)
               .onToolCall(toolCallId, toolName, input);
         },
         onToolEnd: (toolCallId, toolName, result) {
+          runnerSession.onToolEnd(toolCallId, toolName, result.toString());
           ref
               .read(streamingMessageProvider.notifier)
               .onToolEnd(toolCallId, toolName, result.toString());
         },
         onToolError: (toolCallId, toolName, error) {
+          runnerSession.onToolError(toolCallId, toolName, error.toString());
           ref
               .read(streamingMessageProvider.notifier)
               .onToolError(toolCallId, toolName, error.toString());
         },
         onChunk: (content) {
           if (content.isEmpty) return;
+          runnerSession.onChunk(content);
           pendingContent.write(content);
           throttleUpdate();
         },
         onReasoning: (reasoning) {
           if (reasoning.isEmpty) return;
+          runnerSession.onReasoning(reasoning);
           pendingReasoning.write(reasoning);
           throttleUpdate();
         },
@@ -225,6 +237,32 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               _scrollToBottom(force: false);
             });
           }
+
+          // Extract text + reasoning from accumulated parts for session runner
+          final streamingStateBeforeFinalize = ref.read(
+            streamingMessageProvider,
+          );
+          final partsBeforeFinalize =
+              streamingStateBeforeFinalize.accumulatedParts;
+          final textBuf = StringBuffer();
+          final reasoningBuf = StringBuffer();
+          for (final part in partsBeforeFinalize) {
+            if (part is TextPart) textBuf.write(part.content);
+            if (part is ReasoningPart) reasoningBuf.write(part.content);
+          }
+          final accumulatedText = textBuf.toString();
+          final accumulatedReasoning = reasoningBuf.toString();
+          // Finalize session — publish TextEnded/ReasoningEnded/StepEnded
+          await runnerSession.onCompletion(
+            content: accumulatedText.isNotEmpty ? accumulatedText : sdkText,
+            reasoning: accumulatedReasoning.isNotEmpty
+                ? accumulatedReasoning
+                : null,
+            model: modelId,
+            tokensInput: latestCumulativeTokens,
+            tokensOutput: latestCumulativeTokens,
+          );
+
           LogTags.chatScreen.logInfo(
             'onCompletion: flushing done, proceeding to finalize message',
           );
@@ -327,7 +365,11 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     } catch (e) {
       ref.read(chatScreenProvider.notifier).setStreaming(false);
       ref.read(streamingMessageProvider.notifier).reset();
+      // Mark session step as failed
+      await runnerSession.onError(e);
       await _handleStreamingError(e);
+    } finally {
+      runnerSession.dispose();
     }
   }
 

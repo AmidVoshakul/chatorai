@@ -5,6 +5,9 @@ import 'dart:math';
 
 import 'package:chatorai/core/constants/chat_constants.dart';
 import 'package:chatorai/core/context/compaction_service.dart';
+import 'package:chatorai/core/session/database.dart' hide Message;
+import 'package:chatorai/core/session/session_repository.dart';
+import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/features/agents/data/models/agent_registry.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat_model.dart';
@@ -67,6 +70,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     with TickerProviderStateMixin {
   late ChatStorageService _chatStorageService;
   late ScrollController _messageScrollController;
+  late Future<SessionRepository> _sessionRepositoryFuture;
+  SessionRunnerSession? _sessionRunner;
 
   final GlobalKey<ChatMessagesState> _chatMessagesKey =
       GlobalKey<ChatMessagesState>();
@@ -115,6 +120,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void initState() {
     super.initState();
     _chatStorageService = ref.read(chatStorageServiceProvider);
+    _sessionRepositoryFuture = createFileDatabase()
+        .then((db) => SessionRepository(db));
     _messageScrollController =
         widget.testScrollController ?? ScrollController();
     _messageScrollController.addListener(_handleScroll);
@@ -131,6 +138,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _messageScrollController.removeListener(_handleHeadingSync);
     _messageScrollController.dispose();
     _chatInputFocusNode.dispose();
+    _sessionRunner?.dispose();
     super.dispose();
   }
 

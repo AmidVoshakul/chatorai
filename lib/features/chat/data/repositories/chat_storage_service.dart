@@ -11,6 +11,11 @@ final _logger = LogTags.storage;
 // CHAT STORAGE SERVICE
 // ===========================================================================
 
+/// Legacy chat storage backed by SharedPreferences.
+///
+/// Prefer [SessionRepository] for new code. This service is retained for
+/// backward compatibility during the migration to event-sourced sessions.
+@Deprecated('Use SessionRepository instead')
 class ChatStorageService {
   static const String _chatsKey = 'chats_storage';
   static const int _defaultPageSize = 50;
