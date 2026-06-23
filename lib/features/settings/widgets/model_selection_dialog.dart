@@ -1,5 +1,5 @@
-import 'package:chatorai/core/llm/catalog/models/model_config.dart';
-import 'package:chatorai/core/llm/catalog/provider_catalog_service.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
+import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 

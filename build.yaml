@@ -1,0 +1,7 @@
+targets:
+  $default:
+    builders:
+      freezed:
+        generate_for:
+          include:
+            - lib/core/session/session_state.dart

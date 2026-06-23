@@ -1,4 +1,4 @@
-import 'package:chatorai/core/llm/catalog/catalog_providers.dart';
+import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chatorai_divider.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_actions.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_dialogs.dart';

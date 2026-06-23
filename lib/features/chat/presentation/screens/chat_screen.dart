@@ -3,19 +3,17 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/constants/chat_constants.dart';
 import 'package:chatorai/core/context/compaction_service.dart';
 import 'package:chatorai/core/session/database.dart' hide Message;
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
-import 'package:chatorai/features/agents/data/models/agent_registry.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat_model.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/models/model_settings.dart';
 import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
-import 'package:chatorai/features/chat/domain/services/continuation_suggestion_service.dart';
-import 'package:chatorai/features/chat/domain/services/speech_to_text_service.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_app_bar.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages.dart';
@@ -23,6 +21,8 @@ import 'package:chatorai/features/chat/presentation/widgets/markdown_navigator_s
 import 'package:chatorai/features/chat/presentation/widgets/sidebar_wrapper.dart';
 import 'package:chatorai/features/chat/presentation/widgets/speech_overlay.dart';
 import 'package:chatorai/features/chat/presentation/widgets/welcome_questions_data.dart';
+import 'package:chatorai/features/chat/services/continuation_suggestion_service.dart';
+import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart'
     show
@@ -39,7 +39,6 @@ import 'package:chatorai/providers.dart'
         toolRegistryProvider,
         currentAgentProvider;
 import 'package:chatorai/shared/utils/chat_error_utils.dart';
-
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:chatorai/shared/utils/message_utils.dart';
@@ -120,8 +119,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void initState() {
     super.initState();
     _chatStorageService = ref.read(chatStorageServiceProvider);
-    _sessionRepositoryFuture = createFileDatabase()
-        .then((db) => SessionRepository(db));
+    _sessionRepositoryFuture = createFileDatabase().then(
+      (db) => SessionRepository(db),
+    );
     _messageScrollController =
         widget.testScrollController ?? ScrollController();
     _messageScrollController.addListener(_handleScroll);

@@ -96,9 +96,8 @@ class _TestSessionWidgetState extends ConsumerState<TestSessionWidget> {
           loading: () => const Center(
             child: Text('Loading...', key: ValueKey('ready_status')),
           ),
-          error: (error, stack) => Center(
-            child: Text('Error: $error', key: ValueKey('error_text')),
-          ),
+          error: (error, stack) =>
+              Center(child: Text('Error: $error', key: ValueKey('error_text'))),
         ),
       ),
     );
@@ -124,12 +123,8 @@ void main() {
       (tester) async {
         final container = ProviderContainer(
           overrides: [
-            sessionDatabaseProvider.overrideWith(
-              (ref) async => testDb,
-            ),
-            sessionRepositoryProvider.overrideWith(
-              (ref) async => repository,
-            ),
+            sessionDatabaseProvider.overrideWith((ref) async => testDb),
+            sessionRepositoryProvider.overrideWith((ref) async => repository),
           ],
         );
 
@@ -179,12 +174,8 @@ void main() {
       (tester) async {
         final container = ProviderContainer(
           overrides: [
-            sessionDatabaseProvider.overrideWith(
-              (ref) async => testDb,
-            ),
-            sessionRepositoryProvider.overrideWith(
-              (ref) async => repository,
-            ),
+            sessionDatabaseProvider.overrideWith((ref) async => testDb),
+            sessionRepositoryProvider.overrideWith((ref) async => repository),
           ],
         );
 
@@ -217,37 +208,34 @@ void main() {
       },
     );
 
-    testWidgets(
-      'assistant placeholder creates TextStarted event via onChunk',
-      (tester) async {
-        // Create a session runner directly to simulate assistant streaming
-        final sessionRunner = SessionRunner(repository);
-        final runnerSession = sessionRunner.startSession(agent: 'general');
-        await runnerSession.initialize();
+    testWidgets('assistant placeholder creates TextStarted event via onChunk', (
+      tester,
+    ) async {
+      // Create a session runner directly to simulate assistant streaming
+      final sessionRunner = SessionRunner(repository);
+      final runnerSession = sessionRunner.startSession(agent: 'general');
+      await runnerSession.initialize();
 
-        // Verify initial events: just SessionCreated
-        var events = await repository.eventStore.getEvents(
-          runnerSession.sessionId,
-        );
-        expect(events.length, 1);
-        expect(events[0], isA<SessionCreated>());
+      // Verify initial events: just SessionCreated
+      var events = await repository.eventStore.getEvents(
+        runnerSession.sessionId,
+      );
+      expect(events.length, 1);
+      expect(events[0], isA<SessionCreated>());
 
-        // Simulate assistant text streaming (triggers TextStarted)
-        runnerSession.onChunk('Hello!');
+      // Simulate assistant text streaming (triggers TextStarted)
+      runnerSession.onChunk('Hello!');
 
-        // Wait for async operations to complete
-        await tester.pump(const Duration(milliseconds: 200));
+      // Wait for async operations to complete
+      await tester.pump(const Duration(milliseconds: 200));
 
-        events = await repository.eventStore.getEvents(
-          runnerSession.sessionId,
-        );
+      events = await repository.eventStore.getEvents(runnerSession.sessionId);
 
-        // SessionCreated + TextStarted (from onChunk)
-        expect(events.length, greaterThanOrEqualTo(2));
-        expect(events.any((e) => e is TextStarted), isTrue);
+      // SessionCreated + TextStarted (from onChunk)
+      expect(events.length, greaterThanOrEqualTo(2));
+      expect(events.any((e) => e is TextStarted), isTrue);
 
-        runnerSession.dispose();
-      },
-    );
+      runnerSession.dispose();
+    });
   });
 }

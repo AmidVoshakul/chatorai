@@ -189,14 +189,13 @@ class SessionRepository {
     String? title,
   }) async {
     // Load parent to inherit settings
-    final parentState = await getSessionMeta(parentId) ??
-        await loadSession(parentId);
+    final parentState =
+        await getSessionMeta(parentId) ?? await loadSession(parentId);
     final effectiveAgent = agent ?? parentState?.agent ?? 'general';
     final effectiveModelRef = modelRef ?? parentState?.modelRef;
-    final effectiveTitle = title ??
-        (parentState != null
-            ? '${parentState.title} → Sub-task'
-            : 'Sub-task');
+    final effectiveTitle =
+        title ??
+        (parentState != null ? '${parentState.title} → Sub-task' : 'Sub-task');
 
     final childId = SessionID.create();
     final now = DateTime.now();

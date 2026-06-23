@@ -1,6 +1,6 @@
-import 'package:chatorai/core/llm/catalog/models/auth_config.dart';
-import 'package:chatorai/core/llm/catalog/models/provider_config.dart';
-import 'package:chatorai/core/llm/catalog/providers/built_in_providers.dart';
+import 'package:chatorai/core/llm/models/auth_config.dart';
+import 'package:chatorai/core/llm/models/provider_config.dart';
+import 'package:chatorai/core/llm/providers/built_in_providers.dart';
 import 'package:chatorai/features/models/widgets/provider_icon.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';

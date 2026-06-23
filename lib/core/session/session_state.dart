@@ -1,28 +1,40 @@
+import 'package:equatable/equatable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
 import 'session_id.dart';
 
-sealed class MessageRole {
-  const MessageRole();
-}
+part 'session_state.g.dart';
 
-class UserRole extends MessageRole {
-  const UserRole();
+enum MessageRole { user, assistant, tool }
+
+/// Converter for [SessionID] — bridges brand type to plain JSON string.
+class SessionIDConverter implements JsonConverter<SessionID, String> {
+  const SessionIDConverter();
+
   @override
-  String toString() => 'user';
-}
+  SessionID fromJson(String value) => SessionID.fromString(value);
 
-class AssistantRole extends MessageRole {
-  const AssistantRole();
   @override
-  String toString() => 'assistant';
+  String toJson(SessionID value) => value.value;
 }
 
-class ToolRole extends MessageRole {
-  const ToolRole();
+/// Converter for nullable [SessionID].
+class SessionIDNullableConverter implements JsonConverter<SessionID?, String?> {
+  const SessionIDNullableConverter();
+
   @override
-  String toString() => 'tool';
+  SessionID? fromJson(String? value) =>
+      value == null ? null : SessionID.fromString(value);
+
+  @override
+  String? toJson(SessionID? value) => value?.value;
 }
 
-class SessionMessage {
+SessionID _sessionIdFromJson(String value) => SessionID.fromString(value);
+String _sessionIdToJson(SessionID value) => value.value;
+
+@JsonSerializable()
+class SessionMessage extends Equatable {
   final String id;
   final MessageRole role;
   final String content;
@@ -42,6 +54,11 @@ class SessionMessage {
     this.error,
     required this.createdAt,
   });
+
+  factory SessionMessage.fromJson(Map<String, dynamic> json) =>
+      _$SessionMessageFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SessionMessageToJson(this);
 
   SessionMessage copyWith({
     String? id,
@@ -66,32 +83,20 @@ class SessionMessage {
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is SessionMessage &&
-          id == other.id &&
-          role.runtimeType == other.role.runtimeType &&
-          content == other.content &&
-          seq == other.seq &&
-          model == other.model &&
-          reasoning == other.reasoning &&
-          error == other.error &&
-          createdAt == other.createdAt);
-
-  @override
-  int get hashCode => Object.hash(
+  List<Object?> get props => [
     id,
-    role.runtimeType,
+    role,
     content,
     seq,
     model,
     reasoning,
     error,
     createdAt,
-  );
+  ];
 }
 
-class ToolResult {
+@JsonSerializable()
+class ToolResult extends Equatable {
   final String id;
   final String toolName;
   final Map<String, dynamic> input;
@@ -109,22 +114,85 @@ class ToolResult {
     required this.status,
     required this.createdAt,
   });
+
+  factory ToolResult.fromJson(Map<String, dynamic> json) =>
+      _$ToolResultFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ToolResultToJson(this);
+
+  ToolResult copyWith({
+    String? id,
+    String? toolName,
+    Map<String, dynamic>? input,
+    String? outputText,
+    int? durationMs,
+    String? status,
+    DateTime? createdAt,
+  }) {
+    return ToolResult(
+      id: id ?? this.id,
+      toolName: toolName ?? this.toolName,
+      input: input ?? this.input,
+      outputText: outputText ?? this.outputText,
+      durationMs: durationMs ?? this.durationMs,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    id,
+    toolName,
+    input,
+    outputText,
+    durationMs,
+    status,
+    createdAt,
+  ];
 }
 
-class SessionState {
+@JsonSerializable()
+class SessionState extends Equatable {
+  @JsonKey(fromJson: _sessionIdFromJson, toJson: _sessionIdToJson)
   final SessionID id;
+
+  @JsonKey(
+    fromJson: _sessionIdNullableFromJson,
+    toJson: _sessionIdNullableToJson,
+  )
   final SessionID? parentId;
+
+  @Default('')
   final String title;
+
+  @Default('general')
   final String agent;
+
   final String? modelRef;
+
+  @Default(0.0)
   final double cost;
+
+  @Default(0)
   final int tokensInput;
+
+  @Default(0)
   final int tokensOutput;
+
+  @Default(0)
   final int tokensReasoning;
+
+  @Default([])
   final List<SessionMessage> messages;
+
+  @Default([])
   final List<ToolResult> toolResults;
+
   final DateTime createdAt;
+
   final DateTime updatedAt;
+
   final DateTime? archivedAt;
 
   const SessionState({
@@ -133,7 +201,7 @@ class SessionState {
     this.title = '',
     this.agent = 'general',
     this.modelRef,
-    this.cost = 0,
+    this.cost = 0.0,
     this.tokensInput = 0,
     this.tokensOutput = 0,
     this.tokensReasoning = 0,
@@ -143,6 +211,11 @@ class SessionState {
     required this.updatedAt,
     this.archivedAt,
   });
+
+  factory SessionState.fromJson(Map<String, dynamic> json) =>
+      _$SessionStateFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SessionStateToJson(this);
 
   SessionState copyWith({
     SessionID? id,
@@ -160,6 +233,7 @@ class SessionState {
     DateTime? updatedAt,
     DateTime? archivedAt,
     bool clearParentId = false,
+    bool clearModelRef = false,
     bool clearArchivedAt = false,
   }) {
     return SessionState(
@@ -167,7 +241,7 @@ class SessionState {
       parentId: clearParentId ? null : (parentId ?? this.parentId),
       title: title ?? this.title,
       agent: agent ?? this.agent,
-      modelRef: modelRef ?? this.modelRef,
+      modelRef: clearModelRef ? null : (modelRef ?? this.modelRef),
       cost: cost ?? this.cost,
       tokensInput: tokensInput ?? this.tokensInput,
       tokensOutput: tokensOutput ?? this.tokensOutput,
@@ -179,4 +253,31 @@ class SessionState {
       archivedAt: clearArchivedAt ? null : (archivedAt ?? this.archivedAt),
     );
   }
+
+  static SessionID? _sessionIdNullableFromJson(String? value) =>
+      value == null ? null : SessionID.fromString(value);
+
+  static String? _sessionIdNullableToJson(SessionID? value) => value?.value;
+
+  /// Raw string form for code that hasn't migrated to `SessionID` yet.
+  String get sessionIdRaw => id.value;
+  String? get parentIdRaw => parentId?.value;
+
+  @override
+  List<Object?> get props => [
+    id,
+    parentId,
+    title,
+    agent,
+    modelRef,
+    cost,
+    tokensInput,
+    tokensOutput,
+    tokensReasoning,
+    messages,
+    toolResults,
+    createdAt,
+    updatedAt,
+    archivedAt,
+  ];
 }

@@ -15,7 +15,7 @@ void main() {
     setUp(() {
       db = AppDatabase.inMemory();
       repository = SessionRepository(db);
-      runner = SessionRunner(repository);
+      runner = SessionRunner(repository, null);
     });
 
     tearDown(() async {
@@ -57,27 +57,24 @@ void main() {
       },
     );
 
-    test(
-      'full flow: startSession → initialize → publishUserMessage → '
-      'replayEvents produces SessionState with one user message',
-      () async {
-        final session = runner.startSession(agent: 'general');
-        await session.initialize();
+    test('full flow: startSession → initialize → publishUserMessage → '
+        'replayEvents produces SessionState with one user message', () async {
+      final session = runner.startSession(agent: 'general');
+      await session.initialize();
 
-        const userContent = 'What is Dart?';
-        await session.publishUserMessage(content: userContent);
+      const userContent = 'What is Dart?';
+      await session.publishUserMessage(content: userContent);
 
-        // Replay all events to get the final state
-        final events = await repository.eventStore.getEvents(session.sessionId);
-        final state = replayEvents(events);
+      // Replay all events to get the final state
+      final events = await repository.eventStore.getEvents(session.sessionId);
+      final state = replayEvents(events);
 
-        // SessionCreated + MessageAdded → state should have 1 message
-        expect(state.messages.length, 1);
-        expect(state.messages.first.content, userContent);
-        expect(state.messages.first.role, const UserRole());
-        expect(state.messages.first.seq, 1);
-      },
-    );
+      // SessionCreated + MessageAdded → state should have 1 message
+      expect(state.messages.length, 1);
+      expect(state.messages.first.content, userContent);
+      expect(state.messages.first.role, const UserRole());
+      expect(state.messages.first.seq, 1);
+    });
 
     test(
       'publishUserMessage generates unique messageId if not provided',

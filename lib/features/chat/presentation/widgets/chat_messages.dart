@@ -1,19 +1,19 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
-import 'package:chatorai/providers.dart' show streamingMessageProvider;
-import 'package:chatorai/features/agents/data/models/agent_provider.dart';
+import 'package:chatorai/core/agents/agent_provider.dart';
+import 'package:chatorai/core/constants/chat_messages_constants.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/chat_message_bubble.dart';
-import 'package:chatorai/shared/utils/logger.dart';
-import 'package:chatorai/core/constants/chat_messages_constants.dart';
-import 'package:chatorai/shared/utils/markdown_parser.dart';
+import 'package:chatorai/features/chat/data/models/chat_models.dart';
+import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart'
     show MessageData;
-import 'package:chatorai/features/chat/presentation/widgets/chat_messages_waiting_animation.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages_suggestions.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_messages_waiting_animation.dart';
+import 'package:chatorai/features/chat/presentation/widgets/parts/chat_message_bubble.dart';
+import 'package:chatorai/providers.dart' show streamingMessageProvider;
+import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/shared/utils/markdown_parser.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final _logger = LogTags.chatService;
 

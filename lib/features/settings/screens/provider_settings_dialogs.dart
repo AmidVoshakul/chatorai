@@ -1,5 +1,5 @@
-import 'package:chatorai/core/llm/catalog/catalog_providers.dart';
-import 'package:chatorai/core/llm/catalog/models/auth_config.dart';
+import 'package:chatorai/core/llm/catalog_providers.dart';
+import 'package:chatorai/core/llm/models/auth_config.dart';
 import 'package:chatorai/features/models/providers/model_provider.dart'
     show modelProvider;
 import 'package:chatorai/features/settings/screens/provider_settings_actions.dart';

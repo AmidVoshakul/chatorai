@@ -81,11 +81,12 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     String text, {
     String? delegateAgentId,
   }) async {
-    // Ensure session repository is ready
+    // Ensure session repository and tool registry are ready
     final repo = await _sessionRepositoryFuture;
-    
+    final toolRegistry = await ref.read(toolRegistryProvider.future);
+
     // Create and initialize session runner BEFORE publishing user message
-    final sessionRunner = SessionRunner(repo);
+    final sessionRunner = SessionRunner(repo, toolRegistry);
     final runnerSession = sessionRunner.startSession(
       agent: ref.read(currentAgentProvider).name,
       modelRef: selectedModelId,
@@ -117,14 +118,14 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
 
     final chatFromStorage = await _chatStorageService.getChat(chat.id);
     if (chatFromStorage == null) return;
-    
+
     final assistantMessage = _createAssistantMessage();
     await _chatStorageService.addMessageToChat(
       chatFromStorage.id,
       assistantMessage,
     );
     ref.read(chatListProvider.notifier).updateChat(chatFromStorage);
-    
+
     LogTags.chatService.logInfo(
       'ChatScreen._handleAddMessagesAndStream: after storage update, scheduling scroll',
     );
@@ -135,7 +136,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       );
       _scrollToBottom(force: true);
     });
-    
+
     try {
       await _sendToAI(
         text,

@@ -1,12 +1,13 @@
 import 'dart:io' show Platform;
+
+import 'package:chatorai/core/agents/agent_registry.dart';
+import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/providers.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
-import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/features/chat/domain/services/speech_to_text_service.dart';
-import 'package:chatorai/features/agents/data/models/agent_registry.dart';
-import 'package:chatorai/providers.dart';
 
 class InputWidgetBuilders {
   static int computeMaxLines(BuildContext context) {

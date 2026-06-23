@@ -1,6 +1,6 @@
 import 'dart:async';
-
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'evaluator.dart';
 import 'rule.dart';
 import 'ruleset.dart';
@@ -30,8 +30,22 @@ class PermissionService {
   final _controller = StreamController<PermissionRequest>.broadcast();
   bool _rulesSeeded = false;
 
+  // Rate-limit tracking for repeated permission requests
+  final _askHistory = <String, List<DateTime>>{};
+  static const _askLimitWindow = Duration(minutes: 5);
+  static const _askLimitMax = 10;
+
+  static const _prefsKey = 'permission_approved_rules';
+
+  SharedPreferences? _prefs;
+
   Stream<PermissionRequest> get onAsked => _controller.stream;
   List<PermissionRule> get approvedRules => List.unmodifiable(_approved);
+
+  void attachPreferences(SharedPreferences prefs) {
+    _prefs = prefs;
+    _loadApprovedRules();
+  }
 
   /// Seed the default rules from configuration.
   /// This is called once at startup to load the permission rules from chatorai.json.
@@ -46,21 +60,32 @@ class PermissionService {
   }
 
   bool isAllowed(String permission, String pattern) {
-    final rule = evaluate(permission, pattern, [
+    final normalized = _validatePattern(pattern);
+    final rule = evaluate(permission, normalized, [
       PermissionRuleset(rules: _defaultRules),
       PermissionRuleset(sessionApproved: _approved),
     ]);
     return rule.action == PermissionAction.allow;
   }
 
+  String _validatePattern(String pattern) {
+    final trimmed = pattern.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Permission pattern must not be empty');
+    }
+    return trimmed;
+  }
+
   Future<void> ask(PermissionRequest req, PermissionRuleset ruleset) async {
     LogTags.permission.logInfo(
       'PermissionService.ask: START for tool=${req.toolName}, permission=${req.permission}, patterns=${req.patterns}',
     );
+
     var needsAsk = false;
 
     for (final pattern in req.patterns) {
-      final rule = evaluate(req.permission, pattern, [
+      final normalized = _validatePattern(pattern);
+      final rule = evaluate(req.permission, normalized, [
         ruleset,
         PermissionRuleset(sessionApproved: _approved),
       ]);
@@ -86,6 +111,16 @@ class PermissionService {
       );
       return;
     }
+
+    final rateKey = '${req.toolName}:${req.permission}';
+
+    if (_isRateLimited(rateKey)) {
+      LogTags.permission.logWarning(
+        'PermissionService.ask: RATE-LIMITED for $rateKey, denying',
+      );
+      throw PermissionDeniedError(req.toolName, req.permission);
+    }
+    _recordAsk(rateKey);
 
     if (!_rulesSeeded && ruleset.rules.isNotEmpty) {
       _rulesSeeded = true;
@@ -117,6 +152,19 @@ class PermissionService {
     }
   }
 
+  bool _isRateLimited(String key) {
+    final now = DateTime.now();
+    final history = _askHistory[key] ??= [];
+    // Prune old entries
+    history.removeWhere((t) => now.difference(t) > _askLimitWindow);
+    return history.length >= _askLimitMax;
+  }
+
+  void _recordAsk(String key) {
+    final now = DateTime.now();
+    _askHistory.putIfAbsent(key, () => []).add(now);
+  }
+
   void reply(String requestId, PermissionReply reply, {String? message}) {
     final entry = _pending[requestId];
     if (entry == null) return;
@@ -143,7 +191,7 @@ class PermissionService {
         for (final pattern
             in entry.request.always.isNotEmpty
                 ? entry.request.always
-                : entry.patterns) {
+                : entry.request.patterns) {
           newRules.add(
             PermissionRule(
               permission: entry.request.permission,
@@ -154,6 +202,7 @@ class PermissionService {
         }
         _approved.addAll(newRules);
         _resolveSiblings(entry, newRules);
+        unawaited(_persistApprovedRules());
       }
       entry.completer.complete();
       _pending.remove(requestId);
@@ -193,6 +242,35 @@ class PermissionService {
     }
   }
 
+  void _loadApprovedRules() {
+    if (_prefs == null) return;
+    final raw = _prefs!.getStringList(_prefsKey);
+    if (raw == null) return;
+    try {
+      for (final entry in raw) {
+        final parts = entry.split('|');
+        if (parts.length != 3) continue;
+        _approved.add(
+          PermissionRule(
+            permission: parts[0],
+            pattern: parts[1],
+            action: PermissionAction.values.byName(parts[2]),
+          ),
+        );
+      }
+    } catch (_) {
+      // ignore corrupt prefs
+    }
+  }
+
+  Future<void> _persistApprovedRules() async {
+    if (_prefs == null) return;
+    final serialized = _approved
+        .map((r) => '${r.permission}|${r.pattern}|${r.action.name}')
+        .toList();
+    await _prefs!.setStringList(_prefsKey, serialized);
+  }
+
   void cancelAllPendingRequests() {
     for (final entry in _pending.values) {
       entry.completer.completeError(
@@ -200,6 +278,12 @@ class PermissionService {
       );
     }
     _pending.clear();
+    _askHistory.clear();
+  }
+
+  /// Clear rate-limit history (call on session end).
+  void clearRateLimitHistory() {
+    _askHistory.clear();
   }
 }
 

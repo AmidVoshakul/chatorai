@@ -57,9 +57,9 @@ void main() {
       await db.customSelect('SELECT 1').get();
 
       // Verify schema tables exist
-      final tables = await db.customSelect(
-        "SELECT name FROM sqlite_master WHERE type='table'",
-      ).get();
+      final tables = await db
+          .customSelect("SELECT name FROM sqlite_master WHERE type='table'")
+          .get();
       final tableNames = tables.map((r) => r.data['name'] as String).toSet();
 
       expect(tableNames.contains('sessions'), isTrue);

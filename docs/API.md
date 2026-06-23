@@ -126,6 +126,8 @@ Registry for all built-in and custom tools. Converts internal `ToolDef` to `ai_s
 
 Automatically summarizes old messages when token budget is exceeded. Splits messages into head (old) + tail (recent), summarizes head via LLM, and prunes tool outputs older than 2 turns. Already implemented in `lib/core/context/compaction_service.dart`.
 
+Wired into the session pipeline via `CompactionOrchestrator` (`lib/core/context/compaction_orchestrator.dart`), which loads the session state, invokes `CompactionService.compact()`, and persists `CompactionStarted` / `CompactionEnded` events through `SessionRepository`.
+
 ### SkillService
 
 Manages dynamic skill discovery and loading. Skills provide specialized instructions and workflows. Used by the `skill` tool and agent system.
@@ -258,6 +260,8 @@ CHATORAI_DEBUG=true
 - `OverflowDetector`: `isOverflow(totalTokens)`, `forModel(contextLength)`.
 - `HeadingAnchorRegistry`: registers `GlobalKey` for markdown heading anchors.
 - `CompactionService`: `compact(messages, aiService, model)` — summarizes old context when token budget exceeded.
+- `CompactionOrchestrator`: `compactSession(sessionId)` — loads session state, runs compaction via `CompletionProvider`, and persists `CompactionStarted` / `CompactionEnded` events.
+- `CompletionProvider`: Interface implemented by `ChatAiService` to provide non-streaming completions for compaction and similar operations.
 
 ---
 

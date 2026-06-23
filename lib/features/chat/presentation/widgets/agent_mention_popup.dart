@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:chatorai/features/agents/data/models/agent_registry.dart';
+import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
 class AgentMentionPopup extends StatelessWidget {
   final List<AgentDefinition> agents;

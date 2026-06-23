@@ -1,7 +1,8 @@
+import 'package:chatorai/core/agents/agent_registry.dart';
+import 'package:chatorai/features/chat/presentation/widgets/agent_mention_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/features/agents/data/models/agent_registry.dart';
-import 'package:chatorai/features/chat/presentation/widgets/agent_mention_popup.dart';
+
 import 'popup_controller.dart';
 
 mixin AgentMentionHandler<T extends ConsumerStatefulWidget>

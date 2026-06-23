@@ -1,22 +1,22 @@
 // Config and Permission
+// Agents
+import 'package:chatorai/core/agents/agent_provider.dart'
+    show currentAgentProvider;
 import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/permission/permission_provider.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-// Agents
-import 'package:chatorai/features/agents/data/models/agent_provider.dart'
-    show currentAgentProvider;
+// Skills
+import 'package:chatorai/core/skills/models/skill_info.dart';
+import 'package:chatorai/core/skills/providers/skill_providers.dart'
+    show skillServiceProvider;
+import 'package:chatorai/core/skills/skill_service.dart';
 // Chat models and providers
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/providers/chat_providers.dart';
 // Models (for selectedModelId)
 import 'package:chatorai/features/models/providers/model_provider.dart'
     show modelProvider;
-// Skills
-import 'package:chatorai/features/skills/data/models/skill_info.dart';
-import 'package:chatorai/features/skills/domain/services/skill_service.dart';
-import 'package:chatorai/features/skills/presentation/providers/skill_providers.dart'
-    show skillServiceProvider;
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';

@@ -1,4 +1,4 @@
-import 'package:chatorai/core/llm/catalog/models/model_config.dart' as catalog;
+import 'package:chatorai/core/llm/models/model_config.dart' as catalog;
 
 /// Legacy capabilities model.
 ///

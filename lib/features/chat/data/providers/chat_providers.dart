@@ -1,9 +1,9 @@
-import 'package:chatorai/core/llm/catalog/catalog_providers.dart';
-import 'package:chatorai/core/llm/catalog/model_resolver.dart';
+import 'package:chatorai/core/llm/catalog_providers.dart';
+import 'package:chatorai/core/llm/model_resolver.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/providers/chat_repository.dart';
 import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
-import 'package:chatorai/features/chat/domain/services/chat_ai_service.dart';
+import 'package:chatorai/features/chat/services/chat_ai_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

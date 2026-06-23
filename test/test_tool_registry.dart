@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
-import 'package:chatorai/features/tools/data/models/tool.dart';
-import 'package:chatorai/features/tools/data/models/tool_registry.dart';
+import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/permission/rule.dart';

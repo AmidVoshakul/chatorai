@@ -1,8 +1,8 @@
 // ignore_for_file: unused_import
-import 'package:chatorai/core/llm/catalog/catalog_providers.dart';
-import 'package:chatorai/core/llm/catalog/models/auth_config.dart';
-import 'package:chatorai/core/llm/catalog/models/model_config.dart';
-import 'package:chatorai/core/llm/catalog/provider_catalog_service.dart';
+import 'package:chatorai/core/llm/catalog_providers.dart';
+import 'package:chatorai/core/llm/models/auth_config.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
+import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/features/chat/data/models/chat_model.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

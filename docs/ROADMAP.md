@@ -1,6 +1,6 @@
 # Roadmap
 
-**Last updated:** 2026-06-12
+**Last updated:** 2026-06-23
 
 This roadmap outlines completed milestones, current sprint goals, and planned future features for ChatORAI.
 
@@ -42,6 +42,7 @@ This roadmap outlines completed milestones, current sprint goals, and planned fu
 
 - Automatic context summarization when token budget approaches limit.
 - Located in `lib/core/context/compaction_service.dart`.
+- `CompactionOrchestrator` (`lib/core/context/compaction_orchestrator.dart`) wires `CompactionService` into the session event pipeline using a real `CompletionProvider` (no stub).
 - Splits messages into head (old) + tail (recent), summarizes head via LLM, prunes old tool outputs.
 - Already integrated into the streaming pipeline.
 

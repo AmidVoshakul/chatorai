@@ -62,7 +62,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
         ...state.messages,
         SessionMessage(
           id: messageId,
-          role: const AssistantRole(),
+          role: MessageRole.assistant,
           content: '',
           seq: state.messages.length + 1,
           createdAt: event.timestamp,
@@ -111,7 +111,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
           ...state.messages,
           SessionMessage(
             id: toolCallId,
-            role: const ToolRole(),
+            role: MessageRole.tool,
             content: jsonEncode(input),
             seq: state.messages.length + 1,
             createdAt: event.timestamp,
@@ -194,7 +194,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
         ...state.messages,
         SessionMessage(
           id: taskId,
-          role: const AssistantRole(),
+          role: MessageRole.assistant,
           content: output,
           seq: state.messages.length + 1,
           createdAt: event.timestamp,
@@ -369,10 +369,11 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
       );
 
     case ChildSessionCreated(
-      :final childSessionId,
-      :final title,
-      :final agent,
-      :final modelRef,
+      childSessionId: _,
+      parentSessionId: _,
+      title: _,
+      agent: _,
+      modelRef: _,
     ):
       // Do not insert a new session row here — the child session is already
       // created via a preceding SessionCreated event. Instead update the
@@ -405,9 +406,9 @@ SessionState replayEvents(Iterable<SessionEvent> events) {
 
 MessageRole _roleFromString(String role) {
   return switch (role) {
-    'user' => const UserRole(),
-    'assistant' => const AssistantRole(),
-    'tool' => const ToolRole(),
+    'user' => MessageRole.user,
+    'assistant' => MessageRole.assistant,
+    'tool' => MessageRole.tool,
     _ => throw ArgumentError('Unknown role: $role'),
   };
 }

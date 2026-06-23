@@ -50,6 +50,30 @@ class RateLimitError extends ClassifiedError {
       '${retryAfter != null ? ' — retry after ${retryAfter!.inSeconds}s' : ''}';
 }
 
+/// Context overflow error — the request exceeded the model's token limit.
+///
+/// Not retryable. Should trigger compaction instead of a new LLM call.
+class OverflowError extends ClassifiedError {
+  @override
+  final int? statusCode;
+
+  final String? detail;
+
+  const OverflowError({this.statusCode, this.detail});
+
+  @override
+  Duration? get retryAfter => null;
+
+  @override
+  bool get isRetryable => false;
+
+  @override
+  String get message =>
+      'Context overflow'
+      '${statusCode != null ? ' ($statusCode)' : ''}'
+      '${detail != null ? ': $detail' : ''}';
+}
+
 /// Authentication / authorization error (HTTP 401, 403).
 class AuthenticationError extends ClassifiedError {
   @override
@@ -173,6 +197,14 @@ class ErrorClassifier {
         return AuthenticationError(statusCode: statusCode);
       }
 
+      // Detect context overflow from error response body (400-level)
+      if (statusCode == 400 && _isOverflowError(e)) {
+        return OverflowError(
+          statusCode: statusCode,
+          detail: _extractOverflowDetail(e),
+        );
+      }
+
       if (statusCode != null && statusCode >= 400) {
         return ServerError(statusCode: statusCode);
       }
@@ -186,7 +218,27 @@ class ErrorClassifier {
       return NetworkError(detail: e.type.name);
     }
 
+    // String-based overflow check as fallback
+    if (e.message != null && _isOverflowString(e.message!)) {
+      return OverflowError(detail: e.message);
+    }
+
     return UnknownError(original: e);
+  }
+
+  bool _isOverflowError(DioException e) {
+    final message = e.message?.toLowerCase() ?? '';
+    final responseStr = e.response?.statusMessage?.toLowerCase() ?? '';
+    return _isOverflowString('$message $responseStr');
+  }
+
+  String? _extractOverflowDetail(DioException e) {
+    final body = e.response?.data;
+    if (body is Map) {
+      final errorMsg = body['error']?['message'] ?? body['message'];
+      if (errorMsg is String) return errorMsg;
+    }
+    return e.response?.statusMessage;
   }
 
   ClassifiedError _classifyByString(String errStr) {
@@ -242,6 +294,11 @@ class ErrorClassifier {
       return NetworkError(detail: errStr);
     }
 
+    // Context overflow patterns (before UnknownError fallback)
+    if (_isOverflowString(errStr)) {
+      return OverflowError(detail: errStr);
+    }
+
     return UnknownError(original: errStr);
   }
 
@@ -271,5 +328,30 @@ class ErrorClassifier {
       return int.tryParse(match.group(1)!);
     }
     return null;
+  }
+
+  static const _overflowPatterns = <String>[
+    'context_length_exceeded',
+    'maximum context length',
+    'too many tokens',
+    'context window',
+    'token limit',
+    'reduce the length',
+    'prompt is too long',
+    'context length',
+    'context overflow',
+    'token count exceeded',
+    'maximum tokens',
+    'input too long',
+    'prompt length',
+    'exceeds token limit',
+    'too many tokens in prompt',
+    'reduce prompt length',
+    'message too long',
+  ];
+
+  bool _isOverflowString(String s) {
+    final lower = s.toLowerCase();
+    return _overflowPatterns.any(lower.contains);
   }
 }

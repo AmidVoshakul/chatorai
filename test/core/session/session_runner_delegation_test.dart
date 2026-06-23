@@ -15,59 +15,62 @@ void main() {
     setUp(() async {
       db = AppDatabase.inMemory();
       repo = SessionRepository(db);
-      runner = SessionRunner(repo);
+      runner = SessionRunner(repo, null);
     });
 
     tearDown(() async {
       await db.close();
     });
 
-    test('runTaskInChild creates child session and publishes ChildSessionCreated on parent', () async {
-      // Create a parent session
-      final parentState = await repo.createSession(
-        title: 'Parent',
-        agent: 'general',
-      );
-
-      // Run a child task
-      Future<void> simulateChild(SessionRunnerSession child) async {
-        child.onChunk('Hello');
-        await child.onCompletion(
-          content: 'Hello',
-          reasoning: '',
-          model: 'test',
+    test(
+      'runTaskInChild creates child session and publishes ChildSessionCreated on parent',
+      () async {
+        // Create a parent session
+        final parentState = await repo.createSession(
+          title: 'Parent',
+          agent: 'general',
         );
-      }
 
-      final output = await runner.runTaskInChild(
-        parentSessionId: parentState.id,
-        taskPrompt: 'Say hello',
-        streamFn: simulateChild,
-        title: 'Child task',
-      );
+        // Run a child task
+        Future<void> simulateChild(SessionRunnerSession child) async {
+          child.onChunk('Hello');
+          await child.onCompletion(
+            content: 'Hello',
+            reasoning: '',
+            model: 'test',
+          );
+        }
 
-      // Output should be the child's streaming result
-      expect(output, 'Hello');
+        final output = await runner.runTaskInChild(
+          parentSessionId: parentState.id,
+          taskPrompt: 'Say hello',
+          streamFn: simulateChild,
+          title: 'Child task',
+        );
 
-      // Verify child created event exists on parent
-      final parentEvents = await repo.eventStore.getEvents(parentState.id);
-      final childCreated = parentEvents.whereType<ChildSessionCreated>().first;
-      expect(childCreated.parentSessionId, parentState.id);
-      expect(childCreated.title, 'Child task');
+        // Output should be the child's streaming result
+        expect(output, 'Hello');
 
-      // Child session should exist
-      final childState = await repo.loadSession(childCreated.childSessionId);
-      expect(childState, isNot(null));
-      expect(childState!.parentId, parentState.id);
+        // Verify child created event exists on parent
+        final parentEvents = await repo.eventStore.getEvents(parentState.id);
+        final childCreated = parentEvents
+            .whereType<ChildSessionCreated>()
+            .first;
+        expect(childCreated.parentSessionId, parentState.id);
+        expect(childCreated.title, 'Child task');
 
-      // Child runner should have been removed
-      expect(runner.childRunners, isEmpty);
-    });
+        // Child session should exist
+        final childState = await repo.loadSession(childCreated.childSessionId);
+        expect(childState, isNot(null));
+        expect(childState!.parentId, parentState.id);
+
+        // Child runner should have been removed
+        expect(runner.childRunners, isEmpty);
+      },
+    );
 
     test('child session receives user message and streaming events', () async {
-      final parentState = await repo.createSession(
-        agent: 'general',
-      );
+      final parentState = await repo.createSession(agent: 'general');
 
       List<String> capturedChunks = [];
       List<SessionEvent> childEvents = [];
@@ -101,7 +104,9 @@ void main() {
       final events = await repo.eventStore.getEvents(childId);
       // Should contain:
       // SessionCreated (handled by initialize), MessageAdded (user message), TextStarted, TextDelta (two deltas), TextEnded, StepEnded
-      final messageAdded = events.whereType<MessageAdded>().singleWhere((e) => e.role == 'user');
+      final messageAdded = events.whereType<MessageAdded>().singleWhere(
+        (e) => e.role == 'user',
+      );
       expect(messageAdded.content, 'Task msg');
 
       final textStarted = events.whereType<TextStarted>().single;
@@ -118,9 +123,7 @@ void main() {
     });
 
     test('TaskStarted and TaskCompleted events published on parent', () async {
-      final parentState = await repo.createSession(
-        agent: 'general',
-      );
+      final parentState = await repo.createSession(agent: 'general');
 
       Future<void> simulateChild(SessionRunnerSession child) async {
         child.onChunk('Result');
@@ -143,9 +146,7 @@ void main() {
     });
 
     test('child runner disposed after completion', () async {
-      final parentState = await repo.createSession(
-        agent: 'general',
-      );
+      final parentState = await repo.createSession(agent: 'general');
 
       Future<void> simulateChild(SessionRunnerSession child) async {
         child.onChunk('X');
@@ -163,35 +164,38 @@ void main() {
       // The underlying runner is disposed; no way to assert directly but we trust dispose called
     });
 
-    test('runTaskInChild propagates parent session tokens via StepEnded in child', () async {
-      final parentState = await repo.createSession(
-        agent: 'general',
-      );
+    test(
+      'runTaskInChild propagates parent session tokens via StepEnded in child',
+      () async {
+        final parentState = await repo.createSession(agent: 'general');
 
-      Future<void> simulateChild(SessionRunnerSession child) async {
-        child.onChunk('out');
-        await child.onCompletion(
-          content: 'out',
-          tokensInput: 10,
-          tokensOutput: 5,
-          tokensReasoning: 2,
+        Future<void> simulateChild(SessionRunnerSession child) async {
+          child.onChunk('out');
+          await child.onCompletion(
+            content: 'out',
+            tokensInput: 10,
+            tokensOutput: 5,
+            tokensReasoning: 2,
+          );
+        }
+
+        await runner.runTaskInChild(
+          parentSessionId: parentState.id,
+          taskPrompt: 't',
+          streamFn: simulateChild,
         );
-      }
 
-      await runner.runTaskInChild(
-        parentSessionId: parentState.id,
-        taskPrompt: 't',
-        streamFn: simulateChild,
-      );
-
-      final childCreated = (await repo.eventStore.getEvents(parentState.id))
-          .whereType<ChildSessionCreated>()
-          .single;
-      final childEvents = await repo.eventStore.getEvents(childCreated.childSessionId);
-      final stepEnded = childEvents.whereType<StepEnded>().single;
-      expect(stepEnded.tokensInput, 10);
-      expect(stepEnded.tokensOutput, 5);
-      expect(stepEnded.tokensReasoning, 2);
-    });
+        final childCreated = (await repo.eventStore.getEvents(
+          parentState.id,
+        )).whereType<ChildSessionCreated>().single;
+        final childEvents = await repo.eventStore.getEvents(
+          childCreated.childSessionId,
+        );
+        final stepEnded = childEvents.whereType<StepEnded>().single;
+        expect(stepEnded.tokensInput, 10);
+        expect(stepEnded.tokensOutput, 5);
+        expect(stepEnded.tokensReasoning, 2);
+      },
+    );
   });
 }

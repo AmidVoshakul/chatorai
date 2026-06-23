@@ -15,7 +15,7 @@ void main() {
     setUp(() {
       db = AppDatabase.inMemory();
       repository = SessionRepository(db);
-      runner = SessionRunner(repository);
+      runner = SessionRunner(repository, null);
     });
 
     tearDown(() async {

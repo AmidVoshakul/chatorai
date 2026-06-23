@@ -1,9 +1,9 @@
+import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/providers.dart';
+import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/features/chat/domain/services/speech_to_text_service.dart';
-import 'package:chatorai/shared/utils/snackbar_utils.dart';
-import 'package:chatorai/providers.dart';
 
 mixin SpeechInputHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   SpeechToTextService? speechService;

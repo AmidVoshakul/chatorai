@@ -1,4 +1,4 @@
-import 'package:chatorai/features/chat/domain/services/network_service.dart';
+import 'package:chatorai/features/chat/services/network_service.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

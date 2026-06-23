@@ -22,7 +22,6 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
 
   late final AnimationController _shimmerController;
   late final Animation<double> _shimmerAnimation;
-  late final AnimationController _dotsController;
 
   @override
   void initState() {
@@ -34,14 +33,9 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     _shimmerAnimation = Tween<double>(begin: -1, end: 1).animate(
       CurvedAnimation(parent: _shimmerController, curve: Curves.linear),
     );
-    _dotsController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    );
 
     if (widget.part.isStreaming) {
       _shimmerController.repeat();
-      _dotsController.repeat();
     }
   }
 
@@ -50,19 +44,15 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     super.didUpdateWidget(oldWidget);
     if (widget.part.isStreaming) {
       if (!_shimmerController.isAnimating) _shimmerController.repeat();
-      if (!_dotsController.isAnimating) _dotsController.repeat();
     } else {
       _shimmerController.stop();
       _shimmerController.value = 0;
-      _dotsController.stop();
-      _dotsController.value = 0;
     }
   }
 
   @override
   void dispose() {
     _shimmerController.dispose();
-    _dotsController.dispose();
     super.dispose();
   }
 
@@ -75,10 +65,9 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
       alignment: Alignment.centerLeft,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(ChatoraiSpacing.md),
+        padding: const EdgeInsets.all(ChatoraiSpacing.sm),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
         ),
         child: Opacity(
           // Уменьшаем заметность всего reasoning (и мыслей, и инструментов)
@@ -147,7 +136,7 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     final headerText = localizations?.reasoning ?? 'Reasoning';
 
     return AnimatedBuilder(
-      animation: Listenable.merge([_shimmerAnimation, _dotsController]),
+      animation: Listenable.merge([_shimmerAnimation]),
       builder: (context, child) {
         final isStreaming = widget.part.isStreaming;
 
@@ -156,16 +145,6 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
           behavior: HitTestBehavior.opaque,
           child: Row(
             children: [
-              AnimatedRotation(
-                turns: _isExpanded ? 0.5 : 0,
-                duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  Icons.keyboard_arrow_down,
-                  size: ChatoraiIconSizes.md,
-                  color: textColor,
-                ),
-              ),
-              const SizedBox(width: ChatoraiSpacing.xs),
               if (isStreaming)
                 ShaderMask(
                   shaderCallback: (bounds) {
@@ -201,25 +180,6 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
                     color: textColor,
                   ),
                 ),
-              // Dots (without shimmer)
-              // AnimatedBuilder(
-              //   animation: _dotsController,
-              //   builder: (context, child) {
-              //     final dotIndex = isStreaming
-              //         ? (_dotsController.value * 3).floor() % 4
-              //         : 0;
-              //     final dots = '.' * dotIndex;
-              //     return Text(
-              //       dots,
-              //       style: TextStyle(
-              //         fontSize: ChatoraiFontSizes.sm,
-              //         fontWeight: FontWeight.w600,
-              //         height: 1.4,
-              //         color: textColor,
-              //       ),
-              //     );
-              //   },
-              // ),
             ],
           ),
         );

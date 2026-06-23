@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:chatorai/features/skills/data/models/skill_info.dart';
+import 'package:chatorai/core/skills/models/skill_info.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:flutter/material.dart';
 
 class SkillsPopup extends StatefulWidget {
   final List<SkillInfo> skills;

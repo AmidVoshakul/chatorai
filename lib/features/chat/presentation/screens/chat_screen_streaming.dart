@@ -115,12 +115,14 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         .selectedModelObject
         ?.contextLength;
 
-     // ── Session Runner (event sourcing) ──────────────────────────────────
-     // Runner already created and initialized in _handleAddMessagesAndStream
-     final runnerSession = _sessionRunner;
-     if (runnerSession == null) {
-       throw StateError('SessionRunner not initialized — must call _handleAddMessagesAndStream first');
-     }
+    // ── Session Runner (event sourcing) ──────────────────────────────────
+    // Runner already created and initialized in _handleAddMessagesAndStream
+    final runnerSession = _sessionRunner;
+    if (runnerSession == null) {
+      throw StateError(
+        'SessionRunner not initialized — must call _handleAddMessagesAndStream first',
+      );
+    }
 
     if (aiService.isOverflow && attemptMsgs.length > 4) {
       final compactionService = const CompactionService();
@@ -294,13 +296,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             'onCompletion: extracted contentLen=${content.length}, reasoningLen=${reasoning?.length ?? 0} raw=${reasoningRaw.length}',
           );
 
-          final toolParts = allParts
-              .where(
-                (p) => p is ToolResultPart || p is TodoPart || p is TaskPart,
-              )
-              .toList();
-          final partsJson = toolParts.isNotEmpty
-              ? toolParts.map((p) => p.toJson()).toList()
+          final partsJson = allParts.isNotEmpty
+              ? allParts.map((p) => p.toJson()).toList()
               : null;
 
           final lastIsIncomplete =
@@ -340,7 +337,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             updatedAt: DateTime.now(),
           );
           LogTags.chatScreen.logInfo(
-            'onCompletion: saving message id=${completedMessage.id}, partsCount=${toolParts.length}',
+            'onCompletion: saving message id=${completedMessage.id}, partsCount=${allParts.length}',
           );
           ref.read(chatListProvider.notifier).updateChat(newChat);
           ref.read(chatScreenProvider.notifier).setStreaming(false);

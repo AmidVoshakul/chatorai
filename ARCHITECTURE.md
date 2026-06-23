@@ -1,6 +1,6 @@
 # ChatORAI Architecture
 
-**Last updated:** 2026-06-16
+**Last updated:** 2026-06-23
 
 ## Project Overview
 
@@ -24,10 +24,10 @@ lib/
 │   ├── context/             # Token counting, overflow detection, compaction
 │   ├── error/               # Error classification and handling
 │   ├── llm/                 # LLM catalog system
-│   │   └── catalog/         # Provider catalog service, models, caching
-│   │       ├── models/      # ProviderConfig, ModelConfig, AuthConfig
-│   │       ├── providers/   # 39 built-in provider definitions + barrel
-│   │       └── provider_catalog_service.dart  # Centralized catalog with 24h cache
+│   │   ├── models/          # ProviderConfig, ModelConfig, AuthConfig
+│   │   ├── providers/       # Built-in provider definitions + catalog barrel
+│   │   ├── catalog_providers.dart
+│   │   └── provider_catalog_service.dart  # Centralized catalog with 24h cache
 │   ├── permission/          # Permission service and models
 │   └── utils/               # Shared utilities (logger, formatters, secure storage)
 ├── features/                # Feature-based modules (primary organization)
@@ -139,8 +139,8 @@ Cache keys (SharedPreferences):
 
 ### Adding a New Built-in Provider
 
-1. Create a file in `lib/core/llm/catalog/providers/` (e.g. `my_provider.dart`) exporting a top-level function that returns a `ProviderConfig`.
-2. Import the new file in `lib/core/llm/catalog/providers/built_in_providers.dart` and add the function call to the `builtInProviders()` list.
+1. Create a file in `lib/core/llm/providers/` (e.g. `my_provider.dart`) exporting a top-level function that returns a `ProviderConfig`.
+2. Import the new file in `lib/core/llm/providers/built_in_providers.dart` and add the function call to the `builtInProviders()` list.
 3. Add an SVG icon to `assets/provider/` and register the mapping in `_iconMap` inside `lib/features/models/widgets/provider_icon.dart`.
 4. Verify `assets/provider/` is listed in `pubspec.yaml` under `flutter: assets:`.
 
@@ -374,7 +374,20 @@ LIBGL_ALWAYS_SOFTWARE=1 flutter run -d linux  # Linux software rendering
 - **Keybinds System**: GUI hotkeys for desktop (planning phase).
 - **Emergency Stop**: Double-press Escape to halt all processes (planning phase).
 
-**Note:** The Compaction Service is already implemented and in use; it is not a future milestone.
+**Note:** The Compaction Service is already implemented and in use; it is not a future milestone. `CompactionOrchestrator` wires it into the session pipeline with a real `CompletionProvider`.
+
+### Provider Options
+
+`ProviderConfig.buildProviderOptions()` and `ProviderConfig.buildProviderHeaders()` follow the OpenCode pattern for merging per-provider fields:
+
+- `buildProviderOptions()` merges provider `defaultBody`, model `providerOptions` metadata, and variant `body` in order (later wins). Used for provider-specific parameters like Anthropic `thinkingConfig`, OpenAI `reasoningEffort`, or Bedrock `promptCacheKey`.
+- `buildProviderHeaders()` merges provider `defaultHeaders`, variant `headers`, and call-time `overrideHeaders` in order (later wins).
+
+These are used by `ModelResolver.getBodyForModel()` and `ModelResolver.getHeadersForModel()`.
+
+### Bedrock Provider
+
+Amazon Bedrock (`sdk: 'bedrock'`) requires `AuthType.aws` with `awsAccessKeyId`, `awsSecretAccessKey`, and `awsRegion`. Native AWS SigV4 signing is not yet implemented; the resolver throws a clear error until Bedrock-native SDK integration is added.
 
 ---
 

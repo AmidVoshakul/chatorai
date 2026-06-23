@@ -1,13 +1,13 @@
+import 'package:chatorai/core/agents/agent_registry.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/message_data.dart';
+import 'package:chatorai/features/chat/presentation/widgets/model_settings_sheet.dart';
+import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/providers.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/shared/utils/snackbar_utils.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
-import 'package:chatorai/features/chat/domain/services/speech_to_text_service.dart';
-import 'package:chatorai/features/chat/presentation/widgets/model_settings_sheet.dart';
-import 'package:chatorai/features/agents/data/models/agent_registry.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/message_data.dart';
-import 'package:chatorai/providers.dart';
 
 mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   TextEditingController get textController;

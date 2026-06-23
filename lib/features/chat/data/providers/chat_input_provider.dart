@@ -1,5 +1,5 @@
+import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/features/chat/domain/services/speech_to_text_service.dart';
 
 // ===========================================================================
 // STATE

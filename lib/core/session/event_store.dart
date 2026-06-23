@@ -392,9 +392,7 @@ class EventStore {
         parentSessionId: SessionID.fromString(
           data['parentSessionId'] as String,
         ),
-        childSessionId: SessionID.fromString(
-          data['childSessionId'] as String,
-        ),
+        childSessionId: SessionID.fromString(data['childSessionId'] as String),
         title: data['title'] as String? ?? '',
         agent: data['agent'] as String? ?? 'general',
         modelRef: data['modelRef'] as String?,

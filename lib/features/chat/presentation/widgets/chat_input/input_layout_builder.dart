@@ -1,11 +1,11 @@
+import 'package:chatorai/core/agents/agent_registry.dart';
+import 'package:chatorai/features/chat/data/providers/chat_input_provider.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/input_widget_builders.dart';
+import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
+import 'package:chatorai/providers.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
-import 'package:chatorai/features/chat/domain/services/speech_to_text_service.dart';
-import 'package:chatorai/features/agents/data/models/agent_registry.dart';
-import 'package:chatorai/features/chat/data/providers/chat_input_provider.dart';
-import 'package:chatorai/providers.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/input_widget_builders.dart';
 
 class InputLayoutBuilder {
   static Widget buildContainer({

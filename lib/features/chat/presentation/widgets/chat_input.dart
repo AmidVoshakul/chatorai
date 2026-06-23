@@ -1,22 +1,23 @@
 import 'dart:async';
 import 'dart:io' show Platform;
+
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/agent_mention_handler.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/attachment_input_handler.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/input_layout_builder.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/input_widget_builders.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/message_data.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/popup_controller.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/send_message_handler.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/slash_command_handler.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/speech_input_handler.dart';
+import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/providers.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
-import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/features/chat/domain/services/speech_to_text_service.dart';
-import 'package:chatorai/providers.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/message_data.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/agent_mention_handler.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/speech_input_handler.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/attachment_input_handler.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/send_message_handler.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/input_widget_builders.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/input_layout_builder.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/slash_command_handler.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/popup_controller.dart';
 
 export 'package:chatorai/features/chat/presentation/widgets/chat_input/message_data.dart';
 

@@ -4,6 +4,7 @@ import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_state.dart';
+import 'package:chatorai/core/tools/tool_registry.dart';
 
 // ===========================================================================
 // SESSION RUNNER
@@ -16,6 +17,7 @@ import 'package:chatorai/core/session/session_state.dart';
 /// the session on completion.
 class SessionRunner {
   final SessionRepository _repository;
+  final ToolRegistry? _toolRegistry;
 
   /// Active child session runners keyed by child [SessionID].
   ///
@@ -23,7 +25,7 @@ class SessionRunner {
   /// or when [disposeAllChildren] is called.
   final Map<SessionID, SessionRunnerSession> _childRunners = {};
 
-  SessionRunner(this._repository);
+  SessionRunner(this._repository, this._toolRegistry);
 
   /// Returns an unmodifiable view of active child runners.
   Map<SessionID, SessionRunnerSession> get childRunners =>
@@ -55,6 +57,7 @@ class SessionRunner {
     return SessionRunnerSession._(
       repository: _repository,
       creationEvent: event,
+      toolRegistry: _toolRegistry,
     );
   }
 
@@ -113,6 +116,7 @@ class SessionRunner {
         modelRef: childState.modelRef,
         timestamp: DateTime.now(),
       ),
+      toolRegistry: _toolRegistry,
     );
     _childRunners[childId] = childRunner;
 
@@ -208,6 +212,7 @@ class SessionRunner {
 class SessionRunnerSession {
   final SessionRepository _repository;
   final SessionCreated _creationEvent;
+  final ToolRegistry? _toolRegistry;
 
   SessionID get sessionId => _creationEvent.sessionId;
 
@@ -233,8 +238,10 @@ class SessionRunnerSession {
   SessionRunnerSession._({
     required SessionRepository repository,
     required SessionCreated creationEvent,
+    ToolRegistry? toolRegistry,
   }) : _repository = repository,
-       _creationEvent = creationEvent;
+       _creationEvent = creationEvent,
+       _toolRegistry = toolRegistry;
 
   /// Initialize the session by persisting the creation event.
   ///
@@ -573,5 +580,6 @@ class SessionRunnerSession {
   /// Dispose of any held resources.
   void dispose() {
     _eventSubscription?.cancel();
+    _toolRegistry?.pruneSession(sessionId.value);
   }
 }

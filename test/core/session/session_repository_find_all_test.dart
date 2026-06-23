@@ -26,35 +26,41 @@ void main() {
 
       // Insert sessions directly with controlled timestamps
       // so we can guarantee the sort order
-      await db.into(db.sessions).insert(
-        SessionsCompanion.insert(
-          id: 'ses_oldest',
-          title: const Value('Oldest Session'),
-          agent: const Value('general'),
-          createdAt: t1,
-          updatedAt: t1,
-        ),
-      );
+      await db
+          .into(db.sessions)
+          .insert(
+            SessionsCompanion.insert(
+              id: 'ses_oldest',
+              title: const Value('Oldest Session'),
+              agent: const Value('general'),
+              createdAt: t1,
+              updatedAt: t1,
+            ),
+          );
 
-      await db.into(db.sessions).insert(
-        SessionsCompanion.insert(
-          id: 'ses_middle',
-          title: const Value('Middle Session'),
-          agent: const Value('general'),
-          createdAt: t2,
-          updatedAt: t2,
-        ),
-      );
+      await db
+          .into(db.sessions)
+          .insert(
+            SessionsCompanion.insert(
+              id: 'ses_middle',
+              title: const Value('Middle Session'),
+              agent: const Value('general'),
+              createdAt: t2,
+              updatedAt: t2,
+            ),
+          );
 
-      await db.into(db.sessions).insert(
-        SessionsCompanion.insert(
-          id: 'ses_newest',
-          title: const Value('Newest Session'),
-          agent: const Value('general'),
-          createdAt: t3,
-          updatedAt: t3,
-        ),
-      );
+      await db
+          .into(db.sessions)
+          .insert(
+            SessionsCompanion.insert(
+              id: 'ses_newest',
+              title: const Value('Newest Session'),
+              agent: const Value('general'),
+              createdAt: t3,
+              updatedAt: t3,
+            ),
+          );
 
       final all = await repository.findAll();
 
@@ -166,27 +172,26 @@ void main() {
       },
     );
 
-    test('findAll() sorts archived-last even if archived has latest timestamp',
-        () async {
-      // Create two sessions
-      await repository.createSession(
-        agent: 'general',
-        title: 'Active Old',
-      );
+    test(
+      'findAll() sorts archived-last even if archived has latest timestamp',
+      () async {
+        // Create two sessions
+        await repository.createSession(agent: 'general', title: 'Active Old');
 
-      await Future.delayed(const Duration(milliseconds: 10));
+        await Future.delayed(const Duration(milliseconds: 10));
 
-      final toArchiveState = await repository.createSession(
-        agent: 'general',
-        title: 'To Archive New',
-      );
+        final toArchiveState = await repository.createSession(
+          agent: 'general',
+          title: 'To Archive New',
+        );
 
-      // Archive the newer one
-      await repository.archiveSession(toArchiveState.id);
+        // Archive the newer one
+        await repository.archiveSession(toArchiveState.id);
 
-      final all = await repository.findAll();
-      expect(all.length, 1);
-      expect(all.first.title, 'Active Old');
-    });
+        final all = await repository.findAll();
+        expect(all.length, 1);
+        expect(all.first.title, 'Active Old');
+      },
+    );
   });
 }

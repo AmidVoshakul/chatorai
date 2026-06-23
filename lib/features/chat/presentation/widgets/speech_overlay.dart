@@ -1,8 +1,9 @@
 import 'dart:math' as math;
 import 'dart:ui';
-import 'package:flutter/material.dart';
-import 'package:chatorai/features/chat/domain/services/speech_to_text_service.dart';
+
+import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
 // ===========================================================================
 // SPEECH OVERLAY WIDGET
