@@ -1,4 +1,4 @@
-import 'package:chatorai/features/chat/data/models/chat_model.dart';
+import 'package:chatorai/features/chat/data/models/model_card_model.dart';
 
 /// Utility functions for model-related operations
 class ModelUtils {

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/data/models/chat_model.dart';
-import 'package:chatorai/features/chat/domain/services/chat_ai_service.dart';
+import 'package:chatorai/features/chat/data/models/model_card_model.dart';
+import 'package:chatorai/features/chat/services/chat_ai_service.dart';
 
 /// Fake client that simulates 400 errors when maxTokens > threshold.
 class FakeRetryClient {

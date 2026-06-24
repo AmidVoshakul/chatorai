@@ -71,6 +71,12 @@ Type `@` followed by agent name to quickly invoke a subagent with additional con
 @explore review this function for security issues
 ```
 
+or
+
+```
+review this function for security issues use @explore
+```
+
 **Available Agents:**
 
 - `@general` — General-purpose assistant
@@ -87,21 +93,21 @@ Type `@` followed by agent name to quickly invoke a subagent with additional con
 
 When the AI invokes tools, they appear inline in the chat stream with icons and status.
 
-| Tool          | Description            | Input Schema                                                           | Default Permission |
-| ------------- | ---------------------- | ---------------------------------------------------------------------- | ------------------ |
-| `bash`        | Execute shell command  | `{ "command": "...", "timeoutMs": 30000 }`                             | ask                |
-| `read`        | Read file contents     | `{ "path": "...", "offset": 0, "limit": 1000 }`                        | allow              |
-| `edit`        | Replace text in file   | `{ "path": "...", "oldString": "...", "newString": "..." }`            | ask                |
-| `write`       | Create/overwrite file  | `{ "path": "...", "content": "..." }`                                  | ask                |
-| `glob`        | Find files by pattern  | `{ "pattern": "**/*.dart", "path": "lib" }`                            | allow              |
-| `grep`        | Search file contents   | `{ "pattern": "...", "path": "lib", "filePattern": "*.dart" }`         | allow              |
-| `webfetch`    | Fetch URL content      | `{ "url": "https://...", "format": "markdown" }`                       | ask                |
-| `websearch`   | Search web via SearXNG | `{ "query": "...", "engines": [...], "categories": [...] }`            | ask                |
-| `task`        | Spawn subagent         | `{ "prompt": "...", "context": {...}, "subagentType": "explore" }`     | ask                |
-| `todowrite`   | Update todo list       | `{ "todos": [{ "content": "...", "status": "pending"/"completed" }] }` | ask                |
-| `skill`       | Load specialized skill | `{ "name": "...", "params": {...} }`                                   | ask                |
-| `apply_patch` | Apply unified diff     | `{ "patch": "diff --git a/... b/...", "dryRun": false }`               | ask                |
-| `question`    | Ask user questions    | `{ "questions": [{ "question": string, "options": [string], "multiple": bool }] }` | ask                |
+| Tool          | Description            | Input Schema                                                                       | Default Permission |
+| ------------- | ---------------------- | ---------------------------------------------------------------------------------- | ------------------ |
+| `bash`        | Execute shell command  | `{ "command": "...", "timeoutMs": 30000 }`                                         | ask                |
+| `read`        | Read file contents     | `{ "path": "...", "offset": 0, "limit": 1000 }`                                    | allow              |
+| `edit`        | Replace text in file   | `{ "path": "...", "oldString": "...", "newString": "..." }`                        | ask                |
+| `write`       | Create/overwrite file  | `{ "path": "...", "content": "..." }`                                              | ask                |
+| `glob`        | Find files by pattern  | `{ "pattern": "**/*.dart", "path": "lib" }`                                        | allow              |
+| `grep`        | Search file contents   | `{ "pattern": "...", "path": "lib", "filePattern": "*.dart" }`                     | allow              |
+| `webfetch`    | Fetch URL content      | `{ "url": "https://...", "format": "markdown" }`                                   | ask                |
+| `websearch`   | Search web via SearXNG | `{ "query": "...", "engines": [...], "categories": [...] }`                        | ask                |
+| `task`        | Spawn subagent         | `{ "prompt": "...", "context": {...}, "subagentType": "explore" }`                 | ask                |
+| `todowrite`   | Update todo list       | `{ "todos": [{ "content": "...", "status": "pending"/"completed" }] }`             | ask                |
+| `skill`       | Load specialized skill | `{ "name": "...", "params": {...} }`                                               | ask                |
+| `apply_patch` | Apply unified diff     | `{ "patch": "diff --git a/... b/...", "dryRun": false }`                           | ask                |
+| `question`    | Ask user questions     | `{ "questions": [{ "question": string, "options": [string], "multiple": bool }] }` | ask                |
 
 **States:** `pending` (∼), `running` (spinner), `completed` (✓), `error` (✗). Tool results can be expanded to show full output.
 
@@ -145,7 +151,6 @@ These are not interactive commands but JSON configuration options.
 - `*` matches any sequence (except `/` for paths).
 - `?` matches a single character.
 - Patterns are matched against the tool's primary input (e.g., `path` for read/edit, `command` for bash).
-
 
 For environment variables and system dependencies, see `docs/ENVIRONMENT.md`.  
 For API reference, see `docs/API.md`.  

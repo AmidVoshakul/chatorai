@@ -10,12 +10,12 @@ This document describes the software and hardware requirements, environment vari
 
 ### Required Software
 
-| Tool | Version | Notes |
-|------|---------|-------|
-| Flutter SDK | 3.41.0 (stable) | Download from https://flutter.dev |
-| Dart SDK | 3.9 (bundled with Flutter) | |
-| Git | 2.x | For dependency management and version control |
-| IDE | VS Code / Android Studio / IntelliJ | With Flutter & Dart plugins |
+| Tool        | Version                             | Notes                                         |
+| ----------- | ----------------------------------- | --------------------------------------------- |
+| Flutter SDK | 3.41.0 (stable)                     | Download from https://flutter.dev             |
+| Dart SDK    | 3.9 (bundled with Flutter)          |                                               |
+| Git         | 2.x                                 | For dependency management and version control |
+| IDE         | VS Code / Android Studio / IntelliJ | With Flutter & Dart plugins                   |
 
 ### OS-specific Requirements
 
@@ -84,11 +84,13 @@ CHATORAI_DEBUG=true
 ### 2. `SharedPreferences` (Runtime)
 
 At first launch, the user can input:
+
 - API key (stored securely; not logged)
 - Base URL (default: OpenRouter)
 - Model settings (temperature, maxTokens)
 
 Values are persisted per-platform:
+
 - Linux/Windows: registry or JSON file under app data directory
 - Android/iOS: secure shared preferences
 - Web: localStorage
@@ -97,31 +99,44 @@ Values are persisted per-platform:
 
 ## Configuration File: chatorai.json
 
-Optional user-editable JSON configuration. Searched in order:
+Optional user-editable JSON configuration. Location resolved via `XdgPaths.configHome` (see `lib/shared/utils/xdg_paths.dart`):
 
-1. `~/.config/chatorai/chatorai.json` (cross-platform user config dir)
-2. `<project>/.chatorai/chatorai.json` (project-local)
+- **Linux:** `~/.config/<package>/chatorai.json` (or `$XDG_CONFIG_HOME/<package>/`)
+- **macOS:** `~/Library/Application Support/<package>/chatorai.json`
+- **Windows:** `%APPDATA%\<package>\config\chatorai.json`
+- **Mobile:** Sandboxed app support directory
+
+Where `<package>` is the runtime bundle ID (e.g. `com.chatorai.app`). A project-local `./.chatorai/chatorai.json` is also checked as fallback.
 
 **Schema** (`lib/core/config/chatorai_schema.dart`) with `$schema` URL for IDE autocomplete:
 
 ```json5
 {
-  "version": 1,
-  "permission": {
-    "default": "ask",
-    "rules": [
-      { "tool": "read", "action": "*", "resource": "*", "permission": "allow" },
-      { "tool": "bash", "action": "execute", "resource": "/home/**", "permission": "deny" }
-    ]
+  version: 1,
+  permission: {
+    default: "ask",
+    rules: [
+      { tool: "read", action: "*", resource: "*", permission: "allow" },
+      {
+        tool: "bash",
+        action: "execute",
+        resource: "/home/**",
+        permission: "deny",
+      },
+    ],
   },
-  "provider": { /* multi-provider registry configuration (implemented) */ },
-  "keybinding": {
+  provider: {
+    /* multi-provider registry configuration (implemented) */
+  },
+  keybinding: {
     // Reserved for future keybinds system (not yet implemented)
-    "leader": "ctrl+x",
-    "timeout": 2000,
-    "bindings": { "session_child_next": "ctrl+right" },
-    "quick_commands": { /* @ triggers implemented; # and / planned */ }
-  }
+    leader: "ctrl+x",
+    timeout: 2000,
+    bindings: { session_child_next: "ctrl+right" },
+    quick_commands: {
+      /* @ triggers implemented; # and / planned */
+    },
+  },
 }
 ```
 

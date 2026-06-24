@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
 import 'package:path/path.dart' as p;
 
@@ -124,6 +125,9 @@ ToolDef createReadTool() {
       final start = offset.clamp(0, lines.length);
       final end = (offset + limit).clamp(start, lines.length);
       final selected = lines.sublist(start, end).join('\n');
+
+      // Record mtime so edit tool can detect external modifications
+      await FileEditGuard.recordRead(safePath);
 
       return ToolOutput(
         selected,

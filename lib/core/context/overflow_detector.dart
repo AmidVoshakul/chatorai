@@ -22,12 +22,17 @@ class OverflowDetector {
   /// Creates an [OverflowDetector] sized for a specific model context window.
   ///
   /// Falls back to 200 000 tokens when [contextLength] is null or non-positive.
-  /// The reserved buffer is derived as `min(20 000, contextLimit ~/ 10)`.
-  factory OverflowDetector.forModel(int? contextLength) {
+  /// The reserved buffer is derived as `min(20 000, contextLimit ~/ 10)` unless
+  /// overridden by [compactionBuffer] from config.
+  factory OverflowDetector.forModel(
+    int? contextLength, {
+    int? compactionBuffer,
+  }) {
     final limit = (contextLength != null && contextLength > 0)
         ? contextLength
         : 200000;
-    final reserved = min(20000, limit ~/ 10);
+    final defaultReserved = min(20000, limit ~/ 10);
+    final reserved = compactionBuffer ?? defaultReserved;
     return OverflowDetector._internal(
       limit,
       maxOutputTokens: 4096,

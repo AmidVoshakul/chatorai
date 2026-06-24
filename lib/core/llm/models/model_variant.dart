@@ -327,6 +327,27 @@ class ModelPricing extends Equatable {
     );
   }
 
+  /// Format a per-token price as a human-readable per-million-tokens string.
+  ///
+  /// Returns null if the value is negative (sentinel for "price unavailable").
+  /// Returns '0' for zero cost.
+  /// Precision is adaptive: more decimals for smaller values.
+  static String? formatPerM(double? perToken) {
+    if (perToken == null) return null;
+    if (perToken < 0) return null;
+    final perM = perToken * 1000000;
+    if (perM == 0) return '0';
+    if (perM < 0.01) return perM.toStringAsFixed(4);
+    if (perM < 1) return perM.toStringAsFixed(3);
+    return perM.toStringAsFixed(2);
+  }
+
+  /// Formatted input price per million tokens, or null if unavailable.
+  String? get formattedInputPerM => formatPerM(inputCostPer1k);
+
+  /// Formatted output price per million tokens, or null if unavailable.
+  String? get formattedOutputPerM => formatPerM(outputCostPer1k);
+
   @override
   String toString() {
     return 'ModelPricing(input: \$${inputCostPer1k ?? 'N/A'}/1k, '

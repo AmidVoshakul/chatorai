@@ -2,12 +2,23 @@
 
 ChatORAI can be configured via a JSON file (`chatorai.json`) to customize permissions, keybindings, provider settings, and more.
 
-The configuration file is searched in the following order (first found wins):
+The configuration file location is resolved via `XdgPaths.configHome` (see `lib/shared/utils/xdg_paths.dart`). The search order is:
 
-1. `./.chatorai/chatorai.json` (project-specific config, highest priority)
-2. `~/.config/chatorai/chatorai.json` (global user config, used as fallback)
+1. `<configHome>/chatorai.json` — user-global config (highest priority)
+2. `./.chatorai/chatorai.json` — project-specific config (used as fallback)
 
-If both exist, they are merged with the user file taking precedence.
+**Typical paths by platform:**
+
+| Platform | Config path                                                        |
+| -------- | ------------------------------------------------------------------ |
+| Linux    | `~/.config/com.chatorai.app/chatorai.json` (or `$XDG_CONFIG_HOME`) |
+| macOS    | `~/Library/Application Support/com.chatorai.app/chatorai.json`     |
+| Windows  | `%APPDATA%\com.chatorai.app\config\chatorai.json`                  |
+| Mobile   | Sandboxed app support directory (no user-accessible path)          |
+
+The directory name is derived from the package bundle ID at runtime via `package_info_plus`.
+
+If both locations exist, they are merged with the user-global file taking precedence.
 
 ## JSON Schema
 

@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-import 'package:chatorai/features/tools/built_in/webfetch.dart';
-import 'package:chatorai/features/tools/built_in/websearch.dart';
-import 'package:chatorai/features/tools/data/models/tool.dart';
+import 'package:chatorai/core/tools/built_in/webfetch.dart';
+import 'package:chatorai/core/tools/built_in/websearch.dart';
+import 'package:chatorai/core/tools/tool.dart';
 
 import 'helpers/test_context.dart';
 

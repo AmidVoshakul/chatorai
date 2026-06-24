@@ -5,13 +5,16 @@ import 'dart:math';
 
 import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/constants/chat_constants.dart';
+import 'package:chatorai/core/context/compaction_orchestrator.dart';
 import 'package:chatorai/core/context/compaction_service.dart';
 import 'package:chatorai/core/session/database.dart' hide Message;
+import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
+import 'package:chatorai/core/tools/tool_output_persistence.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/features/chat/data/models/chat_model.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
+import 'package:chatorai/features/chat/data/models/model_card_model.dart';
 import 'package:chatorai/features/chat/data/models/model_settings.dart';
 import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_app_bar.dart';
@@ -37,7 +40,8 @@ import 'package:chatorai/providers.dart'
         currentChatProvider,
         chatScreenProvider,
         toolRegistryProvider,
-        currentAgentProvider;
+        currentAgentProvider,
+        compactionConfigProvider;
 import 'package:chatorai/shared/utils/chat_error_utils.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';

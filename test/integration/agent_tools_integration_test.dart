@@ -4,17 +4,16 @@ import 'package:ai_sdk_dart/ai_sdk_dart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test/test.dart';
-import 'package:chatorai/core/llm/catalog/model_resolver.dart';
-import 'package:chatorai/core/llm/catalog/models/model_config.dart';
-import 'package:chatorai/core/llm/catalog/provider_catalog_service.dart';
+import 'package:chatorai/core/llm/model_resolver.dart';
+import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
-import 'package:chatorai/features/tools/data/models/tool.dart';
-import 'package:chatorai/features/tools/built_in/task.dart';
-import 'package:chatorai/features/tools/built_in/question.dart';
-import 'package:chatorai/features/tools/built_in/apply_patch.dart';
-import 'package:chatorai/features/tools/built_in/todo_write.dart';
-import 'package:chatorai/features/chat/domain/services/chat_retry_service.dart';
-import 'package:chatorai/features/chat/domain/services/chat_ai_service.dart';
+import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/core/tools/built_in/task.dart';
+import 'package:chatorai/core/tools/built_in/question.dart';
+import 'package:chatorai/core/tools/built_in/apply_patch.dart';
+import 'package:chatorai/core/tools/built_in/todowrite.dart';
+import 'package:chatorai/features/chat/services/chat_retry_service.dart';
+import 'package:chatorai/features/chat/services/chat_ai_service.dart';
 
 class MockSecureStorageService extends Mock implements SecureStorageService {}
 
@@ -27,6 +26,16 @@ class _FakeChatAiService extends ChatAiService {
   static ModelResolver _createFakeResolver() {
     final mockSecureStorage = MockSecureStorageService();
     final mockPrefs = MockSharedPreferences();
+
+    // Stub SharedPreferences methods that are called during _loadFromPrefs
+    when(() => mockPrefs.setString(any(), any())).thenAnswer((_) async => true);
+    when(() => mockPrefs.setBool(any(), any())).thenAnswer((_) async => true);
+    when(() => mockPrefs.setInt(any(), any())).thenAnswer((_) async => true);
+    when(() => mockPrefs.getString(any())).thenReturn(null);
+    when(() => mockPrefs.getBool(any())).thenReturn(null);
+    when(() => mockPrefs.getInt(any())).thenReturn(null);
+    when(() => mockPrefs.getStringList(any())).thenReturn(null);
+
     final catalog = ProviderCatalogService(
       secureStorage: mockSecureStorage,
       prefs: mockPrefs,

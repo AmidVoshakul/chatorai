@@ -1,9 +1,8 @@
 // ignore_for_file: unused_import
 import 'package:chatorai/core/llm/catalog_providers.dart';
-import 'package:chatorai/core/llm/models/auth_config.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
-import 'package:chatorai/features/chat/data/models/chat_model.dart';
+import 'package:chatorai/features/chat/data/models/model_card_model.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -110,45 +109,48 @@ class ModelNotifier extends Notifier<ModelState> {
   }
 
   /// Loads available models from the catalog.
-  Future<void> _loadModelsAsync() async {
+  Future<void> _loadModelsAsync({bool forceRefresh = false}) async {
     if (_loadingModels) return;
     _loadingModels = true;
     state = state.copyWith(isLoadingModels: true);
 
     try {
-      _logger.logInfo('[ModelNotifier] Loading models from catalog…');
+      _logger.logInfo(
+        '[ModelNotifier] Loading models from catalog… forceRefresh=$forceRefresh',
+      );
 
       final catalog = await ref.read(catalogInitializationProvider.future);
 
       List<ModelConfig> visibleModels(ProviderCatalogService cat) {
-        final configured = cat
-            .getAllProvidersRaw()
-            .where((p) {
-              final key = cat.getApiKeySync(p.id);
-              return (key != null && key.isNotEmpty) ||
-                  (p.auth.type == AuthType.none &&
-                      cat.isProviderEnabled(p.id)) ||
-                  cat.getSelectedModelIds(p.id).isNotEmpty;
-            })
-            .map((p) => p.id)
-            .toSet();
-        return cat.getAllModels().where((m) {
-          if (!m.enabled) return false;
-          if (!configured.contains(m.providerId)) return false;
+        final allModels = cat.getAllModels();
+        _logger.logInfo(
+          '[ModelNotifier] visibleModels: getAllModels=${allModels.length}',
+        );
+        final visible = allModels.where((m) {
           final selectedIds = cat.getSelectedModelIds(m.providerId);
           return selectedIds.isEmpty || selectedIds.contains(m.id);
         }).toList();
+        _logger.logInfo(
+          '[ModelNotifier] visibleModels: visible=${visible.length}',
+        );
+        return visible;
       }
 
       var availableModels = visibleModels(
         catalog,
       ).map(ChatModel.fromModelConfig).toList();
 
-      if (availableModels.isEmpty) {
+      /// Only fetch from API if:
+      /// 1. Cache is completely empty, OR
+      /// 2. User explicitly requested refresh
+      /// Note: NOT triggered by stale pricing (that would overwrite user selections)
+      final hasAnyModels = availableModels.isNotEmpty;
+
+      if (!hasAnyModels || forceRefresh) {
         final providers = catalog.getAllProviders();
         for (final prov in providers) {
           try {
-            await catalog.discoverModels(prov.id, forceRefresh: false);
+            await catalog.discoverModels(prov.id, forceRefresh: forceRefresh);
           } catch (_) {}
         }
         availableModels = visibleModels(
@@ -156,19 +158,23 @@ class ModelNotifier extends Notifier<ModelState> {
         ).map(ChatModel.fromModelConfig).toList();
       }
 
-      if (availableModels.isEmpty) {
-        availableModels = catalog
-            .getAllModelsRaw()
-            .where((m) {
-              final selectedIds = catalog.getSelectedModelIds(m.providerId);
-              return selectedIds.contains(m.id);
-            })
-            .map(ChatModel.fromModelConfig)
-            .toList();
-      }
-
       String selectedModelId = state.selectedModelId;
       ChatModel? selectedModelObject;
+
+      // Primary source: catalog's per-provider selections (set by the dialog).
+      // Fallback: stored prefs value (set by explicit setSelectedModel in chat UI).
+      // Never silently overwrite prefs on reload — only explicit user action does that.
+      String? catalogSelectedId;
+      for (final prov in catalog.getAllProvidersRaw()) {
+        final ids = catalog.getSelectedModelIds(prov.id);
+        if (ids.isNotEmpty) {
+          catalogSelectedId = ids.first;
+          break;
+        }
+      }
+      if (catalogSelectedId != null) {
+        selectedModelId = catalogSelectedId;
+      }
 
       if (selectedModelId.isEmpty && availableModels.isNotEmpty) {
         selectedModelId = availableModels.first.id;
@@ -180,9 +186,10 @@ class ModelNotifier extends Notifier<ModelState> {
             (model) => model.id == selectedModelId,
           );
         } catch (_) {
+          // Stored prefs value no longer in filtered list — use first available
+          // but DO NOT overwrite prefs; user may reselect via dialog.
           selectedModelObject = availableModels.first;
           selectedModelId = selectedModelObject.id;
-          await _saveSettings();
         }
       }
 
@@ -205,26 +212,28 @@ class ModelNotifier extends Notifier<ModelState> {
     }
   }
 
-  Future<void> resetAndReloadModels() async {
-    state = state.copyWith(
-      modelsLoaded: false,
-      availableModels: [],
-      selectedModelObject: null,
-    );
-    await _loadModelsAsync();
+  Future<void> resetAndReloadModels({bool forceRefresh = false}) async {
+    await reloadModels(forceRefresh: forceRefresh);
   }
 
-  Future<void> reloadModels() async {
-    state = state.copyWith(
-      modelsLoaded: false,
-      availableModels: [],
-      selectedModelObject: null,
-    );
-    await _loadModelsAsync();
+  Future<void> reloadModels({bool forceRefresh = false}) async {
+    await _loadModelsAsync(forceRefresh: forceRefresh);
   }
 
   Future<void> setSelectedModel(String modelId) async {
     if (state.selectedModelId == modelId) return;
+
+    final catalog = await ref.read(catalogInitializationProvider.future);
+    final providerId = modelId.contains('/')
+        ? modelId.split('/').first
+        : modelId.contains(':')
+        ? modelId.split(':').first
+        : null;
+
+    // Sync catalog first so both sources agree.
+    if (providerId != null) {
+      await catalog.setSelectedModelIds(providerId, [modelId]);
+    }
 
     ChatModel? modelObject;
     var selectedId = modelId;

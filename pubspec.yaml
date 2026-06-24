@@ -2,7 +2,7 @@ name: chatorai
 description: "ChatORAI - AI Chat Application"
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0
 
 environment:
   sdk: ^3.11.0
@@ -44,6 +44,7 @@ dependencies:
   collection: ^1.19.1
   equatable: ^2.0.0
   flutter_svg: ^2.0.10+1
+  command_shield: ^1.1.0
   ddgs: ^0.3.2
   http: ^1.2.0
   yaml: ^3.1.3

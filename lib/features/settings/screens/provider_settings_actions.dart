@@ -1,4 +1,5 @@
 import 'package:chatorai/core/llm/catalog_providers.dart';
+import 'package:chatorai/features/chat/data/providers/models_provider.dart';
 import 'package:chatorai/features/models/providers/model_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,6 +41,7 @@ Future<void> toggleProvider({
   await catalog.setProviderEnabled(providerId, enabled);
   await ref.read(modelProvider.notifier).resetAndReloadModels();
   ref.invalidate(configuredProvidersProvider);
+  ref.invalidate(modelsScreenProvider);
 }
 
 bool _isModelFromProvider(String modelId, String providerId, WidgetRef ref) {
@@ -106,6 +108,7 @@ Future<bool> deleteProvider({
 
   ref.read(modelProvider.notifier).resetAndReloadModels();
   ref.invalidate(configuredProvidersProvider);
+  ref.invalidate(modelsScreenProvider);
   return true;
 }
 
@@ -122,8 +125,9 @@ Future<void> saveProviderConfig({
 
   await ref.read(modelProvider.notifier).resetAndReloadModels();
   ref.invalidate(configuredProvidersProvider);
+  ref.invalidate(modelsScreenProvider);
 
   try {
-    await catalog.discoverModels(providerId);
+    await catalog.discoverModels(providerId, forceRefresh: true);
   } catch (_) {}
 }

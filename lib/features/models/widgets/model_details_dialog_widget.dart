@@ -1,8 +1,8 @@
+import 'package:chatorai/features/chat/data/models/model_card_model.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/shared/theme/app_theme.dart' show ChatoraiColors;
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:chatorai/shared/theme/app_theme.dart' show ChatoraiColors;
-import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/features/chat/data/models/chat_model.dart';
 
 class ModelDetailsDialogWidget extends StatelessWidget {
   final ChatModel model;
@@ -86,7 +86,7 @@ class ModelDetailsDialogWidget extends StatelessWidget {
             localizations.inputTokens,
             model.pricingPrompt != null
                 ? '\$${model.pricingPrompt}/M'
-                : localizations.notAvailable,
+                : (model.isFree ? '\$0/M' : localizations.notAvailable),
             Icons.attach_money,
           ),
           _buildDetailRow(
@@ -94,7 +94,7 @@ class ModelDetailsDialogWidget extends StatelessWidget {
             localizations.outputTokens,
             model.pricingCompletion != null
                 ? '\$${model.pricingCompletion}/M'
-                : localizations.notAvailable,
+                : (model.isFree ? '\$0/M' : localizations.notAvailable),
             Icons.monetization_on,
           ),
           const SizedBox(height: 20),

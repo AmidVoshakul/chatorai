@@ -10,7 +10,7 @@ import 'package:chatorai/features/chat/presentation/widgets/parts/tool_call_part
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
-import 'package:chatorai/shared/utils/format_time.dart';
+import 'package:chatorai/shared/utils/format_time_utils.dart';
 import 'package:chatorai/shared/utils/message_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

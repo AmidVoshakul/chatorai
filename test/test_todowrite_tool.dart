@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
-import 'package:chatorai/features/tools/data/models/tool.dart';
-import 'package:chatorai/features/tools/built_in/todo_write.dart';
+import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/core/tools/built_in/todowrite.dart';
 
 ToolContext _mockCtx({
   bool askResult = true,
@@ -26,7 +26,7 @@ ToolContext _mockCtx({
 }
 
 void main() {
-  group('todo_write tool', () {
+  group('todowrite tool', () {
     test('description is non-empty', () {
       final tool = createTodoWriteTool();
       expect(tool.description, isNotEmpty);

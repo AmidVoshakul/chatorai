@@ -1,13 +1,12 @@
+import 'package:chatorai/core/config/models/chatorai_config.dart';
+import 'package:chatorai/core/context/compaction_agent.dart';
 import 'package:chatorai/core/context/completion_provider.dart';
+import 'package:chatorai/core/context/token_counter.dart';
 
 /// OpenCode-style context compaction.
 ///
-/// When the token budget is exhausted, splits messages into
-/// head (old) + tail (recent), summarizes the head via an LLM
-/// call, and replaces the history with [summary, ...tail].
-///
-/// Afterwards prunes tool outputs older than 2 turns, keeping
-/// the last 40k tokens.
+/// Splits messages into head (old) + tail (recent), summarizes the head
+/// via an LLM call, and returns [summary, ...tail] passed through [prune].
 class CompactionService {
   final int tailTurns;
   final int preserveRecentTokens;
@@ -19,7 +18,25 @@ class CompactionService {
     this.pruneProtectTokens = 40000,
   });
 
-  /// Returns the index where the tail starts: last [tailTurns] user–assistant pairs.
+  /// Creates a [CompactionService] from [CompactionConfig].
+  ///
+  /// Falls back to hardcoded defaults for any missing/null config values.
+  factory CompactionService.fromConfig(CompactionConfig config) {
+    return CompactionService(
+      tailTurns: 2,
+      preserveRecentTokens: config.keepTokens,
+      pruneProtectTokens: config.buffer,
+    );
+  }
+
+  /// Returns the index where the tail starts (inclusive).
+  ///
+  /// Keeps the last [tailTurns] user–assistant pairs (4 messages when
+  /// tailTurns=2). The [preserveRecentTokens] budget is reserved for a
+  /// future per-message token-aware selection pass; it does not affect
+  /// the current pair-count behaviour.
+  ///
+  /// Returns 0 when the entire message list fits within the pairs budget.
   int _tailStart(List<Map<String, dynamic>> messages) {
     var pairs = 0;
     for (var i = messages.length - 1; i >= 0; i--) {
@@ -33,10 +50,8 @@ class CompactionService {
 
   /// Run full compaction cycle.
   ///
-  /// [messages] — current chat message list (Map role/content).
-  /// [aiService] — used for the non-streaming summarizer LLM call.
-  /// [model] — model ID for the summary.
-  /// Returns a new message list with the compacted history.
+  /// Splits messages into head (old) + tail (recent), summarizes the head
+  /// via an LLM call, and returns [summary, ...tail] passed through [prune].
   Future<List<Map<String, dynamic>>> compact({
     required List<Map<String, dynamic>> messages,
     required CompletionProvider aiService,
@@ -64,7 +79,7 @@ class CompactionService {
       ...tail,
     ];
 
-    return _pruneToolOutputs(result);
+    return prune(result);
   }
 
   /// Find the last compaction summary (system message starting with compaction marker).
@@ -80,77 +95,38 @@ class CompactionService {
   }
 
   /// Call LLM to produce an anchored summary of the head messages.
+  ///
+  /// Delegates to [CompactionAgent] — a built-in hidden agent whose
+  /// permission contract is "no tools, no side effects". See
+  /// [CompactionAgent] for the full contract.
   Future<String> _summarize({
     required List<Map<String, dynamic>> head,
     required CompletionProvider aiService,
     required String model,
     String? previousSummary,
   }) async {
-    final headText = head
-        .map((m) {
-          final role = m['role'] ?? 'unknown';
-          final content = m['content'] ?? '';
-          return '[$role]: $content';
-        })
-        .join('\n\n');
-
-    final prevBlock = previousSummary != null
-        ? '<previous-summary>\n$previousSummary\n</previous-summary>\n\n'
-        : '';
-
-    final prompt =
-        '''
-$prevBlock## Goal
-- Summarize the following conversation context concisely.
-
-## Constraints & Preferences
-- (none)
-
-## Progress
-### Done
-- (extract from context)
-### In Progress
-- (extract from context)
-### Blocked
-- (extract from context)
-
-## Key Decisions
-- (extract from context)
-
-## Next Steps
-- (extract from context)
-
-## Critical Context
-- (extract from context)
-
-## Relevant Files
-- (extract from context)
-
-## Raw conversation to summarize:
-$headText
-''';
-
-    return aiService.generateCompletion(
-      messages: [
-        {
-          'role': 'system',
-          'content':
-              'You are a context compaction agent. Summarize accurately and concisely.',
-        },
-        {'role': 'user', 'content': prompt},
-      ],
+    final agent = CompactionAgent(aiService);
+    return agent.summarize(
+      head: head,
+      previousSummary: previousSummary,
       model: model,
-      temperature: 0.3,
     );
   }
 
-  /// Prune old tool outputs, keeping the last [pruneProtectTokens] chars.
-  List<Map<String, dynamic>> _pruneToolOutputs(
+  /// Prune old tool outputs, keeping the last [pruneProtectTokens] chars
+  /// of accumulated content (~tokens × 4 via [TokenCounter.estimate]).
+  ///
+  /// Walks backwards through messages accumulating content length (chars).
+  /// Messages older than the protect window with role 'tool' are
+  /// replaced with a placeholder. Returns a new list without mutating
+  /// the input.
+  List<Map<String, dynamic>> prune(
     List<Map<String, dynamic>> messages,
   ) {
-    // Find the index where tail starts protecting
+    if (messages.isEmpty) return messages;
+
     var charsKept = 0;
-    var pruneBefore = 0;
+    var pruneBefore = -1;
     for (var i = messages.length - 1; i >= 0; i--) {
       final content = messages[i]['content'] as String? ?? '';
       charsKept += content.length;
@@ -163,7 +139,7 @@ $headText
     return messages.asMap().entries.map((entry) {
       final idx = entry.key;
       final msg = Map<String, dynamic>.from(entry.value);
-      if (idx < pruneBefore && msg['role'] == 'tool') {
+      if (pruneBefore >= 0 && idx <= pruneBefore && msg['role'] == 'tool') {
         msg['content'] = '[Old tool result content cleared]';
       }
       return msg;

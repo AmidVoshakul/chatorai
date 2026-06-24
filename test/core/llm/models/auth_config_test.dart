@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/core/llm/catalog/models/auth_config.dart';
+import 'package:chatorai/core/llm/models/auth_config.dart';
 
 void main() {
   group('AuthConfig', () {

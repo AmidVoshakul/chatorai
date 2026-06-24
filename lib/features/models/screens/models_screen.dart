@@ -1,4 +1,4 @@
-import 'package:chatorai/features/chat/data/models/chat_model.dart';
+import 'package:chatorai/features/chat/data/models/model_card_model.dart';
 import 'package:chatorai/features/chat/data/providers/models_provider.dart';
 import 'package:chatorai/features/models/widgets/model_card_widget.dart';
 import 'package:chatorai/features/models/widgets/model_details_dialog_widget.dart';
@@ -43,8 +43,15 @@ class ModelsScreen extends ConsumerWidget {
             tooltip: state.showFavoritesOnly
                 ? localizations.showAllModels
                 : localizations.showFavoritesOnly,
-          ),
-        ],
+           ),
+         ],
+       ),
+       floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          ref.read(modelsScreenProvider.notifier).loadModels(forceRefresh: true);
+        },
+        tooltip: localizations.refresh,
+        child: const Icon(Icons.refresh),
       ),
       body: Column(
         children: [
@@ -52,13 +59,6 @@ class ModelsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Expanded(child: _buildContent(context, ref, localizations, state)),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ref.read(modelsScreenProvider.notifier).loadModels();
-        },
-        tooltip: localizations.refresh,
-        child: const Icon(Icons.refresh),
       ),
     );
   }

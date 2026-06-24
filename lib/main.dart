@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' show PlatformDispatcher;
 
+import 'package:chatorai/core/tools/tool_output_persistence.dart';
 import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/permission_overlay.dart';
 import 'package:chatorai/features/settings/screens/settings_screen.dart';
@@ -8,6 +9,7 @@ import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:chatorai/shared/widgets/network_aware_widget.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +21,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // MAIN ENTRY POINT
 // ===========================================================================
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await XdgPaths.init();
+
   LogConfig.enabled = true;
   LogConfig.minimumLevel = LogLevel.debug;
 
@@ -44,6 +49,8 @@ void main() {
     }
     return platformHandler?.call(error, stack) ?? false;
   };
+
+  ToolOutputPersistence.instance.initialize();
 
   runApp(const ProviderScope(child: ChatoraiApp()));
 }

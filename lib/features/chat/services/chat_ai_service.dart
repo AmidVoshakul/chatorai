@@ -79,9 +79,12 @@ class ChatAiService implements CompletionProvider {
     _retryService = ChatRetryService(cancellation: _cancellation);
   }
 
-  void updateModelContextLength(int contextLength) {
+  void updateModelContextLength(int contextLength, {int? compactionBuffer}) {
     _modelContextLength = contextLength;
-    _overflowDetector = OverflowDetector.forModel(contextLength);
+    _overflowDetector = OverflowDetector.forModel(
+      contextLength,
+      compactionBuffer: compactionBuffer,
+    );
   }
 
   TokenCounter get tokenCounter => _tokenCounter;
@@ -89,6 +92,23 @@ class ChatAiService implements CompletionProvider {
   int get totalTokens => _tokenCounter.totalTokens;
   bool get isOverflow =>
       _overflowDetector.isOverflow(_tokenCounter.totalTokens);
+
+  /// Estimate token cost of a message list without mutating the running counter.
+  /// Resets, estimates, captures total, resets again — leaves counter unchanged.
+  int estimatePromptTokens(List<Map<String, dynamic>> messages) {
+    _tokenCounter.reset();
+    for (final m in messages) {
+      final content = m['content'];
+      if (m['role'] == 'system') {
+        if (content is String) _tokenCounter.addSystem(content);
+      } else {
+        if (content is String) _tokenCounter.addMessage(content);
+      }
+    }
+    final estimated = _tokenCounter.totalTokens;
+    _tokenCounter.reset();
+    return estimated;
+  }
 
   /// Delegates to [ChatRetryService.retryCountdown].
   Stream<double> get retryCountdown => _retryService.retryCountdown;

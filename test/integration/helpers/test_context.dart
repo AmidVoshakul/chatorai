@@ -1,4 +1,4 @@
-import 'package:chatorai/features/tools/data/models/tool.dart';
+import 'package:chatorai/core/tools/tool.dart';
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 
 /// Integration test context that auto-approves all permission requests.

@@ -83,8 +83,7 @@ class ModelResolver {
       throw ModelResolutionError('Provider not found: $providerId');
     }
 
-    // Verify that the model exists in this provider.
-    if (!provider.models.any((m) => m.modelName == modelName)) {
+    if (provider.getModel(modelName) == null) {
       throw ModelResolutionError(
         'Model $modelName not found in provider $providerId. '
         'Check that the model identifier is correct.',

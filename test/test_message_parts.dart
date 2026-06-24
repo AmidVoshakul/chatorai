@@ -400,13 +400,6 @@ void main() {
   // ── TaskPart ───────────────────────────────────────────────
 
   group('TaskPart', () {
-    test('creates with running status by default', () {
-      const part = TaskPart(description: 'Review code', agent: 'code-reviewer');
-      expect(part.status, TaskStatus.running);
-      expect(part.subtaskCount, 0);
-      expect(part.completedCount, 0);
-    });
-
     test('creates with all fields specified', () {
       const part = TaskPart(
         description: 'Analyze security',

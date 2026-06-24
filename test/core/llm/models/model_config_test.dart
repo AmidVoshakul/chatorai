@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/core/llm/catalog/models/model_config.dart';
-import 'package:chatorai/core/llm/catalog/models/model_variant.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
 
 void main() {
   group('ModelConfig', () {

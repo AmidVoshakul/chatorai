@@ -7,11 +7,12 @@ import 'bash.dart';
 import 'edit.dart';
 import 'glob.dart';
 import 'grep.dart';
+import 'lsp.dart';
 import 'question.dart';
 import 'read.dart';
 import 'skill.dart';
 import 'task.dart';
-import 'todo_write.dart';
+import 'todowrite.dart';
 import 'webfetch.dart';
 import 'websearch.dart';
 import 'write.dart';
@@ -43,6 +44,9 @@ Future<void> registerBuiltInTools(
 
   // Register question tool
   registry.register(createQuestionTool());
+
+  // Register LSP analysis tool
+  registry.register(createLspTool());
 
   // Register skill tool if skillService is provided
   if (skillService != null) {

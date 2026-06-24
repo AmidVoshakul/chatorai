@@ -20,6 +20,10 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     DateTime lastUpdateTime = DateTime.now();
     const updateIntervalMs = 250;
 
+    final toolOutputPersistence = ToolOutputPersistence.instance;
+    final toolInputs = <String, Map<String, dynamic>>{};
+    final toolStartTimes = <String, DateTime>{};
+
     bool isWordBoundary(String text) {
       if (text.isEmpty) return false;
       final lastChar = text[text.length - 1];
@@ -124,8 +128,18 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
       );
     }
 
-    if (aiService.isOverflow && attemptMsgs.length > 4) {
-      final compactionService = const CompactionService();
+    // ── Pre-send overflow check (OpenCode-style) ─────────────────────────
+    // Estimate BEFORE sending to LLM; compact proactively if needed.
+    final sessionId = runnerSession.sessionId.value;
+    final estimatedTokens = aiService.estimatePromptTokens(attemptMsgs);
+    final projectedTotal = estimatedTokens;
+    final compactionConfig = ref.watch(compactionConfigProvider);
+    if (projectedTotal >= aiService.overflowDetector.usable &&
+        attemptMsgs.length > 4) {
+      LogTags.chatScreen.logInfo(
+        'Pre-send compaction triggered for $sessionId',
+      );
+      final compactionService = CompactionService.fromConfig(compactionConfig);
       final compactedApiMessages = await compactionService.compact(
         messages: attemptMsgs,
         aiService: aiService,
@@ -153,10 +167,23 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         );
         ref.read(chatListProvider.notifier).updateChat(newChat);
       }
+      // Fire-and-forget: persist compaction events to session store
+      unawaited(() async {
+        final repo = await _sessionRepositoryFuture;
+        final orchestrator = CompactionOrchestrator(
+          repo,
+          completionProvider: aiService,
+          compactionConfig: compactionConfig,
+        );
+        await orchestrator.compactSession(SessionID.fromString(sessionId));
+      }());
     }
     try {
       if (modelContextLength != null) {
-        aiService.updateModelContextLength(modelContextLength);
+        aiService.updateModelContextLength(
+          modelContextLength,
+          compactionBuffer: compactionConfig.buffer,
+        );
       }
       await aiService.streamChatCompletion(
         messages: attemptMsgs,
@@ -192,22 +219,64 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           latestCumulativeTokens = aiService.tokenCounter.totalTokens;
         },
         onToolStart: (toolCallId, toolName, input) {
+          toolInputs[toolCallId] = input;
+          toolStartTimes[toolCallId] = DateTime.now();
           runnerSession.onToolStart(toolCallId, toolName, input);
           ref
               .read(streamingMessageProvider.notifier)
               .onToolCall(toolCallId, toolName, input);
         },
         onToolEnd: (toolCallId, toolName, result) {
-          runnerSession.onToolEnd(toolCallId, toolName, result.toString());
+          final resultStr = result.toString();
+          runnerSession.onToolEnd(toolCallId, toolName, resultStr);
           ref
               .read(streamingMessageProvider.notifier)
-              .onToolEnd(toolCallId, toolName, result.toString());
+              .onToolEnd(toolCallId, toolName, resultStr);
+          final startTime = toolStartTimes.remove(toolCallId);
+          final durationMs = startTime != null
+              ? DateTime.now().difference(startTime).inMilliseconds
+              : 0;
+          unawaited(
+            toolOutputPersistence
+                .saveResult(
+                  toolCallId: toolCallId,
+                  toolName: toolName,
+                  input: toolInputs.remove(toolCallId),
+                  output: resultStr,
+                  sessionId: runnerSession.sessionId.value,
+                  durationMs: durationMs,
+                  status: ToolResultStatus.success,
+                )
+                .catchError((e) {
+                  LogTags.chatService.logError('saveResult failed: $e');
+                }),
+          );
         },
         onToolError: (toolCallId, toolName, error) {
-          runnerSession.onToolError(toolCallId, toolName, error.toString());
+          final errorStr = error.toString();
+          runnerSession.onToolError(toolCallId, toolName, errorStr);
           ref
               .read(streamingMessageProvider.notifier)
-              .onToolError(toolCallId, toolName, error.toString());
+              .onToolError(toolCallId, toolName, errorStr);
+          final startTime = toolStartTimes.remove(toolCallId);
+          final durationMs = startTime != null
+              ? DateTime.now().difference(startTime).inMilliseconds
+              : 0;
+          unawaited(
+            toolOutputPersistence
+                .saveResult(
+                  toolCallId: toolCallId,
+                  toolName: toolName,
+                  input: toolInputs.remove(toolCallId),
+                  output: errorStr,
+                  sessionId: runnerSession.sessionId.value,
+                  durationMs: durationMs,
+                  status: ToolResultStatus.error,
+                )
+                .catchError((e) {
+                  LogTags.chatService.logError('saveResult failed: $e');
+                }),
+          );
         },
         onChunk: (content) {
           if (content.isEmpty) return;
@@ -366,6 +435,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
       await runnerSession.onError(e);
       await _handleStreamingError(e);
     } finally {
+      toolInputs.clear();
+      toolStartTimes.clear();
       runnerSession.dispose();
     }
   }

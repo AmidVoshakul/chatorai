@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:chatorai/core/llm/catalog/provider_catalog_service.dart';
-import 'package:chatorai/core/llm/catalog/models/provider_config.dart';
-import 'package:chatorai/core/llm/catalog/models/model_config.dart';
+import 'package:chatorai/core/llm/provider_catalog_service.dart';
+import 'package:chatorai/core/llm/models/provider_config.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
 
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
 
@@ -281,6 +281,8 @@ void main() {
           builtInProviders: [testProvider],
         );
 
+        // Provider is now disabled by default; must be explicitly enabled
+        await catalog.setProviderEnabled('test-provider', true);
         expect(catalog.isProviderEnabled('test-provider'), true);
       });
     });
@@ -641,6 +643,8 @@ void main() {
           builtInProviders: [providerWithModels],
         );
 
+        // Enable provider since disabled by default
+        await catalog.setProviderEnabled('test-provider', true);
         expect(catalog.defaultModel?.modelName, 'gpt-4o');
       });
 
@@ -698,7 +702,8 @@ void main() {
             'gpt-4o-mini',
           });
 
-          // getAllModels should include them (provider is enabled by default)
+          // Enable provider (disabled by default) so getAllModels includes them
+          await catalog.setProviderEnabled('test-provider', true);
           expect(catalog.getAllModels(), hasLength(2));
         },
       );
@@ -844,6 +849,9 @@ void main() {
 
         await catalog.updateProviderModels('test-provider', [modelA, modelB]);
 
+        // Enable provider (disabled by default) so getAllModels returns them
+        await catalog.setProviderEnabled('test-provider', true);
+
         // Verify saved via getAllModels
         expect(catalog.getAllModels(), hasLength(2));
 
@@ -853,6 +861,9 @@ void main() {
           prefs: prefs,
           builtInProviders: [testProvider],
         );
+
+        // Enable provider in new instance too
+        await catalog2.setProviderEnabled('test-provider', true);
 
         // Models should be loaded from SharedPreferences
         final models = catalog2.getAllModels();

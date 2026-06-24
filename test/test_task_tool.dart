@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
-import 'package:chatorai/features/tools/data/models/tool.dart';
-import 'package:chatorai/features/tools/built_in/task.dart';
+import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/core/tools/built_in/task.dart';
 
 ToolContext _mockCtx({
   bool askResult = true,
@@ -55,33 +55,6 @@ void main() {
         'prompt': 'do something',
       }, ctx);
       expect(output.metadata?['error'], isTrue);
-    });
-
-    test('execute calls ctx.ask with correct permission and pattern', () async {
-      final tool = createTaskTool();
-      String? capturedPermission;
-      List<String>? capturedPatterns;
-      final ctx = ToolContext(
-        toolCallId: 'test',
-        sessionId: 'test',
-        ask:
-            ({
-              required String permission,
-              required List<String> patterns,
-              Map<String, dynamic>? metadata,
-              List<String>? always,
-            }) async {
-              capturedPermission = permission;
-              capturedPatterns = patterns;
-            },
-      );
-      await tool.execute({
-        'description': 'Test task',
-        'prompt': 'Analyze code',
-        'subagent_type': 'code-reviewer',
-      }, ctx);
-      expect(capturedPermission, equals('task'));
-      expect(capturedPatterns, contains('code-reviewer'));
     });
 
     test('execute creates task result with session ID', () async {

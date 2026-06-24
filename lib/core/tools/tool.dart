@@ -13,22 +13,28 @@ class ToolContext {
   })
   ask;
 
+  final void Function({String? title, Map<String, dynamic>? metadata})?
+  onMetadata;
+
   const ToolContext({
     required this.toolCallId,
     this.abortSignal,
     required this.sessionId,
     required this.ask,
+    this.onMetadata,
   });
 }
 
 class ToolOutput {
   final String output;
   final Map<String, dynamic>? metadata;
+  final String? title;
 
-  const ToolOutput(this.output, {this.metadata});
+  const ToolOutput(this.output, {this.metadata, this.title});
 
   Map<String, dynamic> toJson() => {
     'output': output,
+    if (title != null) 'title': title,
     if (metadata != null) 'metadata': metadata,
   };
 }

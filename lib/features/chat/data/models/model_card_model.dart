@@ -2,10 +2,10 @@ import 'package:chatorai/core/llm/models/model_config.dart' as catalog;
 
 /// Legacy capabilities model.
 ///
-/// Use [ModelCapabilities] from package:chatorai/core/ai/catalog/models/model_config.dart
+/// Use [ModelCapabilities] from package:chatorai/core/llm/models/model_config.dart
 /// instead.
 @Deprecated(
-  'Use ModelCapabilities from package:chatorai/core/ai/catalog/models/model_config.dart',
+  'Use ModelCapabilities from package:chatorai/core/llm/models/model_config.dart',
 )
 class ModelCapabilities {
   final bool reasoning;
@@ -54,10 +54,10 @@ class ModelCapabilities {
 
 /// Legacy model class for AI model configurations.
 ///
-/// Use [ModelConfig] from package:chatorai/core/ai/catalog/models/model_config.dart
+/// Use [ModelConfig] from package:chatorai/core/llm/models/model_config.dart
 /// instead. This class is kept for backward compatibility with existing UI code.
 @Deprecated(
-  'Use ModelConfig from package:chatorai/core/ai/catalog/models/model_config.dart',
+  'Use ModelConfig from package:chatorai/core/llm/models/model_config.dart',
 )
 class ChatModel {
   final String id;
@@ -198,16 +198,17 @@ class ChatModel {
 
   static String? _parsePricing(dynamic pricing) {
     if (pricing == null) return null;
+    double? v;
     if (pricing is String) {
       if (pricing == '0' || pricing.toLowerCase().contains('free')) {
         return '0';
       }
-      return pricing;
+      v = double.tryParse(pricing);
+    } else if (pricing is num) {
+      v = pricing.toDouble();
     }
-    if (pricing is num) {
-      return pricing.toString();
-    }
-    return null;
+    if (v == null) return null;
+    return catalog.ModelPricing.formatPerM(v);
   }
 
   /// Creates a [ChatModel] from a catalog [ModelConfig].
@@ -221,8 +222,8 @@ class ChatModel {
       description: config.description ?? '',
       provider: config.providerId,
       contextLength: config.contextLength,
-      pricingPrompt: config.pricing?.inputCostPer1k?.toString(),
-      pricingCompletion: config.pricing?.outputCostPer1k?.toString(),
+      pricingPrompt: _parsePricing(config.pricing?.inputCostPer1k),
+      pricingCompletion: _parsePricing(config.pricing?.outputCostPer1k),
       capabilities: ModelCapabilities(
         reasoning: config.capabilities.reasoning,
         multimodal: config.capabilities.multimodal,
@@ -232,9 +233,13 @@ class ChatModel {
     );
   }
 
-  bool get isFree =>
-      (pricingPrompt == '0' || pricingPrompt == null) &&
-      (pricingCompletion == '0' || pricingCompletion == null);
+  bool get isFree {
+    final prompt = double.tryParse(pricingPrompt ?? '');
+    final completion = double.tryParse(pricingCompletion ?? '');
+    if (prompt == null && completion == null) return true;
+    return (prompt == null || prompt == 0) &&
+        (completion == null || completion == 0);
+  }
 
   bool get supportsReasoning => capabilities.reasoning;
 

@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:test/test.dart';
-import 'package:chatorai/features/tools/built_in/apply_patch.dart';
-import 'package:chatorai/features/tools/data/models/tool.dart';
+import 'package:chatorai/core/tools/built_in/apply_patch.dart';
+import 'package:chatorai/core/tools/tool.dart';
 
 ToolContext _mockCtx() {
   return ToolContext(

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:chatorai/core/skills/models/skill_info.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 
@@ -176,7 +177,7 @@ class UrlSource implements SkillSource {
     List<Map<String, dynamic>> files,
   ) async {
     // Create cache directory: ~/.cache/chatorai/skills/<url-hash>/<skill-name>/
-    final cacheRoot = _getCacheRoot();
+    final cacheRoot = await _getCacheRoot();
     final urlHash = _hashString(config.baseUrl);
     final skillCacheDir = p.join(cacheRoot, urlHash, skillName);
     await Directory(skillCacheDir).create(recursive: true);
@@ -242,12 +243,9 @@ class UrlSource implements SkillSource {
     await targetFile.writeAsBytes(response.bodyBytes);
   }
 
-  String _getCacheRoot() {
-    final home =
-        Platform.environment['HOME'] ??
-        Platform.environment['USERPROFILE'] ??
-        '/tmp';
-    return p.join(home, '.cache', 'chatorai', 'skills');
+  Future<String> _getCacheRoot() async {
+    final cacheDir = await XdgPaths.cacheHomeAsync;
+    return p.join(cacheDir, 'skills');
   }
 
   String _hashString(String input) {

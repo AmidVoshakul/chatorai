@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
 
@@ -124,6 +125,7 @@ ToolDef createApplyPatchTool() {
         }
       }
       await file.writeAsString(result.join('\n'));
+      await FileEditGuard.recordRead(safePath);
       final expectedTotalLines = originalLines.length - oldCount + newCount;
       if (result.length != expectedTotalLines) {
         return ToolOutput(

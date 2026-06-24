@@ -50,7 +50,7 @@ void main() {
         messages: [
           SessionMessage(
             id: 'm1',
-            role: const UserRole(),
+            role: MessageRole.user,
             content: 'Hi',
             seq: 1,
             createdAt: now,
@@ -66,7 +66,7 @@ void main() {
     test('copyWith updates content', () {
       final msg = SessionMessage(
         id: 'm1',
-        role: const UserRole(),
+        role: MessageRole.user,
         content: 'Hi',
         seq: 1,
         createdAt: DateTime.now(),
@@ -80,14 +80,14 @@ void main() {
       final now = DateTime.now();
       final a = SessionMessage(
         id: 'm1',
-        role: const UserRole(),
+        role: MessageRole.user,
         content: 'Hi',
         seq: 1,
         createdAt: now,
       );
       final b = SessionMessage(
         id: 'm1',
-        role: const UserRole(),
+        role: MessageRole.user,
         content: 'Hi',
         seq: 1,
         createdAt: now,
@@ -99,14 +99,14 @@ void main() {
       final now = DateTime.now();
       final a = SessionMessage(
         id: 'm1',
-        role: const UserRole(),
+        role: MessageRole.user,
         content: 'Hi',
         seq: 1,
         createdAt: now,
       );
       final b = SessionMessage(
         id: 'm1',
-        role: const UserRole(),
+        role: MessageRole.user,
         content: 'Hello',
         seq: 1,
         createdAt: now,
@@ -133,16 +133,16 @@ void main() {
   });
 
   group('MessageRole', () {
-    test('UserRole toString', () {
-      expect(const UserRole().toString(), 'user');
+    test('user toString', () {
+      expect(MessageRole.user.toString(), 'MessageRole.user');
     });
 
-    test('AssistantRole toString', () {
-      expect(const AssistantRole().toString(), 'assistant');
+    test('assistant toString', () {
+      expect(MessageRole.assistant.toString(), 'MessageRole.assistant');
     });
 
-    test('ToolRole toString', () {
-      expect(const ToolRole().toString(), 'tool');
+    test('tool toString', () {
+      expect(MessageRole.tool.toString(), 'MessageRole.tool');
     });
   });
 }

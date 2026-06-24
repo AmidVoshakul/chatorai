@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/tools/data/models/tool_error.dart';
+import 'package:chatorai/core/tools/tool_error.dart';
 
 void main() {
   group('ToolError', () {

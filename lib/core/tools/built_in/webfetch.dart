@@ -3,20 +3,20 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/core/tools/truncation_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 
 ToolDef createWebfetchTool() {
   return ToolDef(
     id: 'webfetch',
-    description: 'Fetch a URL and return its content',
+    description:
+        'Fetch content from a URL and return it as text. '
+        'Use for retrieving web pages, API responses, or any HTTP/HTTPS '
+        'resource. Large responses are truncated and saved to disk.',
     inputSchema: {
       'type': 'object',
       'properties': {
         'url': {'type': 'string', 'description': 'URL to fetch'},
-        'max_chars': {
-          'type': 'integer',
-          'description': 'Maximum characters to return',
-        },
       },
       'required': ['url'],
     },
@@ -32,8 +32,6 @@ ToolDef createWebfetchTool() {
       LogTags.permission.logInfo(
         'webfetch.execute: ctx.ask returned, permission granted',
       );
-
-      final maxChars = input['max_chars'] as int? ?? 50000;
 
       final uri = Uri.tryParse(url);
       if (uri == null || uri.host.isEmpty) {
@@ -55,6 +53,8 @@ ToolDef createWebfetchTool() {
         );
       }
 
+      final truncation = TruncationService.instance;
+
       try {
         final client = HttpClient()
           ..userAgent =
@@ -71,7 +71,7 @@ ToolDef createWebfetchTool() {
         LogTags.network.logInfo(
           'webfetch: Content fetched (${text.length} chars) from $url',
         );
-        return ToolOutput(text.substring(0, text.length.clamp(0, maxChars)));
+        return ToolOutput(truncation.truncate(text));
       } on TimeoutException {
         return ToolOutput(
           'Error fetching $url: request timed out',

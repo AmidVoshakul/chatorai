@@ -1,4 +1,5 @@
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
+import 'package:chatorai/core/tools/truncation_service.dart';
 import 'package:chatorai/core/permission/evaluator.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/rule.dart';
@@ -14,8 +15,6 @@ import 'dart:async';
 // ---------------------------------------------------------------------------
 class ToolExecutor {
   static const _doomLoopThreshold = 3;
-  static const _maxOutputChars = 2000;
-  static const _maxOutputBytes = 50 * 1024; // 50 KB overflow cap
   static const _sideEffectingTools = <String>{'bash', 'write'};
 
   // Session-scoped caches (pruned on session close)
@@ -128,12 +127,14 @@ class ToolExecutor {
       }
 
       // Build execution context
+      final abortSignal = _extractAbortSignal(options);
       final askCtx = _AskContext(
         def: def,
         inputMap: inputMap,
         sessionId: sessionId,
         permissions: _permissions,
         defaultRules: _defaultRules,
+        abortSignal: abortSignal,
       );
 
       final result = await def.execute(inputMap, askCtx.toToolContext());
@@ -198,6 +199,27 @@ class ToolExecutor {
 
   // --- Private helpers ---
 
+  /// Extract abort signal from SDK tool options (if available).
+  static sdk.CancellationToken? _extractAbortSignal(dynamic options) {
+    if (options == null) return null;
+    try {
+      final signal = (options as dynamic).abortSignal;
+      if (signal is sdk.CancellationToken) return signal;
+    } catch (_) {}
+    try {
+      final ctx = (options as dynamic).experimentalContext;
+      if (ctx is Map) {
+        final signal = ctx['abortSignal'];
+        if (signal is sdk.CancellationToken) return signal;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  String _truncate(String output) {
+    return TruncationService.instance.truncate(output);
+  }
+
   /// Evaluate a permission rule for a tool call.
   PermissionRule _evaluate(String permission, String toolId) {
     return evaluate(permission, toolId, [
@@ -243,14 +265,6 @@ class ToolExecutor {
     return false;
   }
 
-  String _truncate(String output) {
-    if (output.length > _maxOutputBytes) {
-      return '[Output overflow: $output.length chars exceeds $_maxOutputBytes byte limit]';
-    }
-    if (output.length <= _maxOutputChars) return output;
-    return '${output.substring(0, _maxOutputChars)}\n\n[Output truncated: $output.length chars]';
-  }
-
   String _normalizeInput(Map<String, dynamic> input) {
     final entries = input.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
@@ -265,6 +279,7 @@ class _AskContext {
   final String? sessionId;
   final PermissionService permissions;
   final PermissionRuleset defaultRules;
+  final sdk.CancellationToken? abortSignal;
 
   _AskContext({
     required this.def,
@@ -272,10 +287,16 @@ class _AskContext {
     required this.sessionId,
     required this.permissions,
     required this.defaultRules,
+    this.abortSignal,
   });
 
   ToolContext toToolContext() {
-    return ToolContext(toolCallId: '', sessionId: sessionId, ask: _ask);
+    return ToolContext(
+      toolCallId: '',
+      sessionId: sessionId,
+      abortSignal: abortSignal,
+      ask: _ask,
+    );
   }
 
   Future<void> _ask({

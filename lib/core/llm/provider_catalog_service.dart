@@ -147,6 +147,27 @@ class ProviderCatalogService {
         }
       }
     }
+    await _migrateProviderEnabled();
+  }
+
+  /// Migration helper: enables providers that were configured before the
+  /// `isProviderEnabled` default changed from `true` to `false`.
+  ///
+  /// Runs once after [preloadApiKeys]. A provider is considered configured
+  /// if it has an API key, selected model IDs, or a custom base URL.
+  Future<void> _migrateProviderEnabled() async {
+    if (_prefs.getBool('_catalog_enabled_migration_v3') == true) return;
+
+    for (final provider in _providers) {
+      final hasKey = getApiKeySync(provider.id) != null;
+      final hasSelectedIds = getSelectedModelIds(provider.id).isNotEmpty;
+      final hasCustomUrl = getCustomBaseUrl(provider.id) != null;
+      if (hasKey || hasSelectedIds || hasCustomUrl) {
+        await setProviderEnabled(provider.id, true);
+      }
+    }
+
+    await _prefs.setBool('_catalog_enabled_migration_v3', true);
   }
 
   /// Discover models from a provider's `/models` endpoint and persist them.
@@ -197,6 +218,11 @@ class ProviderCatalogService {
         items = data['data'] as List<dynamic>;
       } else if (data is List) {
         items = data;
+      } else if (data is Map &&
+          data.containsKey('id') &&
+          !data.containsKey('data')) {
+        // Single-model response (e.g. Venice AI): {id, context_length, model_spec: {...}, ...}
+        items = [data as Map<String, dynamic>];
       }
 
       LogTags.network.logDebug(
@@ -204,16 +230,25 @@ class ProviderCatalogService {
       );
 
       final models = items.whereType<Map<String, dynamic>>().map((m) {
-        final rawId = (m['id'] ?? m['name'] ?? '') as String;
+        // Handle non-standard single-object responses (e.g. Venice AI)
+        final modelSpec = m['model_spec'] as Map<String, dynamic>? ?? {};
+        final rawId =
+            (m['id'] ?? modelSpec['name'] ?? m['name'] ?? '') as String;
         final modelName = rawId;
         final modelId = _canonicalModelId(providerId, rawId);
-        final display = (m['name'] ?? rawId) as String? ?? rawId;
+        final display =
+            (m['name'] ?? modelSpec['name'] ?? rawId) as String? ?? rawId;
 
-        final architecture = m['architecture'] as Map<String, dynamic>?;
+        final source = modelSpec.isNotEmpty ? modelSpec : m;
+        final architecture =
+            source['architecture'] as Map<String, dynamic>? ??
+            m['architecture'] as Map<String, dynamic>?;
         final inputModalities =
             (architecture?['input_modalities'] as List<dynamic>?) ?? [];
         final supportedParams =
-            (m['supported_parameters'] as List<dynamic>?) ?? [];
+            (source['supported_parameters'] as List<dynamic>?) ??
+            (m['supported_parameters'] as List<dynamic>?) ??
+            [];
         final hasTools =
             supportedParams.contains('tools') ||
             supportedParams.contains('tool_choice');
@@ -223,12 +258,43 @@ class ProviderCatalogService {
         final isMultimodal = inputModalities.contains('image');
         final hasVision = inputModalities.contains('image');
 
+        double? toDouble(dynamic value) {
+          if (value == null) return null;
+          if (value is num) return value.toDouble();
+          if (value is String) return double.tryParse(value);
+          return null;
+        }
+
+        final pricingRaw =
+            (source['pricing'] as Map<String, dynamic>?) ??
+            (m['pricing'] as Map<String, dynamic>?);
+        final promptPrice =
+            toDouble(pricingRaw?['prompt']) ??
+            toDouble(pricingRaw?['input']) ??
+            toDouble(pricingRaw?['input_cost_per_token']) ??
+            toDouble((pricingRaw?['input'] as Map?)?['usd']);
+        final completionPrice =
+            toDouble(pricingRaw?['completion']) ??
+            toDouble(pricingRaw?['output']) ??
+            toDouble(pricingRaw?['output_cost_per_token']) ??
+            toDouble((pricingRaw?['output'] as Map?)?['usd']);
+        final modelPricing = (promptPrice != null || completionPrice != null)
+            ? ModelPricing(
+                inputCostPer1k: promptPrice ?? 0.0,
+                outputCostPer1k: completionPrice ?? 0.0,
+              )
+            : null;
+
         return ModelConfig.basic(
           id: modelId,
           providerId: providerId,
           modelName: modelName,
           displayName: display,
-          description: (m['description'] as String?) ?? '',
+          description: _stripTruncation(
+            (source['description'] as String?) ??
+                (m['description'] as String?) ??
+                '',
+          ),
           capabilities: ModelCapabilities(
             reasoning: hasReasoning,
             multimodal: isMultimodal,
@@ -238,6 +304,7 @@ class ProviderCatalogService {
           contextLength: (m['context_length'] is int)
               ? (m['context_length'] as int)
               : 0,
+          pricing: modelPricing,
           enabled: true,
         );
       }).toList();
@@ -338,11 +405,14 @@ class ProviderCatalogService {
 
   /// Update the cached model list for a provider and persist it.
   ///
-  /// Preserves `enabled` flags from existing models when possible.
+  /// [overwriteEnabled] when true, uses the `enabled` value from [models]
+  /// instead of preserving existing flags. Set to true when saving user
+  /// selection from the dialog; leave false when merging API results.
   Future<void> updateProviderModels(
     String providerId,
-    List<ModelConfig> models,
-  ) async {
+    List<ModelConfig> models, {
+    bool overwriteEnabled = false,
+  }) async {
     final provider = getProvider(providerId);
     if (provider == null) return;
 
@@ -357,7 +427,9 @@ class ProviderCatalogService {
       return m.copyWith(
         id: canonicalId,
         providerId: providerId,
-        enabled: existing?.enabled ?? m.enabled,
+        enabled: overwriteEnabled
+            ? m.enabled
+            : (existing?.enabled ?? m.enabled),
       );
     }).toList();
 
@@ -412,7 +484,7 @@ class ProviderCatalogService {
 
   /// Check if a provider is enabled.
   bool isProviderEnabled(String providerId) {
-    return _prefs.getBool('${_PrefKeys.enabled}$providerId') ?? true;
+    return _prefs.getBool('${_PrefKeys.enabled}$providerId') ?? false;
   }
 
   /// Set whether a provider is enabled.
@@ -538,26 +610,34 @@ class ProviderCatalogService {
   // INTERNAL
   // ===========================================================================
 
+  /// Remove provider-side truncation markers (e.g. trailing "..." from
+  /// OpenRouter-style 512-char description caps).
+  static String _stripTruncation(String desc) {
+    final trimmed = desc.trimRight();
+    final cleaned = trimmed.replaceAll(RegExp(r'\.\.\..*$'), '').trimRight();
+    return cleaned;
+  }
+
   /// Load provider state from SharedPreferences.
   void _loadFromPrefs() {
     // Cache schema v1 → v2: old code used ModelCapabilities.basic()
     // which set only tools=true. Clear all cached models so
     // discoverModels() re-populates with proper capabilities.
     final cacheVersion = _prefs.getInt(_PrefKeys.cacheVersionKey) ?? 0;
-    if (cacheVersion < 2) {
+    if (cacheVersion < 3) {
       LogTags.network.logInfo(
-        '[Catalog] Cache invalidated (v$cacheVersion→2), re-discovery required',
+        '[Catalog] Cache invalidated (v$cacheVersion→3), re-discovery required',
       );
       for (final prov in _builtInProviders) {
         _prefs.remove('${_PrefKeys.models}${prov.id}');
         _prefs.remove('${_PrefKeys.discoveryAt}${prov.id}');
       }
-      _prefs.setInt(_PrefKeys.cacheVersionKey, 2);
+      _prefs.setInt(_PrefKeys.cacheVersionKey, 3);
     }
 
     _providers = _builtInProviders.map((provider) {
       final enabled = _prefs.getBool('${_PrefKeys.enabled}${provider.id}');
-      return provider.copyWith(enabled: enabled ?? provider.enabled);
+      return provider.copyWith(enabled: enabled ?? false);
     }).toList();
 
     // Load custom providers from stored JSON
@@ -588,6 +668,17 @@ class ProviderCatalogService {
               .map((m) => ModelConfig.fromJson(m))
               .toList();
           _providers[i] = prov.copyWith(models: models);
+
+          if (models.any((m) => (m.description ?? '').endsWith('...'))) {
+            final sanitized = models
+                .map(
+                  (m) => m.copyWith(
+                    description: _stripTruncation(m.description ?? ''),
+                  ),
+                )
+                .toList();
+            _providers[i] = _providers[i].copyWith(models: sanitized);
+          }
         } catch (_) {
           // ignore bad cache
         }

@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import 'package:chatorai/features/chat/data/models/chat_model.dart';
+import 'package:chatorai/features/chat/data/models/model_card_model.dart';
 import 'package:chatorai/providers.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ===========================================================================
@@ -69,28 +70,31 @@ class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
     });
   }
 
-  Future<void> loadModels() async {
+  Future<void> loadModels({bool forceRefresh = false}) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final modelNotifier = ref.read(modelProvider.notifier);
 
-      // Wait for models to be loaded (with timeout handling)
-      await modelNotifier.waitForModelsLoaded(
-        timeout: const Duration(seconds: 15),
-      );
+      await modelNotifier.reloadModels(forceRefresh: forceRefresh);
 
       final modelState = ref.read(modelProvider);
-
-      // If still no models after waiting, try forcing a reload
-      if (modelState.availableModels.isEmpty && !modelState.modelsLoaded) {
-        await modelNotifier.reloadModels();
-        await Future.delayed(const Duration(seconds: 2));
+      final models = modelState.availableModels;
+      LogTags.settings.logInfo(
+        '[ModelsScreen] loadModels: availableModels=${models.length}',
+      );
+      if (models.isNotEmpty) {
+        LogTags.settings.logInfo(
+          '[ModelsScreen] sample IDs: ${models.take(5).map((m) => m.id).join(', ')}',
+        );
+        LogTags.settings.logInfo(
+          '[ModelsScreen] sample providers: ${models.take(5).map((m) => '${m.id}=>${m.provider}').join(', ')}',
+        );
       }
-
-      final modelState2 = ref.read(modelProvider);
-      final models = modelState2.availableModels;
       final filtered = _applyFilters(models);
+      LogTags.settings.logInfo(
+        '[ModelsScreen] loadModels: filteredModels=${filtered.length}',
+      );
 
       state = state.copyWith(
         models: models,
@@ -98,6 +102,7 @@ class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
         isLoading: false,
       );
     } catch (e) {
+      LogTags.settings.logError('[ModelsScreen] loadModels failed: $e');
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }

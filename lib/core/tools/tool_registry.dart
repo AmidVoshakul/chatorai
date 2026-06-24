@@ -25,11 +25,20 @@ class ToolRegistry {
   // ---- Registration API ----
 
   void register(ToolDef tool) {
-    if (!_tools.any((t) => t.id == tool.id)) _tools.add(tool);
+    if (!contains(tool.id)) _tools.add(tool);
   }
 
   List<ToolDef> get all => List.unmodifiable(_tools);
   List<String> get ids => _tools.map((t) => t.id).toList();
+
+  bool contains(String id) => _tools.any((t) => t.id == id);
+
+  bool remove(String id) {
+    final idx = _tools.indexWhere((t) => t.id == id);
+    if (idx == -1) return false;
+    _tools.removeAt(idx);
+    return true;
+  }
 
   ToolDef? get(String id) {
     for (final t in _tools) {

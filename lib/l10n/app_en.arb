@@ -274,6 +274,7 @@
   "tapHeartToAddFavorites": "Tap the heart icon on models to add them to your favorites",
   "addToFavorites": "Add to favorites",
   "removeFromFavorites": "Remove from favorites",
+  "refresh": "Refresh",
   "startListening": "Start voice input",
 "stopListening": "Stop voice input",
 "listening": "Listening...",

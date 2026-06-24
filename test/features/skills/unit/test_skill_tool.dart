@@ -2,7 +2,7 @@ import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/features/skills/data/models/skill_info.dart';
 import 'package:chatorai/features/skills/domain/services/skill_service.dart';
 import 'package:chatorai/features/skills/data/models/skill_info.dart';
-import 'package:chatorai/features/tools/data/models/tool.dart';
+import 'package:chatorai/core/tools/tool.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 

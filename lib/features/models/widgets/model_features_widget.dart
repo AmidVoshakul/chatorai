@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:chatorai/features/chat/data/models/model_card_model.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/features/chat/data/models/chat_model.dart';
+import 'package:flutter/material.dart';
 
 class ModelFeaturesWidget extends StatelessWidget {
   final ChatModel model;

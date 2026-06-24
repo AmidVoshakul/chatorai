@@ -1,10 +1,13 @@
 import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/core/llm/models/auth_config.dart';
+import 'package:chatorai/features/chat/data/providers/models_provider.dart'
+    show modelsScreenProvider;
 import 'package:chatorai/features/models/providers/model_provider.dart'
     show modelProvider;
 import 'package:chatorai/features/settings/screens/provider_settings_actions.dart';
 import 'package:chatorai/features/settings/widgets/add_provider_dialog.dart';
 import 'package:chatorai/features/settings/widgets/model_selection_dialog.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -129,6 +132,10 @@ Future<void> showModelSelectionDialog({
         apiKey: apiKey,
         initialSelectedIds: initialSelectedIds,
         onSave: (selectedIds) async {
+          LogTags.settings.logInfo(
+            '[ModelSelection] Saved: providerId=$providerId, '
+            'selectedIds=[${selectedIds.join(', ')}]',
+          );
           final scaffoldContext = context;
           Navigator.pop(dialogContext);
           if (scaffoldContext.mounted) {
@@ -139,8 +146,13 @@ Future<void> showModelSelectionDialog({
             );
           }
           await catalog.setSelectedModelIds(providerId, selectedIds);
+          LogTags.settings.logInfo(
+            '[ModelSelection] Done setSelectedModelIds, now enabling provider and reloading',
+          );
           await catalog.setProviderEnabled(providerId, true);
-          await ref.read(modelProvider.notifier).resetAndReloadModels();
+          await ref.read(modelProvider.notifier).resetAndReloadModels(forceRefresh: true);
+          ref.invalidate(modelsScreenProvider);
+          LogTags.settings.logInfo('[ModelSelection] reloadModels complete');
         },
         catalog: catalog,
       );

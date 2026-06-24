@@ -1,10 +1,10 @@
 import 'package:chatorai/core/llm/catalog_providers.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chatorai_divider.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_actions.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_dialogs.dart';
 import 'package:chatorai/features/settings/widgets/provider_card.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/shared/theme/chatorai_divider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

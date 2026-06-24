@@ -1,3 +1,4 @@
+import 'package:chatorai/features/models/widgets/provider_icon.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -141,7 +142,7 @@ class ProviderCard extends StatelessWidget {
         ),
       );
     }
-    return Icon(Icons.api, size: ChatoraiIconSizes.xxl, color: iconColor);
+    return ProviderIcon(providerId: providerId, size: ChatoraiIconSizes.xxl);
   }
 }
 

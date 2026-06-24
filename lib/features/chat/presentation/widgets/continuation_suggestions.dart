@@ -1,8 +1,9 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 // ===========================================================================
 // WIDGET CLASS
@@ -56,7 +57,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
       duration: ChatoraiDurations.normal,
     );
 
-    final limitedSuggestions = widget.suggestions.take(4).toList();
+    final limitedSuggestions = widget.suggestions.take(5).toList();
 
     for (int i = 0; i < limitedSuggestions.length; i++) {
       _pulseControllers.add(
@@ -92,7 +93,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
     super.didUpdateWidget(oldWidget);
     if (widget.suggestions != oldWidget.suggestions) {
       _stopCycle();
-      final limitedSuggestions = widget.suggestions.take(4).toList();
+      final limitedSuggestions = widget.suggestions.take(5).toList();
 
       for (var c in _pulseControllers) {
         c.dispose();
@@ -122,7 +123,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
   // =======================================================================
 
   void _startCycle() {
-    final limitedSuggestions = widget.suggestions.take(4).toList();
+    final limitedSuggestions = widget.suggestions.take(5).toList();
     if (!mounted || limitedSuggestions.isEmpty) return;
     _isCycleActive = true;
     _pulseNext(0);
@@ -131,7 +132,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
   void _pulseNext(int index) {
     if (!mounted || !_isCycleActive) return;
 
-    final limitedSuggestions = widget.suggestions.take(4).toList();
+    final limitedSuggestions = widget.suggestions.take(5).toList();
     if (index >= limitedSuggestions.length) {
       _cycleTimer = Timer(const Duration(seconds: 12), () {
         if (!mounted || !_isCycleActive) return;
@@ -326,7 +327,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
 
   Widget _buildSuggestions() {
     final theme = Theme.of(context);
-    final limitedSuggestions = widget.suggestions.take(4).toList();
+    final limitedSuggestions = widget.suggestions.take(5).toList();
 
     return Column(
       children: limitedSuggestions.asMap().entries.map<Widget>((entry) {
@@ -348,7 +349,7 @@ class _ContinuationSuggestionsState extends State<ContinuationSuggestions>
     ThemeData theme,
   ) {
     Animation<double>? animation;
-    final limitedSuggestions = widget.suggestions.take(4).toList();
+    final limitedSuggestions = widget.suggestions.take(5).toList();
     if (isActive &&
         _currentIndex < _pulseControllers.length &&
         _currentIndex < limitedSuggestions.length) {

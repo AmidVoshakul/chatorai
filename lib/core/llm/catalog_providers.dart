@@ -77,35 +77,7 @@ final allProvidersProvider = Provider<List<ProviderConfig>>((ref) {
   return catalog.getAllProvidersRaw();
 });
 
-/// Notifier for the currently selected model ID.
-class SelectedModelIdNotifier extends Notifier<String?> {
-  @override
-  String? build() => null;
-
-  void select(String? modelId) {
-    state = modelId;
-  }
-
-  void clear() {
-    state = null;
-  }
-}
-
-/// Currently selected model ID (mutable state).
-final selectedModelIdProvider =
-    NotifierProvider<SelectedModelIdNotifier, String?>(
-      SelectedModelIdNotifier.new,
-    );
-
-/// Currently selected model config.
-final selectedModelProvider = Provider<ModelConfig?>((ref) {
-  final selectedId = ref.watch(selectedModelIdProvider);
-  if (selectedId == null) return null;
-  final catalog = ref.watch(providerCatalogServiceProvider);
-  return catalog.getModel(selectedId);
-});
-
-/// The default model (first enabled model).
+/// The first enabled model across all providers (convenience).
 final defaultModelProvider = Provider<ModelConfig?>((ref) {
   final catalog = ref.watch(providerCatalogServiceProvider);
   return catalog.defaultModel;

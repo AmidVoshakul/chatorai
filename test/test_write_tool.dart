@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:chatorai/features/tools/data/models/tool.dart';
-import 'package:chatorai/features/tools/built_in/write.dart';
+import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/core/tools/built_in/write.dart';
 
 ToolContext _mockCtx({
   bool askResult = true,

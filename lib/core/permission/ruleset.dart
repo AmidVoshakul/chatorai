@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:chatorai/core/config/models/permission_section.dart';
+import 'package:chatorai/shared/utils/xdg_paths.dart';
 
 import 'rule.dart';
 
@@ -62,16 +61,7 @@ class PermissionRuleset {
     }
   }
 
-  static String _expandHome(String pattern) {
-    final home = Platform.environment['HOME'];
-    if (home == null) return pattern;
-
-    if (pattern == '~') return home;
-    if (pattern.startsWith('~/')) return home + pattern.substring(1);
-    if (pattern.startsWith(r'$HOME/')) return home + pattern.substring(6);
-    if (pattern.startsWith(r'$HOME')) return home + pattern.substring(5);
-    return pattern;
-  }
+  static String _expandHome(String pattern) => XdgPaths.expandHome(pattern);
 
   static PermissionRuleset defaults() {
     return PermissionRuleset(
@@ -123,6 +113,21 @@ class PermissionRuleset {
         ),
         const PermissionRule(
           permission: 'skill',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        const PermissionRule(
+          permission: 'lsp',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        const PermissionRule(
+          permission: 'task',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        const PermissionRule(
+          permission: 'todowrite',
           pattern: '*',
           action: PermissionAction.allow,
         ),

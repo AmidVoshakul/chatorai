@@ -21,38 +21,38 @@ All providers are defined using Riverpod 3.x and can be accessed via `ref.watch(
 
 ### Chat Providers
 
-| Provider | Type | Description |
-|----------|------|-------------|
-| `chatListProvider` | `NotifierProvider<ChatListNotifier, AsyncValue<List<Chat>>>` | List of all chats with CRUD operations. |
-| `chatScreenProvider` | `StateNotifierProvider<ChatScreenNotifier, ChatScreenState>` | UI state for chat screen (streaming, suggestions, sidebar, headings). |
-| `streamingMessageProvider` | `StateNotifierProvider<StreamingMessageNotifier, StreamingMessageState>` | State for the currently streaming assistant message (parts accumulation). |
-| `currentChatIdProvider` | `NotifierProvider<CurrentChatIdNotifier, String?>` | Currently active chat ID (router-level). |
-| `currentChatProvider` | `Provider<Chat?>` | Computed chat by ID (derived from `currentChatIdProvider` + `chatListProvider`). |
+| Provider                   | Type                                                                     | Description                                                                      |
+| -------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `chatListProvider`         | `NotifierProvider<ChatListNotifier, AsyncValue<List<Chat>>>`             | List of all chats with CRUD operations.                                          |
+| `chatScreenProvider`       | `StateNotifierProvider<ChatScreenNotifier, ChatScreenState>`             | UI state for chat screen (streaming, suggestions, sidebar, headings).            |
+| `streamingMessageProvider` | `StateNotifierProvider<StreamingMessageNotifier, StreamingMessageState>` | State for the currently streaming assistant message (parts accumulation).        |
+| `currentChatIdProvider`    | `NotifierProvider<CurrentChatIdNotifier, String?>`                       | Currently active chat ID (router-level).                                         |
+| `currentChatProvider`      | `Provider<Chat?>`                                                        | Computed chat by ID (derived from `currentChatIdProvider` + `chatListProvider`). |
 
 ### Model Providers
 
-| Provider | Type | Description |
-|----------|------|-------------|
+| Provider        | Type                                               | Description                                                  |
+| --------------- | -------------------------------------------------- | ------------------------------------------------------------ |
 | `modelProvider` | `StateNotifierProvider<ModelNotifier, ModelState>` | Model selection, favorites, available models from providers. |
-| `themeProvider` | `StateNotifierProvider<ThemeNotifier, ThemeState>` | Theme, language, font size, wide screen mode. |
+| `themeProvider` | `StateNotifierProvider<ThemeNotifier, ThemeState>` | Theme, language, font size, wide screen mode.                |
 
 ### Configuration Providers
 
-| Provider | Type | Description |
-|----------|------|-------------|
-| `configProvider` | `Provider<ChatOrAIConfig>` | Validated `chatorai.json` configuration. |
-| `permissionProvider` | `Provider<PermissionService>` | Permission service instance (singleton). |
+| Provider                   | Type                                                                     | Description                                                          |
+| -------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| `configProvider`           | `Provider<ChatOrAIConfig>`                                               | Validated `chatorai.json` configuration.                             |
+| `permissionProvider`       | `Provider<PermissionService>`                                            | Permission service instance (singleton).                             |
 | `providerSettingsProvider` | `StateNotifierProvider<ProviderSettingsNotifier, ProviderSettingsState>` | Multi-provider configuration (API keys, base URLs, selected models). |
 
 ### Core Services
 
-| Provider | Type | Description |
-|----------|------|-------------|
-| `chatAiServiceProvider` | `Provider<ChatAiService>` | AI completion service with tool execution loop. |
-| `chatRepositoryProvider` | `Provider<ChatRepository>` | Chat persistence repository. |
-| `chatStorageServiceProvider` | `Provider<ChatStorageService>` | Local storage abstraction (SharedPreferences). |
-| `toolRegistryProvider` | `FutureProvider<ToolRegistry>` | Registry of all available tools (12 built-in + dynamic skills). |
-| `skillServiceProvider` | `FutureProvider<SkillService>` | Skill management service for dynamic capabilities. |
+| Provider                     | Type                           | Description                                                     |
+| ---------------------------- | ------------------------------ | --------------------------------------------------------------- |
+| `chatAiServiceProvider`      | `Provider<ChatAiService>`      | AI completion service with tool execution loop.                 |
+| `chatRepositoryProvider`     | `Provider<ChatRepository>`     | Chat persistence repository.                                    |
+| `chatStorageServiceProvider` | `Provider<ChatStorageService>` | Local storage abstraction (SharedPreferences).                  |
+| `toolRegistryProvider`       | `FutureProvider<ToolRegistry>` | Registry of all available tools (12 built-in + dynamic skills). |
+| `skillServiceProvider`       | `FutureProvider<SkillService>` | Skill management service for dynamic capabilities.              |
 
 ---
 
@@ -80,6 +80,7 @@ Stream<StreamTextEvent> streamChatCompletion({
 ```
 
 **Event types:**
+
 - `Chunk` — text delta
 - `Reasoning` — thinking process delta
 - `ToolStart` — tool invocation began
@@ -88,6 +89,7 @@ Stream<StreamTextEvent> streamChatCompletion({
 - `Completion` — turn complete
 
 **Features:**
+
 - Unbounded retry with exponential backoff (base 2s, jitter 30%, cap 30s).
 - Respects `Retry-After` headers from rate limits.
 - Token counting and overflow detection.
@@ -98,6 +100,7 @@ Stream<StreamTextEvent> streamChatCompletion({
 Controls tool execution based on user-defined rules from `chatorai.json`. Evaluates rules using wildcard patterns; last-match-wins; default=`ask`.
 
 **Usage:**
+
 ```dart
 await permissionService.ask(
   PermissionRequest(
@@ -118,6 +121,7 @@ await permissionService.ask(
 Registry for all built-in and custom tools. Converts internal `ToolDef` to `ai_sdk_dart` `Tool` via `toSDKTools()`.
 
 **Registration:**
+
 - Built-in tools registered in `built_in_tools.dart` (11 tools: bash, read, glob, grep, edit, write, webfetch, websearch, apply_patch, todo_write, task).
 - `skill` tool registered separately via `skill_providers.dart`.
 - `question` tool exists but is not currently registered.
@@ -148,15 +152,15 @@ The message system uses a concrete `Message` class (not abstract) with `MessageR
 
 **MessageParts** (serialized as JSON with `type` field):
 
-| Part Type | Description | Widget |
-|-----------|-------------|--------|
-| `TextPart` | Plain text content | `TextPartWidget` |
-| `ReasoningPart` | Model's thinking process (collapsible) | `ReasoningPartWidget` |
-| `ToolCallPart` | Tool invocation (toolName, input) | `ToolCallPartWidget` |
+| Part Type        | Description                                  | Widget                 |
+| ---------------- | -------------------------------------------- | ---------------------- |
+| `TextPart`       | Plain text content                           | `TextPartWidget`       |
+| `ReasoningPart`  | Model's thinking process (collapsible)       | `ReasoningPartWidget`  |
+| `ToolCallPart`   | Tool invocation (toolName, input)            | `ToolCallPartWidget`   |
 | `ToolResultPart` | Tool output (state, output, duration, error) | `ToolResultPartWidget` |
-| `TaskPart` | Delegated subagent task | `TaskPartWidget` |
-| `QuestionPart` | Multi-question flow awaiting user response | `QuestionPartWidget` |
-| `TodoPart` | Todo list with items | `TodoPartWidget` |
+| `TaskPart`       | Delegated subagent task                      | `TaskPartWidget`       |
+| `QuestionPart`   | Multi-question flow awaiting user response   | `QuestionPartWidget`   |
+| `TodoPart`       | Todo list with items                         | `TodoPartWidget`       |
 
 **Note:** `ApplyPatchPart` and `SkillPart` are not implemented message part types. The `apply_patch` tool outputs via `ToolResultPartWidget` like any other tool.
 
@@ -168,21 +172,21 @@ All tools implement the `Tool` interface from `ai_sdk_dart`. The `ToolRegistry` 
 
 ### Built-in Tools (12 total)
 
-| Tool | Description | Input Schema | Default Permission |
-|------|-------------|--------------|-------------------|
-| `bash` | Execute shell command | `{ "command": string, "timeoutMs": number }` | ask |
-| `read` | Read file contents | `{ "path": string, "offset": number, "limit": number }` | allow |
-| `edit` | Replace text in file | `{ "path": string, "oldString": string, "newString": string }` | ask |
-| `write` | Create/overwrite file | `{ "path": string, "content": string }` | ask |
-| `glob` | Find files by pattern | `{ "pattern": string, "path": string }` | allow |
-| `grep` | Search file contents | `{ "pattern": string, "path": string, "filePattern": string }` | allow |
-| `webfetch` | Fetch URL content | `{ "url": string, "format": "text" \| "markdown" \| "html" }` | ask |
-| `websearch` | Search web via SearXNG | `{ "query": string, "engines": string[], "categories": string[] }` | ask |
-| `task` | Spawn subagent | `{ "prompt": string, "context": object, "subagentType": string }` | ask |
-| `todowrite` | Update todo list | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }` | ask |
-| `skill` | Load specialized skill | `{ "name": string, "params": object }` | ask |
-| `apply_patch` | Apply unified diff | `{ "patch": string, "dryRun": bool }` | ask |
-| `question` | Ask user questions | `{ "questions": [{ "question": string, "options": [string], "multiple": bool }] }` | ask |
+| Tool          | Description            | Input Schema                                                                       | Default Permission |
+| ------------- | ---------------------- | ---------------------------------------------------------------------------------- | ------------------ |
+| `bash`        | Execute shell command  | `{ "command": string, "timeoutMs": number }`                                       | ask                |
+| `read`        | Read file contents     | `{ "path": string, "offset": number, "limit": number }`                            | allow              |
+| `edit`        | Replace text in file   | `{ "path": string, "oldString": string, "newString": string }`                     | ask                |
+| `write`       | Create/overwrite file  | `{ "path": string, "content": string }`                                            | ask                |
+| `glob`        | Find files by pattern  | `{ "pattern": string, "path": string }`                                            | allow              |
+| `grep`        | Search file contents   | `{ "pattern": string, "path": string, "filePattern": string }`                     | allow              |
+| `webfetch`    | Fetch URL content      | `{ "url": string, "format": "text" \| "markdown" \| "html" }`                      | ask                |
+| `websearch`   | Search web via SearXNG | `{ "query": string, "engines": string[], "categories": string[] }`                 | ask                |
+| `task`        | Spawn subagent         | `{ "prompt": string, "context": object, "subagentType": string }`                  | ask                |
+| `todowrite`   | Update todo list       | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }`            | ask                |
+| `skill`       | Load specialized skill | `{ "name": string, "params": object }`                                             | ask                |
+| `apply_patch` | Apply unified diff     | `{ "patch": string, "dryRun": bool }`                                              | ask                |
+| `question`    | Ask user questions     | `{ "questions": [{ "question": string, "options": [string], "multiple": bool }] }` | ask                |
 
 **Note:** All tool outputs are truncated to 2000 lines or 50KB when displayed. There is no separate `ApplyPatchPartWidget` or `SkillPartWidget`.
 
@@ -192,14 +196,14 @@ All tools implement the `Tool` interface from `ai_sdk_dart`. The `ToolRegistry` 
 
 Streamed from `ChatAiService.streamChatCompletion()`:
 
-| Event | Callback | Payload |
-|-------|----------|---------|
-| `Chunk` | `onChunk(String)` | Text delta appended to message. |
-| `Reasoning` | `onReasoning(String)` | Thinking process delta. |
-| `ToolStart` | `onToolStart(ToolStartEvent)` | Tool invoked (id, name, input). |
-| `ToolEnd` | `onToolEnd(ToolEndEvent)` | Tool completed (result, duration). |
-| `ToolError` | `onToolError(ToolError)` | Tool failed (error, isEOF). |
-| `Completion` | `onCompletion(String)` | Final message ID / turn complete. |
+| Event        | Callback                      | Payload                            |
+| ------------ | ----------------------------- | ---------------------------------- |
+| `Chunk`      | `onChunk(String)`             | Text delta appended to message.    |
+| `Reasoning`  | `onReasoning(String)`         | Thinking process delta.            |
+| `ToolStart`  | `onToolStart(ToolStartEvent)` | Tool invoked (id, name, input).    |
+| `ToolEnd`    | `onToolEnd(ToolEndEvent)`     | Tool completed (result, duration). |
+| `ToolError`  | `onToolError(ToolError)`      | Tool failed (error, isEOF).        |
+| `Completion` | `onCompletion(String)`        | Final message ID / turn complete.  |
 
 ---
 
@@ -207,9 +211,12 @@ Streamed from `ChatAiService.streamChatCompletion()`:
 
 ### chatorai.json Schema
 
-Location (searched in order):
-1. `~/.config/chatorai/chatorai.json`
-2. Project root `chatorai.json`
+Location resolved via `XdgPaths.configHome` (see `lib/shared/utils/xdg_paths.dart`):
+
+1. `<configHome>/chatorai.json` (user-global, highest priority)
+2. Project root `chatorai.json` (fallback)
+
+Typical paths: `~/.config/<package>/chatorai.json` (Linux), `~/Library/Application Support/<package>/chatorai.json` (macOS), `%APPDATA%\<package>\config\chatorai.json` (Windows).
 
 Validated against JSON Schema in `lib/core/config/chatorai_schema.dart`.
 

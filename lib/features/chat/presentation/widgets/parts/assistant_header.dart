@@ -1,5 +1,5 @@
+import 'package:chatorai/shared/utils/format_time_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:chatorai/shared/utils/format_time.dart';
 
 /// Header widget showing model name and timestamp
 /// displayed at the bottom of an assistant message bubble.

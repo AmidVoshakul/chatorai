@@ -29,7 +29,11 @@ lib/
 │   │   ├── catalog_providers.dart
 │   │   └── provider_catalog_service.dart  # Centralized catalog with 24h cache
 │   ├── permission/          # Permission service and models
-│   └── utils/               # Shared utilities (logger, formatters, secure storage)
+│   ├── tools/               # Built-in tool implementations (12+ tools)
+│   │   ├── built_in/        # Individual tool implementations (bash, read, edit, etc.)
+│   │   ├── tool_registry.dart
+│   │   └── tool_output_persistence.dart
+│   └── utils/               # Shared utilities (logger, formatters, secure storage, xdg_paths)
 ├── features/                # Feature-based modules (primary organization)
 │   ├── agents/              # Subagent system and static registry
 │   ├── chat/                # Main chat feature (domain, data, presentation)
@@ -53,7 +57,7 @@ lib/
 │   │   ├── screens/         # SettingsScreen, ProviderSettingsScreen
 │   │   └── widgets/         # AddProviderDialog, ModelSelectionDialog, etc.
 │   ├── skills/              # Skill-based agent capabilities and SkillService
-│   └── tools/               # Built-in tool implementations (12+ tools)
+│   └── tools/               # Built-in tool implementations (12+ tools) — DEPRECATED: moved to core/tools
 ├── generated/               # Auto-generated localization (app_localizations.dart)
 └── l10n/                    # ARB files for translation (6 languages)
 ```
@@ -130,6 +134,7 @@ The ChatAiService coordinates AI completions with tool execution:
 5. `cacheDuration` is a constructor parameter on `ProviderCatalogService`, overridable for testing.
 
 Cache keys (SharedPreferences):
+
 - `catalog_provider_enabled_{id}` — whether the provider is enabled
 - `catalog_provider_base_url_{id}` — custom base URL override
 - `catalog_provider_api_key_{id}` — API key (also mirrored in SecureStorage)
@@ -267,10 +272,10 @@ lib/features/chat/
 
 **Note:** Message models are in `data/models/chat/`, not `domain/models/`. The `apply_patch_part_widget.dart` does not exist; `ApplyPatchPart` is not a recognized message part type. Only `@` triggers are currently implemented in `chat_input.dart`; `#` (file references) and `/` (slash commands) are planned for future releases.
 
-### Tools Feature Module
+### Tools Module (`lib/core/tools/`)
 
 ```
-lib/features/tools/
+lib/core/tools/
 ├── built_in/                      # 12 built-in tools
 │   ├── bash.dart                 # Shell command execution
 │   ├── edit.dart                 # In-file text replacement
@@ -284,22 +289,16 @@ lib/features/tools/
 │   ├── write.dart                # File creation/overwrite
 │   ├── apply_patch.dart          # Unified diff application (rendered via ToolResultPartWidget)
 │   └── built_in_tools.dart       # Registration barrel (registers 11 tools, excluding skill)
-├── permission/                   # Permission system (actual location: lib/core/permission/)
-│   ├── permission_service.dart   # Located in lib/core/permission/
-│   ├── permission_dialog.dart
-│   ├── models/
-│   │   ├── permission_context.dart
-│   │   ├── rule.dart
-│   │   ├── ruleset.dart
-│   │   ├── evaluator.dart
-│   │   └── wildcard.dart
-│   └── arity.dart               # Tool arity definitions
-├── tool_registry.dart           # Singleton registry, toSDKTools()
-├── tools.dart                   # Feature barrel export
-└── (tool part widgets live in lib/features/chat/presentation/widgets/parts/)
+├── tool.dart                     # Tool interface
+├── tool_error.dart               # Tool error types
+├── tool_execution.dart           # Execution context
+├── tool_output_persistence.dart  # Persistent tool output storage
+├── tool_registry.dart            # Singleton registry, toSDKTools()
+├── tool_registry_provider.dart   # Riverpod provider
+└── tool_title.dart               # Tool title formatting
 ```
 
-**Note:** The `skill` tool is registered separately via `skill_providers.dart`. The `question` tool exists but is not currently registered. `path_sandbox.dart` is a utility module, not a tool.
+**Note:** The `skill` tool is registered separately via `skill_providers.dart`. The `question` tool exists but is not currently registered. `path_sandbox.dart` is a utility module in `lib/shared/utils/`, not a tool. The permission system lives in `lib/core/permission/`.
 
 ### Models & Settings Feature Modules
 
@@ -391,4 +390,4 @@ Amazon Bedrock (`sdk: 'bedrock'`) requires `AuthType.aws` with `awsAccessKeyId`,
 
 ---
 
-For user-facing documentation, see `README.md`. For environment setup, see `docs/ENVIRONMENT.md`. For API reference, see `docs/API.md`. For roadmap, see `docs/ROADMAP.md`.
+For user-facing documentation, see `README.md`. For environment setup, see `docs/ENVIRONMENT.md`. For API reference, see `docs/API.md`. For roadmap, see `docs/ROADMAP.md`. For platform path conventions, see `docs/xdg-paths.md`.

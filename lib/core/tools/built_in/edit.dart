@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
 
@@ -54,6 +55,17 @@ ToolDef createEditTool() {
       final safePath = resolveSafePath(filePath);
       // Use pattern 'edit:file_path=$safePath' as required
       await ctx.ask(permission: 'edit', patterns: ['edit:file_path=$safePath']);
+
+      // Read-before-edit guard: reject if file was modified externally
+      final staleMtime = await FileEditGuard.checkStale(safePath);
+      if (staleMtime != null) {
+        return ToolOutput(
+          'Error: file was modified since last read '
+          '(mtime changed from cached value). '
+          'Please re-read the file before editing.',
+          metadata: {'error': true, 'stale': true},
+        );
+      }
       final file = File(safePath);
       if (!await file.exists()) {
         return ToolOutput(

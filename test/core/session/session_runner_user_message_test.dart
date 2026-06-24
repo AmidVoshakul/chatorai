@@ -72,7 +72,7 @@ void main() {
       // SessionCreated + MessageAdded → state should have 1 message
       expect(state.messages.length, 1);
       expect(state.messages.first.content, userContent);
-      expect(state.messages.first.role, const UserRole());
+      expect(state.messages.first.role, MessageRole.user);
       expect(state.messages.first.seq, 1);
     });
 

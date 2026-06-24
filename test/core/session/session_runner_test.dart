@@ -3,8 +3,6 @@ import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
-import 'package:chatorai/core/session/session_id.dart';
-import 'package:chatorai/core/session/session_state.dart';
 
 void main() {
   group('SessionRunner', () {
@@ -20,37 +18,6 @@ void main() {
 
     tearDown(() async {
       await db.close();
-    });
-
-    test('startSession creates session and returns event callbacks', () async {
-      final session = runner.startSession(
-        agent: 'code-reviewer',
-        modelRef: 'gpt-4',
-      );
-
-      expect(session, isNotNull);
-      expect(session.sessionId, isNotNull);
-      expect(session.sessionId.value, startsWith('ses_'));
-
-      // Initialize (persists SessionCreated)
-      final initialState = await session.initialize();
-      expect(initialState.agent, 'code-reviewer');
-      expect(initialState.modelRef, 'gpt-4');
-
-      // Verify event was stored
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.length, 1);
-      expect(events.first, isA<SessionCreated>());
-      final createdEvent = events.first as SessionCreated;
-      expect(createdEvent.agent, 'code-reviewer');
-      expect(createdEvent.modelRef, 'gpt-4');
-
-      // Callbacks exist
-      expect(session.onChunk, isA<Function>());
-      expect(session.onReasoning, isA<Function>());
-      expect(session.onToolStart, isA<Function>());
-      expect(session.onToolEnd, isA<Function>());
-      expect(session.onToolError, isA<Function>());
     });
 
     test('onChunk publishes TextStarted event', () async {

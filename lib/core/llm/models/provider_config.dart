@@ -166,13 +166,16 @@ class ProviderConfig extends Equatable {
     try {
       return models.firstWhere((m) => m.modelName == modelName);
     } catch (_) {
-      // Fall back to matching by full ID (supports slash paths and legacy
-      // colon-separated IDs like "openrouter:free").
       final normalized = modelName.replaceAll(':', '/');
       try {
         return models.firstWhere((m) => m.id == normalized);
       } catch (_) {
-        return null;
+        final prefixed = '$id/$normalized';
+        try {
+          return models.firstWhere((m) => m.id == prefixed);
+        } catch (_) {
+          return null;
+        }
       }
     }
   }

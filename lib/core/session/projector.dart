@@ -264,7 +264,11 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
       );
 
     case MessageAdded(:final messageId, :final role, :final content):
-      final seq = await _nextMessageSeq(db, event.sessionId);
+      final seq = await _existingOrNextMessageSeq(
+        db,
+        event.sessionId,
+        messageId,
+      );
       await db
           .into(db.messages)
           .insert(
@@ -276,6 +280,7 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
               content: Value<String>(content),
               createdAt: event.timestamp,
             ),
+            mode: InsertMode.insertOrReplace,
           );
 
     case TextEnded(:final messageId, :final fullText, :final model):
@@ -294,10 +299,15 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
 
     case ToolCalled(
       toolCallId: final toolCallId,
-      toolName: _,
+      toolName: final toolName,
       input: final input,
     ):
-      final seq = await _nextMessageSeq(db, event.sessionId);
+      final seq = await _existingOrNextMessageSeq(
+        db,
+        event.sessionId,
+        toolCallId,
+      );
+      final stored = jsonEncode({'toolName': toolName, 'input': input});
       await db
           .into(db.messages)
           .insert(
@@ -306,12 +316,14 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
               sessionId: event.sessionId.value,
               seq: seq,
               role: 'tool',
-              content: Value<String>(jsonEncode(input)),
+              content: Value<String>(stored),
               createdAt: event.timestamp,
             ),
+            mode: InsertMode.insertOrReplace,
           );
 
     case ToolSuccess(:final toolCallId, :final outputText, :final durationMs):
+      final toolName = await _lookupToolName(db, toolCallId);
       await (db.update(db.messages)..where((t) => t.id.equals(toolCallId)))
           .write(MessagesCompanion(content: Value(outputText)));
       await db
@@ -321,16 +333,18 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
               id: toolCallId,
               sessionId: event.sessionId.value,
               messageId: toolCallId,
-              toolName: '',
+              toolName: toolName,
               inputJson: Value('{}'),
               outputText: Value(outputText),
               durationMs: Value(durationMs),
               status: Value('success'),
               createdAt: event.timestamp,
             ),
+            mode: InsertMode.insertOrReplace,
           );
 
     case ToolFailed(:final toolCallId, :final error):
+      final toolName = await _lookupToolName(db, toolCallId);
       await (db.update(db.messages)..where((t) => t.id.equals(toolCallId)))
           .write(MessagesCompanion(error: Value<String?>(error)));
       await db
@@ -340,13 +354,14 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
               id: toolCallId,
               sessionId: event.sessionId.value,
               messageId: toolCallId,
-              toolName: '',
+              toolName: toolName,
               inputJson: Value('{}'),
               outputText: Value(error),
               durationMs: Value(0),
               status: Value('error'),
               createdAt: event.timestamp,
             ),
+            mode: InsertMode.insertOrReplace,
           );
 
     case StepEnded(
@@ -420,4 +435,46 @@ Future<int> _nextMessageSeq(AppDatabase db, SessionID sessionId) async {
             ..addColumns([db.messages.seq.max()]))
           .getSingleOrNull();
   return ((row?.read(db.messages.seq.max()) ?? 0) + 1);
+}
+
+/// Returns the existing [seq] for [messageId] if it exists, otherwise
+/// computes the next available sequence number for [sessionId].
+/// Prevents [seq] inflation when [InsertMode.insertOrReplace] re-inserts
+/// an already‑stored message (e.g. duplicate tool events).
+Future<int> _existingOrNextMessageSeq(
+  AppDatabase db,
+  SessionID sessionId,
+  String messageId,
+) async {
+  final row =
+      await (db.selectOnly(db.messages)
+            ..where(db.messages.id.equals(messageId))
+            ..addColumns([db.messages.seq]))
+          .getSingleOrNull();
+  if (row != null) {
+    final seq = row.read(db.messages.seq);
+    if (seq != null) return seq;
+  }
+  return _nextMessageSeq(db, sessionId);
+}
+
+/// Extracts the [toolName] from the JSON previously stored by the
+/// [ToolCalled] projection. Returns the name on success, or an empty
+/// string if the message row is missing or its content is malformed.
+Future<String> _lookupToolName(AppDatabase db, String toolCallId) async {
+  try {
+    final row =
+        await (db.selectOnly(db.messages)
+              ..where(db.messages.id.equals(toolCallId))
+              ..addColumns([db.messages.content]))
+            .getSingleOrNull();
+    if (row == null) return '';
+    final stored = row.read(db.messages.content);
+    if (stored == null || stored.isEmpty) return '';
+    final parsed = jsonDecode(stored);
+    if (parsed is Map && parsed['toolName'] is String) {
+      return parsed['toolName'] as String;
+    }
+  } catch (_) {}
+  return '';
 }

@@ -10,24 +10,30 @@ ChatORAI uses a granular permission system to control tool access. Permissions a
 
 Out of the box, the following defaults apply:
 
-| Permission | Default Action |
-|------------|----------------|
-| `read`     | `allow`        |
-| `glob`     | `allow`        |
-| `grep`     | `allow`        |
-| `bash`     | `ask`          |
-| `edit`     | `ask`          |
-| `write`    | `ask`          |
-| `webfetch` | `allow`        |
-| `websearch`| `allow`        |
-| `doom_loop`| `ask`          |
+| Permission  | Default Action |
+| ----------- | -------------- |
+| `read`      | `allow`        |
+| `glob`      | `allow`        |
+| `grep`      | `allow`        |
+| `bash`      | `ask`          |
+| `edit`      | `ask`          |
+| `write`     | `ask`          |
+| `webfetch`  | `allow`        |
+| `websearch` | `allow`        |
+| `doom_loop` | `ask`          |
 
 ### Configuration
 
 Users can customize permissions by creating a `chatorai.json` file in:
 
-- Project-specific config (highest priority): `<project>/.chatorai/chatorai.json`
-- Global user config (fallback): `~/.config/chatorai/chatorai.json`
+- User-global config (highest priority): `<configHome>/chatorai.json` (resolved via `XdgPaths.configHome`)
+- Project-specific config (fallback): `<project>/.chatorai/chatorai.json`
+
+Where `<configHome>` follows platform conventions (see `lib/shared/utils/xdg_paths.dart`):
+
+- Linux: `~/.config/<package>/` (or `$XDG_CONFIG_HOME`)
+- macOS: `~/Library/Application Support/<package>/`
+- Windows: `%APPDATA%\<package>\config\`
 
 The file is validated against a JSON schema for correctness.
 

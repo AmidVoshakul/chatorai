@@ -9,7 +9,7 @@ A modern AI chat application built with Flutter and Riverpod. Connect to any Ope
 ## ✨ Features
 
 - **Multi-provider support** — Use OpenRouter, local LLMs, or any OpenAI-compatible endpoint
-- **Agent system** — Invoke specialized subagents with `@mention` (explore, code-reviewer, general)
+- **Agent system** — Invoke specialized subagents with `@mention` (explore, general)
 - **Tool execution** — AI can run shell commands, read/edit files, search code, fetch web content
 - **Voice & camera** — Speech-to-text and image attachments
 - **Markdown rendering** — Syntax highlighting, collapsible reasoning blocks
@@ -28,9 +28,11 @@ A modern AI chat application built with Flutter and Riverpod. Connect to any Ope
 ### 1. Configure API
 
 **For development** — copy `.env.example` to `.env` and add your API key:
+
 ```env
 OPENROUTER_API_KEY=your_key_here
 ```
+
 `.env` is gitignored and **not included in release builds**.
 
 **For end users** — the app provides a settings screen to enter API key and base URL. Values are stored securely in `SharedPreferences`.
@@ -56,6 +58,7 @@ For detailed information, see the docs directory:
 - [Commands](docs/COMMANDS.md) — CLI commands and `@` agent mentions
 - [Environment](docs/ENVIRONMENT.md) — Setup and dependencies
 - [Roadmap](docs/ROADMAP.md) — Completed milestones and future plans
+- [XdgPaths](docs/xdg-paths.md) — Platform-aware path resolution (Linux/macOS/Windows/mobile)
 
 ## 🖥️ Installation Packages
 

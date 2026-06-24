@@ -1,10 +1,12 @@
 import 'package:test/test.dart';
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
-import 'package:chatorai/features/tools/data/models/tool.dart';
-import 'package:chatorai/features/tools/data/models/tool_registry.dart';
-import 'package:chatorai/features/tools/built_in/built_in_tools.dart';
-import 'package:chatorai/features/skills/domain/services/skill_service.dart';
-import 'package:chatorai/features/skills/data/models/skill_info.dart';
+import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/core/tools/tool_registry.dart';
+import 'package:chatorai/core/tools/built_in/built_in_tools.dart';
+import 'package:chatorai/core/skills/skill_service.dart';
+import 'package:chatorai/core/skills/models/skill_info.dart';
+import 'package:chatorai/core/skills/skill_source.dart';
+import 'package:chatorai/core/skills/skill_plugin.dart';
 
 class MockToolRegistry implements ToolRegistry {
   final List<String> registered = [];
@@ -18,7 +20,7 @@ class MockToolRegistry implements ToolRegistry {
   @override
   List<ToolDef> get all => throw UnimplementedError();
   @override
-  ToolDef? remove(String id) => throw UnimplementedError();
+  bool remove(String id) => throw UnimplementedError();
   @override
   bool contains(String id) => throw UnimplementedError();
   @override
@@ -26,11 +28,17 @@ class MockToolRegistry implements ToolRegistry {
   @override
   List<String> get ids => registered;
   @override
-  Map<String, sdk.Tool<dynamic, dynamic>> toSDKTools() =>
-      throw UnimplementedError();
+  Map<String, sdk.Tool<dynamic, dynamic>> toSDKTools() => {};
+  @override
+  void pruneSession(String sessionId) {}
 }
 
 class MockSkillService implements SkillService {
+  @override
+  final List<SkillSource> sources = <SkillSource>[];
+  @override
+  final List<SkillPlugin> plugins = <SkillPlugin>[];
+
   @override
   Future<List<SkillInfo>> listAll() async => [
     SkillInfo(
@@ -43,9 +51,11 @@ class MockSkillService implements SkillService {
   @override
   Future<List<SkillInfo>> availableForAgent(String agentName) async => [];
   @override
-  void clearCache() {}
+  Future<void> clearCache() async {}
   @override
   void dispose() {}
+  @override
+  Future<void> refresh() async {}
   @override
   Future<SkillInfo?> getByName(String name) async => null;
 }
@@ -55,7 +65,6 @@ void main() {
     test('registers all built-in tools without skillService', () async {
       final registry = MockToolRegistry();
       await registerBuiltInTools(registry);
-      // Expect all tools except skill (which requires skillService)
       expect(
         registry.registered,
         containsAll([
@@ -71,6 +80,7 @@ void main() {
           'todowrite',
           'task',
           'question',
+          'lsp',
         ]),
       );
       expect(registry.registered, isNot(contains('skill')));

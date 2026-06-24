@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-import 'package:chatorai/features/tools/built_in/bash.dart';
-import 'package:chatorai/features/tools/data/models/tool.dart';
+import 'package:chatorai/core/tools/built_in/bash.dart';
+import 'package:chatorai/core/tools/tool.dart';
 import 'helpers/test_context.dart';
 
 /// Integration tests for the bash tool.

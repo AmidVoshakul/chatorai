@@ -118,23 +118,6 @@ void main() {
       expect(all, isEmpty);
     });
 
-    test('findAll() returns correct session properties', () async {
-      await repository.createSession(
-        agent: 'code-reviewer',
-        title: 'Code Review Session',
-        modelRef: 'gpt-4',
-      );
-
-      final all = await repository.findAll();
-      expect(all.length, 1);
-
-      final session = all.first;
-      expect(session.agent, 'code-reviewer');
-      expect(session.title, 'Code Review Session');
-      expect(session.modelRef, 'gpt-4');
-      expect(session.archivedAt, equals(null));
-    });
-
     test(
       'findAll() returns only non-archived when mix of archived and active',
       () async {

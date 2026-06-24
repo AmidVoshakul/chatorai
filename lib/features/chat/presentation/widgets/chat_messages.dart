@@ -1,5 +1,7 @@
 import 'package:chatorai/core/agents/agent_provider.dart';
 import 'package:chatorai/core/constants/chat_messages_constants.dart';
+import 'package:chatorai/core/llm/catalog_providers.dart'
+    show providerCatalogServiceProvider;
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
@@ -158,6 +160,13 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     _updateHeadings();
   }
 
+  String? _resolveModelDisplayName(String? modelId) {
+    if (modelId == null || modelId.isEmpty) return null;
+    final catalog = ref.read(providerCatalogServiceProvider);
+    final config = catalog.getModel(modelId);
+    return config?.displayName ?? modelId;
+  }
+
   void scrollToHeading(String messageId) {
     final messageIndex =
         widget.chat?.messages.indexWhere((m) => m.id == messageId) ?? -1;
@@ -285,9 +294,15 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                       return const SizedBox.shrink();
                     }
 
+                    final chatMsg = messageToChatMessage(message);
+                    final resolvedMsg = (chatMsg is AssistantMessage)
+                        ? chatMsg.copyWith(
+                            model: _resolveModelDisplayName(chatMsg.model),
+                          )
+                        : chatMsg;
                     return ChatMessageBubble(
                       key: ValueKey(message.id),
-                      message: messageToChatMessage(message),
+                      message: resolvedMsg,
                       chatId: widget.chat!.id,
                       messageId: message.id,
                       chatStorageService: widget.chatStorageService,
@@ -321,7 +336,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                           message: AssistantMessage(
                             id: lastMessage?.id ?? 'streaming',
                             parts: streamingParts,
-                            model: lastMessage?.model,
+                            model: _resolveModelDisplayName(lastMessage?.model),
                             isStreaming: streamingIsActive,
                             timestamp: lastMessage?.timestamp ?? DateTime.now(),
                             cumulativeTokens: lastMessage?.cumulativeTokens,

@@ -28,7 +28,7 @@ class _TestSessionWidgetState extends ConsumerState<TestSessionWidget> {
       final repo = ref.read(sessionRepositoryProvider).requireValue;
 
       // Create and initialize session (mirrors ChatScreen._handleAddMessagesAndStream)
-      final sessionRunner = SessionRunner(repo);
+      final sessionRunner = SessionRunner(repo, null);
       final runnerSession = sessionRunner.startSession(
         agent: 'general',
         modelRef: 'test-model',
@@ -204,7 +204,7 @@ void main() {
         expect(state, isNotNull);
         expect(state!.messages.length, 1);
         expect(state.messages.first.content, 'Hello from test');
-        expect(state.messages.first.role, const UserRole());
+        expect(state.messages.first.role, MessageRole.user);
       },
     );
 
@@ -212,7 +212,7 @@ void main() {
       tester,
     ) async {
       // Create a session runner directly to simulate assistant streaming
-      final sessionRunner = SessionRunner(repository);
+      final sessionRunner = SessionRunner(repository, null);
       final runnerSession = sessionRunner.startSession(agent: 'general');
       await runnerSession.initialize();
 

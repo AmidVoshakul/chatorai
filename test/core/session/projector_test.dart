@@ -50,7 +50,7 @@ void main() {
 
       expect(state.messages.length, 1);
       expect(state.messages.first.content, 'Hello');
-      expect(state.messages.first.role, isA<UserRole>());
+      expect(state.messages.first.role, MessageRole.user);
       expect(state.messages.first.seq, 1);
     });
 
@@ -141,7 +141,7 @@ void main() {
       );
 
       expect(state.messages.length, 1);
-      expect(state.messages.first.role, isA<ToolRole>());
+      expect(state.messages.first.role, MessageRole.tool);
       expect(state.messages.first.content, contains('ls'));
     });
 
@@ -237,19 +237,6 @@ void main() {
       expect(state.archivedAt, isNotNull);
     });
 
-    test('SessionAgentSwitched updates agent', () {
-      final state = projectEvent(
-        empty,
-        SessionAgentSwitched(
-          sessionId: id,
-          agent: 'code-reviewer',
-          timestamp: DateTime.now(),
-        ),
-      );
-
-      expect(state.agent, 'code-reviewer');
-    });
-
     test('SessionModelSwitched updates modelRef', () {
       final state = projectEvent(
         empty,
@@ -298,7 +285,7 @@ void main() {
       );
       expect(state.messages.length, 1);
       expect(state.messages.first.content, '');
-      expect(state.messages.first.role, isA<AssistantRole>());
+      expect(state.messages.first.role, MessageRole.assistant);
     });
 
     test('TextDelta does not change message count', () {
@@ -363,7 +350,7 @@ void main() {
       );
 
       expect(state.messages.length, 1);
-      expect(state.messages.first.role, isA<ToolRole>());
+      expect(state.messages.first.role, MessageRole.tool);
       expect(state.messages.first.content, contains('ls -la'));
 
       state = projectEvent(
@@ -441,9 +428,9 @@ void main() {
         expect(state.title, 'Chain');
         expect(state.messages.length, 2);
         expect(state.messages[0].content, 'Hello, how are you?');
-        expect(state.messages[0].role, isA<UserRole>());
+        expect(state.messages[0].role, MessageRole.user);
         expect(state.messages[1].content, 'I am doing well, thank you!');
-        expect(state.messages[1].role, isA<AssistantRole>());
+        expect(state.messages[1].role, MessageRole.assistant);
         expect(state.messages[1].model, 'claude-4');
       },
     );

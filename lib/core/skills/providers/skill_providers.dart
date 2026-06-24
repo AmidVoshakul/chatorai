@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/permission/permission_provider.dart';
@@ -11,6 +9,7 @@ import 'package:chatorai/core/skills/skill_source.dart';
 import 'package:chatorai/core/skills/url_source.dart';
 import 'package:chatorai/core/skills/skill_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
@@ -32,14 +31,10 @@ List<SkillPlugin> defaultSkillPlugins() {
   ];
 }
 
-/// Global user config directory.
-String? globalSkillPath() {
-  final home =
-      Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
-  if (home != null) {
-    return p.join(home, '.config', 'chatorai', 'skills');
-  }
-  return null;
+/// Global user config directory via XDG_CONFIG_HOME.
+String globalSkillPath() {
+  final path = p.join(XdgPaths.configHome, 'skills');
+  return path;
 }
 
 /// Build list of skill sources from config.
@@ -48,10 +43,7 @@ List<SkillSource> buildSkillSources(ChatOrAIConfig config) {
 
   // 1. Default paths + global path
   final paths = <String>[...defaultSkillPaths()];
-  final global = globalSkillPath();
-  if (global != null) {
-    paths.add(global);
-  }
+  paths.add(globalSkillPath());
 
   // 2. Add configured paths
   if (config.skills?.paths != null) {

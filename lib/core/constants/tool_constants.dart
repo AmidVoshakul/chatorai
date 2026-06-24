@@ -13,6 +13,6 @@ abstract class ToolNames {
   static const String websearch = 'websearch';
   static const String task = 'task';
   static const String question = 'question';
-  static const String todoWrite = 'todo_write';
+  static const String todoWrite = 'todowrite';
   static const String applyPatch = 'apply_patch';
 }

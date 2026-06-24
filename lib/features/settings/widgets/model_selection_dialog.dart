@@ -1,6 +1,7 @@
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter/material.dart';
 
 /// A dialog that fetches available models from a provider and lets the
@@ -57,13 +58,35 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
     });
 
     try {
+      final wasCached =
+          widget.catalog!.getProvider(widget.providerId) != null &&
+          widget.catalog!.getProvider(widget.providerId)!.models.isNotEmpty &&
+          !forceRefresh;
+
       final configs = await widget.catalog!.discoverModels(
         widget.providerId,
         forceRefresh: forceRefresh,
       );
+      LogTags.settings.logInfo(
+        '[ModelSelection] _fetchModels: providerId=${widget.providerId}, '
+        'found=${configs.length} models',
+      );
+      LogTags.settings.logInfo(
+        '[ModelSelection] model IDs: [${configs.take(10).map((m) => '${m.modelName}=>${m.id}').join(', ')}]',
+      );
       setState(() {
         _models = configs;
-        _selectedIds = _normalizeSelectedIds(widget.initialSelectedIds);
+        if (wasCached && _selectedIds.isNotEmpty) {
+          final fullIds = _selectedIds.map(_fullModelId).toList();
+          final valid = fullIds
+              .where((id) => widget.catalog!.getModel(id) != null)
+              .toSet();
+          _selectedIds = valid.isNotEmpty
+              ? valid
+              : _normalizeSelectedIds(widget.initialSelectedIds);
+        } else {
+          _selectedIds = _normalizeSelectedIds(widget.initialSelectedIds);
+        }
         _isLoading = false;
       });
     } catch (e) {
@@ -85,20 +108,16 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
   }
 
   Set<String> _normalizeSelectedIds(List<String> ids) {
-    return ids.map(_modelNameFromSelectedId).toSet();
+    return ids.toSet();
   }
 
-  String _modelNameFromSelectedId(String selectedId) {
-    if (selectedId.startsWith('${widget.providerId}/')) {
-      return selectedId.substring(widget.providerId.length + 1);
+  String _fullModelId(String modelName) {
+    if (modelName.startsWith('${widget.providerId}/')) return modelName;
+    if (modelName.startsWith('${widget.providerId}:')) {
+      return '${widget.providerId}/${modelName.substring(widget.providerId.length + 1)}';
     }
-    if (selectedId.startsWith('${widget.providerId}:')) {
-      return selectedId.substring(widget.providerId.length + 1);
-    }
-    return selectedId;
+    return '${widget.providerId}/$modelName';
   }
-
-  String _fullModelId(String modelName) => '${widget.providerId}/$modelName';
 
   @override
   Widget build(BuildContext context) {
@@ -165,10 +184,16 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
               await widget.catalog!.updateProviderModels(
                 widget.providerId,
                 models,
+                overwriteEnabled: true,
               );
             }
 
             final prefixed = _selectedIds.map(_fullModelId).toList();
+            LogTags.settings.logInfo(
+              '[ModelSelection] Save button pressed: providerId=${widget.providerId}, '
+              'selected=${_selectedIds.length}/${_models.length}, '
+              'prefixed=[${prefixed.join(', ')}]',
+            );
             widget.onSave(prefixed);
           },
           style: FilledButton.styleFrom(

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'schema.dart';
 
 part 'database.g.dart';
@@ -20,16 +20,17 @@ class AppDatabase extends _$AppDatabase {
     return AppDatabase(NativeDatabase.memory());
   }
 
-  /// Creates a file-based persistent database in the app documents directory.
+  /// Creates a file-based persistent database in the app data directory.
   factory AppDatabase.file(String path) {
     return AppDatabase(NativeDatabase(File(path)));
   }
 }
 
 /// Top-level helper: creates a file-based [AppDatabase] at
-/// `<documents>/chatorai_sessions.sqlite`.
+/// `<xdg-data>/chatorai_sessions.sqlite`.
 Future<AppDatabase> createFileDatabase() async {
-  final dir = await getApplicationDocumentsDirectory();
-  final dbPath = '${dir.path}/chatorai_sessions.sqlite';
+  final dataDir = await XdgPaths.dataHomeAsync;
+  await XdgPaths.ensureDir(dataDir);
+  final dbPath = '$dataDir/chatorai_sessions.sqlite';
   return AppDatabase.file(dbPath);
 }

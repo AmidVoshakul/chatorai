@@ -57,5 +57,19 @@ const Map<String, dynamic> chatoraiSchema = {
       },
       'additionalProperties': false,
     },
+    'compaction': {
+      'type': 'object',
+      'properties': {
+        'auto': {'type': 'boolean'},
+        'prune': {'type': 'boolean'},
+        'keep': {
+          'type': 'object',
+          'properties': {
+            'tokens': {'type': 'integer', 'minimum': 0},
+          },
+        },
+        'buffer': {'type': 'integer', 'minimum': 0},
+      },
+    },
   },
 };
