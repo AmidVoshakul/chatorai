@@ -7,6 +7,7 @@ import 'bash.dart';
 import 'edit.dart';
 import 'glob.dart';
 import 'grep.dart';
+import 'invalid.dart';
 import 'lsp.dart';
 import 'question.dart';
 import 'read.dart';
@@ -32,6 +33,7 @@ Future<void> registerBuiltInTools(
   registry.register(createWebfetchTool());
   registry.register(createWebsearchTool());
   registry.register(createApplyPatchTool());
+  registry.register(createInvalidTool());
   registry.register(createTodoWriteTool());
   // Task tool needs multiple services
   registry.register(
