@@ -127,6 +127,11 @@ class PermissionRuleset {
           action: PermissionAction.allow,
         ),
         const PermissionRule(
+          permission: 'question',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        const PermissionRule(
           permission: 'todowrite',
           pattern: '*',
           action: PermissionAction.allow,

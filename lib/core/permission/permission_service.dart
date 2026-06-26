@@ -35,11 +35,19 @@ class PermissionService {
   static const _askLimitWindow = Duration(minutes: 5);
   static const _askLimitMax = 10;
 
+  // Question tracking (interactive user questions, not permissions)
+  final _questionPending = <String, _QuestionEntry>{};
+  final _questionController = StreamController<QuestionRequest>.broadcast();
+  final _questionAskHistory = <String, List<DateTime>>{};
+  static const _questionLimitWindow = Duration(minutes: 5);
+  static const _questionLimitMax = 10;
+
   static const _prefsKey = 'permission_approved_rules';
 
   SharedPreferences? _prefs;
 
   Stream<PermissionRequest> get onAsked => _controller.stream;
+  Stream<QuestionRequest> get onQuestionAsked => _questionController.stream;
   List<PermissionRule> get approvedRules => List.unmodifiable(_approved);
 
   void attachPreferences(SharedPreferences prefs) {
@@ -152,12 +160,98 @@ class PermissionService {
     }
   }
 
+  Future<String> askQuestion({
+    required String id,
+    required String question,
+    List<String> options = const [],
+    bool multiple = false,
+  }) async {
+    LogTags.permission.logInfo(
+      'PermissionService.askQuestion: id=$id, question="$question", options=$options',
+    );
+
+    if (_isQuestionRateLimited('question')) {
+      LogTags.permission.logWarning(
+        'PermissionService.askQuestion: RATE-LIMITED for question, id=$id',
+      );
+      return '';
+    }
+
+    final completer = Completer<String>();
+    _questionPending[id] = _QuestionEntry(
+      question: question,
+      options: options,
+      multiple: multiple,
+      completer: completer,
+    );
+    _questionController.add(
+      QuestionRequest(
+        id: id,
+        question: question,
+        options: options,
+        multiple: multiple,
+      ),
+    );
+    LogTags.permission.logInfo(
+      'PermissionService.askQuestion: WAITING for user answer, id=$id',
+    );
+    try {
+      final answer = await completer.future.timeout(
+        const Duration(seconds: 60),
+        onTimeout: () {
+          LogTags.permission.logWarning(
+            'PermissionService.askQuestion: TIMEOUT id=$id, returning empty',
+          );
+          _questionPending.remove(id);
+          return '';
+        },
+      );
+      LogTags.permission.logInfo(
+        'PermissionService.askQuestion: ANSWER RECEIVED id=$id, answer="$answer"',
+      );
+      return answer;
+    } catch (_) {
+      _questionPending.remove(id);
+      rethrow;
+    }
+  }
+
+  void answerQuestion(String id, String answer) {
+    LogTags.permission.logInfo(
+      'PermissionService.answerQuestion: id=$id, answer="$answer"',
+    );
+    final entry = _questionPending.remove(id);
+    if (entry != null) {
+      entry.completer.complete(answer);
+    } else {
+      LogTags.permission.logWarning(
+        'PermissionService.answerQuestion: No pending question for id=$id',
+      );
+    }
+  }
+
+  void cancelPendingQuestion(String id) {
+    final entry = _questionPending.remove(id);
+    if (entry != null && !entry.completer.isCompleted) {
+      entry.completer.complete('');
+    }
+  }
+
   bool _isRateLimited(String key) {
     final now = DateTime.now();
     final history = _askHistory[key] ??= [];
     // Prune old entries
     history.removeWhere((t) => now.difference(t) > _askLimitWindow);
     return history.length >= _askLimitMax;
+  }
+
+  bool _isQuestionRateLimited(String key) {
+    final now = DateTime.now();
+    final history = _questionAskHistory[key] ??= [];
+    history.removeWhere((t) => now.difference(t) > _questionLimitWindow);
+    if (history.length >= _questionLimitMax) return true;
+    history.add(now);
+    return false;
   }
 
   void _recordAsk(String key) {
@@ -279,11 +373,20 @@ class PermissionService {
     }
     _pending.clear();
     _askHistory.clear();
+    // Cancel pending questions too
+    for (final entry in _questionPending.values) {
+      if (!entry.completer.isCompleted) {
+        entry.completer.complete('');
+      }
+    }
+    _questionPending.clear();
+    _questionAskHistory.clear();
   }
 
   /// Clear rate-limit history (call on session end).
   void clearRateLimitHistory() {
     _askHistory.clear();
+    _questionAskHistory.clear();
   }
 }
 
@@ -301,6 +404,36 @@ class _PendingEntry {
 }
 
 enum PermissionReply { once, always, reject }
+
+// ── Question Request ─────────────────────────────────────────
+
+class QuestionRequest {
+  final String id;
+  final String question;
+  final List<String> options;
+  final bool multiple;
+
+  const QuestionRequest({
+    required this.id,
+    required this.question,
+    this.options = const [],
+    this.multiple = false,
+  });
+}
+
+class _QuestionEntry {
+  final String question;
+  final List<String> options;
+  final bool multiple;
+  final Completer<String> completer;
+
+  _QuestionEntry({
+    required this.question,
+    required this.options,
+    required this.multiple,
+    required this.completer,
+  });
+}
 
 class PermissionDeniedError implements Exception {
   final String toolName;

@@ -138,11 +138,19 @@ class ToolExecutor {
       );
 
       final result = await def.execute(inputMap, askCtx.toToolContext());
-      LogTags.permission.logInfo('ToolExecutor: DONE ${def.id}');
+      LogTags.permission.logInfo(
+        'ToolExecutor: DONE ${def.id} outputLen=${result.output.length}',
+      );
 
       // Handle overflow and truncation
       final output = result.output;
       final truncated = _truncate(output);
+      final wasTruncated = truncated != output;
+
+      LogTags.permission.logDebug(
+        'ToolExecutor: RESULT ${def.id} truncated=$wasTruncated '
+        'finalLen=${truncated.length}',
+      );
 
       final json = <String, dynamic>{
         'output': truncated,
@@ -296,6 +304,55 @@ class _AskContext {
       sessionId: sessionId,
       abortSignal: abortSignal,
       ask: _ask,
+      askQuestion: _askQuestion,
+    );
+  }
+
+  Future<String> _askQuestion({
+    required String question,
+    List<String> options = const [],
+    bool multiple = false,
+  }) async {
+    LogTags.permission.logInfo(
+      '_AskContext._askQuestion: START question="$question", options=$options',
+    );
+
+    // Permission check: question tool goes through the same permission pipeline
+    // as other tools (bash, write, edit) — matching OpenCode's approach.
+    // Default: allow (configurable in chatorai.json per agent or globally).
+    // When allow → no dialog, proceeds directly to askQuestion().
+    // When ask → permission dialog first, then question if approved.
+    // When deny → PermissionDeniedError, tool call fails.
+    await permissions.ask(
+      PermissionRequest(
+        id: 'question_perm_${DateTime.now().microsecondsSinceEpoch}',
+        toolName: 'question',
+        permission: 'question',
+        patterns: ['*'],
+        metadata: {
+          if (sessionId != null) 'sessionId': sessionId,
+          'question': question,
+        },
+      ),
+      PermissionRuleset(
+        rules: [...defaultRules.rules],
+        sessionApproved: permissions.approvedRules,
+      ),
+    );
+
+    LogTags.permission.logInfo(
+      '_AskContext._askQuestion: Permission granted, proceeding with question',
+    );
+
+    final id = 'question_${DateTime.now().microsecondsSinceEpoch}';
+    LogTags.permission.logInfo(
+      '_AskContext._askQuestion: id=$id, question="$question", options=$options',
+    );
+    return permissions.askQuestion(
+      id: id,
+      question: question,
+      options: options,
+      multiple: multiple,
     );
   }
 

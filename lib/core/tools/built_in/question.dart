@@ -1,102 +1,74 @@
 import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 
 ToolDef createQuestionTool() {
   return ToolDef(
     id: 'question',
     description:
-        'Ask the user a question and wait for their response. Use when you need clarification, confirmation, or a decision from the user.',
+        'Ask the user a question and wait for their response. '
+        'Use when you need clarification, confirmation, or a decision from the user. '
+        'Provide options for quick selection when possible.',
     inputSchema: {
       'type': 'object',
       'properties': {
-        'questions': {
+        'question': {
+          'type': 'string',
+          'description': 'The question text to ask the user',
+        },
+        'options': {
           'type': 'array',
-          'items': {
-            'type': 'object',
-            'properties': {
-              'question': {
-                'type': 'string',
-                'description': 'The question text',
-              },
-              'options': {
-                'type': 'array',
-                'items': {'type': 'string'},
-                'description':
-                    'Optional list of predefined options for the user to choose from',
-              },
-              'multiple': {
-                'type': 'boolean',
-                'description': 'Allow selecting multiple options',
-              },
-            },
-            'required': ['question'],
-          },
-          'description': 'List of questions to ask the user',
+          'items': {'type': 'string'},
+          'description':
+              'Optional list of predefined options for the user to choose from',
+        },
+        'multiple': {
+          'type': 'boolean',
+          'description': 'Allow selecting multiple options (not yet supported)',
         },
       },
-      'required': ['questions'],
+      'required': ['question'],
     },
     execute: (input, ctx) async {
-      final questions = input['questions'] as List?;
-      if (questions == null || questions.isEmpty) {
+      String question;
+      List<String> options;
+      bool multiple;
+
+      // Support both new format (single question) and legacy format (questions array)
+      final questionsLegacy = input['questions'] as List?;
+      if (questionsLegacy != null && questionsLegacy.isNotEmpty) {
+        final first = questionsLegacy.first as Map<String, dynamic>;
+        question = first['question'] as String? ?? '';
+        options = (first['options'] as List?)?.cast<String>() ?? [];
+        multiple = first['multiple'] as bool? ?? false;
+      } else {
+        question = input['question'] as String? ?? '';
+        options = (input['options'] as List?)?.cast<String>() ?? [];
+        multiple = input['multiple'] as bool? ?? false;
+      }
+
+      if (question.isEmpty) {
         return ToolOutput(
-          'Error: questions is required and must be a non-empty list',
+          'Error: question is required and must be non-empty',
           metadata: {'error': true},
         );
       }
 
-      // Validate each question has required 'question' field
-      for (final q in questions) {
-        if (q is! Map<String, dynamic>) {
-          return ToolOutput(
-            'Error: each question must be an object',
-            metadata: {'error': true},
-          );
-        }
-        final questionText = q['question'] as String?;
-        if (questionText == null || questionText.isEmpty) {
-          return ToolOutput(
-            'Error: each question must have a non-empty "question" field',
-            metadata: {'error': true},
-          );
-        }
-      }
-
-      // Build prompt for user
-      final prompt = _buildPrompt(questions);
-
-      // Call ctx.ask with the required pattern
-      await ctx.ask(
-        permission: 'question',
-        patterns: ['question:count=${questions.length}'],
-        metadata: {'questions': questions, 'awaiting_response': true},
+      LogTags.permission.logInfo(
+        'QuestionTool: asking user: "$question" options=$options',
       );
 
+      final answer = await ctx.askQuestion(
+        question: question,
+        options: options,
+        multiple: multiple,
+      );
+
+      LogTags.permission.logInfo('QuestionTool: user answered: "$answer"');
+
       return ToolOutput(
-        prompt,
-        metadata: {'questions': questions, 'awaiting_response': true},
+        answer,
+        metadata: {'question': question, 'options': options, 'answer': answer},
       );
     },
   );
-}
-
-String _buildPrompt(List<dynamic> questions) {
-  final buffer = StringBuffer();
-  for (int i = 0; i < questions.length; i++) {
-    final q = questions[i] as Map<String, dynamic>;
-    final questionText = q['question'] as String;
-    final options = (q['options'] as List?)?.cast<String>();
-    final multiple = q['multiple'] as bool? ?? false;
-
-    buffer.writeln('${i + 1}. $questionText');
-    if (options != null && options.isNotEmpty) {
-      buffer.write('   Options: ${options.join(', ')}');
-      if (multiple) {
-        buffer.write(' (multiple selection allowed)');
-      }
-      buffer.writeln();
-    } else {
-      buffer.writeln();
-    }
-  }
-  return buffer.toString().trim();
 }

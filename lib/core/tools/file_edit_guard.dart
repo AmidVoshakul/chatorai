@@ -45,8 +45,9 @@ class FileEditGuard {
   static Future<int?> checkStale(String path) async {
     try {
       final cached = await getLastReadMtime(path);
-      if (cached == null)
+      if (cached == null) {
         return null; // no prior read — not stale by definition
+      }
       final stat = await File(path).stat();
       final current = stat.modified.millisecondsSinceEpoch;
       if (current != cached) return current;

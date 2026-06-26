@@ -13,6 +13,13 @@ class ToolContext {
   })
   ask;
 
+  final Future<String> Function({
+    required String question,
+    List<String> options,
+    bool multiple,
+  })
+  askQuestion;
+
   final void Function({String? title, Map<String, dynamic>? metadata})?
   onMetadata;
 
@@ -21,6 +28,7 @@ class ToolContext {
     this.abortSignal,
     required this.sessionId,
     required this.ask,
+    required this.askQuestion,
     this.onMetadata,
   });
 }
