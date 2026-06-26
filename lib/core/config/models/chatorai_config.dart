@@ -30,7 +30,9 @@ class ChatOrAIConfig {
           ? SkillConfig.fromJson(json['skills'] as Map<String, dynamic>)
           : null,
       compaction: json['compaction'] != null
-          ? CompactionConfig.fromJson(json['compaction'] as Map<String, dynamic>)
+          ? CompactionConfig.fromJson(
+              json['compaction'] as Map<String, dynamic>,
+            )
           : null,
     );
   }

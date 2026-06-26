@@ -120,9 +120,7 @@ class CompactionService {
   /// Messages older than the protect window with role 'tool' are
   /// replaced with a placeholder. Returns a new list without mutating
   /// the input.
-  List<Map<String, dynamic>> prune(
-    List<Map<String, dynamic>> messages,
-  ) {
+  List<Map<String, dynamic>> prune(List<Map<String, dynamic>> messages) {
     if (messages.isEmpty) return messages;
 
     var charsKept = 0;

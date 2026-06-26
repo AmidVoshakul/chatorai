@@ -1,7 +1,7 @@
 import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/permission/permission_provider.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/core/skills/providers/skill_providers.dart';
+import 'package:chatorai/core/skills/skill_providers.dart';
 import 'package:chatorai/core/tools/built_in/built_in_tools.dart' as built_in;
 import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/features/chat/data/providers/chat_providers.dart';

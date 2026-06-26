@@ -16,11 +16,12 @@ class CompactionOrchestrator {
     CompactionService? compactionService,
     required CompletionProvider completionProvider,
     CompactionConfig? compactionConfig,
-  }) : _compactionService = compactionService ??
-        (compactionConfig != null
-            ? CompactionService.fromConfig(compactionConfig)
-            : const CompactionService()),
-        _completionProvider = completionProvider;
+  }) : _compactionService =
+           compactionService ??
+           (compactionConfig != null
+               ? CompactionService.fromConfig(compactionConfig)
+               : const CompactionService()),
+       _completionProvider = completionProvider;
 
   /// Run compaction for [sessionId] and persist the result.
   ///

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/truncation_service.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:command_shield/command_shield.dart';
 
 const _blockedExecutables = <String>{
@@ -196,6 +197,10 @@ ToolDef createBashTool() {
 
       final truncation = TruncationService.instance;
 
+      LogTags.permission.logInfo(
+        'BashTool: START command="$command" timeout=${timeoutMs}ms workingDir=$workingDir',
+      );
+
       try {
         final process = await Process.start(
           'bash',
@@ -260,12 +265,17 @@ ToolDef createBashTool() {
             '${stdout.toString()}${stderr.toString().isNotEmpty ? "\n[stderr]\n${stderr.toString()}" : ""}';
         final output = truncation.truncate(rawOutput);
 
+        LogTags.permission.logInfo(
+          'BashTool: DONE exitCode=$exitCode outputLen=${output.length} truncated=${output != rawOutput}',
+        );
+
         return ToolOutput(
           output,
           metadata: {'exit_code': exitCode, if (exitCode != 0) 'error': true},
           title: input['description'] as String?,
         );
       } catch (e) {
+        LogTags.permission.logError('BashTool: ERROR $e');
         return ToolOutput(
           'Error executing command: $e',
           metadata: {'error': true},

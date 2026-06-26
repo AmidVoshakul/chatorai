@@ -1,4 +1,4 @@
-import 'package:chatorai/core/skills/models/skill_info.dart';
+import 'package:chatorai/core/skills/skill_info.dart';
 import 'package:chatorai/core/skills/skill_service.dart';
 import 'package:chatorai/core/tools/tool.dart';
 
