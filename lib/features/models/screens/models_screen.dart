@@ -43,12 +43,14 @@ class ModelsScreen extends ConsumerWidget {
             tooltip: state.showFavoritesOnly
                 ? localizations.showAllModels
                 : localizations.showFavoritesOnly,
-           ),
-         ],
-       ),
-       floatingActionButton: FloatingActionButton(
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
         onPressed: () {
-          ref.read(modelsScreenProvider.notifier).loadModels(forceRefresh: true);
+          ref
+              .read(modelsScreenProvider.notifier)
+              .loadModels(forceRefresh: true);
         },
         tooltip: localizations.refresh,
         child: const Icon(Icons.refresh),

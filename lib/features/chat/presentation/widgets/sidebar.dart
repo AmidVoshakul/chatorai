@@ -291,14 +291,6 @@ class Sidebar extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    color: isSelected
-                        ? theme.colorScheme.primary
-                        : theme.iconTheme.color,
-                    size: ChatoraiIconSizes.sidebarIcon,
-                  ),
-                  const SizedBox(width: ChatoraiSpacing.sidebarIconSpacing),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

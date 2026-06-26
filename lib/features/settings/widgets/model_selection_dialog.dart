@@ -129,11 +129,22 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
         ? ChatoraiColors.darkSecondaryTextColor
         : ChatoraiColors.secondaryTextColor;
 
+    final screenSize = MediaQuery.of(context).size;
+    final dialogWidth = screenSize.width < 520 ? screenSize.width - 48 : 450.0;
+    final dialogHeight = screenSize.height < 560 ? screenSize.height - 120 : 500.0;
+
     return AlertDialog(
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: screenSize.width < 600 ? 16 : 40,
+        vertical: 24,
+      ),
+      constraints: BoxConstraints(
+        maxWidth: screenSize.width < 600 ? screenSize.width - 32 : 560,
+      ),
       title: const Text('Select Models'),
       content: SizedBox(
-        width: 450,
-        height: 500,
+        width: dialogWidth,
+        height: dialogHeight,
         child: Column(
           children: [
             TextField(
@@ -145,11 +156,27 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
               ),
               onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: ChatoraiSpacing.md),
+            const SizedBox(height: ChatoraiSpacing.sm),
+            Row(
+              children: [
+                TextButton(
+                  onPressed: () => setState(() => _selectedIds.clear()),
+                  child: const Text('Deselect All'),
+                ),
+                TextButton(
+                  onPressed: () => setState(
+                    () => _selectedIds =
+                        _models.map((m) => m.modelName).toSet(),
+                  ),
+                  child: const Text('Select All'),
+                ),
+              ],
+            ),
+            const SizedBox(height: ChatoraiSpacing.sm),
             Expanded(
               child: _buildContent(isDark, textColor, secondaryTextColor),
             ),
-            const SizedBox(height: ChatoraiSpacing.md),
+            const SizedBox(height: ChatoraiSpacing.sm),
             Text(
               '${_selectedIds.length} of ${_models.length} selected',
               style: TextStyle(color: secondaryTextColor, fontSize: 12),
@@ -158,16 +185,6 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => setState(() => _selectedIds.clear()),
-          child: const Text('Deselect All'),
-        ),
-        TextButton(
-          onPressed: () => setState(
-            () => _selectedIds = _models.map((m) => m.modelName).toSet(),
-          ),
-          child: const Text('Select All'),
-        ),
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text('Cancel', style: TextStyle(color: secondaryTextColor)),

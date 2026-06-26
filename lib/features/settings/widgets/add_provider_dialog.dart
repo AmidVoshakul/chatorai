@@ -112,15 +112,22 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
         _selectedOption != null &&
         (!_isCustom || _customNameController.text.trim().isNotEmpty);
 
+    final screenSize = MediaQuery.of(context).size;
+
     return AlertDialog(
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: screenSize.width < 600 ? 16 : 40,
+        vertical: 24,
+      ),
+      constraints: BoxConstraints(
+        maxWidth: screenSize.width < 600 ? screenSize.width - 32 : 560,
+      ),
       title: Text(_isEditing ? 'Edit Provider' : 'Add Provider'),
-      content: SizedBox(
-        width: 400,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
               // Provider dropdown
               DropdownButtonFormField<String>(
                 initialValue: _selectedOption?.id,
@@ -134,6 +141,7 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
                     child: p.id == '__custom__'
                         ? Text(p.name)
                         : Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               ProviderIcon(providerId: p.id, size: 22),
                               const SizedBox(width: 10),
@@ -142,6 +150,16 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
                           ),
                   );
                 }).toList(),
+                selectedItemBuilder: (context) {
+                  return _providers.map((p) {
+                    return Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: p.id == '__custom__'
+                          ? Text(p.name)
+                          : Text(p.name),
+                    );
+                  }).toList();
+                },
                 onChanged: (id) {
                   if (id != null) {
                     _onProviderChanged(
@@ -211,7 +229,6 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
             ],
           ),
         ),
-      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),

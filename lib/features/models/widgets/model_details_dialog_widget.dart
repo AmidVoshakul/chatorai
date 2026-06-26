@@ -12,9 +12,17 @@ class ModelDetailsDialogWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    final screenSize = MediaQuery.of(context).size;
 
     return AlertDialog(
       scrollable: true,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: screenSize.width < 600 ? 16 : 40,
+        vertical: 24,
+      ),
+      constraints: BoxConstraints(
+        maxWidth: screenSize.width < 600 ? screenSize.width - 32 : 560,
+      ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

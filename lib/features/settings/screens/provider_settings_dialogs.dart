@@ -150,7 +150,9 @@ Future<void> showModelSelectionDialog({
             '[ModelSelection] Done setSelectedModelIds, now enabling provider and reloading',
           );
           await catalog.setProviderEnabled(providerId, true);
-          await ref.read(modelProvider.notifier).resetAndReloadModels(forceRefresh: true);
+          await ref
+              .read(modelProvider.notifier)
+              .resetAndReloadModels(forceRefresh: true);
           ref.invalidate(modelsScreenProvider);
           LogTags.settings.logInfo('[ModelSelection] reloadModels complete');
         },
