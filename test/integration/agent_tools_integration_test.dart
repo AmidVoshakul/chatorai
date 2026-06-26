@@ -109,6 +109,8 @@ class PermissionCall {
             ),
           );
         },
+    askQuestion:
+        ({required question, options = const [], multiple = false}) async => '',
   );
   return (ctx: ctx, calls: calls);
 }
@@ -252,101 +254,144 @@ void main() {
         questionTool = createQuestionTool();
       });
 
-      test('returns numbered list prompt for multiple questions', () async {
-        final recording = createRecordingContext(sessionId: defaultSessionId);
+      test('returns user answer as output (new format)', () async {
+        final ctx = ToolContext(
+          toolCallId: 'test-${DateTime.now().millisecondsSinceEpoch}',
+          sessionId: defaultSessionId,
+          abortSignal: null,
+          ask:
+              ({
+                required permission,
+                required patterns,
+                metadata,
+                always,
+              }) async {},
+          askQuestion:
+              ({
+                required question,
+                options = const [],
+                multiple = false,
+              }) async => 'My answer',
+        );
+        final output = await questionTool.execute({
+          'question': 'What is your name?',
+        }, ctx);
+
+        expect(output.output, equals('My answer'));
+        expect(output.metadata?['question'], equals('What is your name?'));
+        expect(output.metadata?['answer'], equals('My answer'));
+      });
+
+      test('supports legacy questions array format', () async {
+        final ctx = ToolContext(
+          toolCallId: 'test-${DateTime.now().millisecondsSinceEpoch}',
+          sessionId: defaultSessionId,
+          abortSignal: null,
+          ask:
+              ({
+                required permission,
+                required patterns,
+                metadata,
+                always,
+              }) async {},
+          askQuestion:
+              ({
+                required question,
+                options = const [],
+                multiple = false,
+              }) async => 'Blue',
+        );
         final output = await questionTool.execute({
           'questions': [
-            {'question': 'What is your name?'},
-            {'question': 'How old are you?'},
             {'question': 'What is your favorite color?'},
           ],
-        }, recording.ctx);
+        }, ctx);
 
-        expect(output.output, contains('1. What is your name?'));
-        expect(output.output, contains('2. How old are you?'));
-        expect(output.output, contains('3. What is your favorite color?'));
+        expect(output.output, equals('Blue'));
+        expect(
+          output.metadata?['question'],
+          equals('What is your favorite color?'),
+        );
       });
 
-      test('metadata contains original questions array', () async {
-        final recording = createRecordingContext(sessionId: defaultSessionId);
-        final questions = [
-          {
-            'question': 'Color?',
-            'options': ['Red', 'Blue'],
-          },
-        ];
+      test('metadata contains question, options and answer', () async {
+        final ctx = ToolContext(
+          toolCallId: 'test-${DateTime.now().millisecondsSinceEpoch}',
+          sessionId: defaultSessionId,
+          abortSignal: null,
+          ask:
+              ({
+                required permission,
+                required patterns,
+                metadata,
+                always,
+              }) async {},
+          askQuestion:
+              ({
+                required question,
+                options = const [],
+                multiple = false,
+              }) async => 'Apple',
+        );
         final output = await questionTool.execute({
-          'questions': questions,
-        }, recording.ctx);
+          'question': 'Select a fruit',
+          'options': ['Apple', 'Banana', 'Cherry'],
+        }, ctx);
 
-        expect(output.metadata?['questions'], equals(questions));
-        expect(output.metadata?['awaiting_response'], isTrue);
+        expect(output.metadata?['question'], equals('Select a fruit'));
+        expect(
+          output.metadata?['options'],
+          equals(['Apple', 'Banana', 'Cherry']),
+        );
+        expect(output.metadata?['answer'], equals('Apple'));
       });
 
-      test('calls ctx.ask with question permission', () async {
-        final recording = createRecordingContext(sessionId: defaultSessionId);
-        await questionTool.execute({
-          'questions': [
-            {'question': 'Test?'},
-          ],
-        }, recording.ctx);
-
-        expect(recording.calls, hasLength(1));
-        expect(recording.calls.first.permission, equals('question'));
-        expect(recording.calls.first.patterns, contains('question:count=1'));
-      });
-
-      test('includes options in prompt when provided', () async {
-        final recording = createRecordingContext(sessionId: defaultSessionId);
-        final output = await questionTool.execute({
-          'questions': [
-            {
-              'question': 'Select a fruit',
-              'options': ['Apple', 'Banana', 'Cherry'],
-            },
-          ],
-        }, recording.ctx);
-
-        expect(output.output, contains('Options: Apple, Banana, Cherry'));
-      });
-
-      test('indicates multiple selection when multiple=true', () async {
+      test('returns error for empty question string', () async {
         final recording = createRecordingContext(sessionId: defaultSessionId);
         final output = await questionTool.execute({
-          'questions': [
-            {
-              'question': 'Select all that apply',
-              'options': ['A', 'B', 'C'],
-              'multiple': true,
-            },
-          ],
-        }, recording.ctx);
-
-        expect(output.output, contains('(multiple selection allowed)'));
-      });
-
-      test('returns error for empty questions list', () async {
-        final recording = createRecordingContext(sessionId: defaultSessionId);
-        final output = await questionTool.execute({
-          'questions': [],
+          'question': '',
         }, recording.ctx);
         expect(output.metadata?['error'], isTrue);
       });
 
-      test('returns error when question field is missing', () async {
+      test('returns error when question is missing', () async {
         final recording = createRecordingContext(sessionId: defaultSessionId);
-        final output = await questionTool.execute({
-          'questions': [
-            {
-              'options': ['A', 'B'],
-            }, // missing question
-          ],
-        }, recording.ctx);
+        final output = await questionTool.execute({}, recording.ctx);
         expect(output.metadata?['error'], isTrue);
       });
 
-      // Note: The tool currently throws a TypeError when questions is not a List.
-      // This is a known limitation; the test is omitted to avoid uncaught exception.
+      test('handles legacy questions array with options', () async {
+        final ctx = ToolContext(
+          toolCallId: 'test-${DateTime.now().millisecondsSinceEpoch}',
+          sessionId: defaultSessionId,
+          abortSignal: null,
+          ask:
+              ({
+                required permission,
+                required patterns,
+                metadata,
+                always,
+              }) async {},
+          askQuestion:
+              ({
+                required question,
+                options = const [],
+                multiple = false,
+              }) async => 'Red',
+        );
+        final output = await questionTool.execute({
+          'questions': [
+            {
+              'question': 'Color?',
+              'options': ['Red', 'Blue'],
+            },
+          ],
+        }, ctx);
+
+        expect(output.metadata?['question'], equals('Color?'));
+        expect(output.metadata?['options'], equals(['Red', 'Blue']));
+        expect(output.metadata?['answer'], equals('Red'));
+      });
     });
 
     group('ApplyPatch Tool Integration', () {
@@ -764,20 +809,33 @@ void main() {
         expect(taskOutput.metadata?['session_id'], equals('cross-session'));
 
         // Now simulate the subagent using question tool
-        final questionRecording = createRecordingContext(
+        final questionCtx = ToolContext(
+          toolCallId: 'cross-${DateTime.now().millisecondsSinceEpoch}',
           sessionId: 'cross-session',
+          abortSignal: null,
+          ask:
+              ({
+                required permission,
+                required patterns,
+                metadata,
+                always,
+              }) async {},
+          askQuestion:
+              ({
+                required question,
+                options = const [],
+                multiple = false,
+              }) async => 'Blue',
         );
         final questionOutput = await createQuestionTool().execute({
-          'questions': [
-            {'question': 'What is your favorite color?'},
-          ],
-        }, questionRecording.ctx);
+          'question': 'What is your favorite color?',
+        }, questionCtx);
 
+        expect(questionOutput.output, equals('Blue'));
         expect(
-          questionOutput.output,
-          contains('1. What is your favorite color?'),
+          questionOutput.metadata?['question'],
+          contains('What is your favorite color?'),
         );
-        expect(questionOutput.metadata?['awaiting_response'], isTrue);
       });
 
       test('apply_patch modifies file that task tool later reads', () async {

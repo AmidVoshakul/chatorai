@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:test/test.dart';
+import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/bash.dart';
 
+/// Creates a [ToolContext] with optional [sdk.CancellationToken].
 ToolContext _ctx({
+  sdk.CancellationToken? signal,
   void Function({
     required String permission,
     required List<String> patterns,
@@ -15,6 +20,7 @@ ToolContext _ctx({
   return ToolContext(
     toolCallId: 'test',
     sessionId: 'test',
+    abortSignal: signal,
     ask: fn == null
         ? ({
             required String permission,
@@ -35,6 +41,8 @@ ToolContext _ctx({
               always: always,
             );
           },
+    askQuestion:
+        ({required question, options = const [], multiple = false}) async => '',
   );
 }
 
@@ -320,6 +328,53 @@ void main() {
         expect(out.metadata?['exit_code'], equals(0));
         expect(out.title, equals('List files in detail'));
       });
+    });
+
+    group('abort signal handling', () {
+      test('pre-cancelled abortSignal returns aborted error', () async {
+        final signal = sdk.CancellationToken();
+        signal.cancel();
+        final ctx = _ctx(signal: signal);
+        final out = await createBashTool().execute(
+          {'command': 'echo hello'},
+          ctx,
+        );
+        expect(out.metadata?['error'], isTrue);
+        expect(out.metadata?['aborted'], isTrue);
+        expect(out.output, contains('aborted'));
+      });
+
+      test(
+        'abortSignal cancellation before execution with empty command',
+        () async {
+          final signal = sdk.CancellationToken();
+          signal.cancel();
+          final ctx = _ctx(signal: signal);
+          final out = await createBashTool().execute(
+            {'command': ''},
+            ctx,
+          );
+          // Empty command check runs first
+          expect(out.metadata?['error'], isTrue);
+        },
+      );
+
+      test(
+        'abortSignal cancellation during long-running command',
+        () async {
+          final signal = sdk.CancellationToken();
+          Timer(const Duration(milliseconds: 50), () => signal.cancel());
+          final ctx = _ctx(signal: signal);
+          final out = await createBashTool().execute(
+            {'command': 'sleep 30'},
+            ctx,
+          );
+          expect(
+            out.metadata?['aborted'] == true || out.metadata?['error'] == true,
+            isTrue,
+          );
+        },
+      );
     });
   });
 }

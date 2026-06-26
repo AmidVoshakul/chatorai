@@ -24,6 +24,8 @@ ToolContext _mockCtx({
           askedPermission = [permission];
           askedPatterns = patterns;
         },
+    askQuestion:
+        ({required question, options = const [], multiple = false}) async => '',
   );
 }
 
@@ -73,6 +75,9 @@ void main() {
               capturedPermission = permission;
               capturedPatterns = patterns;
             },
+        askQuestion:
+            ({required question, options = const [], multiple = false}) async =>
+                '',
       );
       // Use a temporary file within project to avoid path denial
       final testDir = Directory('test/temp_edit_perm');

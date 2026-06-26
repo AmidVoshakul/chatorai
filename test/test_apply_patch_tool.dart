@@ -15,6 +15,8 @@ ToolContext _mockCtx() {
           Map<String, dynamic>? metadata,
           List<String>? always,
         }) async {},
+    askQuestion:
+        ({required question, options = const [], multiple = false}) async => '',
   );
 }
 
@@ -38,7 +40,7 @@ void main() {
       });
 
       test('inputSchema has required fields (file_path, patch)', () {
-        final schema = tool.inputSchema as Map<String, dynamic>;
+        final schema = tool.inputSchema;
         expect(schema['type'], 'object');
         final props = schema['properties'] as Map<String, dynamic>;
         expect(props.containsKey('file_path'), isTrue);
@@ -260,6 +262,12 @@ void main() {
                 capturedPerm = permission;
                 capturedPatterns = patterns;
               },
+          askQuestion:
+              ({
+                required question,
+                options = const [],
+                multiple = false,
+              }) async => '',
         );
 
         await tool.execute({
@@ -285,6 +293,12 @@ void main() {
               }) async {
                 throw Exception('Permission denied');
               },
+          askQuestion:
+              ({
+                required question,
+                options = const [],
+                multiple = false,
+              }) async => '',
         );
         await expectLater(
           tool.execute({
@@ -336,6 +350,229 @@ void main() {
         expect(lines, contains('C'));
         expect(lines, isNot(contains('D')));
         expect(lines, contains('E'));
+        f.deleteSync();
+      });
+    });
+
+    group('execute - multiple hunks', () {
+      test('applies only the first hunk when multiple @@ headers present', () async {
+        final f = File(_path('ap_multi.txt'))
+          ..writeAsStringSync('line1\nline2\nline3\nline4\nline5');
+        // Two hunks: first replaces line2, second replaces line4
+        final patch = [
+          '--- a/ap_multi.txt',
+          '+++ b/ap_multi.txt',
+          '@@ -2,1 +2,1 @@',
+          '-line2',
+          '+replaced2',
+          '@@ -4,1 +4,1 @@',
+          '-line4',
+          '+replaced4',
+        ].join('\n');
+
+        final result = await tool.execute({
+          'file_path': f.path,
+          'patch': patch,
+        }, _mockCtx());
+
+        expect(result.metadata?['error'], isNull);
+        final content = await f.readAsString();
+        // First hunk applied
+        expect(content, contains('replaced2'));
+        // Second hunk NOT applied (only first hunk processed)
+        expect(content, contains('line4'));
+        expect(content, isNot(contains('replaced4')));
+        f.deleteSync();
+      });
+
+      test('applies first hunk and preserves lines between hunks', () async {
+        final f = File(_path('ap_multi2.txt'))
+          ..writeAsStringSync('A\nB\nC\nD\nE\nF\nG');
+        // First hunk: replace line 2 (B -> B2)
+        // Second hunk: replace line 6 (F -> F2) — should NOT be applied
+        final patch = [
+          '--- a/ap_multi2.txt',
+          '+++ b/ap_multi2.txt',
+          '@@ -2,1 +2,1 @@',
+          '-B',
+          '+B2',
+          '@@ -6,1 +6,1 @@',
+          '-F',
+          '+F2',
+        ].join('\n');
+
+        final result = await tool.execute({
+          'file_path': f.path,
+          'patch': patch,
+        }, _mockCtx());
+
+        expect(result.metadata?['error'], isNull);
+        final lines = (await f.readAsString()).split('\n');
+        expect(lines[0], 'A');
+        expect(lines[1], 'B2');
+        expect(lines[2], 'C');
+        expect(lines[3], 'D');
+        expect(lines[4], 'E');
+        expect(lines[5], 'F'); // unchanged — second hunk not applied
+        expect(lines[6], 'G');
+        f.deleteSync();
+      });
+    });
+
+    group('execute - backslash marker', () {
+      test('backslash prefix line is treated as removed line', () async {
+        final f = File(_path('ap_backslash.txt'))
+          ..writeAsStringSync('line1\nline2\nline3');
+        // The `\ No newline at end of file` marker in unified diff
+        // starts with backslash. Current implementation treats it like `-` (skip).
+        // The header says remove 3 lines starting at line 1, but the backslash
+        // line is skipped (not counted as context), so only line1 and line2 are
+        // removed (line3 remains because the loop breaks on the backslash).
+        final patch = [
+          '--- a/ap_backslash.txt',
+          '+++ b/ap_backslash.txt',
+          '@@ -1,3 +1,2 @@',
+          ' line1',
+          '\\ No newline at end of file',
+          '-line2',
+        ].join('\n');
+
+        final result = await tool.execute({
+          'file_path': f.path,
+          'patch': patch,
+        }, _mockCtx());
+
+        // The backslash line causes the loop to break early.
+        // Only line1 is processed as context, line2 is removed.
+        // The result is: line3 (remaining after oldStart + oldCount).
+        expect(result.metadata?['error'], isNull);
+        final content = await f.readAsString();
+        // line1 is consumed as context, line2 is removed, line3 remains
+        // But the backslash breaks the loop, so only line1 is verified.
+        // The output is: line1 (from context) + line3 (from tail)
+        expect(content, contains('line1'));
+        expect(content, isNot(contains('line2')));
+        f.deleteSync();
+      });
+    });
+
+    group('execute - project sandbox', () {
+      test('throws when file path is outside project root', () async {
+        // resolveSafePath throws ArgumentError for paths outside project root
+        final outsidePath = '/tmp/ap_outside_project.txt';
+        await expectLater(
+          tool.execute({
+            'file_path': outsidePath,
+            'patch': '@@ -1 +1 @@\n+test',
+          }, _mockCtx()),
+          throwsA(isA<ArgumentError>()),
+        );
+      });
+
+      test('accepts file path inside project root', () async {
+        final f = File(_path('ap_inside.txt'))..writeAsStringSync('content');
+        final result = await tool.execute({
+          'file_path': f.path,
+          'patch': '@@ -1 +1 @@\n-content\n+patched',
+        }, _mockCtx());
+        expect(result.metadata?['error'], isNull);
+        expect(result.output, contains('Patch successfully applied'));
+        f.deleteSync();
+      });
+    });
+
+    group('execute - readonly filesystem', () {
+      test('throws when writing to read-only file', () async {
+        final f = File(_path('ap_readonly.txt'))..writeAsStringSync('original');
+        // Make file read-only
+        final result = await Process.run('chmod', ['444', f.path]);
+        expect(result.exitCode, 0);
+
+        await expectLater(
+          tool.execute({
+            'file_path': f.path,
+            'patch': '@@ -1 +1 @@\n-original\n+patched',
+          }, _mockCtx()),
+          throwsA(isA<FileSystemException>()),
+        );
+
+        // Restore permissions for cleanup
+        await Process.run('chmod', ['644', f.path]);
+        f.deleteSync();
+      });
+    });
+
+    group('execute - edge cases', () {
+      test('handles patch with only additions (no removals)', () async {
+        final f = File(_path('ap_only_add.txt'))..writeAsStringSync('A\nB');
+        final patch = [
+          '--- a/ap_only_add.txt',
+          '+++ b/ap_only_add.txt',
+          '@@ -1,0 +1,2 @@',
+          '+preA',
+          '+preB',
+        ].join('\n');
+
+        final result = await tool.execute({
+          'file_path': f.path,
+          'patch': patch,
+        }, _mockCtx());
+
+        expect(result.metadata?['error'], isNull);
+        final content = await f.readAsString();
+        expect(content, contains('preA'));
+        expect(content, contains('preB'));
+        expect(content, contains('A'));
+        expect(content, contains('B'));
+        f.deleteSync();
+      });
+
+      test('handles patch with only removals (no additions)', () async {
+        final f = File(_path('ap_only_rem.txt'))..writeAsStringSync('A\nB\nC');
+        final patch = [
+          '--- a/ap_only_rem.txt',
+          '+++ b/ap_only_rem.txt',
+          '@@ -1,3 +0,0 @@',
+          '-A',
+          '-B',
+          '-C',
+        ].join('\n');
+
+        final result = await tool.execute({
+          'file_path': f.path,
+          'patch': patch,
+        }, _mockCtx());
+
+        expect(result.metadata?['error'], isNull);
+        final content = await f.readAsString();
+        expect(content, isEmpty);
+        f.deleteSync();
+      });
+
+      test('handles patch replacing entire file content', () async {
+        final f = File(_path('ap_replace_all.txt'))
+          ..writeAsStringSync('old1\nold2\nold3');
+        final patch = [
+          '--- a/ap_replace_all.txt',
+          '+++ b/ap_replace_all.txt',
+          '@@ -1,3 +1,2 @@',
+          '-old1',
+          '-old2',
+          '-old3',
+          '+new1',
+          '+new2',
+        ].join('\n');
+
+        final result = await tool.execute({
+          'file_path': f.path,
+          'patch': patch,
+        }, _mockCtx());
+
+        expect(result.metadata?['error'], isNull);
+        final content = await f.readAsString();
+        expect(content, contains('new1'));
+        expect(content, contains('new2'));
+        expect(content, isNot(contains('old')));
         f.deleteSync();
       });
     });

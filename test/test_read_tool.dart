@@ -23,6 +23,8 @@ ToolContext _mockCtx({
           askedPermission = [permission];
           askedPatterns = patterns;
         },
+    askQuestion:
+        ({required question, options = const [], multiple = false}) async => '',
   );
 }
 
@@ -82,6 +84,9 @@ void main() {
               capturedPermission = permission;
               capturedPatterns = patterns;
             },
+        askQuestion:
+            ({required question, options = const [], multiple = false}) async =>
+                '',
       );
       final testFile = File('${testDir.path}/test_file.txt');
       await testFile.writeAsString('test');

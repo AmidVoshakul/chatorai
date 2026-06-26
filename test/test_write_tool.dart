@@ -24,6 +24,8 @@ ToolContext _mockCtx({
           askedPermission = [permission];
           askedPatterns = patterns;
         },
+    askQuestion:
+        ({required question, options = const [], multiple = false}) async => '',
   );
 }
 
@@ -75,6 +77,9 @@ void main() {
               capturedPermission = permission;
               capturedPatterns = patterns;
             },
+        askQuestion:
+            ({required question, options = const [], multiple = false}) async =>
+                '',
       );
       // Use a path within the project root (test directory)
       final testDir = Directory('test/temp_write_pattern');

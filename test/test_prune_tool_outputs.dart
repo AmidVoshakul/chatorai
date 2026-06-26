@@ -28,10 +28,7 @@ void main() {
       final service = const CompactionService(pruneProtectTokens: 9999);
       final messages = [
         {'role': 'user', 'content': 'hi'},
-        {
-          'role': 'tool',
-          'content': 'short tool output',
-        },
+        {'role': 'tool', 'content': 'short tool output'},
       ];
       final result = service.prune(messages);
       expect(result[1]['content'], 'short tool output');
@@ -40,33 +37,51 @@ void main() {
     test('does not mutate input list', () {
       final service = const CompactionService(pruneProtectTokens: 10);
       final original = [
-        {'role': 'tool', 'content': 'a very long tool output that should be pruned'},
+        {
+          'role': 'tool',
+          'content': 'a very long tool output that should be pruned',
+        },
       ];
       final result = service.prune(original);
-      expect(original[0]['content'], 'a very long tool output that should be pruned');
+      expect(
+        original[0]['content'],
+        'a very long tool output that should be pruned',
+      );
       expect(result[0]['content'], '[Old tool result content cleared]');
     });
 
     test('ignores non-tool messages outside window', () {
       final service = const CompactionService(pruneProtectTokens: 10);
       final messages = [
-        {'role': 'user', 'content': 'a very long user message that exceeds the limit'},
+        {
+          'role': 'user',
+          'content': 'a very long user message that exceeds the limit',
+        },
       ];
       final result = service.prune(messages);
-      expect(result[0]['content'],
-          'a very long user message that exceeds the limit');
+      expect(
+        result[0]['content'],
+        'a very long user message that exceeds the limit',
+      );
     });
 
     test('pruneProtectTokens parameter controls window size', () {
       final smallService = const CompactionService(pruneProtectTokens: 5);
       final largeService = const CompactionService(pruneProtectTokens: 9999);
       final messages = [
-        {'role': 'tool', 'content': 'tool output that is definitely long enough'},
+        {
+          'role': 'tool',
+          'content': 'tool output that is definitely long enough',
+        },
       ];
-      expect(smallService.prune(messages)[0]['content'],
-          '[Old tool result content cleared]');
-      expect(largeService.prune(messages)[0]['content'],
-          'tool output that is definitely long enough');
+      expect(
+        smallService.prune(messages)[0]['content'],
+        '[Old tool result content cleared]',
+      );
+      expect(
+        largeService.prune(messages)[0]['content'],
+        'tool output that is definitely long enough',
+      );
     });
   });
 }

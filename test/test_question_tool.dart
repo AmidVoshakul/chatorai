@@ -2,13 +2,7 @@ import 'package:test/test.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/question.dart';
 
-ToolContext _mockCtx({
-  bool askResult = true,
-  List<String>? askedPermission,
-  List<String>? askedPatterns,
-}) {
-  askedPermission = askedPermission;
-  askedPatterns = askedPatterns;
+ToolContext _mockCtx({String answer = ''}) {
   return ToolContext(
     toolCallId: 'test-call-id',
     sessionId: 'test-session',
@@ -18,10 +12,10 @@ ToolContext _mockCtx({
           required List<String> patterns,
           Map<String, dynamic>? metadata,
           List<String>? always,
-        }) async {
-          askedPermission = [permission];
-          askedPatterns = patterns;
-        },
+        }) async {},
+    askQuestion:
+        ({required question, options = const [], multiple = false}) async =>
+            answer,
   );
 }
 
@@ -32,53 +26,46 @@ void main() {
       expect(tool.description, isNotEmpty);
     });
 
-    test('inputSchema has required questions field', () {
+    test('inputSchema has required question field', () {
       final tool = createQuestionTool();
       final schema = tool.inputSchema as Map<String, dynamic>;
       final properties = schema['properties'] as Map<String, dynamic>;
-      expect(properties.containsKey('questions'), isTrue);
-      expect((schema['required'] as List).contains('questions'), isTrue);
+      expect(properties.containsKey('question'), isTrue);
+      expect((schema['required'] as List).contains('question'), isTrue);
     });
 
-    test('execute with missing questions returns error', () async {
+    test('execute with missing question returns error', () async {
       final tool = createQuestionTool();
       final ctx = _mockCtx();
       final output = await tool.execute({}, ctx);
       expect(output.metadata?['error'], isTrue);
     });
 
-    test('execute calls ctx.ask with correct permission and pattern', () async {
-      final tool = createQuestionTool();
-      String? capturedPermission;
-      List<String>? capturedPatterns;
-      final ctx = ToolContext(
-        toolCallId: 'test',
-        sessionId: 'test',
-        ask:
-            ({
-              required String permission,
-              required List<String> patterns,
-              Map<String, dynamic>? metadata,
-              List<String>? always,
-            }) async {
-              capturedPermission = permission;
-              capturedPatterns = patterns;
-            },
-      );
-      await tool.execute({
-        'questions': [
-          {
-            'question': 'What is your name?',
-            'options': ['Alice', 'Bob'],
-          },
-        ],
-      }, ctx);
-      expect(capturedPermission, equals('question'));
-    });
-
-    test('execute returns question prompt for user', () async {
+    test('execute with empty question returns error', () async {
       final tool = createQuestionTool();
       final ctx = _mockCtx();
+      final output = await tool.execute({'question': ''}, ctx);
+      expect(output.metadata?['error'], isTrue);
+    });
+
+    test('execute returns user answer', () async {
+      final tool = createQuestionTool();
+      final ctx = _mockCtx(answer: 'Alice');
+
+      final output = await tool.execute({
+        'question': 'What is your name?',
+        'options': ['Alice', 'Bob'],
+      }, ctx);
+
+      expect(output.output, equals('Alice'));
+      expect(output.metadata?['question'], equals('What is your name?'));
+      expect(output.metadata?['options'], equals(['Alice', 'Bob']));
+      expect(output.metadata?['answer'], equals('Alice'));
+    });
+
+    test('execute handles legacy questions array format', () async {
+      final tool = createQuestionTool();
+      final ctx = _mockCtx(answer: 'Blue');
 
       final output = await tool.execute({
         'questions': [
@@ -86,37 +73,29 @@ void main() {
             'question': 'Favorite color?',
             'options': ['Red', 'Green', 'Blue'],
           },
-          {'question': 'Age?', 'type': 'number'},
         ],
       }, ctx);
 
-      expect(output.metadata?['error'], isNull);
-      expect(output.output, contains('Favorite color?'));
-      expect(output.output, contains('Age?'));
+      expect(output.output, equals('Blue'));
+      expect(output.metadata?['question'], equals('Favorite color?'));
+      expect(output.metadata?['options'], equals(['Red', 'Green', 'Blue']));
+      expect(output.metadata?['answer'], equals('Blue'));
     });
 
-    test('execute handles single choice questions', () async {
+    test('execute handles single question without options', () async {
       final tool = createQuestionTool();
-      final ctx = _mockCtx();
+      final ctx = _mockCtx(answer: '42');
 
-      final output = await tool.execute({
-        'questions': [
-          {
-            'question': 'Select one',
-            'options': ['Option A', 'Option B', 'Option C'],
-          },
-        ],
-      }, ctx);
+      final output = await tool.execute({'question': 'How old are you?'}, ctx);
 
-      expect(output.metadata?['error'], isNull);
-      expect(output.output, contains('Option A'));
-      expect(output.output, contains('Option B'));
-      expect(output.output, contains('Option C'));
+      expect(output.output, equals('42'));
+      expect(output.metadata?['question'], equals('How old are you?'));
+      expect(output.metadata?['answer'], equals('42'));
     });
 
-    test('execute handles multi-select questions', () async {
+    test('execute handles multiple flag in legacy format', () async {
       final tool = createQuestionTool();
-      final ctx = _mockCtx();
+      final ctx = _mockCtx(answer: 'A');
 
       final output = await tool.execute({
         'questions': [
@@ -129,22 +108,26 @@ void main() {
       }, ctx);
 
       expect(output.metadata?['error'], isNull);
+      expect(output.output, equals('A'));
     });
 
-    test('execute validates required question field', () async {
-      final tool = createQuestionTool();
-      final ctx = _mockCtx();
+    test(
+      'execute validates required question field in legacy format',
+      () async {
+        final tool = createQuestionTool();
+        final ctx = _mockCtx();
 
-      final output = await tool.execute({
-        'questions': [
-          {
-            'options': ['A', 'B'],
-          }, // missing question
-        ],
-      }, ctx);
+        final output = await tool.execute({
+          'questions': [
+            {
+              'options': ['A', 'B'],
+            },
+          ],
+        }, ctx);
 
-      expect(output.metadata?['error'], isTrue);
-    });
+        expect(output.metadata?['error'], isTrue);
+      },
+    );
 
     test('execute handles empty questions list', () async {
       final tool = createQuestionTool();

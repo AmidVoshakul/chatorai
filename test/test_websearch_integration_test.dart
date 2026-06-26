@@ -112,6 +112,8 @@ ToolContext _permissiveCtx() {
           // Auto-approve permission requests in integration tests.
           return;
         },
+    askQuestion:
+        ({required question, options = const [], multiple = false}) async => '',
   );
 }
 

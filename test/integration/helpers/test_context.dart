@@ -34,11 +34,25 @@ class IntegrationTestContext implements ToolContext {
   })
   ask;
 
+  @override
+  final Future<String> Function({
+    required String question,
+    List<String> options,
+    bool multiple,
+  })
+  askQuestion;
+
+  @override
+  final void Function({String? title, Map<String, dynamic>? metadata})?
+  onMetadata;
+
   const IntegrationTestContext({
     this.toolCallId = 'integration-test',
     this.sessionId,
     this.abortSignal,
     this.ask = _defaultAsk,
+    this.askQuestion = _defaultAskQuestion,
+    this.onMetadata,
   });
 
   /// Auto-approves all permission requests.
@@ -54,6 +68,15 @@ class IntegrationTestContext implements ToolContext {
   }) async {
     // No-op
     return;
+  }
+
+  /// Returns empty string for questions in integration tests.
+  static Future<String> _defaultAskQuestion({
+    required String question,
+    List<String> options = const [],
+    bool multiple = false,
+  }) async {
+    return '';
   }
 
   /// Dummy method not used by tools but required by spec.
