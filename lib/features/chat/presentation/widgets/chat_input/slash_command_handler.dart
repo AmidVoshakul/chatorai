@@ -7,8 +7,8 @@ import 'package:chatorai/core/permission/permission_provider.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 // Skills
-import 'package:chatorai/core/skills/models/skill_info.dart';
-import 'package:chatorai/core/skills/providers/skill_providers.dart'
+import 'package:chatorai/core/skills/skill_info.dart';
+import 'package:chatorai/core/skills/skill_providers.dart'
     show skillServiceProvider;
 import 'package:chatorai/core/skills/skill_service.dart';
 // Chat models and providers
