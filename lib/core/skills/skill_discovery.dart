@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:chatorai/core/skills/directory_source.dart';
-import 'package:chatorai/core/skills/models/skill_info.dart';
 import 'package:chatorai/core/skills/skill_error.dart';
 import 'package:chatorai/core/skills/skill_file_watcher.dart';
+import 'package:chatorai/core/skills/skill_info.dart';
 import 'package:chatorai/core/skills/skill_source.dart';
 import 'package:flutter/foundation.dart';
 

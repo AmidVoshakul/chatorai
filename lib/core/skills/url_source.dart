@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:chatorai/core/skills/models/skill_info.dart';
+import 'package:chatorai/core/skills/skill_info.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:http/http.dart' as http;
