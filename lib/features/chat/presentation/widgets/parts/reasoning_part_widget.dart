@@ -1,16 +1,14 @@
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/tool_call_part_widget.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class ReasoningPartWidget extends StatefulWidget {
   final ReasoningPart part;
-  final List<MessagePart>? toolParts;
 
-  const ReasoningPartWidget({super.key, required this.part, this.toolParts});
+  const ReasoningPartWidget({super.key, required this.part});
 
   @override
   State<ReasoningPartWidget> createState() => _ReasoningPartWidgetState();
@@ -18,7 +16,8 @@ class ReasoningPartWidget extends StatefulWidget {
 
 class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     with TickerProviderStateMixin {
-  bool _isExpanded = false;
+  bool _isExpanded = true;
+  Duration? _thoughtDuration;
 
   late final AnimationController _shimmerController;
   late final Animation<double> _shimmerAnimation;
@@ -47,6 +46,12 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     } else {
       _shimmerController.stop();
       _shimmerController.value = 0;
+
+      if (oldWidget.part.isStreaming &&
+          widget.part.startedAt != null &&
+          _thoughtDuration == null) {
+        _thoughtDuration = DateTime.now().difference(widget.part.startedAt!);
+      }
     }
   }
 
@@ -70,7 +75,6 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
           borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
         ),
         child: Opacity(
-          // Уменьшаем заметность всего reasoning (и мыслей, и инструментов)
           opacity: 0.5,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,93 +101,111 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
 
   Widget _buildContent() {
     final theme = Theme.of(context);
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 350),
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: DefaultTextStyle(
-          style: theme.textTheme.bodySmall ?? const TextStyle(fontSize: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              MarkdownBody(
-                data: widget.part.content,
-                styleSheet: ChatoraiMarkdownStyles.getMarkdownStyles(context),
-                selectable: true,
-              ),
-              if (widget.toolParts != null && widget.toolParts!.isNotEmpty)
-                const SizedBox(height: ChatoraiSpacing.md),
-              if (widget.toolParts != null)
-                ...widget.toolParts!.map(_buildToolWidget),
-            ],
-          ),
-        ),
+    return DefaultTextStyle(
+      style: theme.textTheme.bodySmall ?? const TextStyle(fontSize: 12),
+      child: MarkdownBody(
+        data: widget.part.content,
+        styleSheet: ChatoraiMarkdownStyles.getMarkdownStyles(context),
+        selectable: true,
       ),
     );
   }
 
-  Widget _buildToolWidget(MessagePart part) {
-    if (part is ToolCallPart) {
-      return ToolCallPartWidget(part: part);
-    } else if (part is ToolResultPart) {
-      return ToolResultPartWidget(part: part);
-    }
-    return const SizedBox.shrink();
+  String _formatDuration(Duration d) {
+    final total = d.inSeconds;
+    if (total < 60) return '${total}s';
+    final minutes = total ~/ 60;
+    final seconds = total % 60;
+    if (seconds == 0) return '${minutes}m';
+    return '${minutes}m ${seconds}s';
+  }
+
+  String? get _displayDuration {
+    if (_thoughtDuration != null) return _formatDuration(_thoughtDuration!);
+    return null;
   }
 
   Widget _buildHeader(AppLocalizations? localizations, ThemeData theme) {
-    final textColor = theme.colorScheme.onSurface;
-    final headerText = localizations?.reasoning ?? 'Reasoning';
+    final isStreaming = widget.part.isStreaming;
+    final orange = theme.colorScheme.primary;
 
-    return AnimatedBuilder(
-      animation: Listenable.merge([_shimmerAnimation]),
-      builder: (context, child) {
-        final isStreaming = widget.part.isStreaming;
-
-        return GestureDetector(
-          onTap: () => setState(() => _isExpanded = !_isExpanded),
-          behavior: HitTestBehavior.opaque,
-          child: Row(
-            children: [
-              if (isStreaming)
+    if (isStreaming) {
+      return GestureDetector(
+        onTap: () => setState(() => _isExpanded = !_isExpanded),
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedBuilder(
+          animation: _shimmerAnimation,
+          builder: (context, child) {
+            return Row(
+              children: [
+                SpinKitRing(
+                  color: orange,
+                  size: 14,
+                  lineWidth: 2,
+                ),
+                const SizedBox(width: 8),
                 ShaderMask(
                   shaderCallback: (bounds) {
                     return LinearGradient(
                       begin: Alignment(-1 + _shimmerAnimation.value, 0),
                       end: Alignment(1 + _shimmerAnimation.value, 0),
                       colors: [
-                        textColor.withValues(alpha: 0.35),
-                        textColor,
-                        textColor.withValues(alpha: 0.35),
+                        orange.withValues(alpha: 0.35),
+                        orange,
+                        orange.withValues(alpha: 0.35),
                       ],
                       stops: const [0.25, 0.5, 0.75],
                     ).createShader(bounds);
                   },
                   blendMode: BlendMode.srcIn,
                   child: Text(
-                    headerText,
+                    'Thinking',
                     style: TextStyle(
                       fontSize: ChatoraiFontSizes.sm,
                       fontWeight: FontWeight.w600,
                       height: 1.4,
-                      color: textColor,
+                      color: orange,
                     ),
                   ),
-                )
-              else
-                Text(
-                  headerText,
-                  style: TextStyle(
-                    fontSize: ChatoraiFontSizes.sm,
-                    fontWeight: FontWeight.w600,
-                    height: 1.4,
-                    color: textColor,
-                  ),
                 ),
-            ],
+              ],
+            );
+          },
+        ),
+      );
+    }
+
+    final durationStr = _displayDuration;
+    final thoughtLabel = durationStr != null
+        ? 'Thought: $durationStr'
+        : 'Thought:';
+
+    return GestureDetector(
+      onTap: () => setState(() => _isExpanded = !_isExpanded),
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        children: [
+          AnimatedRotation(
+            turns: _isExpanded ? 0.25 : 0,
+            duration: const Duration(milliseconds: 200),
+            child: Icon(
+              Icons.chevron_right,
+              size: 14,
+              color: orange,
+            ),
           ),
-        );
-      },
+          const SizedBox(width: 8),
+          Text(
+            thoughtLabel,
+            style: TextStyle(
+              fontSize: ChatoraiFontSizes.sm,
+              fontWeight: FontWeight.w600,
+              height: 1.4,
+              color: orange,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
