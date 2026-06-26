@@ -296,12 +296,20 @@ class ChatAiService implements CompletionProvider {
                 :final toolResult,
                 :final preliminary,
               ):
+                LogTags.chatService.logDebug(
+                  'streamChatCompletion: ToolResultEvent tool=${toolResult.toolName} '
+                  'callId=${toolResult.toolCallId} preliminary=$preliminary',
+                );
                 if (!preliminary) {
                   final outputText = switch (toolResult.output) {
                     ToolResultOutputText(:final text) => text,
                     ToolResultOutputContent(:final parts) =>
                       parts.map((p) => p.toString()).join(),
                   };
+                  LogTags.chatService.logInfo(
+                    'streamChatCompletion: onToolEnd tool=${toolResult.toolName} '
+                    'outputLen=${outputText.length}',
+                  );
                   onToolEnd?.call(
                     toolResult.toolCallId,
                     toolResult.toolName,

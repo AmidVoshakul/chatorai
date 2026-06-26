@@ -74,19 +74,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           if (mounted &&
               _autoScrollEnabled &&
               ref.read(themeProvider).autoScrollDuringStreaming) {
-            LogTags.chatService.logInfo(
-              'ChatScreen.throttleUpdate: streaming auto-scroll triggered (_autoScrollEnabled=$_autoScrollEnabled, setting=${ref.read(themeProvider).autoScrollDuringStreaming})',
-            );
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              LogTags.chatService.logInfo(
-                'ChatScreen.throttleUpdate: calling scrollToBottom',
-              );
               _scrollToBottom(force: false);
             });
-          } else {
-            LogTags.chatService.logInfo(
-              'ChatScreen.throttleUpdate: streaming auto-scroll skipped (mounted=$mounted, _autoScrollEnabled=$_autoScrollEnabled, setting=${ref.read(themeProvider).autoScrollDuringStreaming})',
-            );
           }
         }
       }
@@ -222,16 +212,56 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           toolInputs[toolCallId] = input;
           toolStartTimes[toolCallId] = DateTime.now();
           runnerSession.onToolStart(toolCallId, toolName, input);
-          ref
-              .read(streamingMessageProvider.notifier)
-              .onToolCall(toolCallId, toolName, input);
+
+          if (toolName == 'question') {
+            // For question tool, create a QuestionPart in the streaming message
+            final questionText = input['question'] as String? ?? '';
+            final options = (input['options'] as List?)?.cast<String>() ?? [];
+            ref
+                .read(streamingMessageProvider.notifier)
+                .onQuestion(
+                  QuestionPart(question: questionText, options: options),
+                );
+            LogTags.chatScreen.logInfo(
+              'onToolStart(question): added QuestionPart "$questionText"',
+            );
+          } else {
+            ref
+                .read(streamingMessageProvider.notifier)
+                .onToolCall(toolCallId, toolName, input);
+          }
         },
         onToolEnd: (toolCallId, toolName, result) {
           final resultStr = result.toString();
           runnerSession.onToolEnd(toolCallId, toolName, resultStr);
-          ref
-              .read(streamingMessageProvider.notifier)
-              .onToolEnd(toolCallId, toolName, resultStr);
+
+          if (toolName == 'question') {
+            // Update the QuestionPart in streaming with the user's answer
+            // Get the current streaming parts to find the question
+            final streamingState = ref.read(streamingMessageProvider);
+            for (final part in streamingState.accumulatedParts) {
+              if (part is QuestionPart && part.answer == null) {
+                ref
+                    .read(streamingMessageProvider.notifier)
+                    .onQuestion(
+                      QuestionPart(
+                        question: part.question,
+                        options: part.options,
+                        answer: resultStr,
+                      ),
+                    );
+                break;
+              }
+            }
+            LogTags.chatScreen.logInfo(
+              'onToolEnd(question): answer="$resultStr"',
+            );
+          } else {
+            ref
+                .read(streamingMessageProvider.notifier)
+                .onToolEnd(toolCallId, toolName, resultStr);
+          }
+
           final startTime = toolStartTimes.remove(toolCallId);
           final durationMs = startTime != null
               ? DateTime.now().difference(startTime).inMilliseconds

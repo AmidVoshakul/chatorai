@@ -103,9 +103,12 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
       parts[openReasoningIdx] = ReasoningPart(
         content: existing.content + reasoning,
         isStreaming: true,
+        startedAt: existing.startedAt ?? DateTime.now(),
       );
     } else {
-      parts.add(ReasoningPart(content: reasoning, isStreaming: true));
+      parts.add(
+        ReasoningPart(content: reasoning, isStreaming: true, startedAt: DateTime.now()),
+      );
     }
     state = state.copyWith(accumulatedParts: parts);
   }
@@ -114,9 +117,11 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
     for (var i = 0; i < parts.length; i++) {
       if (parts[i] is ReasoningPart &&
           (parts[i] as ReasoningPart).isStreaming) {
+        final existing = parts[i] as ReasoningPart;
         parts[i] = ReasoningPart(
-          content: (parts[i] as ReasoningPart).content,
+          content: existing.content,
           isStreaming: false,
+          startedAt: existing.startedAt,
         );
       }
     }
@@ -213,6 +218,20 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
     state = state.copyWith(accumulatedParts: parts);
   }
 
+  void onQuestion(QuestionPart question) {
+    if (!state.isStreaming) return;
+    final parts = List<MessagePart>.from(state.accumulatedParts);
+    final existingIdx = parts.indexWhere(
+      (p) => p is QuestionPart && p.question == question.question,
+    );
+    if (existingIdx != -1) {
+      parts[existingIdx] = question;
+    } else {
+      parts.add(question);
+    }
+    state = state.copyWith(accumulatedParts: parts);
+  }
+
   Future<void> stopStreaming() async {
     if (!state.isStreaming) return;
     final parts = List<MessagePart>.from(state.accumulatedParts).map((p) {
@@ -220,7 +239,11 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
         return TextPart(content: p.content, isStreaming: false);
       }
       if (p is ReasoningPart) {
-        return ReasoningPart(content: p.content, isStreaming: false);
+        return ReasoningPart(
+          content: p.content,
+          isStreaming: false,
+          startedAt: p.startedAt,
+        );
       }
       if (p is ToolResultPart) {
         return ToolResultPart(

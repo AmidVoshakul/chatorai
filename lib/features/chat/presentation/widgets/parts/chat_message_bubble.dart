@@ -270,66 +270,18 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         .map((p) => p.content)
         .join('\n');
 
-    // Group tool parts under preceding reasoning, wrapping tools without reasoning in a virtual ReasoningPart
+    // Render parts sequentially: Reasoning → Tools → Text → Question → Todo
+    // Tools and Questions are rendered as standalone widgets, NOT inside reasoning block
     List<Widget> groupedParts = [];
-    ReasoningPart? currentReasoning;
-    List<MessagePart> toolChildren = [];
 
     for (final part in m.parts) {
       if (part is ReasoningPart) {
-        // Flush previous reasoning (if any)
-        if (currentReasoning != null) {
-          groupedParts.add(
-            ReasoningPartWidget(
-              part: currentReasoning,
-              toolParts: List<MessagePart>.unmodifiable(toolChildren),
-            ),
-          );
-          toolChildren = [];
-        }
-        currentReasoning = part;
+        groupedParts.add(ReasoningPartWidget(part: part));
       } else if (part is ToolCallPart || part is ToolResultPart) {
-        toolChildren.add(part);
+        groupedParts.add(_buildPart(part, context));
       } else {
-        // Any other part (TextPart, etc.)
-        if (currentReasoning != null) {
-          groupedParts.add(
-            ReasoningPartWidget(
-              part: currentReasoning,
-              toolParts: List<MessagePart>.unmodifiable(toolChildren),
-            ),
-          );
-          currentReasoning = null;
-          toolChildren = [];
-        } else if (toolChildren.isNotEmpty) {
-          // Tools without any preceding reasoning: wrap in a virtual empty reasoning
-          groupedParts.add(
-            ReasoningPartWidget(
-              part: ReasoningPart(content: '', isStreaming: false),
-              toolParts: List<MessagePart>.unmodifiable(toolChildren),
-            ),
-          );
-          toolChildren = [];
-        }
         groupedParts.add(_buildPart(part, context));
       }
-    }
-
-    // Flush at end
-    if (currentReasoning != null) {
-      groupedParts.add(
-        ReasoningPartWidget(
-          part: currentReasoning,
-          toolParts: List<MessagePart>.unmodifiable(toolChildren),
-        ),
-      );
-    } else if (toolChildren.isNotEmpty) {
-      groupedParts.add(
-        ReasoningPartWidget(
-          part: ReasoningPart(content: '', isStreaming: false),
-          toolParts: List<MessagePart>.unmodifiable(toolChildren),
-        ),
-      );
     }
 
     return Column(
@@ -385,12 +337,24 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
   Widget _buildPart(MessagePart part, BuildContext context) {
     return switch (part) {
       TextPart p => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.only(top: 4, bottom: 12),
         child: TextPartWidget(part: p),
       ),
       ReasoningPart p => ReasoningPartWidget(part: p),
-      ToolCallPart p => ToolCallPartWidget(part: p),
-      ToolResultPart p => ToolResultPartWidget(part: p),
+      ToolCallPart p => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.sm),
+        child: Opacity(
+          opacity: 0.3,
+          child: ToolCallPartWidget(part: p),
+        ),
+      ),
+      ToolResultPart p => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.sm),
+        child: Opacity(
+          opacity: 0.3,
+          child: ToolResultPartWidget(part: p),
+        ),
+      ),
       TaskPart p => TaskPartWidget(part: p),
       QuestionPart p => QuestionPartWidget(
         part: p,
