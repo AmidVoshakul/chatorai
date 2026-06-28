@@ -7,8 +7,9 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class ReasoningPartWidget extends StatefulWidget {
   final ReasoningPart part;
+  final String? partKey;
 
-  const ReasoningPartWidget({super.key, required this.part});
+  const ReasoningPartWidget({super.key, required this.part, this.partKey});
 
   @override
   State<ReasoningPartWidget> createState() => _ReasoningPartWidgetState();
@@ -16,7 +17,19 @@ class ReasoningPartWidget extends StatefulWidget {
 
 class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     with TickerProviderStateMixin {
-  bool _isExpanded = true;
+  /// Static map to persist expand/collapse state across widget rebuilds.
+  static final Map<String, bool> _expandState = {};
+
+  bool get _isExpanded {
+    final key = widget.partKey ?? widget.part.content.hashCode.toString();
+    return _expandState.putIfAbsent(key, () => widget.part.isExpanded ?? true);
+  }
+
+  set _isExpanded(bool value) {
+    final key = widget.partKey ?? widget.part.content.hashCode.toString();
+    _expandState[key] = value;
+  }
+
   Duration? _thoughtDuration;
 
   late final AnimationController _shimmerController;
@@ -36,6 +49,8 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     if (widget.part.isStreaming) {
       _shimmerController.repeat();
     }
+    // Initialize expand state from part or default to true.
+    _isExpanded = widget.part.isExpanded ?? true;
   }
 
   @override
@@ -121,6 +136,9 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
   }
 
   String? get _displayDuration {
+    if (widget.part.durationMs != null) {
+      return _formatDuration(Duration(milliseconds: widget.part.durationMs!));
+    }
     if (_thoughtDuration != null) return _formatDuration(_thoughtDuration!);
     return null;
   }
@@ -138,11 +156,7 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
           builder: (context, child) {
             return Row(
               children: [
-                SpinKitRing(
-                  color: orange,
-                  size: 14,
-                  lineWidth: 2,
-                ),
+                SpinKitRing(color: orange, size: 14, lineWidth: 2),
                 const SizedBox(width: 8),
                 ShaderMask(
                   shaderCallback: (bounds) {
@@ -188,11 +202,7 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
           AnimatedRotation(
             turns: _isExpanded ? 0.25 : 0,
             duration: const Duration(milliseconds: 200),
-            child: Icon(
-              Icons.chevron_right,
-              size: 14,
-              color: orange,
-            ),
+            child: Icon(Icons.chevron_right, size: 14, color: orange),
           ),
           const SizedBox(width: 8),
           Text(

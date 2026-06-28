@@ -104,10 +104,15 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
         content: existing.content + reasoning,
         isStreaming: true,
         startedAt: existing.startedAt ?? DateTime.now(),
+        isExpanded: existing.isExpanded,
       );
     } else {
       parts.add(
-        ReasoningPart(content: reasoning, isStreaming: true, startedAt: DateTime.now()),
+        ReasoningPart(
+          content: reasoning,
+          isStreaming: true,
+          startedAt: DateTime.now(),
+        ),
       );
     }
     state = state.copyWith(accumulatedParts: parts);
@@ -118,10 +123,15 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
       if (parts[i] is ReasoningPart &&
           (parts[i] as ReasoningPart).isStreaming) {
         final existing = parts[i] as ReasoningPart;
+        final now = DateTime.now();
         parts[i] = ReasoningPart(
           content: existing.content,
           isStreaming: false,
           startedAt: existing.startedAt,
+          durationMs: existing.startedAt != null
+              ? now.difference(existing.startedAt!).inMilliseconds
+              : null,
+          isExpanded: existing.isExpanded,
         );
       }
     }
@@ -150,12 +160,14 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
     );
     if (existingIdx != -1) {
       // Update existing part (e.g. tool-input-start → tool-call reuse)
+      final existing = parts[existingIdx] as ToolResultPart;
       parts[existingIdx] = ToolResultPart(
         toolCallId: toolCallId,
         toolName: toolName,
         state: ToolState.running,
         input: input,
         isStreaming: true,
+        metadata: existing.metadata,
       );
     } else {
       parts.add(
@@ -186,6 +198,7 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
         state: ToolState.completed,
         input: existing.input,
         isStreaming: false,
+        metadata: existing.metadata,
       );
     }
     state = state.copyWith(accumulatedParts: parts);
@@ -206,6 +219,7 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
         state: ToolState.error,
         input: existing.input,
         isStreaming: false,
+        metadata: existing.metadata,
       );
     }
     state = state.copyWith(accumulatedParts: parts);
@@ -239,10 +253,15 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
         return TextPart(content: p.content, isStreaming: false);
       }
       if (p is ReasoningPart) {
+        final now = DateTime.now();
         return ReasoningPart(
           content: p.content,
           isStreaming: false,
           startedAt: p.startedAt,
+          durationMs: p.startedAt != null
+              ? now.difference(p.startedAt!).inMilliseconds
+              : null,
+          isExpanded: p.isExpanded,
         );
       }
       if (p is ToolResultPart) {
@@ -255,6 +274,7 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
           duration: p.duration,
           input: p.input,
           isStreaming: false,
+          metadata: p.metadata,
         );
       }
       if (p is TodoPart) return TodoPart(todos: p.todos, isStreaming: false);
