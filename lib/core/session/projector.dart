@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:drift/drift.dart';
 
 import 'database.dart' hide ToolResult;
@@ -16,6 +17,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       :final title,
       :final agent,
       :final modelRef,
+      :final permission,
     ) =>
       SessionState(
         id: sessionId,
@@ -23,6 +25,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
         title: title,
         agent: agent,
         modelRef: modelRef,
+        permission: permission,
         createdAt: event.timestamp,
         updatedAt: event.timestamp,
       ),
@@ -214,6 +217,7 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
       :final title,
       :final agent,
       :final modelRef,
+      :final permission,
     ):
       await db
           .into(db.sessions)
@@ -227,6 +231,9 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
               agent: Value(agent),
               modelRef: modelRef != null
                   ? Value<String?>(modelRef)
+                  : const Value.absent(),
+              permissionRules: permission != null
+                  ? Value<String?>(jsonEncode(_serializePermission(permission)))
                   : const Value.absent(),
               createdAt: event.timestamp,
               updatedAt: event.timestamp,
@@ -463,11 +470,9 @@ Future<int> _existingOrNextMessageSeq(
 /// string if the message row is missing or its content is malformed.
 Future<String> _lookupToolName(AppDatabase db, String toolCallId) async {
   try {
-    final row =
-        await (db.selectOnly(db.messages)
-              ..where(db.messages.id.equals(toolCallId))
-              ..addColumns([db.messages.content]))
-            .getSingleOrNull();
+    final row = await (db.selectOnly(
+      db.messages,
+    )..addColumns([db.messages.content])).getSingleOrNull();
     if (row == null) return '';
     final stored = row.read(db.messages.content);
     if (stored == null || stored.isEmpty) return '';
@@ -477,4 +482,29 @@ Future<String> _lookupToolName(AppDatabase db, String toolCallId) async {
     }
   } catch (_) {}
   return '';
+}
+
+Map<String, dynamic>? _serializePermission(PermissionRuleset? pr) {
+  if (pr == null) return null;
+  if (pr.rules.isEmpty && pr.sessionApproved.isEmpty) return null;
+  return {
+    'rules': pr.rules
+        .map(
+          (r) => {
+            'permission': r.permission,
+            'pattern': r.pattern,
+            'action': r.action.name,
+          },
+        )
+        .toList(),
+    'sessionApproved': pr.sessionApproved
+        .map(
+          (r) => {
+            'permission': r.permission,
+            'pattern': r.pattern,
+            'action': r.action.name,
+          },
+        )
+        .toList(),
+  };
 }

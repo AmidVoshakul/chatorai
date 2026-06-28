@@ -149,7 +149,7 @@ class UnknownError extends ClassifiedError {
   Duration? get retryAfter => null;
 
   @override
-  bool get isRetryable => true; // Default to retry for unknown errors
+  bool get isRetryable => true;
 
   @override
   int? get statusCode => null;

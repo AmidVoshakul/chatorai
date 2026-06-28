@@ -1,3 +1,5 @@
+import 'package:chatorai/core/permission/ruleset.dart';
+
 import 'session_id.dart';
 
 sealed class SessionEvent {
@@ -17,6 +19,7 @@ class SessionCreated extends SessionEvent {
   final String title;
   final String agent;
   final String? modelRef;
+  final PermissionRuleset? permission;
 
   const SessionCreated({
     required super.sessionId,
@@ -24,6 +27,7 @@ class SessionCreated extends SessionEvent {
     this.title = '',
     this.agent = 'general',
     this.modelRef,
+    this.permission,
     required super.timestamp,
     super.sequence,
   });

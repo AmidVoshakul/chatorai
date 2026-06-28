@@ -1,3 +1,4 @@
+import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:equatable/equatable.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -183,6 +184,8 @@ class SessionState extends Equatable {
   @Default(0)
   final int tokensReasoning;
 
+  final PermissionRuleset? permission;
+
   @Default([])
   final List<SessionMessage> messages;
 
@@ -205,6 +208,7 @@ class SessionState extends Equatable {
     this.tokensInput = 0,
     this.tokensOutput = 0,
     this.tokensReasoning = 0,
+    this.permission,
     this.messages = const [],
     this.toolResults = const [],
     required this.createdAt,
@@ -227,6 +231,7 @@ class SessionState extends Equatable {
     int? tokensInput,
     int? tokensOutput,
     int? tokensReasoning,
+    PermissionRuleset? permission,
     List<SessionMessage>? messages,
     List<ToolResult>? toolResults,
     DateTime? createdAt,
@@ -234,6 +239,7 @@ class SessionState extends Equatable {
     DateTime? archivedAt,
     bool clearParentId = false,
     bool clearModelRef = false,
+    bool clearPermission = false,
     bool clearArchivedAt = false,
   }) {
     return SessionState(
@@ -246,6 +252,7 @@ class SessionState extends Equatable {
       tokensInput: tokensInput ?? this.tokensInput,
       tokensOutput: tokensOutput ?? this.tokensOutput,
       tokensReasoning: tokensReasoning ?? this.tokensReasoning,
+      permission: clearPermission ? null : (permission ?? this.permission),
       messages: messages ?? this.messages,
       toolResults: toolResults ?? this.toolResults,
       createdAt: createdAt ?? this.createdAt,
@@ -274,6 +281,7 @@ class SessionState extends Equatable {
     tokensInput,
     tokensOutput,
     tokensReasoning,
+    permission,
     messages,
     toolResults,
     createdAt,

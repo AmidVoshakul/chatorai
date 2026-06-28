@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:chatorai/core/permission/rule.dart';
+import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:drift/drift.dart';
 import 'database.dart';
 import 'events.dart';
@@ -118,6 +120,7 @@ class EventStore {
         'title': e.title,
         'agent': e.agent,
         'modelRef': e.modelRef,
+        'permission': _serializePermission(e.permission),
       },
       SessionArchived _ => {'type': 'SessionArchived'},
       SessionAgentSwitched e => {
@@ -242,6 +245,9 @@ class EventStore {
         title: data['title'] as String? ?? '',
         agent: data['agent'] as String? ?? 'general',
         modelRef: data['modelRef'] as String?,
+        permission: _deserializePermission(
+          data['permission'] as Map<String, dynamic>?,
+        ),
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -415,6 +421,59 @@ class EventStore {
       ),
       _ => throw ArgumentError('Unknown event type: $type'),
     };
+  }
+
+  Map<String, dynamic>? _serializePermission(PermissionRuleset? pr) {
+    if (pr == null) return null;
+    if (pr.rules.isEmpty && pr.sessionApproved.isEmpty) return null;
+    return {
+      'rules': pr.rules
+          .map(
+            (r) => {
+              'permission': r.permission,
+              'pattern': r.pattern,
+              'action': r.action.name,
+            },
+          )
+          .toList(),
+      'sessionApproved': pr.sessionApproved
+          .map(
+            (r) => {
+              'permission': r.permission,
+              'pattern': r.pattern,
+              'action': r.action.name,
+            },
+          )
+          .toList(),
+    };
+  }
+
+  PermissionRuleset? _deserializePermission(Map<String, dynamic>? data) {
+    if (data == null) return null;
+    return PermissionRuleset(
+      rules:
+          (data['rules'] as List<dynamic>?)
+              ?.map(
+                (r) => PermissionRule(
+                  permission: r['permission'] as String,
+                  pattern: r['pattern'] as String,
+                  action: PermissionAction.values.byName(r['action'] as String),
+                ),
+              )
+              .toList() ??
+          [],
+      sessionApproved:
+          (data['sessionApproved'] as List<dynamic>?)
+              ?.map(
+                (r) => PermissionRule(
+                  permission: r['permission'] as String,
+                  pattern: r['pattern'] as String,
+                  action: PermissionAction.values.byName(r['action'] as String),
+                ),
+              )
+              .toList() ??
+          [],
+    );
   }
 
   /// Compute the next sequence number for a session by reading the current

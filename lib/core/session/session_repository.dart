@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:chatorai/core/permission/rule.dart';
+import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:drift/drift.dart';
 
 import 'database.dart' hide ToolResult;
@@ -17,12 +21,46 @@ class SessionRepository {
 
   EventStore get eventStore => _eventStore;
 
+  /// Derives a child session's [PermissionRuleset] from the parent's.
+  ///
+  /// Copied parent deny rules are preserved, and `task` and `todowrite`
+  /// are unconditionally denied — matching OpenCode's
+  /// [deriveSubagentSessionPermission] semantics so that subagents cannot
+  /// delegate further or manage their own task metadata.
+  static PermissionRuleset deriveChildPermissions(
+    PermissionRuleset? parentRules,
+  ) {
+    final denies = <PermissionRule>[];
+
+    if (parentRules != null) {
+      denies.addAll(
+        parentRules.rules.where((r) => r.action == PermissionAction.deny),
+      );
+    }
+
+    denies.addAll(const [
+      PermissionRule(
+        permission: 'task',
+        pattern: '*',
+        action: PermissionAction.deny,
+      ),
+      PermissionRule(
+        permission: 'todowrite',
+        pattern: '*',
+        action: PermissionAction.deny,
+      ),
+    ]);
+
+    return PermissionRuleset(rules: denies);
+  }
+
   Future<SessionState> createSession({
     SessionID? id,
     SessionID? parentId,
     String title = '',
     String agent = 'general',
     String? modelRef,
+    PermissionRuleset? permission,
   }) async {
     final sessionId = id ?? SessionID.create();
     final event = SessionCreated(
@@ -31,6 +69,7 @@ class SessionRepository {
       title: title,
       agent: agent,
       modelRef: modelRef,
+      permission: permission,
       timestamp: DateTime.now(),
     );
 
@@ -43,6 +82,7 @@ class SessionRepository {
       title: title,
       agent: agent,
       modelRef: modelRef,
+      permission: permission,
       createdAt: event.timestamp,
       updatedAt: event.timestamp,
     );
@@ -145,6 +185,7 @@ class SessionRepository {
         _db.sessions,
       )..where((s) => s.id.equals(sessionId.value))).go();
     });
+    _stateCache.remove(sessionId);
   }
 
   Future<SessionTree> buildTree() async {
@@ -179,14 +220,19 @@ class SessionRepository {
   /// Creates a child session linked to [parentId] and publishes a
   /// [ChildSessionCreated] event on the *parent* session.
   ///
-  /// The child inherits [agent] and [modelRef] from the parent unless
-  /// explicitly overridden. The [title] defaults to the parent's title
-  /// with a " → Sub-task" suffix.
+  /// The child inherits [agent], [modelRef], and [permission] from the
+  /// parent unless explicitly overridden. The [title] defaults to the
+  /// parent's title with a " → Sub-task" suffix.
+  ///
+  /// Permission derivation follows [deriveChildPermissions]: parent deny
+  /// rules are propagated, and `task` / `todowrite` are unconditionally
+  /// denied so subagents cannot delegate further.
   Future<SessionState> createChildSession(
     SessionID parentId, {
     String? agent,
     String? modelRef,
     String? title,
+    PermissionRuleset? permission,
   }) async {
     // Load parent to inherit settings
     final parentState =
@@ -196,6 +242,10 @@ class SessionRepository {
     final effectiveTitle =
         title ??
         (parentState != null ? '${parentState.title} → Sub-task' : 'Sub-task');
+
+    // Derive permissions from parent unless explicitly overridden
+    final childPermission =
+        permission ?? deriveChildPermissions(parentState?.permission);
 
     final childId = SessionID.create();
     final now = DateTime.now();
@@ -207,6 +257,7 @@ class SessionRepository {
       title: effectiveTitle,
       agent: effectiveAgent,
       modelRef: effectiveModelRef,
+      permission: childPermission,
       timestamp: now,
     );
     await _eventStore.append(createdEvent);
@@ -231,6 +282,7 @@ class SessionRepository {
       title: effectiveTitle,
       agent: effectiveAgent,
       modelRef: effectiveModelRef,
+      permission: childPermission,
       createdAt: now,
       updatedAt: now,
     );
@@ -314,9 +366,43 @@ class SessionRepository {
       tokensInput: row.tokensInput,
       tokensOutput: row.tokensOutput,
       tokensReasoning: row.tokensReasoning,
+      permission: _deserializePermission(row.permissionRules),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       archivedAt: row.archivedAt,
     );
+  }
+}
+
+PermissionRuleset? _deserializePermission(String? raw) {
+  if (raw == null || raw.isEmpty) return null;
+  try {
+    final data = jsonDecode(raw) as Map<String, dynamic>;
+    return PermissionRuleset(
+      rules:
+          (data['rules'] as List<dynamic>?)
+              ?.map(
+                (r) => PermissionRule(
+                  permission: r['permission'] as String,
+                  pattern: r['pattern'] as String,
+                  action: PermissionAction.values.byName(r['action'] as String),
+                ),
+              )
+              .toList() ??
+          [],
+      sessionApproved:
+          (data['sessionApproved'] as List<dynamic>?)
+              ?.map(
+                (r) => PermissionRule(
+                  permission: r['permission'] as String,
+                  pattern: r['pattern'] as String,
+                  action: PermissionAction.values.byName(r['action'] as String),
+                ),
+              )
+              .toList() ??
+          [],
+    );
+  } catch (_) {
+    return null;
   }
 }
