@@ -68,7 +68,9 @@ ChatMessage messageToChatMessage(Message message) {
         parts: parts,
         model: message.model,
         timestamp: timestamp,
-        cumulativeTokens: message.cumulativeTokens,
+        tokensInput: message.tokensInput,
+        tokensOutput: message.tokensOutput,
+        tokensReasoning: message.tokensReasoning,
         contextLength: message.contextLength,
       );
 

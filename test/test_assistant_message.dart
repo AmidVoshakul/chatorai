@@ -15,7 +15,9 @@ void main() {
         isStreaming: false,
         continuationSuggestions: ['Continue', 'Explain more'],
         timestamp: timestamp,
-        cumulativeTokens: 1000,
+        tokensInput: 100,
+        tokensOutput: 900,
+        tokensReasoning: 50,
         contextLength: 200000,
       );
     });
@@ -29,14 +31,15 @@ void main() {
       expect(copied.model, original.model);
       expect(copied.isStreaming, original.isStreaming);
       expect(copied.continuationSuggestions, original.continuationSuggestions);
-      expect(copied.cumulativeTokens, original.cumulativeTokens);
+      expect(copied.tokensInput, original.tokensInput);
+      expect(copied.tokensOutput, original.tokensOutput);
+      expect(copied.tokensReasoning, original.tokensReasoning);
       expect(copied.contextLength, original.contextLength);
     });
 
     test('copyWith preserves id and timestamp even when not specified', () {
       final copied = original.copyWith();
 
-      // id and timestamp come from super class
       expect(copied.id, 'msg_123');
       expect(copied.timestamp, timestamp);
     });
@@ -50,7 +53,6 @@ void main() {
 
       expect(copied.parts, newParts);
       expect(copied.parts.length, 2);
-      // Other fields preserved
       expect(copied.model, original.model);
       expect(copied.isStreaming, original.isStreaming);
     });
@@ -59,7 +61,6 @@ void main() {
       final copied = original.copyWith(model: 'gpt-4o');
 
       expect(copied.model, 'gpt-4o');
-      // Other fields preserved
       expect(copied.parts, original.parts);
       expect(copied.isStreaming, original.isStreaming);
       expect(copied.continuationSuggestions, original.continuationSuggestions);
@@ -69,7 +70,6 @@ void main() {
       final copied = original.copyWith(isStreaming: true);
 
       expect(copied.isStreaming, true);
-      // Other fields preserved
       expect(copied.parts, original.parts);
       expect(copied.model, original.model);
     });
@@ -79,25 +79,22 @@ void main() {
       final copied = original.copyWith(continuationSuggestions: newSuggestions);
 
       expect(copied.continuationSuggestions, newSuggestions);
-      // Other fields preserved
       expect(copied.parts, original.parts);
       expect(copied.model, original.model);
     });
 
-    test('copyWith can override cumulativeTokens', () {
-      final copied = original.copyWith(cumulativeTokens: 5000);
+    test('copyWith can override tokensInput', () {
+      final copied = original.copyWith(tokensInput: 500);
 
-      expect(copied.cumulativeTokens, 5000);
-      // Other fields preserved
-      expect(copied.parts, original.parts);
-      expect(copied.model, original.model);
+      expect(copied.tokensInput, 500);
+      expect(copied.tokensOutput, original.tokensOutput);
+      expect(copied.tokensReasoning, original.tokensReasoning);
     });
 
     test('copyWith can override contextLength', () {
       final copied = original.copyWith(contextLength: 100000);
 
       expect(copied.contextLength, 100000);
-      // Other fields preserved
       expect(copied.parts, original.parts);
       expect(copied.model, original.model);
     });
@@ -106,36 +103,19 @@ void main() {
       final copied = original.copyWith(
         model: 'new-model',
         isStreaming: true,
-        cumulativeTokens: 2000,
+        tokensInput: 200,
       );
 
       expect(copied.model, 'new-model');
       expect(copied.isStreaming, true);
-      expect(copied.cumulativeTokens, 2000);
-      // Other fields preserved
-      expect(copied.parts, original.parts);
-      expect(copied.continuationSuggestions, original.continuationSuggestions);
+      expect(copied.tokensInput, 200);
+      expect(copied.tokensOutput, original.tokensOutput);
+      expect(copied.tokensReasoning, original.tokensReasoning);
     });
 
     test('copyWith does not reset fields when null is passed', () {
-      // Note: The copyWith implementation uses `??` operator which means
-      // passing null keeps the existing value, it doesn't set to null
       final copied = original.copyWith(model: null);
 
-      // model should remain unchanged (not set to null)
-      expect(copied.model, original.model);
-    });
-
-    test('copyWith can set model to null explicitly', () {
-      // To set model to null, we need a different approach since copyWith
-      // uses `??` which treats null as "keep existing"
-      // This is a limitation of the current copyWith implementation
-
-      // The current implementation cannot set a nullable field to null
-      // using copyWith. This is a known limitation.
-      final copied = original.copyWith(model: null);
-
-      // model stays as original because null is treated as "no change"
       expect(copied.model, original.model);
     });
 
@@ -143,21 +123,18 @@ void main() {
       original.copyWith(
         model: 'mutated-model',
         isStreaming: true,
-        cumulativeTokens: 9999,
+        tokensInput: 9999,
       );
 
-      // Original should be unchanged
       expect(original.model, 'claude-3-5-sonnet');
       expect(original.isStreaming, false);
-      expect(original.cumulativeTokens, 1000);
+      expect(original.tokensInput, 100);
     });
 
     test('copyWith creates a new instance', () {
       final copied = original.copyWith();
 
-      // Should be a different object
       expect(identical(original, copied), false);
-      // But with same values
       expect(original.id, copied.id);
       expect(original.timestamp, copied.timestamp);
     });
@@ -174,7 +151,9 @@ void main() {
       expect(message.model, isNull);
       expect(message.isStreaming, false);
       expect(message.continuationSuggestions, isEmpty);
-      expect(message.cumulativeTokens, isNull);
+      expect(message.tokensInput, isNull);
+      expect(message.tokensOutput, isNull);
+      expect(message.tokensReasoning, isNull);
       expect(message.contextLength, isNull);
     });
 
@@ -203,7 +182,9 @@ void main() {
         isStreaming: false,
         continuationSuggestions: ['Option 1', 'Option 2'],
         timestamp: DateTime(2024, 1, 15),
-        cumulativeTokens: 500,
+        tokensInput: 100,
+        tokensOutput: 400,
+        tokensReasoning: 25,
         contextLength: 100000,
       );
     });
@@ -216,7 +197,9 @@ void main() {
       expect(json['model'], 'claude-3-5-sonnet');
       expect(json['isStreaming'], false);
       expect(json['continuationSuggestions'], ['Option 1', 'Option 2']);
-      expect(json['cumulativeTokens'], 500);
+      expect(json['tokensInput'], 100);
+      expect(json['tokensOutput'], 400);
+      expect(json['tokensReasoning'], 25);
       expect(json['contextLength'], 100000);
       expect(json['parts'], isA<List>());
     });
@@ -232,7 +215,9 @@ void main() {
         restored.continuationSuggestions,
         original.continuationSuggestions,
       );
-      expect(restored.cumulativeTokens, original.cumulativeTokens);
+      expect(restored.tokensInput, original.tokensInput);
+      expect(restored.tokensOutput, original.tokensOutput);
+      expect(restored.tokensReasoning, original.tokensReasoning);
       expect(restored.contextLength, original.contextLength);
     });
 

@@ -78,16 +78,21 @@ class AssistantMessage extends ChatMessage {
   final String? model;
   final bool isStreaming;
   final List<String> continuationSuggestions;
-  final int? cumulativeTokens;
+  final int? tokensInput;
+  final int? tokensOutput;
+  final int? tokensReasoning;
   final int? contextLength;
+
   const AssistantMessage({
     required super.id,
     this.parts = const [],
     this.model,
     this.isStreaming = false,
     this.continuationSuggestions = const [],
+    this.tokensInput,
+    this.tokensOutput,
+    this.tokensReasoning,
     required super.timestamp,
-    this.cumulativeTokens,
     this.contextLength,
   });
 
@@ -96,7 +101,9 @@ class AssistantMessage extends ChatMessage {
     String? model,
     bool? isStreaming,
     List<String>? continuationSuggestions,
-    int? cumulativeTokens,
+    int? tokensInput,
+    int? tokensOutput,
+    int? tokensReasoning,
     int? contextLength,
   }) {
     return AssistantMessage(
@@ -107,7 +114,9 @@ class AssistantMessage extends ChatMessage {
       isStreaming: isStreaming ?? this.isStreaming,
       continuationSuggestions:
           continuationSuggestions ?? this.continuationSuggestions,
-      cumulativeTokens: cumulativeTokens ?? this.cumulativeTokens,
+      tokensInput: tokensInput ?? this.tokensInput,
+      tokensOutput: tokensOutput ?? this.tokensOutput,
+      tokensReasoning: tokensReasoning ?? this.tokensReasoning,
       contextLength: contextLength ?? this.contextLength,
     );
   }
@@ -121,7 +130,9 @@ class AssistantMessage extends ChatMessage {
     'isStreaming': isStreaming,
     'continuationSuggestions': continuationSuggestions,
     'timestamp': timestamp.toIso8601String(),
-    'cumulativeTokens': cumulativeTokens,
+    'tokensInput': tokensInput,
+    'tokensOutput': tokensOutput,
+    'tokensReasoning': tokensReasoning,
     'contextLength': contextLength,
   };
 
@@ -138,7 +149,9 @@ class AssistantMessage extends ChatMessage {
       continuationSuggestions:
           (json['continuationSuggestions'] as List?)?.cast<String>() ?? [],
       timestamp: DateTime.parse(json['timestamp'] as String),
-      cumulativeTokens: json['cumulativeTokens'] as int?,
+      tokensInput: json['tokensInput'] as int?,
+      tokensOutput: json['tokensOutput'] as int?,
+      tokensReasoning: json['tokensReasoning'] as int?,
       contextLength: json['contextLength'] as int?,
     );
   }

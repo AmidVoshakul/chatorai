@@ -242,7 +242,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     bool isComplete = false,
     String? model,
     String? reasoning,
-    int? cumulativeTokens,
+    int? tokensInput,
+    int? tokensOutput,
+    int? tokensReasoning,
     int? contextLength,
     List<Map<String, dynamic>>? partsJson,
   }) {
@@ -254,7 +256,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       isComplete: isComplete,
       model: model ?? selectedModelId,
       reasoning: reasoning,
-      cumulativeTokens: cumulativeTokens,
+      tokensInput: tokensInput,
+      tokensOutput: tokensOutput,
+      tokensReasoning: tokensReasoning,
       contextLength: contextLength,
       partsJson: partsJson,
     );
@@ -301,7 +305,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
           reasoning: reasoning.isNotEmpty ? reasoning : null,
           isComplete: true,
           partsJson: partsJson,
-          cumulativeTokens: aiService.tokenCounter.totalTokens,
+          tokensInput: aiService.tokenCounter.totalTokens,
           contextLength: ref
               .read(modelProvider)
               .selectedModelObject
@@ -316,7 +320,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
           content: content,
           reasoning: reasoning.isNotEmpty ? reasoning : null,
           isComplete: true,
-          cumulativeTokens: aiService.tokenCounter.totalTokens,
+          tokensInput: aiService.tokenCounter.totalTokens,
           partsJson: partsJson,
           contextLength: ref
               .read(modelProvider)

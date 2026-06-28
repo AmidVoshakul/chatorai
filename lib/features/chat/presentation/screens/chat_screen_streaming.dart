@@ -103,7 +103,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     final toolRegistry = await ref.read(toolRegistryProvider.future);
     final aiService = ref.read(chatAiServiceProvider);
     final attemptMsgs = aiService.sanitizeMessages(messages);
-    int latestCumulativeTokens = 0;
+    int? latestTokensInput;
+    int? latestTokensOutput;
     final modelContextLength = ref
         .read(modelProvider)
         .selectedModelObject
@@ -209,7 +210,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           }
         },
         onUsage: (input, output) {
-          latestCumulativeTokens = aiService.tokenCounter.totalTokens;
+          latestTokensInput = input;
+          latestTokensOutput = output;
         },
         onToolStart: (toolCallId, toolName, input) {
           toolInputs[toolCallId] = input;
@@ -380,8 +382,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                 ? accumulatedReasoning
                 : null,
             model: modelId,
-            tokensInput: latestCumulativeTokens,
-            tokensOutput: latestCumulativeTokens,
+            tokensInput: latestTokensInput ?? 0,
+            tokensOutput: latestTokensOutput ?? 0,
           );
 
           LogTags.chatScreen.logInfo(
@@ -432,7 +434,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               reasoning: reasoning,
               isComplete: true,
               partsJson: partsJson,
-              cumulativeTokens: latestCumulativeTokens,
+              tokensInput: latestTokensInput,
+              tokensOutput: latestTokensOutput,
               contextLength: modelContextLength ?? lastMsg.contextLength,
             );
             newMessages = [
@@ -445,9 +448,10 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               content: content,
               reasoning: reasoning,
               isComplete: true,
-              cumulativeTokens: latestCumulativeTokens,
+              tokensInput: latestTokensInput,
+              tokensOutput: latestTokensOutput,
               partsJson: partsJson,
-              contextLength: modelContextLength,
+            contextLength: modelContextLength,
             );
             newMessages = [...chat.messages, completedMessage];
           }
@@ -494,12 +498,16 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
 
   Future<void> _handleStreamingError(Object error) async {
     final errorMessage = ChatErrorUtils.formatError(error);
+    final errorPrefix = '⚠️ $errorMessage';
     final chat = currentChat;
     if (chat != null && chat.messages.isNotEmpty) {
       final lastMessage = chat.messages.last;
       if (lastMessage.role == MessageRole.assistant) {
+        final partial = lastMessage.content.isEmpty
+            ? errorPrefix
+            : '${lastMessage.content}\n\n$errorPrefix';
         final errorResponseMessage = lastMessage.copyWith(
-          content: errorMessage,
+          content: partial,
           isComplete: true,
           isError: true,
         );

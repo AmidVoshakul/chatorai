@@ -219,6 +219,28 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     final hasAssistantMessage =
         hasMessages && messages.last.role == MessageRole.assistant;
 
+    // Compute cumulative token sum for each assistant message
+    // Each message stores only its own tokens; cumulative is derived.
+    int cumulativeForIndex(int msgIndex) {
+      var total = 0;
+      for (var i = 0; i <= msgIndex && i < messages.length; i++) {
+        final m = messages[i];
+        if (m.role == MessageRole.assistant) {
+          total += m.tokensInput ?? 0;
+          total += m.tokensOutput ?? 0;
+          total += m.tokensReasoning ?? 0;
+        }
+      }
+      return total;
+    }
+
+    final lastAssistantIndex = hasAssistantMessage
+        ? messages.lastIndexWhere((m) => m.role == MessageRole.assistant)
+        : -1;
+    final lastAssistantCumulative = lastAssistantIndex >= 0
+        ? cumulativeForIndex(lastAssistantIndex)
+        : 0;
+
     final lastMessageIsComplete =
         hasAssistantMessage && messages.last.isComplete;
     final showStreamingBubble =
@@ -301,25 +323,29 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                           )
                         : chatMsg;
                     return ChatMessageBubble(
-                      key: ValueKey(message.id),
-                      message: resolvedMsg,
-                      chatId: widget.chat!.id,
-                      messageId: message.id,
-                      chatStorageService: widget.chatStorageService,
-                      agentName: currentAgent.name,
-                      onContinuationSelected:
-                          message.role == MessageRole.assistant
-                          ? (suggestion) =>
-                                widget.onContinueResponse?.call(suggestion)
-                          : null,
-                      onMessageDeleted: widget.onMessageDeleted,
-                      onMessageRegenerate: widget.onRegenerateResponse != null
-                          ? () => widget.onRegenerateResponse!(message.id)
-                          : null,
-                      onMessageEdited: widget.onMessageEdited,
-                      onMessageEditedAndSend: widget.onMessageEditAndSend,
-                      isLastMessage: isLastMessage,
-                    );
+                    key: ValueKey(message.id),
+                    message: resolvedMsg,
+                    chatId: widget.chat!.id,
+                    messageId: message.id,
+                    chatStorageService: widget.chatStorageService,
+                    agentName: currentAgent.name,
+                    onContinuationSelected:
+                    message.role == MessageRole.assistant
+                    ? (suggestion) =>
+                    widget.onContinueResponse?.call(suggestion)
+                    : null,
+                    onMessageDeleted: widget.onMessageDeleted,
+                    onMessageRegenerate: widget.onRegenerateResponse != null
+                    ? () => widget.onRegenerateResponse!(message.id)
+                    : null,
+                    onMessageEdited: widget.onMessageEdited,
+                    onMessageEditedAndSend: widget.onMessageEditAndSend,
+                    isLastMessage: isLastMessage,
+                      cumulativeTokens: message.role == MessageRole.assistant
+                           ? cumulativeForIndex(msgIndex)
+                           : null,
+                       contextLength: message.contextLength,
+                     );
                   }
 
                   final afterMessages = welcomeOffset + messages.length;
@@ -339,13 +365,14 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                             model: _resolveModelDisplayName(lastMessage?.model),
                             isStreaming: streamingIsActive,
                             timestamp: lastMessage?.timestamp ?? DateTime.now(),
-                            cumulativeTokens: lastMessage?.cumulativeTokens,
                             contextLength: lastMessage?.contextLength,
                           ),
                           chatId: widget.chat?.id ?? '',
                           messageId: lastMessage?.id ?? 'streaming',
                           chatStorageService: widget.chatStorageService,
                           agentName: currentAgent.name,
+                          cumulativeTokens: lastAssistantCumulative,
+                          contextLength: lastMessage?.contextLength,
                         ),
                       );
                     }

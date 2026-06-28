@@ -48,7 +48,9 @@ class Message {
   final String? reasoning; // Model's reasoning/thoughts
   final String? imageData; // Base64 encoded image data
   final String? imageType; // Image MIME type (e.g., 'image/jpeg')
-  final int? cumulativeTokens; // Cumulative token count up to this message
+  final int? tokensInput;
+  final int? tokensOutput;
+  final int? tokensReasoning;
   final int? contextLength; // Model's context window length
   final List<Map<String, dynamic>>?
   partsJson; // Serialized MessageParts (tool calls, etc.)
@@ -64,7 +66,9 @@ class Message {
     this.reasoning,
     this.imageData,
     this.imageType,
-    this.cumulativeTokens,
+    this.tokensInput,
+    this.tokensOutput,
+    this.tokensReasoning,
     this.contextLength,
     this.partsJson,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
@@ -84,7 +88,9 @@ class Message {
     String? reasoning,
     String? imageData,
     String? imageType,
-    int? cumulativeTokens,
+    int? tokensInput,
+    int? tokensOutput,
+    int? tokensReasoning,
     int? contextLength,
     List<Map<String, dynamic>>? partsJson,
   }) {
@@ -99,7 +105,9 @@ class Message {
       reasoning: reasoning ?? this.reasoning,
       imageData: imageData ?? this.imageData,
       imageType: imageType ?? this.imageType,
-      cumulativeTokens: cumulativeTokens ?? this.cumulativeTokens,
+      tokensInput: tokensInput ?? this.tokensInput,
+      tokensOutput: tokensOutput ?? this.tokensOutput,
+      tokensReasoning: tokensReasoning ?? this.tokensReasoning,
       contextLength: contextLength ?? this.contextLength,
       partsJson: partsJson ?? this.partsJson,
     );
@@ -116,7 +124,9 @@ class Message {
         other.timestamp == timestamp &&
         other.isComplete == isComplete &&
         other.isError == isError &&
-        other.cumulativeTokens == cumulativeTokens;
+        other.tokensInput == tokensInput &&
+        other.tokensOutput == tokensOutput &&
+        other.tokensReasoning == tokensReasoning;
   }
 
   @override
@@ -127,7 +137,9 @@ class Message {
         timestamp.hashCode ^
         isComplete.hashCode ^
         isError.hashCode ^
-        cumulativeTokens.hashCode;
+        tokensInput.hashCode ^
+        tokensOutput.hashCode ^
+        tokensReasoning.hashCode;
   }
 
   // ===========================================================================
@@ -146,7 +158,9 @@ class Message {
       'reasoning': reasoning,
       'imageData': imageData,
       'imageType': imageType,
-      'cumulativeTokens': cumulativeTokens,
+      'tokensInput': tokensInput,
+      'tokensOutput': tokensOutput,
+      'tokensReasoning': tokensReasoning,
       'contextLength': contextLength,
       'partsJson': partsJson,
     };
@@ -170,7 +184,9 @@ class Message {
       reasoning: reasoning,
       imageData: imageData,
       imageType: imageType,
-      cumulativeTokens: json['cumulativeTokens'] as int?,
+      tokensInput: json['tokensInput'] as int?,
+      tokensOutput: json['tokensOutput'] as int?,
+      tokensReasoning: json['tokensReasoning'] as int?,
       contextLength: json['contextLength'] as int?,
       partsJson: json['partsJson'] != null
           ? (json['partsJson'] as List<dynamic>).cast<Map<String, dynamic>>()

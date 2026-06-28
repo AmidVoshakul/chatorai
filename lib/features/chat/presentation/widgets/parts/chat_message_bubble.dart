@@ -28,6 +28,8 @@ class ChatMessageBubble extends StatefulWidget {
   final Function(String, String)? onMessageEditedAndSend;
   final bool isLastMessage;
   final Function(String messageId, String answer)? onQuestionAnswer;
+  final int? cumulativeTokens;
+  final int? contextLength;
 
   const ChatMessageBubble({
     super.key,
@@ -43,6 +45,8 @@ class ChatMessageBubble extends StatefulWidget {
     this.onMessageEditedAndSend,
     this.isLastMessage = false,
     this.onQuestionAnswer,
+    this.cumulativeTokens,
+    this.contextLength,
   });
 
   @override
@@ -292,6 +296,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOut,
           child: Container(
+            width: double.infinity,
             padding: const EdgeInsets.symmetric(
               horizontal: ChatoraiSpacing.md,
               vertical: ChatoraiSpacing.sm,
@@ -316,8 +321,6 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
           isUser: false,
           content: textContent,
           isLastMessage: widget.isLastMessage && m.isStreaming,
-          cumulativeTokens: m.cumulativeTokens,
-          contextLength: m.contextLength,
           agentName: widget.agentName,
           model: m.model,
           timestamp: m.timestamp,
@@ -403,8 +406,6 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
     required bool isUser,
     required String? content,
     bool isLastMessage = false,
-    int? cumulativeTokens,
-    int? contextLength,
     String? agentName,
     String? model,
     DateTime? timestamp,
@@ -420,8 +421,8 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
       onMessageDeleted: widget.onMessageDeleted,
       onMessageRegenerate: widget.onMessageRegenerate,
       onContinuationSelected: widget.onContinuationSelected,
-      cumulativeTokens: cumulativeTokens,
-      contextLength: contextLength,
+      cumulativeTokens: widget.cumulativeTokens,
+      contextLength: widget.contextLength,
       agentName: agentName,
       model: model,
       timestamp: timestamp,
