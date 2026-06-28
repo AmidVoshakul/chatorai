@@ -160,14 +160,8 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
                   fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
-              if (isActive) ...[
+              if (isActive)
                 const Spacer(),
-                Icon(
-                  Icons.check,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ],
             ],
           ),
         );

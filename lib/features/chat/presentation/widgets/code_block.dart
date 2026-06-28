@@ -63,84 +63,71 @@ class _CodeBlockState extends State<CodeBlock> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: ChatoraiSpacing.sm,
-              vertical: ChatoraiSpacing.xs,
-            ),
-            decoration: BoxDecoration(
-              color: headerBgColor,
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(ChatoraiBorderRadius.sm),
-                bottom: _isCollapsed
-                    ? Radius.circular(ChatoraiBorderRadius.sm)
-                    : Radius.zero,
+          GestureDetector(
+            onTap: () => setState(() => _isCollapsed = !_isCollapsed),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ChatoraiSpacing.sm,
+                vertical: ChatoraiSpacing.xs,
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: IconButton(
-                        icon: Icon(
-                          _isCollapsed
-                              ? Icons.chevron_right
-                              : Icons.expand_more,
-                          color: headerColor,
-                          size: ChatoraiIconSizes.lg,
-                        ),
-                        onPressed: () =>
-                            setState(() => _isCollapsed = !_isCollapsed),
-                        tooltip: _isCollapsed
-                            ? localizations.expandTooltip
-                            : localizations.collapseTooltip,
-                        splashRadius: ChatoraiSizes.iconButtonSplashRadius,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: ChatoraiSpacing.lg,
-                          minHeight: ChatoraiSpacing.lg,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: ChatoraiSpacing.xs),
-                    Text(
-                      widget.language.toUpperCase(),
-                      style: TextStyle(
-                        color: headerColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: ChatoraiFontSizes.md,
-                      ),
-                    ),
-                  ],
+              decoration: BoxDecoration(
+                color: headerBgColor,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(ChatoraiBorderRadius.sm),
+                  bottom: _isCollapsed
+                      ? Radius.circular(ChatoraiBorderRadius.sm)
+                      : Radius.zero,
                 ),
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.copy_all,
-                      color: headerColor,
-                      size: ChatoraiIconSizes.lg,
-                    ),
-                    onPressed: () => MessageUtils.copyMessage(
-                      content: widget.code,
-                      context: context,
-                    ),
-                    tooltip: localizations.copyCodeTooltip,
-                    splashRadius: ChatoraiIconSizes.md,
-                    hoverColor: isDark
-                        ? ChatoraiColors.black10
-                        : ChatoraiColors.black12,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: ChatoraiSpacing.lg,
-                      minHeight: ChatoraiSpacing.lg,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        _isCollapsed
+                            ? Icons.chevron_right
+                            : Icons.expand_more,
+                        color: headerColor,
+                        size: ChatoraiIconSizes.lg,
+                      ),
+                      const SizedBox(width: ChatoraiSpacing.xs),
+                      Text(
+                        widget.language.toUpperCase(),
+                        style: TextStyle(
+                          color: headerColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: ChatoraiFontSizes.md,
+                        ),
+                      ),
+                    ],
+                  ),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.copy_all,
+                        color: headerColor,
+                        size: ChatoraiIconSizes.lg,
+                      ),
+                      onPressed: () => MessageUtils.copyMessage(
+                        content: widget.code,
+                        context: context,
+                      ),
+                      tooltip: localizations.copyCodeTooltip,
+                      splashRadius: ChatoraiIconSizes.md,
+                      hoverColor: isDark
+                          ? ChatoraiColors.black10
+                          : ChatoraiColors.black12,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: ChatoraiSpacing.lg,
+                        minHeight: ChatoraiSpacing.lg,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           if (!_isCollapsed)

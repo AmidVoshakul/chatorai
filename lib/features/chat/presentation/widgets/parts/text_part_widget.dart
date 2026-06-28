@@ -3,6 +3,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/presentation/widgets/code_block.dart';
+import 'package:chatorai/features/chat/presentation/widgets/table_block.dart';
 
 class TextPartWidget extends StatelessWidget {
   final TextPart part;
@@ -31,8 +32,9 @@ class TextPartWidget extends StatelessWidget {
     bool inCodeBlock = false;
     String currentLanguage = 'text';
     String currentCodeBlock = '';
+    int i = 0;
 
-    for (int i = 0; i < lines.length; i++) {
+    while (i < lines.length) {
       final line = lines[i];
 
       if (line.startsWith('```')) {
@@ -64,8 +66,28 @@ class TextPartWidget extends StatelessWidget {
       } else if (inCodeBlock) {
         currentCodeBlock += '$line\n';
       } else {
-        currentTextBlock += '$line\n';
+        // Check for table at current position
+        final tableResult = TableParser.extractTableAt(lines, i);
+        if (tableResult != null) {
+          if (currentTextBlock.isNotEmpty) {
+            contentWidgets.add(
+              _buildMarkdownBlock(currentTextBlock, styleSheet),
+            );
+            currentTextBlock = '';
+          }
+
+          final tableRows = TableParser.parseTableLines(tableResult.lines);
+          if (tableRows != null && tableRows.isNotEmpty) {
+            contentWidgets.add(TableBlock(rows: tableRows));
+          }
+
+          i = tableResult.endIndex;
+          continue;
+        } else {
+          currentTextBlock += '$line\n';
+        }
       }
+      i++;
     }
 
     if (currentTextBlock.isNotEmpty) {

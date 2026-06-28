@@ -479,66 +479,13 @@ class _ActionRow extends StatelessWidget {
         ? formatMessageTime(timestamp!, context: context)
         : null;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          if (!isUser) const SizedBox(width: 4),
-          // ===== Assistant: agent · model · [⋮] =====
-          if (!isUser) ...[
-            Flexible(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (agentName != null)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: Text(
-                        agentName!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  if (model != null)
-                    Flexible(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 4, left: 8),
-                        child: Text(
-                          '•  $model',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.textTheme.bodySmall?.color?.withValues(
-                              alpha: 0.6,
-                            ),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            _ActionMenuButton(
-              isUser: false,
-              content: content,
-              chatId: chatId,
-              messageId: messageId,
-              chatStorageService: chatStorageService,
-              onMessageDeleted: onMessageDeleted,
-              onMessageRegenerate: onMessageRegenerate,
-              onContinuationSelected: onContinuationSelected,
-              isLastMessage: isLastMessage,
-              localizations: localizations,
-              theme: theme,
-            ),
-          ],
-
-          const Spacer(),
-
-          // ===== User: timestamp  [⋮] =====
-          if (isUser) ...[
+    if (isUser) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            const Spacer(),
             if (formattedTimestamp != null)
               Padding(
                 padding: const EdgeInsets.only(right: 4),
@@ -563,34 +510,88 @@ class _ActionRow extends StatelessWidget {
               localizations: localizations,
             ),
           ],
+        ),
+      );
+    }
 
-          // Retry indicator (last assistant message only) or token count
-          if (!isUser)
-            Consumer(
-              builder: (context, ref, _) {
-                final retryState = ref.watch(chatScreenProvider);
-                if (isLastMessage && retryState.isRetrying) {
-                  return _RetryIndicator(
-                    message: retryState.retryMessage ?? 'Retrying…',
-                  );
-                }
-                if (cumulativeTokens != null) {
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 8, right: 8),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Expanded(
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                const SizedBox(width: 4),
+                if (agentName != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
                     child: Text(
-                      _tokenDisplay(cumulativeTokens!, contextLength),
+                      agentName!,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w400,
-                        color: theme.textTheme.bodySmall?.color?.withValues(
-                          alpha: 0.5,
-                        ),
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.primary,
                       ),
                     ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
+                  ),
+                if (model != null)
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 4, left: 4),
+                      child: Text(
+                        '•  $model',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.textTheme.bodySmall?.color?.withValues(
+                            alpha: 0.6,
+                          ),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                _ActionMenuButton(
+                  isUser: false,
+                  content: content,
+                  chatId: chatId,
+                  messageId: messageId,
+                  chatStorageService: chatStorageService,
+                  onMessageDeleted: onMessageDeleted,
+                  onMessageRegenerate: onMessageRegenerate,
+                  onContinuationSelected: onContinuationSelected,
+                  isLastMessage: isLastMessage,
+                  localizations: localizations,
+                  theme: theme,
+                ),
+              ],
             ),
+          ),
+          // Retry indicator (last assistant message only) or token count
+          Consumer(
+            builder: (context, ref, _) {
+              final retryState = ref.watch(chatScreenProvider);
+              if (isLastMessage && retryState.isRetrying) {
+                return _RetryIndicator(
+                  message: retryState.retryMessage ?? 'Retrying…',
+                );
+              }
+              if (cumulativeTokens != null) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 8),
+                  child: Text(
+                    _tokenDisplay(cumulativeTokens!, contextLength),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: theme.textTheme.bodySmall?.color?.withValues(
+                        alpha: 0.5,
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
         ],
       ),
     );
