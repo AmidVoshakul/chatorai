@@ -8,19 +8,27 @@ ChatORAI uses a granular permission system to control tool access. Permissions a
 
 ### Default Rules
 
-Out of the box, the following defaults apply:
+Out of the box, the following defaults apply (source: `lib/core/permission/ruleset.dart` — `PermissionRuleset.defaults()`):
 
-| Permission  | Default Action |
-| ----------- | -------------- |
-| `read`      | `allow`        |
-| `glob`      | `allow`        |
-| `grep`      | `allow`        |
-| `bash`      | `ask`          |
-| `edit`      | `ask`          |
-| `write`     | `ask`          |
-| `webfetch`  | `allow`        |
-| `websearch` | `allow`        |
-| `doom_loop` | `ask`          |
+| Permission             | Default Action |
+| ---------------------- | -------------- |
+| `read`                 | `allow`        |
+| `glob`                 | `allow`        |
+| `grep`                 | `allow`        |
+| `webfetch`             | `allow`        |
+| `websearch`            | `allow`        |
+| `task`                 | `allow`        |
+| `question`             | `allow`        |
+| `todowrite`            | `allow`        |
+| `skill`                | `allow`        |
+| `lsp`                  | `allow`        |
+| `bash`                 | `ask`          |
+| `edit`                 | `ask`          |
+| `write`                | `ask`          |
+| `doom_loop`            | `ask`          |
+| `external_directory`   | `ask`          |
+
+Tools without an explicit ruleset entry (`apply_patch`, `format`, `invalid`, `plan_exit`, `json_schema`) fall back to `ask` via the permission evaluator (`lib/core/permission/evaluator.dart`).
 
 ### Configuration
 
@@ -57,8 +65,9 @@ Example:
 
 - Rules are evaluated in order; the **last matching rule** wins.
 - Pattern matching uses glob-like syntax with home directory expansion (`~`, `$HOME`).
-- If no rule matches, the default action is `ask`.
+- If no rule matches (and no entry in `PermissionRuleset.defaults()`), the fallback is `ask`.
 - When a permission is `ask`, the user is prompted via a modal dialog.
+- The evaluator implementation is in `lib/core/permission/evaluator.dart` → `evaluate()`.
 
 ### User Prompts
 
@@ -90,6 +99,20 @@ To prevent accidental leakage of sensitive data, the app sanitizes error message
 - All external communication uses TLS/HTTPS.
 - The app validates server certificates (default Dio behavior).
 - Rate limiting is respected by parsing `Retry-After` headers and backing off accordingly.
+
+## MCP Trust Boundary
+
+Tools discovered from external MCP servers are treated as **untrusted**:
+- MCP tool execution follows the same permission rules as built-in tools (`ask` by default).
+- MCP server configurations are stored in `chatorai.json` under the `mcp` section.
+- Stdio transport: server processes are spawned with restricted environment variables.
+- HTTP transport: TLS enforced for remote endpoints; OAuth tokens stored in `SecureStorage`.
+
+## Session Data
+
+- Session data is persisted in a Drift SQLite database at `dataHome/chatorai.db`.
+- No session content is transmitted to external servers (only to the configured AI provider API).
+- `SessionState` and `SessionMessage` use immutable freezed models with consistent JSON serialization.
 
 ## Session Management
 

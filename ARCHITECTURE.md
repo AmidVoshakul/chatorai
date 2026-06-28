@@ -1,17 +1,19 @@
 # ChatORAI Architecture
 
-**Last updated:** 2026-06-23
+**Last updated:** 2026-06-28
 
 ## Project Overview
 
-ChatORAI is a multi-platform AI chat application built with Flutter 3.41.0 and Riverpod 3.x. It supports any OpenAI-compatible API (OpenRouter, local models, custom endpoints) via `ai_sdk_dart` v1.1.0.
+ChatORAI is a multi-platform AI chat application built with Flutter 3.41.0 and Riverpod 3.x. It supports any OpenAI-compatible API (OpenRouter, local models, custom endpoints) via `ai_sdk_dart` v1.1.0. Drift (SQLite) provides event-sourced session persistence; MCP (Model Context Protocol) enables integration with external tool servers.
 
 Key characteristics:
 
 - Feature-first directory structure
 - MVVM pattern with Riverpod providers
 - Layered architecture: Presentation → Domain → Data
-- Tool execution system with granular permissions
+- Event-sourced Session Core with Drift persistence
+- Tool execution system with granular permissions and 16 built-in tools
+- MCP (Model Context Protocol) support for external tool servers
 - Internationalization with 6 languages (en, ru, uk, zh, ja, ar)
 
 ## Directory Layout
@@ -19,35 +21,54 @@ Key characteristics:
 ```
 lib/
 ├── core/                    # Application core, cross-cutting concerns
+│   ├── agents/              # Agent registry (static definitions for @-mention)
+│   ├── background/          # Background task management
 │   ├── config/              # Configuration management (chatorai.json, schema, loader)
 │   ├── constants/           # App-wide constants, enums, themes
 │   ├── context/             # Token counting, overflow detection, compaction
-│   ├── error/               # Error classification and handling
+│   ├── error/               # Error classification and handling (sealed classes)
+│   ├── format/              # Code formatting service (dart-mcp-server integration)
+│   ├── i18n/                # Internationalization helpers
 │   ├── llm/                 # LLM catalog system
 │   │   ├── models/          # ProviderConfig, ModelConfig, AuthConfig
 │   │   ├── providers/       # Built-in provider definitions + catalog barrel
 │   │   ├── catalog_providers.dart
 │   │   └── provider_catalog_service.dart  # Centralized catalog with 24h cache
+│   ├── lsp/                 # LSP service (dart-mcp-server_lsp integration)
+│   ├── mcp/                 # MCP support (McpClientService, McpConfig, McpTypes)
 │   ├── permission/          # Permission service and models
-│   ├── tools/               # Built-in tool implementations (12+ tools)
-│   │   ├── built_in/        # Individual tool implementations (bash, read, edit, etc.)
-│   │   ├── tool_registry.dart
-│   │   └── tool_output_persistence.dart
-│   └── utils/               # Shared utilities (logger, formatters, secure storage, xdg_paths)
+│   ├── session/             # Event-sourced session core (Drift)
+│   │   ├── schema.dart      # Drift table definitions
+│   │   ├── database.dart    # Drift database class
+│   │   ├── events.dart      # Sealed class hierarchy (30+ event types)
+│   │   ├── event_store.dart # Append/read/stream operations
+│   │   ├── projector.dart    # Pure event → SessionState functions
+│   │   ├── session_state.dart # Freezed immutable state models
+│   │   ├── session_repository.dart # CRUD + replay
+│   │   ├── session_runner.dart  # Session lifecycle orchestrator
+│   │   └── session_tree.dart    # Parent-child navigation
+│   ├── skills/              # SkillService for dynamic capability loading
+│   └── tools/               # Built-in tool implementations (16 tools)
+│       ├── built_in/        # Individual tool implementations
+│       ├── tool_execution.dart  # Execution context with doom-loop guard
+│   │   ├── truncation_service.dart  # Output size limits
+│   │   ├── file_edit_guard.dart     # File edit permission checks
+│   │   ├── filesystem_boundary.dart # Path sandboxing
+│   │   utils/               # Shared utilities (logger, formatters, secure storage, xdg_paths)
 ├── features/                # Feature-based modules (primary organization)
-│   ├── agents/              # Subagent system and static registry
+│   ├── agents/              # Subagent system and registry
 │   ├── chat/                # Main chat feature (domain, data, presentation)
 │   │   ├── domain/
-│   │   │   └── services/    # ChatAiService, chat storage
+│   │   │   └── services/    # ChatAiService, SessionRunner integration
 │   │   ├── data/
 │   │   │   ├── models/
 │   │   │   │   └── chat/    # Message and parts hierarchy
 │   │   │   ├── repositories/
-│   │   │   └── providers/   # Riverpod providers (chat, streaming, screen)
+│   │   │   └── providers/   # Riverpod providers (session, streaming, screen)
 │   │   └── presentation/
 │   │       ├── screens/     # ChatScreen (split into parts)
 │   │       ├── widgets/     # ChatMessages, ChatInput, parts/
-│   │       └── view_models/ # (not used; logic in providers)
+│   │       └── chat_input/  # Subdirectory for input components (agent_mention_popup)
 │   ├── models/              # Model selection and provider management
 │   │   ├── providers/       # ModelProvider
 │   │   ├── screens/         # ModelsScreen
@@ -56,8 +77,7 @@ lib/
 │   │   ├── providers/       # Model settings provider
 │   │   ├── screens/         # SettingsScreen, ProviderSettingsScreen
 │   │   └── widgets/         # AddProviderDialog, ModelSelectionDialog, etc.
-│   ├── skills/              # Skill-based agent capabilities and SkillService
-│   └── tools/               # Built-in tool implementations (12+ tools) — DEPRECATED: moved to core/tools
+│   └── skills/              # Skill-based agent capabilities and SkillService
 ├── generated/               # Auto-generated localization (app_localizations.dart)
 └── l10n/                    # ARB files for translation (6 languages)
 ```
@@ -78,18 +98,21 @@ Each feature follows a multi-layer structure:
 - **Data Layer**: Repository implementations, data sources (local: SharedPreferences; remote: API via Dio), DTOs, model mapping.
 - **Presentation Layer**: Flutter widgets, Riverpod providers for UI state, view models.
 
-### Tool Execution Loop
+### Session Runner Pipeline
 
-The ChatAiService coordinates AI completions with tool execution:
+`SessionRunner` orchestrates AI completions with tool execution within an event-sourced session:
 
-1. `streamChatCompletion()` receives messages, model, temperature, and `ToolSet`.
-2. Stream of `StreamTextEvent` chunks (text, reasoning, tool events).
-3. Tool invocation lifecycle:
-   - `onToolStart` → `ToolResultPart(state=running)` created
-   - `tool.execute()` → may throw `ToolError`
-   - `onToolEnd` → `ToolResultPart(state=completed)` with result
-4. Max steps: 5, with automatic `compactionService.compact()` on overflow.
-5. Error handling: retries with exponential backoff (base 2s, jitter, `Retry-After` support).
+1. `startSession()` or `startInitializedSession()` creates a new session (with optional parent for hierarchy).
+2. `runTaskInChild()` spawns a child session for delegated subagent work.
+3. Within a session turn:
+   - `ModelResolver` resolves provider + model configuration and auth headers.
+   - `ChatAiService.streamChatCompletion()` sends messages to the provider API.
+   - Stream of `StreamTextEvent` chunks (text, reasoning, tool events).
+   - Tool invocation lifecycle: `onToolStart` → `tool.execute()` → `onToolEnd`/`onToolError`.
+   - Each event is persisted to the `EventStore` (append-only).
+   - The `Projector` replays events to reconstruct `SessionState` on demand.
+4. Max steps: 5 per turn, with automatic compaction on overflow.
+5. Error handling: retries with exponential backoff, `Retry-After` support, sealed `ClassifiedError` hierarchy.
 
 ### Permission System
 
@@ -105,7 +128,7 @@ The ChatAiService coordinates AI completions with tool execution:
 - **Development**: `.env` (gitignored) for API keys and dev settings.
 - **Runtime**: Users enter API key in app settings → stored in `SharedPreferences`.
 - **chatorai.json**: User-editable JSON with `$schema` URL for IDE autocomplete. Validated against `lib/core/config/chatorai_schema.dart`.
-- Sections: `permission`, `provider` (reserved for multi-provider registry), `keybinding`.
+- Sections: `permission`, `provider` (multi-provider registry, implemented), `keybinding` (reserved for keybinds system), `mcp` (MCP server definitions).
 
 ### Internationalization
 
@@ -226,8 +249,7 @@ Providers update state → UI rebuilds (ChatMessages, ChatMessageBubble)
 lib/features/chat/
 ├── domain/
 │   ├── services/
-│   │   ├── chat_ai_service.dart    # AI completion with tool loop
-│   │   └── chat_storage_service.dart # Persistence abstraction
+│   │   └── chat_ai_service.dart    # AI completion with tool loop (legacy; SessionRunner preferred)
 ├── data/
 │   ├── models/
 │   │   └── chat/                  # Message and parts hierarchy
@@ -240,11 +262,12 @@ lib/features/chat/
 │   │       ├── task_part.dart
 │   │       ├── question_part.dart
 │   │       ├── todo_part.dart
-│   │       └── chat_model.dart    # Chat aggregate
+│   │       ├── chat_message_export.dart
+│   │       └── message_converter.dart
 │   ├── repositories/
 │   │   └── chat_repository_impl.dart
 │   └── providers/
-│       ├── chat_providers.dart    # chatListProvider, currentChatIdProvider, currentChatProvider
+│       ├── session_providers.dart # Session-based providers (new architecture)
 │       ├── chat_screen_notifier.dart
 │       ├── streaming_message_provider.dart
 │       └── chat_input_provider.dart
@@ -266,39 +289,81 @@ lib/features/chat/
     │   │   ├── task_part_widget.dart
     │   │   ├── question_part_widget.dart
     │   │   └── todo_part_widget.dart
-    │   └── agent_mention_popup.dart
+    │   ├── chat_input/
+    │   │   └── agent_mention_popup.dart
+    │   └── agent_mention_popup.dart  # Alternate location
     └── view_models/                # Not used; logic in providers
 ```
 
-**Note:** Message models are in `data/models/chat/`, not `domain/models/`. The `apply_patch_part_widget.dart` does not exist; `ApplyPatchPart` is not a recognized message part type. Only `@` triggers are currently implemented in `chat_input.dart`; `#` (file references) and `/` (slash commands) are planned for future releases.
+**Note:** Message models are in `data/models/chat/`. The `apply_patch_part_widget.dart` does not exist; `ApplyPatchPart` is not a recognized message part type. Only `@` triggers are currently implemented in `chat_input.dart`; `#` (file references) and `/` (slash commands) are planned. The `QuestionPart` widget is rendered inline in the chat stream for interactive user prompts.
 
 ### Tools Module (`lib/core/tools/`)
 
 ```
 lib/core/tools/
-├── built_in/                      # 12 built-in tools
+├── built_in/                      # 16+ built-in tool implementations
 │   ├── bash.dart                 # Shell command execution
+│   ├── read.dart                 # File reading
+│   ├── write.dart                # File creation/overwrite
 │   ├── edit.dart                 # In-file text replacement
 │   ├── glob.dart                 # File pattern matching
 │   ├── grep.dart                 # Content search
-│   ├── read.dart                 # File reading
-│   ├── task.dart                 # Subagent delegation
-│   ├── todo_write.dart           # Todo list management
 │   ├── webfetch.dart             # URL content fetching
 │   ├── websearch.dart            # Web search via SearXNG
-│   ├── write.dart                # File creation/overwrite
-│   ├── apply_patch.dart          # Unified diff application (rendered via ToolResultPartWidget)
-│   └── built_in_tools.dart       # Registration barrel (registers 11 tools, excluding skill)
+│   ├── apply_patch.dart          # Unified diff application
+│   ├── task.dart                 # Subagent delegation (needs SessionRunner)
+│   ├── question.dart             # Interactive question with cooldown dedup
+│   ├── todowrite.dart           # Todo list management
+│   ├── skill.dart                # Skill loading via SkillService
+│   ├── lsp.dart                  # LSP hover/info via dart-mcp-server_lsp
+│   ├── format.dart               # Code formatting via FormatService
+│   ├── invalid.dart              # Invalid tool placeholder (for unknown tool IDs)
+│   ├── external_directory.dart   # External directory reference
+│   ├── json_schema.dart          # JSON schema validation
+│   ├── plan.dart                 # Plan exit tool
+│   └── built_in_tools.dart       # Registration barrel (registers 16+ tools)
 ├── tool.dart                     # Tool interface
-├── tool_error.dart               # Tool error types
-├── tool_execution.dart           # Execution context
+├── tool_definition.dart          # ToolDef model
+├── tool_error.dart               # Tool error types (sealed ToolError)
+├── tool_execution.dart           # Execution context with doom-loop guard
 ├── tool_output_persistence.dart  # Persistent tool output storage
+├── tool_output_metadata.dart     # Output metadata tracking
 ├── tool_registry.dart            # Singleton registry, toSDKTools()
 ├── tool_registry_provider.dart   # Riverpod provider
-└── tool_title.dart               # Tool title formatting
+├── tool_title.dart               # Tool title formatting
+├── truncation_service.dart       # Output size limits (2000 lines / 50KB)
+├── file_edit_guard.dart          # File edit permission boundary checks
+├── filesystem_boundary.dart      # Path sandboxing enforcement
+└── json_schema_validator.dart    # JSON schema validation logic
 ```
 
-**Note:** The `skill` tool is registered separately via `skill_providers.dart`. The `question` tool exists but is not currently registered. `path_sandbox.dart` is a utility module in `lib/shared/utils/`, not a tool. The permission system lives in `lib/core/permission/`.
+**Registration details:** `registerBuiltInTools()` accepts optional `chatAiService`, `toolRegistry`, `skillService`, `lspService`, `formatService`, `formatterConfig`, and `currentSessionRunner` parameters. The `question` tool is now registered. The `lsp` and `format` tools are conditionally registered when their services are provided.
+
+### MCP (Model Context Protocol) Module
+
+```
+lib/core/mcp/
+├── mcp_config.dart           — McpConfig, McpServerConfig, McpOAuthConfig models
+├── mcp_types.dart            — McpToolInfo, McpCallResult, McpContentPart, etc.
+└── mcp_client_service.dart   — McpClientService (singleton)
+```
+
+`McpClientService` manages connections to external MCP servers:
+
+- Local servers via `StdioClientTransport`
+- Remote servers via `StreamableHttpClientTransport`
+- Tool discovery (`listTools`, `listAllTools`)
+- Tool invocation (`callTool`)
+- Config from `chatorai.json` `mcp` section
+
+### LSP Integration
+
+```
+lib/core/lsp/
+└── lsp_service.dart         — LspService wrapping dart-mcp-server_lsp
+```
+
+The `lsp` tool provides hover information and code intelligence via LSP. It is conditionally registered when an LSP server is available.
 
 ### Models & Settings Feature Modules
 
@@ -367,13 +432,14 @@ LIBGL_ALWAYS_SOFTWARE=1 flutter run -d linux  # Linux software rendering
 
 ## Future Considerations
 
-- **Session Hierarchy**: Parent-child sessions with context isolation (not yet implemented).
-- **MCP/LSP**: Built-in tools for code intelligence (exploration phase).
-- **Agent Registry**: Currently static (hardcoded in `AgentRegistry`); dynamic skill-based discovery is a future goal.
-- **Keybinds System**: GUI hotkeys for desktop (planning phase).
-- **Emergency Stop**: Double-press Escape to halt all processes (planning phase).
+- **Keybinds System**: GUI hotkeys for desktop (planning phase — `keybinding` section reserved in config schema).
+- **Emergency Stop**: Double-press Escape to halt all active processes, preserving session state.
+- **Dynamic Agent Discovery**: Currently static (`AgentRegistry`); dynamic skill-based discovery via MCP servers is a future goal.
+- **File Export/Import**: Session export to JSON/Markdown for sharing and archival.
+- **Crash Recovery**: Full event replay from Session Core already implemented; UI indicator for session restoring is a remaining UX polish.
+- **Advanced MCP**: OAuth flow for remote MCP servers, SSE transport for streaming tool results.
 
-**Note:** The Compaction Service is already implemented and in use; it is not a future milestone. `CompactionOrchestrator` wires it into the session pipeline with a real `CompletionProvider`.
+**Note:** The Compaction Service, Session Hierarchy, and MCP/LSP integration are implemented. The Session Core uses Drift-based event sourcing with full replay capability.
 
 ### Provider Options
 

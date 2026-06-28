@@ -9,8 +9,11 @@
 2. **Проверить Drift‑схему** – таблицы `events`, `sessions`, `messages`, `tool_results`, `context_epochs` находятся в `lib/core/session/schema.dart`.
 3. **Запустить тесты** – `flutter test` проходит без ошибок.
 4. **Сохранить текущий граф архитектуры** – запустить под‑агент `explore` с запросом: 
-   > *"Отобрази архитектурные деревья ProviderCatalogService, PermissionService, SessionEvent flow и UI‑виджеты (ProviderSettingsScreen). Сохрани результат в memory.*"
-   (результат будет записан через `memory_create_entities`/`memory_create_relations`).
+    > *"Отобрази архитектурные деревья ProviderCatalogService, PermissionService, SessionEvent flow и UI‑виджеты (ProviderSettingsScreen). Сохрани результат в memory."*
+    (результат будет записан через `memory_create_entities`/`memory_create_relations`).
+
+**Статус:** Фаза 0 завершена. Session Core + Event Sourcing полностью реализован. MCP модуль интегрирован.
+**Версия в `pubspec.yaml`:** 1.0.0 (Flutter 3.41.0, Drift 2.25, mcp_dart 2.2)
 
 ---
 
@@ -64,4 +67,34 @@
 
 ---
 
-**Следующий шаг** – выбрать один из пунктов (1, 2 или 3) и запустить соответствующий `task`‑sub‑agent для реализации.
+**Следующий шаг** – выбрать один из пунктов (1, 2 или 7) и запустить соответствующий `task`‑sub‑agent для реализации.
+
+---
+
+## ✅ Completed Phases
+
+### Session Core + Event Sourcing (Completed)
+- Drift schema in `lib/core/session/schema.dart` (5 tables: events, sessions, messages, tool_results, context_epochs)
+- `EventStore`: append, read, stream with Drift DAOs
+- `Projector`: pure event → SessionState replay
+- `SessionRepository`: CRUD + event replay
+- `SessionRunner`: startSession, startInitializedSession, runTaskInChild
+- `SessionTree`: parent-child navigation
+- 30+ event types in sealed class hierarchy (events.dart)
+- Freezed models for SessionState/SessionMessage with JSON serialization
+- Session providers (Riverpod): session_providers.dart
+
+### MCP Integration (Completed)
+- `McpClientService` with StdioClientTransport and StreamableHttpClientTransport
+- `McpConfig`/`McpServerConfig`/`McpOAuthConfig` models
+- `McpToolInfo`, `McpCallResult`, `McpConnectionStatus`, `McpServerStatus` types
+- Tool discovery (listTools, listAllTools) and invocation (callTool)
+- Integration with `registerBuiltInTools` for conditional registration of MCP-discovered tools
+
+### Tool Registry Expansion (Completed)
+- 16+ tools registered in `built_in_tools.dart`
+- Added: question (with cooldown dedup), lsp, format, invalid, external_directory, json_schema, plan
+- TruncationService (2000 lines / 50KB)
+- FileEditGuard for path sandboxing enforcement
+- JsonSchemaValidator for input validation
+- Integration tests: 16+ tests in `test/test_built_in_tools_registration.dart`

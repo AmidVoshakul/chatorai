@@ -1,6 +1,8 @@
 # Configuration
 
-ChatORAI can be configured via a JSON file (`chatorai.json`) to customize permissions, keybindings, provider settings, and more.
+**Last updated:** 2026-06-28
+
+ChatORAI can be configured via a JSON file (`chatorai.json`) to customize permissions, keybindings, provider settings, MCP servers, and more.
 
 The configuration file location is resolved via `XdgPaths.configHome` (see `lib/shared/utils/xdg_paths.dart`). The search order is:
 
@@ -36,9 +38,11 @@ IDE autocomplete may use this schema if the `$schema` field is added to the file
 {
   "version": 1,
   "permission": { ... },
-  "provider": { ... },
   "keybinding": { ... },
-  "skills": { ... }
+  "skills": { ... },
+  "compaction": { ... },
+  "formatter": { ... },
+  "mcp": { ... }
 }
 ```
 
@@ -53,7 +57,7 @@ Controls which tools are allowed, denied, or require user confirmation. Supports
 - **String** — sets a default action for all permissions: `"allow"`, `"ask"`, or `"deny"`.
 - **Object** — maps permission names to either a default action (string) or per-pattern actions (object).
 
-Permission names correspond to tool IDs: `read`, `edit`, `write`, `bash`, `glob`, `grep`, `webfetch`, `websearch`, `doom_loop`, etc.
+Permission names correspond to tool IDs: `read`, `edit`, `write`, `bash`, `glob`, `grep`, `webfetch`, `websearch`, `task`, `todowrite`, `question`, `skill`, `lsp`, `doom_loop`, `external_directory`, etc.
 
 #### Per-Pattern Rules
 
@@ -73,7 +77,7 @@ Patterns use glob-like syntax and support home directory expansion (`~`, `$HOME`
 
 #### Default Rules
 
-If no permission configuration is provided, the following defaults apply:
+If no permission configuration is provided, the following defaults apply (source: `lib/core/permission/ruleset.dart` — `PermissionRuleset.defaults()`):
 
 ```json
 {
@@ -81,26 +85,29 @@ If no permission configuration is provided, the following defaults apply:
     "read": "allow",
     "glob": "allow",
     "grep": "allow",
+    "webfetch": "allow",
+    "websearch": "allow",
+    "task": "allow",
+    "question": "allow",
+    "todowrite": "allow",
+    "skill": "allow",
+    "lsp": "allow",
     "bash": "ask",
     "edit": "ask",
     "write": "ask",
-    "webfetch": "allow",
-    "websearch": "allow",
     "doom_loop": "ask",
-    "skills": "allow"
+    "external_directory": "ask"
   }
 }
 ```
 
-### `provider`
-
-Reserved for future multi-provider registry configuration. Currently not used.
+Tools without a ruleset entry (e.g. `apply_patch`, `format`, `invalid`, `plan_exit`, `json_schema`) fall back to `ask` via the evaluator.
 
 ### `keybinding`
 
-Customizes keyboard shortcuts. **Note:** The keybinds system is not yet implemented. This section is reserved for future use.
+Customizes keyboard shortcuts. The keybinds system is implemented via `KeybindManager` (`lib/core/keybinding/keybind_manager.dart`). See `.opencode/plans/keybinds-system.md` for the.
 
-Example (planned structure):
+Example:
 
 ```json
 {
@@ -117,23 +124,111 @@ Example (planned structure):
 
 ### `skills`
 
-Configures external skill sources. Skills are loaded from local directories or remote URLs.
+Configures skill discovery paths and remote sources. Skills provide specialized AI instructions and workflows.
 
 ```json
 {
   "skills": {
-    "paths": ["~/.config/chatorai/skills"],
+    "paths": [".opencode/skills/"],
     "urls": [
-      "https://example.com/skills-index.json",
+      "https://example.com/skills/index.json",
       {
-        "url": "https://another.com/skills.json",
+        "url": "https://example.com/skills/index.json",
         "cache_ttl": 3600,
-        "api_key": "optional_key"
+        "api_key": "..."
       }
     ]
   }
 }
 ```
+
+| Field   | Type       | Description                              |
+| ------- | ---------- | ---------------------------------------- |
+| `paths` | `string[]` | Directories to scan for `SKILL.md` files |
+| `urls`  | `array`    | Remote skill sources (URL to `index.json`) |
+
+### `compaction`
+
+Controls automatic context compaction when token budget is exceeded.
+
+```json
+{
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "keep": { "tokens": 4000 },
+    "buffer": 2000
+  }
+}
+```
+
+| Field          | Type      | Description                                     |
+| -------------- | --------- | ----------------------------------------------- |
+| `auto`         | `bool`    | Enable automatic compaction                      |
+| `prune`        | `bool`    | Prune old tool outputs                          |
+| `keep.tokens`  | `int`     | Tokens to preserve as recent context            |
+| `buffer`       | `int`     | Token buffer before triggering compaction       |
+
+### `formatter`
+
+Configures external code formatters (e.g. `dart format`).
+
+```json
+{
+  "formatter": {
+    "formatters": {
+      "dart": {
+        "disabled": false,
+        "command": ["dart", "format", "--output=show"],
+        "extensions": [".dart"]
+      }
+    }
+  }
+}
+```
+
+### `mcp`
+
+Configures external MCP (Model Context Protocol) servers. These servers provide additional tools that appear as native built-in tools during AI conversations.
+
+```json
+{
+  "mcp": {
+    "default_timeout": 30000,
+    "servers": {
+      "my-server": {
+        "type": "local",
+        "command": "npx",
+        "args": ["-y", "my-mcp-server"],
+        "cwd": "/home/user",
+        "environment": { "NODE_ENV": "production" },
+        "timeout": 30000
+      },
+      "remote-server": {
+        "type": "remote",
+        "url": "https://api.example.com/mcp",
+        "headers": { "Authorization": "Bearer ..." },
+        "oauth": {
+          "client_id": "...",
+          "client_secret": "...",
+          "scope": "...",
+          "callback_port": 8080,
+          "redirect_uri": "http://localhost:8080/callback"
+        }
+      }
+    }
+  }
+}
+```
+
+**Server types:**
+
+| Type   | Required fields        | Optional fields                                                |
+| ------ | ---------------------- | -------------------------------------------------------------- |
+| local  | `command`, `args`      | `cwd`, `environment`, `enabled`, `timeout`, `type: "local"`    |
+| remote | `url`                 | `headers`, `oauth`, `enabled`, `timeout`, `type: "remote"`     |
+
+Tools discovered from MCP servers are registered into the `ToolRegistry` and participate in the tool execution pipeline alongside built-in tools.
 
 ## Validation
 

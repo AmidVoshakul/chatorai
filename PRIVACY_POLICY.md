@@ -30,10 +30,19 @@ All permissions are optional and are only used when you explicitly use these fea
 
 ## Data Sharing with Third Parties
 
-We use OpenRouter (https://openrouter.ai) as our AI model provider. When you send messages:
+We use OpenRouter (https://openrouter.ai) as our primary AI model provider. When you send messages:
 
 - Your message content and any attached media are transmitted directly to OpenRouter's API.
 - OpenRouter's privacy policy applies to their processing of your data. Please review their privacy policy at: https://openrouter.ai/privacy
+
+### MCP Servers (Optional)
+
+If configured, ChatORAI can connect to external MCP (Model Context Protocol) servers defined in `chatorai.json` under the `mcp` section. These servers may receive:
+
+- Tool invocation requests with user-defined input parameters.
+- File content references for context-aware operations.
+
+Each MCP server operates under its own privacy terms. The configured AI provider (e.g., OpenRouter) processes session content; MCP servers receive only the specific inputs required for tool execution.
 
 We are not responsible for the privacy practices of third-party services.
 

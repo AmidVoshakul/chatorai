@@ -42,11 +42,14 @@ cd chatorai
 # Install dependencies
 flutter pub get
 
+# Run localization code generation (after editing lib/l10n/*.arb)
+flutter gen-l10n
+
+# Run Drift code generation (after editing lib/core/session/schema.dart)
+dart run build_runner build --delete-conflicting-outputs
+
 # Run tests
 flutter test
-
-# Run with code generation
-flutter gen-l10n
 ```
 
 ## Style Guidelines

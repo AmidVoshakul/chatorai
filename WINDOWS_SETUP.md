@@ -24,7 +24,7 @@ Download and install [Visual Studio 2022 Community](https://visualstudio.microso
 
 - Select **"Desktop development with C++"** workload
 - Include **Windows 10/11 SDK**
-- Include **C++ CMake tools**
+- Include **C++ CMake tools** (required by `sqlite3_flutter_libs` / Drift for native SQLite compilation)
 
 ### 3. Verify Installation
 

@@ -1,6 +1,6 @@
 # Environment & System Requirements
 
-**Last updated:** 2026-06-12
+**Last updated:** 2026-06-28
 
 This document describes the software and hardware requirements, environment variables, and system dependencies needed to develop, build, and run ChatORAI.
 
@@ -125,16 +125,28 @@ Where `<package>` is the runtime bundle ID (e.g. `com.chatorai.app`). A project-
       },
     ],
   },
-  provider: {
-    /* multi-provider registry configuration (implemented) */
-  },
   keybinding: {
-    // Reserved for future keybinds system (not yet implemented)
     leader: "ctrl+x",
     timeout: 2000,
     bindings: { session_child_next: "ctrl+right" },
-    quick_commands: {
-      /* @ triggers implemented; # and / planned */
+  },
+  skills: {
+    paths: [".opencode/skills/"],
+  },
+  compaction: {
+    auto: true,
+    prune: true,
+    keep: { tokens: 4000 },
+    buffer: 2000,
+  },
+  mcp: {
+    default_timeout: 30000,
+    servers: {
+      "my-server": {
+        type: "local",
+        command: "npx",
+        args: ["-y", "my-mcp-server"],
+      },
     },
   },
 }
@@ -160,18 +172,47 @@ Key dependencies:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_riverpod: ^3.2.1
+  flutter_riverpod: ^3.3.1
   ai_sdk_dart: ^1.1.0
   ai_sdk_openai: ^1.1.0
-  dio: ^5.8.2+1
-  shared_preferences: ^2.3.4
-  flutter_markdown_plus: ^2.0.0
+  ai_sdk_provider: ^1.1.0
+  ai_sdk_anthropic: ^1.1.0
+  ai_sdk_google: ^1.1.0
+  dio: ^5.9.0
+  shared_preferences: ^2.5.4
+  flutter_markdown_plus: ^1.0.5
+  flutter_highlight: ^0.7.0
+  markdown: ^7.2.2
+  speech_to_text: ^7.3.0
+  image_picker: ^1.1.2
+  flutter_secure_storage: ^10.3.1
+  glob: ^2.1.2
+  json_schema: ^5.2.2
+  collection: ^1.19.1
+  equatable: ^2.0.0
+  flutter_svg: ^2.0.10+1
+  ddgs: ^0.3.2
+  http: ^1.2.0
+  yaml: ^3.1.3
+  drift: ^2.25.1
+  sqlite3_flutter_libs: ^0.5.0
+  path_provider: ^2.0.0
+  uuid: ^4.5.1
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.12.0
+  mcp_dart: ^2.2.2
+  synchronized: ^3.1.0
   # ... (see full pubspec.yaml)
 
 dev_dependencies:
   flutter_test:
-  flutter_lints: ^4.0.0
-  build_runner: ^2.4.15
+  flutter_lints: ^6.0.0
+  test: ^1.26.3
+  mocktail: ^1.0.3
+  drift_dev: ^2.25.1
+  build_runner: ^2.4.0
+  json_serializable: ^6.14.0
+  freezed: 3.2.6-dev.1
 ```
 
 ---

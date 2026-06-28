@@ -1,6 +1,6 @@
 # Commands Reference
 
-**Last updated:** 2026-06-12
+**Last updated:** 2026-06-28
 
 ChatORAI supports:
 
@@ -93,25 +93,31 @@ review this function for security issues use @explore
 
 When the AI invokes tools, they appear inline in the chat stream with icons and status.
 
-| Tool          | Description            | Input Schema                                                                       | Default Permission |
-| ------------- | ---------------------- | ---------------------------------------------------------------------------------- | ------------------ |
-| `bash`        | Execute shell command  | `{ "command": "...", "timeoutMs": 30000 }`                                         | ask                |
-| `read`        | Read file contents     | `{ "path": "...", "offset": 0, "limit": 1000 }`                                    | allow              |
-| `edit`        | Replace text in file   | `{ "path": "...", "oldString": "...", "newString": "..." }`                        | ask                |
-| `write`       | Create/overwrite file  | `{ "path": "...", "content": "..." }`                                              | ask                |
-| `glob`        | Find files by pattern  | `{ "pattern": "**/*.dart", "path": "lib" }`                                        | allow              |
-| `grep`        | Search file contents   | `{ "pattern": "...", "path": "lib", "filePattern": "*.dart" }`                     | allow              |
-| `webfetch`    | Fetch URL content      | `{ "url": "https://...", "format": "markdown" }`                                   | ask                |
-| `websearch`   | Search web via SearXNG | `{ "query": "...", "engines": [...], "categories": [...] }`                        | ask                |
-| `task`        | Spawn subagent         | `{ "prompt": "...", "context": {...}, "subagentType": "explore" }`                 | ask                |
-| `todowrite`   | Update todo list       | `{ "todos": [{ "content": "...", "status": "pending"/"completed" }] }`             | ask                |
-| `skill`       | Load specialized skill | `{ "name": "...", "params": {...} }`                                               | ask                |
-| `apply_patch` | Apply unified diff     | `{ "patch": "diff --git a/... b/...", "dryRun": false }`                           | ask                |
-| `question`    | Ask user questions     | `{ "questions": [{ "question": string, "options": [string], "multiple": bool }] }` | ask                |
+| Tool             | Description                                       | Default Permission |
+| ---------------- | ------------------------------------------------- | ------------------ |
+| `bash`           | Execute shell command                             | ask                |
+| `read`           | Read file contents                                | allow              |
+| `edit`           | Replace text in file                              | ask                |
+| `write`          | Create/overwrite file                             | ask                |
+| `glob`           | Find files by pattern                             | allow              |
+| `grep`           | Search file contents                              | allow              |
+| `webfetch`       | Fetch URL content                                 | allow              |
+| `websearch`      | Search web via SearXNG                            | allow              |
+| `task`           | Spawn subagent via `SessionRunner`                | allow              |
+| `question`       | Ask user question (with dedup)                    | allow              |
+| `todowrite`      | Update todo list                                  | allow              |
+| `skill`          | Load specialized skill                            | allow              |
+| `apply_patch`    | Apply unified diff                                | ask                |
+| `lsp`            | LSP hover/signature help                          | allow              |
+| `format`         | Code formatting                                   | ask                |
+
+**Conditionally registered:** `lsp` (when `LspService` available), `format` (when `FormatService` available), `skill` (when `SkillService` available). Additional built-in tools: `external_directory` (ask), `plan_exit` (ask), `json_schema` (ask fallback).
 
 **States:** `pending` (∼), `running` (spinner), `completed` (✓), `error` (✗). Tool results can be expanded to show full output.
 
 **Note:** All tool outputs are truncated to 2000 lines or 50KB when displayed.
+
+For the full tool reference with input schemas, see `docs/API.md` → Tools section.
 
 ---
 

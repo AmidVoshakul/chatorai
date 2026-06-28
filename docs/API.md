@@ -1,6 +1,6 @@
 # API Reference
 
-**Last updated:** 2026-06-12
+**Last updated:** 2026-06-28
 
 This document describes the public APIs of ChatORAI for developers, contributors, and advanced users.
 
@@ -46,13 +46,18 @@ All providers are defined using Riverpod 3.x and can be accessed via `ref.watch(
 
 ### Core Services
 
-| Provider                     | Type                           | Description                                                     |
-| ---------------------------- | ------------------------------ | --------------------------------------------------------------- |
-| `chatAiServiceProvider`      | `Provider<ChatAiService>`      | AI completion service with tool execution loop.                 |
-| `chatRepositoryProvider`     | `Provider<ChatRepository>`     | Chat persistence repository.                                    |
-| `chatStorageServiceProvider` | `Provider<ChatStorageService>` | Local storage abstraction (SharedPreferences).                  |
-| `toolRegistryProvider`       | `FutureProvider<ToolRegistry>` | Registry of all available tools (12 built-in + dynamic skills). |
-| `skillServiceProvider`       | `FutureProvider<SkillService>` | Skill management service for dynamic capabilities.              |
+| Provider                        | Type                              | Description                                                         |
+| ------------------------------- | --------------------------------- | ------------------------------------------------------------------- |
+| `chatAiServiceProvider`         | `Provider<ChatAiService>`         | AI completion service with tool execution loop.                     |
+| `sessionRunnerProvider`         | `Provider<SessionRunner>`         | Event-sourced session orchestrator.                                 |
+| `sessionRepositoryProvider`     | `Provider<SessionRepository>`     | Session CRUD + event replay.                                        |
+| `sessionTreeProvider`           | `Provider<SessionTree>`           | Parent-child session navigation.                                    |
+| `chatRepositoryProvider`        | `Provider<ChatRepository>`        | Chat persistence repository.                                        |
+| `chatStorageServiceProvider`    | `Provider<ChatStorageService>`    | Local storage abstraction (SharedPreferences).                      |
+| `toolRegistryProvider`          | `FutureProvider<ToolRegistry>`    | Registry of all available tools (16 built-in + dynamic skills).     |
+| `skillServiceProvider`          | `FutureProvider<SkillService>`    | Skill management service for dynamic capabilities.                  |
+| `mcpClientServiceProvider`      | `Provider<McpClientService>`     | MCP server connections for external tool integration.               |
+| `lspServiceProvider`           | `Provider<LspService>`           | LSP integration for code intelligence.                              |
 
 ---
 
@@ -97,7 +102,30 @@ Stream<StreamTextEvent> streamChatCompletion({
 
 ### PermissionService
 
-Controls tool execution based on user-defined rules from `chatorai.json`. Evaluates rules using wildcard patterns; last-match-wins; default=`ask`.
+Controls tool execution based on user-defined rules from `chatorai.json` and built-in defaults. Evaluates rules using wildcard patterns; last-match-wins; fallback=`ask` when no rule matches.
+
+**Default rules** (defined in `PermissionRuleset.defaults()`, `lib/core/permission/ruleset.dart`):
+
+| Tool               | Default Action |
+| ------------------ | -------------- |
+| `read`             | `allow`        |
+| `glob`             | `allow`        |
+| `grep`             | `allow`        |
+| `webfetch`         | `allow`        |
+| `websearch`        | `allow`        |
+| `task`             | `allow`        |
+| `question`         | `allow`        |
+| `todowrite`        | `allow`        |
+| `skill`            | `allow`        |
+| `lsp`              | `allow`        |
+| `bash`             | `ask`          |
+| `edit`             | `ask`          |
+| `write`            | `ask`          |
+| `doom_loop`        | `ask`          |
+| `external_directory` | `ask`        |
+| `apply_patch`      | `ask` (fallback — no ruleset entry) |
+| `format`           | `ask` (fallback — no ruleset entry) |
+| `invalid`          | `ask` (fallback — no ruleset entry) |
 
 **Usage:**
 
@@ -122,9 +150,69 @@ Registry for all built-in and custom tools. Converts internal `ToolDef` to `ai_s
 
 **Registration:**
 
-- Built-in tools registered in `built_in_tools.dart` (11 tools: bash, read, glob, grep, edit, write, webfetch, websearch, apply_patch, todo_write, task).
-- `skill` tool registered separately via `skill_providers.dart`.
-- `question` tool exists but is not currently registered.
+- All built-in tools registered in `built_in_tools.dart` via `registerBuiltInTools()` — 16 unconditional + up to 3 conditional (19 total possible).
+- Conditional: `lsp` (when `LspService` is provided), `format` (when `FormatService` is provided), `skill` (when `SkillService` is provided).
+- The `task` tool requires `chatAiService`, `toolRegistry`, and `currentSessionRunner` parameters.
+- Permission defaults defined in `PermissionRuleset.defaults()` (`lib/core/permission/ruleset.dart`).
+- Evaluation uses `evaluate()` from `lib/core/permission/evaluator.dart` — last-match-wins, fallback to `ask`.
+
+### SessionRunner
+
+Orchestrates session lifecycle with event sourcing. Created via `Session跑了.runTaskInChild()` or through `session_providers.dart`.
+
+**Key methods:**
+
+```dart
+// Start a new root session
+Future<SessionRunnerSession> startSession({
+  required String agent,        // 'general', 'explore', 'code-reviewer', etc.
+  String? modelRef,             // model identifier from catalog
+  String? title,                // optional session title
+  String? parentSessionId,      // for hierarchical sessions
+})
+
+// Start a pre-initialized session
+Future<SessionRunnerSession> startInitializedSession({
+  required String agent,
+  String? modelRef,
+  String? title,
+  String? parentSessionId,
+})
+
+// Run a task in a child session (delegated subagent work)
+Future<void> runTaskInChild({
+  required SessionID parentSessionId,
+  required String taskPrompt,
+  required Future<void> Function(SessionRunnerSession child) streamFn,
+  String? agent,
+  String? modelRef,
+  String? title,
+  String? taskId,
+  sdk.CancellationToken? abortSignal,
+})
+```
+
+**Properties of `SessionRunnerSession`:**
+
+```dart
+class SessionRunnerSession {
+  final SessionID id;
+  final SessionID? parentId;
+  final String agent;
+  final String? modelRef;
+  final DateTime createdAt;
+}
+```
+
+**Usage via Riverpod providers:**
+
+```dart
+// In a widget or notifier:
+final sessionRunner = ref.read(sessionRunnerProvider);
+final session = await sessionRunner.startSession(agent: 'general');
+```
+
+**Stream events** from `SessionRunner` are persisted to the `EventStore` and can be replayed via `SessionRepository` to reconstruct `SessionState`.
 
 ### CompactionService
 
@@ -152,15 +240,28 @@ The message system uses a concrete `Message` class (not abstract) with `MessageR
 
 **MessageParts** (serialized as JSON with `type` field):
 
-| Part Type        | Description                                  | Widget                 |
-| ---------------- | -------------------------------------------- | ---------------------- |
-| `TextPart`       | Plain text content                           | `TextPartWidget`       |
-| `ReasoningPart`  | Model's thinking process (collapsible)       | `ReasoningPartWidget`  |
-| `ToolCallPart`   | Tool invocation (toolName, input)            | `ToolCallPartWidget`   |
-| `ToolResultPart` | Tool output (state, output, duration, error) | `ToolResultPartWidget` |
-| `TaskPart`       | Delegated subagent task                      | `TaskPartWidget`       |
-| `QuestionPart`   | Multi-question flow awaiting user response   | `QuestionPartWidget`   |
-| `TodoPart`       | Todo list with items                         | `TodoPartWidget`       |
+| Part Type        | Description                                                            | Widget                 |
+| ---------------- | ---------------------------------------------------------------------- | ---------------------- |
+| `TextPart`       | Plain text content                                                     | `TextPartWidget`       |
+| `ReasoningPart`  | Model's thinking process (collapsible, with optional duration)         | `ReasoningPartWidget`  |
+| `ToolCallPart`   | Tool invocation (toolName, input)                                      | `ToolCallPartWidget`   |
+| `ToolResultPart` | Tool output (state, output, duration, error)                           | `ToolResultPartWidget` |
+| `TaskPart`       | Delegated subagent task                                                | `TaskPartWidget`       |
+| `QuestionPart`   | Multi-question flow awaiting user response                             | `QuestionPartWidget`   |
+| `TodoPart`       | Todo list with items                                                   | `TodoPartWidget`       |
+
+**ReasoningPart fields** (defined in `lib/features/chat/data/models/chat/reasoning_part.dart`):
+
+| Field         | Type        | Description                                                 |
+| ------------- | ----------- | ----------------------------------------------------------- |
+| `content`     | `String`    | The reasoning/thinking text                                 |
+| `title`       | `String?`   | Optional display title                                      |
+| `isStreaming` | `bool`      | Whether the part is still being streamed                    |
+| `startedAt`   | `DateTime?` | When the reasoning started (used to compute `durationMs`)   |
+| `durationMs`  | `int?`      | Computed duration in ms (set when streaming ends, persisted) |
+| `isExpanded`  | `bool?`     | UI expand/collapse state                                    |
+
+`durationMs` is computed in `StreamingMessageNotifier._markReasoningAsDone()` and `stopStreaming()` when reasoning streaming ends. It is persisted via `toJson()`/`fromJson()` and survives chat switches and app reloads. The `ReasoningPartWidget._displayDuration` getter prefers `widget.part.durationMs` over a locally computed `_thoughtDuration`.
 
 **Note:** `ApplyPatchPart` and `SkillPart` are not implemented message part types. The `apply_patch` tool outputs via `ToolResultPartWidget` like any other tool.
 
@@ -170,31 +271,54 @@ The message system uses a concrete `Message` class (not abstract) with `MessageR
 
 All tools implement the `Tool` interface from `ai_sdk_dart`. The `ToolRegistry` converts internal `ToolDef` implementations to SDK tools.
 
-### Built-in Tools (12 total)
+### Built-in Tools (19 total, 16 unconditional + 3 conditional)
 
-| Tool          | Description            | Input Schema                                                                       | Default Permission |
-| ------------- | ---------------------- | ---------------------------------------------------------------------------------- | ------------------ |
-| `bash`        | Execute shell command  | `{ "command": string, "timeoutMs": number }`                                       | ask                |
-| `read`        | Read file contents     | `{ "path": string, "offset": number, "limit": number }`                            | allow              |
-| `edit`        | Replace text in file   | `{ "path": string, "oldString": string, "newString": string }`                     | ask                |
-| `write`       | Create/overwrite file  | `{ "path": string, "content": string }`                                            | ask                |
-| `glob`        | Find files by pattern  | `{ "pattern": string, "path": string }`                                            | allow              |
-| `grep`        | Search file contents   | `{ "pattern": string, "path": string, "filePattern": string }`                     | allow              |
-| `webfetch`    | Fetch URL content      | `{ "url": string, "format": "text" \| "markdown" \| "html" }`                      | ask                |
-| `websearch`   | Search web via SearXNG | `{ "query": string, "engines": string[], "categories": string[] }`                 | ask                |
-| `task`        | Spawn subagent         | `{ "prompt": string, "context": object, "subagentType": string }`                  | ask                |
-| `todowrite`   | Update todo list       | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }`            | ask                |
-| `skill`       | Load specialized skill | `{ "name": string, "params": object }`                                             | ask                |
-| `apply_patch` | Apply unified diff     | `{ "patch": string, "dryRun": bool }`                                              | ask                |
-| `question`    | Ask user questions     | `{ "questions": [{ "question": string, "options": [string], "multiple": bool }] }` | ask                |
+**Always registered (16):**
 
-**Note:** All tool outputs are truncated to 2000 lines or 50KB when displayed. There is no separate `ApplyPatchPartWidget` or `SkillPartWidget`.
+| Tool                | Description                                                   | Input Schema                                                                       | Default Permission |
+| ----------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------ |
+| `bash`             | Execute shell command                                         | `{ "command": string, "timeoutMs": number }`                                       | ask                |
+| `read`             | Read file contents                                            | `{ "path": string, "offset": number, "limit": number }`                            | allow              |
+| `edit`             | Replace text in file                                          | `{ "path": string, "oldString": string, "newString": string }`                     | ask                |
+| `write`            | Create/overwrite file                                         | `{ "path": string, "content": string }`                                            | ask                |
+| `glob`             | Find files by pattern                                         | `{ "pattern": string, "path": string }`                                            | allow              |
+| `grep`             | Search file contents                                          | `{ "pattern": string, "path": string, "filePattern": string }`                     | allow              |
+| `webfetch`         | Fetch URL content                                             | `{ "url": string, "format": "text" \| "markdown" \| "html" }`                      | allow              |
+| `websearch`        | Search web via SearXNG                                        | `{ "query": string, "engines": string[], "categories": string[] }`                 | allow              |
+| `task`             | Spawn subagent via `SessionRunner`                            | `{ "prompt": string, "context": object, "subagentType": string }`                  | allow              |
+| `todowrite`        | Update todo list                                              | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }`            | allow              |
+| `question`         | Ask user question (with dedup)                                | `{ "question": string, "options": string[], "multiple": bool }`                    | allow              |
+| `skill`            | Load specialized skill                                        | `{ "name": string, "params": object }`                                             | allow              |
+| `apply_patch`      | Apply unified diff                                            | `{ "patch": string, "dryRun": bool }`                                              | ask                |
+| `invalid`          | Invalid tool placeholder                                      | `{}`                                                                               | ask                |
+
+**Conditionally registered (up to 3):**
+
+| Tool                         | Condition                                            | Default Permission |
+| ---------------------------- | ---------------------------------------------------- | ------------------ |
+| `lsp`                        | When `LspService` is provided                        | allow              |
+| `format`                     | When `FormatService` is provided                     | ask                |
+| `skill` (dynamic loading)    | When `SkillService` is provided                      | allow              |
+
+**Additional tools** (also always registered, listed separately for clarity):
+
+| Tool                   | Description                                       | Default Permission |
+| ---------------------- | ------------------------------------------------- | ------------------ |
+| `external_directory`   | Directory operations (builtin)                     | ask                |
+| `plan_exit`            | Exit plan mode, switch to build agent              | ask                |
+| `json_schema`          | JSON schema validation                            | ask (fallback)     |
+
+The actual registration in `registerBuiltInTools()` (see `lib/core/tools/built_in/built_in_tools.dart`) registers 16 tools unconditionally, plus up to 3 conditional tools (`lsp`, `format`, `skill`). Total: 19 possible built-in tools.
+
+**Note:** All tool outputs are truncated to 2000 lines or 50KB when displayed.
 
 ---
 
 ## Events
 
-Streamed from `ChatAiService.streamChatCompletion()`:
+### Stream Events
+
+Streamed from `ChatAiService.streamChatCompletion()` (legacy pipeline):
 
 | Event        | Callback                      | Payload                            |
 | ------------ | ----------------------------- | ---------------------------------- |
@@ -204,6 +328,28 @@ Streamed from `ChatAiService.streamChatCompletion()`:
 | `ToolEnd`    | `onToolEnd(ToolEndEvent)`     | Tool completed (result, duration). |
 | `ToolError`  | `onToolError(ToolError)`      | Tool failed (error, isEOF).        |
 | `Completion` | `onCompletion(String)`        | Final message ID / turn complete.  |
+
+### Session Events (Event Sourcing)
+
+Persisted to Drift `events` table. All events extend `sealed class SessionEvent`:
+
+| Event Type                  | Purpose                                                    |
+| --------------------------- | ---------------------------------------------------------- |
+| `SessionCreated`            | New session with optional parent, title, agent, model.     |
+| `SessionArchived`           | Session archived (soft delete).                            |
+| `SessionAgentSwitched`      | Agent changed mid-session.                                  |
+| `SessionModelSwitched`      | Model reference changed.                                   |
+| `MessageAdded`              | User/assistant/system message persisted.                   |
+| `TextStarted/Delta/Ended`   | Assistant streaming text lifecycle.                        |
+| `ReasoningStarted/Delta/Ended` | Reasoning/thinking stream lifecycle.                    |
+| `ToolInputStarted/Delta/Ended` | Tool JSON input streaming (for progress UI).            |
+| `ToolCalled`                | Tool invoked with full input.                              |
+| `ToolSuccess`               | Tool completed (output, duration).                         |
+| `ToolFailed`                | Tool failed (error message).                               |
+| `StepStarted/Ended/Failed`  | Turn lifecycle with token tracking.                        |
+| `CompactionStarted/Ended`   | Context compaction with summary.                           |
+| `ChildSessionCreated`       | Parent-child session hierarchy.                            |
+| `TaskStarted/Completed`     | Delegated subagent task tracking.                           |
 
 ---
 
@@ -226,20 +372,32 @@ Validated against JSON Schema in `lib/core/config/chatorai_schema.dart`.
 {
   "version": 1,
   "permission": {
-    "default": "ask", // allow | deny | ask
+    "default": "ask",
     "rules": [
       { "tool": "read", "action": "*", "resource": "*", "permission": "allow" },
       { "tool": "bash", "action": "execute", "resource": "/home/**", "permission": "deny" }
     ]
   },
-  "provider": {
-    // Multi-provider registry configuration (implemented)
-  },
   "keybinding": {
-    // Reserved for future keybinds system (not yet implemented)
     "leader": "ctrl+x",
     "timeout": 2000,
-    "bindings": { ... }
+    "bindings": { "session_child_next": "ctrl+right" }
+  },
+  "skills": {
+    "paths": [".opencode/skills/"],
+    "urls": []
+  },
+  "compaction": { "auto": true, "prune": true },
+  "formatter": { "formatters": {} },
+  "mcp": {
+    "default_timeout": 30000,
+    "servers": {
+      "my-server": {
+        "type": "local",
+        "command": "npx",
+        "args": ["-y", "my-mcp-server"]
+      }
+    }
   }
 }
 ```
@@ -262,13 +420,17 @@ CHATORAI_DEBUG=true
 ## Internal APIs (Subject to Change)
 
 - `ChatStorageService`: `getChats()`, `getChat(id)`, `addChat()`, `updateChat()`, `deleteChat()`, etc.
-- `ModelNotifier`: Manages model selection, favorites, and available models (replaces `ModelRepository`).
-- `TokenCounter`: `addContent(text)`, `clear()`, `totalTokens`.
-- `OverflowDetector`: `isOverflow(totalTokens)`, `forModel(contextLength)`.
-- `HeadingAnchorRegistry`: registers `GlobalKey` for markdown heading anchors.
-- `CompactionService`: `compact(messages, aiService, model)` — summarizes old context when token budget exceeded.
-- `CompactionOrchestrator`: `compactSession(sessionId)` — loads session state, runs compaction via `CompletionProvider`, and persists `CompactionStarted` / `CompactionEnded` events.
-- `CompletionProvider`: Interface implemented by `ChatAiService` to provide non-streaming completions for compaction and similar operations.
+- `SessionRunner`: `startSession()`, `startInitializedSession()`, `runTaskInChild()` — orchestrates session lifecycle with event sourcing.
+- `SessionRepository`: CRUD operations for sessions; event replay.
+- `SessionTree`: Parent-child navigation in the session hierarchy.
+- `EventStore`: `append()`, `read()`, `stream()` on the Drift event store.
+- `McpClientService`: `initialize(config)`, `connect(serverName)`, `callTool(...)`, `listAllTools()`, `getToolDefs()`, `disconnect()`, `dispose()`.
+- `ModelNotifier`: Manages model selection, favorites, and available models.
+- `PermissionRuleset`: `fromConfig(map)`, `defaults()`, merge via `PermissionEvaluator`.
+- `ToolExecutor`: `execute(def, input, options)` — cache, doom-loop guard, permission check, truncation.
+- `TruncationService`: Singleton, `output(content)` → truncated content + outputPath.
+- `SessionState`: Freezed immutable model for session state reconstruction from events.
+- `SessionMessage`: Freezed model with JSON serialization, `SessionIDConverter`, `MessageRole`, Equatable mixin.
 
 ---
 
