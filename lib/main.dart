@@ -34,7 +34,7 @@ void main() async {
   // They are already handled by ChatAiService._retry — we just prevent them
   // from reaching VSCode's exception breakpoint.
   final platformHandler = PlatformDispatcher.instance.onError;
-  PlatformDispatcher.instance.onError = (error, stack) {
+  PlatformDispatcher.instance.onError = (error, estack) {
     if (error is DioException) {
       LogTags.chatService.logDebug(
         '[Global] swallowed DioException (handled by _retry)',
@@ -47,7 +47,7 @@ void main() async {
       );
       return true;
     }
-    return platformHandler?.call(error, stack) ?? false;
+    return platformHandler?.call(error, estack) ?? false;
   };
 
   ToolOutputPersistence.instance.initialize();

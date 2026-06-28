@@ -186,30 +186,22 @@ class ModelsScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(8),
       children: [
         for (final entry in sorted)
-          ExpansionTile(
-            key: ValueKey('grp_${entry.key}'),
-            initiallyExpanded: false,
-            leading: ProviderIcon(providerId: entry.key),
-            title: Text('${_providerName(entry.key)} · ${entry.value.length}'),
-            tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-            childrenPadding: const EdgeInsets.only(left: 8, bottom: 4),
-            children: [
-              _ModelGrid(
-                models: entry.value,
-                currentModel: currentModel,
-                onSelect: (model) async {
-                  await ref
-                      .read(modelsScreenProvider.notifier)
-                      .selectModel(model.id);
-                  if (context.mounted) Navigator.of(context).pop(model);
-                },
-                isFavorite: (id) =>
-                    ref.read(modelsScreenProvider.notifier).isFavorite(id),
-                onToggleFavorite: (id) =>
-                    ref.read(modelsScreenProvider.notifier).toggleFavorite(id),
-                onInfo: (model) => showModelDetailsDialog(context, model),
-              ),
-            ],
+          _DeferredModelTile(
+            providerKey: entry.key,
+            providerName: _providerName(entry.key),
+            models: entry.value,
+            currentModel: currentModel,
+            onSelect: (model) async {
+              await ref
+                  .read(modelsScreenProvider.notifier)
+                  .selectModel(model.id);
+              if (context.mounted) Navigator.of(context).pop(model);
+            },
+            isFavorite: (id) =>
+                ref.read(modelsScreenProvider.notifier).isFavorite(id),
+            onToggleFavorite: (id) =>
+                ref.read(modelsScreenProvider.notifier).toggleFavorite(id),
+            onInfo: (model) => showModelDetailsDialog(context, model),
           ),
       ],
     );
@@ -234,6 +226,70 @@ class ModelsScreen extends ConsumerWidget {
   };
 
   String _providerName(String? id) => _providerNames[id] ?? (id ?? 'Unknown');
+}
+
+// ===========================================================================
+// DEFERRED MODEL TILE — builds grid only on first expansion
+// ===========================================================================
+
+class _DeferredModelTile extends StatefulWidget {
+  final String providerKey;
+  final String providerName;
+  final List<ChatModel> models;
+  final String? currentModel;
+  final Future<void> Function(ChatModel) onSelect;
+  final bool Function(String) isFavorite;
+  final void Function(String) onToggleFavorite;
+  final void Function(ChatModel) onInfo;
+
+  const _DeferredModelTile({
+    required this.providerKey,
+    required this.providerName,
+    required this.models,
+    required this.currentModel,
+    required this.onSelect,
+    required this.isFavorite,
+    required this.onToggleFavorite,
+    required this.onInfo,
+  });
+
+  @override
+  State<_DeferredModelTile> createState() => _DeferredModelTileState();
+}
+
+class _DeferredModelTileState extends State<_DeferredModelTile> {
+  bool _hasBuiltGrid = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return ExpansionTile(
+      key: ValueKey('grp_${widget.providerKey}'),
+      initiallyExpanded: false,
+      leading: ProviderIcon(providerId: widget.providerKey),
+      title: Text(
+        '${widget.providerName} · ${widget.models.length}',
+      ),
+      tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+      childrenPadding: const EdgeInsets.only(left: 8, bottom: 4),
+      onExpansionChanged: (expanded) {
+        if (expanded && !_hasBuiltGrid) {
+          setState(() => _hasBuiltGrid = true);
+        }
+      },
+      children: _hasBuiltGrid
+          ? [
+              _ModelGrid(
+                models: widget.models,
+                currentModel: widget.currentModel,
+                onSelect: widget.onSelect,
+                isFavorite: widget.isFavorite,
+                onToggleFavorite: widget.onToggleFavorite,
+                onInfo: widget.onInfo,
+              ),
+            ]
+          : [const SizedBox.shrink()],
+    );
+  }
 }
 
 // ===========================================================================

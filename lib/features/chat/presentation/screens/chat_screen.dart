@@ -95,6 +95,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   SpeechUiState _speechUiState = SpeechUiState.idle;
   String _speechStatusMessage = '';
   double _speechSoundLevel = 0.0;
+  String _speechRecognizedText = '';
 
   final ContinuationSuggestionService _suggestionService =
       ContinuationSuggestionService();
@@ -182,7 +183,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _isMobile = _cachedScreenWidth < ChatScreenConstants.mobileBreakpoint;
 
     final chatInput = ChatInput(
-      key: const ValueKey('chat_input_widget'),
       onSendMessage: _handleSendMessage,
       onToggleStreaming: (_) {},
       onStopStreaming: _stopStreaming,
@@ -199,6 +199,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           _speechSoundLevel = (level / 30).clamp(0.0, 1.0);
         });
       },
+      onRecognizedText: (text) {
+        setState(() {
+          _speechRecognizedText = text;
+        });
+      },
       checkModelSupportsImages: (_) =>
           ref.read(modelProvider.notifier).modelSupportsImagesSelected(),
       onMessageAdded: () {
@@ -210,19 +215,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     Widget baseLayout = _isMobile
         ? _buildMobileLayout(chatInput)
         : _buildDesktopLayout(chatInput);
-
-    if (_speechUiState != SpeechUiState.idle) {
-      baseLayout = Stack(
-        children: [
-          baseLayout,
-          SpeechOverlayWidget(
-            state: _speechUiState,
-            message: _speechStatusMessage,
-            soundLevel: _speechSoundLevel,
-          ),
-        ],
-      );
-    }
 
     final uiState = ref.watch(chatScreenProvider);
     if (uiState.navigatorHeadings.isNotEmpty) {

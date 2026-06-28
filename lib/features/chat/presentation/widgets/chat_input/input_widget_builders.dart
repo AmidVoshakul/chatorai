@@ -94,6 +94,7 @@ class InputWidgetBuilders {
     Gradient? gradient,
     Color? bgColor,
     VoidCallback? onTap,
+    VoidCallback? onLongPress,
   }) {
     return Container(
       key: key,
@@ -110,6 +111,7 @@ class InputWidgetBuilders {
         child: InkWell(
           borderRadius: BorderRadius.circular(buttonSize / 2),
           onTap: onTap,
+          onLongPress: onLongPress,
           child: Center(child: child),
         ),
       ),
@@ -155,8 +157,11 @@ class InputWidgetBuilders {
             CircularProgressIndicator(
               value: retryProgress,
               strokeWidth: ChatoraiBorderWidth.medium,
-              backgroundColor: ChatoraiColors.error.withValues(alpha: 0.12),
-              valueColor: AlwaysStoppedAnimation<Color>(ChatoraiColors.error),
+              backgroundColor:
+                  ChatoraiColors.error.withValues(alpha: 0.12),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                ChatoraiColors.error,
+              ),
             ),
           IconButton(
             onPressed: onStopStreaming,
@@ -276,11 +281,11 @@ class InputWidgetBuilders {
     required SpeechUiState speechUiState,
   }) {
     if (isSending) return Icons.autorenew;
-    if (hasText || hasAttachment) return Icons.send;
     if (speechUiState == SpeechUiState.listening ||
         speechUiState == SpeechUiState.preparing) {
       return Icons.stop;
     }
+    if (hasText || hasAttachment) return Icons.send;
     return Icons.mic;
   }
 
@@ -292,7 +297,6 @@ class InputWidgetBuilders {
     required SpeechUiState speechUiState,
   }) {
     if (isSending) return ChatoraiColors.pureWhite;
-    if (hasText || hasAttachment) return ChatoraiColors.pureWhite;
     if (speechUiState == SpeechUiState.listening ||
         speechUiState == SpeechUiState.preparing) {
       return ChatoraiColors.error;
@@ -301,6 +305,7 @@ class InputWidgetBuilders {
         speechUiState == SpeechUiState.noSpeech) {
       return ChatoraiColors.error;
     }
+    if (hasText || hasAttachment) return ChatoraiColors.pureWhite;
     return theme.iconTheme.color ?? ChatoraiColors.pureBlack;
   }
 }

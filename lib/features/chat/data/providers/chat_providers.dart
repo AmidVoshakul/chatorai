@@ -18,6 +18,13 @@ final retryCountdownProvider = StreamProvider.autoDispose<double>((ref) {
   return aiService.retryCountdown;
 });
 
+/// Emits the current retry message each time backoff begins / countdown resets.
+/// Empty string when idle (no retry in progress).
+final retryMessageProvider = StreamProvider.autoDispose<String>((ref) {
+  final aiService = ref.watch(chatAiServiceProvider);
+  return aiService.retryMessageStream;
+});
+
 // ===========================================================================
 // SERVICE PROVIDERS
 // ===========================================================================

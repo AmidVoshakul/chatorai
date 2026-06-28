@@ -5,35 +5,30 @@ import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
-// ===========================================================================
-// SPEECH OVERLAY WIDGET
-// ===========================================================================
-
 class SpeechOverlayWidget extends StatefulWidget {
   final SpeechUiState state;
   final String message;
   final double soundLevel;
+  final String recognizedText;
+  final double bottomInset;
 
   const SpeechOverlayWidget({
     super.key,
     required this.state,
     required this.message,
     required this.soundLevel,
+    this.recognizedText = '',
+    this.bottomInset = 0,
   });
 
   @override
   State<SpeechOverlayWidget> createState() => _SpeechOverlayWidgetState();
 }
 
-// ===========================================================================
-// STATE
-// ===========================================================================
-
 class _SpeechOverlayWidgetState extends State<SpeechOverlayWidget>
     with TickerProviderStateMixin {
   late AnimationController _waveController;
-  late AnimationController _shimmerController;
-  late Animation<double> _shimmerAnimation;
+  late final AnimationController _fadeController;
 
   double _smoothedLevel = 0;
 
@@ -46,29 +41,30 @@ class _SpeechOverlayWidgetState extends State<SpeechOverlayWidget>
       duration: const Duration(milliseconds: 1600),
     )..repeat();
 
-    _shimmerController = AnimationController(
-      duration: const Duration(milliseconds: 2200),
+    _fadeController = AnimationController(
       vsync: this,
-    )..repeat();
-
-    _shimmerAnimation = CurvedAnimation(
-      parent: _shimmerController,
-      curve: Curves.easeInOut,
-    );
+      duration: const Duration(milliseconds: 300),
+    )..forward();
   }
 
   @override
   void dispose() {
     _waveController.dispose();
-    _shimmerController.dispose();
+    _fadeController.dispose();
     super.dispose();
   }
 
   @override
   void didUpdateWidget(covariant SpeechOverlayWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-
     _smoothedLevel = (_smoothedLevel * 0.75) + (widget.soundLevel * 0.25);
+    if (widget.recognizedText != oldWidget.recognizedText &&
+        widget.recognizedText.isNotEmpty &&
+        _fadeController.isCompleted) {
+      _fadeController
+        ..reset()
+        ..forward();
+    }
   }
 
   @override
@@ -77,117 +73,86 @@ class _SpeechOverlayWidgetState extends State<SpeechOverlayWidget>
       return const SizedBox.shrink();
     }
 
-    final overlayBackgroundColor = ChatoraiColors.speechOverlayBackgroundDark;
-    final overlayTextColor = ChatoraiColors.speechOverlayTextDark;
-    final waveColor = ChatoraiColors.speechOverlayWaveDark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final speechColor = isDark ? Colors.grey[300]! : Colors.grey[700]!;
 
-    return Stack(
-      children: [
-        // ===================================================================
-        // GLASS BLUR BACKGROUND
-        // ===================================================================
-        Positioned.fill(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(
-              sigmaX: ChatoraiColors.speechOverlayBlur,
-              sigmaY: ChatoraiColors.speechOverlayBlur,
-            ),
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: widget.bottomInset,
+      child: Stack(
+        children: [
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
-              color: overlayBackgroundColor.withValues(alpha: 0.75),
+              color: (isDark
+                      ? ChatoraiColors.pureBlack
+                      : ChatoraiColors.pureWhite)
+                  .withValues(alpha: 0.75),
             ),
           ),
-        ),
-
-        // ===================================================================
-        // CENTER CONTENT
-        // ===================================================================
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.xl),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // ===========================================================
-                // SIRI STYLE WAVE
-                // ===========================================================
-                SizedBox(
-                  height: 90,
-                  width: double.infinity,
-                  child: _AudioWaveAnimation(
-                    level: _smoothedLevel,
-                    color: waveColor,
-                    animation: _waveController,
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 90,
+                    width: double.infinity,
+                    child: _AudioWaveAnimation(
+                      level: _smoothedLevel,
+                      color: speechColor,
+                      animation: _waveController,
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: ChatoraiSpacing.lg),
-
-                // ===========================================================
-                // STATUS
-                // ===========================================================
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _PulsingDot(color: overlayTextColor),
-                    const SizedBox(width: ChatoraiSpacing.md),
-                    Flexible(
-                      child: _buildShimmerText(
-                        widget.message,
-                        overlayTextColor,
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _PulsingDot(color: speechColor),
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Text(
+                          widget.message,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                            color: speechColor.withValues(alpha: 0.8),
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  if (widget.recognizedText.isNotEmpty)
+                    FadeTransition(
+                      opacity: _fadeController,
+                      child: SelectableText(
+                        widget.recognizedText,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w500,
+                          color: isDark
+                              ? ChatoraiColors.pureWhite
+                              : ChatoraiColors.pureBlack,
+                          height: 1.4,
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  // =======================================================================
-  // SHIMMER TEXT
-  // =======================================================================
-
-  Widget _buildShimmerText(String text, Color textColor) {
-    const shimmerColor = Colors.white60;
-    const shimmerHighlight = Colors.white;
-
-    return AnimatedBuilder(
-      animation: _shimmerAnimation,
-      builder: (context, child) {
-        return ShaderMask(
-          shaderCallback: (bounds) {
-            final progress = _shimmerAnimation.value;
-
-            return LinearGradient(
-              begin: Alignment(-1 + progress * 2, 0),
-              end: Alignment(1 + progress * 2, 0),
-              colors: const [shimmerColor, shimmerHighlight, shimmerColor],
-            ).createShader(bounds);
-          },
-          blendMode: BlendMode.srcIn,
-          child: Text(
-            text,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: ChatoraiFontSizes.lg,
-              fontWeight: FontWeight.w500,
-              color: textColor,
-              height: 1.3,
-              decoration: TextDecoration.none,
-            ),
-          ),
-        );
-      },
+        ],
+      ),
     );
   }
 }
-
-// ===========================================================================
-// AUDIO WAVE ANIMATION
-// ===========================================================================
 
 class _AudioWaveAnimation extends StatelessWidget {
   final double level;
@@ -206,7 +171,7 @@ class _AudioWaveAnimation extends StatelessWidget {
       animation: animation,
       builder: (context, child) {
         return CustomPaint(
-          painter: _SiriWavePainter(
+          painter: _WavePainter(
             level: level,
             color: color,
             animationValue: animation.value,
@@ -218,16 +183,12 @@ class _AudioWaveAnimation extends StatelessWidget {
   }
 }
 
-// ===========================================================================
-// SIRI STYLE WAVE PAINTER
-// ===========================================================================
-
-class _SiriWavePainter extends CustomPainter {
+class _WavePainter extends CustomPainter {
   final double level;
   final Color color;
   final double animationValue;
 
-  _SiriWavePainter({
+  _WavePainter({
     required this.level,
     required this.color,
     required this.animationValue,
@@ -268,11 +229,8 @@ class _SiriWavePainter extends CustomPainter {
 
     for (double x = 0; x <= size.width; x++) {
       final progress = x / size.width;
-
       final fade = math.sin(progress * math.pi);
-
-      final y =
-          centerY +
+      final y = centerY +
           math.sin(
                 (progress * frequency * math.pi * 2) +
                     animationValue * math.pi * 2 +
@@ -293,15 +251,11 @@ class _SiriWavePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _SiriWavePainter oldDelegate) {
+  bool shouldRepaint(covariant _WavePainter oldDelegate) {
     return oldDelegate.level != level ||
         oldDelegate.animationValue != animationValue;
   }
 }
-
-// ===========================================================================
-// PULSING DOT
-// ===========================================================================
 
 class _PulsingDot extends StatefulWidget {
   final Color color;
@@ -320,16 +274,13 @@ class _PulsingDotState extends State<_PulsingDot>
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1100),
     )..repeat(reverse: true);
 
-    _animation = Tween<double>(
-      begin: 0.4,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _animation = Tween<double>(begin: 0.4, end: 1.0)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override

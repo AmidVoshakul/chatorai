@@ -91,6 +91,7 @@ class InputLayoutBuilder {
     required VoidCallback onMicrophoneAction,
     required VoidCallback onSend,
     required VoidCallback? onStopStreaming,
+    required VoidCallback? onLongPressMic,
     required WidgetRef ref,
     required GlobalKey plusKey,
     required GlobalKey settingsKey,
@@ -151,6 +152,7 @@ class InputLayoutBuilder {
             onMicrophoneAction: onMicrophoneAction,
             onSend: onSend,
             onStopStreaming: onStopStreaming,
+            onLongPressMic: onLongPressMic,
             ref: ref,
             plusKey: plusKey,
             settingsKey: settingsKey,
@@ -180,6 +182,7 @@ class InputLayoutBuilder {
     required VoidCallback onMicrophoneAction,
     required VoidCallback onSend,
     required VoidCallback? onStopStreaming,
+    required VoidCallback? onLongPressMic,
     required WidgetRef ref,
     required GlobalKey plusKey,
     required GlobalKey settingsKey,
@@ -278,6 +281,7 @@ class InputLayoutBuilder {
           onMicrophoneAction: onMicrophoneAction,
           onSend: onSend,
           onStopStreaming: onStopStreaming,
+          onLongPressMic: onLongPressMic,
           ref: ref,
           isStreaming: isStreaming,
         ),
@@ -299,6 +303,7 @@ class InputLayoutBuilder {
     required VoidCallback onMicrophoneAction,
     required VoidCallback onSend,
     required VoidCallback? onStopStreaming,
+    required VoidCallback? onLongPressMic,
     required WidgetRef ref,
     required GlobalKey plusKey,
     required GlobalKey settingsKey,
@@ -366,6 +371,7 @@ class InputLayoutBuilder {
           onMicrophoneAction: onMicrophoneAction,
           onSend: onSend,
           onStopStreaming: onStopStreaming,
+          onLongPressMic: onLongPressMic,
           ref: ref,
           isStreaming: isStreaming,
         ),
@@ -384,6 +390,7 @@ class InputLayoutBuilder {
     required VoidCallback onMicrophoneAction,
     required VoidCallback onSend,
     required VoidCallback? onStopStreaming,
+    required VoidCallback? onLongPressMic,
     required WidgetRef ref,
     required bool isStreaming,
   }) {
@@ -394,28 +401,32 @@ class InputLayoutBuilder {
         onStopStreaming: onStopStreaming,
       );
     }
+    final isListening = chatInputState.speechUiState == SpeechUiState.listening ||
+        chatInputState.speechUiState == SpeechUiState.preparing;
+    final isIdle = chatInputState.speechUiState == SpeechUiState.idle;
+    final showGradient = (hasText || hasAttachment) || !isIdle;
+
     return InputWidgetBuilders.buildActionButton(
       buttonSize: buttonSize,
-      gradient:
-          !hasText &&
-              !hasAttachment &&
-              chatInputState.speechUiState == SpeechUiState.idle
-          ? null
-          : LinearGradient(
+      gradient: showGradient
+          ? LinearGradient(
               colors: [
-                theme.colorScheme.primary,
-                theme.colorScheme.primary.withValues(alpha: 0.8),
+                isListening
+                    ? ChatoraiColors.error
+                    : theme.colorScheme.primary,
+                isListening
+                    ? ChatoraiColors.error.withValues(alpha: 0.8)
+                    : theme.colorScheme.primary.withValues(alpha: 0.8),
               ],
-            ),
-      bgColor:
-          !hasText &&
-              !hasAttachment &&
-              chatInputState.speechUiState == SpeechUiState.idle
-          ? (theme.brightness == Brightness.dark
-                ? ChatoraiColors.inputContainerDark
-                : ChatoraiColors.inputContainerLight)
+            )
           : null,
-      onTap: !hasText && !hasAttachment ? onMicrophoneAction : onSend,
+      bgColor: showGradient
+          ? null
+          : (theme.brightness == Brightness.dark
+                ? ChatoraiColors.inputContainerDark
+                : ChatoraiColors.inputContainerLight),
+      onTap: isListening ? onMicrophoneAction : (hasText || hasAttachment ? onSend : onMicrophoneAction),
+      onLongPress: isListening ? null : onLongPressMic,
       child: Icon(
         InputWidgetBuilders.getActionIcon(
           isSending: chatInputState.isSending,

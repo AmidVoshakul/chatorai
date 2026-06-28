@@ -111,22 +111,23 @@ class ChatAiService implements CompletionProvider {
   /// Estimate token cost of a message list without mutating the running counter.
   /// Resets, estimates, captures total, resets again — leaves counter unchanged.
   int estimatePromptTokens(List<Map<String, dynamic>> messages) {
-    _tokenCounter.reset();
+    final local = TokenCounter();
     for (final m in messages) {
       final content = m['content'];
       if (m['role'] == 'system') {
-        if (content is String) _tokenCounter.addSystem(content);
+        if (content is String) local.addSystem(content);
       } else {
-        if (content is String) _tokenCounter.addMessage(content);
+        if (content is String) local.addMessage(content);
       }
     }
-    final estimated = _tokenCounter.totalTokens;
-    _tokenCounter.reset();
-    return estimated;
+    return local.totalTokens;
   }
 
   /// Delegates to [ChatRetryService.retryCountdown].
   Stream<double> get retryCountdown => _retryService.retryCountdown;
+
+  /// Emits the latest retry message each time a backoff begins.
+  Stream<String> get retryMessageStream => _retryService.retryMessageStream;
 
   /// Whether a retry backoff is currently in progress.
   bool get isRetrying => _retryService.isRetrying;
@@ -239,14 +240,6 @@ class ChatAiService implements CompletionProvider {
     _currentTemperature = temperature;
     final gen = _generation + 1;
     cancelAllRequests();
-    for (final m in messages) {
-      final content = m['content'];
-      if (m['role'] == 'system') {
-        if (content is String) _tokenCounter.addSystem(content);
-      } else {
-        if (content is String) _tokenCounter.addMessage(content);
-      }
-    }
 
     // ── Build LanguageModel once (before retry loop) ──────────────────────
     ModelConfig? resolvedConfig;
@@ -275,7 +268,7 @@ class ChatAiService implements CompletionProvider {
 
     try {
       await _retryService.execute(
-        () async {
+        ({void Function()? onChunkReceived}) async {
           LogTags.chatService.logDebug(
             'streamChatCompletion: calling streamText device=…',
           );
@@ -319,6 +312,7 @@ class ChatAiService implements CompletionProvider {
             })) {
               switch (event) {
                 case StreamTextTextDeltaEvent(:final delta):
+                  onChunkReceived?.call();
                   onChunk(delta);
                 case StreamTextReasoningDeltaEvent(:final delta):
                   onReasoning(delta);
@@ -474,16 +468,19 @@ class ChatAiService implements CompletionProvider {
 
     try {
       final gen = _generation;
-      final result = await _retryService.execute(() async {
-        if (gen != _generation) throw Exception('cancelled');
-        return generateText(
-          model: lm,
-          messages: _toModelMessages(messages),
-          temperature: temperature,
-          maxRetries: 0,
-          headers: activeHeaders,
-        );
-      }, isStillValid: () => gen == _generation);
+      final result = await _retryService.execute(
+        ({void Function()? onChunkReceived}) async {
+          if (gen != _generation) throw Exception('cancelled');
+          return generateText(
+            model: lm,
+            messages: _toModelMessages(messages),
+            temperature: temperature,
+            maxRetries: 0,
+            headers: activeHeaders,
+          );
+        },
+        isStillValid: () => gen == _generation,
+      );
       return result.text;
     } finally {
       _stopProgressTimer();
@@ -518,5 +515,6 @@ class ChatAiService implements CompletionProvider {
   /// Dispose resources.
   void dispose() {
     _cancellation.cancel();
+    _retryService.dispose();
   }
 }

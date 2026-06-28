@@ -1,5 +1,5 @@
-import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
@@ -12,12 +12,10 @@ import 'package:chatorai/core/tools/tool_registry.dart';
 class _FakeToolOptions {
   final String? sessionId;
   final Map<String, dynamic>? experimentalContext;
-  final dynamic abortSignal;
 
   _FakeToolOptions({
     this.sessionId,
     this.experimentalContext,
-    this.abortSignal,
   });
 }
 
@@ -42,17 +40,6 @@ ToolDef _overflowTool() {
     inputSchema: {'type': 'object'},
     execute: (input, ctx) async {
       throw ToolOverflowError('overflow_tool', 'Output too large');
-    },
-  );
-}
-
-ToolDef _errorTool() {
-  return ToolDef(
-    id: 'error_tool',
-    description: 'Error tool',
-    inputSchema: {'type': 'object'},
-    execute: (input, ctx) async {
-      throw Exception('Unhandled error');
     },
   );
 }
@@ -91,6 +78,114 @@ void main() {
       // Second execution should return cached result
       final result2 = await executor.execute(tool, {'text': 'cached'}, options);
       expect(result2['output'], equals('cached'));
+    });
+
+    test('execute caches when toolCallId matches (SDK double-dispatch guard)', () async {
+      var callCount = 0;
+      final trackingTool = ToolDef(
+        id: 'read',
+        description: 'Tracking tool',
+        inputSchema: {'type': 'object'},
+        execute: (input, ctx) async {
+          callCount++;
+          return ToolOutput(input['text']?.toString() ?? 'echo');
+        },
+      );
+
+      final options = sdk.ToolExecutionOptions(
+        toolCallId: 'call-123',
+        experimentalContext: {'sessionId': 'dedup-test'},
+      );
+
+      // First call should execute
+      final result1 = await executor.execute(
+        trackingTool,
+        {'text': 'hello'},
+        options,
+      );
+      expect(result1['output'], equals('hello'));
+      expect(callCount, equals(1));
+
+      // Second call with same toolCallId should hit cache
+      final result2 = await executor.execute(
+        trackingTool,
+        {'text': 'hello'},
+        options,
+      );
+      expect(result2['output'], equals('hello'));
+      expect(callCount, equals(1));
+    });
+
+    test('execute does NOT cache different toolCallIds without sessionId', () async {
+      var callCount = 0;
+      final trackingTool = ToolDef(
+        id: 'read',
+        description: 'Tracking tool',
+        inputSchema: {'type': 'object'},
+        execute: (input, ctx) async {
+          callCount++;
+          return ToolOutput(input['text']?.toString() ?? 'echo');
+        },
+      );
+
+      // First call with call-1, no sessionId → cached by toolCallId
+      await executor.execute(
+        trackingTool,
+        {'text': 'hello'},
+        sdk.ToolExecutionOptions(toolCallId: 'call-1'),
+      );
+      expect(callCount, equals(1));
+
+      // Second call with different toolCallId, no sessionId → fresh execution
+      await executor.execute(
+        trackingTool,
+        {'text': 'hello'},
+        sdk.ToolExecutionOptions(toolCallId: 'call-2'),
+      );
+      expect(callCount, equals(2));
+    });
+
+    test('execute falls back to timestamp when toolCallId unavailable', () async {
+      final tool = _echoTool();
+      // _FakeToolOptions is not a ToolExecutionOptions → cast yields null toolCallId
+      final result = await executor.execute(tool, {
+        'text': 'fallback',
+      }, _FakeToolOptions(sessionId: null));
+      expect(result['output'], equals('fallback'));
+    });
+
+    test('execute prioritises sessionId over toolCallId in cache key', () async {
+      var callCount = 0;
+      final trackingTool = ToolDef(
+        id: 'read',
+        description: 'Tracking tool',
+        inputSchema: {'type': 'object'},
+        execute: (input, ctx) async {
+          callCount++;
+          return ToolOutput(input['text']?.toString() ?? 'echo');
+        },
+      );
+
+      // Same toolCallId, different sessionId → should execute twice
+      await executor.execute(
+        trackingTool,
+        {'text': 'hello'},
+        sdk.ToolExecutionOptions(
+          toolCallId: 'call-123',
+          experimentalContext: {'sessionId': 'session-a'},
+        ),
+      );
+      expect(callCount, equals(1));
+
+      await executor.execute(
+        trackingTool,
+        {'text': 'hello'},
+        sdk.ToolExecutionOptions(
+          toolCallId: 'call-123',
+          experimentalContext: {'sessionId': 'session-b'},
+        ),
+      );
+      expect(callCount, equals(2));
     });
 
     test('execute does NOT cache side-effecting tools (bash, write)', () async {
@@ -253,14 +348,11 @@ void main() {
       final ruleset = PermissionRuleset.defaults();
       final executor = ToolExecutor(permissions, ruleset);
 
-      String? capturedQuestion;
       final questionTool = ToolDef(
         id: 'question_test',
         description: 'Question tool',
         inputSchema: {'type': 'object'},
         execute: (input, ctx) async {
-          // Trigger askQuestion through the toolContext
-          capturedQuestion = 'test question';
           return ToolOutput('done');
         },
       );

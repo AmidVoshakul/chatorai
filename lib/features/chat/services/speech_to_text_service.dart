@@ -89,16 +89,26 @@ class SpeechToTextService {
   Future<bool> checkAvailability() async {
     try {
       if (!_isInitialized) {
+        _logger.logDebug('Initializing speech recognition...');
         _isInitialized = await _speech.initialize(
+          debugLogging: true,
+          options: [SpeechToText.androidIntentLookup],
           onStatus: _onSpeechStatus,
           onError: (error) {
-            _logger.logError('Speech error: $error');
+            _logger.logError('Speech init error: $error');
             _errorHandler.handle(error, _isListening);
           },
         );
 
         if (!_isInitialized) {
-          _logger.logWarning('Microphone permission denied');
+          final perm = await _speech.hasPermission;
+          final locale = await _speech.systemLocale();
+          _logger.logWarning(
+            'Speech init failed. '
+            'hasPermission=$perm, '
+            'systemLocale=$locale, '
+            'isListening=$_isListening',
+          );
           onStatusMessage(msgErrorNotAuthorized);
           onStateChanged(SpeechUiState.error);
           Future.delayed(const Duration(seconds: 2), () {
@@ -107,6 +117,7 @@ class SpeechToTextService {
           });
           return false;
         }
+        _logger.logDebug('Speech recognition initialized successfully');
       }
       return _isInitialized;
     } catch (e) {
@@ -205,7 +216,7 @@ class SpeechToTextService {
 
   Future<bool> startListening({
     Duration timeout = const Duration(seconds: 30),
-    Duration pauseFor = const Duration(seconds: 30),
+    Duration pauseFor = const Duration(seconds: 5),
     Duration waitForSpeech = const Duration(seconds: 10),
     Duration debounceDuration = const Duration(milliseconds: 300),
   }) async {
@@ -247,8 +258,7 @@ class SpeechToTextService {
           onSoundLevelChange?.call(level);
         },
         listenFor: timeout,
-        pauseFor: const Duration(seconds: 60),
-        localeId: 'ru_RU',
+        pauseFor: pauseFor,
       );
 
       return result ?? false;

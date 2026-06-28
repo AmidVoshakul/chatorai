@@ -109,7 +109,22 @@ extension _ChatScreenBuildExt on _ChatScreenState {
               child: _buildChatContentWrapper(
                 child: Column(
                   children: [
-                    Expanded(child: _buildChatMessages(wrapWithGesture: true)),
+                    Expanded(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _buildChatMessages(wrapWithGesture: true),
+                          if (_speechUiState != SpeechUiState.idle)
+                            SpeechOverlayWidget(
+                              state: _speechUiState,
+                              message: _speechStatusMessage,
+                              soundLevel: _speechSoundLevel,
+                              recognizedText: _speechRecognizedText,
+                              bottomInset: 0,
+                            ),
+                        ],
+                      ),
+                    ),
                     chatInput,
                   ],
                 ),
@@ -143,7 +158,22 @@ extension _ChatScreenBuildExt on _ChatScreenState {
             child: _buildChatContentWrapper(
               child: Column(
                 children: [
-                  Expanded(child: _buildChatMessages()),
+                  Expanded(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _buildChatMessages(),
+                        if (_speechUiState != SpeechUiState.idle)
+                          SpeechOverlayWidget(
+                            state: _speechUiState,
+                            message: _speechStatusMessage,
+                            soundLevel: _speechSoundLevel,
+                            recognizedText: _speechRecognizedText,
+                            bottomInset: 0,
+                          ),
+                      ],
+                    ),
+                  ),
                   chatInput,
                 ],
               ),

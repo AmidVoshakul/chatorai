@@ -29,6 +29,9 @@ sealed class ClassifiedError {
 
   /// Optional retry-after duration extracted from headers.
   Duration? get retryAfter;
+
+  /// OpenCode-compatible upsell reason (free_tier_limit, account_rate_limit).
+  String? get reason;
 }
 
 /// Rate limit error (HTTP 429).
@@ -39,7 +42,16 @@ class RateLimitError extends ClassifiedError {
   @override
   final Duration? retryAfter;
 
-  const RateLimitError({this.statusCode = 429, this.retryAfter});
+  @override
+  /// OpenCode-compatible reason for upsell / UI actions:
+  /// "free_tier_limit", "account_rate_limit", or null.
+  final String? reason;
+
+  const RateLimitError({
+    this.statusCode = 429,
+    this.retryAfter,
+    this.reason,
+  });
 
   @override
   bool get isRetryable => true;
@@ -47,7 +59,8 @@ class RateLimitError extends ClassifiedError {
   @override
   String get message =>
       'Rate limit exceeded'
-      '${retryAfter != null ? ' — retry after ${retryAfter!.inSeconds}s' : ''}';
+      '${retryAfter != null ? ' — retry after ${retryAfter!.inSeconds}s' : ''}'
+      '${reason != null ? ' [$reason]' : ''}';
 }
 
 /// Context overflow error — the request exceeded the model's token limit.
@@ -63,6 +76,9 @@ class OverflowError extends ClassifiedError {
 
   @override
   Duration? get retryAfter => null;
+
+  @override
+  String? get reason => null;
 
   @override
   bool get isRetryable => false;
@@ -87,6 +103,9 @@ class AuthenticationError extends ClassifiedError {
   Duration? get retryAfter => null;
 
   @override
+  String? get reason => null;
+
+  @override
   bool get isRetryable => false;
 
   @override
@@ -109,6 +128,9 @@ class ServerError extends ClassifiedError {
   Duration? get retryAfter => null;
 
   @override
+  String? get reason => null;
+
+  @override
   bool get isRetryable => statusCode != null && statusCode! >= 500;
 
   @override
@@ -126,6 +148,9 @@ class NetworkError extends ClassifiedError {
 
   @override
   Duration? get retryAfter => null;
+
+  @override
+  String? get reason => null;
 
   @override
   bool get isRetryable => true;
@@ -147,6 +172,9 @@ class UnknownError extends ClassifiedError {
 
   @override
   Duration? get retryAfter => null;
+
+  @override
+  String? get reason => null;
 
   @override
   bool get isRetryable => true;
@@ -190,7 +218,12 @@ class ErrorClassifier {
       final retryAfter = _extractRetryAfter(response.headers);
 
       if (statusCode == 429) {
-        return RateLimitError(statusCode: statusCode, retryAfter: retryAfter);
+        final reason = _classifyRateLimitReason(e);
+        return RateLimitError(
+          statusCode: statusCode,
+          retryAfter: retryAfter,
+          reason: reason,
+        );
       }
 
       if (statusCode == 401 || statusCode == 403) {
@@ -248,7 +281,12 @@ class ErrorClassifier {
     if (lower.contains('429') ||
         lower.contains('rate limit') ||
         lower.contains('too many requests')) {
-      return const RateLimitError();
+      final reason = lower.contains('free') && lower.contains('limit')
+          ? 'free_tier_limit'
+          : lower.contains('go limit') || lower.contains('account')
+              ? 'account_rate_limit'
+              : null;
+      return RateLimitError(reason: reason);
     }
 
     // Auth patterns
@@ -303,6 +341,11 @@ class ErrorClassifier {
   }
 
   /// Extract Retry-After duration from response headers.
+  ///
+  /// Supports:
+  /// - `Retry-After-Ms` header (milliseconds, e.g. Anthropic)
+  /// - `Retry-After` header as seconds (integer)
+  /// - `Retry-After` header as HTTP-date (RFC 7231)
   Duration? _extractRetryAfter(Headers headers) {
     // Prefer retry-after-ms (milliseconds)
     final retryAfterMs = headers.value('retry-after-ms');
@@ -311,11 +354,56 @@ class ErrorClassifier {
       if (ms != null) return Duration(milliseconds: ms);
     }
 
-    // Fall back to retry-after (seconds)
+    // Fall back to retry-after (seconds or HTTP-date)
     final retryAfter = headers.value('retry-after');
     if (retryAfter != null) {
+      // Try parsing as a number of seconds first
       final seconds = int.tryParse(retryAfter);
       if (seconds != null) return Duration(seconds: seconds);
+
+      // Try parsing as HTTP-date (RFC 7231)
+      final parsedDate = DateTime.tryParse(retryAfter);
+      if (parsedDate != null) {
+        final delta = parsedDate.difference(DateTime.now());
+        if (delta.isNegative) return Duration.zero;
+        return delta;
+      }
+    }
+
+    return null;
+  }
+
+  /// Detect OpenCode-style rate-limit sub-reasons from response body.
+  ///
+  /// Returns:
+  /// - "free_tier_limit"       → FreeUsageLimitError found in body
+  /// - "account_rate_limit"    → GoUsageLimitError found in body
+  /// - null                    → no specific reason
+  String? _classifyRateLimitReason(DioException e) {
+    final body = e.response?.data;
+    String? bodyStr;
+    if (body is String) {
+      bodyStr = body;
+    } else if (body is Map) {
+      final errorMsg = body['error']?['message'] ?? body['message'];
+      if (errorMsg is String) bodyStr = errorMsg;
+      final raw = body.toString();
+      bodyStr = '$bodyStr $raw';
+    }
+
+    if (bodyStr == null || bodyStr.isEmpty) return null;
+    final lower = bodyStr.toLowerCase();
+
+    if (lower.contains('freeusagelimiterror') ||
+        lower.contains('free_usage_limit') ||
+        lower.contains('free tier limit')) {
+      return 'free_tier_limit';
+    }
+
+    if (lower.contains('gousagelimiterror') ||
+        lower.contains('go_usage_limit') ||
+        lower.contains('go limit')) {
+      return 'account_rate_limit';
     }
 
     return null;

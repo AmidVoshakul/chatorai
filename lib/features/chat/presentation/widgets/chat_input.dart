@@ -30,6 +30,7 @@ class ChatInput extends ConsumerStatefulWidget {
   final Function(SpeechUiState, String)? onSpeechStateChanged;
   final bool Function(String)? checkModelSupportsImages;
   final Function(double)? onSoundLevelChanged;
+  final Function(String)? onRecognizedText;
   final VoidCallback? onMessageAdded;
 
   const ChatInput({
@@ -42,6 +43,7 @@ class ChatInput extends ConsumerStatefulWidget {
     this.onSpeechStateChanged,
     this.checkModelSupportsImages,
     this.onSoundLevelChanged,
+    this.onRecognizedText,
     this.onMessageAdded,
   });
 
@@ -60,7 +62,6 @@ class _ChatInputState extends ConsumerState<ChatInput>
   final TextEditingController _textController = TextEditingController();
   final GlobalKey _textFieldKey = GlobalKey(); // for popup positioning
   Timer? _plusTimer;
-  SpeechToTextService? _speechService;
   final GlobalKey _plusKey = GlobalKey();
   final GlobalKey _settingsKey = GlobalKey();
   final GlobalKey _agentKey = GlobalKey();
@@ -86,14 +87,14 @@ class _ChatInputState extends ConsumerState<ChatInput>
       widget.checkModelSupportsImages;
 
   @override
-  SpeechToTextService? get speechService => _speechService;
-
-  @override
   void Function(SpeechUiState, String)? get onSpeechStateChanged =>
       widget.onSpeechStateChanged;
 
   @override
   void Function(double)? get onSoundLevelChanged => widget.onSoundLevelChanged;
+
+  @override
+  Function(String)? get onRecognizedText => widget.onRecognizedText;
 
   @override
   GlobalKey get textFieldKey => _textFieldKey;
@@ -121,9 +122,8 @@ class _ChatInputState extends ConsumerState<ChatInput>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_speechService == null) {
+    if (speechService == null) {
       initSpeechService();
-      _speechService = speechService;
     }
   }
 
@@ -325,6 +325,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
               onClearAttachedFile: clearAttachedFile,
             ),
             onStopStreaming: widget.onStopStreaming,
+            onLongPressMic: handleMicrophoneAction,
             ref: ref,
             plusKey: _plusKey,
             settingsKey: _settingsKey,
@@ -353,6 +354,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
               onClearAttachedFile: clearAttachedFile,
             ),
             onStopStreaming: widget.onStopStreaming,
+            onLongPressMic: handleMicrophoneAction,
             ref: ref,
             plusKey: _plusKey,
             settingsKey: _settingsKey,
@@ -361,12 +363,49 @@ class _ChatInputState extends ConsumerState<ChatInput>
             currentAgent: currentAgent,
           );
 
-    return Stack(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        InputLayoutBuilder.buildContainer(
-          isMobile: isMobile,
-          theme: theme,
-          child: layoutChild,
+        Consumer(
+          builder: (context, ref, _) {
+            final messageAsync = ref.watch(retryMessageProvider);
+            final countdownAsync = ref.watch(retryCountdownProvider);
+            final message = messageAsync.hasValue ? messageAsync.value : null;
+            final progress = countdownAsync.hasValue ? countdownAsync.value : null;
+            final isRetrying = progress != null && progress > 0 && progress <= 1;
+            if (message == null || message.isEmpty || !isRetrying) {
+              return const SizedBox.shrink();
+            }
+            return Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  right: ChatoraiSpacing.md,
+                  bottom: ChatoraiSpacing.xs,
+                ),
+                child: Text(
+                  message,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: ChatoraiColors.error,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            );
+          },
+        ),
+        Stack(
+          children: [
+            InputLayoutBuilder.buildContainer(
+              isMobile: isMobile,
+              theme: theme,
+              child: layoutChild,
+            ),
+          ],
         ),
       ],
     );

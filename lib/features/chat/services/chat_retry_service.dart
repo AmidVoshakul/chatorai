@@ -29,7 +29,7 @@ class RetryPolicy {
   final int maxAttempts;
 
   static const Duration defaultBaseDelay = Duration(milliseconds: 500);
-  static const Duration defaultMaxDelay = Duration(seconds: 10);
+  static const Duration defaultMaxDelay = Duration(hours: 24);
   static const double defaultFactor = 2.0;
   static const int defaultMaxAttempts = 3;
 
@@ -43,17 +43,22 @@ class RetryPolicy {
   static const RetryPolicy defaults = RetryPolicy();
 }
 
-/// Bounded exponential backoff retry engine — OpenCode-compatible.
+/// OpenCode-compatible bounded exponential backoff retry engine.
 ///
-/// Only retries on known transient errors (network, 5xx). Does NOT retry
-/// rate limits (429), auth errors (401/403), or client errors (4xx).
+/// Behaviour per error type (after [maxAttempts] failures):
+/// - **429 with `retryAfter` header** → retry FOREVER using the server-provided delay
+/// - **429 without `retryAfter` header** → fail fast (no info on when to retry)
+/// - **5xx / Network errors** → fail fast once after [maxAttempts]
+/// - **Other retryable + error type changed** → continue retrying
 class ChatRetryService {
   final RetryPolicy policy;
   final ChatCancellation cancellation;
 
   static const _errorClassifier = ErrorClassifier();
 
-  StreamController<double>? _retryController;
+  StreamController<double>? _retryCountdownController;
+  StreamController<String>? _retryMessageController;
+
   bool _retryCancelled = false;
   bool isRetrying = false;
 
@@ -62,44 +67,85 @@ class ChatRetryService {
     required this.cancellation,
   });
 
-  Stream<double> get retryCountdown => _ensureRetryController.stream;
+  Stream<double> get retryCountdown {
+    final c = _retryCountdownController ??= StreamController<double>.broadcast();
+    return c.stream;
+  }
 
-  StreamController<double> get _ensureRetryController {
-    if (_retryController == null || _retryController!.isClosed) {
-      _retryController = StreamController<double>.broadcast();
+  Stream<String> get retryMessageStream {
+    final c = _retryMessageController ??= StreamController<String>.broadcast();
+    return c.stream;
+  }
+
+  void _resetRetryState() {
+    _emit(null, '');
+  }
+
+  void dispose() {
+    _retryCountdownController?.close();
+    _retryMessageController?.close();
+    _retryCountdownController = null;
+    _retryMessageController = null;
+  }
+
+  void _emit(double? progress, String? message) {
+    final rc = _retryCountdownController;
+    final mc = _retryMessageController;
+    if (progress != null && rc != null && !rc.isClosed) {
+      try { rc.add(progress); } catch (_) {}
     }
-    return _retryController!;
+    if (message != null && mc != null && !mc.isClosed) {
+      try { mc.add(message); } catch (_) {}
+    }
   }
 
   Future<T> execute<T>(
-    Future<T> Function() operation, {
+    Future<T> Function({
+      void Function()? onChunkReceived,
+    }) operation, {
     void Function(RichRetryInfo info)? onRetry,
     bool Function()? isStillValid,
   }) async {
     _retryCancelled = false;
     int attempt = 0;
+    var chunkReceived = false;
 
-    while (attempt < policy.maxAttempts) {
+    while (true) {
       try {
         LogTags.chatService.logDebug(
           'ChatRetryService.execute attempt $attempt starting',
         );
-        final result = await operation();
+        final result = await operation(
+          onChunkReceived: () {
+            chunkReceived = true;
+          },
+        );
         LogTags.chatService.logDebug(
           'ChatRetryService.execute attempt $attempt succeeded',
         );
-        _ensureRetryController.close();
+        _resetRetryState();
         return result;
       } catch (e) {
         LogTags.chatService.logWarning(
           'ChatRetryService.execute attempt $attempt caught: ${e.runtimeType}: $e',
         );
 
-        if (!_isRetryable(e)) {
+        // If the operation emitted at least one data chunk before failing,
+        // reset attempt counter so the next retry starts fresh:
+        //   1s → 2s → 4s (after success) → 1s → 2s → 4s …
+        if (chunkReceived) {
+          attempt = 0;
+          chunkReceived = false;
+        }
+
+        // ── Pre-flight checks ───────────────────────────────────────────
+        final classified = _errorClassifier.classify(e);
+
+        if (!classified.isRetryable) {
           LogTags.chatService.logWarning(
-            'ChatRetryService.execute attempt $attempt: error NOT retryable, rethrowing',
+            'ChatRetryService.execute attempt $attempt: error NOT retryable (${classified.runtimeType}), rethrowing',
           );
-          _ensureRetryController.close();
+          _resetRetryState();
           rethrow;
         }
 
@@ -107,7 +153,7 @@ class ChatRetryService {
           LogTags.chatService.logWarning(
             'ChatRetryService.execute attempt $attempt: cancelled, aborting',
           );
-          _ensureRetryController.close();
+          _resetRetryState();
           throw Exception('cancelled');
         }
 
@@ -115,20 +161,44 @@ class ChatRetryService {
           LogTags.chatService.logWarning(
             'ChatRetryService.execute attempt $attempt: superseded by newer generation, aborting',
           );
-          _ensureRetryController.close();
+          _resetRetryState();
           throw Exception('cancelled');
         }
 
-        if (attempt >= policy.maxAttempts - 1) {
-          LogTags.chatService.logWarning(
-            'ChatRetryService.execute attempt $attempt: max attempts (${policy.maxAttempts}) reached, rethrowing',
-          );
-          _ensureRetryController.close();
-          rethrow;
+        // ── Stop policy (maxAttempts exhausted) ─────────────────────────
+        if (attempt >= policy.maxAttempts) {
+          final reclassified = _errorClassifier.classify(e);
+          if (!reclassified.isRetryable) {
+            LogTags.chatService.logWarning(
+              'ChatRetryService.execute attempt $attempt: error no longer retryable (${reclassified.runtimeType}), rethrowing',
+            );
+            _resetRetryState();
+            rethrow;
+          }
+
+          if (reclassified is! RateLimitError) {
+            LogTags.chatService.logWarning(
+              'ChatRetryService.execute attempt $attempt: maxAttempts (${policy.maxAttempts}) reached for ${reclassified.runtimeType}, rethrowing',
+            );
+            _resetRetryState();
+            rethrow;
+          }
+
+          final effectiveRetryAfter = reclassified.retryAfter;
+
+          if (effectiveRetryAfter == Duration.zero &&
+              attempt >= policy.maxAttempts * 2) {
+            LogTags.chatService.logWarning(
+              'ChatRetryService.execute attempt $attempt: 429 with zero retry-after for too long, fail fast',
+            );
+            _resetRetryState();
+            rethrow;
+          }
         }
 
-        final delay = _nextDelay(attempt);
-        final info = _buildRetryInfo(e, attempt, delay);
+        // ── Compute delay ──────────────────────────────────────────────
+        final delay = classified.retryAfter ?? _nextDelay(attempt);
+        final info = _buildRetryInfo(classified, attempt, delay);
         onRetry?.call(info);
 
         LogTags.chatService.logInfo(
@@ -137,33 +207,37 @@ class ChatRetryService {
         );
 
         isRetrying = true;
-        await _sleep(delay, isStillValid: isStillValid);
+        await _sleep(delay, message: info.message, isStillValid: isStillValid);
         isRetrying = false;
 
         attempt++;
       }
     }
-
-    _ensureRetryController.close();
-    throw Exception('Max retry attempts exceeded');
   }
 
-  RichRetryInfo _buildRetryInfo(Object error, int attempt, Duration delay) {
-    final classified = _errorClassifier.classify(error);
-    final message = _retryMessage(classified);
+  RichRetryInfo _buildRetryInfo(
+    ClassifiedError error,
+    int attempt,
+    Duration delay,
+  ) {
+    final displayAttempt = attempt + 1;
+    final message = _retryMessage(error, displayAttempt);
+    final action = _retryAction(error);
     return RichRetryInfo(
       message: message,
       attempt: attempt,
       nextDelayMs: delay.inMilliseconds,
+      action: action,
     );
   }
 
-  String _retryMessage(ClassifiedError error) {
+  String _retryMessage(ClassifiedError error, int displayAttempt) {
     return switch (error) {
-      RateLimitError() => 'Rate limit exceeded',
+      RateLimitError(:final reason) =>
+        _rateLimitTemplate(reason, displayAttempt),
       AuthenticationError() => 'Auth error',
       ServerError(:final statusCode) =>
-        statusCode != null && statusCode >= 500
+        (statusCode != null && statusCode >= 500)
             ? 'Server error ($statusCode)'
             : 'Request error ($statusCode)',
       NetworkError() => 'Network error',
@@ -172,39 +246,63 @@ class ChatRetryService {
     };
   }
 
-  bool _isRetryable(Object e) {
-    final classified = _errorClassifier.classify(e);
-    LogTags.chatService.logDebug(
-      '_isRetryableError: $e → ${classified.runtimeType} retryable=${classified.isRetryable}',
-    );
-    return classified.isRetryable;
+  String _rateLimitTemplate(String? reason, int displayAttempt) {
+    final title = switch (reason) {
+      'free_tier_limit' => 'Free tier limit reached',
+      'account_rate_limit' => 'Usage limit reached',
+      _ => 'Too Many Requests',
+    };
+    return '$title: [attempt #$displayAttempt]';
+  }
+
+  String _injectCountdown(String template, Duration remaining) {
+    final secs = remaining.inSeconds;
+    final countdown = secs <= 1
+        ? 'retrying now…'
+        : secs < 60
+            ? 'retrying in ${secs}s'
+            : 'retrying in ${(secs / 60).ceil()}min';
+    return template.replaceFirst('[attempt #', '[$countdown attempt #');
+  }
+
+  String? _retryAction(ClassifiedError error) {
+    if (error is! RateLimitError) return null;
+    return error.reason;
   }
 
   Duration _nextDelay(int attempt) {
-    final exponential = policy.baseDelay * pow(policy.factor, attempt);
-    final capped = exponential > policy.maxDelay
-        ? policy.maxDelay
-        : exponential;
+    final exponential = policy.baseDelay * pow(policy.factor, attempt.toDouble());
+    final capped = exponential > policy.maxDelay ? policy.maxDelay : exponential;
     return Duration(milliseconds: capped.inMilliseconds.round());
   }
 
   Future<void> _sleep(
     Duration duration, {
+    required String message,
     required bool Function()? isStillValid,
   }) async {
-    final rc = _ensureRetryController;
+    final rc = _retryCountdownController!;
+    final msgController = _retryMessageController!;
     final totalMs = duration.inMilliseconds.toDouble();
+
+    if (totalMs <= 0) {
+      rc.add(0.0);
+      _emit(0.0, message);
+      _resetRetryState();
+      return;
+    }
+
     final startTime = DateTime.now().millisecondsSinceEpoch;
-    final interval = const Duration(milliseconds: 50);
+    var lastProgress = -1.0;
 
     while (true) {
-      await Future<void>.delayed(interval);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
 
       if (_retryCancelled || cancellation.isCancelled) {
         LogTags.chatService.logWarning(
           'ChatRetryService: cancelled during wait',
         );
-        _ensureRetryController.close();
+        _resetRetryState();
         throw Exception('cancelled');
       }
 
@@ -212,7 +310,7 @@ class ChatRetryService {
         LogTags.chatService.logWarning(
           'ChatRetryService: superseded during wait, aborting',
         );
-        _ensureRetryController.close();
+        _resetRetryState();
         throw Exception('cancelled');
       }
 
@@ -220,12 +318,21 @@ class ChatRetryService {
           (DateTime.now().millisecondsSinceEpoch - startTime) / totalMs;
       final progress = 1.0 - elapsed.clamp(0.0, 1.0);
 
-      if (!rc.isClosed) {
-        rc.add(progress);
+      if (progress != lastProgress) {
+        lastProgress = progress;
+
+        final remainingMs = (progress * totalMs).round();
+        final remainingDuration = Duration(milliseconds: remainingMs);
+        final dynamicMessage = _injectCountdown(message, remainingDuration);
+
+        if (!rc.isClosed) rc.add(progress);
+        if (!msgController.isClosed) msgController.add(dynamicMessage);
       }
 
       if (progress <= 0.0) break;
     }
+
+    _resetRetryState();
   }
 
   void cancelRetry() {

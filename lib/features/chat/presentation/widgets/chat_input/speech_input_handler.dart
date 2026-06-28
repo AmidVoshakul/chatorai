@@ -10,20 +10,24 @@ mixin SpeechInputHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 
   void Function(SpeechUiState, String)? get onSpeechStateChanged;
   void Function(double)? get onSoundLevelChanged;
+  Function(String)? get onRecognizedText;
+
+  String _textBeforeSpeech = '';
+
+  void _applySpeechText(String text) {
+    if (!mounted) return;
+    final prefix = _textBeforeSpeech;
+    final separator = prefix.isNotEmpty ? ' ' : '';
+    textController.text = '$prefix$separator$text';
+    textController.selection = TextSelection.collapsed(offset: textController.text.length);
+    onRecognizedText?.call(text);
+  }
 
   void initSpeechService() {
     final localizations = AppLocalizations.of(context)!;
     speechService = SpeechToTextService(
-      onResult: (text) {
-        if (mounted) {
-          textController.text = text;
-        }
-      },
-      onPartialResult: (text) {
-        if (mounted) {
-          textController.text = text;
-        }
-      },
+      onResult: (text) => _applySpeechText(text),
+      onPartialResult: (text) => _applySpeechText(text),
       onStatusMessage: (message) {
         if (mounted) {
           ref.read(chatInputProvider.notifier).setSpeechStatusMessage(message);
@@ -68,8 +72,9 @@ mixin SpeechInputHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   }
 
   Future<void> startSpeechToText() async {
-    if (ref.read(chatInputProvider).speechUiState == SpeechUiState.listening ||
-        ref.read(chatInputProvider).speechUiState == SpeechUiState.preparing) {
+    final currentState = ref.read(chatInputProvider).speechUiState;
+    if (currentState == SpeechUiState.listening ||
+        currentState == SpeechUiState.preparing) {
       await speechService?.stopListening();
       return;
     }
@@ -86,6 +91,7 @@ mixin SpeechInputHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       }
       return;
     }
+    _textBeforeSpeech = textController.text;
     await speechService?.startListening(
       timeout: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 5),
@@ -94,13 +100,14 @@ mixin SpeechInputHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   }
 
   Future<void> handleMicrophoneAction() async {
-    if (ref.read(chatInputProvider).speechUiState == SpeechUiState.listening ||
-        ref.read(chatInputProvider).speechUiState == SpeechUiState.preparing) {
+    final currentState = ref.read(chatInputProvider).speechUiState;
+    if (currentState == SpeechUiState.listening ||
+        currentState == SpeechUiState.preparing) {
       await speechService?.stopListening();
       return;
     }
-    if (ref.read(chatInputProvider).speechUiState == SpeechUiState.error ||
-        ref.read(chatInputProvider).speechUiState == SpeechUiState.noSpeech) {
+    if (currentState == SpeechUiState.error ||
+        currentState == SpeechUiState.noSpeech) {
       await startSpeechToText();
       return;
     }

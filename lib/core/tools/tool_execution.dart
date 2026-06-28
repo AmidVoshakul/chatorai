@@ -60,11 +60,19 @@ class ToolExecutor {
     final sessionId = (rawSessionId == null || rawSessionId.isEmpty)
         ? null
         : rawSessionId;
-    // Use requestId from options if available, otherwise generate unique per-invocation
-    // to prevent cross-session cache contamination when sessionId is null
     final requestId = ctx != null ? ctx['requestId'] as String? : null;
+    // Use toolCallId from SDK's ToolExecutionOptions as additional cache key source.
+    // The ai_sdk_dart library may call executeDynamic multiple times for the same
+    // toolCallId (preliminary + final dispatch). Using toolCallId ensures the
+    // second invocation hits the cache instead of re-executing the tool.
+    String? toolCallId;
+    try {
+      final opts = options as sdk.ToolExecutionOptions?;
+      toolCallId = opts?.toolCallId;
+    } catch (_) {}
     final cacheKeySuffix =
         sessionId ??
+        toolCallId ??
         requestId ??
         'invocation_${DateTime.now().microsecondsSinceEpoch}';
     final cacheKey = '${def.id}:$cacheKeySuffix:${_normalizeInput(inputMap)}';

@@ -155,6 +155,7 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
   ) {
     if (!state.isStreaming) return;
     final parts = List<MessagePart>.from(state.accumulatedParts);
+    _markReasoningAsDone(parts);
     final existingIdx = parts.indexWhere(
       (p) => p is ToolResultPart && p.toolCallId == toolCallId,
     );
@@ -186,6 +187,7 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
   void onToolEnd(String toolCallId, String toolName, String result) {
     if (!state.isStreaming) return;
     final parts = List<MessagePart>.from(state.accumulatedParts);
+    _markReasoningAsDone(parts);
     final idx = parts.indexWhere(
       (p) => p is ToolResultPart && p.toolCallId == toolCallId,
     );
@@ -207,6 +209,7 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
   void onToolError(String toolCallId, String toolName, String error) {
     if (!state.isStreaming) return;
     final parts = List<MessagePart>.from(state.accumulatedParts);
+    _markReasoningAsDone(parts);
     final idx = parts.indexWhere(
       (p) => p is ToolResultPart && p.toolCallId == toolCallId,
     );
@@ -228,6 +231,7 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
   void onTodo(List<TodoItem> todos) {
     if (!state.isStreaming) return;
     final parts = List<MessagePart>.from(state.accumulatedParts);
+    _markReasoningAsDone(parts);
     parts.add(TodoPart(todos: todos));
     state = state.copyWith(accumulatedParts: parts);
   }
@@ -235,6 +239,7 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
   void onQuestion(QuestionPart question) {
     if (!state.isStreaming) return;
     final parts = List<MessagePart>.from(state.accumulatedParts);
+    _markReasoningAsDone(parts);
     final existingIdx = parts.indexWhere(
       (p) => p is QuestionPart && p.question == question.question,
     );
