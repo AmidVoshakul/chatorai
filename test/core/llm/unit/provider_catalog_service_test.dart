@@ -287,6 +287,73 @@ void main() {
       });
     });
 
+    group('migrateFromLegacySettings API key migration', () {
+      test('migrates legacy API key to secure storage', () async {
+        SharedPreferences.setMockInitialValues({
+          'provider_enabled_test-provider': true,
+          'provider_api_key_test-provider': 'sk-legacy-key',
+        });
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [testProvider],
+        );
+
+        await catalog.migrateFromLegacySettings();
+
+        // Legacy API key should be migrated to secure storage
+        final key = await catalog.getApiKey('test-provider');
+        expect(key, 'sk-legacy-key');
+      });
+
+      test('migrates legacy base URL to new format', () async {
+        SharedPreferences.setMockInitialValues({
+          'provider_enabled_test-provider': true,
+          'provider_base_url_test-provider': 'https://legacy.example.com/v1',
+        });
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [testProvider],
+        );
+
+        await catalog.migrateFromLegacySettings();
+
+        expect(
+          catalog.getCustomBaseUrl('test-provider'),
+          'https://legacy.example.com/v1',
+        );
+      });
+
+      test('migrates legacy selected models to new format', () async {
+        SharedPreferences.setMockInitialValues({
+          'provider_enabled_test-provider': true,
+          'provider_models_test-provider': [
+            'test-provider/model-a',
+            'test-provider/model-b',
+          ],
+        });
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [testProvider],
+        );
+
+        await catalog.migrateFromLegacySettings();
+
+        expect(catalog.getSelectedModelIds('test-provider'), [
+          'test-provider/model-a',
+          'test-provider/model-b',
+        ]);
+      });
+    });
+
     group('migrateFromLegacySettings', () {
       test('migrates legacy enabled state to new format', () async {
         SharedPreferences.setMockInitialValues({
@@ -936,6 +1003,498 @@ void main() {
           // Also verify the unrelated keys don't crash _loadFromPrefs
           expect(catalog.getProvider('test-provider'), isNotNull);
         },
+      );
+    });
+
+    group('_canonicalModelId idempotence fix', () {
+      test(
+        'modelName already containing providerId is NOT double-prefixed',
+        () async {
+          SharedPreferences.setMockInitialValues({});
+          final prefs = await SharedPreferences.getInstance();
+          catalog = ProviderCatalogService(
+            secureStorage: mockStorage,
+            prefs: prefs,
+            builtInProviders: [testProvider],
+          );
+
+          final model = ModelConfig.basic(
+            id: 'test-provider/free',
+            providerId: 'test-provider',
+            modelName: 'test-provider/free',
+            displayName: 'Test Free',
+            contextLength: 4096,
+          );
+
+          await catalog.updateProviderModels('test-provider', [model]);
+
+          final stored = catalog.getProvider('test-provider')?.models;
+          expect(stored, hasLength(1));
+          expect(stored!.first.id, 'test-provider/free');
+          expect(stored.first.modelName, 'test-provider/free');
+          expect(stored.first.providerId, 'test-provider');
+        },
+      );
+
+      test('getModel resolves single-prefixed ID', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [testProvider],
+        );
+
+        final model = ModelConfig.basic(
+          id: 'test-provider/model-a',
+          providerId: 'test-provider',
+          modelName: 'test-provider/model-a',
+          displayName: 'Model A',
+          contextLength: 4096,
+        );
+
+        await catalog.updateProviderModels('test-provider', [model]);
+        await catalog.setProviderEnabled('test-provider', true);
+
+        final resolved = catalog.getModel('test-provider/model-a');
+        expect(resolved, isNotNull);
+        expect(resolved!.id, 'test-provider/model-a');
+        expect(resolved.modelName, 'test-provider/model-a');
+      });
+
+      test('modelName with colon prefix gets normalized to slash', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [testProvider],
+        );
+
+        // Model with modelName starting with "test-provider:" (colon format)
+        // This tests the backwards-compatible colon handling
+        final model = ModelConfig.basic(
+          id: 'test-provider/model-a',
+          providerId: 'test-provider',
+          modelName: 'test-provider:model-a',
+          displayName: 'Model A',
+          contextLength: 4096,
+        );
+
+        await catalog.updateProviderModels('test-provider', [model]);
+
+        final stored = catalog.getProvider('test-provider')?.models;
+        expect(stored, hasLength(1));
+        // Colon is normalized to slash: test-provider/model-a
+        // (because _canonicalModelId removes "test-provider:" and prepends "test-provider/")
+        expect(stored!.first.id, 'test-provider/model-a');
+      });
+
+      test('raw modelName without prefix gets single-prefixed', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [testProvider],
+        );
+
+        final model = ModelConfig.basic(
+          id: 'test-provider/owl-alpha',
+          providerId: 'test-provider',
+          modelName: 'owl-alpha',
+          displayName: 'Owl Alpha',
+          contextLength: 4096,
+        );
+
+        await catalog.updateProviderModels('test-provider', [model]);
+
+        final stored = catalog.getProvider('test-provider')?.models;
+        expect(stored, hasLength(1));
+        expect(stored!.first.id, 'test-provider/owl-alpha');
+        expect(stored.first.modelName, 'owl-alpha');
+      });
+
+      test(
+        'two models with same root name get distinct single-prefixed IDs',
+        () async {
+          SharedPreferences.setMockInitialValues({});
+          final prefs = await SharedPreferences.getInstance();
+          catalog = ProviderCatalogService(
+            secureStorage: mockStorage,
+            prefs: prefs,
+            builtInProviders: [testProvider],
+          );
+
+          final modelA = ModelConfig.basic(
+            id: 'test-provider/free',
+            providerId: 'test-provider',
+            modelName: 'test-provider/free',
+            displayName: 'Test Free',
+            contextLength: 4096,
+          );
+          final modelB = ModelConfig.basic(
+            id: 'test-provider/owl-alpha',
+            providerId: 'test-provider',
+            modelName: 'owl-alpha',
+            displayName: 'Owl Alpha',
+            contextLength: 4096,
+          );
+
+          await catalog.updateProviderModels('test-provider', [modelA, modelB]);
+          await catalog.setProviderEnabled('test-provider', true);
+
+          final ids = catalog.getAllModels().map((m) => m.id).toSet();
+          expect(ids, contains('test-provider/free'));
+          expect(ids, contains('test-provider/owl-alpha'));
+        },
+      );
+    });
+
+    group('preloadApiKeys', () {
+      test('loads API keys from secure storage into cache', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        await mockStorage.write(
+          key: 'catalog_provider_api_key_test-provider',
+          value: 'sk-preloaded',
+        );
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [testProvider],
+        );
+
+        await catalog.preloadApiKeys();
+
+        expect(catalog.getApiKeySync('test-provider'), 'sk-preloaded');
+      });
+    });
+
+    group('updatePrefs', () {
+      test('reloads state from new prefs instance', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [testProvider],
+        );
+
+        expect(catalog.isProviderEnabled('test-provider'), false);
+
+        // Create new prefs with different values
+        SharedPreferences.setMockInitialValues({
+          'catalog_provider_enabled_test-provider': true,
+        });
+        final newPrefs = await SharedPreferences.getInstance();
+        catalog.updatePrefs(newPrefs);
+
+        expect(catalog.isProviderEnabled('test-provider'), true);
+      });
+    });
+
+    group('removeCustomProvider', () {
+      test('removes a custom provider by ID', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [],
+        );
+
+        catalog.addCustomProvider(
+          ProviderConfig.basic(
+            id: 'custom-1',
+            name: 'Custom One',
+            baseUrl: 'https://custom1.example.com',
+          ),
+        );
+        catalog.addCustomProvider(
+          ProviderConfig.basic(
+            id: 'custom-2',
+            name: 'Custom Two',
+            baseUrl: 'https://custom2.example.com',
+          ),
+        );
+
+        expect(catalog.getAllProvidersRaw(), hasLength(2));
+
+        catalog.removeCustomProvider('custom-1');
+
+        expect(catalog.getAllProvidersRaw(), hasLength(1));
+        expect(catalog.getAllProvidersRaw().first.id, 'custom-2');
+      });
+    });
+
+    group('_stripTruncation', () {
+      test(
+        'removes trailing truncation markers from description on reload',
+        () async {
+          SharedPreferences.setMockInitialValues({'catalog_cache_version': 4});
+          final prefs = await SharedPreferences.getInstance();
+          mockStorage = MockSecureStorageService();
+          catalog = ProviderCatalogService(
+            secureStorage: mockStorage,
+            prefs: prefs,
+            builtInProviders: [testProvider],
+          );
+
+          final model = ModelConfig.basic(
+            id: 'test-provider/gpt-4o',
+            providerId: 'test-provider',
+            modelName: 'gpt-4o',
+            displayName: 'GPT-4o',
+            description: 'A great model...with truncation...',
+            contextLength: 128000,
+          );
+
+          await catalog.updateProviderModels('test-provider', [model]);
+
+          // Create a new catalog instance to trigger _loadFromPrefs with cache
+          final catalog2 = ProviderCatalogService(
+            secureStorage: mockStorage,
+            prefs: prefs,
+            builtInProviders: [testProvider],
+          );
+
+          final stored = catalog2.getProvider('test-provider')?.models.first;
+          expect(stored, isNotNull);
+          // _stripTruncation is called during _loadFromPrefs when loading from cache
+          // The description should have truncation markers removed
+          expect(stored!.description, isNot(contains('...')));
+        },
+      );
+    });
+
+    group('addListener/removeListener', () {
+      test('addListener and removeListener are no-ops', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [testProvider],
+        );
+
+        // Should not throw
+        expect(() => catalog.addListener(() {}), returnsNormally);
+        expect(() => catalog.removeListener(() {}), returnsNormally);
+      });
+    });
+
+    group('getAllModelsRaw', () {
+      test('returns all models regardless of enabled state', () async {
+        SharedPreferences.setMockInitialValues({
+          'catalog_provider_enabled_test-provider': false,
+        });
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        final providerWithModels = testProvider.copyWith(
+          models: [
+            ModelConfig.basic(
+              id: 'test-provider/gpt-4o',
+              providerId: 'test-provider',
+              modelName: 'gpt-4o',
+              displayName: 'GPT-4o',
+              contextLength: 128000,
+            ),
+          ],
+        );
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [providerWithModels],
+        );
+
+        // Provider is disabled, so getAllModels returns empty
+        expect(catalog.getAllModels(), isEmpty);
+
+        // But getAllModelsRaw returns models regardless
+        final allModels = catalog.getAllModelsRaw();
+        expect(allModels, hasLength(1));
+        expect(allModels.first.modelName, 'gpt-4o');
+      });
+    });
+
+    group('getModel colon format', () {
+      test('resolves model with colon separator', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        final providerWithModels = testProvider.copyWith(
+          models: [
+            ModelConfig.basic(
+              id: 'test-provider/gpt-4o',
+              providerId: 'test-provider',
+              modelName: 'gpt-4o',
+              displayName: 'GPT-4o',
+              contextLength: 128000,
+            ),
+          ],
+        );
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [providerWithModels],
+        );
+
+        final model = catalog.getModel('test-provider:gpt-4o');
+        expect(model, isNotNull);
+        expect(model!.modelName, 'gpt-4o');
+      });
+
+      test(
+        'getModel returns null for colon format with unknown model',
+        () async {
+          SharedPreferences.setMockInitialValues({});
+          final prefs = await SharedPreferences.getInstance();
+          mockStorage = MockSecureStorageService();
+          catalog = ProviderCatalogService(
+            secureStorage: mockStorage,
+            prefs: prefs,
+            builtInProviders: [testProvider],
+          );
+
+          expect(catalog.getModel('test-provider:unknown'), isNull);
+        },
+      );
+    });
+
+    group('custom providers persistence', () {
+      test('loads custom providers from stored JSON', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [],
+        );
+
+        // Add a custom provider
+        catalog.addCustomProvider(
+          ProviderConfig.basic(
+            id: 'my-custom',
+            name: 'My Custom',
+            baseUrl: 'https://custom.example.com/v1',
+          ),
+        );
+
+        // Create new catalog instance to load from prefs
+        final catalog2 = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [],
+        );
+
+        final providers = catalog2.getAllProvidersRaw();
+        expect(providers, hasLength(1));
+        expect(providers.first.id, 'my-custom');
+        expect(providers.first.name, 'My Custom');
+      });
+
+      test('handles invalid custom providers JSON gracefully', () async {
+        SharedPreferences.setMockInitialValues({
+          'catalog_custom_providers': 'not valid json',
+        });
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [],
+        );
+
+        // Should not throw, just skip invalid JSON
+        expect(catalog.getAllProvidersRaw(), isEmpty);
+      });
+    });
+
+    group('discoverModels error handling', () {
+      test('returns empty list when provider not found', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [testProvider],
+        );
+
+        final result = await catalog.discoverModels('nonexistent');
+        expect(result, isEmpty);
+      });
+
+      test(
+        'returns empty list on network failure',
+        () async {
+          SharedPreferences.setMockInitialValues({'catalog_cache_version': 4});
+          final prefs = await SharedPreferences.getInstance();
+          mockStorage = MockSecureStorageService();
+          catalog = ProviderCatalogService(
+            secureStorage: mockStorage,
+            prefs: prefs,
+            builtInProviders: [testProvider],
+            // Very short timeout so the test doesn't hang
+            cacheDuration: const Duration(milliseconds: 1),
+          );
+
+          // Wait for cache to expire
+          await Future.delayed(const Duration(milliseconds: 2));
+
+          // discoverModels will try to connect to https://api.test.com/v1/models
+          // which should fail in test environment
+          final result = await catalog.discoverModels('test-provider');
+          // Should return empty on network failure
+          expect(result, isEmpty);
+        },
+        timeout: const Timeout(Duration(seconds: 10)),
+      );
+
+      test(
+        'forceRefresh bypasses cache even when fresh',
+        () async {
+          SharedPreferences.setMockInitialValues({
+            'catalog_cache_version': 4,
+            'catalog_discovered_at_test-provider':
+                DateTime.now().millisecondsSinceEpoch,
+          });
+          final prefs = await SharedPreferences.getInstance();
+          mockStorage = MockSecureStorageService();
+          catalog = ProviderCatalogService(
+            secureStorage: mockStorage,
+            prefs: prefs,
+            builtInProviders: [testProvider],
+          );
+
+          // First, populate models
+          final model = ModelConfig.basic(
+            id: 'test-provider/gpt-4o',
+            providerId: 'test-provider',
+            modelName: 'gpt-4o',
+            displayName: 'GPT-4o',
+            contextLength: 128000,
+          );
+          await catalog.updateProviderModels('test-provider', [model]);
+          await catalog.setProviderEnabled('test-provider', true);
+
+          // discoverModels with forceRefresh should try network (and fail)
+          // but the method catches errors and returns []
+          final result = await catalog.discoverModels(
+            'test-provider',
+            forceRefresh: true,
+          );
+          // Network call fails → returns empty
+          expect(result, isEmpty);
+        },
+        timeout: const Timeout(Duration(seconds: 10)),
       );
     });
   });

@@ -37,157 +37,178 @@ void main() {
   });
 
   group('ConfigManager', () {
-    test('loadConfig returns config with defaults when no file exists', () async {
-      // This loads the actual config, which may or may not exist.
-      // The important thing is that it doesn't throw.
-      final config = await ConfigManager.loadConfig();
-      expect(config.version, greaterThanOrEqualTo(0));
-    });
+    test(
+      'loadConfig returns config with defaults when no file exists',
+      () async {
+        // This loads the actual config, which may or may not exist.
+        // The important thing is that it doesn't throw.
+        final config = await ConfigManager.loadConfig();
+        expect(config.version, greaterThanOrEqualTo(0));
+      },
+    );
 
-    test('loadConfig throws ConfigValidationError for invalid action', () async {
-      // Write a temporary chatorai.json with a bad permission action
-      final projectConfig = File('.chatorai/chatorai.json');
-      final dir = Directory('.chatorai');
+    test(
+      'loadConfig throws ConfigValidationError for invalid action',
+      () async {
+        // Write a temporary chatorai.json with a bad permission action
+        final projectConfig = File('.chatorai/chatorai.json');
+        final dir = Directory('.chatorai');
 
-      String? originalContent;
-      bool dirExisted = await dir.exists();
+        String? originalContent;
+        bool dirExisted = await dir.exists();
 
-      try {
-        if (!dirExisted) {
-          await dir.create(recursive: true);
+        try {
+          if (!dirExisted) {
+            await dir.create(recursive: true);
+          }
+          originalContent = await projectConfig.exists()
+              ? await projectConfig.readAsString()
+              : null;
+
+          await projectConfig.writeAsString(
+            json.encode({
+              'version': 1,
+              'permission': {'bash': 'alloww'}, // typo
+            }),
+          );
+
+          await expectLater(
+            ConfigManager.loadConfig(),
+            throwsA(isA<ConfigValidationError>()),
+          );
+        } finally {
+          if (originalContent != null) {
+            await projectConfig.writeAsString(originalContent);
+          } else if (await projectConfig.exists()) {
+            await projectConfig.delete();
+          }
+          if (!dirExisted && await dir.exists()) {
+            await dir.delete(recursive: true);
+          }
         }
-        originalContent = await projectConfig.exists()
-            ? await projectConfig.readAsString()
-            : null;
+      },
+    );
 
-        await projectConfig.writeAsString(json.encode({
-          'version': 1,
-          'permission': {'bash': 'alloww'}, // typo
-        }));
+    test(
+      'loadConfig throws ConfigValidationError for malformed JSON',
+      () async {
+        final projectConfig = File('.chatorai/chatorai.json');
+        final dir = Directory('.chatorai');
 
-        await expectLater(
-          ConfigManager.loadConfig(),
-          throwsA(isA<ConfigValidationError>()),
-        );
-      } finally {
-        if (originalContent != null) {
-          await projectConfig.writeAsString(originalContent);
-        } else if (await projectConfig.exists()) {
-          await projectConfig.delete();
+        String? originalContent;
+        bool dirExisted = await dir.exists();
+
+        try {
+          if (!dirExisted) {
+            await dir.create(recursive: true);
+          }
+          originalContent = await projectConfig.exists()
+              ? await projectConfig.readAsString()
+              : null;
+
+          await projectConfig.writeAsString('not valid json {{{');
+
+          await expectLater(
+            ConfigManager.loadConfig(),
+            throwsA(isA<ConfigValidationError>()),
+          );
+        } finally {
+          if (originalContent != null) {
+            await projectConfig.writeAsString(originalContent);
+          } else if (await projectConfig.exists()) {
+            await projectConfig.delete();
+          }
+          if (!dirExisted && await dir.exists()) {
+            await dir.delete(recursive: true);
+          }
         }
-        if (!dirExisted && await dir.exists()) {
-          await dir.delete(recursive: true);
+      },
+    );
+
+    test(
+      'loadConfig throws ConfigValidationError for invalid nested permission',
+      () async {
+        final projectConfig = File('.chatorai/chatorai.json');
+        final dir = Directory('.chatorai');
+
+        String? originalContent;
+        bool dirExisted = await dir.exists();
+
+        try {
+          if (!dirExisted) {
+            await dir.create(recursive: true);
+          }
+          originalContent = await projectConfig.exists()
+              ? await projectConfig.readAsString()
+              : null;
+
+          await projectConfig.writeAsString(
+            json.encode({
+              'version': 1,
+              'permission': {
+                'bash': {'*': 'invalid_action'},
+              },
+            }),
+          );
+
+          await expectLater(
+            ConfigManager.loadConfig(),
+            throwsA(isA<ConfigValidationError>()),
+          );
+        } finally {
+          if (originalContent != null) {
+            await projectConfig.writeAsString(originalContent);
+          } else if (await projectConfig.exists()) {
+            await projectConfig.delete();
+          }
+          if (!dirExisted && await dir.exists()) {
+            await dir.delete(recursive: true);
+          }
         }
-      }
-    });
+      },
+    );
 
-    test('loadConfig throws ConfigValidationError for malformed JSON', () async {
-      final projectConfig = File('.chatorai/chatorai.json');
-      final dir = Directory('.chatorai');
+    test(
+      'loadConfig throws ConfigValidationError for non-string action in nested perm',
+      () async {
+        final projectConfig = File('.chatorai/chatorai.json');
+        final dir = Directory('.chatorai');
 
-      String? originalContent;
-      bool dirExisted = await dir.exists();
+        String? originalContent;
+        bool dirExisted = await dir.exists();
 
-      try {
-        if (!dirExisted) {
-          await dir.create(recursive: true);
+        try {
+          if (!dirExisted) {
+            await dir.create(recursive: true);
+          }
+          originalContent = await projectConfig.exists()
+              ? await projectConfig.readAsString()
+              : null;
+
+          await projectConfig.writeAsString(
+            json.encode({
+              'version': 1,
+              'permission': {
+                'bash': {'*': 42}, // not a string
+              },
+            }),
+          );
+
+          await expectLater(
+            ConfigManager.loadConfig(),
+            throwsA(isA<ConfigValidationError>()),
+          );
+        } finally {
+          if (originalContent != null) {
+            await projectConfig.writeAsString(originalContent);
+          } else if (await projectConfig.exists()) {
+            await projectConfig.delete();
+          }
+          if (!dirExisted && await dir.exists()) {
+            await dir.delete(recursive: true);
+          }
         }
-        originalContent = await projectConfig.exists()
-            ? await projectConfig.readAsString()
-            : null;
-
-        await projectConfig.writeAsString('not valid json {{{');
-
-        await expectLater(
-          ConfigManager.loadConfig(),
-          throwsA(isA<ConfigValidationError>()),
-        );
-      } finally {
-        if (originalContent != null) {
-          await projectConfig.writeAsString(originalContent);
-        } else if (await projectConfig.exists()) {
-          await projectConfig.delete();
-        }
-        if (!dirExisted && await dir.exists()) {
-          await dir.delete(recursive: true);
-        }
-      }
-    });
-
-    test('loadConfig throws ConfigValidationError for invalid nested permission', () async {
-      final projectConfig = File('.chatorai/chatorai.json');
-      final dir = Directory('.chatorai');
-
-      String? originalContent;
-      bool dirExisted = await dir.exists();
-
-      try {
-        if (!dirExisted) {
-          await dir.create(recursive: true);
-        }
-        originalContent = await projectConfig.exists()
-            ? await projectConfig.readAsString()
-            : null;
-
-        await projectConfig.writeAsString(json.encode({
-          'version': 1,
-          'permission': {
-            'bash': {'*': 'invalid_action'},
-          },
-        }));
-
-        await expectLater(
-          ConfigManager.loadConfig(),
-          throwsA(isA<ConfigValidationError>()),
-        );
-      } finally {
-        if (originalContent != null) {
-          await projectConfig.writeAsString(originalContent);
-        } else if (await projectConfig.exists()) {
-          await projectConfig.delete();
-        }
-        if (!dirExisted && await dir.exists()) {
-          await dir.delete(recursive: true);
-        }
-      }
-    });
-
-    test('loadConfig throws ConfigValidationError for non-string action in nested perm', () async {
-      final projectConfig = File('.chatorai/chatorai.json');
-      final dir = Directory('.chatorai');
-
-      String? originalContent;
-      bool dirExisted = await dir.exists();
-
-      try {
-        if (!dirExisted) {
-          await dir.create(recursive: true);
-        }
-        originalContent = await projectConfig.exists()
-            ? await projectConfig.readAsString()
-            : null;
-
-        await projectConfig.writeAsString(json.encode({
-          'version': 1,
-          'permission': {
-            'bash': {'*': 42}, // not a string
-          },
-        }));
-
-        await expectLater(
-          ConfigManager.loadConfig(),
-          throwsA(isA<ConfigValidationError>()),
-        );
-      } finally {
-        if (originalContent != null) {
-          await projectConfig.writeAsString(originalContent);
-        } else if (await projectConfig.exists()) {
-          await projectConfig.delete();
-        }
-        if (!dirExisted && await dir.exists()) {
-          await dir.delete(recursive: true);
-        }
-      }
-    });
+      },
+    );
   });
 }

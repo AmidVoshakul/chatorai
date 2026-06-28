@@ -245,35 +245,38 @@ void main() {
       // No exception thrown
     });
 
-    test('preserves existing enabled flag when overwriteEnabled=false',
-        () async {
-      final prefs = await SharedPreferences.getInstance();
-      final model = _testModel('openai', 'gpt-4o');
-      final provider = ProviderConfig.basic(
-        id: 'openai',
-        name: 'OpenAI',
-        baseUrl: 'https://api.openai.com/v1',
-        models: [model],
-      );
+    test(
+      'preserves existing enabled flag when overwriteEnabled=false',
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        final model = _testModel('openai', 'gpt-4o');
+        final provider = ProviderConfig.basic(
+          id: 'openai',
+          name: 'OpenAI',
+          baseUrl: 'https://api.openai.com/v1',
+          models: [model],
+        );
 
-      catalog = ProviderCatalogService(
-        secureStorage: secureStorage,
-        prefs: prefs,
-        builtInProviders: [provider],
-      );
+        catalog = ProviderCatalogService(
+          secureStorage: secureStorage,
+          prefs: prefs,
+          builtInProviders: [provider],
+        );
 
-      final newModel = _testModel('openai', 'gpt-4o').copyWith(enabled: false);
-      await catalog.updateProviderModels(
-        'openai',
-        [newModel],
-        overwriteEnabled: false,
-      );
+        final newModel = _testModel(
+          'openai',
+          'gpt-4o',
+        ).copyWith(enabled: false);
+        await catalog.updateProviderModels('openai', [
+          newModel,
+        ], overwriteEnabled: false);
 
-      // When overwriteEnabled is false, existing enabled flag is preserved
-      final updated = catalog.getModel('openai/gpt-4o');
-      expect(updated, isNotNull);
-      expect(updated!.enabled, isTrue); // Preserved from original
-    });
+        // When overwriteEnabled is false, existing enabled flag is preserved
+        final updated = catalog.getModel('openai/gpt-4o');
+        expect(updated, isNotNull);
+        expect(updated!.enabled, isTrue); // Preserved from original
+      },
+    );
 
     test('overwrites enabled flag when overwriteEnabled=true', () async {
       final prefs = await SharedPreferences.getInstance();
@@ -292,11 +295,9 @@ void main() {
       );
 
       final newModel = _testModel('openai', 'gpt-4o').copyWith(enabled: false);
-      await catalog.updateProviderModels(
-        'openai',
-        [newModel],
-        overwriteEnabled: true,
-      );
+      await catalog.updateProviderModels('openai', [
+        newModel,
+      ], overwriteEnabled: true);
 
       final updated = catalog.getModel('openai/gpt-4o');
       expect(updated, isNotNull);

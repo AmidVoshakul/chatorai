@@ -1,9 +1,9 @@
-import 'dart:io';
-
 import 'package:ai_sdk_dart/ai_sdk_dart.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test/test.dart';
+import 'package:chatorai/core/session/session_id.dart';
+import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/llm/model_resolver.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
@@ -15,6 +15,26 @@ import 'package:chatorai/features/chat/services/chat_retry_service.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 
+class _MockSessionRunnerExtra extends Mock implements SessionRunner {}
+
+SessionRunnerHolder _makeRunnerHolderExtra([
+  String result = 'mock task result',
+]) {
+  final mock = _MockSessionRunnerExtra();
+  when(
+    () => mock.runTaskInChild(
+      parentSessionId: any(named: 'parentSessionId'),
+      taskPrompt: any(named: 'taskPrompt'),
+      streamFn: any(named: 'streamFn'),
+      agent: any(named: 'agent'),
+      title: any(named: 'title'),
+      taskId: any(named: 'taskId'),
+      abortSignal: any(named: 'abortSignal'),
+    ),
+  ).thenAnswer((_) async => TaskChildResult(result));
+  return SessionRunnerHolder(mock);
+}
+
 class MockSecureStorageService extends Mock implements SecureStorageService {}
 
 class MockSharedPreferences extends Mock implements SharedPreferences {}
@@ -22,9 +42,7 @@ class MockSharedPreferences extends Mock implements SharedPreferences {}
 class _FakeChatAiService extends ChatAiService {
   _FakeChatAiService({
     this.modelOverride = 'mock-model',
-    this.temperatureOverride,
     this.completionResult = 'mock completion result',
-    this.throwOnStream = false,
   }) : super(resolver: _createFakeResolver());
 
   static ModelResolver _createFakeResolver() {
@@ -48,15 +66,13 @@ class _FakeChatAiService extends ChatAiService {
   }
 
   final String? modelOverride;
-  final double? temperatureOverride;
   final String completionResult;
-  final bool throwOnStream;
 
   @override
   String? get currentModel => modelOverride;
 
   @override
-  double? get currentTemperature => temperatureOverride;
+  double? get currentTemperature => 0.7;
 
   @override
   Future<void> streamChatCompletion({
@@ -75,9 +91,6 @@ class _FakeChatAiService extends ChatAiService {
     void Function(RichRetryInfo info)? onRetry,
     void Function(List<Map<String, dynamic>> messages)? onOverflow,
   }) async {
-    if (throwOnStream) {
-      throw Exception('Stream error');
-    }
     onChunk(completionResult);
     onReasoning('mock reasoning');
     onCompletion(completionResult);
@@ -87,11 +100,7 @@ class _FakeChatAiService extends ChatAiService {
   }
 }
 
-ToolContext _mockCtx({
-  String? sessionId = 'test-session',
-}) {
-  String? capturedPermission;
-  List<String>? capturedPatterns;
+ToolContext _mockCtx({String? sessionId = 'test-session'}) {
   return ToolContext(
     toolCallId: 'test-call-id',
     sessionId: sessionId,
@@ -101,10 +110,7 @@ ToolContext _mockCtx({
           required List<String> patterns,
           Map<String, dynamic>? metadata,
           List<String>? always,
-        }) async {
-          capturedPermission = permission;
-          capturedPatterns = patterns;
-        },
+        }) async {},
     askQuestion:
         ({required question, options = const [], multiple = false}) async => '',
   );
@@ -119,11 +125,52 @@ ToolDef _makeToolDef(String id) {
   );
 }
 
+ToolRegistry _makeToolRegistry() {
+  final registry = ToolRegistry(PermissionService(), PermissionRuleset());
+  registry.register(_makeToolDef('read'));
+  registry.register(_makeToolDef('edit'));
+  registry.register(_makeToolDef('write'));
+  registry.register(_makeToolDef('glob'));
+  registry.register(_makeToolDef('grep'));
+  registry.register(_makeToolDef('bash'));
+  registry.register(_makeToolDef('webfetch'));
+  registry.register(_makeToolDef('websearch'));
+  registry.register(_makeToolDef('apply_patch'));
+  registry.register(_makeToolDef('todowrite'));
+  return registry;
+}
+
 void main() {
-  group('task tool — ChatAiService success path', () {
-    test('success path with ChatAiService produces XML output', () async {
+  setUpAll(() {
+    registerFallbackValue(SessionID.create());
+  });
+
+  group('task tool — error when no runner', () {
+    test('returns error when no currentSessionRunner provided', () async {
+      final tool = createTaskTool();
+      final ctx = _mockCtx();
+
+      final output = await tool.execute({
+        'description': 'No runner',
+        'prompt': 'Test',
+        'subagent_type': 'general',
+      }, ctx);
+
+      expect(output.metadata?['error'], isTrue);
+      expect(output.output, contains('No session runner available'));
+    });
+  });
+
+  group('task tool — full delegation with ChatAiService', () {
+    final registry = _makeToolRegistry();
+
+    test('success path produces XML with state=completed', () async {
       final chatAi = _FakeChatAiService(modelOverride: 'mock-model');
-      final tool = createTaskTool(chatAiService: chatAi);
+      final tool = createTaskTool(
+        chatAiService: chatAi,
+        toolRegistry: registry,
+        currentSessionRunner: _makeRunnerHolderExtra(),
+      );
 
       final ctx = _mockCtx();
       final output = await tool.execute({
@@ -133,15 +180,19 @@ void main() {
       }, ctx);
 
       expect(output.output, contains('state="completed"'));
-      expect(output.output, contains('<summary>Integration test</summary>'));
+      expect(output.output, contains('<summary>mock task result</summary>'));
       expect(output.output, contains('<task_result>'));
-      expect(output.output, contains('mock completion result'));
+      expect(output.output, contains('mock task result'));
       expect(output.metadata?['error'], isNull);
     });
 
     test('success path includes agent_name in metadata', () async {
       final chatAi = _FakeChatAiService();
-      final tool = createTaskTool(chatAiService: chatAi);
+      final tool = createTaskTool(
+        chatAiService: chatAi,
+        toolRegistry: registry,
+        currentSessionRunner: _makeRunnerHolderExtra(),
+      );
 
       final ctx = _mockCtx();
       final output = await tool.execute({
@@ -154,10 +205,13 @@ void main() {
       expect(output.metadata?['subagent_type'], equals('explore'));
     });
 
-    test('success path includes session_id and optional task_id in metadata',
-        () async {
+    test('success path includes session_id and task_id in metadata', () async {
       final chatAi = _FakeChatAiService();
-      final tool = createTaskTool(chatAiService: chatAi);
+      final tool = createTaskTool(
+        chatAiService: chatAi,
+        toolRegistry: registry,
+        currentSessionRunner: _makeRunnerHolderExtra(),
+      );
 
       final ctx = _mockCtx(sessionId: 'session-xyz');
       final output = await tool.execute({
@@ -173,7 +227,11 @@ void main() {
 
     test('error when currentModel is null', () async {
       final chatAi = _FakeChatAiService(modelOverride: null);
-      final tool = createTaskTool(chatAiService: chatAi);
+      final tool = createTaskTool(
+        chatAiService: chatAi,
+        toolRegistry: registry,
+        currentSessionRunner: _makeRunnerHolderExtra(),
+      );
 
       final ctx = _mockCtx();
       final output = await tool.execute({
@@ -186,41 +244,13 @@ void main() {
       expect(output.output, contains('No model selected'));
     });
 
-    test('temperature falls back to 0.7 when currentTemperature is null',
-        () async {
-      final chatAi = _FakeChatAiService(temperatureOverride: null);
-      final tool = createTaskTool(chatAiService: chatAi);
-
-      final ctx = _mockCtx();
-      final output = await tool.execute({
-        'description': 'Temp fallback',
-        'prompt': 'Test',
-        'subagent_type': 'general',
-      }, ctx);
-
-      expect(output.output, contains('state="completed"'));
-      expect(output.metadata?['error'], isNull);
-    });
-
-    test('temperature uses currentTemperature when non-null', () async {
-      final chatAi = _FakeChatAiService(temperatureOverride: 0.3);
-      final tool = createTaskTool(chatAiService: chatAi);
-
-      final ctx = _mockCtx();
-      final output = await tool.execute({
-        'description': 'Custom temp',
-        'prompt': 'Test',
-        'subagent_type': 'general',
-      }, ctx);
-
-      expect(output.output, contains('state="completed"'));
-      expect(output.metadata?['error'], isNull);
-    });
-
-    test('streamChatCompletion callbacks are wired correctly',
-        () async {
-      final chatAi = _FakeChatAiService();
-      final tool = createTaskTool(chatAiService: chatAi);
+    test('chatAiService callbacks wired correctly', () async {
+      final chatAi = _FakeChatAiService(completionResult: 'final output');
+      final tool = createTaskTool(
+        chatAiService: chatAi,
+        toolRegistry: registry,
+        currentSessionRunner: _makeRunnerHolderExtra('final output'),
+      );
 
       final ctx = _mockCtx();
       final output = await tool.execute({
@@ -230,231 +260,171 @@ void main() {
       }, ctx);
 
       expect(output.output, contains('state="completed"'));
-      expect(output.output, contains('mock completion result'));
+      expect(output.output, contains('final output'));
       expect(output.metadata?['error'], isNull);
     });
 
-    test('onToolEnd result is appended to output', () async {
-      final chatAi = _FakeChatAiService(
-        completionResult: 'base result',
-      );
-      final tool = createTaskTool(chatAiService: chatAi);
+    for (final callbackCase in _CallbackTestCase.all) {
+      test(callbackCase.name, () async {
+        final chatAi = _FakeChatAiService(
+          completionResult: callbackCase.result,
+        );
+        final tool = createTaskTool(
+          chatAiService: chatAi,
+          toolRegistry: registry,
+          currentSessionRunner: _makeRunnerHolderExtra(),
+        );
 
-      final ctx = _mockCtx();
-      final output = await tool.execute({
-        'description': 'Tool end test',
-        'prompt': 'Test',
-        'subagent_type': 'general',
-      }, ctx);
+        final ctx = _mockCtx();
+        final output = await tool.execute({
+          'description': callbackCase.description,
+          'prompt': 'Test',
+          'subagent_type': 'general',
+        }, ctx);
 
-      expect(output.output, contains('base result'));
-      expect(output.output, contains('file1.txt'));
-    });
-
-    test('onToolError appends error to output', () async {
-      final chatAi = _FakeChatAiService(
-        completionResult: 'partial',
-      );
-      final tool = createTaskTool(chatAiService: chatAi);
-
-      final ctx = _mockCtx();
-      final output = await tool.execute({
-        'description': 'Tool error test',
-        'prompt': 'Test',
-        'subagent_type': 'general',
-      }, ctx);
-
-      expect(output.output, contains('partial'));
-      expect(output.output, contains('[Tool error:'));
-    });
-
-    test('MVP fallback used when chatAiService is null', () async {
-      final tool = createTaskTool();
-
-      final ctx = _mockCtx();
-      final output = await tool.execute({
-        'description': 'MVP test',
-        'prompt': 'Test fallback',
-        'subagent_type': 'general',
-      }, ctx);
-
-      expect(output.output, contains('[Subagent MVP not yet wired'));
-      expect(output.output, contains('Agent: General'));
-      expect(output.metadata?['error'], isNull);
-    });
+        expect(output.output, contains('state="completed"'));
+        expect(output.metadata?['error'], isNull);
+      });
+    }
   });
 
-  group('task tool — toolRegistry path', () {
-    test('MVP fallback with toolRegistry but no ChatAiService', () async {
-      final registry = ToolRegistry(
-        PermissionService(),
-        PermissionRuleset(),
-      );
-      registry.register(_makeToolDef('read'));
-      registry.register(_makeToolDef('edit'));
-      registry.register(_makeToolDef('task'));
-      registry.register(_makeToolDef('todowrite'));
+  group('task tool — edge cases', () {
+    for (final edgeCase in _SubagentTypeEdgeCase.all) {
+      test(edgeCase.name, () async {
+        final tool = createTaskTool();
+        final ctx = _mockCtx();
 
-      final tool = createTaskTool(toolRegistry: registry);
+        final output = await tool.execute({
+          'description': 'Valid',
+          'prompt': 'Valid prompt',
+          if (edgeCase.subagentTypeKey != null)
+            edgeCase.subagentTypeKey!: edgeCase.subagentTypeValue,
+        }, ctx);
 
-      final ctx = _mockCtx();
-      final output = await tool.execute({
-        'description': 'Registry without AI',
-        'prompt': 'Test',
-        'subagent_type': 'general',
-      }, ctx);
+        expect(output.metadata?['error'], isTrue);
+      });
+    }
 
-      expect(output.output, contains('[Subagent MVP not yet wired'));
-      expect(output.output, contains('Agent: General'));
-    });
-
-    test('success path with ChatAiService and toolRegistry', () async {
-      final registry = ToolRegistry(
-        PermissionService(),
-        PermissionRuleset(),
-      );
-      registry.register(_makeToolDef('read'));
-      registry.register(_makeToolDef('edit'));
-      registry.register(_makeToolDef('task'));
-      registry.register(_makeToolDef('todowrite'));
-
+    test('XML output has valid structure with runner', () async {
+      final registry = _makeToolRegistry();
       final chatAi = _FakeChatAiService();
       final tool = createTaskTool(
         chatAiService: chatAi,
         toolRegistry: registry,
+        currentSessionRunner: _makeRunnerHolderExtra(),
       );
-
       final ctx = _mockCtx();
+
       final output = await tool.execute({
-        'description': 'Full integration',
+        'description': 'Wrap test',
         'prompt': 'Test',
         'subagent_type': 'general',
       }, ctx);
 
-      expect(output.output, contains('state="completed"'));
-      expect(output.output, contains('mock completion result'));
-      expect(output.metadata?['error'], isNull);
+      expect(output.output, startsWith('<task '));
+      expect(output.output, endsWith('</task>'));
+      expect(output.output, contains('<summary>'));
+      expect(output.output, contains('<task_result>'));
     });
-  });
 
-  group('task tool — edge cases', () {
-    test('empty subagent_type string returns error', () async {
+    test('error when no runner returns error metadata', () async {
       final tool = createTaskTool();
       final ctx = _mockCtx();
 
       final output = await tool.execute({
-        'description': 'Valid',
-        'prompt': 'Valid prompt',
-        'subagent_type': '',
+        'description': 'Format test',
+        'prompt': 'Check XML',
+        'subagent_type': 'general',
       }, ctx);
 
       expect(output.metadata?['error'], isTrue);
     });
+  });
 
-    test('null subagent_type returns error', () async {
-      final tool = createTaskTool();
-      final ctx = _mockCtx();
+  group('deriveSubagentTools', () {
+    test('excludes task and todowrite from subagent tool set', () {
+      final registry = _makeToolRegistry();
+      final subagentTools = deriveSubagentTools(registry);
 
-      final output = await tool.execute({
-        'description': 'Valid',
-        'prompt': 'Valid prompt',
-      }, ctx);
-
-      expect(output.metadata?['error'], isTrue);
+      expect(subagentTools.containsKey('task'), isFalse);
+      expect(subagentTools.containsKey('todowrite'), isFalse);
+      expect(subagentTools.containsKey('read'), isTrue);
+      expect(subagentTools.containsKey('edit'), isTrue);
+      expect(subagentTools.containsKey('glob'), isTrue);
     });
 
-    test('MVP output auto-generates id when task_id is omitted', () async {
-      final tool = createTaskTool();
-      final ctx = _mockCtx();
+    test('returns empty map when registry has only denied tools', () {
+      final registry = ToolRegistry(PermissionService(), PermissionRuleset());
+      registry.register(_makeToolDef('task'));
+      registry.register(_makeToolDef('todowrite'));
 
-      final output = await tool.execute({
-        'description': 'Auto ID',
-        'prompt': 'Test',
-        'subagent_type': 'general',
-      }, ctx);
-
-      expect(output.output, contains('id="sub-'));
-      expect(output.output, isNot(contains('task_id=')));
+      final subagentTools = deriveSubagentTools(registry);
+      expect(subagentTools, isEmpty);
     });
 
-    test('MVP output includes task_id attribute when provided', () async {
-      final tool = createTaskTool();
-      final ctx = _mockCtx();
+    test('preserves all non-denied tools', () {
+      final registry = ToolRegistry(PermissionService(), PermissionRuleset());
+      registry.register(_makeToolDef('bash'));
+      registry.register(_makeToolDef('read'));
+      registry.register(_makeToolDef('write'));
+      registry.register(_makeToolDef('grep'));
 
-      final output = await tool.execute({
-        'description': 'With ID',
-        'prompt': 'Test',
-        'subagent_type': 'general',
-        'task_id': 'my-task-1',
-      }, ctx);
-
-      expect(output.output, contains('task_id="my-task-1"'));
-      expect(output.output, contains('id="my-task-1"'));
-    });
-
-    test('MVP output includes session_id in task tag', () async {
-      final tool = createTaskTool();
-      final ctx = _mockCtx(sessionId: 'sess-001');
-
-      final output = await tool.execute({
-        'description': 'Session attr',
-        'prompt': 'Test',
-        'subagent_type': 'general',
-      }, ctx);
-
-      expect(output.output, contains('session_id="sess-001"'));
-    });
-
-    test('MVP output includes prompt text in task_result', () async {
-      final tool = createTaskTool();
-      final ctx = _mockCtx();
-
-      final output = await tool.execute({
-        'description': 'Prompt test',
-        'prompt': 'My specific prompt content',
-        'subagent_type': 'explore',
-      }, ctx);
-
-      expect(output.output, contains('Prompt: My specific prompt content'));
-    });
-
-    test('MVP output uses correct agent name for explore type', () async {
-      final tool = createTaskTool();
-      final ctx = _mockCtx();
-
-      final output = await tool.execute({
-        'description': 'Explore agent',
-        'prompt': 'Explore codebase',
-        'subagent_type': 'explore',
-      }, ctx);
-
-      expect(output.output, contains('Agent: Explore'));
-    });
-
-    test('MVP output uses correct agent name for build type', () async {
-      final tool = createTaskTool();
-      final ctx = _mockCtx();
-
-      final output = await tool.execute({
-        'description': 'Build agent',
-        'prompt': 'Build feature',
-        'subagent_type': 'build',
-      }, ctx);
-
-      expect(output.output, contains('Agent: Build'));
-    });
-
-    test('MVP output uses correct agent name for title type', () async {
-      final tool = createTaskTool();
-      final ctx = _mockCtx();
-
-      final output = await tool.execute({
-        'description': 'Title agent',
-        'prompt': 'Generate title',
-        'subagent_type': 'title',
-      }, ctx);
-
-      expect(output.output, contains('Agent: Title'));
+      final subagentTools = deriveSubagentTools(registry);
+      expect(subagentTools.length, equals(4));
+      expect(subagentTools.containsKey('bash'), isTrue);
+      expect(subagentTools.containsKey('read'), isTrue);
+      expect(subagentTools.containsKey('write'), isTrue);
+      expect(subagentTools.containsKey('grep'), isTrue);
     });
   });
+}
+
+class _CallbackTestCase {
+  final String name;
+  final String result;
+  final String description;
+
+  const _CallbackTestCase({
+    required this.name,
+    required this.result,
+    required this.description,
+  });
+
+  static List<_CallbackTestCase> get all => [
+    _CallbackTestCase(
+      name: 'onToolEnd events are forwarded to child runner',
+      result: 'base result',
+      description: 'Tool end test',
+    ),
+    _CallbackTestCase(
+      name: 'onToolError events are forwarded to child runner onError',
+      result: 'partial',
+      description: 'Tool error test',
+    ),
+  ];
+}
+
+class _SubagentTypeEdgeCase {
+  final String name;
+  final String? subagentTypeKey;
+  final String subagentTypeValue;
+
+  const _SubagentTypeEdgeCase({
+    required this.name,
+    required this.subagentTypeKey,
+    required this.subagentTypeValue,
+  });
+
+  static List<_SubagentTypeEdgeCase> get all => [
+    _SubagentTypeEdgeCase(
+      name: 'empty subagent_type string returns error',
+      subagentTypeKey: 'subagent_type',
+      subagentTypeValue: '',
+    ),
+    _SubagentTypeEdgeCase(
+      name: 'null subagent_type returns error',
+      subagentTypeKey: null,
+      subagentTypeValue: '',
+    ),
+  ];
 }

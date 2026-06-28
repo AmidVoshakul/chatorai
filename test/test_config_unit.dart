@@ -33,10 +33,7 @@ void main() {
         const ConfigReadError(path: '/test', original: 'io error'),
         isA<ConfigError>(),
       );
-      expect(
-        const ConfigValidationError('bad config'),
-        isA<ConfigError>(),
-      );
+      expect(const ConfigValidationError('bad config'), isA<ConfigError>());
     });
 
     test('ConfigError types implement Exception', () {
@@ -79,8 +76,10 @@ void main() {
 
       // The ConfigManager uses json_schema package, so we verify the
       // error types it throws.
-      expect(const ConfigValidationError('Malformed JSON: test'),
-          isA<ConfigValidationError>());
+      expect(
+        const ConfigValidationError('Malformed JSON: test'),
+        isA<ConfigValidationError>(),
+      );
     });
 
     test('permission action validation rejects invalid actions', () {
@@ -134,9 +133,7 @@ void main() {
 
     test('config without permission section is valid', () {
       // Schema allows missing permission section
-      final config = <String, dynamic>{
-        'version': 1,
-      };
+      final config = <String, dynamic>{'version': 1};
       expect(config.containsKey('permission'), isFalse);
     });
 

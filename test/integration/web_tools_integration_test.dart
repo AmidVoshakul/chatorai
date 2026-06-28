@@ -487,7 +487,9 @@ void main() {
               'max_chars': 100,
             }, ctx);
           } on TimeoutException {
-            markTestSkipped('httpbin.org unreachable — skipping truncation test');
+            markTestSkipped(
+              'httpbin.org unreachable — skipping truncation test',
+            );
             return;
           } catch (e) {
             markTestSkipped('Network error for truncation test: $e');
@@ -536,7 +538,9 @@ void main() {
           expect(output, isA<ToolOutput>());
 
           if (output.output.contains('No results found')) {
-            markTestSkipped('DDG returned zero results for "flutter dart" — skip');
+            markTestSkipped(
+              'DDG returned zero results for "flutter dart" — skip',
+            );
             return;
           }
 

@@ -335,10 +335,9 @@ void main() {
         final signal = sdk.CancellationToken();
         signal.cancel();
         final ctx = _ctx(signal: signal);
-        final out = await createBashTool().execute(
-          {'command': 'echo hello'},
-          ctx,
-        );
+        final out = await createBashTool().execute({
+          'command': 'echo hello',
+        }, ctx);
         expect(out.metadata?['error'], isTrue);
         expect(out.metadata?['aborted'], isTrue);
         expect(out.output, contains('aborted'));
@@ -350,31 +349,24 @@ void main() {
           final signal = sdk.CancellationToken();
           signal.cancel();
           final ctx = _ctx(signal: signal);
-          final out = await createBashTool().execute(
-            {'command': ''},
-            ctx,
-          );
+          final out = await createBashTool().execute({'command': ''}, ctx);
           // Empty command check runs first
           expect(out.metadata?['error'], isTrue);
         },
       );
 
-      test(
-        'abortSignal cancellation during long-running command',
-        () async {
-          final signal = sdk.CancellationToken();
-          Timer(const Duration(milliseconds: 50), () => signal.cancel());
-          final ctx = _ctx(signal: signal);
-          final out = await createBashTool().execute(
-            {'command': 'sleep 30'},
-            ctx,
-          );
-          expect(
-            out.metadata?['aborted'] == true || out.metadata?['error'] == true,
-            isTrue,
-          );
-        },
-      );
+      test('abortSignal cancellation during long-running command', () async {
+        final signal = sdk.CancellationToken();
+        Timer(const Duration(milliseconds: 50), () => signal.cancel());
+        final ctx = _ctx(signal: signal);
+        final out = await createBashTool().execute({
+          'command': 'sleep 30',
+        }, ctx);
+        expect(
+          out.metadata?['aborted'] == true || out.metadata?['error'] == true,
+          isTrue,
+        );
+      });
     });
   });
 }

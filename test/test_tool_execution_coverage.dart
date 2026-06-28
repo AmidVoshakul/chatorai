@@ -7,8 +7,10 @@ import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/permission/rule.dart';
 
-ToolDef _tool(String id, Future<ToolOutput> Function(Map<String, dynamic>, dynamic) fn) =>
-    ToolDef(id: id, description: '', inputSchema: const {}, execute: fn);
+ToolDef _tool(
+  String id,
+  Future<ToolOutput> Function(Map<String, dynamic>, dynamic) fn,
+) => ToolDef(id: id, description: '', inputSchema: const {}, execute: fn);
 
 dynamic _ctx(String? sessionId) {
   final map = <String, dynamic>{};
@@ -16,8 +18,11 @@ dynamic _ctx(String? sessionId) {
   return map;
 }
 
-PermissionRule r(String perm, String pattern, String action) =>
-    PermissionRule(permission: perm, pattern: pattern, action: PermissionAction.values.firstWhere((a) => a.name == action));
+PermissionRule r(String perm, String pattern, String action) => PermissionRule(
+  permission: perm,
+  pattern: pattern,
+  action: PermissionAction.values.firstWhere((a) => a.name == action),
+);
 
 void main() {
   late PermissionService ps;
@@ -25,52 +30,79 @@ void main() {
 
   setUp(() {
     ps = PermissionService();
-    ps.seedRules(PermissionRuleset(rules: [
-      r('read', '*', 'allow'),
-      r('write', '*', 'allow'),
-      r('edit', '*', 'allow'),
-      r('bash', '*', 'allow'),
-      r('question', '*', 'allow'),
-      r('doom_loop', '*', 'allow'),
-    ]));
-    ex = ToolExecutor(ps, PermissionRuleset(rules: [
-      r('read', '*', 'allow'),
-      r('write', '*', 'allow'),
-      r('edit', '*', 'allow'),
-      r('bash', '*', 'allow'),
-      r('question', '*', 'allow'),
-      r('doom_loop', '*', 'allow'),
-    ]));
+    ps.seedRules(
+      PermissionRuleset(
+        rules: [
+          r('read', '*', 'allow'),
+          r('write', '*', 'allow'),
+          r('edit', '*', 'allow'),
+          r('bash', '*', 'allow'),
+          r('question', '*', 'allow'),
+          r('doom_loop', '*', 'allow'),
+        ],
+      ),
+    );
+    ex = ToolExecutor(
+      ps,
+      PermissionRuleset(
+        rules: [
+          r('read', '*', 'allow'),
+          r('write', '*', 'allow'),
+          r('edit', '*', 'allow'),
+          r('bash', '*', 'allow'),
+          r('question', '*', 'allow'),
+          r('doom_loop', '*', 'allow'),
+        ],
+      ),
+    );
   });
 
   group('ToolExecutor — execute paths', () {
     test('non-Map input wrapped to {"raw": input}', () async {
-      final tool = _tool('echo', (input, ctx) async => ToolOutput(input['raw'].toString()));
+      final tool = _tool(
+        'echo',
+        (input, ctx) async => ToolOutput(input['raw'].toString()),
+      );
       final r = await ex.execute(tool, {'raw': 'hello'}, _ctx('s1'));
       expect(r['output'], 'hello');
     });
 
     test('ToolInvalidArgsError produces error JSON', () async {
-      final tool = _tool('bad', (input, ctx) async => throw ToolInvalidArgsError('bad', 'bad args'));
+      final tool = _tool(
+        'bad',
+        (input, ctx) async => throw ToolInvalidArgsError('bad', 'bad args'),
+      );
       final r = await ex.execute(tool, {'a': 1}, _ctx('s1'));
       expect(r['error'], 'invalid_args');
       expect(r['toolName'], 'bad');
     });
 
     test('ToolOverflowError produces error JSON', () async {
-      final tool = _tool('big', (input, ctx) async => throw ToolOverflowError('big', 'too big'));
+      final tool = _tool(
+        'big',
+        (input, ctx) async => throw ToolOverflowError('big', 'too big'),
+      );
       final r = await ex.execute(tool, {'a': 1}, _ctx('s1'));
       expect(r['error'], 'overflow');
       expect(r['toolName'], 'big');
     });
 
     test('unexpected StateError is rethrown', () async {
-      final tool = _tool('boom', (input, ctx) async => throw StateError('boom'));
-      expect(() => ex.execute(tool, {'a': 1}, _ctx('s1')), throwsA(isA<StateError>()));
+      final tool = _tool(
+        'boom',
+        (input, ctx) async => throw StateError('boom'),
+      );
+      expect(
+        () => ex.execute(tool, {'a': 1}, _ctx('s1')),
+        throwsA(isA<StateError>()),
+      );
     });
 
     test('ToolOutput.metadata surfaced in result', () async {
-      final tool = _tool('meta', (input, ctx) async => ToolOutput('ok', metadata: {'tokens': 7}));
+      final tool = _tool(
+        'meta',
+        (input, ctx) async => ToolOutput('ok', metadata: {'tokens': 7}),
+      );
       final r = await ex.execute(tool, {}, _ctx('s1'));
       expect(r['metadata']['tokens'], 7);
     });
@@ -83,7 +115,10 @@ void main() {
 
     test('identical same-session call returns cached output', () async {
       var count = 0;
-      final tool = _tool('cached', (input, ctx) async => ToolOutput('call-${++count}'));
+      final tool = _tool(
+        'cached',
+        (input, ctx) async => ToolOutput('call-${++count}'),
+      );
 
       final r1 = await ex.execute(tool, {'p': 'v'}, _ctx('s1'));
       expect(r1['output'], 'call-1');
@@ -94,7 +129,10 @@ void main() {
 
     test('cross-session same input is not cached', () async {
       var count = 0;
-      final tool = _tool('cross', (input, ctx) async => ToolOutput('call-${++count}'));
+      final tool = _tool(
+        'cross',
+        (input, ctx) async => ToolOutput('call-${++count}'),
+      );
 
       await ex.execute(tool, {'p': 'v'}, _ctx('s1'));
       await ex.execute(tool, {'p': 'v'}, _ctx('s2'));
@@ -129,7 +167,10 @@ void main() {
 
     test('pruning busts cache for pruned session', () async {
       var count = 0;
-      final tool = _tool('cold', (input, ctx) async => ToolOutput('call-${++count}'));
+      final tool = _tool(
+        'cold',
+        (input, ctx) async => ToolOutput('call-${++count}'),
+      );
 
       await ex.execute(tool, {'a': 1}, _ctx('cold-session'));
       expect(count, 1);

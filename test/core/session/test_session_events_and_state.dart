@@ -35,14 +35,18 @@ void main() {
 
     test('SessionAgentSwitched carries agent name', () {
       final event = SessionAgentSwitched(
-        sessionId: testSid, agent: 'explore', timestamp: ts,
+        sessionId: testSid,
+        agent: 'explore',
+        timestamp: ts,
       );
       expect(event.agent, equals('explore'));
     });
 
     test('SessionModelSwitched carries modelRef', () {
       final event = SessionModelSwitched(
-        sessionId: testSid, modelRef: 'claude-3', timestamp: ts,
+        sessionId: testSid,
+        modelRef: 'claude-3',
+        timestamp: ts,
       );
       expect(event.modelRef, equals('claude-3'));
     });
@@ -61,9 +65,24 @@ void main() {
     });
 
     test('TextStarted/TextDelta/TextEnded carry messageId', () {
-      final started = TextStarted(sessionId: testSid, messageId: 'msg-2', timestamp: ts);
-      final delta = TextDelta(sessionId: testSid, messageId: 'msg-2', delta: 'Hi', timestamp: ts);
-      final ended = TextEnded(sessionId: testSid, messageId: 'msg-2', fullText: 'Hi there', model: 'gpt-4o', timestamp: ts);
+      final started = TextStarted(
+        sessionId: testSid,
+        messageId: 'msg-2',
+        timestamp: ts,
+      );
+      final delta = TextDelta(
+        sessionId: testSid,
+        messageId: 'msg-2',
+        delta: 'Hi',
+        timestamp: ts,
+      );
+      final ended = TextEnded(
+        sessionId: testSid,
+        messageId: 'msg-2',
+        fullText: 'Hi there',
+        model: 'gpt-4o',
+        timestamp: ts,
+      );
 
       expect(started.messageId, equals('msg-2'));
       expect(delta.delta, equals('Hi'));
@@ -72,9 +91,23 @@ void main() {
     });
 
     test('ReasoningStarted/ReasoningDelta/ReasoningEnded', () {
-      final started = ReasoningStarted(sessionId: testSid, messageId: 'msg-3', timestamp: ts);
-      final delta = ReasoningDelta(sessionId: testSid, messageId: 'msg-3', delta: 'thinking...', timestamp: ts);
-      final ended = ReasoningEnded(sessionId: testSid, messageId: 'msg-3', fullReasoning: 'I need to...', timestamp: ts);
+      final started = ReasoningStarted(
+        sessionId: testSid,
+        messageId: 'msg-3',
+        timestamp: ts,
+      );
+      final delta = ReasoningDelta(
+        sessionId: testSid,
+        messageId: 'msg-3',
+        delta: 'thinking...',
+        timestamp: ts,
+      );
+      final ended = ReasoningEnded(
+        sessionId: testSid,
+        messageId: 'msg-3',
+        fullReasoning: 'I need to...',
+        timestamp: ts,
+      );
 
       expect(started.messageId, equals('msg-3'));
       expect(delta.delta, equals('thinking...'));
@@ -82,9 +115,23 @@ void main() {
     });
 
     test('ToolInputStarted/ToolInputDelta/ToolInputEnded', () {
-      final started = ToolInputStarted(sessionId: testSid, toolCallId: 'tc-1', timestamp: ts);
-      final delta = ToolInputDelta(sessionId: testSid, toolCallId: 'tc-1', delta: '{"fi', timestamp: ts);
-      final ended = ToolInputEnded(sessionId: testSid, toolCallId: 'tc-1', fullInput: '{"file": "test.dart"}', timestamp: ts);
+      final started = ToolInputStarted(
+        sessionId: testSid,
+        toolCallId: 'tc-1',
+        timestamp: ts,
+      );
+      final delta = ToolInputDelta(
+        sessionId: testSid,
+        toolCallId: 'tc-1',
+        delta: '{"fi',
+        timestamp: ts,
+      );
+      final ended = ToolInputEnded(
+        sessionId: testSid,
+        toolCallId: 'tc-1',
+        fullInput: '{"file": "test.dart"}',
+        timestamp: ts,
+      );
 
       expect(started.toolCallId, equals('tc-1'));
       expect(delta.delta, equals('{"fi'));
@@ -93,16 +140,24 @@ void main() {
 
     test('ToolCalled/ToolSuccess/ToolFailed', () {
       final called = ToolCalled(
-        sessionId: testSid, toolCallId: 'tc-2', toolName: 'bash',
-        input: {'command': 'ls'}, timestamp: ts,
+        sessionId: testSid,
+        toolCallId: 'tc-2',
+        toolName: 'bash',
+        input: {'command': 'ls'},
+        timestamp: ts,
       );
       final success = ToolSuccess(
-        sessionId: testSid, toolCallId: 'tc-2',
-        outputText: 'file1.txt', durationMs: 150, timestamp: ts,
+        sessionId: testSid,
+        toolCallId: 'tc-2',
+        outputText: 'file1.txt',
+        durationMs: 150,
+        timestamp: ts,
       );
       final failed = ToolFailed(
-        sessionId: testSid, toolCallId: 'tc-3',
-        error: 'Command not found', timestamp: ts,
+        sessionId: testSid,
+        toolCallId: 'tc-3',
+        error: 'Command not found',
+        timestamp: ts,
       );
 
       expect(called.toolName, equals('bash'));
@@ -113,14 +168,24 @@ void main() {
     });
 
     test('StepStarted/StepEnded/StepFailed', () {
-      final started = StepStarted(sessionId: testSid, stepNumber: 1, timestamp: ts);
+      final started = StepStarted(
+        sessionId: testSid,
+        stepNumber: 1,
+        timestamp: ts,
+      );
       final ended = StepEnded(
-        sessionId: testSid, stepNumber: 1,
-        tokensInput: 100, tokensOutput: 50, tokensReasoning: 10,
+        sessionId: testSid,
+        stepNumber: 1,
+        tokensInput: 100,
+        tokensOutput: 50,
+        tokensReasoning: 10,
         timestamp: ts,
       );
       final failed = StepFailed(
-        sessionId: testSid, stepNumber: 2, error: 'Timeout', timestamp: ts,
+        sessionId: testSid,
+        stepNumber: 2,
+        error: 'Timeout',
+        timestamp: ts,
       );
 
       expect(started.stepNumber, equals(1));
@@ -132,7 +197,9 @@ void main() {
     test('CompactionStarted/CompactionEnded', () {
       final started = CompactionStarted(sessionId: testSid, timestamp: ts);
       final ended = CompactionEnded(
-        sessionId: testSid, summary: 'Conversation about X', timestamp: ts,
+        sessionId: testSid,
+        summary: 'Conversation about X',
+        timestamp: ts,
       );
       expect(ended.summary, equals('Conversation about X'));
     });
@@ -153,12 +220,16 @@ void main() {
 
     test('TaskStarted/TaskCompleted', () {
       final started = TaskStarted(
-        sessionId: testSid, taskId: 'task-1',
-        description: 'Review code', timestamp: ts,
+        sessionId: testSid,
+        taskId: 'task-1',
+        description: 'Review code',
+        timestamp: ts,
       );
       final completed = TaskCompleted(
-        sessionId: testSid, taskId: 'task-1',
-        output: 'Code looks good', timestamp: ts,
+        sessionId: testSid,
+        taskId: 'task-1',
+        output: 'Code looks good',
+        timestamp: ts,
       );
       expect(started.description, equals('Review code'));
       expect(completed.output, equals('Code looks good'));
@@ -166,8 +237,11 @@ void main() {
 
     test('sequence field defaults to 0', () {
       final event = MessageAdded(
-        sessionId: testSid, messageId: 'msg', role: 'user',
-        content: 'hi', timestamp: ts,
+        sessionId: testSid,
+        messageId: 'msg',
+        role: 'user',
+        content: 'hi',
+        timestamp: ts,
       );
       expect(event.sequence, equals(0));
     });
@@ -291,8 +365,18 @@ void main() {
     test('Equatable props include all fields', () {
       final now = DateTime.now();
       final id = SessionID.create();
-      final state1 = SessionState(id: id, title: 'A', createdAt: now, updatedAt: now);
-      final state2 = SessionState(id: id, title: 'A', createdAt: now, updatedAt: now);
+      final state1 = SessionState(
+        id: id,
+        title: 'A',
+        createdAt: now,
+        updatedAt: now,
+      );
+      final state2 = SessionState(
+        id: id,
+        title: 'A',
+        createdAt: now,
+        updatedAt: now,
+      );
       expect(state1, equals(state2));
     });
   });
@@ -303,9 +387,14 @@ void main() {
     test('fromJson/toJson roundtrip', () {
       final now = DateTime.now();
       final msg = SessionMessage(
-        id: 'msg-1', role: MessageRole.user, content: 'Hello',
-        seq: 0, model: 'gpt-4o', reasoning: 'thinking',
-        error: null, createdAt: now,
+        id: 'msg-1',
+        role: MessageRole.user,
+        content: 'Hello',
+        seq: 0,
+        model: 'gpt-4o',
+        reasoning: 'thinking',
+        error: null,
+        createdAt: now,
       );
 
       final json = msg.toJson();
@@ -322,8 +411,11 @@ void main() {
       final now = DateTime.now();
       final now2 = DateTime(2024);
       final msg = SessionMessage(
-        id: 'msg-2', role: MessageRole.assistant, content: 'Hi',
-        seq: 1, createdAt: now2,
+        id: 'msg-2',
+        role: MessageRole.assistant,
+        content: 'Hi',
+        seq: 1,
+        createdAt: now2,
       );
 
       final copy = msg.copyWith(content: 'Updated');
@@ -338,10 +430,13 @@ void main() {
     test('fromJson/toJson roundtrip', () {
       final now = DateTime.now();
       final result = ToolResult(
-        id: 'tr-1', toolName: 'bash',
+        id: 'tr-1',
+        toolName: 'bash',
         input: {'command': 'ls'},
-        outputText: 'file.txt', durationMs: 100,
-        status: 'success', createdAt: now,
+        outputText: 'file.txt',
+        durationMs: 100,
+        status: 'success',
+        createdAt: now,
       );
 
       final json = result.toJson();
@@ -356,9 +451,13 @@ void main() {
     test('copyWith preserves fields', () {
       final now = DateTime.now();
       final result = ToolResult(
-        id: 'tr-2', toolName: 'read',
-        input: {}, outputText: 'content',
-        durationMs: 50, status: 'success', createdAt: now,
+        id: 'tr-2',
+        toolName: 'read',
+        input: {},
+        outputText: 'content',
+        durationMs: 50,
+        status: 'success',
+        createdAt: now,
       );
 
       final copy = result.copyWith(outputText: 'new content');

@@ -261,7 +261,8 @@ void main() {
         final testDir = Directory('test/glob_posix');
         if (!testDir.existsSync()) testDir.createSync(recursive: true);
         final subDir = Directory('${testDir.path}/sub')..createSync();
-        final file1 = File('${subDir.path}/file.dart')..writeAsStringSync('test');
+        final file1 = File('${subDir.path}/file.dart')
+          ..writeAsStringSync('test');
 
         final output = await tool.execute({
           'pattern': '**/*.dart',
@@ -290,8 +291,10 @@ void main() {
         // Create a .gitignore with a malformed pattern
         final gitignore = File('${testDir.path}/.gitignore')
           ..writeAsStringSync('valid_pattern\n[invalid\n*.log');
-        final file1 = File('${testDir.path}/test.dart')..writeAsStringSync('test');
-        final file2 = File('${testDir.path}/test.log')..writeAsStringSync('log');
+        final file1 = File('${testDir.path}/test.dart')
+          ..writeAsStringSync('test');
+        final file2 = File('${testDir.path}/test.log')
+          ..writeAsStringSync('log');
 
         final output = await tool.execute({
           'pattern': '*',
@@ -318,7 +321,8 @@ void main() {
 
         final gitignore = File('${testDir.path}/.gitignore')
           ..writeAsStringSync('');
-        final file1 = File('${testDir.path}/test.dart')..writeAsStringSync('test');
+        final file1 = File('${testDir.path}/test.dart')
+          ..writeAsStringSync('test');
 
         final output = await tool.execute({
           'pattern': '*.dart',
@@ -342,8 +346,10 @@ void main() {
 
         final gitignore = File('${testDir.path}/.gitignore')
           ..writeAsStringSync('# This is a comment\n*.log\n# Another comment');
-        final file1 = File('${testDir.path}/test.dart')..writeAsStringSync('test');
-        final file2 = File('${testDir.path}/test.log')..writeAsStringSync('log');
+        final file1 = File('${testDir.path}/test.dart')
+          ..writeAsStringSync('test');
+        final file2 = File('${testDir.path}/test.log')
+          ..writeAsStringSync('log');
 
         final output = await tool.execute({
           'pattern': '*',
@@ -377,8 +383,11 @@ void main() {
                 throw Exception('Permission denied by user');
               },
           askQuestion:
-              ({required question, options = const [], multiple = false}) async =>
-                  '',
+              ({
+                required question,
+                options = const [],
+                multiple = false,
+              }) async => '',
         );
 
         await expectLater(

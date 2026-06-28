@@ -10,11 +10,9 @@ class FakeSkillService implements SkillService {
   final Map<String, SkillInfo> _skills;
   final bool _listAllThrows;
 
-  FakeSkillService({
-    Map<String, SkillInfo>? skills,
-    bool listAllThrows = false,
-  })  : _skills = skills ?? {},
-        _listAllThrows = listAllThrows;
+  FakeSkillService({Map<String, SkillInfo>? skills, bool listAllThrows = false})
+    : _skills = skills ?? {},
+      _listAllThrows = listAllThrows;
 
   @override
   Future<List<SkillInfo>> listAll() async {
@@ -116,10 +114,9 @@ void main() {
             content: 'content b',
           ),
         ];
-        final service = FakeSkillService(skills: {
-          'skill-a': skills[0],
-          'skill-b': skills[1],
-        });
+        final service = FakeSkillService(
+          skills: {'skill-a': skills[0], 'skill-b': skills[1]},
+        );
         final tool = createSkillTool(service, skills);
 
         expect(tool.description, contains('skill-a'));
@@ -172,47 +169,53 @@ void main() {
     });
 
     group('permission call verification', () {
-      test('execute calls ctx.ask with correct permission and pattern', () async {
-        final skill = SkillInfo(
-          name: 'my-skill',
-          description: 'A test skill',
-          directory: '/skills/test',
-          content: '# Test',
-        );
-        final service = FakeSkillService(skills: {'my-skill': skill});
-        final skills = [skill];
-        final tool = createSkillTool(service, skills);
+      test(
+        'execute calls ctx.ask with correct permission and pattern',
+        () async {
+          final skill = SkillInfo(
+            name: 'my-skill',
+            description: 'A test skill',
+            directory: '/skills/test',
+            content: '# Test',
+          );
+          final service = FakeSkillService(skills: {'my-skill': skill});
+          final skills = [skill];
+          final tool = createSkillTool(service, skills);
 
-        String? capturedPermission;
-        List<String>? capturedPatterns;
-        List<String>? capturedAlways;
-        final ctx = ToolContext(
-          toolCallId: 'test',
-          sessionId: 'test',
-          ask:
-              ({
-                required String permission,
-                required List<String> patterns,
-                Map<String, dynamic>? metadata,
-                List<String>? always,
-              }) async {
-                capturedPermission = permission;
-                capturedPatterns = patterns;
-                capturedAlways = always;
-              },
-          askQuestion:
-              ({required question, options = const [], multiple = false}) async =>
-                  '',
-        );
+          String? capturedPermission;
+          List<String>? capturedPatterns;
+          List<String>? capturedAlways;
+          final ctx = ToolContext(
+            toolCallId: 'test',
+            sessionId: 'test',
+            ask:
+                ({
+                  required String permission,
+                  required List<String> patterns,
+                  Map<String, dynamic>? metadata,
+                  List<String>? always,
+                }) async {
+                  capturedPermission = permission;
+                  capturedPatterns = patterns;
+                  capturedAlways = always;
+                },
+            askQuestion:
+                ({
+                  required question,
+                  options = const [],
+                  multiple = false,
+                }) async => '',
+          );
 
-        await tool.execute({'name': 'my-skill'}, ctx);
+          await tool.execute({'name': 'my-skill'}, ctx);
 
-        expect(capturedPermission, equals('skill'));
-        expect(capturedPatterns, isNotNull);
-        expect(capturedPatterns!.first, contains('skill:name=my-skill'));
-        expect(capturedAlways, isNotNull);
-        expect(capturedAlways!.first, contains('skill:name=my-skill'));
-      });
+          expect(capturedPermission, equals('skill'));
+          expect(capturedPatterns, isNotNull);
+          expect(capturedPatterns!.first, contains('skill:name=my-skill'));
+          expect(capturedAlways, isNotNull);
+          expect(capturedAlways!.first, contains('skill:name=my-skill'));
+        },
+      );
     });
 
     group('output format verification (XML wrapping)', () {
@@ -253,26 +256,29 @@ void main() {
         expect(output.output, contains('file:///home/user/skills/dir-skill'));
       });
 
-      test('output includes <skill_files> section when files present', () async {
-        final skill = SkillInfo(
-          name: 'files-skill',
-          description: 'Files test',
-          directory: '/skills/files',
-          content: 'Content',
-          files: ['helpers.py', 'config.json', 'README.md'],
-        );
-        final service = FakeSkillService(skills: {'files-skill': skill});
-        final tool = createSkillTool(service, [skill]);
-        final ctx = _mockCtx();
+      test(
+        'output includes <skill_files> section when files present',
+        () async {
+          final skill = SkillInfo(
+            name: 'files-skill',
+            description: 'Files test',
+            directory: '/skills/files',
+            content: 'Content',
+            files: ['helpers.py', 'config.json', 'README.md'],
+          );
+          final service = FakeSkillService(skills: {'files-skill': skill});
+          final tool = createSkillTool(service, [skill]);
+          final ctx = _mockCtx();
 
-        final output = await tool.execute({'name': 'files-skill'}, ctx);
+          final output = await tool.execute({'name': 'files-skill'}, ctx);
 
-        expect(output.output, contains('<skill_files>'));
-        expect(output.output, contains('<file>helpers.py</file>'));
-        expect(output.output, contains('<file>config.json</file>'));
-        expect(output.output, contains('<file>README.md</file>'));
-        expect(output.output, contains('</skill_files>'));
-      });
+          expect(output.output, contains('<skill_files>'));
+          expect(output.output, contains('<file>helpers.py</file>'));
+          expect(output.output, contains('<file>config.json</file>'));
+          expect(output.output, contains('<file>README.md</file>'));
+          expect(output.output, contains('</skill_files>'));
+        },
+      );
 
       test('output omits empty files section when no files', () async {
         final skill = SkillInfo(
@@ -307,25 +313,30 @@ void main() {
         expect(output.output, contains('not found'));
       });
 
-      test('getByName returns null for missing skill (service integration)', () async {
-        final service = FakeSkillService(skills: {});
-        final result = await service.getByName('ghost-skill');
-        expect(result, isNull);
-      });
+      test(
+        'getByName returns null for missing skill (service integration)',
+        () async {
+          final service = FakeSkillService(skills: {});
+          final result = await service.getByName('ghost-skill');
+          expect(result, isNull);
+        },
+      );
 
-      test('getByName returns skill for existing name (service integration)',
-          () async {
-        final skill = SkillInfo(
-          name: 'real-skill',
-          description: 'Real',
-          directory: '/skills/real',
-          content: 'real content',
-        );
-        final service = FakeSkillService(skills: {'real-skill': skill});
-        final result = await service.getByName('real-skill');
-        expect(result, isNotNull);
-        expect(result!.name, equals('real-skill'));
-      });
+      test(
+        'getByName returns skill for existing name (service integration)',
+        () async {
+          final skill = SkillInfo(
+            name: 'real-skill',
+            description: 'Real',
+            directory: '/skills/real',
+            content: 'real content',
+          );
+          final service = FakeSkillService(skills: {'real-skill': skill});
+          final result = await service.getByName('real-skill');
+          expect(result, isNotNull);
+          expect(result!.name, equals('real-skill'));
+        },
+      );
     });
 
     group('successful skill load with full context injection', () {

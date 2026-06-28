@@ -45,14 +45,11 @@ void main() {
       final testFile = File('${testDir.path}/test_first_access.txt');
       await testFile.writeAsString('Hello old World');
 
-      final output = await tool.execute(
-        {
-          'file_path': testFile.path,
-          'old_string': 'old',
-          'new_string': 'new',
-        },
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'old_string': 'old',
+        'new_string': 'new',
+      }, ctx);
 
       expect(output.metadata?['error'], isNull);
       expect(await testFile.readAsString(), equals('Hello new World'));
@@ -67,14 +64,11 @@ void main() {
       // Read the file first (simulates what the read tool does)
       await testFile.readAsString();
 
-      final output = await tool.execute(
-        {
-          'file_path': testFile.path,
-          'old_string': 'old',
-          'new_string': 'new',
-        },
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'old_string': 'old',
+        'new_string': 'new',
+      }, ctx);
 
       expect(output.metadata?['error'], isNull);
       expect(await testFile.readAsString(), equals('Hello new World'));
@@ -88,14 +82,11 @@ void main() {
       final testFile = File('${testDir.path}/test_noop.txt');
       await testFile.writeAsString('Hello World');
 
-      final output = await tool.execute(
-        {
-          'file_path': testFile.path,
-          'old_string': 'World',
-          'new_string': 'World',
-        },
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'old_string': 'World',
+        'new_string': 'World',
+      }, ctx);
 
       // replaceAll with same string is a no-op but succeeds
       expect(output.metadata?['error'], isNull);
@@ -104,26 +95,25 @@ void main() {
   });
 
   group('edit tool — empty old_string', () {
-    test('empty old_string produces no-op (replaceAll inserts between chars)',
-        () async {
-      final tool = createEditTool();
-      final ctx = _mockCtx();
-      final testFile = File('${testDir.path}/test_empty_old.txt');
-      await testFile.writeAsString('Hello World');
+    test(
+      'empty old_string produces no-op (replaceAll inserts between chars)',
+      () async {
+        final tool = createEditTool();
+        final ctx = _mockCtx();
+        final testFile = File('${testDir.path}/test_empty_old.txt');
+        await testFile.writeAsString('Hello World');
 
-      final output = await tool.execute(
-        {
+        final output = await tool.execute({
           'file_path': testFile.path,
           'old_string': '',
           'new_string': 'replacement',
-        },
-        ctx,
-      );
+        }, ctx);
 
-      // content.contains('') is always true, replaceAll('', 'replacement')
-      // inserts between every character. This documents current behavior.
-      expect(output.metadata?['error'], isNull);
-    });
+        // content.contains('') is always true, replaceAll('', 'replacement')
+        // inserts between every character. This documents current behavior.
+        expect(output.metadata?['error'], isNull);
+      },
+    );
   });
 
   group('edit tool — path alias', () {
@@ -133,14 +123,11 @@ void main() {
       final testFile = File('${testDir.path}/test_alias.txt');
       await testFile.writeAsString('Hello old World');
 
-      final output = await tool.execute(
-        {
-          'path': testFile.path,
-          'old_string': 'old',
-          'new_string': 'new',
-        },
-        ctx,
-      );
+      final output = await tool.execute({
+        'path': testFile.path,
+        'old_string': 'old',
+        'new_string': 'new',
+      }, ctx);
 
       expect(output.metadata?['error'], isNull);
       expect(await testFile.readAsString(), equals('Hello new World'));
@@ -152,14 +139,11 @@ void main() {
       final testFile = File('${testDir.path}/test_oldstring_alias.txt');
       await testFile.writeAsString('Hello old World');
 
-      final output = await tool.execute(
-        {
-          'file_path': testFile.path,
-          'oldString': 'old',
-          'newString': 'new',
-        },
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'oldString': 'old',
+        'newString': 'new',
+      }, ctx);
 
       expect(output.metadata?['error'], isNull);
       expect(await testFile.readAsString(), equals('Hello new World'));
@@ -171,14 +155,11 @@ void main() {
       final tool = createEditTool();
       final ctx = _mockCtx();
 
-      final output = await tool.execute(
-        {
-          'file_path': '${testDir.path}/nonexistent.txt',
-          'old_string': 'old',
-          'new_string': 'new',
-        },
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': '${testDir.path}/nonexistent.txt',
+        'old_string': 'old',
+        'new_string': 'new',
+      }, ctx);
 
       expect(output.metadata?['error'], isTrue);
       expect(output.output, contains('not found'));
@@ -190,14 +171,11 @@ void main() {
       final testFile = File('${testDir.path}/test_delete.txt');
       await testFile.writeAsString('Hello old World');
 
-      final output = await tool.execute(
-        {
-          'file_path': testFile.path,
-          'old_string': ' old',
-          'new_string': '',
-        },
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'old_string': ' old',
+        'new_string': '',
+      }, ctx);
 
       expect(output.metadata?['error'], isNull);
       expect(await testFile.readAsString(), equals('Hello World'));
@@ -209,38 +187,34 @@ void main() {
       final testFile = File('${testDir.path}/test_multiline.txt');
       await testFile.writeAsString('Line 1\nLine 2\nLine 3');
 
-      final output = await tool.execute(
-        {
-          'file_path': testFile.path,
-          'old_string': 'Line 2\nLine 3',
-          'new_string': 'Replaced',
-        },
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'old_string': 'Line 2\nLine 3',
+        'new_string': 'Replaced',
+      }, ctx);
 
       expect(output.metadata?['error'], isNull);
       expect(await testFile.readAsString(), equals('Line 1\nReplaced'));
     });
 
-    test('edit preserves file content when old_string appears multiple times',
-        () async {
-      final tool = createEditTool();
-      final ctx = _mockCtx();
-      final testFile = File('${testDir.path}/test_multiple.txt');
-      await testFile.writeAsString('abc abc abc');
+    test(
+      'edit preserves file content when old_string appears multiple times',
+      () async {
+        final tool = createEditTool();
+        final ctx = _mockCtx();
+        final testFile = File('${testDir.path}/test_multiple.txt');
+        await testFile.writeAsString('abc abc abc');
 
-      final output = await tool.execute(
-        {
+        final output = await tool.execute({
           'file_path': testFile.path,
           'old_string': 'abc',
           'new_string': 'xyz',
           'replace_all': false,
-        },
-        ctx,
-      );
+        }, ctx);
 
-      expect(output.metadata?['error'], isNull);
-      expect(await testFile.readAsString(), equals('xyz abc abc'));
-    });
+        expect(output.metadata?['error'], isNull);
+        expect(await testFile.readAsString(), equals('xyz abc abc'));
+      },
+    );
   });
 }

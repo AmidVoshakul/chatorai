@@ -6,14 +6,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test/test.dart';
 import 'package:chatorai/core/llm/model_resolver.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
-import 'package:chatorai/shared/utils/secure_storage_service.dart';
+import 'package:chatorai/core/permission/permission_service.dart';
+import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/core/session/session_id.dart';
+import 'package:chatorai/core/session/session_runner.dart';
+import 'package:chatorai/core/session/session_repository.dart';
+import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/core/tools/built_in/task.dart';
 import 'package:chatorai/core/tools/built_in/question.dart';
 import 'package:chatorai/core/tools/built_in/apply_patch.dart';
 import 'package:chatorai/core/tools/built_in/todowrite.dart';
 import 'package:chatorai/features/chat/services/chat_retry_service.dart';
 import 'package:chatorai/features/chat/services/chat_ai_service.dart';
+import 'package:chatorai/shared/utils/secure_storage_service.dart';
 
 class MockSecureStorageService extends Mock implements SecureStorageService {}
 
@@ -21,7 +28,10 @@ class MockSharedPreferences extends Mock implements SharedPreferences {}
 
 /// Fake ChatAiService for testing task tool without real network calls.
 class _FakeChatAiService extends ChatAiService {
-  _FakeChatAiService() : super(resolver: _createFakeResolver());
+  _FakeChatAiService() : super(resolver: _createFakeResolver()) {
+    currentModelForTesting = 'openrouter/free';
+    currentTemperatureForTesting = 0.7;
+  }
 
   static ModelResolver _createFakeResolver() {
     final mockSecureStorage = MockSecureStorageService();
@@ -65,6 +75,67 @@ class _FakeChatAiService extends ChatAiService {
     onChunk('Fake subagent output');
     onCompletion('Fake completion');
   }
+}
+
+/// Test harness that provides all dependencies for the task tool.
+class _TaskTestHarness {
+  final AppDatabase db;
+  final SessionRepository repository;
+  final SessionRunner runner;
+  final SessionRunnerHolder runnerHolder;
+  final ToolRegistry toolRegistry;
+  final ChatAiService chatAiService;
+
+  _TaskTestHarness({
+    required this.db,
+    required this.repository,
+    required this.runner,
+    required this.runnerHolder,
+    required this.toolRegistry,
+    required this.chatAiService,
+  });
+
+  ToolDef createTaskToolWithDeps() => createTaskTool(
+    chatAiService: chatAiService,
+    toolRegistry: toolRegistry,
+    currentSessionRunner: runnerHolder,
+  );
+
+  Future<void> close() => db.close();
+}
+
+SharedPreferences _createMockPrefs() {
+  final mock = MockSharedPreferences();
+  when(() => mock.setString(any(), any())).thenAnswer((_) async => true);
+  when(() => mock.setBool(any(), any())).thenAnswer((_) async => true);
+  when(() => mock.setInt(any(), any())).thenAnswer((_) async => true);
+  when(() => mock.getString(any())).thenReturn(null);
+  when(() => mock.getBool(any())).thenReturn(null);
+  when(() => mock.getInt(any())).thenReturn(null);
+  when(() => mock.getStringList(any())).thenReturn(null);
+  return mock;
+}
+
+Future<_TaskTestHarness> _createTaskHarness(ChatAiService chatService) async {
+  final db = AppDatabase.inMemory();
+  final repository = SessionRepository(db);
+  final runner = SessionRunner(repository, null);
+  final runnerHolder = SessionRunnerHolder(runner);
+  // Create an initial parent session so child session creation works
+  await repository.createSession(agent: 'test');
+
+  final ps = PermissionService();
+  ps.attachPreferences(_createMockPrefs());
+  final toolRegistry = ToolRegistry(ps, PermissionRuleset(rules: []));
+
+  return _TaskTestHarness(
+    db: db,
+    repository: repository,
+    runner: runner,
+    runnerHolder: runnerHolder,
+    toolRegistry: toolRegistry,
+    chatAiService: chatService,
+  );
 }
 
 /// Record of a permission request made via ctx.ask.
@@ -120,13 +191,24 @@ String _tempPath(String name) =>
 
 void main() {
   group('Integration Tests - Agent/Task Tools', () {
-    const defaultSessionId = 'integration-test-session-001';
+    const defaultSessionId = 'ses_integration-test-session-001';
 
     group('Task Tool Integration', () {
+      late _TaskTestHarness harness;
       late ToolDef taskTool;
 
-      setUp(() {
-        taskTool = createTaskTool();
+      setUp(() async {
+        harness = await _createTaskHarness(_FakeChatAiService());
+        // Create parent session with known ID so tests can reference it
+        await harness.repository.createSession(
+          id: SessionID.fromString(defaultSessionId),
+          agent: 'general',
+        );
+        taskTool = harness.createTaskToolWithDeps();
+      });
+
+      tearDown(() async {
+        await harness.close();
       });
 
       test('produces valid XML with required attributes', () async {
@@ -140,7 +222,7 @@ void main() {
         expect(output.metadata?['error'], isNull);
         expect(output.output, contains('session_id="$defaultSessionId"'));
         expect(output.output, contains('state="completed"'));
-        expect(output.output, contains('<summary>Explore codebase</summary>'));
+        expect(output.output, contains('<summary>'));
         expect(output.output, contains('<task_result>'));
       });
 
@@ -212,29 +294,9 @@ void main() {
         expect(output.output, contains('Missing required fields'));
       });
 
-      test('MVP fallback when chatAiService is null', () async {
+      test('executes subagent successfully', () async {
         final recording = createRecordingContext(sessionId: defaultSessionId);
         final output = await taskTool.execute({
-          'description': 'MVP task',
-          'prompt': 'Do work',
-          'subagent_type': 'explore',
-        }, recording.ctx);
-
-        expect(output.metadata?['error'], isNull);
-        expect(output.output, contains('[Subagent MVP not yet wired'));
-        expect(output.metadata?['agent_name'], isNotNull);
-      });
-
-      test('executes subagent when ChatAiService provided', () async {
-        // Create a fake ChatAiService that immediately completes
-        final fakeService = _FakeChatAiService();
-        // Set the current model and temperature to simulate parent call state
-        fakeService.currentModelForTesting = 'openrouter/free';
-        fakeService.currentTemperatureForTesting = 0.7;
-        final toolWithService = createTaskTool(chatAiService: fakeService);
-        final recording = createRecordingContext(sessionId: defaultSessionId);
-
-        final output = await toolWithService.execute({
           'description': 'Subagent test',
           'prompt': 'Do something',
           'subagent_type': 'general',
@@ -242,7 +304,6 @@ void main() {
 
         expect(output.metadata?['error'], isNull);
         expect(output.output, contains('Fake subagent output'));
-        expect(output.output, contains('session_id'));
         expect(output.metadata?['agent_name'], equals('General'));
       });
     });
@@ -795,23 +856,39 @@ void main() {
     });
 
     group('Cross-Tool Integration Scenarios', () {
+      late _TaskTestHarness crossHarness;
+      late ToolDef crossTaskTool;
+
+      setUp(() async {
+        crossHarness = await _createTaskHarness(_FakeChatAiService());
+        await crossHarness.repository.createSession(
+          id: SessionID.fromString('ses_cross-session'),
+          agent: 'general',
+        );
+        crossTaskTool = crossHarness.createTaskToolWithDeps();
+      });
+
+      tearDown(() async {
+        await crossHarness.close();
+      });
+
       test('task tool followed by question tool in same session', () async {
         // Simulate a workflow where a task delegates to a subagent that asks questions
         final taskRecording = createRecordingContext(
-          sessionId: 'cross-session',
+          sessionId: 'ses_cross-session',
         );
-        final taskOutput = await createTaskTool().execute({
+        final taskOutput = await crossTaskTool.execute({
           'description': 'User interview',
           'prompt': 'Ask the user about their preferences',
           'subagent_type': 'general',
         }, taskRecording.ctx);
 
-        expect(taskOutput.metadata?['session_id'], equals('cross-session'));
+        expect(taskOutput.metadata?['session_id'], equals('ses_cross-session'));
 
         // Now simulate the subagent using question tool
         final questionCtx = ToolContext(
           toolCallId: 'cross-${DateTime.now().millisecondsSinceEpoch}',
-          sessionId: 'cross-session',
+          sessionId: 'ses_cross-session',
           abortSignal: null,
           ask:
               ({

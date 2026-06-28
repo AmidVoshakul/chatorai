@@ -78,23 +78,24 @@ void main() {
       expect(output.metadata?['binary'], isTrue);
     });
 
-    test('file with .DS_Store in name is detected via binary content',
-        () async {
-      // .DS_Store is NOT in the extension list, but its content is binary
-      // This tests the content-based detection, not extension
-      final tool = createReadTool();
-      final ctx = _mockCtx();
-      final testFile = File('${testDir.path}/regular_name.txt');
-      // Write binary content that exceeds 30% non-printable threshold
-      final binaryBytes = List.filled(1000, 0x00);
-      await testFile.writeAsBytes(binaryBytes);
+    test(
+      'file with .DS_Store in name is detected via binary content',
+      () async {
+        // .DS_Store is NOT in the extension list, but its content is binary
+        // This tests the content-based detection, not extension
+        final tool = createReadTool();
+        final ctx = _mockCtx();
+        final testFile = File('${testDir.path}/regular_name.txt');
+        // Write binary content that exceeds 30% non-printable threshold
+        final binaryBytes = List.filled(1000, 0x00);
+        await testFile.writeAsBytes(binaryBytes);
 
-      final output = await tool.execute({'file_path': testFile.path}, ctx);
-      expect(output.metadata?['binary'], isTrue);
-    });
+        final output = await tool.execute({'file_path': testFile.path}, ctx);
+        expect(output.metadata?['binary'], isTrue);
+      },
+    );
 
-    test('file with .gitignore name but text content is not binary',
-        () async {
+    test('file with .gitignore name but text content is not binary', () async {
       final tool = createReadTool();
       final ctx = _mockCtx();
       final testFile = File('${testDir.path}/.gitignore');
@@ -113,10 +114,10 @@ void main() {
       final testFile = File('${testDir.path}/test_offset_beyond.txt');
       await testFile.writeAsString('Line 1\nLine 2\nLine 3');
 
-      final output = await tool.execute(
-        {'file_path': testFile.path, 'offset': 100},
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'offset': 100,
+      }, ctx);
       expect(output.metadata?['error'], isNull);
       expect(output.output, isEmpty);
       expect(output.metadata?['offset'], equals(3)); // clamped to lines.length
@@ -128,10 +129,10 @@ void main() {
       final testFile = File('${testDir.path}/test_offset_negative.txt');
       await testFile.writeAsString('Line 1\nLine 2\nLine 3');
 
-      final output = await tool.execute(
-        {'file_path': testFile.path, 'offset': -5},
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'offset': -5,
+      }, ctx);
       expect(output.metadata?['error'], isNull);
       expect(output.metadata?['offset'], equals(0));
       expect(output.output, contains('Line 1'));
@@ -175,10 +176,11 @@ void main() {
       final lines = List.generate(10, (i) => 'Line $i');
       await testFile.writeAsString(lines.join('\n'));
 
-      final output = await tool.execute(
-        {'file_path': testFile.path, 'offset': 5, 'limit': 100},
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'offset': 5,
+        'limit': 100,
+      }, ctx);
       expect(output.metadata?['error'], isNull);
       expect(output.metadata?['limit'], equals(5)); // only lines 5-9 available
       expect(output.output, contains('Line 5'));
@@ -210,10 +212,7 @@ void main() {
       await testFile.writeAsString('path alias content');
 
       // Use 'path' instead of 'file_path'
-      final output = await tool.execute(
-        {'path': testFile.path},
-        ctx,
-      );
+      final output = await tool.execute({'path': testFile.path}, ctx);
       expect(output.metadata?['error'], isNull);
       expect(output.output, contains('path alias content'));
     });
@@ -226,10 +225,10 @@ void main() {
       await testFile1.writeAsString('primary');
       await testFile2.writeAsString('secondary');
 
-      final output = await tool.execute(
-        {'file_path': testFile1.path, 'path': testFile2.path},
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile1.path,
+        'path': testFile2.path,
+      }, ctx);
       expect(output.metadata?['error'], isNull);
       expect(output.output, contains('primary'));
     });

@@ -55,140 +55,177 @@ void main() {
   });
 
   group('websearch numResults parsing (no network)', () {
-    test('numResults as string "3" does not throw', () async {
-      final tool = createWebsearchTool();
-      final ctx = _mockCtx();
-      // Even if network fails, parsing should not throw
-      final output = await tool.execute(
-        {'query': 'test', 'numResults': '3'},
-        ctx,
-      );
-      expect(output, isA<ToolOutput>());
-    }, timeout: Timeout(const Duration(seconds: 20)));
+    test(
+      'numResults as string "3" does not throw',
+      () async {
+        final tool = createWebsearchTool();
+        final ctx = _mockCtx();
+        // Even if network fails, parsing should not throw
+        final output = await tool.execute({
+          'query': 'test',
+          'numResults': '3',
+        }, ctx);
+        expect(output, isA<ToolOutput>());
+      },
+      timeout: Timeout(const Duration(seconds: 20)),
+    );
 
-    test('numResults as string "0" does not throw', () async {
-      final tool = createWebsearchTool();
-      final ctx = _mockCtx();
-      final output = await tool.execute(
-        {'query': 'test', 'numResults': '0'},
-        ctx,
-      );
-      expect(output, isA<ToolOutput>());
-    }, timeout: Timeout(const Duration(seconds: 20)));
+    test(
+      'numResults as string "0" does not throw',
+      () async {
+        final tool = createWebsearchTool();
+        final ctx = _mockCtx();
+        final output = await tool.execute({
+          'query': 'test',
+          'numResults': '0',
+        }, ctx);
+        expect(output, isA<ToolOutput>());
+      },
+      timeout: Timeout(const Duration(seconds: 20)),
+    );
 
-    test('numResults as string "100" does not throw', () async {
-      final tool = createWebsearchTool();
-      final ctx = _mockCtx();
-      final output = await tool.execute(
-        {'query': 'test', 'numResults': '100'},
-        ctx,
-      );
-      expect(output, isA<ToolOutput>());
-    }, timeout: Timeout(const Duration(seconds: 20)));
+    test(
+      'numResults as string "100" does not throw',
+      () async {
+        final tool = createWebsearchTool();
+        final ctx = _mockCtx();
+        final output = await tool.execute({
+          'query': 'test',
+          'numResults': '100',
+        }, ctx);
+        expect(output, isA<ToolOutput>());
+      },
+      timeout: Timeout(const Duration(seconds: 20)),
+    );
 
-    test('numResults as invalid string "abc" does not throw', () async {
-      final tool = createWebsearchTool();
-      final ctx = _mockCtx();
-      final output = await tool.execute(
-        {'query': 'test', 'numResults': 'abc'},
-        ctx,
-      );
-      expect(output, isA<ToolOutput>());
-    }, timeout: Timeout(const Duration(seconds: 20)));
+    test(
+      'numResults as invalid string "abc" does not throw',
+      () async {
+        final tool = createWebsearchTool();
+        final ctx = _mockCtx();
+        final output = await tool.execute({
+          'query': 'test',
+          'numResults': 'abc',
+        }, ctx);
+        expect(output, isA<ToolOutput>());
+      },
+      timeout: Timeout(const Duration(seconds: 20)),
+    );
 
-    test('numResults as negative number does not throw', () async {
-      final tool = createWebsearchTool();
-      final ctx = _mockCtx();
-      final output = await tool.execute(
-        {'query': 'test', 'numResults': -5},
-        ctx,
-      );
-      expect(output, isA<ToolOutput>());
-    }, timeout: Timeout(const Duration(seconds: 20)));
+    test(
+      'numResults as negative number does not throw',
+      () async {
+        final tool = createWebsearchTool();
+        final ctx = _mockCtx();
+        final output = await tool.execute({
+          'query': 'test',
+          'numResults': -5,
+        }, ctx);
+        expect(output, isA<ToolOutput>());
+      },
+      timeout: Timeout(const Duration(seconds: 20)),
+    );
 
-    test('numResults as double string "3.5" does not throw', () async {
-      final tool = createWebsearchTool();
-      final ctx = _mockCtx();
-      final output = await tool.execute(
-        {'query': 'test', 'numResults': '3.5'},
-        ctx,
-      );
-      expect(output, isA<ToolOutput>());
-    }, timeout: Timeout(const Duration(seconds: 20)));
+    test(
+      'numResults as double string "3.5" does not throw',
+      () async {
+        final tool = createWebsearchTool();
+        final ctx = _mockCtx();
+        final output = await tool.execute({
+          'query': 'test',
+          'numResults': '3.5',
+        }, ctx);
+        expect(output, isA<ToolOutput>());
+      },
+      timeout: Timeout(const Duration(seconds: 20)),
+    );
   });
 
   group('websearch special characters (no network)', () {
-    test('query with ampersand does not throw', () async {
-      final tool = createWebsearchTool();
-      final ctx = _mockCtx();
-      final output = await tool.execute(
-        {'query': 'flutter & dart'},
-        ctx,
-      );
-      expect(output, isA<ToolOutput>());
-    }, timeout: Timeout(const Duration(seconds: 20)));
+    test(
+      'query with ampersand does not throw',
+      () async {
+        final tool = createWebsearchTool();
+        final ctx = _mockCtx();
+        final output = await tool.execute({'query': 'flutter & dart'}, ctx);
+        expect(output, isA<ToolOutput>());
+      },
+      timeout: Timeout(const Duration(seconds: 20)),
+    );
 
-    test('query with angle brackets does not throw', () async {
-      final tool = createWebsearchTool();
-      final ctx = _mockCtx();
-      final output = await tool.execute(
-        {'query': 'flutter <test> dart'},
-        ctx,
-      );
-      expect(output, isA<ToolOutput>());
-    }, timeout: Timeout(const Duration(seconds: 20)));
+    test(
+      'query with angle brackets does not throw',
+      () async {
+        final tool = createWebsearchTool();
+        final ctx = _mockCtx();
+        final output = await tool.execute({
+          'query': 'flutter <test> dart',
+        }, ctx);
+        expect(output, isA<ToolOutput>());
+      },
+      timeout: Timeout(const Duration(seconds: 20)),
+    );
 
-    test('query with quotes does not throw', () async {
-      final tool = createWebsearchTool();
-      final ctx = _mockCtx();
-      final output = await tool.execute(
-        {'query': 'flutter "dart"'},
-        ctx,
-      );
-      expect(output, isA<ToolOutput>());
-    }, timeout: Timeout(const Duration(seconds: 20)));
+    test(
+      'query with quotes does not throw',
+      () async {
+        final tool = createWebsearchTool();
+        final ctx = _mockCtx();
+        final output = await tool.execute({'query': 'flutter "dart"'}, ctx);
+        expect(output, isA<ToolOutput>());
+      },
+      timeout: Timeout(const Duration(seconds: 20)),
+    );
 
-    test('query with unicode characters does not throw', () async {
-      final tool = createWebsearchTool();
-      final ctx = _mockCtx();
-      final output = await tool.execute(
-        {'query': 'флатер дарт'},
-        ctx,
-      );
-      expect(output, isA<ToolOutput>());
-    }, timeout: Timeout(const Duration(seconds: 20)));
+    test(
+      'query with unicode characters does not throw',
+      () async {
+        final tool = createWebsearchTool();
+        final ctx = _mockCtx();
+        final output = await tool.execute({'query': 'флатер дарт'}, ctx);
+        expect(output, isA<ToolOutput>());
+      },
+      timeout: Timeout(const Duration(seconds: 20)),
+    );
   });
 
   group('websearch permission patterns', () {
-    test('execute calls ctx.ask with correct permission and pattern', () async {
-      final tool = createWebsearchTool();
-      String? capturedPermission;
-      List<String>? capturedPatterns;
-      Map<String, dynamic>? capturedMetadata;
-      final ctx = ToolContext(
-        toolCallId: 'test',
-        sessionId: 'test',
-        ask:
-            ({
-              required String permission,
-              required List<String> patterns,
-              Map<String, dynamic>? metadata,
-              List<String>? always,
-            }) async {
-              capturedPermission = permission;
-              capturedPatterns = patterns;
-              capturedMetadata = metadata;
-            },
-        askQuestion:
-            ({required question, options = const [], multiple = false}) async =>
-                '',
-      );
-      await tool.execute({'query': 'flutter widgets', 'numResults': 3}, ctx);
-      expect(capturedPermission, equals('websearch'));
-      expect(capturedPatterns, equals(['websearch:query=flutter widgets']));
-      expect(capturedMetadata?['query'], equals('flutter widgets'));
-      expect(capturedMetadata?['numResults'], isA<int>());
-    }, timeout: Timeout(const Duration(seconds: 20)));
+    test(
+      'execute calls ctx.ask with correct permission and pattern',
+      () async {
+        final tool = createWebsearchTool();
+        String? capturedPermission;
+        List<String>? capturedPatterns;
+        Map<String, dynamic>? capturedMetadata;
+        final ctx = ToolContext(
+          toolCallId: 'test',
+          sessionId: 'test',
+          ask:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                capturedPermission = permission;
+                capturedPatterns = patterns;
+                capturedMetadata = metadata;
+              },
+          askQuestion:
+              ({
+                required question,
+                options = const [],
+                multiple = false,
+              }) async => '',
+        );
+        await tool.execute({'query': 'flutter widgets', 'numResults': 3}, ctx);
+        expect(capturedPermission, equals('websearch'));
+        expect(capturedPatterns, equals(['websearch:query=flutter widgets']));
+        expect(capturedMetadata?['query'], equals('flutter widgets'));
+        expect(capturedMetadata?['numResults'], isA<int>());
+      },
+      timeout: Timeout(const Duration(seconds: 20)),
+    );
   });
 
   group('websearch schema', () {

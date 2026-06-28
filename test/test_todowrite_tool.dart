@@ -190,32 +190,29 @@ void main() {
       expect(output.output, isNotNull);
     });
 
-    test('execute handles special characters in content (XSS/injection)', () async {
-      final tool = createTodoWriteTool();
-      final ctx = _mockCtx();
+    test(
+      'execute handles special characters in content (XSS/injection)',
+      () async {
+        final tool = createTodoWriteTool();
+        final ctx = _mockCtx();
 
-      final output = await tool.execute({
-        'todos': [
-          {
-            'content': '<script>alert("xss")</script>',
-            'status': 'pending',
-          },
-          {
-            'content': 'Robert; DROP TABLE users;--',
-            'status': 'in_progress',
-          },
-          {
-            'content': '{"key": "value", "nested": {"a": 1}}',
-            'status': 'completed',
-          },
-        ],
-      }, ctx);
+        final output = await tool.execute({
+          'todos': [
+            {'content': '<script>alert("xss")</script>', 'status': 'pending'},
+            {'content': 'Robert; DROP TABLE users;--', 'status': 'in_progress'},
+            {
+              'content': '{"key": "value", "nested": {"a": 1}}',
+              'status': 'completed',
+            },
+          ],
+        }, ctx);
 
-      expect(output.metadata?['error'], isNull);
-      expect(output.output, contains('<script>alert("xss")</script>'));
-      expect(output.output, contains('Robert; DROP TABLE users;--'));
-      expect(output.output, contains('{"key": "value", "nested": {"a": 1}}'));
-    });
+        expect(output.metadata?['error'], isNull);
+        expect(output.output, contains('<script>alert("xss")</script>'));
+        expect(output.output, contains('Robert; DROP TABLE users;--'));
+        expect(output.output, contains('{"key": "value", "nested": {"a": 1}}'));
+      },
+    );
 
     test('execute handles unicode and emoji in content', () async {
       final tool = createTodoWriteTool();
@@ -250,20 +247,23 @@ void main() {
       expect(output.metadata?['count'], equals(3));
     });
 
-    test('execute stores todos per session ID (verified via metadata)', () async {
-      final tool = createTodoWriteTool();
-      final ctx = _mockCtx();
+    test(
+      'execute stores todos per session ID (verified via metadata)',
+      () async {
+        final tool = createTodoWriteTool();
+        final ctx = _mockCtx();
 
-      final output = await tool.execute({
-        'todos': [
-          {'content': 'Session task', 'status': 'pending'},
-        ],
-      }, ctx);
+        final output = await tool.execute({
+          'todos': [
+            {'content': 'Session task', 'status': 'pending'},
+          ],
+        }, ctx);
 
-      // Verify session ID is reflected in metadata
-      expect(output.metadata?['sessionId'], equals('test-session'));
-      expect(output.metadata?['count'], equals(1));
-    });
+        // Verify session ID is reflected in metadata
+        expect(output.metadata?['sessionId'], equals('test-session'));
+        expect(output.metadata?['count'], equals(1));
+      },
+    );
 
     test('execute overwrites previous todos for same session', () async {
       final tool = createTodoWriteTool();

@@ -60,9 +60,14 @@ void main() {
       const overflow = ToolOverflowError('x', 'msg');
       const execution = ToolExecutionError('x', 'msg');
 
-      final types = [notFound, timeout, perm, invalid, overflow, execution]
-          .map((e) => e.runtimeType)
-          .toSet();
+      final types = [
+        notFound,
+        timeout,
+        perm,
+        invalid,
+        overflow,
+        execution,
+      ].map((e) => e.runtimeType).toSet();
       expect(types, hasLength(6));
     });
 
@@ -136,8 +141,19 @@ void main() {
       final ctx = ToolContext(
         toolCallId: 'call-1',
         sessionId: 'session-1',
-        ask: ({required permission, required patterns, metadata, always}) async {},
-        askQuestion: ({required question, List<String> options = const [], bool multiple = false}) async => '',
+        ask:
+            ({
+              required permission,
+              required patterns,
+              metadata,
+              always,
+            }) async {},
+        askQuestion:
+            ({
+              required question,
+              List<String> options = const [],
+              bool multiple = false,
+            }) async => '',
       );
 
       expect(ctx.toolCallId, equals('call-1'));
@@ -272,7 +288,9 @@ void main() {
       final denyRuleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash', pattern: '*', action: PermissionAction.deny,
+            permission: 'bash',
+            pattern: '*',
+            action: PermissionAction.deny,
           ),
         ],
       );

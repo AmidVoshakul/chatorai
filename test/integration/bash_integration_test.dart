@@ -205,34 +205,38 @@ void main() {
     });
 
     group('Timeout handling', () {
-      test('command exceeding timeout returns error metadata', () async {
-        await _requireBash();
+      test(
+        'command exceeding timeout returns error metadata',
+        () async {
+          await _requireBash();
 
-        final tool = createBashTool();
-        final ctx = const IntegrationTestContext(
-          toolCallId: 'bash-integration-test',
-          sessionId: 'bash-integration-session',
-        );
+          final tool = createBashTool();
+          final ctx = const IntegrationTestContext(
+            toolCallId: 'bash-integration-test',
+            sessionId: 'bash-integration-session',
+          );
 
-        // Use a short timeout (500ms) with a command that sleeps 5 seconds.
-        // 500ms is long enough to avoid race conditions with process startup
-        // but short enough to trigger the timeout reliably.
-        final output = await tool.execute({
-          'command': 'sleep 5',
-          'timeout': 500,
-        }, ctx);
+          // Use a short timeout (500ms) with a command that sleeps 5 seconds.
+          // 500ms is long enough to avoid race conditions with process startup
+          // but short enough to trigger the timeout reliably.
+          final output = await tool.execute({
+            'command': 'sleep 5',
+            'timeout': 500,
+          }, ctx);
 
-        expect(output, isA<ToolOutput>());
-        expect(
-          output.metadata?['error'],
-          isTrue,
-          reason: 'Should have error flag when timed out',
-        );
-        // Exit code should be -1 for timeout (as per implementation)
-        expect(output.metadata?['exit_code'], equals(-1));
-        // Output may be empty or contain partial output; just check it's a string
-        expect(output.output, isA<String>());
-      }, timeout: Timeout(const Duration(seconds: 10)));
+          expect(output, isA<ToolOutput>());
+          expect(
+            output.metadata?['error'],
+            isTrue,
+            reason: 'Should have error flag when timed out',
+          );
+          // Exit code should be -1 for timeout (as per implementation)
+          expect(output.metadata?['exit_code'], equals(-1));
+          // Output may be empty or contain partial output; just check it's a string
+          expect(output.output, isA<String>());
+        },
+        timeout: Timeout(const Duration(seconds: 10)),
+      );
 
       test('command within timeout completes successfully', () async {
         await _requireBash();
@@ -324,7 +328,8 @@ void main() {
           expect(
             output.output.length,
             lessThanOrEqualTo(50000 + 50),
-            reason: 'Output should be truncated to ~50000 chars (with sentinel overhead)',
+            reason:
+                'Output should be truncated to ~50000 chars (with sentinel overhead)',
           );
           expect(output.output, contains('truncated'));
         },

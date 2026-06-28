@@ -7,9 +7,7 @@ import 'package:chatorai/core/config/models/permission_section.dart';
 void main() {
   group('PermissionRuleset.fromConfig', () {
     test('parses string action (allow)', () {
-      final rules = PermissionRuleset.fromConfig({
-        'read': 'allow',
-      });
+      final rules = PermissionRuleset.fromConfig({'read': 'allow'});
 
       expect(rules, hasLength(1));
       expect(rules[0].permission, equals('read'));
@@ -18,9 +16,7 @@ void main() {
     });
 
     test('parses string action (deny)', () {
-      final rules = PermissionRuleset.fromConfig({
-        'bash': 'deny',
-      });
+      final rules = PermissionRuleset.fromConfig({'bash': 'deny'});
 
       expect(rules, hasLength(1));
       expect(rules[0].permission, equals('bash'));
@@ -28,9 +24,7 @@ void main() {
     });
 
     test('parses string action (ask)', () {
-      final rules = PermissionRuleset.fromConfig({
-        'edit': 'ask',
-      });
+      final rules = PermissionRuleset.fromConfig({'edit': 'ask'});
 
       expect(rules, hasLength(1));
       expect(rules[0].permission, equals('edit'));
@@ -41,10 +35,7 @@ void main() {
       // PermissionRuleConfig.fromJson treats a Map as patternActions directly.
       // Each key is a pattern, each value is an action.
       final rules = PermissionRuleset.fromConfig({
-        'bash': {
-          'git *': 'allow',
-          'rm *': 'deny',
-        },
+        'bash': {'git *': 'allow', 'rm *': 'deny'},
       });
 
       expect(rules, hasLength(2));
@@ -57,9 +48,7 @@ void main() {
 
     test('expands home directory in patterns', () {
       final rules = PermissionRuleset.fromConfig({
-        'read': {
-          '~/.ssh/*': 'deny',
-        },
+        'read': {'~/.ssh/*': 'deny'},
       });
 
       expect(rules, hasLength(1));
@@ -70,9 +59,7 @@ void main() {
 
     test('throws ArgumentError for unknown action string', () {
       expect(
-        () => PermissionRuleset.fromConfig({
-          'read': 'unknown_action',
-        }),
+        () => PermissionRuleset.fromConfig({'read': 'unknown_action'}),
         throwsA(isA<ArgumentError>()),
       );
     });
@@ -80,9 +67,7 @@ void main() {
     test('throws ArgumentError for unknown action in pattern map', () {
       expect(
         () => PermissionRuleset.fromConfig({
-          'read': {
-            '*.txt': 'invalid',
-          },
+          'read': {'*.txt': 'invalid'},
         }),
         throwsA(isA<ArgumentError>()),
       );
@@ -101,8 +86,10 @@ void main() {
       });
 
       expect(rules, hasLength(3));
-      expect(rules.map((r) => r.permission).toSet(),
-          equals({'read', 'bash', 'write'}));
+      expect(
+        rules.map((r) => r.permission).toSet(),
+        equals({'read', 'bash', 'write'}),
+      );
     });
 
     test('handles PermissionRuleConfig object with patternActions', () {
@@ -119,9 +106,7 @@ void main() {
 
     test('handles PermissionRuleConfig object with defaultAction', () {
       final rules = PermissionRuleset.fromConfig({
-        'read': PermissionRuleConfig(
-          defaultAction: 'allow',
-        ),
+        'read': PermissionRuleConfig(defaultAction: 'allow'),
       });
 
       expect(rules, hasLength(1));
@@ -142,9 +127,7 @@ void main() {
 
       expect(
         defaults.rules.any(
-          (r) =>
-              r.permission == 'read' &&
-              r.action == PermissionAction.allow,
+          (r) => r.permission == 'read' && r.action == PermissionAction.allow,
         ),
         isTrue,
       );
@@ -155,9 +138,7 @@ void main() {
 
       expect(
         defaults.rules.any(
-          (r) =>
-              r.permission == 'bash' &&
-              r.action == PermissionAction.ask,
+          (r) => r.permission == 'bash' && r.action == PermissionAction.ask,
         ),
         isTrue,
       );
@@ -169,8 +150,7 @@ void main() {
       expect(
         defaults.rules.any(
           (r) =>
-              r.permission == 'webfetch' &&
-              r.action == PermissionAction.allow,
+              r.permission == 'webfetch' && r.action == PermissionAction.allow,
         ),
         isTrue,
       );

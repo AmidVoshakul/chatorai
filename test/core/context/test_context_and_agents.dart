@@ -244,7 +244,11 @@ void main() {
       final visible = registry.getVisibleAgents();
       final hiddenIds = ['compaction', 'title', 'summary'];
       for (final id in hiddenIds) {
-        expect(visible.any((a) => a.id == id), isFalse, reason: '$id should be hidden');
+        expect(
+          visible.any((a) => a.id == id),
+          isFalse,
+          reason: '$id should be hidden',
+        );
       }
     });
 

@@ -11,7 +11,7 @@ import 'package:chatorai/core/permission/ruleset.dart';
 ToolDef _simpleToolDef(
   String id,
   Future<ToolOutput> Function(Map<String, dynamic> input, ToolContext ctx)
-      executeFn,
+  executeFn,
 ) {
   return ToolDef(
     id: id,
@@ -42,10 +42,7 @@ void main() {
   group('ToolExecutor.execute', () {
     test('executes tool and returns output with metadata', () async {
       final tool = _simpleToolDef('read', (input, ctx) async {
-        return ToolOutput(
-          'file content',
-          metadata: {'lines': 10},
-        );
+        return ToolOutput('file content', metadata: {'lines': 10});
       });
 
       final options = _experimentalContext('session-1');
@@ -159,10 +156,7 @@ void main() {
       // Instead of throwing, the tool returns a ToolOutput with error metadata.
       // This tests the normal error path that tools use.
       final tool = _simpleToolDef('read', (input, ctx) async {
-        return ToolOutput(
-          'Error: file not found',
-          metadata: {'error': true},
-        );
+        return ToolOutput('Error: file not found', metadata: {'error': true});
       });
 
       final options = _experimentalContext('session-err-output');

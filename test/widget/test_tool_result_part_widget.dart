@@ -5,37 +5,37 @@ import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 
 void main() {
-  group('ToolResultPartWidget UI Tests', () {
-    const String shortText = 'Short output';
+  const String shortText = 'Short output';
 
-    Widget createTestWidget({
-      required String toolName,
-      String? result,
-      ToolState state = ToolState.completed,
-      Map<String, dynamic>? input,
-      String? error,
-      Duration? duration,
-    }) {
-      return MaterialApp(
-        theme: AppTheme.lightTheme,
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: ToolResultPartWidget(
-              part: ToolResultPart(
-                toolCallId: 'test-call',
-                toolName: toolName,
-                result: result,
-                state: state,
-                input: input,
-                error: error,
-                duration: duration,
-              ),
+  Widget createTestWidget({
+    required String toolName,
+    String? result,
+    ToolState state = ToolState.completed,
+    Map<String, dynamic>? input,
+    String? error,
+    Duration? duration,
+  }) {
+    return MaterialApp(
+      theme: AppTheme.lightTheme,
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: ToolResultPartWidget(
+            part: ToolResultPart(
+              toolCallId: 'test-call',
+              toolName: toolName,
+              result: result,
+              state: state,
+              input: input,
+              error: error,
+              duration: duration,
             ),
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
+  group('ToolResultPartWidget UI Tests', () {
     testWidgets('shows correct line and char counts in footer', (tester) async {
       await tester.pumpWidget(
         createTestWidget(toolName: 'bash', result: shortText),
@@ -214,6 +214,109 @@ void main() {
       final lineCount = lineLimitText.split('\n').length;
       expect(lineCount, greaterThan(maxLines));
       expect(lineLimitText.length, lessThan(maxChars));
+    });
+  });
+
+  group('Edit/Apply Patch Diff Widgets', () {
+    testWidgets('edit tool renders diff with additions and removals', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestWidget(
+          toolName: 'edit',
+          state: ToolState.completed,
+          input: {
+            'file_path': 'lib/main.dart',
+            'old_string': 'old line 1\nold line 2',
+            'new_string': 'new line 1\nnew line 2',
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Edit lib/main.dart'), findsOneWidget);
+      await tester.tap(find.byType(ToolResultPartWidget));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('new line 1'), findsOneWidget);
+      expect(find.textContaining('old line 2'), findsOneWidget);
+      expect(find.textContaining('old line 1'), findsOneWidget);
+    });
+
+    testWidgets('edit diff lines display with color and prefix', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestWidget(
+          toolName: 'edit',
+          state: ToolState.completed,
+          input: {
+            'file_path': 'test.dart',
+            'old_string': 'before',
+            'new_string': 'after',
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(ToolResultPartWidget));
+      await tester.pumpAndSettle();
+      expect(find.text('before'), findsOneWidget);
+      expect(find.text('after'), findsOneWidget);
+    });
+
+    testWidgets('apply_patch tool renders patch input', (tester) async {
+      const patch = '''--- a/test.dart
++++ b/test.dart
+@@ -1,3 +1,4 @@
+ line1
+-line2
++line2 modified
++line2b
+ line3
+''';
+      await tester.pumpWidget(
+        createTestWidget(
+          toolName: 'apply_patch',
+          state: ToolState.completed,
+          input: {'file_path': 'test.dart', 'patch': patch},
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Patch test.dart'), findsOneWidget);
+      expect(find.textContaining('line2'), findsAtLeast(1));
+    });
+
+    testWidgets('edit with empty old/new shows no diff area', (tester) async {
+      await tester.pumpWidget(
+        createTestWidget(
+          toolName: 'edit',
+          state: ToolState.completed,
+          input: {
+            'file_path': 'empty.dart',
+            'old_string': '',
+            'new_string': '',
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Edit empty.dart'), findsOneWidget);
+    });
+
+    testWidgets('edit summary line shows additions and deletions count', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestWidget(
+          toolName: 'edit',
+          state: ToolState.completed,
+          input: {
+            'file_path': 'counter.dart',
+            'old_string': 'a\nb',
+            'new_string': 'x\ny\nz',
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('+'), findsOneWidget);
+      expect(find.textContaining('-'), findsOneWidget);
     });
   });
 }

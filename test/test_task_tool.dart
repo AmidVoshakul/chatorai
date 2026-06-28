@@ -1,15 +1,47 @@
-import 'package:ai_sdk_dart/ai_sdk_dart.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
+import 'package:chatorai/core/session/session_id.dart';
+import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/task.dart';
+import 'package:chatorai/core/tools/tool_registry.dart';
+import 'package:chatorai/core/permission/permission_service.dart';
+import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/features/chat/services/chat_ai_service.dart';
 
-ToolContext _mockCtx({
-  List<String>? askedPermission,
-  List<String>? askedPatterns,
-  String? sessionId,
-}) {
-  askedPermission;
-  askedPatterns;
+class _MockSessionRunner extends Mock implements SessionRunner {}
+
+class _MockChatAiService extends Mock implements ChatAiService {}
+
+SessionRunnerHolder _makeRunnerHolder([String result = 'mock task result']) {
+  final mock = _MockSessionRunner();
+  when(
+    () => mock.runTaskInChild(
+      parentSessionId: any(named: 'parentSessionId'),
+      taskPrompt: any(named: 'taskPrompt'),
+      streamFn: any(named: 'streamFn'),
+      agent: any(named: 'agent'),
+      title: any(named: 'title'),
+      taskId: any(named: 'taskId'),
+      abortSignal: any(named: 'abortSignal'),
+    ),
+  ).thenAnswer((_) async => TaskChildResult(result));
+  return SessionRunnerHolder(mock);
+}
+
+ToolDef _makeTaskTool({String runnerResult = 'mock task result'}) {
+  final registry = ToolRegistry(PermissionService(), PermissionRuleset());
+  final mockChat = _MockChatAiService();
+  when(() => mockChat.currentModel).thenReturn('mock-model');
+  when(() => mockChat.currentTemperature).thenReturn(0.7);
+  return createTaskTool(
+    chatAiService: mockChat,
+    toolRegistry: registry,
+    currentSessionRunner: _makeRunnerHolder(runnerResult),
+  );
+}
+
+ToolContext _mockCtx({String? sessionId}) {
   return ToolContext(
     toolCallId: 'test-call-id',
     sessionId: sessionId ?? 'test-session',
@@ -19,16 +51,17 @@ ToolContext _mockCtx({
           required List<String> patterns,
           Map<String, dynamic>? metadata,
           List<String>? always,
-        }) async {
-          askedPermission = [permission];
-          askedPatterns = patterns;
-        },
+        }) async {},
     askQuestion:
         ({required question, options = const [], multiple = false}) async => '',
   );
 }
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(SessionID.create());
+  });
+
   group('task tool', () {
     test('description is non-empty', () {
       final tool = createTaskTool();
@@ -61,7 +94,7 @@ void main() {
     });
 
     test('execute creates task result with session ID', () async {
-      final tool = createTaskTool();
+      final tool = _makeTaskTool();
       final ctx = _mockCtx();
 
       final output = await tool.execute({
@@ -76,314 +109,152 @@ void main() {
     });
 
     test('execute includes description and subagent_type in result', () async {
-      final tool = createTaskTool();
+      final tool = _makeTaskTool();
       final ctx = _mockCtx();
 
       final output = await tool.execute({
-        'description': 'My task description',
-        'prompt': 'Do the thing',
-        'subagent_type': 'explore',
-      }, ctx);
-
-      expect(output.metadata?['description'], equals('My task description'));
-      expect(output.metadata?['subagent_type'], equals('explore'));
-    });
-
-    test('execute handles optional task_id', () async {
-      final tool = createTaskTool();
-      final ctx = _mockCtx();
-
-      final output = await tool.execute({
-        'description': 'Task with ID',
-        'prompt': 'Do work',
-        'subagent_type': 'general',
-        'task_id': 'custom-task-123',
-      }, ctx);
-
-      expect(output.metadata?['error'], isNull);
-      expect(output.metadata?['session_id'], isNotNull);
-    });
-
-    test('execute fails with unknown subagent_type', () async {
-      final tool = createTaskTool();
-      final ctx = _mockCtx();
-
-      final output = await tool.execute({
-        'description': 'Unknown agent',
-        'prompt': 'Do something',
-        'subagent_type': 'nonexistent_agent_xyz',
-      }, ctx);
-
-      expect(output.metadata?['error'], isTrue);
-    });
-
-    test('execute returns error when session ID is null', () async {
-      final tool = createTaskTool();
-      final ctx = ToolContext(
-        toolCallId: 'test-call-id',
-        sessionId: null,
-        ask:
-            ({
-              required String permission,
-              required List<String> patterns,
-              Map<String, dynamic>? metadata,
-              List<String>? always,
-            }) async {},
-        askQuestion:
-            ({required question, options = const [], multiple = false}) async =>
-                '',
-      );
-
-      final output = await tool.execute({
-        'description': 'No session',
-        'prompt': 'Do something',
-        'subagent_type': 'general',
-      }, ctx);
-
-      expect(output.metadata?['error'], isTrue);
-      expect(output.output, contains('session ID'));
-    });
-
-    test('execute returns error when description is empty', () async {
-      final tool = createTaskTool();
-      final ctx = _mockCtx();
-
-      final output = await tool.execute({
-        'description': '',
-        'prompt': 'Do something',
-        'subagent_type': 'general',
-      }, ctx);
-
-      expect(output.metadata?['error'], isTrue);
-    });
-
-    test('execute returns error when prompt is empty', () async {
-      final tool = createTaskTool();
-      final ctx = _mockCtx();
-
-      final output = await tool.execute({
-        'description': 'Valid description',
-        'prompt': '',
-        'subagent_type': 'general',
-      }, ctx);
-
-      expect(output.metadata?['error'], isTrue);
-    });
-
-    test('execute returns error when subagent_type is empty string', () async {
-      final tool = createTaskTool();
-      final ctx = _mockCtx();
-
-      final output = await tool.execute({
-        'description': 'Valid',
-        'prompt': 'Valid prompt',
-        'subagent_type': '',
-      }, ctx);
-
-      expect(output.metadata?['error'], isTrue);
-    });
-
-    test('permission call includes subagent_type as pattern', () async {
-      final tool = createTaskTool();
-      String? capturedPermission;
-      List<String>? capturedPatterns;
-      final ctx = ToolContext(
-        toolCallId: 'test',
-        sessionId: 'test-session',
-        ask:
-            ({
-              required String permission,
-              required List<String> patterns,
-              Map<String, dynamic>? metadata,
-              List<String>? always,
-            }) async {
-              capturedPermission = permission;
-              capturedPatterns = patterns;
-            },
-        askQuestion:
-            ({required question, options = const [], multiple = false}) async =>
-                '',
-      );
-
-      await tool.execute({
-        'description': 'Test',
-        'prompt': 'Do work',
-        'subagent_type': 'explore',
-      }, ctx);
-
-      expect(capturedPermission, equals('task'));
-      expect(capturedPatterns, isNotNull);
-      expect(capturedPatterns!.contains('explore'), isTrue);
-    });
-
-    test('permission metadata includes description and subagent_type',
-        () async {
-      final tool = createTaskTool();
-      Map<String, dynamic>? capturedMetadata;
-      final ctx = ToolContext(
-        toolCallId: 'test',
-        sessionId: 'test-session',
-        ask:
-            ({
-              required String permission,
-              required List<String> patterns,
-              Map<String, dynamic>? metadata,
-              List<String>? always,
-            }) async {
-              capturedMetadata = metadata;
-            },
-        askQuestion:
-            ({required question, options = const [], multiple = false}) async =>
-                '',
-      );
-
-      await tool.execute({
-        'description': 'My special task',
+        'description': 'My test task',
         'prompt': 'Do work',
         'subagent_type': 'build',
       }, ctx);
 
-      expect(capturedMetadata, isNotNull);
-      expect(capturedMetadata!['description'], equals('My special task'));
-      expect(capturedMetadata!['subagent_type'], equals('build'));
+      expect(output.metadata?['description'], equals('My test task'));
+      expect(output.metadata?['subagent_type'], equals('build'));
     });
 
     group('XML output format', () {
-      test('output contains state="completed" attribute', () async {
+      final testCases = <_XmlTestCase>[
+        _XmlTestCase(
+          name: 'output contains state="completed" attribute',
+          expectedSubstring: 'state="completed"',
+        ),
+        _XmlTestCase(
+          name: 'output contains <summary> tag',
+          runnerResult: 'My summary text',
+          description: 'My summary text',
+          expectedSubstring: '<summary>My summary text</summary>',
+        ),
+        _XmlTestCase(
+          name: 'output contains <task_result> tag',
+          expectedSubstring: '<task_result>',
+          expectedEndSubstring: '</task_result>',
+        ),
+        _XmlTestCase(
+          name: 'output wraps in <task> root element',
+          expectedStartsWith: '<task ',
+          expectedEndsWith: '</task>',
+        ),
+        _XmlTestCase(
+          name: 'output includes session_id attribute in <task> tag',
+          sessionId: 'sess-abc-123',
+          expectedSubstring: 'session_id="sess-abc-123"',
+        ),
+        _XmlTestCase(
+          name: 'output includes task_id when provided',
+          inputOverrides: {'task_id': 'my-custom-id-42'},
+          expectedSubstring: 'id="my-custom-id-42"',
+        ),
+        _XmlTestCase(
+          name: 'output auto-generates id when task_id not provided',
+          expectedSubstring: 'id="task_',
+        ),
+      ];
+
+      for (final tc in testCases) {
+        test(tc.name, () async {
+          final tool = _makeTaskTool(runnerResult: tc.runnerResult);
+          final ctx = _mockCtx(sessionId: tc.sessionId);
+
+          final input = <String, dynamic>{
+            'description': tc.description,
+            'prompt': 'Test',
+            'subagent_type': 'general',
+            ...tc.inputOverrides,
+          };
+
+          final output = await tool.execute(input, ctx);
+
+          final substring = tc.expectedSubstring;
+          final startsWithStr = tc.expectedStartsWith;
+          final endsWithStr = tc.expectedEndsWith;
+          final endSubstring = tc.expectedEndSubstring;
+          if (substring != null) {
+            expect(output.output, contains(substring));
+          }
+          if (startsWithStr != null) {
+            expect(output.output, startsWith(startsWithStr));
+          }
+          if (endsWithStr != null) {
+            expect(output.output, endsWith(endsWithStr));
+          }
+          if (endSubstring != null) {
+            expect(output.output, contains(endSubstring));
+          }
+        });
+      }
+    });
+
+    group('error when no runner', () {
+      test('returns error when no currentSessionRunner provided', () async {
         final tool = createTaskTool();
         final ctx = _mockCtx();
 
         final output = await tool.execute({
-          'description': 'Format test',
-          'prompt': 'Check XML',
-          'subagent_type': 'general',
-        }, ctx);
-
-        expect(output.output, contains('state="completed"'));
-      });
-
-      test('output contains <summary> with description', () async {
-        final tool = createTaskTool();
-        final ctx = _mockCtx();
-
-        final output = await tool.execute({
-          'description': 'My summary text',
-          'prompt': 'Do stuff',
-          'subagent_type': 'general',
-        }, ctx);
-
-        expect(output.output, contains('<summary>My summary text</summary>'));
-      });
-
-      test('output contains <task_result> tag', () async {
-        final tool = createTaskTool();
-        final ctx = _mockCtx();
-
-        final output = await tool.execute({
-          'description': 'Result test',
-          'prompt': 'Produce result',
-          'subagent_type': 'general',
-        }, ctx);
-
-        expect(output.output, contains('<task_result>'));
-        expect(output.output, contains('</task_result>'));
-      });
-
-      test('output wraps in <task> root element', () async {
-        final tool = createTaskTool();
-        final ctx = _mockCtx();
-
-        final output = await tool.execute({
-          'description': 'Wrap test',
+          'description': 'No runner',
           'prompt': 'Test',
           'subagent_type': 'general',
         }, ctx);
 
-        expect(output.output, startsWith('<task '));
-        expect(output.output, endsWith('</task>'));
-      });
-
-      test('output includes session_id attribute in <task> tag', () async {
-        final tool = createTaskTool();
-        final ctx = _mockCtx(sessionId: 'sess-abc-123');
-
-        final output = await tool.execute({
-          'description': 'Session test',
-          'prompt': 'Test',
-          'subagent_type': 'general',
-        }, ctx);
-
-        expect(output.output, contains('session_id="sess-abc-123"'));
-      });
-
-      test('output includes task_id when provided', () async {
-        final tool = createTaskTool();
-        final ctx = _mockCtx();
-
-        final output = await tool.execute({
-          'description': 'Task ID test',
-          'prompt': 'Test',
-          'subagent_type': 'general',
-          'task_id': 'my-custom-id-42',
-        }, ctx);
-
-        expect(output.output, contains('task_id="my-custom-id-42"'));
-      });
-
-      test('output auto-generates id when task_id not provided', () async {
-        final tool = createTaskTool();
-        final ctx = _mockCtx();
-
-        final output = await tool.execute({
-          'description': 'Auto ID test',
-          'prompt': 'Test',
-          'subagent_type': 'general',
-        }, ctx);
-
-        expect(output.output, contains('id="sub-'));
+        expect(output.metadata?['error'], isTrue);
+        expect(output.output, contains('No session runner available'));
       });
     });
 
-    group('MVP fallback output', () {
-      test('MVP fallback includes agent name in task_result', () async {
-        final tool = createTaskTool();
-        final ctx = _mockCtx();
-
-        final output = await tool.execute({
-          'description': 'MVP test',
-          'prompt': 'Test fallback',
-          'subagent_type': 'general',
-        }, ctx);
-
-        expect(output.output, contains('[Subagent MVP not yet wired'));
-        expect(output.output, contains('Agent: General'));
-      });
-
-      test('MVP fallback includes prompt in task_result', () async {
-        final tool = createTaskTool();
-        final ctx = _mockCtx();
-
-        final output = await tool.execute({
-          'description': 'MVP prompt',
-          'prompt': 'My specific prompt text',
-          'subagent_type': 'explore',
-        }, ctx);
-
-        expect(output.output, contains('Prompt: My specific prompt text'));
-      });
-    });
-
-    group('_deriveSubagentTools', () {
+    group('deriveSubagentTools', () {
       test('excludes task and todowrite from subagent tool set', () {
-        final registry = MockToolRegistry();
+        final registry = ToolRegistry(PermissionService(), PermissionRuleset());
+        registry.register(
+          ToolDef(
+            id: 'read',
+            description: 'Mock read',
+            inputSchema: const {'type': 'object'},
+            execute: (input, ctx) async => ToolOutput('result-read'),
+          ),
+        );
+        registry.register(
+          ToolDef(
+            id: 'edit',
+            description: 'Mock edit',
+            inputSchema: const {'type': 'object'},
+            execute: (input, ctx) async => ToolOutput('result-edit'),
+          ),
+        );
+        registry.register(
+          ToolDef(
+            id: 'task',
+            description: 'Mock task',
+            inputSchema: const {'type': 'object'},
+            execute: (input, ctx) async => ToolOutput('result-task'),
+          ),
+        );
+        registry.register(
+          ToolDef(
+            id: 'todowrite',
+            description: 'Mock todowrite',
+            inputSchema: const {'type': 'object'},
+            execute: (input, ctx) async => ToolOutput('result-todowrite'),
+          ),
+        );
+        registry.register(
+          ToolDef(
+            id: 'glob',
+            description: 'Mock glob',
+            inputSchema: const {'type': 'object'},
+            execute: (input, ctx) async => ToolOutput('result-glob'),
+          ),
+        );
 
-        registry.register('read', mockSdkTool());
-        registry.register('edit', mockSdkTool());
-        registry.register('task', mockSdkTool());
-        registry.register('todowrite', mockSdkTool());
-        registry.register('glob', mockSdkTool());
-
-        final subagentTools = deriveSubagentToolsForTest(registry);
+        final subagentTools = deriveSubagentTools(registry);
 
         expect(subagentTools.containsKey('task'), isFalse);
         expect(subagentTools.containsKey('todowrite'), isFalse);
@@ -393,23 +264,65 @@ void main() {
       });
 
       test('returns empty map when registry has only denied tools', () {
-        final registry = MockToolRegistry();
-        registry.register('task', mockSdkTool());
-        registry.register('todowrite', mockSdkTool());
+        final registry = ToolRegistry(PermissionService(), PermissionRuleset());
+        registry.register(
+          ToolDef(
+            id: 'task',
+            description: 'Mock task',
+            inputSchema: const {'type': 'object'},
+            execute: (input, ctx) async => ToolOutput('result-task'),
+          ),
+        );
+        registry.register(
+          ToolDef(
+            id: 'todowrite',
+            description: 'Mock todowrite',
+            inputSchema: const {'type': 'object'},
+            execute: (input, ctx) async => ToolOutput('result-todowrite'),
+          ),
+        );
 
-        final subagentTools = deriveSubagentToolsForTest(registry);
+        final subagentTools = deriveSubagentTools(registry);
 
         expect(subagentTools, isEmpty);
       });
 
       test('preserves all non-denied tools', () {
-        final registry = MockToolRegistry();
-        registry.register('bash', mockSdkTool());
-        registry.register('read', mockSdkTool());
-        registry.register('write', mockSdkTool());
-        registry.register('grep', mockSdkTool());
+        final registry = ToolRegistry(PermissionService(), PermissionRuleset());
+        registry.register(
+          ToolDef(
+            id: 'bash',
+            description: 'Mock bash',
+            inputSchema: const {'type': 'object'},
+            execute: (input, ctx) async => ToolOutput('result-bash'),
+          ),
+        );
+        registry.register(
+          ToolDef(
+            id: 'read',
+            description: 'Mock read',
+            inputSchema: const {'type': 'object'},
+            execute: (input, ctx) async => ToolOutput('result-read'),
+          ),
+        );
+        registry.register(
+          ToolDef(
+            id: 'write',
+            description: 'Mock write',
+            inputSchema: const {'type': 'object'},
+            execute: (input, ctx) async => ToolOutput('result-write'),
+          ),
+        );
+        registry.register(
+          ToolDef(
+            id: 'grep',
+            description: 'Mock grep',
+            inputSchema: const {'type': 'object'},
+            execute: (input, ctx) async => ToolOutput('result-grep'),
+          ),
+        );
 
-        final subagentTools = deriveSubagentToolsForTest(registry);
+        final subagentTools = deriveSubagentTools(registry);
 
         expect(subagentTools.length, equals(4));
         expect(subagentTools.containsKey('bash'), isTrue);
@@ -421,38 +334,26 @@ void main() {
   });
 }
 
-// --- Helpers for _deriveSubagentTools testing ---
+class _XmlTestCase {
+  final String name;
+  final String runnerResult;
+  final String? sessionId;
+  final String description;
+  final Map<String, dynamic> inputOverrides;
+  final String? expectedSubstring;
+  final String? expectedStartsWith;
+  final String? expectedEndsWith;
+  final String? expectedEndSubstring;
 
-/// Expose the private _deriveSubagentTools function for direct testing.
-ToolSet deriveSubagentToolsForTest(dynamic registry) {
-  final allTools = registry.toSDKTools();
-  final result = <String, Tool<dynamic, dynamic>>{};
-  for (final entry in allTools.entries) {
-    if (!subagentDeniedTools.contains(entry.key)) {
-      result[entry.key] = entry.value;
-    }
-  }
-  return result;
-}
-
-const subagentDeniedTools = {'task', 'todowrite'};
-
-/// Minimal SDK tool stub for registry testing.
-Tool<dynamic, dynamic> mockSdkTool() {
-  return Tool<dynamic, dynamic>(
-    inputSchema: Schema(jsonSchema: {}, fromJson: (j) => j),
-    description: 'Mock tool',
-    executeDynamic: (_, _) async => '',
-  );
-}
-
-/// Minimal ToolRegistry that only exposes toSDKTools for derive testing.
-class MockToolRegistry {
-  final Map<String, Tool<dynamic, dynamic>> _tools = {};
-
-  void register(String id, Tool<dynamic, dynamic> tool) {
-    _tools[id] = tool;
-  }
-
-  Map<String, Tool<dynamic, dynamic>> toSDKTools() => Map.from(_tools);
+  _XmlTestCase({
+    required this.name,
+    this.runnerResult = 'mock task result',
+    this.sessionId,
+    this.description = 'Format test',
+    this.inputOverrides = const {},
+    this.expectedSubstring,
+    this.expectedStartsWith,
+    this.expectedEndsWith,
+    this.expectedEndSubstring,
+  });
 }

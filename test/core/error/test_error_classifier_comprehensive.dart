@@ -25,7 +25,9 @@ void main() {
     });
 
     test('extracts retry-after-ms header', () {
-      final headers = Headers.fromMap({'retry-after-ms': ['5000']});
+      final headers = Headers.fromMap({
+        'retry-after-ms': ['5000'],
+      });
       final response = Response(
         requestOptions: RequestOptions(path: '/test'),
         statusCode: 429,
@@ -41,7 +43,9 @@ void main() {
     });
 
     test('extracts retry-after header in seconds', () {
-      final headers = Headers.fromMap({'retry-after': ['30']});
+      final headers = Headers.fromMap({
+        'retry-after': ['30'],
+      });
       final response = Response(
         requestOptions: RequestOptions(path: '/test'),
         statusCode: 429,
@@ -128,7 +132,9 @@ void main() {
     });
 
     test('classifies string with "context_length_exceeded"', () {
-      final result = classifier.classify('context_length_exceeded: too many tokens');
+      final result = classifier.classify(
+        'context_length_exceeded: too many tokens',
+      );
       expect(result, isA<OverflowError>());
       expect(result.isRetryable, isFalse);
     });
@@ -424,7 +430,11 @@ void main() {
     for (final s in overflowStrings) {
       test('classifies "$s" as OverflowError', () {
         final result = classifier.classify(s);
-        expect(result, isA<OverflowError>(), reason: '"$s" should be OverflowError');
+        expect(
+          result,
+          isA<OverflowError>(),
+          reason: '"$s" should be OverflowError',
+        );
       });
     }
   });

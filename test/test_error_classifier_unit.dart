@@ -201,14 +201,16 @@ void main() {
         'retry-after': ['30'],
       });
 
-      final result = classifier.classify(DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        response: Response(
+      final result = classifier.classify(
+        DioException(
           requestOptions: RequestOptions(path: '/test'),
-          statusCode: 429,
-          headers: headers,
+          response: Response(
+            requestOptions: RequestOptions(path: '/test'),
+            statusCode: 429,
+            headers: headers,
+          ),
         ),
-      ));
+      );
 
       expect(result, isA<RateLimitError>());
       expect(result.retryAfter, equals(const Duration(seconds: 30)));
@@ -219,14 +221,16 @@ void main() {
         'retry-after-ms': ['5000'],
       });
 
-      final result = classifier.classify(DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        response: Response(
+      final result = classifier.classify(
+        DioException(
           requestOptions: RequestOptions(path: '/test'),
-          statusCode: 429,
-          headers: headers,
+          response: Response(
+            requestOptions: RequestOptions(path: '/test'),
+            statusCode: 429,
+            headers: headers,
+          ),
         ),
-      ));
+      );
 
       expect(result, isA<RateLimitError>());
       expect(result.retryAfter, equals(const Duration(milliseconds: 5000)));

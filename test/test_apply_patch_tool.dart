@@ -355,35 +355,38 @@ void main() {
     });
 
     group('execute - multiple hunks', () {
-      test('applies only the first hunk when multiple @@ headers present', () async {
-        final f = File(_path('ap_multi.txt'))
-          ..writeAsStringSync('line1\nline2\nline3\nline4\nline5');
-        // Two hunks: first replaces line2, second replaces line4
-        final patch = [
-          '--- a/ap_multi.txt',
-          '+++ b/ap_multi.txt',
-          '@@ -2,1 +2,1 @@',
-          '-line2',
-          '+replaced2',
-          '@@ -4,1 +4,1 @@',
-          '-line4',
-          '+replaced4',
-        ].join('\n');
+      test(
+        'applies only the first hunk when multiple @@ headers present',
+        () async {
+          final f = File(_path('ap_multi.txt'))
+            ..writeAsStringSync('line1\nline2\nline3\nline4\nline5');
+          // Two hunks: first replaces line2, second replaces line4
+          final patch = [
+            '--- a/ap_multi.txt',
+            '+++ b/ap_multi.txt',
+            '@@ -2,1 +2,1 @@',
+            '-line2',
+            '+replaced2',
+            '@@ -4,1 +4,1 @@',
+            '-line4',
+            '+replaced4',
+          ].join('\n');
 
-        final result = await tool.execute({
-          'file_path': f.path,
-          'patch': patch,
-        }, _mockCtx());
+          final result = await tool.execute({
+            'file_path': f.path,
+            'patch': patch,
+          }, _mockCtx());
 
-        expect(result.metadata?['error'], isNull);
-        final content = await f.readAsString();
-        // First hunk applied
-        expect(content, contains('replaced2'));
-        // Second hunk NOT applied (only first hunk processed)
-        expect(content, contains('line4'));
-        expect(content, isNot(contains('replaced4')));
-        f.deleteSync();
-      });
+          expect(result.metadata?['error'], isNull);
+          final content = await f.readAsString();
+          // First hunk applied
+          expect(content, contains('replaced2'));
+          // Second hunk NOT applied (only first hunk processed)
+          expect(content, contains('line4'));
+          expect(content, isNot(contains('replaced4')));
+          f.deleteSync();
+        },
+      );
 
       test('applies first hunk and preserves lines between hunks', () async {
         final f = File(_path('ap_multi2.txt'))

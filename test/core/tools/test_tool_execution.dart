@@ -71,11 +71,9 @@ void main() {
 
     test('execute returns tool output for simple tool', () async {
       final tool = _echoTool();
-      final result = await executor.execute(
-        tool,
-        {'text': 'hello'},
-        _FakeToolOptions(sessionId: 'test-session'),
-      );
+      final result = await executor.execute(tool, {
+        'text': 'hello',
+      }, _FakeToolOptions(sessionId: 'test-session'));
       expect(result['output'], equals('hello'));
     });
 
@@ -146,21 +144,17 @@ void main() {
 
     test('execute works with null sessionId', () async {
       final tool = _echoTool();
-      final result = await executor.execute(
-        tool,
-        {'text': 'no session'},
-        _FakeToolOptions(sessionId: null),
-      );
+      final result = await executor.execute(tool, {
+        'text': 'no session',
+      }, _FakeToolOptions(sessionId: null));
       expect(result['output'], equals('no session'));
     });
 
     test('execute works with empty sessionId', () async {
       final tool = _echoTool();
-      final result = await executor.execute(
-        tool,
-        {'text': 'empty session'},
-        _FakeToolOptions(sessionId: ''),
-      );
+      final result = await executor.execute(tool, {
+        'text': 'empty session',
+      }, _FakeToolOptions(sessionId: ''));
       expect(result['output'], equals('empty session'));
     });
 

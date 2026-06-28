@@ -192,10 +192,7 @@ void main() {
           ..writeAsStringSync('test');
 
         await expectLater(
-          tool.execute({
-            'pattern': '[invalid',
-            'path': testDir.path,
-          }, ctx),
+          tool.execute({'pattern': '[invalid', 'path': testDir.path}, ctx),
           throwsA(isA<FormatException>()),
         );
 
@@ -213,10 +210,7 @@ void main() {
           ..writeAsStringSync('test');
 
         await expectLater(
-          tool.execute({
-            'pattern': '(unbalanced',
-            'path': testDir.path,
-          }, ctx),
+          tool.execute({'pattern': '(unbalanced', 'path': testDir.path}, ctx),
           throwsA(isA<FormatException>()),
         );
 
@@ -456,9 +450,7 @@ void main() {
         final testDir = Directory('test/temp_grep_max');
         if (!testDir.existsSync()) testDir.createSync(recursive: true);
         final testFile = File('${testDir.path}/test.txt');
-        await testFile.writeAsString(
-          'match1\nmatch2\nmatch3\nmatch4\nmatch5',
-        );
+        await testFile.writeAsString('match1\nmatch2\nmatch3\nmatch4\nmatch5');
 
         final output = await tool.execute({
           'pattern': 'match',
@@ -608,8 +600,11 @@ void main() {
                 throw Exception('Permission denied by user');
               },
           askQuestion:
-              ({required question, options = const [], multiple = false}) async =>
-                  '',
+              ({
+                required question,
+                options = const [],
+                multiple = false,
+              }) async => '',
         );
 
         await expectLater(

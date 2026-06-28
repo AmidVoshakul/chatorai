@@ -46,8 +46,7 @@ void main() {
 
     test('inputSchema has timeout field with constraints', () {
       final tool = createWebfetchTool();
-      final properties =
-          tool.inputSchema['properties'] as Map<String, dynamic>;
+      final properties = tool.inputSchema['properties'] as Map<String, dynamic>;
       expect(properties.containsKey('timeout'), isTrue);
       expect(properties['timeout']['type'], equals('integer'));
       final description = properties['timeout']['description'] as String;
@@ -211,38 +210,48 @@ void main() {
           'max_chars': 100,
           'timeout': 5,
         }, ctx);
-        expect(output.metadata?['error'], isTrue,
-            reason:
-                'Public unreachable IPv6 should produce a network error, '
-                'not be blocked: ${output.output}');
-        expect(output.output, isNot(contains('private')),
-            reason:
-                'Public IPv6 should not be blocked as private: '
-                '${output.output}');
+        expect(
+          output.metadata?['error'],
+          isTrue,
+          reason:
+              'Public unreachable IPv6 should produce a network error, '
+              'not be blocked: ${output.output}',
+        );
+        expect(
+          output.output,
+          isNot(contains('private')),
+          reason:
+              'Public IPv6 should not be blocked as private: '
+              '${output.output}',
+        );
       },
       timeout: Timeout(const Duration(seconds: 10)),
     );
 
     group('network error handling', () {
-      test('connection refused returns error metadata', () async {
-        final tool = createWebfetchTool();
-        final ctx = _mockCtx();
-        final output = await tool.execute(
-          {'url': 'http://127.0.0.1:1'},
-          ctx,
-        );
-        expect(output.metadata?['error'], isTrue);
-      }, timeout: Timeout(const Duration(seconds: 15)));
+      test(
+        'connection refused returns error metadata',
+        () async {
+          final tool = createWebfetchTool();
+          final ctx = _mockCtx();
+          final output = await tool.execute({'url': 'http://127.0.0.1:1'}, ctx);
+          expect(output.metadata?['error'], isTrue);
+        },
+        timeout: Timeout(const Duration(seconds: 15)),
+      );
 
-      test('DNS failure returns error metadata', () async {
-        final tool = createWebfetchTool();
-        final ctx = _mockCtx();
-        final output = await tool.execute(
-          {'url': 'https://this-domain-does-not-exist-12345.invalid'},
-          ctx,
-        );
-        expect(output.metadata?['error'], isTrue);
-      }, timeout: Timeout(const Duration(seconds: 15)));
+      test(
+        'DNS failure returns error metadata',
+        () async {
+          final tool = createWebfetchTool();
+          final ctx = _mockCtx();
+          final output = await tool.execute({
+            'url': 'https://this-domain-does-not-exist-12345.invalid',
+          }, ctx);
+          expect(output.metadata?['error'], isTrue);
+        },
+        timeout: Timeout(const Duration(seconds: 15)),
+      );
     });
   });
 
@@ -272,7 +281,10 @@ void main() {
 
     test('blocks redirect to localhost', () {
       final current = Uri.parse('https://example.com/page');
-      final result = resolveRedirectUri(current, 'http://127.0.0.1:8080/secret');
+      final result = resolveRedirectUri(
+        current,
+        'http://127.0.0.1:8080/secret',
+      );
       expect(result, isNull);
     });
 
@@ -296,7 +308,10 @@ void main() {
 
     test('blocks redirect to .local host', () {
       final current = Uri.parse('https://example.com/page');
-      final result = resolveRedirectUri(current, 'http://my-internal.local/admin');
+      final result = resolveRedirectUri(
+        current,
+        'http://my-internal.local/admin',
+      );
       expect(result, isNull);
     });
 
@@ -319,62 +334,67 @@ void main() {
   /// Использует httpbin.org — если сервер отдаёт 503 или недоступен, тест
   /// пропускается без ошибки.
   group('SSRF redirect bypass (integration)', () {
-    test('redirect to 169.254.169.254 is blocked', () async {
-      final ctx = _mockCtx();
-      ToolOutput output;
-      try {
-        output = await createWebfetchTool().execute(
-          {
+    test(
+      'redirect to 169.254.169.254 is blocked',
+      () async {
+        final ctx = _mockCtx();
+        ToolOutput output;
+        try {
+          output = await createWebfetchTool().execute({
             'url':
                 'https://httpbin.org/redirect-to?url=http://169.254.169.254/latest/meta-data/',
             'max_chars': 100,
             'timeout': 5,
-          },
-          ctx,
+          }, ctx);
+        } catch (_) {
+          markTestSkipped('httpbin.org unreachable');
+          return;
+        }
+        if (output.metadata?['error'] != true) {
+          markTestSkipped(
+            'httpbin.org did not return a redirect: ${output.output.trim()}',
+          );
+          return;
+        }
+        expect(
+          output.output,
+          anyOf(contains('private'), contains('redirect')),
+          reason: 'SSRF VULNERABILITY if this fails: ${output.output}',
         );
-      } catch (_) {
-        markTestSkipped('httpbin.org unreachable');
-        return;
-      }
-      if (output.metadata?['error'] != true) {
-        markTestSkipped(
-          'httpbin.org did not return a redirect: ${output.output.trim()}',
-        );
-        return;
-      }
-      expect(
-        output.output,
-        anyOf(contains('private'), contains('redirect')),
-        reason: 'SSRF VULNERABILITY if this fails: ${output.output}',
-      );
-    }, timeout: Timeout(const Duration(seconds: 15)));
+      },
+      timeout: Timeout(const Duration(seconds: 15)),
+    );
 
-    test('redirect to localhost is blocked', () async {
-      final ctx = _mockCtx();
-      ToolOutput output;
-      try {
-        output = await createWebfetchTool().execute({
-          'url':
-              'https://httpbin.org/redirect-to?url=http://127.0.0.1:8080/secret',
-          'max_chars': 100,
-          'timeout': 5,
-        }, ctx);
-      } catch (_) {
-        markTestSkipped('httpbin.org unreachable');
-        return;
-      }
-      if (output.metadata?['error'] != true) {
-        markTestSkipped(
-          'httpbin.org did not return a redirect: ${output.output.trim()}',
+    test(
+      'redirect to localhost is blocked',
+      () async {
+        final ctx = _mockCtx();
+        ToolOutput output;
+        try {
+          output = await createWebfetchTool().execute({
+            'url':
+                'https://httpbin.org/redirect-to?url=http://127.0.0.1:8080/secret',
+            'max_chars': 100,
+            'timeout': 5,
+          }, ctx);
+        } catch (_) {
+          markTestSkipped('httpbin.org unreachable');
+          return;
+        }
+        if (output.metadata?['error'] != true) {
+          markTestSkipped(
+            'httpbin.org did not return a redirect: ${output.output.trim()}',
+          );
+          return;
+        }
+        expect(
+          output.output,
+          anyOf(contains('private'), contains('redirect')),
+          reason: 'SSRF VULNERABILITY if this fails: ${output.output}',
         );
-        return;
-      }
-      expect(
-        output.output,
-        anyOf(contains('private'), contains('redirect')),
-        reason: 'SSRF VULNERABILITY if this fails: ${output.output}',
-      );
-    }, timeout: Timeout(const Duration(seconds: 15)));
+      },
+      timeout: Timeout(const Duration(seconds: 15)),
+    );
   });
 
   group('detectAndDecode', () {
@@ -386,24 +406,19 @@ void main() {
 
     test('decodes Latin-1 from Content-Type charset', () {
       final bytes = latin1.encode('Café résumé ñoño');
-      final result = detectAndDecode(
-        bytes,
-        'text/html; charset=iso-8859-1',
-      );
+      final result = detectAndDecode(bytes, 'text/html; charset=iso-8859-1');
       expect(result, equals('Café résumé ñoño'));
     });
 
     test('handles charset with surrounding quotes', () {
       final bytes = utf8.encode('test');
-      final result = detectAndDecode(
-        bytes,
-        'text/html; charset="utf-8"',
-      );
+      final result = detectAndDecode(bytes, 'text/html; charset="utf-8"');
       expect(result, equals('test'));
     });
 
     test('detects charset from meta tag', () {
-      final html = '<html><head><meta charset="utf-8"></head>'
+      final html =
+          '<html><head><meta charset="utf-8"></head>'
           '<body>Hello привет</body></html>';
       final bytes = utf8.encode(html);
       final result = detectAndDecode(bytes, 'text/html');
@@ -411,7 +426,8 @@ void main() {
     });
 
     test('detects charset from meta http-equiv', () {
-      final html = '<html><head>'
+      final html =
+          '<html><head>'
           '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
           '</head><body>Hello</body></html>';
       final bytes = utf8.encode(html);
@@ -541,7 +557,10 @@ void main() {
     });
 
     test('converts bold/strong', () {
-      expect(convertHtmlToMarkdown('<strong>bold</strong>'), equals('**bold**'));
+      expect(
+        convertHtmlToMarkdown('<strong>bold</strong>'),
+        equals('**bold**'),
+      );
       expect(convertHtmlToMarkdown('<b>bold</b>'), equals('**bold**'));
     });
 
@@ -597,7 +616,9 @@ void main() {
     });
 
     test('converts blockquote', () {
-      final result = convertHtmlToMarkdown('<blockquote>Quote text</blockquote>');
+      final result = convertHtmlToMarkdown(
+        '<blockquote>Quote text</blockquote>',
+      );
       expect(result, contains('> Quote text'));
     });
 
@@ -659,14 +680,18 @@ void main() {
     });
 
     test('truncates with sentinel when exceeding maxChars', () {
-      final text = 'A\nB\nC\nD\nE\nF\nG\nH\nI\nJ\nK\nL\nM\nN\nO\nP\nQ\nR\nS\nT\nU\nV\nW\nX\nY\nZ\n' * 5;
+      final text =
+          'A\nB\nC\nD\nE\nF\nG\nH\nI\nJ\nK\nL\nM\nN\nO\nP\nQ\nR\nS\nT\nU\nV\nW\nX\nY\nZ\n' *
+          5;
       final result = truncateContent(text, 80);
       expect(result.length, lessThanOrEqualTo(80));
       expect(result, contains('truncated'));
     });
 
     test('sentinel includes line count', () {
-      final text = 'A\nB\nC\nD\nE\nF\nG\nH\nI\nJ\nK\nL\nM\nN\nO\nP\nQ\nR\nS\nT\nU\nV\nW\nX\nY\nZ\n' * 5;
+      final text =
+          'A\nB\nC\nD\nE\nF\nG\nH\nI\nJ\nK\nL\nM\nN\nO\nP\nQ\nR\nS\nT\nU\nV\nW\nX\nY\nZ\n' *
+          5;
       final result = truncateContent(text, 80);
       expect(result, contains(RegExp(r'\d+ lines truncated')));
     });
@@ -690,16 +715,20 @@ void main() {
       expect(output.output, isNotEmpty);
     }, timeout: Timeout(const Duration(seconds: 15)));
 
-    test('format=text returns plain text', () async {
-      final ctx = _mockCtx();
-      final output = await createWebfetchTool().execute({
-        'url': 'https://example.com',
-        'format': 'text',
-        'max_chars': 500,
-      }, ctx);
-      expect(output.metadata?['error'], isNull);
-      expect(output.output, isNotEmpty);
-    }, timeout: Timeout(const Duration(seconds: 15)));
+    test(
+      'format=text returns plain text',
+      () async {
+        final ctx = _mockCtx();
+        final output = await createWebfetchTool().execute({
+          'url': 'https://example.com',
+          'format': 'text',
+          'max_chars': 500,
+        }, ctx);
+        expect(output.metadata?['error'], isNull);
+        expect(output.output, isNotEmpty);
+      },
+      timeout: Timeout(const Duration(seconds: 15)),
+    );
 
     test('format=html returns raw HTML', () async {
       final ctx = _mockCtx();
@@ -714,15 +743,19 @@ void main() {
   });
 
   group('execute with truncation', () {
-    test('max_chars truncates long content', () async {
-      final ctx = _mockCtx();
-      final output = await createWebfetchTool().execute({
-        'url': 'https://example.com',
-        'max_chars': 50,
-      }, ctx);
-      if (output.metadata?['error'] == null) {
-        expect(output.output.length, lessThanOrEqualTo(50));
-      }
-    }, timeout: Timeout(const Duration(seconds: 15)));
+    test(
+      'max_chars truncates long content',
+      () async {
+        final ctx = _mockCtx();
+        final output = await createWebfetchTool().execute({
+          'url': 'https://example.com',
+          'max_chars': 50,
+        }, ctx);
+        if (output.metadata?['error'] == null) {
+          expect(output.output.length, lessThanOrEqualTo(50));
+        }
+      },
+      timeout: Timeout(const Duration(seconds: 15)),
+    );
   });
 }

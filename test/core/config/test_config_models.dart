@@ -19,16 +19,13 @@ void main() {
     test('parses full config with all fields', () {
       final json = {
         'version': 1,
-        'permission': {
-          'bash': 'ask',
-          'read': 'allow',
-        },
-        'keybinding': {
-          'session_child_next': 'ctrl+right',
-        },
+        'permission': {'bash': 'ask', 'read': 'allow'},
+        'keybinding': {'session_child_next': 'ctrl+right'},
         'skills': {
           'paths': ['/path/to/skills'],
-          'urls': [{'url': 'https://example.com/skill.md'}],
+          'urls': [
+            {'url': 'https://example.com/skill.md'},
+          ],
         },
         'compaction': {
           'auto': true,
@@ -75,7 +72,10 @@ void main() {
     });
 
     test('handles null permission section', () {
-      final config = ChatOrAIConfig.fromJson({'version': 2, 'permission': null});
+      final config = ChatOrAIConfig.fromJson({
+        'version': 2,
+        'permission': null,
+      });
       expect(config.permission, isEmpty);
     });
   });
@@ -93,10 +93,7 @@ void main() {
           ),
         },
         keybinding: {'session_child_next': 'ctrl+right'},
-        skills: const SkillConfig(
-          paths: ['/skills'],
-          urls: [],
-        ),
+        skills: const SkillConfig(paths: ['/skills'], urls: []),
         compaction: const CompactionConfig(
           auto: true,
           prune: false,
@@ -110,7 +107,10 @@ void main() {
 
       expect(restored.version, equals(original.version));
       expect(restored.permission['bash']?.defaultAction, equals('ask'));
-      expect(restored.permission['edit']?.patternActions?['*.dart'], equals('allow'));
+      expect(
+        restored.permission['edit']?.patternActions?['*.dart'],
+        equals('allow'),
+      );
       expect(restored.keybinding?['session_child_next'], equals('ctrl+right'));
       expect(restored.skills?.paths, equals(['/skills']));
       expect(restored.compaction?.auto, isTrue);
@@ -118,10 +118,7 @@ void main() {
     });
 
     test('omits null fields from toJson', () {
-      const config = ChatOrAIConfig(
-        version: 1,
-        permission: {},
-      );
+      const config = ChatOrAIConfig(version: 1, permission: {});
 
       final json = config.toJson();
       expect(json.containsKey('keybinding'), isFalse);
@@ -246,7 +243,9 @@ void main() {
     test('toJson includes non-empty collections', () {
       const config = SkillConfig(
         paths: ['/p1'],
-        urls: [{'url': 'https://x.com'}],
+        urls: [
+          {'url': 'https://x.com'},
+        ],
       );
       final json = config.toJson();
       expect(json['paths'], equals(['/p1']));

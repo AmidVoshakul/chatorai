@@ -25,10 +25,10 @@ void main() {
       final tool = createWriteTool();
       final ctx = _mockCtx();
 
-      final output = await tool.execute(
-        {'file_path': '/tmp/outside_project.txt', 'content': 'test'},
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': '/tmp/outside_project.txt',
+        'content': 'test',
+      }, ctx);
       expect(output.metadata?['error'], isTrue);
       expect(output.output, contains('Error'));
     });
@@ -37,10 +37,10 @@ void main() {
       final tool = createWriteTool();
       final ctx = _mockCtx();
 
-      final output = await tool.execute(
-        {'file_path': '../../outside_project.txt', 'content': 'test'},
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': '../../outside_project.txt',
+        'content': 'test',
+      }, ctx);
       expect(output.metadata?['error'], isTrue);
     });
   });
@@ -55,10 +55,10 @@ void main() {
       final testFile = File('${testDir.path}/test_bytes.txt');
       final content = 'Hello, 世界!'; // multi-byte UTF-8
 
-      final output = await tool.execute(
-        {'file_path': testFile.path, 'content': content},
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'content': content,
+      }, ctx);
 
       expect(output.metadata?['error'], isNull);
       // bytes = content.length (Dart string length, not UTF-8 byte length)
@@ -77,10 +77,10 @@ void main() {
       final testFile = File('${testDir.path}/test_bytes_ascii.txt');
       final content = 'Hello, World!';
 
-      final output = await tool.execute(
-        {'file_path': testFile.path, 'content': content},
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'content': content,
+      }, ctx);
 
       expect(output.metadata?['error'], isNull);
       expect(output.metadata?['bytes'], equals(content.length));
@@ -99,10 +99,10 @@ void main() {
       if (!testDir.existsSync()) testDir.createSync(recursive: true);
       final testFile = File('${testDir.path}/test_empty.txt');
 
-      final output = await tool.execute(
-        {'file_path': testFile.path, 'content': ''},
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'content': '',
+      }, ctx);
 
       expect(output.metadata?['error'], isNull);
       expect(testFile.existsSync(), isTrue);
@@ -123,10 +123,10 @@ void main() {
       if (!testDir.existsSync()) testDir.createSync(recursive: true);
       final testFile = File('${testDir.path}/a/b/c/d/e/deep_file.txt');
 
-      final output = await tool.execute(
-        {'file_path': testFile.path, 'content': 'deep content'},
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'content': 'deep content',
+      }, ctx);
 
       expect(output.metadata?['error'], isNull);
       expect(testFile.existsSync(), isTrue);
@@ -143,10 +143,10 @@ void main() {
       if (!testDir.existsSync()) testDir.createSync(recursive: true);
       final testFile = File('${testDir.path}/subdir/file.txt');
 
-      final output = await tool.execute(
-        {'file_path': testFile.path, 'content': 'single level'},
-        ctx,
-      );
+      final output = await tool.execute({
+        'file_path': testFile.path,
+        'content': 'single level',
+      }, ctx);
 
       expect(output.metadata?['error'], isNull);
       expect(testFile.existsSync(), isTrue);
@@ -164,10 +164,10 @@ void main() {
       if (!testDir.existsSync()) testDir.createSync(recursive: true);
       final testFile = File('${testDir.path}/alias_test.txt');
 
-      final output = await tool.execute(
-        {'path': testFile.path, 'content': 'alias write'},
-        ctx,
-      );
+      final output = await tool.execute({
+        'path': testFile.path,
+        'content': 'alias write',
+      }, ctx);
 
       expect(output.metadata?['error'], isNull);
       expect(await testFile.readAsString(), equals('alias write'));

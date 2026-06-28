@@ -95,7 +95,9 @@ void main() {
 
   group('Evaluator.evaluate', () {
     test('returns default ask when no rule matches', () {
-      final result = evaluate('unknown', '*.xyz', [PermissionRuleset.defaults()]);
+      final result = evaluate('unknown', '*.xyz', [
+        PermissionRuleset.defaults(),
+      ]);
       expect(result.action, equals(PermissionAction.ask));
     });
 
@@ -103,7 +105,9 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'read', pattern: '*', action: PermissionAction.allow,
+            permission: 'read',
+            pattern: '*',
+            action: PermissionAction.allow,
           ),
         ],
       );
@@ -115,10 +119,14 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'read', pattern: '*', action: PermissionAction.ask,
+            permission: 'read',
+            pattern: '*',
+            action: PermissionAction.ask,
           ),
           const PermissionRule(
-            permission: 'read', pattern: '*.secret', action: PermissionAction.deny,
+            permission: 'read',
+            pattern: '*.secret',
+            action: PermissionAction.deny,
           ),
         ],
       );
@@ -130,10 +138,14 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash', pattern: '*', action: PermissionAction.ask,
+            permission: 'bash',
+            pattern: '*',
+            action: PermissionAction.ask,
           ),
           const PermissionRule(
-            permission: 'bash', pattern: '*', action: PermissionAction.deny,
+            permission: 'bash',
+            pattern: '*',
+            action: PermissionAction.deny,
           ),
         ],
       );
@@ -145,12 +157,16 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'edit', pattern: '*', action: PermissionAction.ask,
+            permission: 'edit',
+            pattern: '*',
+            action: PermissionAction.ask,
           ),
         ],
         sessionApproved: [
           const PermissionRule(
-            permission: 'edit', pattern: '*.dart', action: PermissionAction.allow,
+            permission: 'edit',
+            pattern: '*.dart',
+            action: PermissionAction.allow,
           ),
         ],
       );
@@ -162,14 +178,18 @@ void main() {
       final ruleset1 = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'read', pattern: '*', action: PermissionAction.allow,
+            permission: 'read',
+            pattern: '*',
+            action: PermissionAction.allow,
           ),
         ],
       );
       final ruleset2 = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'read', pattern: '*.env', action: PermissionAction.deny,
+            permission: 'read',
+            pattern: '*.env',
+            action: PermissionAction.deny,
           ),
         ],
       );
@@ -187,7 +207,9 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: '*', pattern: '*', action: PermissionAction.deny,
+            permission: '*',
+            pattern: '*',
+            action: PermissionAction.deny,
           ),
         ],
       );
@@ -212,8 +234,20 @@ void main() {
         'edit': {'*.dart': 'allow', '*.env': 'deny'},
       });
       expect(rules, hasLength(2));
-      expect(rules.any((r) => r.pattern.contains('.dart') && r.action == PermissionAction.allow), isTrue);
-      expect(rules.any((r) => r.pattern.contains('.env') && r.action == PermissionAction.deny), isTrue);
+      expect(
+        rules.any(
+          (r) =>
+              r.pattern.contains('.dart') && r.action == PermissionAction.allow,
+        ),
+        isTrue,
+      );
+      expect(
+        rules.any(
+          (r) =>
+              r.pattern.contains('.env') && r.action == PermissionAction.deny,
+        ),
+        isTrue,
+      );
     });
 
     test('parses mixed default and pattern actions', () {
@@ -240,9 +274,7 @@ void main() {
     });
 
     test('case-insensitive action parsing', () {
-      final rules = PermissionRuleset.fromConfig({
-        'bash': 'ALLOW',
-      });
+      final rules = PermissionRuleset.fromConfig({'bash': 'ALLOW'});
       expect(rules[0].action, equals(PermissionAction.allow));
     });
 
@@ -255,9 +287,9 @@ void main() {
   // ── PermissionRuleset.defaults ─────────────────────────────────────────
 
   group('PermissionRuleset.defaults', () {
-    test('returns 14 default rules', () {
+    test('returns 15 default rules', () {
       final defaults = PermissionRuleset.defaults();
-      expect(defaults.rules, hasLength(14));
+      expect(defaults.rules, hasLength(15));
     });
 
     test('read is allowed by default', () {
@@ -280,7 +312,9 @@ void main() {
 
     test('write is ask by default', () {
       final defaults = PermissionRuleset.defaults();
-      final writeRule = defaults.rules.firstWhere((r) => r.permission == 'write');
+      final writeRule = defaults.rules.firstWhere(
+        (r) => r.permission == 'write',
+      );
       expect(writeRule.action, equals(PermissionAction.ask));
     });
 
@@ -350,9 +384,7 @@ void main() {
     });
 
     test('returns map for patternActions', () {
-      const config = PermissionRuleConfig(
-        patternActions: {'*.dart': 'allow'},
-      );
+      const config = PermissionRuleConfig(patternActions: {'*.dart': 'allow'});
       expect(config.toJson(), equals({'*.dart': 'allow'}));
     });
 

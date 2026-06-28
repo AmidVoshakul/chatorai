@@ -19,14 +19,18 @@ void main() {
       service = PermissionService();
       prefs = MockSharedPreferences();
       when(() => prefs.getStringList(any())).thenReturn(null);
-      when(() => prefs.setStringList(any(), any())).thenAnswer((_) async => true);
+      when(
+        () => prefs.setStringList(any(), any()),
+      ).thenAnswer((_) async => true);
       service.attachPreferences(prefs);
     });
 
     test('emits PermissionRequest on onAsked when ask rule matches', () async {
-      service.seedRules(PermissionRuleset(rules: [
-        rule('write', 'lib/**', PermissionAction.ask),
-      ]));
+      service.seedRules(
+        PermissionRuleset(
+          rules: [rule('write', 'lib/**', PermissionAction.ask)],
+        ),
+      );
 
       final req = PermissionRequest(
         id: 'r1',
@@ -48,9 +52,11 @@ void main() {
     });
 
     test('reply(once) does not persist approved rule', () async {
-      service.seedRules(PermissionRuleset(rules: [
-        rule('read', 'lib/**', PermissionAction.ask),
-      ]));
+      service.seedRules(
+        PermissionRuleset(
+          rules: [rule('read', 'lib/**', PermissionAction.ask)],
+        ),
+      );
 
       final req = PermissionRequest(
         id: 'r2',
@@ -68,9 +74,11 @@ void main() {
     });
 
     test('reply(always) persists approved rule', () async {
-      service.seedRules(PermissionRuleset(rules: [
-        rule('edit', 'lib/**', PermissionAction.ask),
-      ]));
+      service.seedRules(
+        PermissionRuleset(
+          rules: [rule('edit', 'lib/**', PermissionAction.ask)],
+        ),
+      );
 
       final req = PermissionRequest(
         id: 'r3',
@@ -88,9 +96,9 @@ void main() {
     });
 
     test('reply(reject) throws PermissionRejectedError', () async {
-      service.seedRules(PermissionRuleset(rules: [
-        rule('bash', '*', PermissionAction.ask),
-      ]));
+      service.seedRules(
+        PermissionRuleset(rules: [rule('bash', '*', PermissionAction.ask)]),
+      );
 
       final req = PermissionRequest(
         id: 'r4',
@@ -107,10 +115,14 @@ void main() {
     });
 
     test('reply(reject) rejects same-session siblings', () async {
-      service.seedRules(PermissionRuleset(rules: [
-        rule('read', 'lib/**', PermissionAction.ask),
-        rule('write', 'lib/**', PermissionAction.ask),
-      ]));
+      service.seedRules(
+        PermissionRuleset(
+          rules: [
+            rule('read', 'lib/**', PermissionAction.ask),
+            rule('write', 'lib/**', PermissionAction.ask),
+          ],
+        ),
+      );
 
       final req1 = PermissionRequest(
         id: 's1',
@@ -189,11 +201,12 @@ void main() {
   group('PermissionService — preferences persistence', () {
     test('loads approved rules from pipe-delimited prefs', () async {
       final prefs = MockSharedPreferences();
-      when(() => prefs.getStringList(any())).thenReturn([
-        'read|lib/**|allow',
-        'write|src/**|deny',
-      ]);
-      when(() => prefs.setStringList(any(), any())).thenAnswer((_) async => true);
+      when(
+        () => prefs.getStringList(any()),
+      ).thenReturn(['read|lib/**|allow', 'write|src/**|deny']);
+      when(
+        () => prefs.setStringList(any(), any()),
+      ).thenAnswer((_) async => true);
 
       final s = PermissionService();
       s.attachPreferences(prefs);
@@ -205,12 +218,12 @@ void main() {
 
     test('ignores malformed prefs entries', () async {
       final prefs = MockSharedPreferences();
-      when(() => prefs.getStringList(any())).thenReturn([
-        'read|lib/**|allow',
-        'corrupt',
-        'write|src/**',
-      ]);
-      when(() => prefs.setStringList(any(), any())).thenAnswer((_) async => true);
+      when(
+        () => prefs.getStringList(any()),
+      ).thenReturn(['read|lib/**|allow', 'corrupt', 'write|src/**']);
+      when(
+        () => prefs.setStringList(any(), any()),
+      ).thenAnswer((_) async => true);
 
       final s = PermissionService();
       s.attachPreferences(prefs);
@@ -222,8 +235,7 @@ void main() {
       final prefs = MockSharedPreferences();
       final captured = <List<String>>[];
       when(() => prefs.getStringList(any())).thenReturn(null);
-      when(() => prefs.setStringList(any(), any()))
-          .thenAnswer((i) {
+      when(() => prefs.setStringList(any(), any())).thenAnswer((i) {
         captured.add(i.positionalArguments[1] as List<String>);
         return Future<bool>.value(true);
       });
@@ -231,9 +243,11 @@ void main() {
       final s = PermissionService();
       s.attachPreferences(prefs);
 
-      s.seedRules(PermissionRuleset(rules: [
-        rule('delete', 'tmp/**', PermissionAction.ask),
-      ]));
+      s.seedRules(
+        PermissionRuleset(
+          rules: [rule('delete', 'tmp/**', PermissionAction.ask)],
+        ),
+      );
 
       final req = PermissionRequest(
         id: 'rp',
@@ -257,9 +271,9 @@ void main() {
 
     setUp(() {
       service = PermissionService();
-      service.seedRules(PermissionRuleset(rules: [
-        rule('read', '*', PermissionAction.ask),
-      ]));
+      service.seedRules(
+        PermissionRuleset(rules: [rule('read', '*', PermissionAction.ask)]),
+      );
     });
 
     test('cancelAllPendingRequests rejects active asks', () async {

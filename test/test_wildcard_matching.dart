@@ -165,9 +165,7 @@ void main() {
     });
 
     test('returns default ask when no rule matches', () {
-      final rulesets = [
-        PermissionRuleset(rules: []),
-      ];
+      final rulesets = [PermissionRuleset(rules: [])];
 
       final result = evaluate('unknown', 'pattern', rulesets);
       expect(result.action, equals(PermissionAction.ask));

@@ -241,10 +241,7 @@ void main() {
 
       service.reply('test-reject', PermissionReply.reject);
 
-      expect(
-        () => askFuture,
-        throwsA(isA<PermissionRejectedError>()),
-      );
+      expect(() => askFuture, throwsA(isA<PermissionRejectedError>()));
     });
 
     test('always reply adds approved rules', () async {
@@ -474,10 +471,7 @@ void main() {
   group('PermissionService.attachPreferences', () {
     test('loads approved rules from SharedPreferences', () async {
       SharedPreferences.setMockInitialValues({
-        'permission_approved_rules': [
-          'read|*.txt|allow',
-          'bash|git *|allow',
-        ],
+        'permission_approved_rules': ['read|*.txt|allow', 'bash|git *|allow'],
       });
 
       final prefs = await SharedPreferences.getInstance();
@@ -491,10 +485,7 @@ void main() {
 
     test('ignores corrupt prefs entries', () async {
       SharedPreferences.setMockInitialValues({
-        'permission_approved_rules': [
-          'invalid-entry',
-          'read|*.txt|allow',
-        ],
+        'permission_approved_rules': ['invalid-entry', 'read|*.txt|allow'],
       });
 
       final prefs = await SharedPreferences.getInstance();
