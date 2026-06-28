@@ -75,9 +75,16 @@ extension _ChatScreenEditsExt on _ChatScreenState {
     );
     ref.read(chatListProvider.notifier).updateChat(chatWithAssistant);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoScrollEnabled = true;
       _scrollToBottom(force: true);
     });
-    _sendToAI(newContent, providedChat: chatWithAssistant);
+
+    final apiMessages = _buildApiMessages(chatWithAssistant);
+    await _initiateStream(
+      chat: chatWithAssistant,
+      messages: apiMessages,
+      isContinuation: false,
+    );
 
     if (!mounted) return;
     final localizations = AppLocalizations.of(context)!;

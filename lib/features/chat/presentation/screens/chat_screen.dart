@@ -41,7 +41,8 @@ import 'package:chatorai/providers.dart'
         chatScreenProvider,
         toolRegistryProvider,
         currentAgentProvider,
-        compactionConfigProvider;
+        compactionConfigProvider,
+        currentSessionRunnerProvider;
 import 'package:chatorai/shared/utils/chat_error_utils.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
@@ -97,7 +98,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   final ContinuationSuggestionService _suggestionService =
       ContinuationSuggestionService();
-  bool _userStopped = false;
+
   bool _autoScrollEnabled = true; // Auto-scroll enabled by default
 
   /// Test-only accessor for auto-scroll state.

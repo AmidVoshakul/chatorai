@@ -343,17 +343,11 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
       ReasoningPart p => ReasoningPartWidget(part: p),
       ToolCallPart p => Padding(
         padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.sm),
-        child: Opacity(
-          opacity: 0.3,
-          child: ToolCallPartWidget(part: p),
-        ),
+        child: Opacity(opacity: 0.3, child: ToolCallPartWidget(part: p)),
       ),
       ToolResultPart p => Padding(
         padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.sm),
-        child: Opacity(
-          opacity: 0.3,
-          child: ToolResultPartWidget(part: p),
-        ),
+        child: Opacity(opacity: 0.3, child: ToolResultPartWidget(part: p)),
       ),
       TaskPart p => TaskPartWidget(part: p),
       QuestionPart p => QuestionPartWidget(
@@ -493,29 +487,39 @@ class _ActionRow extends StatelessWidget {
           if (!isUser) const SizedBox(width: 4),
           // ===== Assistant: agent · model · [⋮] =====
           if (!isUser) ...[
-            if (agentName != null)
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Text(
-                  agentName!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-            if (model != null)
-              Padding(
-                padding: const EdgeInsets.only(right: 4, left: 8),
-                child: Text(
-                  '•  $model',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.textTheme.bodySmall?.color?.withValues(
-                      alpha: 0.6,
+            Flexible(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (agentName != null)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Text(
+                        agentName!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  if (model != null)
+                    Flexible(
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 4, left: 8),
+                        child: Text(
+                          '•  $model',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.textTheme.bodySmall?.color?.withValues(
+                              alpha: 0.6,
+                            ),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                ],
               ),
+            ),
             _ActionMenuButton(
               isUser: false,
               content: content,
@@ -561,11 +565,11 @@ class _ActionRow extends StatelessWidget {
           ],
 
           // Retry indicator (last assistant message only) or token count
-          if (!isUser && isLastMessage)
+          if (!isUser)
             Consumer(
               builder: (context, ref, _) {
                 final retryState = ref.watch(chatScreenProvider);
-                if (retryState.isRetrying) {
+                if (isLastMessage && retryState.isRetrying) {
                   return _RetryIndicator(
                     message: retryState.retryMessage ?? 'Retrying…',
                   );

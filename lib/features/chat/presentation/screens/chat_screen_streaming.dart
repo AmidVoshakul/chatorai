@@ -109,13 +109,16 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         .selectedModelObject
         ?.contextLength;
 
+    // Deduplication for question tool onToolStart (Bug 3)
+    String? lastAddedQuestionText;
+    DateTime? lastAddedQuestionTime;
+    const questionDebounceMs = 500; // within 500ms consider duplicate
+
     // ── Session Runner (event sourcing) ──────────────────────────────────
-    // Runner already created and initialized in _handleAddMessagesAndStream
+    // Set by _initiateStream before calling this method
     final runnerSession = _sessionRunner;
     if (runnerSession == null) {
-      throw StateError(
-        'SessionRunner not initialized — must call _handleAddMessagesAndStream first',
-      );
+      throw StateError('SessionRunner not initialized — call _initiateStream first');
     }
 
     // ── Pre-send overflow check (OpenCode-style) ─────────────────────────
@@ -217,14 +220,31 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             // For question tool, create a QuestionPart in the streaming message
             final questionText = input['question'] as String? ?? '';
             final options = (input['options'] as List?)?.cast<String>() ?? [];
-            ref
-                .read(streamingMessageProvider.notifier)
-                .onQuestion(
-                  QuestionPart(question: questionText, options: options),
-                );
-            LogTags.chatScreen.logInfo(
-              'onToolStart(question): added QuestionPart "$questionText"',
-            );
+
+            // Deduplicate: skip if same question was added within debounce window
+            final now = DateTime.now();
+            final isDuplicate =
+                lastAddedQuestionText == questionText &&
+                lastAddedQuestionTime != null &&
+                now.difference(lastAddedQuestionTime!).inMilliseconds <
+                    questionDebounceMs;
+
+            if (!isDuplicate) {
+              ref
+                  .read(streamingMessageProvider.notifier)
+                  .onQuestion(
+                    QuestionPart(question: questionText, options: options),
+                  );
+              lastAddedQuestionText = questionText;
+              lastAddedQuestionTime = now;
+              LogTags.chatScreen.logInfo(
+                'onToolStart(question): added QuestionPart "$questionText"',
+              );
+            } else {
+              LogTags.chatScreen.logInfo(
+                'onToolStart(question): DUPLICATE skipped "$questionText"',
+              );
+            }
           } else {
             ref
                 .read(streamingMessageProvider.notifier)
@@ -454,6 +474,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               'ChatScreen.onCompletion: postFrame scrollToBottom call',
             );
             _scrollToBottom(force: true);
+            // Restore focus to chat input after streaming completes (Bug 4)
+            _chatInputFocusNode.requestFocus();
           });
           _showContinuationSuggestions(completedMessage);
         },
@@ -467,7 +489,6 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     } finally {
       toolInputs.clear();
       toolStartTimes.clear();
-      runnerSession.dispose();
     }
   }
 

@@ -7,11 +7,15 @@ String _formatArgs(Map<String, dynamic> input, {int maxArgs = 3}) {
   final omit = {
     'path',
     'filePath',
+    'file_path',
     'command',
     'url',
     'pattern',
     'query',
     'description',
+    'old_string',
+    'new_string',
+    'patch',
   };
   final args = <String>[];
   for (final entry in input.entries) {

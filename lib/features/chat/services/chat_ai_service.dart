@@ -52,6 +52,14 @@ class ChatCompletionResponse {
 ///
 /// Uses [ModelResolver] from the catalog for model resolution and
 /// LanguageModel creation (OpenCode‑style). No legacy factory fallback.
+///
+/// **Cancellation semantics (OpenCode‑inspired):**
+/// - Every call to [streamChatCompletion] increments a generation counter.
+/// - [cancelAllRequests] increments the counter, invalidating old generations.
+/// - The retry loop checks `isStillValid` against the captured generation,
+///   so a cancelled or superseded request stops retrying immediately.
+/// - A running‑request guard prevents concurrent [streamChatCompletion] calls;
+///   a new call cancels the previous and waits for it to fully stop.
 class ChatAiService implements CompletionProvider {
   final ModelResolver _resolver;
   final Map<String, String> _headers;
@@ -61,6 +69,13 @@ class ChatAiService implements CompletionProvider {
   final TokenCounter _tokenCounter = TokenCounter();
   late OverflowDetector _overflowDetector;
   int _modelContextLength = 200000;
+
+  int _generation = 0;
+  bool _isRunning = false;
+  Completer<void>? _stopCompleter;
+
+  /// Whether a request is currently in progress.
+  bool get isRunning => _isRunning;
 
   /// Create with catalog‑based resolution.
   ///
@@ -192,6 +207,10 @@ class ChatAiService implements CompletionProvider {
   // ===========================================================================
   // STREAMING
   // ===========================================================================
+  /// Runs a chat completion with generation‑scoped cancellation.
+  ///
+  /// If another request is already running, this cancels it and waits for it
+  /// to fully stop before proceeding (prevents overlapping state updates).
   Future<void> streamChatCompletion({
     required List<Map<String, dynamic>> messages,
     required String model,
@@ -208,9 +227,17 @@ class ChatAiService implements CompletionProvider {
     void Function(RichRetryInfo info)? onRetry,
     void Function(List<Map<String, dynamic>> messages)? onOverflow,
   }) async {
+    // ── Running‑request guard ──────────────────────────────────────────
+    if (_isRunning) {
+      cancelAllRequests();
+      await _stopCompleter?.future;
+    }
+
+    _isRunning = true;
+    _stopCompleter = Completer<void>();
     _currentModel = model;
     _currentTemperature = temperature;
-    // Cancel any previous retry cycle before starting a new one
+    final gen = _generation + 1;
     cancelAllRequests();
     for (final m in messages) {
       final content = m['content'];
@@ -241,149 +268,155 @@ class ChatAiService implements CompletionProvider {
         'streamChatCompletion: resolver failed for $model',
         e,
       );
+      _isRunning = false;
+      _stopCompleter?.complete();
       rethrow;
     }
 
     try {
-      await _retryService.execute(() async {
-        LogTags.chatService.logDebug(
-          'streamChatCompletion: calling streamText device=…',
-        );
-        final result = await streamText(
-          model: lm,
-          messages: _toModelMessages(messages),
-          temperature: temperature,
-          maxRetries: 0, // We handle retries ourselves
-          headers: activeHeaders,
-          abortSignal: _cancellation.token,
-          tools: tools,
-          maxSteps: maxSteps,
-          onInputAvailable: (event) {
-            final rawInput = event.input;
-            final inputMap = rawInput is Map<String, dynamic>
-                ? rawInput
-                : <String, dynamic>{'raw': rawInput};
-            onToolStart?.call(event.toolCallId, event.toolName, inputMap);
-          },
-        );
-        LogTags.chatService.logDebug(
-          'streamChatCompletion: streamText returned, consuming stream',
-        );
-
-        try {
-          await for (final event in result.fullStream.handleError((
-            Object error,
-            StackTrace stack,
-          ) {
-            // DioException escapes ai_sdk_dart's internal streams before
-            // reaching our await-for.  Swallow here so it never reaches
-            // the zone handler.  The corresponding StreamTextErrorEvent
-            // data event carries the same error and drives the retry.
-            if (error is DioException) {
-              LogTags.chatService.logDebug(
-                'stream handleError swallowed DioException',
-              );
-              return;
-            }
-            throw error;
-          })) {
-            switch (event) {
-              case StreamTextTextDeltaEvent(:final delta):
-                onChunk(delta);
-              case StreamTextReasoningDeltaEvent(:final delta):
-                onReasoning(delta);
-              case StreamTextToolResultEvent(
-                :final toolResult,
-                :final preliminary,
-              ):
-                LogTags.chatService.logDebug(
-                  'streamChatCompletion: ToolResultEvent tool=${toolResult.toolName} '
-                  'callId=${toolResult.toolCallId} preliminary=$preliminary',
-                );
-                if (!preliminary) {
-                  final outputText = switch (toolResult.output) {
-                    ToolResultOutputText(:final text) => text,
-                    ToolResultOutputContent(:final parts) =>
-                      parts.map((p) => p.toString()).join(),
-                  };
-                  LogTags.chatService.logInfo(
-                    'streamChatCompletion: onToolEnd tool=${toolResult.toolName} '
-                    'outputLen=${outputText.length}',
-                  );
-                  onToolEnd?.call(
-                    toolResult.toolCallId,
-                    toolResult.toolName,
-                    outputText,
-                  );
-                }
-              case StreamTextToolErrorEvent(
-                :final toolCallId,
-                :final toolName,
-                :final error,
-              ):
-                onToolError?.call(toolCallId, toolName, error.toString());
-              case StreamTextReasoningStartEvent():
-                break;
-              case StreamTextReasoningEndEvent():
-                break;
-              case StreamTextTextStartEvent():
-                break;
-              case StreamTextTextEndEvent():
-                break;
-              case StreamTextToolInputStartEvent():
-                break;
-              case StreamTextToolInputDeltaEvent():
-                break;
-              case StreamTextToolInputEndEvent():
-                break;
-              case StreamTextUsageEvent():
-                break;
-              case StreamTextSourceEvent():
-                break;
-              case StreamTextFileEvent():
-                break;
-              case StreamTextStartEvent():
-                break;
-              case StreamTextStartStepEvent():
-                break;
-              case StreamTextFinishStepEvent():
-                break;
-              case StreamTextRawEvent():
-                break;
-              case StreamTextErrorEvent(:final error):
-                LogTags.chatService.logError(
-                  'streamChatCompletion: StreamTextErrorEvent',
-                  error,
-                );
-                throw error;
-              case StreamTextFinishEvent(:final text, :final usage):
-                _tokenCounter.recordUsage(
-                  promptTokens: usage?.inputTokens,
-                  completionTokens: usage?.outputTokens,
-                );
-                onUsage?.call(
-                  usage?.inputTokens ?? 0,
-                  usage?.outputTokens ?? 0,
-                );
-                onCompletion(text);
-                if (_overflowDetector.isOverflow(_tokenCounter.totalTokens)) {
-                  onOverflow?.call(messages);
-                }
-            }
-          }
+      await _retryService.execute(
+        () async {
           LogTags.chatService.logDebug(
-            'streamChatCompletion: stream consumed successfully',
+            'streamChatCompletion: calling streamText device=…',
           );
-        } catch (e, s) {
-          LogTags.chatService.logError(
-            'streamChatCompletion: stream iteration threw (will propagate to retry)',
-            e,
-            s,
+          final result = await streamText(
+            model: lm,
+            messages: _toModelMessages(messages),
+            temperature: temperature,
+            maxRetries: 0, // We handle retries ourselves
+            headers: activeHeaders,
+            abortSignal: _cancellation.token,
+            tools: tools,
+            maxSteps: maxSteps,
+            onInputAvailable: (event) {
+              final rawInput = event.input;
+              final inputMap = rawInput is Map<String, dynamic>
+                  ? rawInput
+                  : <String, dynamic>{'raw': rawInput};
+              onToolStart?.call(event.toolCallId, event.toolName, inputMap);
+            },
           );
-          rethrow;
-        }
-        return null;
-      }, onRetry: onRetry);
+          LogTags.chatService.logDebug(
+            'streamChatCompletion: streamText returned, consuming stream',
+          );
+
+          try {
+            await for (final event in result.fullStream.handleError((
+              Object error,
+              StackTrace stack,
+            ) {
+              // DioException escapes ai_sdk_dart's internal streams before
+              // reaching our await-for.  Swallow here so it never reaches
+              // the zone handler.  The corresponding StreamTextErrorEvent
+              // data event carries the same error and drives the retry.
+              if (error is DioException) {
+                LogTags.chatService.logDebug(
+                  'stream handleError swallowed DioException',
+                );
+                return;
+              }
+              throw error;
+            })) {
+              switch (event) {
+                case StreamTextTextDeltaEvent(:final delta):
+                  onChunk(delta);
+                case StreamTextReasoningDeltaEvent(:final delta):
+                  onReasoning(delta);
+                case StreamTextToolResultEvent(
+                  :final toolResult,
+                  :final preliminary,
+                ):
+                  LogTags.chatService.logDebug(
+                    'streamChatCompletion: ToolResultEvent tool=${toolResult.toolName} '
+                    'callId=${toolResult.toolCallId} preliminary=$preliminary',
+                  );
+                  if (!preliminary) {
+                    final outputText = switch (toolResult.output) {
+                      ToolResultOutputText(:final text) => text,
+                      ToolResultOutputContent(:final parts) =>
+                        parts.map((p) => p.toString()).join(),
+                    };
+                    LogTags.chatService.logInfo(
+                      'streamChatCompletion: onToolEnd tool=${toolResult.toolName} '
+                      'outputLen=${outputText.length}',
+                    );
+                    onToolEnd?.call(
+                      toolResult.toolCallId,
+                      toolResult.toolName,
+                      outputText,
+                    );
+                  }
+                case StreamTextToolErrorEvent(
+                  :final toolCallId,
+                  :final toolName,
+                  :final error,
+                ):
+                  onToolError?.call(toolCallId, toolName, error.toString());
+                case StreamTextReasoningStartEvent():
+                  break;
+                case StreamTextReasoningEndEvent():
+                  break;
+                case StreamTextTextStartEvent():
+                  break;
+                case StreamTextTextEndEvent():
+                  break;
+                case StreamTextToolInputStartEvent():
+                  break;
+                case StreamTextToolInputDeltaEvent():
+                  break;
+                case StreamTextToolInputEndEvent():
+                  break;
+                case StreamTextUsageEvent():
+                  break;
+                case StreamTextSourceEvent():
+                  break;
+                case StreamTextFileEvent():
+                  break;
+                case StreamTextStartEvent():
+                  break;
+                case StreamTextStartStepEvent():
+                  break;
+                case StreamTextFinishStepEvent():
+                  break;
+                case StreamTextRawEvent():
+                  break;
+                case StreamTextErrorEvent(:final error):
+                  LogTags.chatService.logError(
+                    'streamChatCompletion: StreamTextErrorEvent',
+                    error,
+                  );
+                  throw error;
+                case StreamTextFinishEvent(:final text, :final usage):
+                  _tokenCounter.recordUsage(
+                    promptTokens: usage?.inputTokens,
+                    completionTokens: usage?.outputTokens,
+                  );
+                  onUsage?.call(
+                    usage?.inputTokens ?? 0,
+                    usage?.outputTokens ?? 0,
+                  );
+                  onCompletion(text);
+                  if (_overflowDetector.isOverflow(_tokenCounter.totalTokens)) {
+                    onOverflow?.call(messages);
+                  }
+              }
+            }
+            LogTags.chatService.logDebug(
+              'streamChatCompletion: stream consumed successfully',
+            );
+          } catch (e, s) {
+            LogTags.chatService.logError(
+              'streamChatCompletion: stream iteration threw (will propagate to retry)',
+              e,
+              s,
+            );
+            rethrow;
+          }
+          return null;
+        },
+        onRetry: onRetry,
+        isStillValid: () => gen == _generation,
+      );
     } catch (e, s) {
       LogTags.chatService.logError(
         'streamChatCompletion: unhandled error (should not happen with retry)',
@@ -402,6 +435,8 @@ class ChatAiService implements CompletionProvider {
 
       rethrow;
     } finally {
+      _isRunning = false;
+      _stopCompleter?.complete();
       _stopProgressTimer();
     }
   }
@@ -438,7 +473,9 @@ class ChatAiService implements CompletionProvider {
     }
 
     try {
+      final gen = _generation;
       final result = await _retryService.execute(() async {
+        if (gen != _generation) throw Exception('cancelled');
         return generateText(
           model: lm,
           messages: _toModelMessages(messages),
@@ -446,7 +483,7 @@ class ChatAiService implements CompletionProvider {
           maxRetries: 0,
           headers: activeHeaders,
         );
-      });
+      }, isStillValid: () => gen == _generation);
       return result.text;
     } finally {
       _stopProgressTimer();
@@ -467,7 +504,13 @@ class ChatAiService implements CompletionProvider {
     }).toList();
   }
 
+  /// Cancels all in‑flight requests and increments the generation counter.
+  ///
+  /// Any retry loop still running with an older generation will abort on its
+  /// next `isStillValid` check. The cancellation token is also cancelled so
+  /// the underlying HTTP request (if still in flight) can be aborted.
   void cancelAllRequests() {
+    _generation++;
     _retryService.cancelRetry();
     _cancellation.cancel();
   }

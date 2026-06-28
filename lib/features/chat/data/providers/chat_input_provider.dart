@@ -5,7 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // STATE
 // ===========================================================================
 
+class _Unset {
+  const _Unset();
+}
+
 class ChatInputState {
+  static const _unset = _Unset();
+
   final SpeechUiState speechUiState;
   final String speechStatusMessage;
   final bool isSending;
@@ -31,20 +37,20 @@ class ChatInputState {
     String? speechStatusMessage,
     bool? isSending,
     bool? plusActive,
-    String? attachedFilePath,
-    String? attachedFileName,
-    String? attachedImageType,
-    String? attachedBase64Data,
+    Object? attachedFilePath = _unset,
+    Object? attachedFileName = _unset,
+    Object? attachedImageType = _unset,
+    Object? attachedBase64Data = _unset,
   }) {
     return ChatInputState(
       speechUiState: speechUiState ?? this.speechUiState,
       speechStatusMessage: speechStatusMessage ?? this.speechStatusMessage,
       isSending: isSending ?? this.isSending,
       plusActive: plusActive ?? this.plusActive,
-      attachedFilePath: attachedFilePath ?? this.attachedFilePath,
-      attachedFileName: attachedFileName ?? this.attachedFileName,
-      attachedImageType: attachedImageType ?? this.attachedImageType,
-      attachedBase64Data: attachedBase64Data ?? this.attachedBase64Data,
+      attachedFilePath: identical(attachedFilePath, _unset) ? this.attachedFilePath : attachedFilePath as String?,
+      attachedFileName: identical(attachedFileName, _unset) ? this.attachedFileName : attachedFileName as String?,
+      attachedImageType: identical(attachedImageType, _unset) ? this.attachedImageType : attachedImageType as String?,
+      attachedBase64Data: identical(attachedBase64Data, _unset) ? this.attachedBase64Data : attachedBase64Data as String?,
     );
   }
 }

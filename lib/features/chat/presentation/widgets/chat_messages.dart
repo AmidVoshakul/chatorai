@@ -290,7 +290,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                         message.role == MessageRole.assistant &&
                         message.content.isEmpty;
 
-                    if (isEmptyAssistantMessage && isLastMessage) {
+                    if (isEmptyAssistantMessage && isLastMessage && !message.isComplete) {
                       return const SizedBox.shrink();
                     }
 

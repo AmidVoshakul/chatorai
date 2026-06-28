@@ -1,21 +1,164 @@
 part of 'chat_screen.dart';
 
 extension _ChatScreenMessagingExt on _ChatScreenState {
+  List<Map<String, dynamic>> _buildApiMessages(
+    Chat chat, {
+    String? delegateAgentId,
+  }) {
+    const int maxHistoryMessages = 20;
+    final recentMessages = chat.messages.length > maxHistoryMessages
+        ? chat.messages.sublist(chat.messages.length - maxHistoryMessages)
+        : chat.messages;
+
+    final messages = recentMessages.where((m) => !m.isError).map((msg) {
+      final result = <String, dynamic>{'role': msg.role.name};
+      if (msg.imageData != null && msg.imageType != null) {
+        result['content'] = [
+          {'type': 'text', 'text': msg.content},
+          {
+            'type': 'image_url',
+            'image_url': {
+              'url': 'data:${msg.imageType};base64,${msg.imageData}',
+            },
+          },
+        ];
+      } else {
+        result['content'] = msg.content;
+      }
+      return result;
+    }).toList();
+
+    if (delegateAgentId != null) {
+      final agent = AgentRegistry().get(delegateAgentId);
+      if (agent != null && agent.systemPrompt != null) {
+        messages.insert(0, {'role': 'system', 'content': agent.systemPrompt!});
+      }
+    } else {
+      final currentAgent = ref.read(currentAgentProvider);
+      final isDefault = currentAgent.id == 'build';
+      if (!isDefault && currentAgent.systemPrompt != null) {
+        messages.insert(0, {
+          'role': 'system',
+          'content': currentAgent.systemPrompt!,
+        });
+      }
+    }
+    return messages;
+  }
+
+  Future<void> _initiateStream({
+    required Chat chat,
+    required List<Map<String, dynamic>> messages,
+    required bool isContinuation,
+    String? delegateAgentId,
+  }) async {
+    final repo = await _sessionRepositoryFuture;
+    final toolRegistry = await ref.read(toolRegistryProvider.future);
+    final sessionRunner = SessionRunner(repo, toolRegistry);
+    final runnerSession = await sessionRunner.startInitializedSession(
+      agent: ref.read(currentAgentProvider).name,
+      modelRef: selectedModelId,
+    );
+    _sessionRunner = runnerSession;
+    ref.read(currentSessionRunnerProvider.notifier).set(sessionRunner);
+
+    if (!isContinuation) {
+      final userMessages =
+          chat.messages.where((m) => m.role == MessageRole.user).toList();
+      if (userMessages.isNotEmpty) {
+        final lastUserMsg = userMessages.last;
+        try {
+          await runnerSession.publishUserMessage(
+            content: lastUserMsg.content,
+            messageId: lastUserMsg.id,
+          );
+        } catch (e) {
+          LogTags.chatService.logError(
+            'Failed to publish user message to session core',
+            e,
+          );
+        }
+      }
+    }
+
+    try {
+      final modelSettingsNotifier = ref.read(modelSettingsProvider.notifier);
+      final settings = await modelSettingsNotifier.getSettings(selectedModelId);
+
+      if (delegateAgentId == null &&
+          settings.systemPrompt != null &&
+          messages.isNotEmpty &&
+          messages.first['role'] != 'system') {
+        messages.insert(0, {
+          'role': 'system',
+          'content': settings.systemPrompt!,
+        });
+      }
+
+      await _handleStreamingResponse(
+        chat: chat,
+        messages: messages,
+        isContinuation: isContinuation,
+        modelId: selectedModelId,
+        modelSettings: settings,
+      );
+    } catch (e, s) {
+      ref.read(chatScreenProvider.notifier).setStreaming(false);
+      ref.read(streamingMessageProvider.notifier).reset();
+      try {
+        await _handleStreamingError(e);
+      } catch (e2) {
+        LogTags.chatService.logError(
+          '_handleStreamingError threw after main exception',
+          e2,
+          s,
+        );
+      }
+    } finally {
+      runnerSession.dispose();
+      if (_sessionRunner == runnerSession) {
+        _sessionRunner = null;
+      }
+      ref.read(currentSessionRunnerProvider.notifier).clear();
+    }
+  }
   Future<void> _handleSendMessage(MessageData messageData) async {
     ref.read(chatScreenProvider.notifier).hideAllSuggestions();
+    Chat chat;
     if (currentChat == null) {
-      final newChat = await ref.read(chatListProvider.notifier).createNewChat();
-      ref.read(currentChatIdProvider.notifier).setChatId(newChat.id);
-      await _handleAddMessagesAndStream(
-        newChat,
-        messageData.text,
-        delegateAgentId: messageData.delegateAgentId,
-      );
-      return;
+      chat = await ref.read(chatListProvider.notifier).createNewChat();
+      ref.read(currentChatIdProvider.notifier).setChatId(chat.id);
+    } else {
+      chat = currentChat!;
     }
-    await _handleAddMessagesAndStream(
-      currentChat!,
+
+    final userMessage = _createUserMessage(
       messageData.text,
+      base64Data: messageData.base64Data,
+      imageType: messageData.imageType,
+    );
+    await _chatStorageService.addMessageToChat(chat.id, userMessage);
+    var streamChat = await _chatStorageService.getChat(chat.id);
+    if (streamChat == null) return;
+
+    final assistantMessage = _createAssistantMessage();
+    await _chatStorageService.addMessageToChat(streamChat.id, assistantMessage);
+    streamChat = await _chatStorageService.getChat(streamChat.id) ?? streamChat;
+    ref.read(chatListProvider.notifier).updateChat(streamChat);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoScrollEnabled = true;
+      _scrollToBottom(force: true);
+    });
+
+    final messages = _buildApiMessages(
+      streamChat,
+      delegateAgentId: messageData.delegateAgentId,
+    );
+    await _initiateStream(
+      chat: streamChat,
+      messages: messages,
+      isContinuation: false,
       delegateAgentId: messageData.delegateAgentId,
     );
   }
@@ -76,92 +219,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     await _handleSendMessage(MessageData(text: answer));
   }
 
-  Future<void> _handleAddMessagesAndStream(
-    Chat chat,
-    String text, {
-    String? delegateAgentId,
-  }) async {
-    // Ensure session repository and tool registry are ready
-    final repo = await _sessionRepositoryFuture;
-    final toolRegistry = await ref.read(toolRegistryProvider.future);
 
-    // Create and initialize session runner BEFORE publishing user message
-    final sessionRunner = SessionRunner(repo, toolRegistry);
-    final runnerSession = sessionRunner.startSession(
-      agent: ref.read(currentAgentProvider).name,
-      modelRef: selectedModelId,
-    );
-    await runnerSession.initialize();
-    _sessionRunner = runnerSession;
-
-    final userMessage = _createUserMessage(
-      text,
-      base64Data: null,
-      imageType: null,
-    );
-
-    // Publish user message to Session Core (with error logging)
-    try {
-      await runnerSession.publishUserMessage(
-        content: text,
-        messageId: userMessage.id,
-      );
-    } catch (e) {
-      LogTags.chatService.logError(
-        'Failed to publish user message to session core',
-        e,
-      );
-    }
-
-    // Store in legacy ChatStorageService (still needed for UI until migration complete)
-    await _chatStorageService.addMessageToChat(chat.id, userMessage);
-
-    final chatFromStorage = await _chatStorageService.getChat(chat.id);
-    if (chatFromStorage == null) return;
-
-    final assistantMessage = _createAssistantMessage();
-    await _chatStorageService.addMessageToChat(
-      chatFromStorage.id,
-      assistantMessage,
-    );
-    ref.read(chatListProvider.notifier).updateChat(chatFromStorage);
-
-    LogTags.chatService.logInfo(
-      'ChatScreen._handleAddMessagesAndStream: after storage update, scheduling scroll',
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _autoScrollEnabled = true;
-      LogTags.chatService.logInfo(
-        'ChatScreen._handleAddMessagesAndStream: _autoScrollEnabled set to true',
-      );
-      _scrollToBottom(force: true);
-    });
-
-    try {
-      await _sendToAI(
-        text,
-        providedChat: chatFromStorage,
-        delegateAgentId: delegateAgentId,
-      );
-    } catch (e, s) {
-      ref.read(chatScreenProvider.notifier).setStreaming(false);
-      ref.read(streamingMessageProvider.notifier).reset();
-      try {
-        await _handleStreamingError(e);
-      } catch (e2) {
-        LogTags.chatService.logError(
-          '_handleStreamingError threw after main exception',
-          e2,
-          s,
-        );
-      }
-    } finally {
-      runnerSession.dispose();
-      if (_sessionRunner == runnerSession) {
-        _sessionRunner = null;
-      }
-    }
-  }
 
   Message _createUserMessage(
     String content, {
@@ -203,9 +261,12 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
   }
 
   void _stopStreaming() async {
-    _userStopped = true;
     final aiService = ref.read(chatAiServiceProvider);
     aiService.cancelAllRequests();
+
+    // Brief yield so any in‑flight stream event can be captured
+    // before we snapshot the streaming state.
+    await Future<void>.delayed(const Duration(milliseconds: 50));
 
     final streamingState = ref.read(streamingMessageProvider);
     if (!streamingState.isStreaming) {

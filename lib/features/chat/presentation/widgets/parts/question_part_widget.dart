@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
 class QuestionPartWidget extends StatefulWidget {
   final QuestionPart part;
@@ -25,73 +25,77 @@ class _QuestionPartWidgetState extends State<QuestionPartWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final hasAnswer =
         widget.part.answer != null && widget.part.answer!.isNotEmpty;
     final hasOptions = widget.part.options.isNotEmpty;
+    // Use parsedAnswer for display (handles JSON-encoded answers)
+    final displayAnswer = widget.part.parsedAnswer;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.all(ChatoraiSpacing.md),
       decoration: BoxDecoration(
-        color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.3),
+        // Theme-aware background: black for dark, white for light
+        color: isDark ? Colors.black26 : Colors.white,
         borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-        border: Border.all(
-          color: hasAnswer
-              ? theme.colorScheme.primary.withValues(alpha: 0.3)
-              : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Icon(
-                hasAnswer ? Icons.check_circle : Icons.help_outline,
-                size: 16,
-                color: hasAnswer
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
+          // "# Question" heading
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              '# Question',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: Colors.white24,
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(width: 8),
+            ),
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Hide check_circle icon when answered (no bird icon)
+              if (!hasAnswer)
+                Icon(
+                  Icons.help_outline,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   widget.part.question,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
+                    fontSize: 12,
                   ),
                 ),
               ),
             ],
           ),
-          if (hasAnswer)
+          if (hasAnswer && displayAnswer != null)
             Padding(
-              padding: const EdgeInsets.only(top: 8, left: 24),
+              padding: const EdgeInsets.only(top: 8, left: 14),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: ChatoraiSpacing.sm,
                   vertical: ChatoraiSpacing.xs,
                 ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.reply,
-                      size: 14,
-                      color: theme.colorScheme.primary,
-                    ),
+                    Icon(Icons.arrow_upward, size: 10, color: Colors.white60),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
-                        widget.part.answer!,
+                        displayAnswer,
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w500,
-                          color: theme.colorScheme.primary,
+                          color: Colors.white60,
                         ),
                       ),
                     ),

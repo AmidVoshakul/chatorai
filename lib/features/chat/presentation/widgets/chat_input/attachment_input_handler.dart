@@ -122,6 +122,7 @@ mixin AttachmentInputHandler<T extends ConsumerStatefulWidget>
   }
 
   void clearAttachedFile() {
+    if (!mounted) return;
     final notifier = ref.read(chatInputProvider.notifier);
     notifier.clearAttachedFile();
     ref.read(chatInputProvider);
