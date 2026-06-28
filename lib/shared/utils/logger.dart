@@ -104,4 +104,7 @@ class LogTags {
   static final Logger errorMessage = Logger('ErrorMessage');
   static final Logger permission = Logger('Permission');
   static final Logger skills = Logger('Skills');
+  static final Logger lsp = Logger('LSP');
+  static final Logger format = Logger('Format');
+  static final Logger mcp = Logger('MCP');
 }

@@ -33,14 +33,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
-  ai_sdk_mcp:
-    dependency: "direct main"
-    description:
-      name: ai_sdk_mcp
-      sha256: ac6cca108a6a630e290cb78118f41c55483886156f590e51e4d16ced9fe73574
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
   ai_sdk_openai:
     dependency: "direct main"
     description:
@@ -813,6 +805,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.13.0"
+  mcp_dart:
+    dependency: "direct main"
+    description:
+      name: mcp_dart
+      sha256: bc43d364974cc55d9d4bb5ad3708e614274a9218ba66f9ff2e47493e3b32474e
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.2"
   meta:
     dependency: transitive
     description:
@@ -1346,6 +1346,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
+  synchronized:
+    dependency: "direct main"
+    description:
+      name: synchronized
+      sha256: "93b153dcb6a26dcddee6ca087dd634b53e38c10b5aa163e8e49501a776456153"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.4.1"
   term_glyph:
     dependency: transitive
     description:
@@ -1547,5 +1555,5 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.11.1 <4.0.0"
+  dart: ">=3.12.0 <4.0.0"
   flutter: ">=3.38.4"

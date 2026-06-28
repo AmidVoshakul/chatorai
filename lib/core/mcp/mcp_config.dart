@@ -1,0 +1,210 @@
+/// MCP server type discriminator.
+enum McpServerType {
+  local('local'),
+  remote('remote');
+
+  final String value;
+  const McpServerType(this.value);
+
+  static McpServerType fromValue(String value) {
+    return switch (value) {
+      'local' => McpServerType.local,
+      'remote' => McpServerType.remote,
+      _ => throw ArgumentError('Unknown MCP server type: $value'),
+    };
+  }
+}
+
+/// OAuth configuration for remote MCP servers.
+class McpOAuthConfig {
+  final String? clientId;
+  final String? clientSecret;
+  final String? scope;
+  final int? callbackPort;
+  final String? redirectUri;
+
+  const McpOAuthConfig({
+    this.clientId,
+    this.clientSecret,
+    this.scope,
+    this.callbackPort,
+    this.redirectUri,
+  });
+
+  factory McpOAuthConfig.fromJson(Map<String, dynamic> json) {
+    return McpOAuthConfig(
+      clientId: json['client_id'] as String? ?? json['clientId'] as String?,
+      clientSecret:
+          json['client_secret'] as String? ?? json['clientSecret'] as String?,
+      scope: json['scope'] as String?,
+      callbackPort:
+          json['callback_port'] as int? ?? json['callbackPort'] as int?,
+      redirectUri:
+          json['redirect_uri'] as String? ?? json['redirectUri'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    if (clientId != null) map['client_id'] = clientId;
+    if (clientSecret != null) map['client_secret'] = clientSecret;
+    if (scope != null) map['scope'] = scope;
+    if (callbackPort != null) map['callback_port'] = callbackPort;
+    if (redirectUri != null) map['redirect_uri'] = redirectUri;
+    return map;
+  }
+}
+
+/// Configuration for a single MCP server (local stdio or remote HTTP/SSE).
+class McpServerConfig {
+  final McpServerType type;
+  final bool enabled;
+  final int? timeout;
+
+  // Local fields
+  final String command;
+  final List<String> args;
+  final String? cwd;
+  final Map<String, String> environment;
+
+  // Remote fields
+  final String? url;
+  final Map<String, String>? headers;
+  final McpOAuthConfig? oauth;
+
+  const McpServerConfig._({
+    required this.type,
+    required this.command,
+    this.args = const [],
+    this.cwd,
+    this.environment = const {},
+    this.url,
+    this.headers,
+    this.oauth,
+    this.enabled = true,
+    this.timeout,
+  });
+
+  factory McpServerConfig.local({
+    required String command,
+    List<String> args = const [],
+    String? cwd,
+    Map<String, String> environment = const {},
+    bool enabled = true,
+    int? timeout,
+  }) => McpServerConfig._(
+    type: McpServerType.local,
+    command: command,
+    args: args,
+    cwd: cwd,
+    environment: environment,
+    enabled: enabled,
+    timeout: timeout,
+  );
+
+  factory McpServerConfig.remote({
+    required String url,
+    bool enabled = true,
+    Map<String, String> headers = const {},
+    McpOAuthConfig? oauth,
+    int? timeout,
+  }) => McpServerConfig._(
+    type: McpServerType.remote,
+    command: '',
+    url: url,
+    headers: headers,
+    oauth: oauth,
+    enabled: enabled,
+    timeout: timeout,
+  );
+
+  bool get isLocal => type == McpServerType.local;
+  bool get isRemote => type == McpServerType.remote;
+
+  factory McpServerConfig.fromJson(Map<String, dynamic> json) {
+    final typeValue = json['type'] as String? ?? 'local';
+    final type = McpServerType.fromValue(typeValue);
+    final enabled = json['enabled'] as bool? ?? true;
+    final timeout = json['timeout'] as int?;
+
+    if (type == McpServerType.local) {
+      return McpServerConfig.local(
+        command: json['command'] as String,
+        args: (json['args'] as List<dynamic>?)?.cast<String>() ?? const [],
+        cwd: json['cwd'] as String?,
+        environment: Map<String, String>.from(json['environment'] ?? const {}),
+        enabled: enabled,
+        timeout: timeout,
+      );
+    }
+
+    return McpServerConfig.remote(
+      url: json['url'] as String,
+      enabled: enabled,
+      headers: Map<String, String>.from(json['headers'] ?? const {}),
+      oauth: json['oauth'] != null
+          ? McpOAuthConfig.fromJson(json['oauth'] as Map<String, dynamic>)
+          : null,
+      timeout: timeout,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final base = <String, dynamic>{'type': type.value, 'enabled': enabled};
+    if (timeout != null) base['timeout'] = timeout;
+
+    if (isLocal) {
+      base['command'] = command;
+      base['args'] = args;
+      if (cwd != null) base['cwd'] = cwd;
+      if (environment.isNotEmpty) base['environment'] = environment;
+    } else {
+      base['url'] = url;
+      if (headers != null && headers!.isNotEmpty) base['headers'] = headers;
+      if (oauth != null) base['oauth'] = oauth!.toJson();
+    }
+
+    return base;
+  }
+}
+
+/// Top-level MCP configuration.
+class McpConfig {
+  final Map<String, McpServerConfig> servers;
+  final int? defaultTimeout;
+
+  const McpConfig({this.servers = const {}, this.defaultTimeout});
+
+  factory McpConfig.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const McpConfig();
+
+    final servers = <String, McpServerConfig>{};
+    final serversJson = json['servers'] as Map<String, dynamic>? ?? {};
+    for (final entry in serversJson.entries) {
+      if (entry.value is Map<String, dynamic>) {
+        servers[entry.key] = McpServerConfig.fromJson(
+          entry.value as Map<String, dynamic>,
+        );
+      }
+    }
+
+    return McpConfig(
+      servers: servers,
+      defaultTimeout:
+          json['default_timeout'] as int? ?? json['defaultTimeout'] as int?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    if (servers.isNotEmpty) {
+      final serversJson = <String, dynamic>{};
+      for (final entry in servers.entries) {
+        serversJson[entry.key] = entry.value.toJson();
+      }
+      map['servers'] = serversJson;
+    }
+    if (defaultTimeout != null) map['default_timeout'] = defaultTimeout;
+    return map;
+  }
+}

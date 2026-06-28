@@ -1,8 +1,8 @@
 name: chatorai
 description: "ChatORAI - AI Chat Application"
-publish_to: 'none'
+publish_to: "none"
 
-version: 1.0.0
+version: 1.0.1
 
 environment:
   sdk: ^3.11.0
@@ -33,7 +33,6 @@ dependencies:
   ai_sdk_dart: ^1.1.0
   ai_sdk_openai: ^1.1.0
   ai_sdk_provider: ^1.1.0
-  ai_sdk_mcp: ^1.1.0
   ai_sdk_anthropic: ^1.1.0
   ai_sdk_google: ^1.1.0
   retry: ^3.1.2
@@ -54,6 +53,8 @@ dependencies:
   uuid: ^4.5.1
   freezed_annotation: ^3.1.0
   json_annotation: ^4.12.0
+  mcp_dart: ^2.2.2
+  synchronized: ^3.1.0
 
 dev_dependencies:
   flutter_test:

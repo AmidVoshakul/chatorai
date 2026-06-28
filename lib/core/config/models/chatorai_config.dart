@@ -1,12 +1,72 @@
+import 'package:chatorai/core/mcp/mcp_config.dart';
 import 'permission_section.dart';
 
-/// Root configuration DTO for `chatorai.json`.
+class FormatterEntryConfig {
+  final bool? disabled;
+  final List<String>? command;
+  final Map<String, String>? environment;
+  final List<String>? extensions;
+
+  const FormatterEntryConfig({
+    this.disabled,
+    this.command,
+    this.environment,
+    this.extensions,
+  });
+
+  factory FormatterEntryConfig.fromJson(Map<String, dynamic> json) {
+    return FormatterEntryConfig(
+      disabled: json['disabled'] as bool?,
+      command: (json['command'] as List<dynamic>?)?.cast<String>(),
+      environment: (json['environment'] as Map<String, dynamic>?)
+          ?.cast<String, String>(),
+      extensions: (json['extensions'] as List<dynamic>?)?.cast<String>(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    if (disabled != null) 'disabled': disabled,
+    if (command != null) 'command': command,
+    if (environment != null) 'environment': environment,
+    if (extensions != null) 'extensions': extensions,
+  };
+}
+
+class FormatterConfig {
+  final Map<String, FormatterEntryConfig> formatters;
+
+  const FormatterConfig({this.formatters = const {}});
+
+  factory FormatterConfig.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const FormatterConfig();
+    final formatters = <String, FormatterEntryConfig>{};
+    for (final entry in json.entries) {
+      if (entry.value is Map<String, dynamic>) {
+        formatters[entry.key] = FormatterEntryConfig.fromJson(
+          entry.value as Map<String, dynamic>,
+        );
+      }
+    }
+    return FormatterConfig(formatters: formatters);
+  }
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    for (final entry in formatters.entries) {
+      map[entry.key] = entry.value.toJson();
+    }
+    return map;
+  }
+}
+
 class ChatOrAIConfig {
   final int version;
   final Map<String, PermissionRuleConfig> permission;
   final Map<String, dynamic>? keybinding;
   final SkillConfig? skills;
   final CompactionConfig? compaction;
+  final FormatterConfig? formatter;
+  final McpConfig? mcp;
 
   const ChatOrAIConfig({
     required this.version,
@@ -14,6 +74,8 @@ class ChatOrAIConfig {
     this.keybinding,
     this.skills,
     this.compaction,
+    this.formatter,
+    this.mcp,
   });
 
   factory ChatOrAIConfig.fromJson(Map<String, dynamic> json) {
@@ -34,6 +96,12 @@ class ChatOrAIConfig {
               json['compaction'] as Map<String, dynamic>,
             )
           : null,
+      formatter: json['formatter'] != null
+          ? FormatterConfig.fromJson(json['formatter'] as Map<String, dynamic>?)
+          : null,
+      mcp: json['mcp'] != null
+          ? McpConfig.fromJson(json['mcp'] as Map<String, dynamic>?)
+          : null,
     );
   }
 
@@ -43,6 +111,8 @@ class ChatOrAIConfig {
     if (keybinding != null) 'keybinding': keybinding,
     if (skills != null) 'skills': skills!.toJson(),
     if (compaction != null) 'compaction': compaction!.toJson(),
+    if (formatter != null) 'formatter': formatter!.toJson(),
+    if (mcp != null) 'mcp': mcp!.toJson(),
   };
 }
 

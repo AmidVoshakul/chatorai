@@ -10,6 +10,8 @@ export 'package:chatorai/core/i18n/language_provider.dart';
 export 'package:chatorai/core/permission/permission_provider.dart';
 // Feature: Skills
 export 'package:chatorai/core/skills/skills.dart';
+// Feature: Sessions
+export 'package:chatorai/features/chat/data/providers/session_providers.dart';
 // Feature: Tools
 export 'package:chatorai/core/tools/tool_registry_provider.dart';
 export 'package:chatorai/features/chat/data/providers/chat_input_provider.dart';

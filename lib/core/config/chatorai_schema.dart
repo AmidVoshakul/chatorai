@@ -71,5 +71,78 @@ const Map<String, dynamic> chatoraiSchema = {
         'buffer': {'type': 'integer', 'minimum': 0},
       },
     },
+    'formatter': {
+      'type': 'object',
+      'properties': {
+        'formatters': {
+          'type': 'object',
+          'additionalProperties': {
+            'type': 'object',
+            'properties': {
+              'disabled': {'type': 'boolean'},
+              'command': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+              'environment': {
+                'type': 'object',
+                'additionalProperties': {'type': 'string'},
+              },
+              'extensions': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+        },
+      },
+    },
+    'mcp': {
+      'type': 'object',
+      'properties': {
+        'default_timeout': {'type': 'integer'},
+        'servers': {
+          'type': 'object',
+          'additionalProperties': {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'string',
+                'enum': ['local', 'remote'],
+              },
+              'enabled': {'type': 'boolean'},
+              'timeout': {'type': 'integer'},
+              // local
+              'command': {'type': 'string'},
+              'args': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+              'cwd': {'type': 'string'},
+              'environment': {
+                'type': 'object',
+                'additionalProperties': {'type': 'string'},
+              },
+              // remote
+              'url': {'type': 'string'},
+              'headers': {
+                'type': 'object',
+                'additionalProperties': {'type': 'string'},
+              },
+              'oauth': {
+                'type': 'object',
+                'properties': {
+                  'client_id': {'type': 'string'},
+                  'client_secret': {'type': 'string'},
+                  'scope': {'type': 'string'},
+                  'callback_port': {'type': 'integer'},
+                  'redirect_uri': {'type': 'string'},
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   },
 };
