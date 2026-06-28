@@ -4,6 +4,7 @@ import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
+import 'package:chatorai/core/tools/filesystem_boundary.dart';
 
 ToolDef createGlobTool() {
   return ToolDef(
@@ -34,6 +35,20 @@ ToolDef createGlobTool() {
 
       final root = input['path'] as String? ?? Directory.current.path;
       final safeRoot = resolveSafePath(root);
+      final boundary = FilesystemBoundary(workspace: Directory.current);
+      final globResolution = boundary.resolve(safeRoot);
+      if (globResolution.isExternal) {
+        await ctx.ask(
+          permission: 'external_directory',
+          patterns: [globResolution.path],
+          always: [globResolution.path],
+          metadata: {
+            'filepath': globResolution.path,
+            'parentDir': p.dirname(globResolution.path),
+            'tool': 'glob',
+          },
+        );
+      }
       final dir = Directory(safeRoot);
       if (!dir.existsSync()) {
         return ToolOutput(

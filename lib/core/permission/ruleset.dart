@@ -132,6 +132,11 @@ class PermissionRuleset {
           action: PermissionAction.allow,
         ),
         const PermissionRule(
+          permission: 'external_directory',
+          pattern: '*',
+          action: PermissionAction.ask,
+        ),
+        const PermissionRule(
           permission: 'todowrite',
           pattern: '*',
           action: PermissionAction.allow,

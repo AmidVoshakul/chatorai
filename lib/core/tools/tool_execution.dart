@@ -5,6 +5,7 @@ import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/core/tools/json_schema_validator.dart';
 import 'package:chatorai/core/tools/tool_error.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'dart:async';
@@ -49,14 +50,24 @@ class ToolExecutor {
     final inputMap = rawInput is Map<String, dynamic>
         ? rawInput
         : <String, dynamic>{'raw': rawInput};
+    final validation = JsonSchemaValidator.validate(inputMap, def.inputSchema);
+    if (!validation.isValid) {
+      final message = validation.errors.map((e) => e.toString()).join('; ');
+      throw ToolInvalidArgsError(def.id, message);
+    }
     final ctx = options.experimentalContext;
     final rawSessionId = ctx != null ? ctx['sessionId'] as String? : null;
     final sessionId = (rawSessionId == null || rawSessionId.isEmpty)
         ? null
         : rawSessionId;
-
-    final cacheKey =
-        '${def.id}:${sessionId ?? "null"}:${_normalizeInput(inputMap)}';
+    // Use requestId from options if available, otherwise generate unique per-invocation
+    // to prevent cross-session cache contamination when sessionId is null
+    final requestId = ctx != null ? ctx['requestId'] as String? : null;
+    final cacheKeySuffix =
+        sessionId ??
+        requestId ??
+        'invocation_${DateTime.now().microsecondsSinceEpoch}';
+    final cacheKey = '${def.id}:$cacheKeySuffix:${_normalizeInput(inputMap)}';
 
     // Side-effecting tools bypass cache — always re-execute
     if (!_sideEffectingTools.contains(def.id)) {
@@ -142,19 +153,28 @@ class ToolExecutor {
         'ToolExecutor: DONE ${def.id} outputLen=${result.output.length}',
       );
 
-      // Handle overflow and truncation
-      final output = result.output;
-      final truncated = _truncate(output);
-      final wasTruncated = truncated != output;
-
-      LogTags.permission.logDebug(
-        'ToolExecutor: RESULT ${def.id} truncated=$wasTruncated '
-        'finalLen=${truncated.length}',
+      // Handle overflow and truncation (OpenCode-compatible)
+      final truncResult = await TruncationService.instance.output(
+        result.output,
+        hasTaskTool: true,
       );
 
+      LogTags.permission.logDebug(
+        'ToolExecutor: RESULT ${def.id} truncated=${truncResult.truncated} '
+        'finalLen=${truncResult.content.length}',
+      );
+
+      final meta = result.metadata is Map<String, dynamic>
+          ? Map<String, dynamic>.from(result.metadata as Map)
+          : <String, dynamic>{};
+      if (truncResult.truncated) {
+        meta['truncated'] = true;
+        meta['outputPath'] = truncResult.outputPath;
+      }
+
       final json = <String, dynamic>{
-        'output': truncated,
-        if (result.metadata != null) 'metadata': result.metadata,
+        'output': truncResult.content,
+        if (meta.isNotEmpty) 'metadata': meta,
       };
 
       _resultCache[cacheKey] = json;
@@ -222,10 +242,6 @@ class ToolExecutor {
       }
     } catch (_) {}
     return null;
-  }
-
-  String _truncate(String output) {
-    return TruncationService.instance.truncate(output);
   }
 
   /// Evaluate a permission rule for a tool call.

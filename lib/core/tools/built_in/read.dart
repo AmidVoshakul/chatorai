@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
+import 'package:chatorai/core/tools/filesystem_boundary.dart';
 import 'package:path/path.dart' as p;
 
 const _binaryExtensions = {
@@ -95,6 +96,20 @@ ToolDef createReadTool() {
       }
 
       final safePath = resolveSafePath(filePath);
+      final boundary = FilesystemBoundary(workspace: Directory.current);
+      final resolution = boundary.resolve(safePath);
+      if (resolution.isExternal) {
+        await ctx.ask(
+          permission: 'external_directory',
+          patterns: [resolution.path],
+          always: [resolution.path],
+          metadata: {
+            'filepath': resolution.path,
+            'parentDir': p.dirname(resolution.path),
+            'tool': 'read',
+          },
+        );
+      }
       await ctx.ask(permission: 'read', patterns: [safePath]);
       final offset = input['offset'] as int? ?? 0;
       final limit = input['limit'] as int? ?? 2000;

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
 import 'package:path/path.dart' as p;
+import 'package:chatorai/core/tools/filesystem_boundary.dart';
 
 ToolDef createGrepTool() {
   return ToolDef(
@@ -53,6 +54,20 @@ ToolDef createGrepTool() {
 
       final results = <String>[];
       final safeRoot = resolveSafePath(root);
+      final boundary = FilesystemBoundary(workspace: Directory.current);
+      final grepResolution = boundary.resolve(safeRoot);
+      if (grepResolution.isExternal) {
+        await ctx.ask(
+          permission: 'external_directory',
+          patterns: [grepResolution.path],
+          always: [grepResolution.path],
+          metadata: {
+            'filepath': grepResolution.path,
+            'parentDir': p.dirname(grepResolution.path),
+            'tool': 'grep',
+          },
+        );
+      }
       final dir = Directory(safeRoot);
       if (!dir.existsSync()) {
         return ToolOutput(

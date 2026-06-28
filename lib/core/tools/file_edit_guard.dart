@@ -35,7 +35,10 @@ class FileEditGuard {
   /// Get the last-recorded mtime for [path], or null if never read.
   static Future<int?> getLastReadMtime(String path) async {
     await _ensurePrefs();
-    return _prefs!.getInt('$_prefix$path');
+    final key = '$_prefix$path';
+    final value = _prefs!.get(key);
+    if (value is! int) return null;
+    return value;
   }
 
   /// Check whether [path] was modified since the last [recordRead] call.
@@ -64,5 +67,10 @@ class FileEditGuard {
     for (final key in keys) {
       await _prefs!.remove(key);
     }
+  }
+
+  /// Reset the cached SharedPreferences instance (for testing only).
+  static void resetForTest() {
+    _prefs = null;
   }
 }

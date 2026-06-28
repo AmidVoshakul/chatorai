@@ -11,6 +11,7 @@ class ToolResultPart extends MessagePart {
   final Duration? duration;
   final Map<String, dynamic>? input;
   final bool isStreaming;
+  final Map<String, dynamic>? metadata;
   const ToolResultPart({
     required this.toolCallId,
     required this.toolName,
@@ -20,6 +21,7 @@ class ToolResultPart extends MessagePart {
     this.duration,
     this.input,
     this.isStreaming = false,
+    this.metadata,
   });
 
   ToolResultPart copyWith({
@@ -31,6 +33,7 @@ class ToolResultPart extends MessagePart {
     Duration? duration,
     Map<String, dynamic>? input,
     bool? isStreaming,
+    Map<String, dynamic>? metadata,
   }) {
     return ToolResultPart(
       toolCallId: toolCallId ?? this.toolCallId,
@@ -41,6 +44,7 @@ class ToolResultPart extends MessagePart {
       duration: duration ?? this.duration,
       input: input ?? this.input,
       isStreaming: isStreaming ?? this.isStreaming,
+      metadata: metadata ?? this.metadata,
     );
   }
 
@@ -55,6 +59,7 @@ class ToolResultPart extends MessagePart {
     'duration': duration?.inMilliseconds,
     'input': input,
     'isStreaming': isStreaming,
+    'metadata': metadata,
   };
 
   factory ToolResultPart.fromJson(Map<String, dynamic> json) {
@@ -71,6 +76,7 @@ class ToolResultPart extends MessagePart {
           : null,
       input: json['input'] as Map<String, dynamic>?,
       isStreaming: json['isStreaming'] as bool? ?? false,
+      metadata: json['metadata'] as Map<String, dynamic>?,
     );
   }
 }

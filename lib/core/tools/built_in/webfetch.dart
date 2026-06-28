@@ -10,7 +10,8 @@ import 'package:html/dom.dart' as dom;
 ToolDef createWebfetchTool({int defaultMaxChars = 50000}) {
   return ToolDef(
     id: 'webfetch',
-    description: 'Fetch content from a URL and return it as text, '
+    description:
+        'Fetch content from a URL and return it as text, '
         'markdown, or raw HTML. '
         'Use for retrieving web pages, API responses, or any HTTP/HTTPS '
         'resource. HTML pages are automatically converted to clean markdown '
@@ -101,8 +102,7 @@ ToolDef createWebfetchTool({int defaultMaxChars = 50000}) {
 
         try {
           var currentUri = uri;
-          for (var redirectCount = 0; redirectCount <= 5;
-              redirectCount++) {
+          for (var redirectCount = 0; redirectCount <= 5; redirectCount++) {
             final request = await client
                 .getUrl(currentUri)
                 .timeout(Duration(seconds: timeoutSec));
@@ -137,8 +137,7 @@ ToolDef createWebfetchTool({int defaultMaxChars = 50000}) {
               );
             }
 
-            if (response.statusCode >= 300 &&
-                response.statusCode < 400) {
+            if (response.statusCode >= 300 && response.statusCode < 400) {
               final location = response.headers.value('location');
               await response.drain();
               if (location == null || location.isEmpty) {
@@ -147,32 +146,28 @@ ToolDef createWebfetchTool({int defaultMaxChars = 50000}) {
                   metadata: {'error': true},
                 );
               }
-              final resolved = resolveRedirectUri(
-                currentUri,
-                location,
-              );
+              final resolved = resolveRedirectUri(currentUri, location);
               if (resolved == null) {
                 return ToolOutput(
                   'Error: redirect to private/internal host is not '
-                      'allowed',
+                  'allowed',
                   metadata: {'error': true},
                 );
               }
               currentUri = resolved;
               try {
-                final dnsIp =
-                    await _checkDnsForPrivateHost(currentUri.host);
+                final dnsIp = await _checkDnsForPrivateHost(currentUri.host);
                 if (dnsIp != null) {
                   return ToolOutput(
                     'Error: redirect target ${currentUri.host} '
-                        'resolves to private IP ($dnsIp)',
+                    'resolves to private IP ($dnsIp)',
                     metadata: {'error': true},
                   );
                 }
               } on TimeoutException {
                 return ToolOutput(
                   'Error: DNS lookup timed out for redirect target '
-                      '${currentUri.host}',
+                  '${currentUri.host}',
                   metadata: {'error': true, 'timeout': true},
                 );
               }
@@ -191,10 +186,8 @@ ToolDef createWebfetchTool({int defaultMaxChars = 50000}) {
               }
             }
 
-            final contentType = response.headers
-                    .value('content-type')
-                    ?.toLowerCase() ??
-                '';
+            final contentType =
+                response.headers.value('content-type')?.toLowerCase() ?? '';
 
             final raw = detectAndDecode(bytes, contentType);
             final isHtml = contentType.contains('text/html');
@@ -247,9 +240,10 @@ ToolDef createWebfetchTool({int defaultMaxChars = 50000}) {
 /// Detects charset from Content-Type header or HTML meta tags and decodes bytes.
 String detectAndDecode(List<int> bytes, String contentType) {
   String? detectedCharset;
-  final charsetMatch =
-      RegExp(r'''charset\s*=\s*([^\s;]+)''', caseSensitive: false)
-          .firstMatch(contentType);
+  final charsetMatch = RegExp(
+    r'''charset\s*=\s*([^\s;]+)''',
+    caseSensitive: false,
+  ).firstMatch(contentType);
   if (charsetMatch != null) {
     detectedCharset = charsetMatch.group(1)!.trim();
   }
@@ -299,9 +293,9 @@ String truncateContent(String text, int maxChars) {
   final available = maxChars - sentinelEstimate;
   final headLen = available ~/ 2;
   final tailLen = available - headLen;
-  final linesSkipped = '\n'.allMatches(
-    text.substring(headLen, text.length - tailLen),
-  ).length;
+  final linesSkipped = '\n'
+      .allMatches(text.substring(headLen, text.length - tailLen))
+      .length;
   final sentinel = '\n... [$linesSkipped lines truncated] ...\n';
   final tailStart = text.length - tailLen;
   return '${text.substring(0, headLen)}$sentinel${text.substring(tailStart)}';
@@ -320,8 +314,14 @@ String extractTextFromHtml(String html) {
 void _collectText(dom.Node node, StringBuffer buffer) {
   if (node is dom.Element) {
     final tag = node.localName?.toLowerCase() ?? '';
-    if (['script', 'style', 'noscript', 'iframe', 'object', 'embed']
-        .contains(tag)) {
+    if ([
+      'script',
+      'style',
+      'noscript',
+      'iframe',
+      'object',
+      'embed',
+    ].contains(tag)) {
       return;
     }
 
@@ -384,9 +384,16 @@ String convertHtmlToMarkdown(String html) {
 void _convertNodeToMarkdown(dom.Node node, StringBuffer buffer, int depth) {
   if (node is dom.Element) {
     final tag = node.localName?.toLowerCase() ?? '';
-    if (['script', 'style', 'noscript', 'iframe', 'object', 'embed', 'meta',
-        'link']
-        .contains(tag)) {
+    if ([
+      'script',
+      'style',
+      'noscript',
+      'iframe',
+      'object',
+      'embed',
+      'meta',
+      'link',
+    ].contains(tag)) {
       return;
     }
 
@@ -446,23 +453,24 @@ void _convertNodeToMarkdown(dom.Node node, StringBuffer buffer, int depth) {
         }
         buffer.write('\n\n');
 
-      case 'a': {
-        String? href;
-        try {
-          href = node.attributes['href'];
-        } catch (_) {}
-        final text = StringBuffer();
-        for (final child in node.nodes) {
-          _convertInline(child, text);
+      case 'a':
+        {
+          String? href;
+          try {
+            href = node.attributes['href'];
+          } catch (_) {}
+          final text = StringBuffer();
+          for (final child in node.nodes) {
+            _convertInline(child, text);
+          }
+          final linkText = text.toString().trim();
+          if (linkText.isNotEmpty && href != null && href.isNotEmpty) {
+            buffer.write('[$linkText]($href)');
+          } else if (linkText.isNotEmpty) {
+            buffer.write(linkText);
+          }
+          break;
         }
-        final linkText = text.toString().trim();
-        if (linkText.isNotEmpty && href != null && href.isNotEmpty) {
-          buffer.write('[$linkText]($href)');
-        } else if (linkText.isNotEmpty) {
-          buffer.write(linkText);
-        }
-        break;
-      }
 
       case 'strong':
       case 'b':
@@ -492,7 +500,8 @@ void _convertNodeToMarkdown(dom.Node node, StringBuffer buffer, int depth) {
         // Detect language from code element inside pre
         String lang = '';
         for (final child in node.nodes) {
-          if (child is dom.Element && child.localName?.toLowerCase() == 'code') {
+          if (child is dom.Element &&
+              child.localName?.toLowerCase() == 'code') {
             try {
               final cls = child.attributes['class'] ?? '';
               if (cls.startsWith('language-')) {
@@ -514,8 +523,7 @@ void _convertNodeToMarkdown(dom.Node node, StringBuffer buffer, int depth) {
       case 'ul':
         _writeNewline(buffer, depth);
         for (final child in node.nodes) {
-          if (child is dom.Element &&
-              child.localName?.toLowerCase() == 'li') {
+          if (child is dom.Element && child.localName?.toLowerCase() == 'li') {
             buffer.write('  ' * depth);
             buffer.write('- ');
             for (final liChild in child.nodes) {
@@ -530,8 +538,7 @@ void _convertNodeToMarkdown(dom.Node node, StringBuffer buffer, int depth) {
         _writeNewline(buffer, depth);
         int index = 1;
         for (final child in node.nodes) {
-          if (child is dom.Element &&
-              child.localName?.toLowerCase() == 'li') {
+          if (child is dom.Element && child.localName?.toLowerCase() == 'li') {
             buffer.write('  ' * depth);
             buffer.write('$index. ');
             for (final liChild in child.nodes) {
@@ -562,18 +569,19 @@ void _convertNodeToMarkdown(dom.Node node, StringBuffer buffer, int depth) {
         _writeNewline(buffer, depth);
         buffer.write('---\n\n');
 
-      case 'img': {
-        String? src;
-        String? alt;
-        try {
-          src = node.attributes['src'];
-          alt = node.attributes['alt'] ?? '';
-        } catch (_) {}
-        if (src != null) {
-          buffer.write('![$alt]($src)');
+      case 'img':
+        {
+          String? src;
+          String? alt;
+          try {
+            src = node.attributes['src'];
+            alt = node.attributes['alt'] ?? '';
+          } catch (_) {}
+          if (src != null) {
+            buffer.write('![$alt]($src)');
+          }
+          break;
         }
-        break;
-      }
 
       case 'br':
         buffer.write('\n');
@@ -658,7 +666,9 @@ bool _isPrivateHost(String host) {
   // Try to parse as IP address – handles both IPv4 and IPv6
   final addr = InternetAddress.tryParse(lower);
   if (addr == null) return false; // not an IP, not a blocked hostname
-  if (addr.type == InternetAddressType.IPv6) return _isPrivateIpv6(addr.address);
+  if (addr.type == InternetAddressType.IPv6) {
+    return _isPrivateIpv6(addr.address);
+  }
   // IPv4
   return _isPrivateIpv4(addr.address);
 }

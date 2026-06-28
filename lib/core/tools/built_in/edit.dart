@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
+import 'package:path/path.dart' as p;
+import 'package:chatorai/core/tools/filesystem_boundary.dart';
 
 ToolDef createEditTool() {
   return ToolDef(
@@ -53,6 +55,20 @@ ToolDef createEditTool() {
       }
 
       final safePath = resolveSafePath(filePath);
+      final boundary = FilesystemBoundary(workspace: Directory.current);
+      final resolution = boundary.resolve(safePath);
+      if (resolution.isExternal) {
+        await ctx.ask(
+          permission: 'external_directory',
+          patterns: [resolution.path],
+          always: [resolution.path],
+          metadata: {
+            'filepath': resolution.path,
+            'parentDir': p.dirname(resolution.path),
+            'tool': 'edit',
+          },
+        );
+      }
       // Use pattern 'edit:file_path=$safePath' as required
       await ctx.ask(permission: 'edit', patterns: ['edit:file_path=$safePath']);
 

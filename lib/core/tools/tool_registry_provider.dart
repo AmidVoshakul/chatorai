@@ -1,15 +1,19 @@
 import 'package:chatorai/core/config/config_provider.dart';
+import 'package:chatorai/core/format/format_service.dart';
+import 'package:chatorai/core/lsp/lsp_provider.dart';
+import 'package:chatorai/core/mcp/mcp_client_service.dart';
 import 'package:chatorai/core/permission/permission_provider.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/skills/skill_providers.dart';
 import 'package:chatorai/core/tools/built_in/built_in_tools.dart' as built_in;
+import 'package:chatorai/core/tools/built_in/task.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/features/chat/data/providers/chat_providers.dart';
+import 'package:chatorai/features/chat/data/providers/session_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final toolRegistryProvider = FutureProvider<ToolRegistry>((ref) async {
   final config = await ref.watch(configProvider.future);
-  // Use default rules if config does not provide any permission rules
   final rules = config.permission.isNotEmpty
       ? PermissionRuleset(
           rules: PermissionRuleset.fromConfig(
@@ -19,12 +23,30 @@ final toolRegistryProvider = FutureProvider<ToolRegistry>((ref) async {
       : PermissionRuleset.defaults();
   final aiService = ref.read(chatAiServiceProvider);
   final skillService = await ref.read(skillServiceProvider.future);
+  final lspService = await ref.watch(lspServiceProvider.future);
   final registry = ToolRegistry(ref.read(permissionServiceProvider), rules);
+  final currentRunner = ref.read(currentSessionRunnerProvider);
   await built_in.registerBuiltInTools(
     registry,
     chatAiService: aiService,
     toolRegistry: registry,
     skillService: skillService,
+    lspService: lspService,
+    formatService: FormatService.instance,
+    formatterConfig: config.formatter,
+    currentSessionRunner: currentRunner != null
+        ? SessionRunnerHolder(currentRunner)
+        : null,
   );
+
+  // Initialize MCP and register discovered tools
+  if (config.mcp != null && config.mcp!.servers.isNotEmpty) {
+    await McpClientService.instance.initialize(config.mcp!);
+    final mcpToolDefs = await McpClientService.instance.getToolDefs();
+    for (final toolDef in mcpToolDefs) {
+      registry.register(toolDef);
+    }
+  }
+
   return registry;
 });

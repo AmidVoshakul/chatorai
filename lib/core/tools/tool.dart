@@ -1,5 +1,24 @@
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 
+class SchemaValidationError {
+  final String path;
+  final String message;
+  final String? schemaPath;
+
+  const SchemaValidationError({
+    required this.path,
+    required this.message,
+    this.schemaPath,
+  });
+
+  @override
+  String toString() {
+    final parts = ['$path: $message'];
+    if (schemaPath != null) parts.add('(schema: $schemaPath)');
+    return parts.join(' ');
+  }
+}
+
 class ToolContext {
   final String toolCallId;
   final sdk.CancellationToken? abortSignal;
@@ -53,11 +72,17 @@ class ToolDef {
   final Map<String, dynamic> inputSchema;
   final Future<ToolOutput> Function(Map<String, dynamic> input, ToolContext ctx)
   execute;
+  final String Function(
+    Map<String, dynamic> input,
+    List<SchemaValidationError> errors,
+  )?
+  formatValidationError;
 
   const ToolDef({
     required this.id,
     required this.description,
     required this.inputSchema,
     required this.execute,
+    this.formatValidationError,
   });
 }
