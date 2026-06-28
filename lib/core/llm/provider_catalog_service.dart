@@ -533,9 +533,18 @@ class ProviderCatalogService {
     List<String> modelIds,
   ) async {
     _selectedModelIds[providerId] = modelIds.toSet();
-    await _prefs.setStringList(
-      '${_PrefKeys.selectedModels}$providerId',
-      modelIds,
+    final key = '${_PrefKeys.selectedModels}$providerId';
+    LogTags.settings.logInfo(
+      '[Catalog] setSelectedModelIds: provider=$providerId '
+      'count=${modelIds.length} ids=[${modelIds.join(',')}] key=$key',
+    );
+    await _prefs.setStringList(key, modelIds);
+    LogTags.settings.logInfo(
+      '[Catalog] setSelectedModelIds: persisted OK, verifying read-back...',
+    );
+    final verify = _prefs.getStringList(key);
+    LogTags.settings.logInfo(
+      '[Catalog] setSelectedModelIds: read-back=${verify?.length ?? 0} ids=[${verify?.join(',') ?? ''}]',
     );
   }
 
@@ -602,8 +611,8 @@ class ProviderCatalogService {
       }
     }
 
-    // Reload to reflect migrated settings
-    _loadFromPrefs();
+    // _selectedModelIds is already updated in-memory during migration;
+    // constructor already called _loadFromPrefs, no reload needed.
   }
 
   // ===========================================================================
@@ -624,15 +633,15 @@ class ProviderCatalogService {
     // which set only tools=true. Clear all cached models so
     // discoverModels() re-populates with proper capabilities.
     final cacheVersion = _prefs.getInt(_PrefKeys.cacheVersionKey) ?? 0;
-    if (cacheVersion < 3) {
+    if (cacheVersion < 4) {
       LogTags.network.logInfo(
-        '[Catalog] Cache invalidated (v$cacheVersion→3), re-discovery required',
+        '[Catalog] Cache invalidated (v$cacheVersion→4), re-discovery required',
       );
       for (final prov in _builtInProviders) {
         _prefs.remove('${_PrefKeys.models}${prov.id}');
         _prefs.remove('${_PrefKeys.discoveryAt}${prov.id}');
       }
-      _prefs.setInt(_PrefKeys.cacheVersionKey, 3);
+      _prefs.setInt(_PrefKeys.cacheVersionKey, 4);
     }
 
     _providers = _builtInProviders.map((provider) {
@@ -690,6 +699,13 @@ class ProviderCatalogService {
       );
       if (selectedIds != null && selectedIds.isNotEmpty) {
         _selectedModelIds[prov.id] = selectedIds.toSet();
+        LogTags.settings.logInfo(
+          '[Catalog] _loadFromPrefs: loaded ${selectedIds.length} selected models for ${prov.id}: [${selectedIds.join(',')}]',
+        );
+      } else {
+        LogTags.settings.logInfo(
+          '[Catalog] _loadFromPrefs: NO selected models for ${prov.id} (raw=${selectedIds?.length ?? 0})',
+        );
       }
     }
 

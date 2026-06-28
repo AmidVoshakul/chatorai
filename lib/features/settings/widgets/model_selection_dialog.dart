@@ -39,7 +39,7 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
   @override
   void initState() {
     super.initState();
-    _selectedIds = _normalizeSelectedIds(widget.initialSelectedIds);
+    _selectedIds = widget.initialSelectedIds.toSet();
     _fetchModels();
   }
 
@@ -77,15 +77,14 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
       setState(() {
         _models = configs;
         if (wasCached && _selectedIds.isNotEmpty) {
-          final fullIds = _selectedIds.map(_fullModelId).toList();
-          final valid = fullIds
+          final valid = _selectedIds
               .where((id) => widget.catalog!.getModel(id) != null)
               .toSet();
           _selectedIds = valid.isNotEmpty
               ? valid
-              : _normalizeSelectedIds(widget.initialSelectedIds);
+              : widget.initialSelectedIds.toSet();
         } else {
-          _selectedIds = _normalizeSelectedIds(widget.initialSelectedIds);
+          _selectedIds = widget.initialSelectedIds.toSet();
         }
         _isLoading = false;
       });
@@ -107,18 +106,6 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
     }).toList();
   }
 
-  Set<String> _normalizeSelectedIds(List<String> ids) {
-    return ids.toSet();
-  }
-
-  String _fullModelId(String modelName) {
-    if (modelName.startsWith('${widget.providerId}/')) return modelName;
-    if (modelName.startsWith('${widget.providerId}:')) {
-      return '${widget.providerId}/${modelName.substring(widget.providerId.length + 1)}';
-    }
-    return '${widget.providerId}/$modelName';
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -131,7 +118,9 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
 
     final screenSize = MediaQuery.of(context).size;
     final dialogWidth = screenSize.width < 520 ? screenSize.width - 48 : 450.0;
-    final dialogHeight = screenSize.height < 560 ? screenSize.height - 120 : 500.0;
+    final dialogHeight = screenSize.height < 560
+        ? screenSize.height - 120
+        : 500.0;
 
     return AlertDialog(
       insetPadding: EdgeInsets.symmetric(
@@ -165,8 +154,7 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
                 ),
                 TextButton(
                   onPressed: () => setState(
-                    () => _selectedIds =
-                        _models.map((m) => m.modelName).toSet(),
+                    () => _selectedIds = _models.map((m) => m.id).toSet(),
                   ),
                   child: const Text('Select All'),
                 ),
@@ -194,8 +182,8 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
             if (widget.catalog != null) {
               final models = _models.map((m) {
                 return m.copyWith(
-                  id: _fullModelId(m.modelName),
-                  enabled: _selectedIds.contains(m.modelName),
+                  id: m.id,
+                  enabled: _selectedIds.contains(m.id),
                 );
               }).toList();
               await widget.catalog!.updateProviderModels(
@@ -205,13 +193,13 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
               );
             }
 
-            final prefixed = _selectedIds.map(_fullModelId).toList();
+            final selected = _selectedIds.toList();
             LogTags.settings.logInfo(
               '[ModelSelection] Save button pressed: providerId=${widget.providerId}, '
               'selected=${_selectedIds.length}/${_models.length}, '
-              'prefixed=[${prefixed.join(', ')}]',
+              'prefixed=[${selected.join(', ')}]',
             );
-            widget.onSave(prefixed);
+            widget.onSave(selected);
           },
           style: FilledButton.styleFrom(
             backgroundColor: ChatoraiColors.orange,
@@ -270,7 +258,7 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
       itemCount: filtered.length,
       itemBuilder: (context, index) {
         final model = filtered[index];
-        final isSelected = _selectedIds.contains(model.modelName);
+        final isSelected = _selectedIds.contains(model.id);
         return CheckboxListTile(
           title: Text(
             model.displayName.isNotEmpty ? model.displayName : model.modelName,
@@ -292,9 +280,9 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
           onChanged: (checked) {
             setState(() {
               if (checked == true) {
-                _selectedIds.add(model.modelName);
+                _selectedIds.add(model.id);
               } else {
-                _selectedIds.remove(model.modelName);
+                _selectedIds.remove(model.id);
               }
             });
           },

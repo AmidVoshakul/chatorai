@@ -198,9 +198,11 @@ class ModelResolver {
       final openAI = OpenAIProvider(apiKey: apiKey, baseUrl: baseUrl);
       return openAI.call(effectiveModelName);
     } catch (e) {
-      // If provider-specific build fails, attempt fallback to OpenAI-compatible
-      final fallback = OpenAIProvider(apiKey: apiKey, baseUrl: baseUrl);
-      return fallback.call(effectiveModelName);
+      LogTags.network.logError(
+        '[Resolver] buildLanguageModel fallback suppressed for ${provider.id}',
+        e,
+      );
+      rethrow;
     }
   }
 

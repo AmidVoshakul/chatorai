@@ -128,107 +128,103 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-              // Provider dropdown
-              DropdownButtonFormField<String>(
-                initialValue: _selectedOption?.id,
-                decoration: const InputDecoration(
-                  labelText: 'Provider',
-                  border: OutlineInputBorder(),
-                ),
-                items: _providers.map((p) {
-                  return DropdownMenuItem(
-                    value: p.id,
-                    child: p.id == '__custom__'
-                        ? Text(p.name)
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ProviderIcon(providerId: p.id, size: 22),
-                              const SizedBox(width: 10),
-                              Text(p.name),
-                            ],
-                          ),
-                  );
-                }).toList(),
-                selectedItemBuilder: (context) {
-                  return _providers.map((p) {
-                    return Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: p.id == '__custom__'
-                          ? Text(p.name)
-                          : Text(p.name),
-                    );
-                  }).toList();
-                },
-                onChanged: (id) {
-                  if (id != null) {
-                    _onProviderChanged(
-                      _providers.firstWhere((p) => p.id == id),
-                    );
-                  }
-                },
+            // Provider dropdown
+            DropdownButtonFormField<String>(
+              initialValue: _selectedOption?.id,
+              decoration: const InputDecoration(
+                labelText: 'Provider',
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: ChatoraiSpacing.md),
+              items: _providers.map((p) {
+                return DropdownMenuItem(
+                  value: p.id,
+                  child: p.id == '__custom__'
+                      ? Text(p.name)
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ProviderIcon(providerId: p.id, size: 22),
+                            const SizedBox(width: 10),
+                            Text(p.name),
+                          ],
+                        ),
+                );
+              }).toList(),
+              selectedItemBuilder: (context) {
+                return _providers.map((p) {
+                  return Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: p.id == '__custom__' ? Text(p.name) : Text(p.name),
+                  );
+                }).toList();
+              },
+              onChanged: (id) {
+                if (id != null) {
+                  _onProviderChanged(_providers.firstWhere((p) => p.id == id));
+                }
+              },
+            ),
+            const SizedBox(height: ChatoraiSpacing.md),
 
-              // Custom provider name field
-              if (_isCustom) ...[
-                TextField(
-                  controller: _customNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Provider Name',
-                    hintText: 'e.g. My Custom AI',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 1,
-                  onChanged: (_) => setState(() {}),
-                ),
-                const SizedBox(height: ChatoraiSpacing.md),
-              ],
-
-              // API key (show for providers with apiKey auth)
-              if (_selectedOption != null &&
-                  _selectedOption!.id != '__custom__' &&
-                  _builtInProviderAuthType(_selectedOption!.id) !=
-                      AuthType.none) ...[
-                TextField(
-                  controller: _apiKeyController,
-                  decoration: const InputDecoration(
-                    labelText: 'API Key',
-                    hintText: 'Enter your API key',
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  maxLines: 1,
-                ),
-                const SizedBox(height: ChatoraiSpacing.md),
-              ],
-              if (_isCustom) ...[
-                TextField(
-                  controller: _apiKeyController,
-                  decoration: const InputDecoration(
-                    labelText: 'API Key',
-                    hintText: 'Optional for local providers',
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  maxLines: 1,
-                ),
-                const SizedBox(height: ChatoraiSpacing.md),
-              ],
-
-              // Base URL
+            // Custom provider name field
+            if (_isCustom) ...[
               TextField(
-                controller: _baseUrlController,
+                controller: _customNameController,
                 decoration: const InputDecoration(
-                  labelText: 'Base URL',
-                  hintText: 'https://api.example.com/v1',
+                  labelText: 'Provider Name',
+                  hintText: 'e.g. My Custom AI',
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 1,
+                onChanged: (_) => setState(() {}),
               ),
+              const SizedBox(height: ChatoraiSpacing.md),
             ],
-          ),
+
+            // API key (show for providers with apiKey auth)
+            if (_selectedOption != null &&
+                _selectedOption!.id != '__custom__' &&
+                _builtInProviderAuthType(_selectedOption!.id) !=
+                    AuthType.none) ...[
+              TextField(
+                controller: _apiKeyController,
+                decoration: const InputDecoration(
+                  labelText: 'API Key',
+                  hintText: 'Enter your API key',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+                maxLines: 1,
+              ),
+              const SizedBox(height: ChatoraiSpacing.md),
+            ],
+            if (_isCustom) ...[
+              TextField(
+                controller: _apiKeyController,
+                decoration: const InputDecoration(
+                  labelText: 'API Key',
+                  hintText: 'Optional for local providers',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+                maxLines: 1,
+              ),
+              const SizedBox(height: ChatoraiSpacing.md),
+            ],
+
+            // Base URL
+            TextField(
+              controller: _baseUrlController,
+              decoration: const InputDecoration(
+                labelText: 'Base URL',
+                hintText: 'https://api.example.com/v1',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 1,
+            ),
+          ],
         ),
+      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),

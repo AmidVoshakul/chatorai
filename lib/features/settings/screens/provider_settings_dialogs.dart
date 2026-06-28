@@ -18,9 +18,6 @@ void showAddProviderDialog(BuildContext context, WidgetRef ref) {
     builder: (dialogContext) {
       return AddProviderDialog(
         onSave: (providerId, baseUrl, apiKey, customConfig) async {
-          Navigator.pop(dialogContext);
-
-          // Register custom provider before saving config
           if (customConfig != null) {
             ref
                 .read(providerCatalogServiceProvider)
@@ -33,8 +30,9 @@ void showAddProviderDialog(BuildContext context, WidgetRef ref) {
             baseUrl: baseUrl,
             apiKey: apiKey,
           );
+          // ignore: use_build_context_synchronously
+          Navigator.pop(dialogContext);
           await Future<void>.delayed(const Duration(milliseconds: 100));
-          // After saving config, show model selection
           if (context.mounted) {
             showModelSelectionDialog(
               context: context,
@@ -136,24 +134,21 @@ Future<void> showModelSelectionDialog({
             '[ModelSelection] Saved: providerId=$providerId, '
             'selectedIds=[${selectedIds.join(', ')}]',
           );
-          final scaffoldContext = context;
-          Navigator.pop(dialogContext);
-          if (scaffoldContext.mounted) {
+          await catalog.setSelectedModelIds(providerId, selectedIds);
+          await catalog.setProviderEnabled(providerId, true);
+          await ref
+              .read(modelProvider.notifier)
+              .resetAndReloadModels(forceRefresh: false);
+          ref.invalidate(modelsScreenProvider);
+          // ignore: use_build_context_synchronously
+          if (context.mounted) {
+            Navigator.pop(dialogContext);
             SnackbarUtils.showSuccessSnackBar(
-              context: scaffoldContext,
+              context: context,
               message:
                   '${selectedIds.length} models selected for $providerName',
             );
           }
-          await catalog.setSelectedModelIds(providerId, selectedIds);
-          LogTags.settings.logInfo(
-            '[ModelSelection] Done setSelectedModelIds, now enabling provider and reloading',
-          );
-          await catalog.setProviderEnabled(providerId, true);
-          await ref
-              .read(modelProvider.notifier)
-              .resetAndReloadModels(forceRefresh: true);
-          ref.invalidate(modelsScreenProvider);
           LogTags.settings.logInfo('[ModelSelection] reloadModels complete');
         },
         catalog: catalog,

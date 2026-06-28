@@ -180,16 +180,27 @@ class ModelNotifier extends Notifier<ModelState> {
         selectedModelId = availableModels.first.id;
         selectedModelObject = availableModels.first;
         await _saveSettings();
-      } else if (availableModels.isNotEmpty) {
+      } else if (selectedModelId.isNotEmpty) {
+        // Look in visible (enabled) models first
         try {
           selectedModelObject = availableModels.firstWhere(
             (model) => model.id == selectedModelId,
           );
         } catch (_) {
-          // Stored prefs value no longer in filtered list — use first available
-          // but DO NOT overwrite prefs; user may reselect via dialog.
-          selectedModelObject = availableModels.first;
-          selectedModelId = selectedModelObject.id;
+          // Fallback: search ALL models (including disabled providers)
+          // so the selected model object is available for display even if
+          // its provider is temporarily disabled.
+          final allModels = catalog.getAllModelsRaw();
+          try {
+            selectedModelObject = allModels
+                .map(ChatModel.fromModelConfig)
+                .firstWhere((model) => model.id == selectedModelId);
+          } catch (_) {
+            // Model truly gone — keep the stored ID so it doesn't
+            // silently change on restart. selectedModelObject stays null
+            // and the UI shows a clear indicator.
+            selectedModelObject = null;
+          }
         }
       }
 
@@ -222,18 +233,6 @@ class ModelNotifier extends Notifier<ModelState> {
 
   Future<void> setSelectedModel(String modelId) async {
     if (state.selectedModelId == modelId) return;
-
-    final catalog = await ref.read(catalogInitializationProvider.future);
-    final providerId = modelId.contains('/')
-        ? modelId.split('/').first
-        : modelId.contains(':')
-        ? modelId.split(':').first
-        : null;
-
-    // Sync catalog first so both sources agree.
-    if (providerId != null) {
-      await catalog.setSelectedModelIds(providerId, [modelId]);
-    }
 
     ChatModel? modelObject;
     var selectedId = modelId;
