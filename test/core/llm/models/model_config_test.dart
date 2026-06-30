@@ -4,7 +4,6 @@ import 'package:chatorai/core/llm/models/model_config.dart';
 void main() {
   group('ModelConfig', () {
     final basicModel = ModelConfig.basic(
-      id: 'openai/gpt-4o-mini',
       providerId: 'openai',
       modelName: 'gpt-4o-mini',
       displayName: 'GPT-4o Mini',
@@ -33,7 +32,6 @@ void main() {
 
     test('full factory sets all fields', () {
       final model = ModelConfig.full(
-        id: 'anthropic/claude-3-5-sonnet',
         providerId: 'anthropic',
         modelName: 'claude-3-5-sonnet',
         displayName: 'Claude 3.5 Sonnet',
@@ -128,14 +126,12 @@ void main() {
 
     test('equality compares all fields', () {
       final m1 = ModelConfig.basic(
-        id: 'test',
         providerId: 'test-provider',
         modelName: 'test-model',
         displayName: 'Test Model',
         contextLength: 1000,
       );
       final m2 = ModelConfig.basic(
-        id: 'test',
         providerId: 'test-provider',
         modelName: 'test-model',
         displayName: 'Test Model',
@@ -149,7 +145,6 @@ void main() {
 
     test('toJson serializes all fields correctly', () {
       final model = ModelConfig.full(
-        id: 'test/model',
         providerId: 'test',
         modelName: 'model',
         displayName: 'Model',
@@ -192,7 +187,6 @@ void main() {
 
     test('fromJson reconstructs model correctly', () {
       final original = ModelConfig.full(
-        id: 'openai/gpt-4o',
         providerId: 'openai',
         modelName: 'gpt-4o',
         displayName: 'GPT-4o',
@@ -222,7 +216,7 @@ void main() {
         'contextLength': 1000,
       };
       final model = ModelConfig.fromJson(json);
-      expect(model.id, 'provider/minimal');
+      expect(model.id, 'provider/model');
       expect(model.description, isNull);
       expect(model.variants, isEmpty);
       expect(model.enabled, true);

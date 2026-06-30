@@ -8,29 +8,54 @@ class TaskPart extends MessagePart {
   final String description;
   final String agent;
   final TaskStatus status;
-  final int subtaskCount;
-  final int completedCount;
+  final String? sessionId;
+  final String? error;
+  final int? retryAttempt;
+  final String? currentTool;
+  final String? currentToolTitle;
+  final int toolCallsCount;
+  final int? durationMs;
+  final DateTime? startedAt;
+
   const TaskPart({
     required this.description,
     required this.agent,
     this.status = TaskStatus.running,
-    this.subtaskCount = 0,
-    this.completedCount = 0,
+    this.sessionId,
+    this.error,
+    this.retryAttempt,
+    this.currentTool,
+    this.currentToolTitle,
+    this.toolCallsCount = 0,
+    this.durationMs,
+    this.startedAt,
   });
 
   TaskPart copyWith({
     String? description,
     String? agent,
     TaskStatus? status,
-    int? subtaskCount,
-    int? completedCount,
+    String? sessionId,
+    String? error,
+    int? retryAttempt,
+    String? currentTool,
+    String? currentToolTitle,
+    int? toolCallsCount,
+    int? durationMs,
+    DateTime? startedAt,
   }) {
     return TaskPart(
       description: description ?? this.description,
       agent: agent ?? this.agent,
       status: status ?? this.status,
-      subtaskCount: subtaskCount ?? this.subtaskCount,
-      completedCount: completedCount ?? this.completedCount,
+      sessionId: sessionId ?? this.sessionId,
+      error: error ?? this.error,
+      retryAttempt: retryAttempt ?? this.retryAttempt,
+      currentTool: currentTool ?? this.currentTool,
+      currentToolTitle: currentToolTitle ?? this.currentToolTitle,
+      toolCallsCount: toolCallsCount ?? this.toolCallsCount,
+      durationMs: durationMs ?? this.durationMs,
+      startedAt: startedAt ?? this.startedAt,
     );
   }
 
@@ -40,8 +65,14 @@ class TaskPart extends MessagePart {
     'description': description,
     'agent': agent,
     'status': status.name,
-    'subtaskCount': subtaskCount,
-    'completedCount': completedCount,
+    if (sessionId != null) 'sessionId': sessionId,
+    if (error != null) 'error': error,
+    if (retryAttempt != null) 'retryAttempt': retryAttempt,
+    if (currentTool != null) 'currentTool': currentTool,
+    if (currentToolTitle != null) 'currentToolTitle': currentToolTitle,
+    'toolCallsCount': toolCallsCount,
+    if (durationMs != null) 'durationMs': durationMs,
+    if (startedAt != null) 'startedAt': startedAt!.toIso8601String(),
   };
 
   factory TaskPart.fromJson(Map<String, dynamic> json) {
@@ -51,8 +82,16 @@ class TaskPart extends MessagePart {
       status: (json['status'] as String?) != null
           ? TaskStatus.values.byName(json['status'] as String)
           : TaskStatus.running,
-      subtaskCount: json['subtaskCount'] as int? ?? 0,
-      completedCount: json['completedCount'] as int? ?? 0,
+      sessionId: json['sessionId'] as String?,
+      error: json['error'] as String?,
+      retryAttempt: json['retryAttempt'] as int?,
+      currentTool: json['currentTool'] as String?,
+      currentToolTitle: json['currentToolTitle'] as String?,
+      toolCallsCount: json['toolCallsCount'] as int? ?? 0,
+      durationMs: json['durationMs'] as int?,
+      startedAt: json['startedAt'] != null
+          ? DateTime.tryParse(json['startedAt'] as String)
+          : null,
     );
   }
 }

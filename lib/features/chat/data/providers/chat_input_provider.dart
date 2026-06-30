@@ -47,10 +47,18 @@ class ChatInputState {
       speechStatusMessage: speechStatusMessage ?? this.speechStatusMessage,
       isSending: isSending ?? this.isSending,
       plusActive: plusActive ?? this.plusActive,
-      attachedFilePath: identical(attachedFilePath, _unset) ? this.attachedFilePath : attachedFilePath as String?,
-      attachedFileName: identical(attachedFileName, _unset) ? this.attachedFileName : attachedFileName as String?,
-      attachedImageType: identical(attachedImageType, _unset) ? this.attachedImageType : attachedImageType as String?,
-      attachedBase64Data: identical(attachedBase64Data, _unset) ? this.attachedBase64Data : attachedBase64Data as String?,
+      attachedFilePath: identical(attachedFilePath, _unset)
+          ? this.attachedFilePath
+          : attachedFilePath as String?,
+      attachedFileName: identical(attachedFileName, _unset)
+          ? this.attachedFileName
+          : attachedFileName as String?,
+      attachedImageType: identical(attachedImageType, _unset)
+          ? this.attachedImageType
+          : attachedImageType as String?,
+      attachedBase64Data: identical(attachedBase64Data, _unset)
+          ? this.attachedBase64Data
+          : attachedBase64Data as String?,
     );
   }
 }

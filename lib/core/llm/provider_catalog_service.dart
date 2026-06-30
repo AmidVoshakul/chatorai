@@ -26,7 +26,6 @@ import 'package:chatorai/core/llm/models/provider_config.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Immutable state for the catalog.
@@ -232,12 +231,8 @@ class ProviderCatalogService {
       final models = items.whereType<Map<String, dynamic>>().map((m) {
         // Handle non-standard single-object responses (e.g. Venice AI)
         final modelSpec = m['model_spec'] as Map<String, dynamic>? ?? {};
-        final rawId =
+        final modelName =
             (m['id'] ?? modelSpec['name'] ?? m['name'] ?? '') as String;
-        final modelName = rawId;
-        final modelId = _canonicalModelId(providerId, rawId);
-        final display =
-            (m['name'] ?? modelSpec['name'] ?? rawId) as String? ?? rawId;
 
         final source = modelSpec.isNotEmpty ? modelSpec : m;
         final architecture =
@@ -257,6 +252,9 @@ class ProviderCatalogService {
             supportedParams.contains('include_reasoning');
         final isMultimodal = inputModalities.contains('image');
         final hasVision = inputModalities.contains('image');
+        final display =
+            (m['name'] ?? modelSpec['name'] ?? modelName) as String? ??
+            modelName;
 
         double? toDouble(dynamic value) {
           if (value == null) return null;
@@ -286,7 +284,6 @@ class ProviderCatalogService {
             : null;
 
         return ModelConfig.basic(
-          id: modelId,
           providerId: providerId,
           modelName: modelName,
           displayName: display,
@@ -374,8 +371,7 @@ class ProviderCatalogService {
   /// Get a model by its full ID (format: 'providerId/modelName').
   ///
   /// According to OpenCode patterns, model identifiers must always include
-  /// the provider prefix to avoid ambiguity. Legacy colon format
-  /// ('providerId:modelName') is also supported for backwards compatibility.
+  /// the provider prefix to avoid ambiguity.
   ///
   /// Returns null if provider not found or model not in that provider.
   ModelConfig? getModel(String modelId) {
@@ -384,16 +380,6 @@ class ProviderCatalogService {
       if (parts.length >= 2) {
         final providerId = parts[0];
         final modelName = parts.sublist(1).join('/');
-        final provider = getProvider(providerId);
-        return provider?.getModel(modelName);
-      }
-    }
-
-    if (modelId.contains(':')) {
-      final parts = modelId.split(':');
-      if (parts.length >= 2) {
-        final providerId = parts[0];
-        final modelName = parts.sublist(1).join(':');
         final provider = getProvider(providerId);
         return provider?.getModel(modelName);
       }
@@ -417,15 +403,13 @@ class ProviderCatalogService {
     if (provider == null) return;
 
     final existingById = {
-      for (final m in provider.models)
-        _canonicalModelId(providerId, m.modelName): m,
+      for (final m in provider.models) '$providerId/${m.modelName}': m,
     };
 
     final merged = models.map((m) {
-      final canonicalId = _canonicalModelId(providerId, m.modelName);
-      final existing = existingById[canonicalId];
+      final key = '$providerId/${m.modelName}';
+      final existing = existingById[key];
       return m.copyWith(
-        id: canonicalId,
         providerId: providerId,
         enabled: overwriteEnabled
             ? m.enabled
@@ -442,14 +426,6 @@ class ProviderCatalogService {
     } catch (_) {
       // ignore persistence errors
     }
-  }
-
-  static String _canonicalModelId(String providerId, String modelName) {
-    if (modelName.startsWith('$providerId/')) return modelName;
-    if (modelName.startsWith('$providerId:')) {
-      return '$providerId/${modelName.substring(providerId.length + 1)}';
-    }
-    return '$providerId/$modelName';
   }
 
   /// Get API key for a provider from secure storage (with caching).
@@ -555,8 +531,8 @@ class ProviderCatalogService {
   }
 
   /// Legacy compatibility: no-op for tests that expect ChangeNotifier.
-  void addListener(VoidCallback listener) {}
-  void removeListener(VoidCallback listener) {}
+  void addListener(void Function() listener) {}
+  void removeListener(void Function() listener) {}
   void dispose() {}
 
   /// Migrate settings from legacy SharedPreferences keys.

@@ -36,7 +36,6 @@ void main() {
         auth: AuthConfig.apiKey(apiKey: 'dummy', apiKeyHeader: 'x-api-key'),
         models: [
           ModelConfig.basic(
-            id: 'anthropic/claude-3-5-sonnet',
             providerId: 'anthropic',
             modelName: 'claude-3-5-sonnet',
             displayName: 'Claude 3.5 Sonnet',
@@ -62,7 +61,7 @@ void main() {
     });
 
     test(
-      'getModel supports slash IDs and preserves slashes in model names',
+      'getModel matches by exact modelName',
       () {
         final provider = ProviderConfig.full(
           id: 'openrouter',
@@ -71,7 +70,6 @@ void main() {
           auth: AuthConfig.none(),
           models: [
             ModelConfig.basic(
-              id: 'openrouter/openai/gpt-4o',
               providerId: 'openrouter',
               modelName: 'openai/gpt-4o',
               displayName: 'GPT-4o',
@@ -81,32 +79,12 @@ void main() {
         );
 
         expect(
-          provider.getModel('openrouter/openai/gpt-4o')?.id,
+          provider.getModel('openai/gpt-4o')?.id,
           'openrouter/openai/gpt-4o',
         );
         expect(provider.getModel('nonexistent'), isNull);
       },
     );
-
-    test('getModel keeps legacy colon IDs as compatibility input', () {
-      final provider = ProviderConfig.full(
-        id: 'openrouter',
-        name: 'OpenRouter',
-        baseUrl: 'https://openrouter.ai/api/v1',
-        auth: AuthConfig.none(),
-        models: [
-          ModelConfig.basic(
-            id: 'openrouter/free',
-            providerId: 'openrouter',
-            modelName: 'free',
-            displayName: 'Free',
-            contextLength: 0,
-          ),
-        ],
-      );
-
-      expect(provider.getModel('openrouter:free')?.id, 'openrouter/free');
-    });
 
     test('copyWith preserves unchanged fields', () {
       final copied = basicProvider.copyWith(description: 'Updated description');
@@ -146,7 +124,6 @@ void main() {
         ),
         models: [
           ModelConfig.basic(
-            id: 'openrouter/gpt-4o',
             providerId: 'openrouter',
             modelName: 'gpt-4o',
             displayName: 'GPT-4o',
@@ -195,7 +172,6 @@ void main() {
         ),
         models: [
           ModelConfig.basic(
-            id: 'groq/llama-3.1-70b',
             providerId: 'groq',
             modelName: 'llama-3.1-70b',
             displayName: 'Llama 3.1 70B',
@@ -237,7 +213,6 @@ void main() {
 
     test('nested model serialization preserves all fields', () {
       final model = ModelConfig.full(
-        id: 'test/model',
         providerId: 'test',
         modelName: 'model',
         displayName: 'Model',

@@ -156,6 +156,7 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
     if (!state.isStreaming) return;
     final parts = List<MessagePart>.from(state.accumulatedParts);
     _markReasoningAsDone(parts);
+    _markTextAsDone(parts);
     final existingIdx = parts.indexWhere(
       (p) => p is ToolResultPart && p.toolCallId == toolCallId,
     );
@@ -188,6 +189,7 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
     if (!state.isStreaming) return;
     final parts = List<MessagePart>.from(state.accumulatedParts);
     _markReasoningAsDone(parts);
+    _markTextAsDone(parts);
     final idx = parts.indexWhere(
       (p) => p is ToolResultPart && p.toolCallId == toolCallId,
     );
@@ -248,6 +250,104 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
     } else {
       parts.add(question);
     }
+    state = state.copyWith(accumulatedParts: parts);
+  }
+
+  int _findTaskPartIndex(List<MessagePart> parts) {
+    for (var i = parts.length - 1; i >= 0; i--) {
+      if (parts[i] is TaskPart) return i;
+    }
+    return -1;
+  }
+
+  void onTaskStart({
+    required String description,
+    required String agent,
+    String? sessionId,
+  }) {
+    if (!state.isStreaming) return;
+    final parts = List<MessagePart>.from(state.accumulatedParts);
+    _markReasoningAsDone(parts);
+    _markTextAsDone(parts);
+
+    final idx = _findTaskPartIndex(parts);
+    final taskPart = TaskPart(
+      description: description,
+      agent: agent,
+      status: TaskStatus.running,
+      sessionId: sessionId,
+      startedAt: DateTime.now(),
+    );
+
+    if (idx != -1) {
+      parts[idx] = taskPart;
+    } else {
+      parts.add(taskPart);
+    }
+    state = state.copyWith(accumulatedParts: parts);
+  }
+
+  void onTaskToolExecuted(String toolName, String? toolTitle) {
+    if (!state.isStreaming) return;
+    final parts = List<MessagePart>.from(state.accumulatedParts);
+    final idx = _findTaskPartIndex(parts);
+    if (idx == -1) return;
+
+    final existing = parts[idx] as TaskPart;
+    parts[idx] = existing.copyWith(
+      currentTool: toolName,
+      currentToolTitle: toolTitle,
+      toolCallsCount: existing.toolCallsCount + 1,
+    );
+    state = state.copyWith(accumulatedParts: parts);
+  }
+
+  /// Update the TaskPart's sessionId with the real child session ID
+  /// once it becomes available from the task tool.
+  void updateTaskSessionId(String sessionId) {
+    if (!state.isStreaming) return;
+    final parts = List<MessagePart>.from(state.accumulatedParts);
+    final idx = _findTaskPartIndex(parts);
+    if (idx == -1) return;
+
+    final existing = parts[idx] as TaskPart;
+    parts[idx] = existing.copyWith(sessionId: sessionId);
+    state = state.copyWith(accumulatedParts: parts);
+  }
+
+  void onTaskError(String error, int? retryAttempt) {
+    if (!state.isStreaming) return;
+    final parts = List<MessagePart>.from(state.accumulatedParts);
+    final idx = _findTaskPartIndex(parts);
+    if (idx == -1) return;
+
+    final existing = parts[idx] as TaskPart;
+    parts[idx] = existing.copyWith(
+      error: error,
+      retryAttempt: retryAttempt,
+      currentTool: null,
+      currentToolTitle: null,
+    );
+    state = state.copyWith(accumulatedParts: parts);
+  }
+
+  void onTaskEnd() {
+    if (!state.isStreaming) return;
+    final parts = List<MessagePart>.from(state.accumulatedParts);
+    final idx = _findTaskPartIndex(parts);
+    if (idx == -1) return;
+
+    final existing = parts[idx] as TaskPart;
+    final now = DateTime.now();
+    final startedAt = existing.startedAt ?? now;
+    final durationMs = now.difference(startedAt).inMilliseconds;
+
+    parts[idx] = existing.copyWith(
+      status: TaskStatus.completed,
+      currentTool: null,
+      currentToolTitle: null,
+      durationMs: durationMs,
+    );
     state = state.copyWith(accumulatedParts: parts);
   }
 

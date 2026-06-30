@@ -1,4 +1,5 @@
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/core/permission/rule.dart';
 import 'package:equatable/equatable.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -184,6 +185,13 @@ class SessionState extends Equatable {
   @Default(0)
   final int tokensReasoning;
 
+  @Default(0)
+  final int tokensCacheRead;
+
+  @Default(0)
+  final int tokensCacheWrite;
+
+  @JsonKey(fromJson: _permissionFromJson, toJson: _permissionToJson)
   final PermissionRuleset? permission;
 
   @Default([])
@@ -208,6 +216,8 @@ class SessionState extends Equatable {
     this.tokensInput = 0,
     this.tokensOutput = 0,
     this.tokensReasoning = 0,
+    this.tokensCacheRead = 0,
+    this.tokensCacheWrite = 0,
     this.permission,
     this.messages = const [],
     this.toolResults = const [],
@@ -231,6 +241,8 @@ class SessionState extends Equatable {
     int? tokensInput,
     int? tokensOutput,
     int? tokensReasoning,
+    int? tokensCacheRead,
+    int? tokensCacheWrite,
     PermissionRuleset? permission,
     List<SessionMessage>? messages,
     List<ToolResult>? toolResults,
@@ -252,6 +264,8 @@ class SessionState extends Equatable {
       tokensInput: tokensInput ?? this.tokensInput,
       tokensOutput: tokensOutput ?? this.tokensOutput,
       tokensReasoning: tokensReasoning ?? this.tokensReasoning,
+      tokensCacheRead: tokensCacheRead ?? this.tokensCacheRead,
+      tokensCacheWrite: tokensCacheWrite ?? this.tokensCacheWrite,
       permission: clearPermission ? null : (permission ?? this.permission),
       messages: messages ?? this.messages,
       toolResults: toolResults ?? this.toolResults,
@@ -265,6 +279,63 @@ class SessionState extends Equatable {
       value == null ? null : SessionID.fromString(value);
 
   static String? _sessionIdNullableToJson(SessionID? value) => value?.value;
+
+  static PermissionRuleset? _permissionFromJson(Map<String, dynamic>? json) {
+    if (json == null) return null;
+    final rules = (json['rules'] as List?)
+        ?.map(
+          (e) => PermissionRule(
+            permission: e['permission'] as String,
+            pattern: e['pattern'] as String,
+            action: PermissionAction.values.firstWhere(
+              (a) => a.name == e['action'] as String,
+              orElse: () => PermissionAction.ask,
+            ),
+          ),
+        )
+        .toList();
+    final sessionApproved = (json['sessionApproved'] as List?)
+        ?.map(
+          (e) => PermissionRule(
+            permission: e['permission'] as String,
+            pattern: e['pattern'] as String,
+            action: PermissionAction.values.firstWhere(
+              (a) => a.name == e['action'] as String,
+              orElse: () => PermissionAction.ask,
+            ),
+          ),
+        )
+        .toList();
+    return PermissionRuleset(
+      rules: rules ?? const [],
+      sessionApproved: sessionApproved ?? const [],
+    );
+  }
+
+  static Map<String, dynamic>? _permissionToJson(PermissionRuleset? pr) {
+    if (pr == null) return null;
+    if (pr.rules.isEmpty && pr.sessionApproved.isEmpty) return null;
+    return {
+      'rules': pr.rules
+          .map(
+            (r) => {
+              'permission': r.permission,
+              'pattern': r.pattern,
+              'action': r.action.name,
+            },
+          )
+          .toList(),
+      'sessionApproved': pr.sessionApproved
+          .map(
+            (r) => {
+              'permission': r.permission,
+              'pattern': r.pattern,
+              'action': r.action.name,
+            },
+          )
+          .toList(),
+    };
+  }
 
   /// Raw string form for code that hasn't migrated to `SessionID` yet.
   String get sessionIdRaw => id.value;
@@ -281,6 +352,8 @@ class SessionState extends Equatable {
     tokensInput,
     tokensOutput,
     tokensReasoning,
+    tokensCacheRead,
+    tokensCacheWrite,
     permission,
     messages,
     toolResults,

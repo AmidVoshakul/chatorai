@@ -47,11 +47,7 @@ class RateLimitError extends ClassifiedError {
   /// "free_tier_limit", "account_rate_limit", or null.
   final String? reason;
 
-  const RateLimitError({
-    this.statusCode = 429,
-    this.retryAfter,
-    this.reason,
-  });
+  const RateLimitError({this.statusCode = 429, this.retryAfter, this.reason});
 
   @override
   bool get isRetryable => true;
@@ -284,8 +280,8 @@ class ErrorClassifier {
       final reason = lower.contains('free') && lower.contains('limit')
           ? 'free_tier_limit'
           : lower.contains('go limit') || lower.contains('account')
-              ? 'account_rate_limit'
-              : null;
+          ? 'account_rate_limit'
+          : null;
       return RateLimitError(reason: reason);
     }
 

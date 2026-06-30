@@ -11,6 +11,8 @@ import 'package:chatorai/features/settings/widgets/theme_selection_dialog.dart';
 import 'package:chatorai/features/settings/widgets/language_selection_dialog.dart';
 import 'package:chatorai/features/settings/widgets/about_dialog.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_screen.dart';
+import 'package:chatorai/features/settings/screens/stats_screen.dart';
+import 'package:chatorai/features/settings/screens/config_screen.dart';
 
 // ===========================================================================
 // SETTINGS SCREEN
@@ -53,6 +55,30 @@ class SettingsScreen extends ConsumerWidget {
                 MaterialPageRoute(
                   builder: (_) => const ProviderSettingsScreen(),
                 ),
+              ),
+            ),
+            const SizedBox(height: ChatoraiSpacing.xl),
+            SettingsSelectionCard(
+              context: context,
+              icon: Icons.bar_chart,
+              title: localizations.usageStatistics,
+              subtitle: localizations.totalSessions,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const StatsScreen()),
+              ),
+            ),
+            const SizedBox(height: ChatoraiSpacing.xl),
+            SettingsSectionHeader(title: localizations.configuration),
+            const SizedBox(height: ChatoraiSpacing.lg),
+            SettingsSelectionCard(
+              context: context,
+              icon: Icons.settings,
+              title: localizations.configuration,
+              subtitle: localizations.configuration,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ConfigScreen()),
               ),
             ),
             const SizedBox(height: ChatoraiSpacing.xl),

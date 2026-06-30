@@ -196,7 +196,6 @@ class ModelConfig extends Equatable {
 
   /// Create a basic model configuration.
   factory ModelConfig.basic({
-    required String id,
     required String providerId,
     required String modelName,
     required String displayName,
@@ -209,7 +208,7 @@ class ModelConfig extends Equatable {
     bool enabled = true,
   }) {
     return ModelConfig._(
-      id: _canonicalId(id, providerId),
+      id: canonicalId(providerId, modelName),
       providerId: providerId,
       modelName: modelName,
       displayName: displayName,
@@ -225,7 +224,6 @@ class ModelConfig extends Equatable {
 
   /// Create a full model configuration with all fields.
   factory ModelConfig.full({
-    required String id,
     required String providerId,
     required String modelName,
     required String displayName,
@@ -240,7 +238,7 @@ class ModelConfig extends Equatable {
     Map<String, dynamic>? metadata,
   }) {
     return ModelConfig._(
-      id: _canonicalId(id, providerId),
+      id: canonicalId(providerId, modelName),
       providerId: providerId,
       modelName: modelName,
       displayName: displayName,
@@ -302,8 +300,8 @@ class ModelConfig extends Equatable {
   }
 
   /// Create a copy with modified fields.
+  /// [id] is always derived from [modelName] + [providerId] — never set directly.
   ModelConfig copyWith({
-    String? id,
     String? providerId,
     String? modelName,
     String? displayName,
@@ -317,10 +315,12 @@ class ModelConfig extends Equatable {
     DateTime? addedAt,
     Map<String, dynamic>? metadata,
   }) {
+    final newProviderId = providerId ?? this.providerId;
+    final newModelName = modelName ?? this.modelName;
     return ModelConfig._(
-      id: _canonicalId(id ?? this.id, providerId ?? this.providerId),
-      providerId: providerId ?? this.providerId,
-      modelName: modelName ?? this.modelName,
+      id: canonicalId(newProviderId, newModelName),
+      providerId: newProviderId,
+      modelName: newModelName,
       displayName: displayName ?? this.displayName,
       description: description ?? this.description,
       capabilities: capabilities ?? this.capabilities,
@@ -375,10 +375,11 @@ class ModelConfig extends Equatable {
   factory ModelConfig.fromJson(Map<String, dynamic> json) {
     final variantsList = json['variants'] as List<dynamic>?;
     final providerId = json['providerId'] as String;
+    final modelName = json['modelName'] as String;
     return ModelConfig._(
-      id: _canonicalId(json['id'] as String, providerId),
+      id: canonicalId(providerId, modelName),
       providerId: providerId,
-      modelName: json['modelName'] as String,
+      modelName: modelName,
       displayName: json['displayName'] as String,
       description: json['description'] as String?,
       capabilities: ModelCapabilities.fromJson(
@@ -402,13 +403,8 @@ class ModelConfig extends Equatable {
     );
   }
 
-  static String _canonicalId(String id, String providerId) {
-    if (id.startsWith('$providerId/')) return id;
-    if (id.startsWith('$providerId:')) {
-      return '$providerId/${id.substring(providerId.length + 1)}';
-    }
-    // Always prefix with providerId to ensure global uniqueness.
-    return '$providerId/$id';
+  static String canonicalId(String providerId, String modelName) {
+    return '$providerId/$modelName';
   }
 
   @override

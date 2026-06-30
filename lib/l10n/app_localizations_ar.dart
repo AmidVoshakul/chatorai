@@ -167,9 +167,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get renameChat => 'إعادة تسمية الدردشة';
 
   @override
-  String get deleteChat => 'حذف الدردشة';
-
-  @override
   String get failedToShowMenu => 'فشل في عرض القائمة';
 
   @override
@@ -204,8 +201,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get expand => 'توسيع';
 
   @override
-  String chatRenamedTo(Object title) {
-    return 'تمت إعادة تسمية الدردشة إلى: $title';
+  String chatRenamedTo(Object name) {
+    return 'تمت إعادة تسمية الدردشة إلى: $name';
   }
 
   @override
@@ -871,150 +868,81 @@ class AppLocalizationsAr extends AppLocalizations {
   String get removeFromFavorites => 'إزالة من المفضلة';
 
   @override
-  String get startListening => 'بدء الإدخال الصوتي';
+  String get loadingSkills => 'Loading skills';
 
   @override
-  String get stopListening => 'إيقاف الإدخال الصوتي';
+  String get noSkillsInstalled => 'No skills installed';
 
   @override
-  String get listening => 'تحدث الآن...';
+  String get noSkillsMatchSearch => 'No skills match your search';
 
   @override
-  String get micUnavailable => 'الميكروفون غير متاح';
+  String get allSkillsRequirePermission => 'All skills require permission';
 
   @override
-  String get sendMessage => 'إرسال الرسالة';
+  String skillExecuted(Object name) {
+    return 'Skill executed';
+  }
 
   @override
-  String get modelSettings => 'إعدادات النموذج';
+  String get configuration => 'Configuration';
 
   @override
-  String get temperature => 'درجة الحرارة';
+  String get stats => 'Stats';
 
   @override
-  String get temperatureDescription =>
-      'التحكم في العشوائية: أقل = أكثر تركيزًا، أعلى = أكثر إبداعًا';
+  String get usageStatistics => 'Usage Statistics';
 
   @override
-  String get maxTokens => 'الحد الأقصى للرموز';
+  String get totalSessions => 'Sessions';
 
   @override
-  String get maxTokensDescription => 'الحد الأقصى لطول الاستجابة المولدة';
+  String get totalMessages => 'Messages';
 
   @override
-  String get systemPrompt => 'موجه النظام';
+  String get days => 'Days';
 
   @override
-  String get systemPromptDescription => 'تعليمات مساعد الذكاء الاصطناعي';
+  String get totalTokens => 'Total Tokens';
 
   @override
-  String get resetToDefaults => 'إعادة تعيين إلى الافتراضي';
+  String get totalCost => 'Total Cost';
+
+  @override
+  String get avgCostPerDay => 'Avg Cost/Day';
+
+  @override
+  String get avgTokensPerSession => 'Avg Tokens/Session';
+
+  @override
+  String get medianTokensPerSession => 'Median Tokens/Session';
+
+  @override
+  String get cacheRead => 'Cache Read';
+
+  @override
+  String get cacheWrite => 'Cache Write';
+
+  @override
+  String get toolUsage => 'Tool Usage';
+
+  @override
+  String get modelUsage => 'Model Usage';
+
+  @override
+  String get noStatsAvailable => 'No statistics available';
+
+  @override
+  String get reasoningTokens => 'Reasoning';
+
+  @override
+  String get addProvider => 'Add Provider';
 
   @override
   String get applySettings => 'تطبيق الإعدادات';
 
   @override
-  String get modelParameters => 'معلمات النموذج';
-
-  @override
-  String get activeModel => 'النموذج النشط';
-
-  @override
-  String get noModelSelected => 'لم يتم اختيار نموذج';
-
-  @override
-  String get settingsApplied => 'تم تطبيق الإعدادات بنجاح';
-
-  @override
-  String apiLimitExceeded(Object limit) {
-    return 'تم تجاوز حد API: $limit';
-  }
-
-  @override
-  String valueExceedsApiLimit(Object limit) {
-    return 'القيمة تتجاوز حد API ($limit). سيتم استخدام القيمة القصوى.';
-  }
-
-  @override
-  String get micStartFailed => 'فشل تشغيل الميكروفون';
-
-  @override
-  String get micStopFailed => 'فشل إيقاف الميكروفون';
-
-  @override
-  String get speechErrorNoMatch => 'تعذر التعرف على الكلام. حاول مرة أخرى.';
-
-  @override
-  String get speechErrorTimeout => 'انتهت مهلة الاستماع. لم يتم سماع أي شيء.';
-
-  @override
-  String get speechErrorNetwork => 'خطأ في الشبكة. تحقق من اتصال الإنترنت.';
-
-  @override
-  String get speechErrorNotAuthorized =>
-      'لا يوجد وصول إلى الميكروفون. تحقق من الأذونات في الإعدادات.';
-
-  @override
-  String get speechErrorServer => 'خطأ في خادم التعرف. حاول مرة أخرى لاحقًا.';
-
-  @override
-  String get speechErrorTooManyRequests =>
-      'الطلبات كثيرة جدًا. حاول مرة أخرى لاحقًا.';
-
-  @override
-  String get speechErrorUnknown => 'خطأ التعرف على الكلام';
-
-  @override
-  String get speechPreparing => 'جاري التحضير...';
-
-  @override
-  String get speechListening => 'تحدث الآن...';
-
-  @override
-  String get speechProcessing => 'جاري المعالجة...';
-
-  @override
-  String get micNoSpeechDetected => 'لم أسمعك. يرجى المحاولة مرة أخرى.';
-
-  @override
-  String get micAutoRestart => 'إعادة المحاولة...';
-
-  @override
-  String get speechPhase2 => 'لا أسمعك...تحدث بصوت أعلى';
-
-  @override
-  String speechStartError(Object error) {
-    return 'خطأ في البدء: $error';
-  }
-
-  @override
-  String get errorProcessingRequest =>
-      'عذرًا، حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.';
-
-  @override
-  String rateLimitRetryMessage(Object seconds) {
-    return 'تم تجاوز حد المعدل. إعادة المحاولة خلال $seconds ثوانٍ...';
-  }
-
-  @override
-  String get messageNotFound => 'الرسالة غير موجودة';
-
-  @override
-  String get errorEditingMessage => 'خطأ في تعديل الرسالة';
-
-  @override
-  String get errorEditAndSendMessage => 'خطأ في تعديل وإرسال الرسالة';
-
-  @override
-  String generatingSuggestionsFailed(Object error) {
-    return 'فشل في إنشاء الاقتراحات: $error';
-  }
-
-  @override
-  String get selectModelTooltip => 'اختيار النموذج';
-
-  @override
-  String get toggleNavigatorTooltip => 'تبديل الملاحة';
+  String get copyCodeTooltip => 'نسخ الكود';
 
   @override
   String get defaultSuggestion1 => 'أخبرني المزيد عن هذا الموضوع';
@@ -1026,39 +954,135 @@ class AppLocalizationsAr extends AppLocalizations {
   String get defaultSuggestion3 => 'ما هي البدائل؟';
 
   @override
-  String get defaultSuggestion4 => 'كيف يتم تطبيق هذا في الممارسة العملية؟';
+  String get deleteChat => 'حذف الدردشة';
+
+  @override
+  String get manageProviders => 'Manage Providers';
+
+  @override
+  String get micAutoRestart => 'إعادة المحاولة...';
+
+  @override
+  String get micNoSpeechDetected => 'لم أسمعك. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get micStartFailed => 'فشل تشغيل الميكروفون';
+
+  @override
+  String get micUnavailable => 'الميكروفون غير متاح';
+
+  @override
+  String get modelParameters => 'معلمات النموذج';
+
+  @override
+  String get modelSettings => 'إعدادات النموذج';
+
+  @override
+  String get noInternetConnection => 'لا يوجد اتصال بالإنترنت';
+
+  @override
+  String get noModelSelected => 'لم يتم اختيار نموذج';
+
+  @override
+  String get openaiCompatibleApi => 'OpenAI-Compatible API';
+
+  @override
+  String get openaiCompatibleApiDescription =>
+      'Connect to any OpenAI-compatible API endpoint';
+
+  @override
+  String get permissionAlways => 'السماح دائماً';
+
+  @override
+  String get permissionAlwaysConfirm => 'Always allow';
+
+  @override
+  String get permissionDialogPatterns => 'طلب الوصول إلى:';
+
+  @override
+  String get permissionOnce => 'مرة واحدة';
+
+  @override
+  String get permissionReject => 'رفض';
+
+  @override
+  String get providers => 'Providers';
+
+  @override
+  String get refreshQuestions => 'تحديث الأسئلة';
+
+  @override
+  String get resetToDefaults => 'إعادة تعيين إلى الافتراضي';
+
+  @override
+  String get settingsApplied => 'تم تطبيق الإعدادات بنجاح';
+
+  @override
+  String get speechErrorNetwork => 'خطأ في الشبكة. تحقق من اتصال الإنترنت.';
+
+  @override
+  String get speechErrorNoMatch => 'تعذر التعرف على الكلام. حاول مرة أخرى.';
+
+  @override
+  String get speechErrorNotAuthorized =>
+      'لا يوجد وصول إلى الميكروفون. تحقق من الأذونات في الإعدادات.';
+
+  @override
+  String get speechErrorServer => 'خطأ في خادم التعرف. حاول مرة أخرى لاحقًا.';
+
+  @override
+  String get speechErrorTimeout => 'انتهت مهلة الاستماع. لم يتم سماع أي شيء.';
+
+  @override
+  String get speechErrorTooManyRequests =>
+      'الطلبات كثيرة جدًا. حاول مرة أخرى لاحقًا.';
+
+  @override
+  String get speechErrorUnknown => 'خطأ التعرف على الكلام';
+
+  @override
+  String get speechListening => 'تحدث الآن...';
+
+  @override
+  String get speechPhase2 => 'لا أسمعك...تحدث بصوت أعلى';
+
+  @override
+  String get speechPreparing => 'جاري التحضير...';
+
+  @override
+  String get speechProcessing => 'جاري المعالجة...';
+
+  @override
+  String speechStartError(Object error) {
+    return 'خطأ في البدء: $error';
+  }
+
+  @override
+  String get systemPrompt => 'موجه النظام';
+
+  @override
+  String get systemPromptDescription => 'تعليمات مساعد الذكاء الاصطناعي';
 
   @override
   String get systemPromptSuggestion =>
       'أنت مساعد مفيد. استمر في المحادثة من خلال تقديم 3 استمرارات محددة ومنطقية لآخر رسالة. رد باللغة نفسها التي يستخدمها المستخدم.';
 
   @override
+  String get temperature => 'درجة الحرارة';
+
+  @override
+  String get temperatureDescription =>
+      'التحكم في العشوائية: أقل = أكثر تركيزًا، أعلى = أكثر إبداعًا';
+
+  @override
+  String get toggleNavigatorTooltip => 'تبديل الملاحة';
+
+  @override
   String get userPromptSuggestion =>
       'قدم 3 استمرارات محددة ومنطقية لهذه الرسالة. أجب بالقائمة فقط، بدون نص إضافي.';
 
   @override
-  String get refreshQuestions => 'تحديث الأسئلة';
-
-  @override
-  String get noInternetConnection => 'لا يوجد اتصال بالإنترنت';
-
-  @override
-  String modelDoesNotSupportFiles(Object modelId) {
-    return 'النموذج $modelId لا يدعم الملفات. يمكنك إرفاق ملف، لكن الإرسال لن يعمل.';
-  }
-
-  @override
-  String get fileAttachedButNotSupported =>
-      'تم إرفاق الملف ولكن النموذج الحالي لا يدعمه';
-
-  @override
-  String get copyCodeTooltip => 'نسخ الكود';
-
-  @override
-  String get expandTooltip => 'توسيع';
-
-  @override
-  String get collapseTooltip => 'طي';
+  String get versionLabel => 'الإصدار:';
 
   @override
   String get welcomeGreeting1 => 'اسأل، استكشف، اصنع — دعنا نكتشف معًا.';
@@ -1098,54 +1122,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeGreeting12 => 'أدخل سؤالًا. الباقي عملي.';
 
   @override
-  String get versionLabel => 'الإصدار:';
+  String modelDoesNotSupportFiles(Object modelId) {
+    return 'النموذج $modelId لا يدعم الملفات. يمكنك إرفاق ملف، لكن الإرسال لن يعمل.';
+  }
 
   @override
-  String get permissionDialogPatterns => 'طلب الوصول إلى:';
-
-  @override
-  String get permissionOnce => 'مرة واحدة';
-
-  @override
-  String get permissionAlways => 'السماح دائماً';
-
-  @override
-  String get permissionReject => 'رفض';
-
-  @override
-  String get permissionAlwaysConfirm => 'Always allow';
-
-  @override
-  String get providers => 'Providers';
-
-  @override
-  String get manageProviders => 'Manage AI providers';
-
-  @override
-  String get openaiCompatibleApi => 'AI Providers';
-
-  @override
-  String get openaiCompatibleApiDescription =>
-      'Configure AI providers and manage their API keys and models';
-
-  @override
-  String get addProvider => 'Add Provider';
-
-  @override
-  String get loadingSkills => 'Loading skills...';
-
-  @override
-  String get noSkillsInstalled =>
-      'No skills installed. Add in .chatorai/skills/';
-
-  @override
-  String get noSkillsMatchSearch => 'No skills match your search';
-
-  @override
-  String get allSkillsRequirePermission => 'All skills require permission';
-
-  @override
-  String skillExecuted(Object name) {
-    return 'Skill executed: $name';
+  String generatingSuggestionsFailed(Object error) {
+    return 'فشل في إنشاء الاقتراحات: $error';
   }
 }

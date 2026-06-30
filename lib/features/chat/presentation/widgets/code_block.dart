@@ -85,9 +85,7 @@ class _CodeBlockState extends State<CodeBlock> {
                   Row(
                     children: [
                       Icon(
-                        _isCollapsed
-                            ? Icons.chevron_right
-                            : Icons.expand_more,
+                        _isCollapsed ? Icons.chevron_right : Icons.expand_more,
                         color: headerColor,
                         size: ChatoraiIconSizes.lg,
                       ),

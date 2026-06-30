@@ -21,7 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get apiKey => 'API Key';
 
   @override
-  String get enterApiKey => 'Enter your OpenRouter API key';
+  String get enterApiKey => 'Enter your OpenRouter API Key';
 
   @override
   String get baseUrl => 'Base URL';
@@ -30,10 +30,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get validateApiKey => 'Validate API Key';
 
   @override
-  String get apiKeyValid => 'API key is valid';
+  String get apiKeyValid => 'API Key is valid';
 
   @override
-  String get apiKeyInvalid => 'Invalid API key format';
+  String get apiKeyInvalid => 'Invalid API Key format';
 
   @override
   String get apiKeyEmpty => 'API key cannot be empty';
@@ -63,7 +63,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get useDarkTheme => 'Use dark theme';
 
   @override
-  String get fontSize => 'Font Size';
+  String get fontSize => 'Font size';
 
   @override
   String currentSize(Object percentage) {
@@ -74,19 +74,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accessibility => 'Accessibility';
 
   @override
-  String get reduceMotion => 'Reduce Motion';
+  String get reduceMotion => 'Reduce motion';
 
   @override
-  String get disableAnimation => 'Disable or reduce animation effects';
+  String get disableAnimation => 'Disable or reduce motion effects';
 
   @override
-  String get highContrast => 'High Contrast';
+  String get highContrast => 'High contrast';
 
   @override
   String get increaseContrast => 'Increase contrast for better readability';
 
   @override
-  String get wideScreenMode => 'Wide Screen Mode';
+  String get wideScreenMode => 'Wide screen mode';
 
   @override
   String get useFullScreenWidth => 'Use full screen width for chat content';
@@ -96,7 +96,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get autoScrollDuringStreamingDesc =>
-      'Automatically scroll down as new content arrives';
+      'Automatically scroll down when new content appears';
 
   @override
   String get language => 'Language';
@@ -111,7 +111,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ukrainian => 'Ukrainian';
 
   @override
-  String get arabic => 'Arabic (RTL)';
+  String get arabic => 'Arabic (right-to-left)';
 
   @override
   String get chinese => 'Chinese';
@@ -120,10 +120,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get japanese => 'Japanese';
 
   @override
-  String get resetSettings => 'Reset Settings';
+  String get resetSettings => 'Reset settings';
 
   @override
-  String get resetAllSettings => 'Reset all settings to default values';
+  String get resetAllSettings => 'Reset all settings to defaults';
 
   @override
   String get save => 'Save';
@@ -141,20 +141,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get apiKeyCopied => 'API key copied';
 
   @override
-  String get apiKeySaved => 'API key saved successfully';
+  String get apiKeySaved => 'API key saved';
 
   @override
-  String get settingsSaved => 'Settings saved!';
+  String get settingsSaved => 'Settings saved';
 
   @override
-  String get settingsReset => 'Settings reset to default values';
+  String get settingsReset => 'Settings reset';
 
   @override
   String get appInfo => 'App Info';
 
   @override
   String get appDescription =>
-      'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nDeveloped with ❤️ using Flutter';
+      'AI Chat Application powered by multiple LLM providers';
 
   @override
   String get shareChat => 'Share Chat';
@@ -166,9 +166,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get renameChat => 'Rename Chat';
 
   @override
-  String get deleteChat => 'Delete Chat';
-
-  @override
   String get failedToShowMenu => 'Failed to show menu';
 
   @override
@@ -178,7 +175,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failedToCopyChat => 'Failed to copy chat';
 
   @override
-  String get chatSharingNotImplemented => 'Chat sharing is not implemented yet';
+  String get chatSharingNotImplemented => 'Chat sharing not implemented';
 
   @override
   String get newChat => 'New Chat';
@@ -187,8 +184,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noChatsYet => 'No chats yet';
 
   @override
-  String get startConversation =>
-      'Start a conversation by clicking \"New Chat\"';
+  String get startConversation => 'Start a conversation';
 
   @override
   String get reasoning => 'Reasoning';
@@ -203,12 +199,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expand => 'Expand';
 
   @override
-  String chatRenamedTo(Object title) {
-    return 'Chat renamed to: $title';
+  String chatRenamedTo(Object name) {
+    return 'Chat renamed to $name';
   }
 
   @override
-  String get appTitle => 'Chat ORAI';
+  String get appTitle => 'ChatORAI';
 
   @override
   String get justNow => 'Just now';
@@ -219,7 +215,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get onlyOneMinuteAgo => '1 min ago';
+  String get onlyOneMinuteAgo => '1 minute ago';
 
   @override
   String hoursAgo(Object hours) {
@@ -250,7 +246,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ok => 'OK';
 
   @override
-  String get modelSelected => 'Model Selected';
+  String get modelSelected => 'Model selected';
 
   @override
   String get errorLoadingModels => 'Error loading models';
@@ -336,10 +332,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
-  String get enterYourMessage => 'Enter your message...';
+  String get enterYourMessage => 'Enter your message';
 
   @override
-  String get saveAndSend => 'Save & Send';
+  String get saveAndSend => 'Save and send';
 
   @override
   String get messageEditedSuccessfully => 'Message edited successfully';
@@ -360,7 +356,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String confirmDeleteMessage(Object chatTitle) {
-    return 'Are you sure you want to delete the chat \"$chatTitle\"?';
+    return 'Confirm delete message';
   }
 
   @override
@@ -369,12 +365,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String modelDoesNotSupportImages(Object modelId) {
-    return 'Model $modelId does not support images. You can attach a photo, but sending will not work.';
+    return 'Model does not support images';
   }
 
   @override
   String chatTitleUpdated(Object title) {
-    return 'Chat renamed to: $title';
+    return 'Chat title updated';
   }
 
   @override
@@ -408,7 +404,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get share => 'Share';
 
   @override
-  String get copyMessage => 'Copy Message';
+  String get copyMessage => 'Copy message';
 
   @override
   String get delete => 'Delete';
@@ -420,7 +416,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get regenerate => 'Regenerate';
 
   @override
-  String get continueResponse => 'Continue Response';
+  String get continueResponse => 'Continue response';
 
   @override
   String get like => 'Like';
@@ -441,7 +437,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorMessage => 'Error message';
 
   @override
-  String get welcomeMessage => 'Welcome! How can I help you today?';
+  String get welcomeMessage => 'Welcome to ChatORAI';
 
   @override
   String get welcomeQuestion1 => 'Explain quantum computing in simple terms';
@@ -463,11 +459,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Give me 5 creative ideas for a weekend project';
 
   @override
-  String get welcomeQuestion6 =>
-      'What are some good books for personal development?';
+  String get welcomeQuestion6 => 'What are some good books on personal growth?';
 
   @override
-  String get welcomeQuestion7 => 'Help me brainstorm names for my new startup';
+  String get welcomeQuestion7 => 'Help me come up with names for my startup';
 
   @override
   String get welcomeQuestion8 => 'Create a meal plan for a healthy week';
@@ -478,15 +473,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get welcomeQuestion10 =>
-      'Explain the difference between async and sync programming';
+      'Explain the difference between asynchronous and synchronous programming';
 
   @override
   String get welcomeQuestion11 =>
-      'How do I optimize my code for better performance?';
+      'How to optimize code for better performance?';
 
   @override
-  String get welcomeQuestion12 =>
-      'What are the most useful programming design patterns?';
+  String get welcomeQuestion12 => 'What are the most useful design patterns?';
 
   @override
   String get welcomeQuestion13 => 'Teach me the basics of machine learning';
@@ -496,7 +490,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'What are the key concepts of cloud computing?';
 
   @override
-  String get welcomeQuestion15 => 'Explain blockchain technology to a beginner';
+  String get welcomeQuestion15 =>
+      'Explain blockchain technology for a beginner';
 
   @override
   String get welcomeQuestion16 =>
@@ -506,23 +501,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion17 => 'What are the best productivity techniques?';
 
   @override
-  String get welcomeQuestion18 =>
-      'How can I improve my focus and concentration?';
+  String get welcomeQuestion18 => 'How to improve concentration and focus?';
 
   @override
   String get welcomeQuestion19 =>
-      'Give me a daily routine for maximum productivity';
+      'Give me a daily schedule for maximum productivity';
 
   @override
   String get welcomeQuestion20 => 'What are some good habits for success?';
 
   @override
-  String get welcomeQuestion21 =>
-      'How to prepare for a software engineering interview?';
+  String get welcomeQuestion21 => 'How to prepare for an IT interview?';
 
   @override
   String get welcomeQuestion22 =>
-      'What skills are most valuable in tech industry?';
+      'What skills are needed in the tech industry?';
 
   @override
   String get welcomeQuestion23 => 'How to negotiate a salary increase?';
@@ -533,7 +526,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get welcomeQuestion25 =>
-      'What are the latest breakthroughs in space exploration?';
+      'What are the latest breakthroughs in space research?';
 
   @override
   String get welcomeQuestion26 => 'How is AI changing healthcare?';
@@ -550,23 +543,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'What are the most important philosophical questions?';
 
   @override
-  String get welcomeQuestion30 =>
-      'How can I think more critically about problems?';
+  String get welcomeQuestion30 => 'How to learn to think more critically?';
 
   @override
   String get welcomeQuestion31 => 'What are the best ways to learn new skills?';
 
   @override
   String get welcomeQuestion32 =>
-      'How do I stay motivated when learning something difficult?';
+      'How to stay motivated when learning complex material?';
 
   @override
   String get welcomeQuestion33 =>
-      'What are the best programming languages to learn in 2025?';
+      'Which programming languages are best to learn in 2025?';
 
   @override
   String get welcomeQuestion34 =>
-      'How to build a strong portfolio for tech jobs?';
+      'How to create a strong portfolio for IT jobs?';
 
   @override
   String get welcomeQuestion35 => 'What are the top AI tools for productivity?';
@@ -586,38 +578,40 @@ class AppLocalizationsEn extends AppLocalizations {
       'What are microservices and when to use them?';
 
   @override
-  String get welcomeQuestion40 => 'Explain REST API vs GraphQL';
+  String get welcomeQuestion40 =>
+      'Explain the difference between REST API and GraphQL';
 
   @override
-  String get welcomeQuestion41 => 'What are the best cloud platforms to learn?';
+  String get welcomeQuestion41 => 'Which cloud platforms are best to learn?';
 
   @override
   String get welcomeQuestion42 => 'How to prepare for technical interviews?';
 
   @override
-  String get welcomeQuestion43 => 'What are soft skills every developer needs?';
+  String get welcomeQuestion43 => 'What soft skills does every developer need?';
 
   @override
-  String get welcomeQuestion44 => 'How to negotiate salary as a developer?';
+  String get welcomeQuestion44 => 'How to negotiate a developer\'s salary?';
 
   @override
-  String get welcomeQuestion45 => 'What are the best remote work tools?';
+  String get welcomeQuestion45 => 'What are the best tools for remote work?';
 
   @override
-  String get welcomeQuestion46 => 'How to stay productive working from home?';
+  String get welcomeQuestion46 =>
+      'How to stay productive while working remotely?';
 
   @override
   String get welcomeQuestion47 =>
       'What are the best project management methodologies?';
 
   @override
-  String get welcomeQuestion48 => 'How to handle difficult coworkers?';
+  String get welcomeQuestion48 => 'How to work with difficult colleagues?';
 
   @override
-  String get welcomeQuestion49 => 'What are the best books for leadership?';
+  String get welcomeQuestion49 => 'What are the best books on leadership?';
 
   @override
-  String get welcomeQuestion50 => 'How to start a successful tech startup?';
+  String get welcomeQuestion50 => 'How to launch a successful tech startup?';
 
   @override
   String get welcomeQuestion51 =>
@@ -627,28 +621,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion52 => 'How does blockchain technology work?';
 
   @override
-  String get welcomeQuestion53 => 'What are NFTs and should I care?';
+  String get welcomeQuestion53 =>
+      'What are NFTs and are they worth paying attention to?';
 
   @override
-  String get welcomeQuestion54 => 'Explain the metaverse concept';
+  String get welcomeQuestion54 => 'Explain the concept of the metaverse';
 
   @override
-  String get welcomeQuestion55 => 'What are the best AI models for coding?';
+  String get welcomeQuestion55 =>
+      'What are the best AI models for programming?';
 
   @override
   String get welcomeQuestion56 => 'How to use ChatGPT effectively?';
 
   @override
-  String get welcomeQuestion57 => 'What are the ethics of AI?';
+  String get welcomeQuestion57 =>
+      'What are the ethical aspects of AI to consider?';
 
   @override
-  String get welcomeQuestion58 => 'How will AI change jobs in the future?';
+  String get welcomeQuestion58 => 'How will AI change work in the future?';
 
   @override
   String get welcomeQuestion59 => 'What are the best cybersecurity practices?';
 
   @override
-  String get welcomeQuestion60 => 'How to protect my privacy online?';
+  String get welcomeQuestion60 => 'How to protect your privacy online?';
 
   @override
   String get welcomeQuestion61 => 'What are the best data science tools?';
@@ -657,16 +654,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion62 => 'How to visualize data effectively?';
 
   @override
-  String get welcomeQuestion63 => 'What are the best mobile app frameworks?';
+  String get welcomeQuestion63 =>
+      'What are the best frameworks for mobile apps?';
 
   @override
-  String get welcomeQuestion64 => 'How to build cross-platform apps?';
+  String get welcomeQuestion64 => 'How to build cross-platform applications?';
 
   @override
   String get welcomeQuestion65 => 'What are the best game development engines?';
 
   @override
-  String get welcomeQuestion66 => 'How to get started with 3D modeling?';
+  String get welcomeQuestion66 => 'How to start working with 3D modeling?';
 
   @override
   String get welcomeQuestion67 => 'What are the best video editing tools?';
@@ -684,7 +682,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion71 => 'What are the best networking tips?';
 
   @override
-  String get welcomeQuestion72 => 'How to give a great presentation?';
+  String get welcomeQuestion72 => 'How to make a great presentation?';
 
   @override
   String get welcomeQuestion73 =>
@@ -700,14 +698,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion76 => 'How to improve sleep quality?';
 
   @override
-  String get welcomeQuestion77 => 'What are the best exercise routines?';
+  String get welcomeQuestion77 => 'What are the best workouts?';
 
   @override
-  String get welcomeQuestion78 => 'How to eat healthy on a budget?';
+  String get welcomeQuestion78 => 'How to eat healthy on a limited budget?';
 
   @override
   String get welcomeQuestion79 =>
-      'What are the best travel destinations for tech workers?';
+      'What are the best travel destinations for tech specialists?';
 
   @override
   String get welcomeQuestion80 => 'How to learn a new language quickly?';
@@ -724,7 +722,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'What are the top skills for software architects?';
 
   @override
-  String get welcomeQuestion84 => 'How to design scalable database systems?';
+  String get welcomeQuestion84 => 'How to design scalable databases?';
 
   @override
   String get welcomeQuestion85 => 'What are the best DevOps tools to learn?';
@@ -733,14 +731,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion86 => 'How to implement CI/CD pipelines?';
 
   @override
-  String get welcomeQuestion87 => 'What are container orchestration platforms?';
+  String get welcomeQuestion87 => 'What is container orchestration?';
 
   @override
-  String get welcomeQuestion88 => 'Explain serverless computing benefits';
+  String get welcomeQuestion88 =>
+      'Explain the benefits of serverless computing';
 
   @override
-  String get welcomeQuestion89 =>
-      'What are the best practices for API security?';
+  String get welcomeQuestion89 => 'What are the best API security practices?';
 
   @override
   String get welcomeQuestion90 => 'How to optimize mobile app performance?';
@@ -749,38 +747,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion91 => 'What are progressive web apps?';
 
   @override
-  String get welcomeQuestion92 => 'How to build accessible web applications?';
+  String get welcomeQuestion92 => 'How to create accessible web applications?';
 
   @override
   String get welcomeQuestion93 => 'What are the best UI/UX design principles?';
 
   @override
-  String get welcomeQuestion94 => 'How to conduct user research effectively?';
+  String get welcomeQuestion94 => 'How to conduct effective user research?';
 
   @override
   String get welcomeQuestion95 => 'What are the best A/B testing strategies?';
 
   @override
-  String get welcomeQuestion96 => 'How to analyze user behavior data?';
+  String get welcomeQuestion96 => 'How to analyze user behavior?';
 
   @override
   String get welcomeQuestion97 =>
       'What are the best growth hacking techniques?';
 
   @override
-  String get welcomeQuestion98 =>
-      'How to build a community around your product?';
+  String get welcomeQuestion98 => 'How to build a community around a product?';
 
   @override
   String get welcomeQuestion99 => 'What are the best customer support tools?';
 
   @override
   String get welcomeQuestion100 =>
-      'How to handle customer feedback effectively?';
+      'How to effectively handle customer feedback?';
 
   @override
   String get welcomeQuestion101 =>
-      'What are the differences between React and Vue?';
+      'What is the difference between React and Vue?';
 
   @override
   String get welcomeQuestion102 =>
@@ -795,7 +792,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'How to implement authentication in web apps?';
 
   @override
-  String get welcomeQuestion105 => 'What are GraphQL advantages over REST?';
+  String get welcomeQuestion105 =>
+      'What are the advantages of GraphQL over REST?';
 
   @override
   String get welcomeQuestion106 =>
@@ -810,7 +808,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get welcomeQuestion109 =>
-      'What are the best testing frameworks for JavaScript?';
+      'What are the best JavaScript testing frameworks?';
 
   @override
   String get welcomeQuestion110 =>
@@ -828,10 +826,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'What are the best practices for Git workflow?';
 
   @override
-  String get welcomeQuestion114 => 'How to handle merge conflicts effectively?';
+  String get welcomeQuestion114 =>
+      'How to effectively resolve merge conflicts?';
 
   @override
-  String get welcomeQuestion115 => 'What are containerization best practices?';
+  String get welcomeQuestion115 =>
+      'What are the best practices for containerization?';
 
   @override
   String get welcomeQuestion116 => 'How to secure Docker containers?';
@@ -843,62 +843,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion118 => 'How to monitor application performance?';
 
   @override
-  String get welcomeQuestion119 => 'What are the best logging practices?';
+  String get welcomeQuestion119 => 'What are the best practices for logging?';
 
   @override
   String get welcomeQuestion120 =>
       'How to implement error handling in distributed systems?';
 
   @override
-  String get continueConversation => 'Continue the conversation';
+  String get continueConversation => 'Continue conversation';
 
   @override
-  String get generatingSuggestions => 'Generating suggestions...';
+  String get generatingSuggestions => 'Generating suggestions';
 
   @override
-  String get searchChats => 'Search chats...';
+  String get searchChats => 'Search chats';
 
   @override
   String noChatsFound(Object query) {
-    return 'No chats found for \"$query\"';
+    return 'No chats found';
   }
 
   @override
   String get tryDifferentSearchTerm => 'Try a different search term';
 
   @override
-  String get appShortName => 'ChatORAI';
+  String get appShortName => 'Chatorai';
 
   @override
-  String get typeYourMessage => 'Type your message...';
+  String get typeYourMessage => 'Type your message';
 
   @override
-  String get addImage => 'Image';
+  String get addImage => 'Add image';
 
   @override
-  String get addCamera => 'Camera';
+  String get addCamera => 'Take photo';
 
   @override
-  String get addFile => 'File';
+  String get addFile => 'Add file';
 
   @override
   String get selectLanguage => 'Select language';
 
   @override
-  String get searchFavorites => 'Search favorites...';
+  String get searchFavorites => 'Search favorites';
 
   @override
-  String get showAllModels => 'Show All Models';
+  String get showAllModels => 'Show all models';
 
   @override
-  String get showFavoritesOnly => 'Show Favorites Only';
+  String get showFavoritesOnly => 'Show favorites only';
 
   @override
   String get noFavoriteModels => 'No favorite models';
 
   @override
-  String get tapHeartToAddFavorites =>
-      'Tap the heart icon on models to add them to your favorites';
+  String get tapHeartToAddFavorites => 'Tap heart to add favorites';
 
   @override
   String get addToFavorites => 'Add to favorites';
@@ -907,277 +906,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeFromFavorites => 'Remove from favorites';
 
   @override
-  String get startListening => 'Start voice input';
+  String get loadingSkills => 'Loading skills';
 
   @override
-  String get stopListening => 'Stop voice input';
-
-  @override
-  String get listening => 'Listening...';
-
-  @override
-  String get micUnavailable => 'Microphone unavailable';
-
-  @override
-  String get sendMessage => 'Send message';
-
-  @override
-  String get modelSettings => 'Model Settings';
-
-  @override
-  String get temperature => 'Temperature';
-
-  @override
-  String get temperatureDescription =>
-      'Controls randomness: lower = more focused, higher = more creative';
-
-  @override
-  String get maxTokens => 'Max Tokens';
-
-  @override
-  String get maxTokensDescription => 'Maximum length of generated response';
-
-  @override
-  String get systemPrompt => 'System Prompt';
-
-  @override
-  String get systemPromptDescription => 'Instructions for the AI assistant';
-
-  @override
-  String get resetToDefaults => 'Reset to Defaults';
-
-  @override
-  String get applySettings => 'Apply Settings';
-
-  @override
-  String get modelParameters => 'Model Parameters';
-
-  @override
-  String get activeModel => 'Active Model';
-
-  @override
-  String get noModelSelected => 'No model selected';
-
-  @override
-  String get settingsApplied => 'Settings applied successfully';
-
-  @override
-  String apiLimitExceeded(Object limit) {
-    return 'API limit exceeded: $limit';
-  }
-
-  @override
-  String valueExceedsApiLimit(Object limit) {
-    return 'Value exceeds API limit ($limit). Maximum value will be used.';
-  }
-
-  @override
-  String get micStartFailed => 'Failed to start microphone';
-
-  @override
-  String get micStopFailed => 'Failed to stop microphone';
-
-  @override
-  String get speechErrorNoMatch =>
-      'Could not recognize speech. Please try again.';
-
-  @override
-  String get speechErrorTimeout => 'Listening timeout. Nothing heard.';
-
-  @override
-  String get speechErrorNetwork =>
-      'Network error. Check your internet connection.';
-
-  @override
-  String get speechErrorNotAuthorized =>
-      'No microphone access. Check permissions in settings.';
-
-  @override
-  String get speechErrorServer =>
-      'Recognition server error. Please try again later.';
-
-  @override
-  String get speechErrorTooManyRequests =>
-      'Too many requests. Please try again later.';
-
-  @override
-  String get speechErrorUnknown => 'Speech recognition error';
-
-  @override
-  String get speechPreparing => 'Preparing...';
-
-  @override
-  String get speechListening => 'Speak now...';
-
-  @override
-  String get speechProcessing => 'Processing...';
-
-  @override
-  String get micNoSpeechDetected => 'I didn\'t hear you. Please try again.';
-
-  @override
-  String get micAutoRestart => 'Retrying...';
-
-  @override
-  String get speechPhase2 => 'I can\'t hear you...speak louder';
-
-  @override
-  String speechStartError(Object error) {
-    return 'Start error: $error';
-  }
-
-  @override
-  String get errorProcessingRequest =>
-      'Sorry, I encountered an error while processing your request. Please try again.';
-
-  @override
-  String rateLimitRetryMessage(Object seconds) {
-    return 'Rate limit exceeded. Retrying in $seconds seconds...';
-  }
-
-  @override
-  String get messageNotFound => 'Message not found';
-
-  @override
-  String get errorEditingMessage => 'Error editing message';
-
-  @override
-  String get errorEditAndSendMessage => 'Error editing and sending message';
-
-  @override
-  String generatingSuggestionsFailed(Object error) {
-    return 'Failed to generate suggestions: $error';
-  }
-
-  @override
-  String get selectModelTooltip => 'Select Model';
-
-  @override
-  String get toggleNavigatorTooltip => 'Toggle Navigator';
-
-  @override
-  String get defaultSuggestion1 => 'Tell me more about this topic';
-
-  @override
-  String get defaultSuggestion2 => 'Can you provide examples?';
-
-  @override
-  String get defaultSuggestion3 => 'What are the alternatives?';
-
-  @override
-  String get defaultSuggestion4 => 'How does this apply in practice?';
-
-  @override
-  String get systemPromptSuggestion =>
-      'You are a helpful assistant. Continue the conversation by providing 3 specific and logical continuations of the last message. Respond in the same language as the user.';
-
-  @override
-  String get userPromptSuggestion =>
-      'Provide 3 specific and logical continuations for this message. Answer only with the list, no additional text.';
-
-  @override
-  String get refreshQuestions => 'Refresh questions';
-
-  @override
-  String get noInternetConnection => 'No internet connection';
-
-  @override
-  String modelDoesNotSupportFiles(Object modelId) {
-    return 'Model $modelId does not support files. You can attach a file, but sending will not work.';
-  }
-
-  @override
-  String get fileAttachedButNotSupported =>
-      'File attached but not supported by the current model';
-
-  @override
-  String get copyCodeTooltip => 'Copy code';
-
-  @override
-  String get expandTooltip => 'Expand';
-
-  @override
-  String get collapseTooltip => 'Collapse';
-
-  @override
-  String get welcomeGreeting1 =>
-      'Ask, explore, create — let\'s figure it out together.';
-
-  @override
-  String get welcomeGreeting2 =>
-      'Ask a question, describe a task, or just start a conversation.';
-
-  @override
-  String get welcomeGreeting3 => 'Ask a question or start an exploration.';
-
-  @override
-  String get welcomeGreeting4 =>
-      'Ask any question, share an idea, or ask for help — I\'m here to help.';
-
-  @override
-  String get welcomeGreeting5 => 'Got an idea? Let\'s figure it out.';
-
-  @override
-  String get welcomeGreeting6 => 'Set a direction for the conversation.';
-
-  @override
-  String get welcomeGreeting7 => 'What are we exploring today?';
-
-  @override
-  String get welcomeGreeting8 => 'Write a thought. Let\'s analyze it together.';
-
-  @override
-  String get welcomeGreeting9 => 'Curiosity is welcome.';
-
-  @override
-  String get welcomeGreeting10 => 'Your question is my next answer.';
-
-  @override
-  String get welcomeGreeting11 => 'Let\'s turn an idea into an answer.';
-
-  @override
-  String get welcomeGreeting12 => 'Enter a question. The rest is my job.';
-
-  @override
-  String get versionLabel => 'Version:';
-
-  @override
-  String get permissionDialogPatterns => 'Requesting access to:';
-
-  @override
-  String get permissionOnce => 'Once';
-
-  @override
-  String get permissionAlways => 'Always allow';
-
-  @override
-  String get permissionReject => 'Reject';
-
-  @override
-  String get permissionAlwaysConfirm => 'Always allow';
-
-  @override
-  String get providers => 'Providers';
-
-  @override
-  String get manageProviders => 'Manage AI providers';
-
-  @override
-  String get openaiCompatibleApi => 'AI Providers';
-
-  @override
-  String get openaiCompatibleApiDescription =>
-      'Configure AI providers and manage their API keys and models';
-
-  @override
-  String get addProvider => 'Add Provider';
-
-  @override
-  String get loadingSkills => 'Loading skills...';
-
-  @override
-  String get noSkillsInstalled =>
-      'No skills installed. Add in .chatorai/skills/';
+  String get noSkillsInstalled => 'No skills installed';
 
   @override
   String get noSkillsMatchSearch => 'No skills match your search';
@@ -1187,6 +919,249 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String skillExecuted(Object name) {
-    return 'Skill executed: $name';
+    return 'Skill executed';
+  }
+
+  @override
+  String get configuration => 'Configuration';
+
+  @override
+  String get stats => 'Stats';
+
+  @override
+  String get usageStatistics => 'Usage Statistics';
+
+  @override
+  String get totalSessions => 'Sessions';
+
+  @override
+  String get totalMessages => 'Messages';
+
+  @override
+  String get days => 'Days';
+
+  @override
+  String get totalTokens => 'Total Tokens';
+
+  @override
+  String get totalCost => 'Total Cost';
+
+  @override
+  String get avgCostPerDay => 'Avg Cost/Day';
+
+  @override
+  String get avgTokensPerSession => 'Avg Tokens/Session';
+
+  @override
+  String get medianTokensPerSession => 'Median Tokens/Session';
+
+  @override
+  String get cacheRead => 'Cache Read';
+
+  @override
+  String get cacheWrite => 'Cache Write';
+
+  @override
+  String get toolUsage => 'Tool Usage';
+
+  @override
+  String get modelUsage => 'Model Usage';
+
+  @override
+  String get noStatsAvailable => 'No statistics available';
+
+  @override
+  String get reasoningTokens => 'Reasoning';
+
+  @override
+  String get addProvider => 'Add Provider';
+
+  @override
+  String get applySettings => 'Apply Settings';
+
+  @override
+  String get copyCodeTooltip => 'Copy code';
+
+  @override
+  String get defaultSuggestion1 => 'What can you do?';
+
+  @override
+  String get defaultSuggestion2 => 'Help me write code';
+
+  @override
+  String get defaultSuggestion3 => 'Explain a concept';
+
+  @override
+  String get deleteChat => 'Delete chat';
+
+  @override
+  String get manageProviders => 'Manage Providers';
+
+  @override
+  String get micAutoRestart => 'Auto-restarting microphone...';
+
+  @override
+  String get micNoSpeechDetected => 'No speech detected';
+
+  @override
+  String get micStartFailed => 'Failed to start microphone';
+
+  @override
+  String get micUnavailable => 'Microphone not available';
+
+  @override
+  String get modelParameters => 'Model Parameters';
+
+  @override
+  String get modelSettings => 'Model Settings';
+
+  @override
+  String get noInternetConnection => 'No internet connection';
+
+  @override
+  String get noModelSelected => 'No model selected';
+
+  @override
+  String get openaiCompatibleApi => 'OpenAI-Compatible API';
+
+  @override
+  String get openaiCompatibleApiDescription =>
+      'Connect to any OpenAI-compatible API endpoint';
+
+  @override
+  String get permissionAlways => 'Always';
+
+  @override
+  String get permissionAlwaysConfirm => 'Always allow this action?';
+
+  @override
+  String get permissionDialogPatterns => 'Permission patterns';
+
+  @override
+  String get permissionOnce => 'Once';
+
+  @override
+  String get permissionReject => 'Reject';
+
+  @override
+  String get providers => 'Providers';
+
+  @override
+  String get refreshQuestions => 'Refresh questions';
+
+  @override
+  String get resetToDefaults => 'Reset to Defaults';
+
+  @override
+  String get settingsApplied => 'Settings applied';
+
+  @override
+  String get speechErrorNetwork => 'Network error';
+
+  @override
+  String get speechErrorNoMatch => 'No speech match';
+
+  @override
+  String get speechErrorNotAuthorized => 'Not authorized';
+
+  @override
+  String get speechErrorServer => 'Server error';
+
+  @override
+  String get speechErrorTimeout => 'Timeout';
+
+  @override
+  String get speechErrorTooManyRequests => 'Too many requests';
+
+  @override
+  String get speechErrorUnknown => 'Unknown error';
+
+  @override
+  String get speechListening => 'Listening...';
+
+  @override
+  String get speechPhase2 => 'Processing speech...';
+
+  @override
+  String get speechPreparing => 'Preparing...';
+
+  @override
+  String get speechProcessing => 'Processing...';
+
+  @override
+  String speechStartError(Object error) {
+    return 'Failed to start speech recognition';
+  }
+
+  @override
+  String get systemPrompt => 'System Prompt';
+
+  @override
+  String get systemPromptDescription =>
+      'Instructions that define how the AI behaves';
+
+  @override
+  String get systemPromptSuggestion => 'You are a helpful assistant.';
+
+  @override
+  String get temperature => 'Temperature';
+
+  @override
+  String get temperatureDescription => 'Higher values make output more random';
+
+  @override
+  String get toggleNavigatorTooltip => 'Toggle navigation';
+
+  @override
+  String get userPromptSuggestion => 'How can I help you today?';
+
+  @override
+  String get versionLabel => 'Version';
+
+  @override
+  String get welcomeGreeting1 => 'Welcome!';
+
+  @override
+  String get welcomeGreeting2 => 'How can I help you?';
+
+  @override
+  String get welcomeGreeting3 => 'Ask me anything';
+
+  @override
+  String get welcomeGreeting4 =>
+      'I can help you with coding, writing, and analysis';
+
+  @override
+  String get welcomeGreeting5 => 'Let\'s get started';
+
+  @override
+  String get welcomeGreeting6 => 'What would you like to work on?';
+
+  @override
+  String get welcomeGreeting7 => 'Ready to help';
+
+  @override
+  String get welcomeGreeting8 => 'Your AI companion is here';
+
+  @override
+  String get welcomeGreeting9 => 'Start a conversation';
+
+  @override
+  String get welcomeGreeting10 => 'Discover what I can do';
+
+  @override
+  String get welcomeGreeting11 => 'Need help? Just ask';
+
+  @override
+  String get welcomeGreeting12 => 'I\'m here to help';
+
+  @override
+  String modelDoesNotSupportFiles(Object modelId) {
+    return 'This model does not support file attachments';
+  }
+
+  @override
+  String generatingSuggestionsFailed(Object error) {
+    return 'Failed to generate suggestions';
   }
 }

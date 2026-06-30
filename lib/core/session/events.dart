@@ -250,6 +250,8 @@ class StepEnded extends SessionEvent {
   final int tokensInput;
   final int tokensOutput;
   final int tokensReasoning;
+  final int tokensCacheRead;
+  final int tokensCacheWrite;
 
   const StepEnded({
     required super.sessionId,
@@ -257,6 +259,8 @@ class StepEnded extends SessionEvent {
     required this.tokensInput,
     required this.tokensOutput,
     required this.tokensReasoning,
+    this.tokensCacheRead = 0,
+    this.tokensCacheWrite = 0,
     required super.timestamp,
     super.sequence,
   });

@@ -24,7 +24,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get enterApiKey => 'Введите ваш OpenRouter API ключ';
 
   @override
-  String get baseUrl => 'Base URL';
+  String get baseUrl => 'Базовый URL';
 
   @override
   String get validateApiKey => 'Проверить API ключ';
@@ -168,9 +168,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get renameChat => 'Переименовать чат';
 
   @override
-  String get deleteChat => 'Удалить чат';
-
-  @override
   String get failedToShowMenu => 'Не удалось показать меню';
 
   @override
@@ -205,8 +202,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get expand => 'Развернуть';
 
   @override
-  String chatRenamedTo(Object title) {
-    return 'Чат переименован в: $title';
+  String chatRenamedTo(Object name) {
+    return 'Чат переименован в: $name';
   }
 
   @override
@@ -913,272 +910,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get removeFromFavorites => 'Удалить из избранного';
 
   @override
-  String get startListening => 'Start voice input';
-
-  @override
-  String get stopListening => 'Stop voice input';
-
-  @override
-  String get listening => 'Listening...';
-
-  @override
-  String get micUnavailable => 'Microphone unavailable';
-
-  @override
-  String get sendMessage => 'Send message';
-
-  @override
-  String get modelSettings => 'Model Settings';
-
-  @override
-  String get temperature => 'Temperature';
-
-  @override
-  String get temperatureDescription =>
-      'Controls randomness: lower = more focused, higher = more creative';
-
-  @override
-  String get maxTokens => 'Max Tokens';
-
-  @override
-  String get maxTokensDescription => 'Maximum length of generated response';
-
-  @override
-  String get systemPrompt => 'System Prompt';
-
-  @override
-  String get systemPromptDescription => 'Instructions for the AI assistant';
-
-  @override
-  String get resetToDefaults => 'Reset to Defaults';
-
-  @override
-  String get applySettings => 'Apply Settings';
-
-  @override
-  String get modelParameters => 'Model Parameters';
-
-  @override
-  String get activeModel => 'Active Model';
-
-  @override
-  String get noModelSelected => 'No model selected';
-
-  @override
-  String get settingsApplied => 'Settings applied successfully';
-
-  @override
-  String apiLimitExceeded(Object limit) {
-    return 'API limit exceeded: $limit';
-  }
-
-  @override
-  String valueExceedsApiLimit(Object limit) {
-    return 'Value exceeds API limit ($limit). Maximum value will be used.';
-  }
-
-  @override
-  String get micStartFailed => 'Failed to start microphone';
-
-  @override
-  String get micStopFailed => 'Failed to stop microphone';
-
-  @override
-  String get speechErrorNoMatch =>
-      'Could not recognize speech. Please try again.';
-
-  @override
-  String get speechErrorTimeout => 'Listening timeout. Nothing heard.';
-
-  @override
-  String get speechErrorNetwork =>
-      'Network error. Check your internet connection.';
-
-  @override
-  String get speechErrorNotAuthorized =>
-      'No microphone access. Check permissions in settings.';
-
-  @override
-  String get speechErrorServer =>
-      'Recognition server error. Please try again later.';
-
-  @override
-  String get speechErrorTooManyRequests =>
-      'Too many requests. Please try again later.';
-
-  @override
-  String get speechErrorUnknown => 'Speech recognition error';
-
-  @override
-  String get speechPreparing => 'Preparing...';
-
-  @override
-  String get speechListening => 'Speak now...';
-
-  @override
-  String get speechProcessing => 'Processing...';
-
-  @override
-  String get micNoSpeechDetected => 'I didn\'t hear you. Please try again.';
-
-  @override
-  String get micAutoRestart => 'Retrying...';
-
-  @override
-  String get speechPhase2 => 'Я вас не слышу...говорите громче';
-
-  @override
-  String speechStartError(Object error) {
-    return 'Ошибка запуска: $error';
-  }
-
-  @override
-  String get errorProcessingRequest =>
-      'Sorry, I encountered an error while processing your request. Please try again.';
-
-  @override
-  String rateLimitRetryMessage(Object seconds) {
-    return 'Rate limit exceeded. Retrying in $seconds seconds...';
-  }
-
-  @override
-  String get messageNotFound => 'Message not found';
-
-  @override
-  String get errorEditingMessage => 'Error editing message';
-
-  @override
-  String get errorEditAndSendMessage => 'Error editing and sending message';
-
-  @override
-  String generatingSuggestionsFailed(Object error) {
-    return 'Failed to generate suggestions: $error';
-  }
-
-  @override
-  String get selectModelTooltip => 'Select Model';
-
-  @override
-  String get toggleNavigatorTooltip => 'Toggle Navigator';
-
-  @override
-  String get defaultSuggestion1 => 'Tell me more about this topic';
-
-  @override
-  String get defaultSuggestion2 => 'Can you provide examples?';
-
-  @override
-  String get defaultSuggestion3 => 'What are the alternatives?';
-
-  @override
-  String get defaultSuggestion4 => 'How does this apply in practice?';
-
-  @override
-  String get systemPromptSuggestion =>
-      'You are a helpful assistant. Continue the conversation by providing 3 specific and logical continuations of the last message. Respond in the same language as the user.';
-
-  @override
-  String get userPromptSuggestion =>
-      'Provide 3 specific and logical continuations for this message. Answer only with the list, no additional text.';
-
-  @override
-  String get refreshQuestions => 'Refresh questions';
-
-  @override
-  String get noInternetConnection => 'No internet connection';
-
-  @override
-  String modelDoesNotSupportFiles(Object modelId) {
-    return 'Model $modelId does not support files. You can attach a file, but sending will not work.';
-  }
-
-  @override
-  String get fileAttachedButNotSupported =>
-      'File attached but not supported by the current model';
-
-  @override
-  String get copyCodeTooltip => 'Copy code';
-
-  @override
-  String get expandTooltip => 'Expand';
-
-  @override
-  String get collapseTooltip => 'Collapse';
-
-  @override
-  String get welcomeGreeting1 =>
-      'Ask, explore, create — let\'s figure it out together.';
-
-  @override
-  String get welcomeGreeting2 =>
-      'Ask a question, describe a task, or just start a conversation.';
-
-  @override
-  String get welcomeGreeting3 => 'Ask a question or start an exploration.';
-
-  @override
-  String get welcomeGreeting4 =>
-      'Ask any question, share an idea, or ask for help — I\'m here to help.';
-
-  @override
-  String get welcomeGreeting5 => 'Got an idea? Let\'s figure it out.';
-
-  @override
-  String get welcomeGreeting6 => 'Set a direction for the conversation.';
-
-  @override
-  String get welcomeGreeting7 => 'What are we exploring today?';
-
-  @override
-  String get welcomeGreeting8 => 'Write a thought. Let\'s analyze it together.';
-
-  @override
-  String get welcomeGreeting9 => 'Curiosity is welcome.';
-
-  @override
-  String get welcomeGreeting10 => 'Your question is my next answer.';
-
-  @override
-  String get welcomeGreeting11 => 'Let\'s turn an idea into an answer.';
-
-  @override
-  String get welcomeGreeting12 => 'Enter a question. The rest is my job.';
-
-  @override
-  String get versionLabel => 'Version:';
-
-  @override
-  String get permissionDialogPatterns => 'Запрос доступа к:';
-
-  @override
-  String get permissionOnce => 'Один раз';
-
-  @override
-  String get permissionAlways => 'Всегда разрешать';
-
-  @override
-  String get permissionReject => 'Отклонить';
-
-  @override
-  String get permissionAlwaysConfirm => 'Always allow';
-
-  @override
-  String get providers => 'Провайдеры';
-
-  @override
-  String get manageProviders => 'Управление AI провайдерами';
-
-  @override
-  String get openaiCompatibleApi => 'AI Провайдеры';
-
-  @override
-  String get openaiCompatibleApiDescription =>
-      'Настройте AI провайдеров и управляйте их API ключами и моделями';
-
-  @override
-  String get addProvider => 'Добавить провайдера';
-
-  @override
   String get loadingSkills => 'Загрузка навыков...';
 
   @override
@@ -1194,5 +925,248 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String skillExecuted(Object name) {
     return 'Навык выполнен: $name';
+  }
+
+  @override
+  String get configuration => 'Конфигурация';
+
+  @override
+  String get stats => 'Статистика';
+
+  @override
+  String get usageStatistics => 'Статистика использования';
+
+  @override
+  String get totalSessions => 'Сеансы';
+
+  @override
+  String get totalMessages => 'Сообщения';
+
+  @override
+  String get days => 'Дни';
+
+  @override
+  String get totalTokens => 'Всего токенов';
+
+  @override
+  String get totalCost => 'Общая стоимость';
+
+  @override
+  String get avgCostPerDay => 'Средняя стоимость/день';
+
+  @override
+  String get avgTokensPerSession => 'Среднее токенов/сеанс';
+
+  @override
+  String get medianTokensPerSession => 'Медиана токенов/сеанс';
+
+  @override
+  String get cacheRead => 'Чтение кэша';
+
+  @override
+  String get cacheWrite => 'Запись кэша';
+
+  @override
+  String get toolUsage => 'Использование инструментов';
+
+  @override
+  String get modelUsage => 'Использование моделей';
+
+  @override
+  String get noStatsAvailable => 'Статистика недоступна';
+
+  @override
+  String get reasoningTokens => 'Рассуждения';
+
+  @override
+  String get addProvider => 'Добавить провайдера';
+
+  @override
+  String get applySettings => 'Применить настройки';
+
+  @override
+  String get copyCodeTooltip => 'Копировать код';
+
+  @override
+  String get defaultSuggestion1 => 'Что ты умеешь?';
+
+  @override
+  String get defaultSuggestion2 => 'Помоги написать код';
+
+  @override
+  String get defaultSuggestion3 => 'Объясни концепцию';
+
+  @override
+  String get deleteChat => 'Удалить чат';
+
+  @override
+  String get manageProviders => 'Управление AI провайдерами';
+
+  @override
+  String get micAutoRestart => 'Автоперезапуск микрофона...';
+
+  @override
+  String get micNoSpeechDetected => 'Речь не обнаружена';
+
+  @override
+  String get micStartFailed => 'Не удалось запустить микрофон';
+
+  @override
+  String get micUnavailable => 'Микрофон недоступен';
+
+  @override
+  String get modelParameters => 'Параметры модели';
+
+  @override
+  String get modelSettings => 'Настройки модели';
+
+  @override
+  String get noInternetConnection => 'Нет подключения к интернету';
+
+  @override
+  String get noModelSelected => 'Модель не выбрана';
+
+  @override
+  String get openaiCompatibleApi => 'AI Провайдеры';
+
+  @override
+  String get openaiCompatibleApiDescription =>
+      'Настройте AI провайдеров и управляйте их API ключами и моделями';
+
+  @override
+  String get permissionAlways => 'Всегда разрешать';
+
+  @override
+  String get permissionAlwaysConfirm => 'Всегда разрешать';
+
+  @override
+  String get permissionDialogPatterns => 'Запрос доступа к:';
+
+  @override
+  String get permissionOnce => 'Один раз';
+
+  @override
+  String get permissionReject => 'Отклонить';
+
+  @override
+  String get providers => 'Провайдеры';
+
+  @override
+  String get refreshQuestions => 'Обновить вопросы';
+
+  @override
+  String get resetToDefaults => 'Сбросить к умолчанию';
+
+  @override
+  String get settingsApplied => 'Настройки применены';
+
+  @override
+  String get speechErrorNetwork => 'Ошибка сети';
+
+  @override
+  String get speechErrorNoMatch => 'Речь не распознана';
+
+  @override
+  String get speechErrorNotAuthorized => 'Не авторизован';
+
+  @override
+  String get speechErrorServer => 'Ошибка сервера';
+
+  @override
+  String get speechErrorTimeout => 'Время ожидания истекло';
+
+  @override
+  String get speechErrorTooManyRequests => 'Слишком много запросов';
+
+  @override
+  String get speechErrorUnknown => 'Неизвестная ошибка';
+
+  @override
+  String get speechListening => 'Слушаю...';
+
+  @override
+  String get speechPhase2 => 'Я вас не слышу...говорите громче';
+
+  @override
+  String get speechPreparing => 'Подготовка...';
+
+  @override
+  String get speechProcessing => 'Обработка...';
+
+  @override
+  String speechStartError(Object error) {
+    return 'Ошибка запуска: $error';
+  }
+
+  @override
+  String get systemPrompt => 'Системный промпт';
+
+  @override
+  String get systemPromptDescription => 'Инструкции, определяющие поведение ИИ';
+
+  @override
+  String get systemPromptSuggestion => 'Ты полезный ассистент.';
+
+  @override
+  String get temperature => 'Температура';
+
+  @override
+  String get temperatureDescription =>
+      'Более высокие значения делают вывод более случайным';
+
+  @override
+  String get toggleNavigatorTooltip => 'Переключить навигацию';
+
+  @override
+  String get userPromptSuggestion => 'Чем могу помочь сегодня?';
+
+  @override
+  String get versionLabel => 'Версия';
+
+  @override
+  String get welcomeGreeting1 => 'Добро пожаловать!';
+
+  @override
+  String get welcomeGreeting2 => 'Чем я могу помочь?';
+
+  @override
+  String get welcomeGreeting3 => 'Спросите меня о чем угодно';
+
+  @override
+  String get welcomeGreeting4 =>
+      'Я могу помочь вам с кодированием, написанием и анализом.';
+
+  @override
+  String get welcomeGreeting5 => 'Давайте начнем';
+
+  @override
+  String get welcomeGreeting6 => 'Над чем хотите поработать?';
+
+  @override
+  String get welcomeGreeting7 => 'Готов помочь';
+
+  @override
+  String get welcomeGreeting8 => 'Ваш AI-компаньон здесь';
+
+  @override
+  String get welcomeGreeting9 => 'Начните разговор';
+
+  @override
+  String get welcomeGreeting10 => 'Узнайте, что я умею';
+
+  @override
+  String get welcomeGreeting11 => 'Нужна помощь? Просто спросите';
+
+  @override
+  String get welcomeGreeting12 => 'Я здесь, чтобы помочь';
+
+  @override
+  String modelDoesNotSupportFiles(Object modelId) {
+    return 'Эта модель не поддерживает вложение файлов';
+  }
+
+  @override
+  String generatingSuggestionsFailed(Object error) {
+    return 'Не удалось сгенерировать предложения';
   }
 }

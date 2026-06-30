@@ -165,9 +165,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get renameChat => 'チャットを名前変更';
 
   @override
-  String get deleteChat => 'チャットを削除';
-
-  @override
   String get failedToShowMenu => 'メニューを表示できませんでした';
 
   @override
@@ -201,8 +198,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get expand => '展開';
 
   @override
-  String chatRenamedTo(Object title) {
-    return 'チャットは$titleに名前変更されました';
+  String chatRenamedTo(Object name) {
+    return 'チャットは$nameに名前変更されました';
   }
 
   @override
@@ -856,147 +853,81 @@ class AppLocalizationsJa extends AppLocalizations {
   String get removeFromFavorites => 'お気に入りから削除';
 
   @override
-  String get startListening => '音声入力を開始';
+  String get loadingSkills => 'Loading skills';
 
   @override
-  String get stopListening => '音声入力を停止';
+  String get noSkillsInstalled => 'No skills installed';
 
   @override
-  String get listening => '話してください...';
+  String get noSkillsMatchSearch => 'No skills match your search';
 
   @override
-  String get micUnavailable => 'マイクが利用できません';
+  String get allSkillsRequirePermission => 'All skills require permission';
 
   @override
-  String get sendMessage => 'メッセージを送信';
+  String skillExecuted(Object name) {
+    return 'Skill executed';
+  }
 
   @override
-  String get modelSettings => 'モデル設定';
+  String get configuration => 'Configuration';
 
   @override
-  String get temperature => '温度';
+  String get stats => 'Stats';
 
   @override
-  String get temperatureDescription => 'ランダム性を制御: 低=より集中、高=より創造的';
+  String get usageStatistics => 'Usage Statistics';
 
   @override
-  String get maxTokens => '最大トークン数';
+  String get totalSessions => 'Sessions';
 
   @override
-  String get maxTokensDescription => '生成される応答の最大長';
+  String get totalMessages => 'Messages';
 
   @override
-  String get systemPrompt => 'システムプロンプト';
+  String get days => 'Days';
 
   @override
-  String get systemPromptDescription => 'AIアシスタントへの指示';
+  String get totalTokens => 'Total Tokens';
 
   @override
-  String get resetToDefaults => 'デフォルトにリセット';
+  String get totalCost => 'Total Cost';
+
+  @override
+  String get avgCostPerDay => 'Avg Cost/Day';
+
+  @override
+  String get avgTokensPerSession => 'Avg Tokens/Session';
+
+  @override
+  String get medianTokensPerSession => 'Median Tokens/Session';
+
+  @override
+  String get cacheRead => 'Cache Read';
+
+  @override
+  String get cacheWrite => 'Cache Write';
+
+  @override
+  String get toolUsage => 'Tool Usage';
+
+  @override
+  String get modelUsage => 'Model Usage';
+
+  @override
+  String get noStatsAvailable => 'No statistics available';
+
+  @override
+  String get reasoningTokens => 'Reasoning';
+
+  @override
+  String get addProvider => 'Add Provider';
 
   @override
   String get applySettings => '設定を適用';
 
   @override
-  String get modelParameters => 'モデルパラメータ';
-
-  @override
-  String get activeModel => 'アクティブなモデル';
-
-  @override
-  String get noModelSelected => 'モデルが選択されていません';
-
-  @override
-  String get settingsApplied => '設定が正常に適用されました';
-
-  @override
-  String apiLimitExceeded(Object limit) {
-    return 'API制限超過: $limit';
-  }
-
-  @override
-  String valueExceedsApiLimit(Object limit) {
-    return '値がAPI制限 ($limit) を超えています。最大値を使用します。';
-  }
-
-  @override
-  String get micStartFailed => 'マイクの起動に失敗しました';
-
-  @override
-  String get micStopFailed => 'マイクの停止に失敗しました';
-
-  @override
-  String get speechErrorNoMatch => '音声を認識できませんでした。もう一度お試しください。';
-
-  @override
-  String get speechErrorTimeout => 'リスニングがタイムアウトしました。何も聞こえませんでした。';
-
-  @override
-  String get speechErrorNetwork => 'ネットワークエラー。インターネット接続を確認してください。';
-
-  @override
-  String get speechErrorNotAuthorized => 'マイクへのアクセス権がありません。設定で権限を確認してください。';
-
-  @override
-  String get speechErrorServer => '認識サーバーエラー。後でもう一度お試しください。';
-
-  @override
-  String get speechErrorTooManyRequests => 'リクエストが多すぎます。後でもう一度お試しください。';
-
-  @override
-  String get speechErrorUnknown => '音声認識エラー';
-
-  @override
-  String get speechPreparing => '準備中...';
-
-  @override
-  String get speechListening => '話してください...';
-
-  @override
-  String get speechProcessing => '処理中...';
-
-  @override
-  String get micNoSpeechDetected => '聞こえませんでした。もう一度お試しくください。';
-
-  @override
-  String get micAutoRestart => '再試行中...';
-
-  @override
-  String get speechPhase2 => '聞こえません...もう少し大きな声で';
-
-  @override
-  String speechStartError(Object error) {
-    return '開始エラー: $error';
-  }
-
-  @override
-  String get errorProcessingRequest =>
-      '申し訳ありません。リクエストの処理中にエラーが発生しました。もう一度お試しください。';
-
-  @override
-  String rateLimitRetryMessage(Object seconds) {
-    return 'レート制限に達しました。$seconds秒後に再試行します...';
-  }
-
-  @override
-  String get messageNotFound => 'メッセージが見つかりません';
-
-  @override
-  String get errorEditingMessage => 'メッセージの編集エラー';
-
-  @override
-  String get errorEditAndSendMessage => 'メッセージの編集と送信エラー';
-
-  @override
-  String generatingSuggestionsFailed(Object error) {
-    return '提案の生成に失敗しました: $error';
-  }
-
-  @override
-  String get selectModelTooltip => 'モデルを選択';
-
-  @override
-  String get toggleNavigatorTooltip => 'ナビゲーターを切り替え';
+  String get copyCodeTooltip => 'コードをコピー';
 
   @override
   String get defaultSuggestion1 => 'このトピックについて詳しく教えてください';
@@ -1008,38 +939,132 @@ class AppLocalizationsJa extends AppLocalizations {
   String get defaultSuggestion3 => '代替案はありますか？';
 
   @override
-  String get defaultSuggestion4 => 'これは実際にどのように適用されますか？';
+  String get deleteChat => 'チャットを削除';
+
+  @override
+  String get manageProviders => 'Manage Providers';
+
+  @override
+  String get micAutoRestart => '再試行中...';
+
+  @override
+  String get micNoSpeechDetected => '聞こえませんでした。もう一度お試しくください。';
+
+  @override
+  String get micStartFailed => 'マイクの起動に失敗しました';
+
+  @override
+  String get micUnavailable => 'マイクが利用できません';
+
+  @override
+  String get modelParameters => 'モデルパラメータ';
+
+  @override
+  String get modelSettings => 'モデル設定';
+
+  @override
+  String get noInternetConnection => 'インターネット接続がありません';
+
+  @override
+  String get noModelSelected => 'モデルが選択されていません';
+
+  @override
+  String get openaiCompatibleApi => 'OpenAI-Compatible API';
+
+  @override
+  String get openaiCompatibleApiDescription =>
+      'Connect to any OpenAI-compatible API endpoint';
+
+  @override
+  String get permissionAlways => '常に許可';
+
+  @override
+  String get permissionAlwaysConfirm => 'Always allow';
+
+  @override
+  String get permissionDialogPatterns => 'アクセス要求:';
+
+  @override
+  String get permissionOnce => '一度のみ';
+
+  @override
+  String get permissionReject => '拒否';
+
+  @override
+  String get providers => 'Providers';
+
+  @override
+  String get refreshQuestions => '質問を更新';
+
+  @override
+  String get resetToDefaults => 'デフォルトにリセット';
+
+  @override
+  String get settingsApplied => '設定が正常に適用されました';
+
+  @override
+  String get speechErrorNetwork => 'ネットワークエラー。インターネット接続を確認してください。';
+
+  @override
+  String get speechErrorNoMatch => '音声を認識できませんでした。もう一度お試しください。';
+
+  @override
+  String get speechErrorNotAuthorized => 'マイクへのアクセス権がありません。設定で権限を確認してください。';
+
+  @override
+  String get speechErrorServer => '認識サーバーエラー。後でもう一度お試しください。';
+
+  @override
+  String get speechErrorTimeout => 'リスニングがタイムアウトしました。何も聞こえませんでした。';
+
+  @override
+  String get speechErrorTooManyRequests => 'リクエストが多すぎます。後でもう一度お試しください。';
+
+  @override
+  String get speechErrorUnknown => '音声認識エラー';
+
+  @override
+  String get speechListening => '話してください...';
+
+  @override
+  String get speechPhase2 => '聞こえません...もう少し大きな声で';
+
+  @override
+  String get speechPreparing => '準備中...';
+
+  @override
+  String get speechProcessing => '処理中...';
+
+  @override
+  String speechStartError(Object error) {
+    return '開始エラー: $error';
+  }
+
+  @override
+  String get systemPrompt => 'システムプロンプト';
+
+  @override
+  String get systemPromptDescription => 'AIアシスタントへの指示';
 
   @override
   String get systemPromptSuggestion =>
       'あなたは有用なアシスタントです。会話を続け、最後のメッセージに対して3つの具体的で論理的な続きを提案してください。ユーザーと同じ言語で回答してください。';
 
   @override
+  String get temperature => '温度';
+
+  @override
+  String get temperatureDescription => 'ランダム性を制御: 低=より集中、高=より創造的';
+
+  @override
+  String get toggleNavigatorTooltip => 'ナビゲーターを切り替え';
+
+  @override
   String get userPromptSuggestion =>
       'このメッセージに対して3つの具体的で論理的な続きを提案してください。リストのみで回答し、追加テキストは含めないでください。';
 
   @override
-  String get refreshQuestions => '質問を更新';
-
-  @override
-  String get noInternetConnection => 'インターネット接続がありません';
-
-  @override
-  String modelDoesNotSupportFiles(Object modelId) {
-    return 'モデル $modelId はファイルをサポートしていません。ファイルを添付することはできますが、送信は機能しません。';
-  }
-
-  @override
-  String get fileAttachedButNotSupported => 'ファイルが添付されましたが、現在のモデルではサポートされていません';
-
-  @override
-  String get copyCodeTooltip => 'コードをコピー';
-
-  @override
-  String get expandTooltip => '展開';
-
-  @override
-  String get collapseTooltip => '折りたたむ';
+  String get versionLabel => 'バージョン:';
 
   @override
   String get welcomeGreeting1 => '聞いて、探索して、作ろう — 一緒に考えましょう。';
@@ -1079,54 +1104,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get welcomeGreeting12 => '質問を入力してください。残りは私の仕事です。';
 
   @override
-  String get versionLabel => 'バージョン:';
+  String modelDoesNotSupportFiles(Object modelId) {
+    return 'モデル $modelId はファイルをサポートしていません。ファイルを添付することはできますが、送信は機能しません。';
+  }
 
   @override
-  String get permissionDialogPatterns => 'アクセス要求:';
-
-  @override
-  String get permissionOnce => '一度のみ';
-
-  @override
-  String get permissionAlways => '常に許可';
-
-  @override
-  String get permissionReject => '拒否';
-
-  @override
-  String get permissionAlwaysConfirm => 'Always allow';
-
-  @override
-  String get providers => 'Providers';
-
-  @override
-  String get manageProviders => 'Manage AI providers';
-
-  @override
-  String get openaiCompatibleApi => 'AI Providers';
-
-  @override
-  String get openaiCompatibleApiDescription =>
-      'Configure AI providers and manage their API keys and models';
-
-  @override
-  String get addProvider => 'Add Provider';
-
-  @override
-  String get loadingSkills => 'Loading skills...';
-
-  @override
-  String get noSkillsInstalled =>
-      'No skills installed. Add in .chatorai/skills/';
-
-  @override
-  String get noSkillsMatchSearch => 'No skills match your search';
-
-  @override
-  String get allSkillsRequirePermission => 'All skills require permission';
-
-  @override
-  String skillExecuted(Object name) {
-    return 'Skill executed: $name';
+  String generatingSuggestionsFailed(Object error) {
+    return '提案の生成に失敗しました: $error';
   }
 }

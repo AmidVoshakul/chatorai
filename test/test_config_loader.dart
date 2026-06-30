@@ -59,14 +59,15 @@ void main() {
     });
 
     test('schema validation catches bad enum value', () async {
-      print('Current dir: ${Directory.current.path}');
-      final projectConfig = File('chatorai.json');
-      print('Project config exists: ${await projectConfig.exists()}');
+      final configDir = Directory('.chatorai');
+      if (!await configDir.exists()) {
+        await configDir.create();
+      }
 
+      final projectConfig = File('.chatorai/chatorai.json');
       final originalContent = await projectConfig.exists()
           ? await projectConfig.readAsString()
           : null;
-      print('Original content: $originalContent');
 
       try {
         await projectConfig.writeAsString(
@@ -75,9 +76,6 @@ void main() {
             'permission': {'bash': 'alloww'}, // typo: should be "allow"
           }),
         );
-        print('Wrote bad config');
-        print('File exists after write: ${await projectConfig.exists()}');
-        print('File content: ${await projectConfig.readAsString()}');
 
         await expectLater(
           ConfigManager.loadConfig(),

@@ -23,9 +23,9 @@ SessionRunnerHolder _makeRunnerHolder([String result = 'mock task result']) {
       agent: any(named: 'agent'),
       title: any(named: 'title'),
       taskId: any(named: 'taskId'),
-      abortSignal: any(named: 'abortSignal'),
+      holder: any(named: 'holder'),
     ),
-  ).thenAnswer((_) async => TaskChildResult(result));
+  ).thenAnswer((_) async => TaskChildResult(result, sessionId: SessionID.fromString('ses_mock_child')));
   return SessionRunnerHolder(mock);
 }
 

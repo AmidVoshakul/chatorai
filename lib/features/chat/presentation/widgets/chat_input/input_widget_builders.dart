@@ -157,8 +157,7 @@ class InputWidgetBuilders {
             CircularProgressIndicator(
               value: retryProgress,
               strokeWidth: ChatoraiBorderWidth.medium,
-              backgroundColor:
-                  ChatoraiColors.error.withValues(alpha: 0.12),
+              backgroundColor: ChatoraiColors.error.withValues(alpha: 0.12),
               valueColor: const AlwaysStoppedAnimation<Color>(
                 ChatoraiColors.error,
               ),

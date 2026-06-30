@@ -181,10 +181,7 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
           onPressed: () async {
             if (widget.catalog != null) {
               final models = _models.map((m) {
-                return m.copyWith(
-                  id: m.id,
-                  enabled: _selectedIds.contains(m.id),
-                );
+                return m.copyWith(enabled: _selectedIds.contains(m.id));
               }).toList();
               await widget.catalog!.updateProviderModels(
                 widget.providerId,

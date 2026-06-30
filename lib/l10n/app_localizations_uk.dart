@@ -24,7 +24,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get enterApiKey => 'Введіть ваш OpenRouter API ключ';
 
   @override
-  String get baseUrl => 'Base URL';
+  String get baseUrl => 'Базовий URL';
 
   @override
   String get validateApiKey => 'Перевірити API ключ';
@@ -169,9 +169,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get renameChat => 'Перейменувати чат';
 
   @override
-  String get deleteChat => 'Видалити чат';
-
-  @override
   String get failedToShowMenu => 'Не вдалося показати меню';
 
   @override
@@ -206,8 +203,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get expand => 'Розгорнути';
 
   @override
-  String chatRenamedTo(Object title) {
-    return 'Чат перейменовано на: $title';
+  String chatRenamedTo(Object name) {
+    return 'Чат перейменовано на: $name';
   }
 
   @override
@@ -909,156 +906,82 @@ class AppLocalizationsUk extends AppLocalizations {
   String get removeFromFavorites => 'Видалити з обраного';
 
   @override
-  String get startListening => 'Почати голосовий ввід';
+  String get loadingSkills => 'Завантаження навичок...';
 
   @override
-  String get stopListening => 'Зупинити голосовий ввід';
+  String get noSkillsInstalled =>
+      'Немає встановлених навичок. Додайте в .chatorai/skills/';
 
   @override
-  String get listening => 'Говоріть...';
+  String get noSkillsMatchSearch => 'Немає навичок, що відповідають пошуку';
 
   @override
-  String get micUnavailable => 'Мікрофон недоступний';
+  String get allSkillsRequirePermission => 'Всі навички вимагають дозволу';
 
   @override
-  String get sendMessage => 'Надіслати повідомлення';
+  String skillExecuted(Object name) {
+    return 'Навик виконано: $name';
+  }
 
   @override
-  String get modelSettings => 'Налаштування моделі';
+  String get configuration => 'Конфігурація';
 
   @override
-  String get temperature => 'Температура';
+  String get stats => 'Статистика';
 
   @override
-  String get temperatureDescription =>
-      'Контролює випадковість: нижче = більш зосереджено, вище = більш креативно';
+  String get usageStatistics => 'Статистика використання';
 
   @override
-  String get maxTokens => 'Макс. токенів';
+  String get totalSessions => 'Сеанси';
 
   @override
-  String get maxTokensDescription =>
-      'Максимальна довжина згенерованої відповіді';
+  String get totalMessages => 'Повідомлення';
 
   @override
-  String get systemPrompt => 'Системний промпт';
+  String get days => 'Дні';
 
   @override
-  String get systemPromptDescription => 'Інструкції для AI-асистента';
+  String get totalTokens => 'Всього токенів';
 
   @override
-  String get resetToDefaults => 'Скинути до стандартних';
+  String get totalCost => 'Загальна вартість';
+
+  @override
+  String get avgCostPerDay => 'Середня вартість/день';
+
+  @override
+  String get avgTokensPerSession => 'Середнє токенів/сеанс';
+
+  @override
+  String get medianTokensPerSession => 'Медіана токенів/сеанс';
+
+  @override
+  String get cacheRead => 'Читання кешу';
+
+  @override
+  String get cacheWrite => 'Запис кешу';
+
+  @override
+  String get toolUsage => 'Використання інструментів';
+
+  @override
+  String get modelUsage => 'Використання моделей';
+
+  @override
+  String get noStatsAvailable => 'Статистика недоступна';
+
+  @override
+  String get reasoningTokens => 'Міркування';
+
+  @override
+  String get addProvider => 'Додати провайдера';
 
   @override
   String get applySettings => 'Застосувати налаштування';
 
   @override
-  String get modelParameters => 'Параметри моделі';
-
-  @override
-  String get activeModel => 'Активна модель';
-
-  @override
-  String get noModelSelected => 'Модель не вибрана';
-
-  @override
-  String get settingsApplied => 'Налаштування успішно застосовано';
-
-  @override
-  String apiLimitExceeded(Object limit) {
-    return 'Перевищено ліміт API: $limit';
-  }
-
-  @override
-  String valueExceedsApiLimit(Object limit) {
-    return 'Значення перевищує ліміт API ($limit). Буде використано максимальне значення.';
-  }
-
-  @override
-  String get micStartFailed => 'Не вдалося запустити мікрофон';
-
-  @override
-  String get micStopFailed => 'Не вдалося зупинити мікрофон';
-
-  @override
-  String get speechErrorNoMatch =>
-      'Не вдалося розпізнати мову. Спробуйте ще раз.';
-
-  @override
-  String get speechErrorTimeout =>
-      'Час очікування вичерпано. Нічого не почуто.';
-
-  @override
-  String get speechErrorNetwork =>
-      'Помилка мережі. Перевірте підключення до інтернету.';
-
-  @override
-  String get speechErrorNotAuthorized =>
-      'Немає доступу до мікрофона. Перевірте дозволи в налаштуваннях.';
-
-  @override
-  String get speechErrorServer =>
-      'Помилка сервера розпізнавання. Спробуйте пізніше.';
-
-  @override
-  String get speechErrorTooManyRequests =>
-      'Занадто багато запитів. Спробуйте пізніше.';
-
-  @override
-  String get speechErrorUnknown => 'Помилка розпізнавання мови';
-
-  @override
-  String get speechPreparing => 'Підготовка...';
-
-  @override
-  String get speechListening => 'Говоріть...';
-
-  @override
-  String get speechProcessing => 'Обробка...';
-
-  @override
-  String get micNoSpeechDetected => 'Я вас не почув. Спробуйте ще раз.';
-
-  @override
-  String get micAutoRestart => 'Повторна спроба...';
-
-  @override
-  String get speechPhase2 => 'Я вас не чую...говоріть голосніше';
-
-  @override
-  String speechStartError(Object error) {
-    return 'Помилка запуску: $error';
-  }
-
-  @override
-  String get errorProcessingRequest =>
-      'Вибачте, сталася помилка при обробці вашого запиту. Будь ласка, спробуйте ще раз.';
-
-  @override
-  String rateLimitRetryMessage(Object seconds) {
-    return 'Перевищено ліміт запитів. Повторна спроба через $seconds секунд...';
-  }
-
-  @override
-  String get messageNotFound => 'Повідомлення не знайдено';
-
-  @override
-  String get errorEditingMessage => 'Помилка редагування повідомлення';
-
-  @override
-  String get errorEditAndSendMessage =>
-      'Помилка редагування та відправлення повідомлення';
-
-  @override
-  String generatingSuggestionsFailed(Object error) {
-    return 'Не вдалося згенерувати пропозиції: $error';
-  }
-
-  @override
-  String get selectModelTooltip => 'Вибрати модель';
-
-  @override
-  String get toggleNavigatorTooltip => 'Перемкнути навігатор';
+  String get copyCodeTooltip => 'Копіювати код';
 
   @override
   String get defaultSuggestion1 => 'Розкажіть більше про цю тему';
@@ -1070,39 +993,139 @@ class AppLocalizationsUk extends AppLocalizations {
   String get defaultSuggestion3 => 'Які є альтернативи?';
 
   @override
-  String get defaultSuggestion4 => 'Як це застосовується на практиці?';
+  String get deleteChat => 'Видалити чат';
+
+  @override
+  String get manageProviders => 'Керування провайдерами';
+
+  @override
+  String get micAutoRestart => 'Повторна спроба...';
+
+  @override
+  String get micNoSpeechDetected => 'Я вас не почув. Спробуйте ще раз.';
+
+  @override
+  String get micStartFailed => 'Не вдалося запустити мікрофон';
+
+  @override
+  String get micUnavailable => 'Мікрофон недоступний';
+
+  @override
+  String get modelParameters => 'Параметри моделі';
+
+  @override
+  String get modelSettings => 'Налаштування моделі';
+
+  @override
+  String get noInternetConnection => 'Немає підключення до інтернету';
+
+  @override
+  String get noModelSelected => 'Модель не вибрана';
+
+  @override
+  String get openaiCompatibleApi => 'OpenAI-сумісний API';
+
+  @override
+  String get openaiCompatibleApiDescription =>
+      'Підключення до будь-якого OpenAI-сумісного API';
+
+  @override
+  String get permissionAlways => 'Завжди дозволяти';
+
+  @override
+  String get permissionAlwaysConfirm => 'Завжди дозволяти';
+
+  @override
+  String get permissionDialogPatterns => 'Запит доступу до:';
+
+  @override
+  String get permissionOnce => 'Один раз';
+
+  @override
+  String get permissionReject => 'Відхилити';
+
+  @override
+  String get providers => 'Провайдери';
+
+  @override
+  String get refreshQuestions => 'Оновити питання';
+
+  @override
+  String get resetToDefaults => 'Скинути до стандартних';
+
+  @override
+  String get settingsApplied => 'Налаштування успішно застосовано';
+
+  @override
+  String get speechErrorNetwork =>
+      'Помилка мережі. Перевірте підключення до інтернету.';
+
+  @override
+  String get speechErrorNoMatch =>
+      'Не вдалося розпізнати мову. Спробуйте ще раз.';
+
+  @override
+  String get speechErrorNotAuthorized =>
+      'Немає доступу до мікрофона. Перевірте дозволи в налаштуваннях.';
+
+  @override
+  String get speechErrorServer =>
+      'Помилка сервера розпізнавання. Спробуйте пізніше.';
+
+  @override
+  String get speechErrorTimeout =>
+      'Час очікування вичерпано. Нічого не почуто.';
+
+  @override
+  String get speechErrorTooManyRequests =>
+      'Занадто багато запитів. Спробуйте пізніше.';
+
+  @override
+  String get speechErrorUnknown => 'Помилка розпізнавання мови';
+
+  @override
+  String get speechListening => 'Говоріть...';
+
+  @override
+  String get speechPhase2 => 'Я вас не чую...говоріть голосніше';
+
+  @override
+  String get speechPreparing => 'Підготовка...';
+
+  @override
+  String get speechProcessing => 'Обробка...';
+
+  @override
+  String speechStartError(Object error) {
+    return 'Помилка запуску: $error';
+  }
+
+  @override
+  String get systemPrompt => 'Системний промпт';
+
+  @override
+  String get systemPromptDescription => 'Інструкції для AI-асистента';
 
   @override
   String get systemPromptSuggestion =>
       'Ви — корисний асистент. Продовжте діалог, запропонувавши 3 конкретні та логічні продовження останнього повідомлення. Відповідайте українською мовою.';
 
   @override
+  String get temperature => 'Температура';
+
+  @override
+  String get temperatureDescription =>
+      'Контролює випадковість: нижче = більш зосереджено, вище = більш креативно';
+
+  @override
+  String get toggleNavigatorTooltip => 'Перемкнути навігатор';
+
+  @override
   String get userPromptSuggestion =>
       'Запропонуйте 3 конкретні та логічні продовження для цього повідомлення. Відповідайте тільки списком, без додаткового тексту.';
 
   @override
-  String get refreshQuestions => 'Оновити питання';
-
-  @override
-  String get noInternetConnection => 'Немає підключення до інтернету';
-
-  @override
-  String modelDoesNotSupportFiles(Object modelId) {
-    return 'Модель $modelId не підтримує файли. Ви можете прикріпити файл, але відправлення не спрацює.';
-  }
-
-  @override
-  String get fileAttachedButNotSupported =>
-      'Файл прикріплено, але не підтримується поточною моделлю';
-
-  @override
-  String get copyCodeTooltip => 'Копіювати код';
-
-  @override
-  String get expandTooltip => 'Розгорнути';
-
-  @override
-  String get collapseTooltip => 'Згорнути';
+  String get versionLabel => 'Версія:';
 
   @override
   String get welcomeGreeting1 =>
@@ -1144,54 +1167,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeGreeting12 => 'Введи питання. Решта — моя робота.';
 
   @override
-  String get versionLabel => 'Версія:';
+  String modelDoesNotSupportFiles(Object modelId) {
+    return 'Модель $modelId не підтримує файли. Ви можете прикріпити файл, але відправлення не спрацює.';
+  }
 
   @override
-  String get permissionDialogPatterns => 'Запит доступу до:';
-
-  @override
-  String get permissionOnce => 'Один раз';
-
-  @override
-  String get permissionAlways => 'Завжди дозволяти';
-
-  @override
-  String get permissionReject => 'Відхилити';
-
-  @override
-  String get permissionAlwaysConfirm => 'Always allow';
-
-  @override
-  String get providers => 'Providers';
-
-  @override
-  String get manageProviders => 'Manage AI providers';
-
-  @override
-  String get openaiCompatibleApi => 'AI Providers';
-
-  @override
-  String get openaiCompatibleApiDescription =>
-      'Configure AI providers and manage their API keys and models';
-
-  @override
-  String get addProvider => 'Add Provider';
-
-  @override
-  String get loadingSkills => 'Loading skills...';
-
-  @override
-  String get noSkillsInstalled =>
-      'No skills installed. Add in .chatorai/skills/';
-
-  @override
-  String get noSkillsMatchSearch => 'No skills match your search';
-
-  @override
-  String get allSkillsRequirePermission => 'All skills require permission';
-
-  @override
-  String skillExecuted(Object name) {
-    return 'Skill executed: $name';
+  String generatingSuggestionsFailed(Object error) {
+    return 'Не вдалося згенерувати пропозиції: $error';
   }
 }

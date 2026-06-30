@@ -19,6 +19,8 @@ class Sessions extends Table {
   IntColumn get tokensInput => integer().withDefault(const Constant(0))();
   IntColumn get tokensOutput => integer().withDefault(const Constant(0))();
   IntColumn get tokensReasoning => integer().withDefault(const Constant(0))();
+  IntColumn get tokensCacheRead => integer().withDefault(const Constant(0))();
+  IntColumn get tokensCacheWrite => integer().withDefault(const Constant(0))();
   TextColumn? get permissionRules => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();

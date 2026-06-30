@@ -16,19 +16,20 @@ import 'chat_retry_service.dart';
 
 // Tool event callbacks surfaced to the chat UI layer.
 typedef ToolStartCallback =
-    void Function(
+    Future<void> Function(
       String toolCallId,
       String toolName,
       Map<String, dynamic> input,
     );
 
 typedef ToolEndCallback =
-    void Function(String toolCallId, String toolName, String result);
+    Future<void> Function(String toolCallId, String toolName, String result);
 
 typedef ToolErrorCallback =
-    void Function(String toolCallId, String toolName, String error);
+    Future<void> Function(String toolCallId, String toolName, String error);
 
-typedef UsageCallback = void Function(int input, int output);
+typedef UsageCallback =
+    void Function(int input, int output, int cacheRead, int cacheWrite);
 
 class ChatCompletionResponse {
   final String content;
@@ -63,6 +64,8 @@ class ChatCompletionResponse {
 class ChatAiService implements CompletionProvider {
   final ModelResolver _resolver;
   final Map<String, String> _headers;
+
+  ModelResolver get resolver => _resolver;
 
   late final ChatRetryService _retryService;
   late final ChatCancellation _cancellation;
@@ -216,9 +219,9 @@ class ChatAiService implements CompletionProvider {
     required List<Map<String, dynamic>> messages,
     required String model,
     required double temperature,
-    required Function(String) onChunk,
-    required Function(String) onReasoning,
-    required Function(String) onCompletion,
+    required Future<void> Function(String) onChunk,
+    required Future<void> Function(String) onReasoning,
+    required Future<void> Function(String) onCompletion,
     ToolSet tools = const {},
     ToolStartCallback? onToolStart,
     ToolEndCallback? onToolEnd,
@@ -281,12 +284,13 @@ class ChatAiService implements CompletionProvider {
             abortSignal: _cancellation.token,
             tools: tools,
             maxSteps: maxSteps,
-            onInputAvailable: (event) {
+            onInputAvailable: (event) async {
               final rawInput = event.input;
               final inputMap = rawInput is Map<String, dynamic>
                   ? rawInput
                   : <String, dynamic>{'raw': rawInput};
-              onToolStart?.call(event.toolCallId, event.toolName, inputMap);
+              await onToolStart?.call(
+                  event.toolCallId, event.toolName, inputMap);
             },
           );
           LogTags.chatService.logDebug(
@@ -313,9 +317,9 @@ class ChatAiService implements CompletionProvider {
               switch (event) {
                 case StreamTextTextDeltaEvent(:final delta):
                   onChunkReceived?.call();
-                  onChunk(delta);
+                  await onChunk(delta);
                 case StreamTextReasoningDeltaEvent(:final delta):
-                  onReasoning(delta);
+                  await onReasoning(delta);
                 case StreamTextToolResultEvent(
                   :final toolResult,
                   :final preliminary,
@@ -334,7 +338,7 @@ class ChatAiService implements CompletionProvider {
                       'streamChatCompletion: onToolEnd tool=${toolResult.toolName} '
                       'outputLen=${outputText.length}',
                     );
-                    onToolEnd?.call(
+                    await onToolEnd?.call(
                       toolResult.toolCallId,
                       toolResult.toolName,
                       outputText,
@@ -345,7 +349,7 @@ class ChatAiService implements CompletionProvider {
                   :final toolName,
                   :final error,
                 ):
-                  onToolError?.call(toolCallId, toolName, error.toString());
+                  await onToolError?.call(toolCallId, toolName, error.toString());
                 case StreamTextReasoningStartEvent():
                   break;
                 case StreamTextReasoningEndEvent():
@@ -388,6 +392,8 @@ class ChatAiService implements CompletionProvider {
                   onUsage?.call(
                     usage?.inputTokens ?? 0,
                     usage?.outputTokens ?? 0,
+                    usage?.inputTokenDetails?.cacheReadTokens ?? 0,
+                    usage?.inputTokenDetails?.cacheWriteTokens ?? 0,
                   );
                   onCompletion(text);
                   if (_overflowDetector.isOverflow(_tokenCounter.totalTokens)) {
@@ -436,6 +442,115 @@ class ChatAiService implements CompletionProvider {
   }
 
   // ===========================================================================
+  // CHILD COMPLETION (no re‑entrancy guard)
+  // ===========================================================================
+  /// Runs an independent LLM completion for a task‑tool sub‑agent.
+  ///
+  /// Unlike [streamChatCompletion], this method does **not** check
+  /// `_isRunning` and does **not** call `cancelAllRequests()`, so a child
+  /// agent can safely run its own LLM cycle while the parent stream is still
+  /// active.  A fresh [CancellationToken] is created for each invocation.
+  Future<void> runChildCompletion({
+    required List<Map<String, dynamic>> messages,
+    required String model,
+    required double temperature,
+    required Future<void> Function(String) onChunk,
+    required Future<void> Function(String) onReasoning,
+    required Future<void> Function(String) onCompletion,
+    ToolSet tools = const {},
+    ToolStartCallback? onToolStart,
+    ToolEndCallback? onToolEnd,
+    ToolErrorCallback? onToolError,
+    int maxSteps = 5,
+  }) async {
+    ModelConfig? resolvedConfig;
+    late LanguageModelV3 lm;
+    Map<String, String> activeHeaders = _headers;
+
+    try {
+      resolvedConfig = _resolver.resolve(model);
+      activeHeaders = _resolver.getHeadersForModel(
+        resolvedConfig,
+        overrideHeaders: _headers,
+      );
+      lm = await _resolver.buildLanguageModel(resolvedConfig);
+    } catch (e) {
+      rethrow;
+    }
+
+    final childAbort = CancellationToken();
+
+    try {
+      final result = await streamText(
+        model: lm,
+        messages: _toModelMessages(messages),
+        temperature: temperature,
+        maxRetries: 0,
+        headers: activeHeaders,
+        abortSignal: childAbort,
+        tools: tools,
+        maxSteps: maxSteps,
+        onInputAvailable: (event) {
+          final rawInput = event.input;
+          final inputMap = rawInput is Map<String, dynamic>
+              ? rawInput
+              : <String, dynamic>{'raw': rawInput};
+          onToolStart?.call(event.toolCallId, event.toolName, inputMap);
+        },
+      );
+
+      try {
+        await for (final event in result.fullStream.handleError((
+          Object error,
+          StackTrace stack,
+        ) {
+          if (error is DioException) return;
+          throw error;
+        })) {
+          switch (event) {
+            case StreamTextTextDeltaEvent(:final delta):
+              await onChunk(delta);
+            case StreamTextReasoningDeltaEvent(:final delta):
+              await onReasoning(delta);
+            case StreamTextToolResultEvent(
+              :final toolResult,
+              :final preliminary,
+            ):
+              if (!preliminary) {
+                final outputText = switch (toolResult.output) {
+                  ToolResultOutputText(:final text) => text,
+                  ToolResultOutputContent(:final parts) =>
+                    parts.map((p) => p.toString()).join(),
+                };
+                await onToolEnd?.call(
+                  toolResult.toolCallId,
+                  toolResult.toolName,
+                  outputText,
+                );
+              }
+            case StreamTextToolErrorEvent(
+              :final toolCallId,
+              :final toolName,
+              :final error,
+            ):
+              await onToolError?.call(toolCallId, toolName, error.toString());
+            case StreamTextFinishEvent(:final text):
+              await onCompletion(text);
+            default:
+              break;
+          }
+        }
+      } catch (_) {
+        rethrow;
+      }
+    } catch (_) {
+      rethrow;
+    } finally {
+      childAbort.cancel();
+    }
+  }
+
+  // ===========================================================================
   // NON-STREAMING COMPLETION
   // ===========================================================================
   @override
@@ -468,19 +583,18 @@ class ChatAiService implements CompletionProvider {
 
     try {
       final gen = _generation;
-      final result = await _retryService.execute(
-        ({void Function()? onChunkReceived}) async {
-          if (gen != _generation) throw Exception('cancelled');
-          return generateText(
-            model: lm,
-            messages: _toModelMessages(messages),
-            temperature: temperature,
-            maxRetries: 0,
-            headers: activeHeaders,
-          );
-        },
-        isStillValid: () => gen == _generation,
-      );
+      final result = await _retryService.execute(({
+        void Function()? onChunkReceived,
+      }) async {
+        if (gen != _generation) throw Exception('cancelled');
+        return generateText(
+          model: lm,
+          messages: _toModelMessages(messages),
+          temperature: temperature,
+          maxRetries: 0,
+          headers: activeHeaders,
+        );
+      }, isStillValid: () => gen == _generation);
       return result.text;
     } finally {
       _stopProgressTimer();

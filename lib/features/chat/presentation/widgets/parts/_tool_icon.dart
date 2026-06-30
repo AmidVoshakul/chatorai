@@ -1,22 +1,26 @@
-import 'package:flutter/material.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
 IconData toolIcon(String toolName) {
   switch (toolName.toLowerCase()) {
     case 'read':
+      return Icons.arrow_forward;
     case 'question':
     case 'skill':
       return Icons.arrow_forward;
     case 'edit':
+      return Icons.arrow_back;
     case 'write':
       return Icons.arrow_back;
     case 'bash':
       return Icons.terminal;
     case 'glob':
+      return Icons.shuffle;
     case 'grep':
       return Icons.search;
     case 'webfetch':
+      return Icons.read_more;
     case 'apply_patch':
       return Icons.public;
     case 'websearch':

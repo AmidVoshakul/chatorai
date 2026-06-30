@@ -53,14 +53,12 @@ void main() {
 
       await catalog.updateProviderModels('openrouter', [
         ModelConfig.basic(
-          id: 'openrouter/free',
           providerId: 'openrouter',
           modelName: 'openrouter/free',
           displayName: 'OpenRouter Free',
           contextLength: 4096,
         ),
         ModelConfig.basic(
-          id: 'openrouter/owl-alpha',
           providerId: 'openrouter',
           modelName: 'owl-alpha',
           displayName: 'Owl Alpha',
@@ -75,7 +73,7 @@ void main() {
               providerId: 'openrouter',
               baseUrl: 'https://openrouter.ai/api/v1',
               apiKey: 'sk-test',
-              initialSelectedIds: ['openrouter/free'],
+              initialSelectedIds: ['openrouter/openrouter/free'],
               onSave: (_) {},
               catalog: catalog,
             ),
@@ -123,7 +121,6 @@ void main() {
 
       await catalog.updateProviderModels('openrouter', [
         ModelConfig.basic(
-          id: 'openrouter/owl-alpha',
           providerId: 'openrouter',
           modelName: 'owl-alpha',
           displayName: 'Owl Alpha',
@@ -190,14 +187,12 @@ void main() {
 
       await catalog.updateProviderModels('openrouter', [
         ModelConfig.basic(
-          id: 'openrouter/free',
           providerId: 'openrouter',
           modelName: 'openrouter/free',
           displayName: 'OpenRouter Free',
           contextLength: 4096,
         ),
         ModelConfig.basic(
-          id: 'openrouter/owl-alpha',
           providerId: 'openrouter',
           modelName: 'owl-alpha',
           displayName: 'Owl Alpha',
@@ -234,7 +229,7 @@ void main() {
 
       expect(
         savedIds,
-        containsAll(['openrouter/free', 'openrouter/owl-alpha']),
+        containsAll(['openrouter/openrouter/free', 'openrouter/owl-alpha']),
       );
     });
 
@@ -261,14 +256,12 @@ void main() {
 
       await catalog.updateProviderModels('openrouter', [
         ModelConfig.basic(
-          id: 'openrouter/free',
           providerId: 'openrouter',
           modelName: 'openrouter/free',
           displayName: 'OpenRouter Free',
           contextLength: 4096,
         ),
         ModelConfig.basic(
-          id: 'openrouter/owl-alpha',
           providerId: 'openrouter',
           modelName: 'owl-alpha',
           displayName: 'Owl Alpha',
@@ -345,7 +338,6 @@ void main() {
 
       await catalog.updateProviderModels('openrouter', [
         ModelConfig.basic(
-          id: 'openrouter/owl-alpha',
           providerId: 'openrouter',
           modelName: 'owl-alpha',
           displayName: 'Owl Alpha',
@@ -419,7 +411,6 @@ void main() {
 
       await catalog.updateProviderModels('openrouter', [
         ModelConfig.basic(
-          id: 'openrouter/owl-alpha',
           providerId: 'openrouter',
           modelName: 'owl-alpha',
           displayName: 'Owl Alpha',
@@ -481,7 +472,6 @@ void main() {
 
       await catalog.updateProviderModels('openrouter', [
         ModelConfig.basic(
-          id: 'openrouter/owl-alpha',
           providerId: 'openrouter',
           modelName: 'owl-alpha',
           displayName: 'Owl Alpha',
@@ -544,7 +534,6 @@ void main() {
 
       await catalog.updateProviderModels('openrouter', [
         ModelConfig.basic(
-          id: 'openrouter/owl-alpha',
           providerId: 'openrouter',
           modelName: 'owl-alpha',
           displayName: 'Owl Alpha',
@@ -607,7 +596,6 @@ void main() {
 
       await catalog.updateProviderModels('openrouter', [
         ModelConfig.basic(
-          id: 'openrouter/owl-alpha',
           providerId: 'openrouter',
           modelName: 'owl-alpha',
           displayName: 'Owl Alpha',
@@ -669,7 +657,6 @@ void main() {
       // Pre-populate models so wasCached=true
       await catalog.updateProviderModels('openrouter', [
         ModelConfig.basic(
-          id: 'openrouter/owl-alpha',
           providerId: 'openrouter',
           modelName: 'owl-alpha',
           displayName: 'Owl Alpha',
@@ -776,14 +763,12 @@ void main() {
 
       await catalog.updateProviderModels('openrouter', [
         ModelConfig.basic(
-          id: 'openrouter/free',
           providerId: 'openrouter',
           modelName: 'openrouter/free',
           displayName: 'OpenRouter Free',
           contextLength: 4096,
         ),
         ModelConfig.basic(
-          id: 'openrouter/owl-alpha',
           providerId: 'openrouter',
           modelName: 'owl-alpha',
           displayName: 'Owl Alpha',
@@ -798,7 +783,7 @@ void main() {
               providerId: 'openrouter',
               baseUrl: 'https://openrouter.ai/api/v1',
               apiKey: 'sk-test',
-              initialSelectedIds: ['openrouter/free'],
+              initialSelectedIds: ['openrouter/openrouter/free'],
               onSave: (_) {},
               catalog: catalog,
             ),

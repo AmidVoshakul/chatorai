@@ -2,65 +2,60 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:chatorai/shared/utils/logger.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 /// Platform-aware application paths following each OS convention.
 ///
-/// ### Directory name
-///
-/// The directory name is resolved dynamically from the application's package
-/// name (bundle ID) via [PackageInfo] at runtime — never hardcoded.  Call
-/// [init] once at startup (e.g. in `main()`) before accessing any getter.
-///
-/// ### Path layout
-///
-/// **Linux** — XDG Base Directory Specification:
-///   Data   → `$XDG_DATA_HOME/package`          (default: `~/.local/share/package`)
-///   Config → `$XDG_CONFIG_HOME/package`        (default: `~/.config/package`)
-///   Cache  → `$XDG_CACHE_HOME/package`         (default: `~/.cache/package`)
-///   State  → `$XDG_STATE_HOME/package`         (default: `~/.local/state/package`)
-///
-/// **macOS** — Apple convention:
-///   Data   → `~/Library/Application Support/package`
-///   Config → `~/Library/Application Support/package`
-///   Cache  → `~/Library/Caches/package`
-///   State  → `~/Library/Application Support/package`
-///
-/// **Windows** — MS convention:
-///   Data   → `%APPDATA%\package`
-///   Config → `%APPDATA%\package\config`
-///   Cache  → `%LOCALAPPDATA%\package\cache`
-///   State  → `%APPDATA%\package\state`
-///
-/// **Mobile** (Android / iOS) — entirely sandboxed via [path_provider]:
-///   Data   → `[ApplicationSupportDirectory]/package`
-///   Cache  → `[TemporaryDirectory]/package/cache`
+/// Directory name is resolved from `pubspec.yaml` of the current working
+/// directory when [init] is called.  Falls back to `chatorai` when the file
+/// is not present (e.g. globally installed CLI binary).
 class XdgPaths {
   XdgPaths._();
 
   static String? _appDirName;
   static Completer<void>? _initCompleter;
 
-  /// Initialise the cached package-name directory.
+  // ---------------------------------------------------------------------------
+  // Platform detection
+  // ---------------------------------------------------------------------------
+
+  static bool get _isLinux => Platform.isLinux;
+  static bool get _isMacOS => Platform.isMacOS;
+  static bool get _isWindows => Platform.isWindows;
+  static bool get _isAndroid => Platform.isAndroid;
+  static bool get _isIOS => Platform.isIOS;
+  static bool get _isMobile => _isAndroid || _isIOS;
+
+  // ---------------------------------------------------------------------------
+  // Cached mobile paths (populated by init())
+  // ---------------------------------------------------------------------------
+
+  static String? _cachedDataDir;
+  static String? _cachedCacheDir;
+  static String? _cachedConfigDir;
+
+  /// Fallback error thrown when mobile paths are accessed before init().
+  static String get _fallbackMobileError =>
+      'XdgPaths.init() must be called before accessing paths on mobile';
+
+  /// Initialise from `pubspec.yaml` in the current working directory.
   ///
-  /// Must be called once at application startup (e.g. in `main()`) **before**
-  /// any sync getter is accessed.  Safe to call multiple times — only the
-  /// first invocation performs work.
+  /// Safe to call multiple times — only the first invocation performs work.
+  /// On mobile (Android/iOS), caches platform-specific paths from path_provider.
   static Future<void> init() async {
     if (_initCompleter != null) return _initCompleter!.future;
     _initCompleter = Completer<void>();
     try {
-      final info = await PackageInfo.fromPlatform();
-      final name = info.packageName;
-      if (name.isEmpty ||
-          name.contains('/') ||
-          name.contains('\\') ||
-          name.contains('..')) {
-        throw StateError('Invalid package name from PackageInfo: $name');
+      _appDirName = _resolveAppDirName();
+      if (_isMobile) {
+        final docs = getApplicationDocumentsDirectory();
+        final temp = getTemporaryDirectory();
+        final support = getApplicationSupportDirectory();
+        _cachedDataDir = (await docs).path;
+        _cachedCacheDir = (await temp).path;
+        _cachedConfigDir = (await support).path;
       }
-      _appDirName = name;
       _initCompleter!.complete();
     } catch (e) {
       _initCompleter!.completeError(e);
@@ -68,11 +63,31 @@ class XdgPaths {
     }
   }
 
-  /// The resolved application directory name.
-  ///
-  /// Returns the package name (e.g. `com.chatorai.app`) if [init] has been
-  /// called, otherwise falls back to `chatorai` so that early-bootstrap code
-  /// and tests don't crash.
+  static String _resolveAppDirName() {
+    try {
+      final pubspec = File('pubspec.yaml');
+      if (pubspec.existsSync()) {
+        final content = pubspec.readAsStringSync();
+        final match = RegExp(
+          r'^name:\s*(.+)$',
+          multiLine: true,
+        ).firstMatch(content);
+        if (match != null) {
+          final raw = match
+              .group(1)!
+              .trim()
+              .replaceAll("'", '')
+              .replaceAll('"', '');
+          if (raw.isNotEmpty) return raw;
+        }
+      }
+    } catch (_) {
+      // ignore and use fallback below
+    }
+    return 'chatorai';
+  }
+
+  /// Cached app directory name, or null when [init] has not been called yet.
   static String get _dirName {
     if (_appDirName == null) {
       LogTags.storage.logWarning(
@@ -83,19 +98,11 @@ class XdgPaths {
     return _appDirName!;
   }
 
-  /// Resolved home directory.
+  /// Resolved home directory (desktop only — mobile uses cached paths).
   static String get home =>
       Platform.environment['HOME'] ??
       Platform.environment['USERPROFILE'] ??
-      '/tmp';
-
-  // ---------------------------------------------------------------------------
-  // Platform detection
-  // ---------------------------------------------------------------------------
-
-  static bool get _isLinux => Platform.isLinux;
-  static bool get _isMacOS => Platform.isMacOS;
-  static bool get _isWindows => Platform.isWindows;
+      (_isMobile ? '' : '/tmp');
 
   // ---------------------------------------------------------------------------
   // Base directories
@@ -105,6 +112,13 @@ class XdgPaths {
   ///
   /// Tool outputs, session database.
   static String get dataHome {
+    if (_isMobile) {
+      final cached = _cachedDataDir;
+      if (cached == null) {
+        throw UnsupportedError(_fallbackMobileError);
+      }
+      return p.join(cached, _dirName);
+    }
     if (_isLinux) {
       final base =
           Platform.environment['XDG_DATA_HOME'] ??
@@ -126,6 +140,13 @@ class XdgPaths {
   ///
   /// chatorai.json, global skills, agents, commands.
   static String get configHome {
+    if (_isMobile) {
+      final cached = _cachedConfigDir;
+      if (cached == null) {
+        throw UnsupportedError(_fallbackMobileError);
+      }
+      return p.join(cached, _dirName);
+    }
     if (_isLinux) {
       final base =
           Platform.environment['XDG_CONFIG_HOME'] ?? p.join(home, '.config');
@@ -146,6 +167,13 @@ class XdgPaths {
   ///
   /// Model lists, URL-skill cache.
   static String get cacheHome {
+    if (_isMobile) {
+      final cached = _cachedCacheDir;
+      if (cached == null) {
+        throw UnsupportedError(_fallbackMobileError);
+      }
+      return p.join(cached, _dirName);
+    }
     if (_isLinux) {
       final base =
           Platform.environment['XDG_CACHE_HOME'] ?? p.join(home, '.cache');
@@ -165,6 +193,14 @@ class XdgPaths {
 
   /// Persistent runtime state (non-essential, safe to discard).
   static String get stateHome {
+    if (_isMobile) {
+      // On mobile, state goes under data directory
+      final cached = _cachedDataDir;
+      if (cached == null) {
+        throw UnsupportedError(_fallbackMobileError);
+      }
+      return p.join(cached, _dirName, 'state');
+    }
     if (_isLinux) {
       final base =
           Platform.environment['XDG_STATE_HOME'] ??
@@ -183,52 +219,16 @@ class XdgPaths {
   }
 
   // ---------------------------------------------------------------------------
-  // Async alternatives (all platforms including mobile)
+  // Async alternatives (desktop only — no mobile Flutter runtime needed)
   // ---------------------------------------------------------------------------
 
-  /// [dataHome] — works on all platforms.
-  /// On mobile uses [getApplicationSupportDirectory] (sandboxed app data).
-  static Future<String> get dataHomeAsync async {
-    if (_isMobile) {
-      final dir = await getApplicationSupportDirectory();
-      return dir.path;
-    }
-    return dataHome;
-  }
+  static Future<String> get dataHomeAsync async => dataHome;
 
-  /// [configHome] — works on all platforms.
-  /// On mobile, config shares the same sandboxed directory as data
-  /// ([getApplicationSupportDirectory]) — mobile OS does not distinguish
-  /// between separate data and config home directories.
-  static Future<String> get configHomeAsync async {
-    if (_isMobile) {
-      final dir = await getApplicationSupportDirectory();
-      return dir.path;
-    }
-    return configHome;
-  }
+  static Future<String> get configHomeAsync async => configHome;
 
-  /// [cacheHome] — works on all platforms.
-  /// On mobile uses [getTemporaryDirectory].
-  static Future<String> get cacheHomeAsync async {
-    if (_isMobile) {
-      final dir = await getTemporaryDirectory();
-      return p.join(dir.path, _dirName, 'cache');
-    }
-    return cacheHome;
-  }
+  static Future<String> get cacheHomeAsync async => cacheHome;
 
-  /// [stateHome] — works on all platforms.
-  /// On mobile reuses [dataHomeAsync].
-  static Future<String> get stateHomeAsync async {
-    if (_isMobile) {
-      final dir = await getApplicationSupportDirectory();
-      return p.join(dir.path, _dirName, 'state');
-    }
-    return stateHome;
-  }
-
-  static bool get _isMobile => !(_isLinux || _isMacOS || _isWindows);
+  static Future<String> get stateHomeAsync async => stateHome;
 
   /// Ensure [path] exists as a directory (creates recursively if needed).
   static Future<Directory> ensureDir(String path) async {
@@ -254,7 +254,7 @@ class XdgPaths {
   static Directory dataSubdirSync(String name) =>
       ensureDirSync(p.join(dataHome, name));
 
-  /// Get or create a subdirectory under [dataHomeAsync] (all platforms).
+  /// Get or create a subdirectory under [dataHomeAsync].
   static Future<Directory> dataSubdirAsync(String name) async =>
       ensureDir(p.join(await dataHomeAsync, name));
 
@@ -262,7 +262,7 @@ class XdgPaths {
   static Future<Directory> cacheSubdir(String name) =>
       ensureDir(p.join(cacheHome, name));
 
-  /// Get or create a subdirectory under [cacheHomeAsync] (all platforms).
+  /// Get or create a subdirectory under [cacheHomeAsync].
   static Future<Directory> cacheSubdirAsync(String name) async =>
       ensureDir(p.join(await cacheHomeAsync, name));
 

@@ -132,7 +132,7 @@ void main() {
     test('first chunk fires TextStarted event', () async {
       final session = await runner.startInitializedSession(agent: 'general');
 
-      session.onChunk('Hello');
+      await session.onChunk('Hello');
 
       // Allow microtasks (unawaited appends) to settle
       await Future.delayed(const Duration(milliseconds: 50));
@@ -148,9 +148,9 @@ void main() {
     test('subsequent chunks do not fire additional TextStarted', () async {
       final session = await runner.startInitializedSession(agent: 'general');
 
-      session.onChunk('Hello');
-      session.onChunk(' world');
-      session.onChunk('!');
+      await session.onChunk('Hello');
+      await session.onChunk(' world');
+      await session.onChunk('!');
 
       await Future.delayed(const Duration(milliseconds: 50));
 
@@ -163,7 +163,7 @@ void main() {
     test('empty chunk is a no-op', () async {
       final session = await runner.startInitializedSession(agent: 'general');
 
-      session.onChunk('');
+      await session.onChunk('');
 
       await Future.delayed(const Duration(milliseconds: 50));
 
@@ -177,7 +177,7 @@ void main() {
       final session = runner.startSession(agent: 'general');
       // Do NOT initialize
 
-      session.onChunk('Should not appear');
+      await session.onChunk('Should not appear');
 
       await Future.delayed(const Duration(milliseconds: 50));
 
@@ -189,7 +189,7 @@ void main() {
       final session = await runner.startInitializedSession(agent: 'general');
 
       // Append a word-boundary character — should trigger immediate flush
-      session.onChunk('Hello ');
+      await session.onChunk('Hello ');
       await session.flushText(force: true);
 
       final events = await repository.eventStore.getEvents(session.sessionId);
@@ -445,28 +445,28 @@ void main() {
       await db.close();
     });
 
-    test('force flush appends TextDelta event', () async {
-      final session = await runner.startInitializedSession(agent: 'general');
+test('force flush appends TextDelta event', () async {
+  final session = await runner.startInitializedSession(agent: 'general');
 
-      session.onChunk('Hello');
-      await session.flushText(force: true);
+  await session.onChunk('Hello');
+  await session.flushText(force: true);
 
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.whereType<TextDelta>().length, 1);
-      final textDelta = events.whereType<TextDelta>().first;
-      expect(textDelta.delta, 'Hello');
-    });
+  final events = await repository.eventStore.getEvents(session.sessionId);
+  expect(events.whereType<TextDelta>().length, 1);
+  final textDelta = events.whereType<TextDelta>().first;
+  expect(textDelta.delta, 'Hello');
+});
 
-    test('non-force flush before 250ms is a no-op', () async {
-      final session = await runner.startInitializedSession(agent: 'general');
+test('non-force flush before 250ms is a no-op', () async {
+  final session = await runner.startInitializedSession(agent: 'general');
 
-      session.onChunk('Hi');
-      // Immediately flush without force — should be suppressed
-      await session.flushText(force: false);
+  await session.onChunk('Hi');
+  // Immediately flush without force — should be suppressed
+  await session.flushText(force: false);
 
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.whereType<TextDelta>(), isEmpty);
-    });
+  final events = await repository.eventStore.getEvents(session.sessionId);
+  expect(events.whereType<TextDelta>(), isEmpty);
+});
 
     test('flush with empty pending text is a no-op', () async {
       final session = await runner.startInitializedSession(agent: 'general');

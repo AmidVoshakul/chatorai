@@ -5,13 +5,9 @@ import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/features/chat/services/chat_ai_service.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 
 const _subagentDeniedTools = {'task', 'todowrite'};
-
-class SessionRunnerHolder {
-  final SessionRunner? runner;
-  const SessionRunnerHolder(this.runner);
-}
 
 String _escapeXml(String value) => value
     .replaceAll('&', '&amp;')
@@ -42,6 +38,11 @@ String _buildTaskXml({
       '<summary>$safeSummary</summary>'
       '<task_result><![CDATA[$safeContent]]></task_result>'
       '</task>';
+}
+
+String _normalizeSessionId(String id) {
+  if (id.startsWith('ses_')) return id;
+  return 'ses_$id';
 }
 
 ToolDef createTaskTool({
@@ -98,19 +99,24 @@ ToolDef createTaskTool({
           prompt.isEmpty ||
           subagentType == null ||
           subagentType.isEmpty) {
-        return ToolOutput(
+        return const ToolOutput(
           'Error: Missing required fields',
           metadata: {'error': true},
         );
       }
 
-      final sessionId = ctx.sessionId;
-      if (sessionId == null) {
-        return ToolOutput(
-          'Error: Missing session ID',
+      final parentSessionId = currentSessionRunner?.parentSessionId;
+      final rawSessionId = parentSessionId ?? ctx.sessionId;
+      if (rawSessionId == null) {
+        LogTags.chatService.logWarning(
+          'TaskTool: no parent sessionId available',
+        );
+        return const ToolOutput(
+          'Error: Missing session ID for task delegation',
           metadata: {'error': true},
         );
       }
+      final normalizedSessionId = _normalizeSessionId(rawSessionId);
 
       final agent = AgentRegistry().get(subagentType);
       if (agent == null) {
@@ -132,7 +138,7 @@ ToolDef createTaskTool({
 
       final runner = currentSessionRunner?.runner;
       if (runner == null) {
-        return ToolOutput(
+        return const ToolOutput(
           'Error: No session runner available for task delegation. '
           'Task tool requires an active parent session to create child sessions.',
           metadata: {'error': true},
@@ -141,7 +147,7 @@ ToolDef createTaskTool({
 
       final effectiveToolRegistry = toolRegistry;
       if (effectiveToolRegistry == null) {
-        return ToolOutput(
+        return const ToolOutput(
           'Error: ToolRegistry not available for task delegation',
           metadata: {'error': true},
         );
@@ -159,7 +165,7 @@ ToolDef createTaskTool({
 
       final effectiveChatAiService = chatAiService;
       if (effectiveChatAiService == null) {
-        return ToolOutput(
+        return const ToolOutput(
           'Error: ChatAiService not available for task delegation',
           metadata: {'error': true},
         );
@@ -167,7 +173,7 @@ ToolDef createTaskTool({
 
       final currentModel = effectiveChatAiService.currentModel;
       if (currentModel == null) {
-        return ToolOutput(
+        return const ToolOutput(
           'Error: No model selected in ChatAiService',
           metadata: {'error': true},
         );
@@ -176,10 +182,14 @@ ToolDef createTaskTool({
       final temperatureToUse = effectiveChatAiService.currentTemperature ?? 0.7;
 
       final childResult = await runner.runTaskInChild(
-        parentSessionId: _toSessionId(sessionId),
+        parentSessionId: SessionID.fromString(normalizedSessionId),
         taskPrompt: prompt,
+        holder: currentSessionRunner,
         streamFn: (child) async {
-          await chatAiService!.streamChatCompletion(
+          LogTags.chatService.logInfo(
+            'TaskTool: child stream starting agent=$subagentType parent=$normalizedSessionId child=${child.sessionId.value}',
+          );
+          await chatAiService!.runChildCompletion(
             messages: messages,
             model: currentModel,
             temperature: temperatureToUse,
@@ -187,10 +197,23 @@ ToolDef createTaskTool({
             maxSteps: agent.maxSteps,
             onChunk: child.onChunk,
             onReasoning: child.onReasoning,
-            onToolStart: child.onToolStart,
-            onToolEnd: child.onToolEnd,
-            onToolError: (toolCallId, toolName, error) {
-              child.onError(Exception(error));
+            onToolStart: (toolCallId, toolName, input) async {
+              await child.onToolStart(toolCallId, toolName, input);
+              final title =
+                  input['command'] as String? ??
+                  input['query'] as String? ??
+                  input['filePath'] as String? ??
+                  input['path'] as String?;
+              currentSessionRunner?.onChildToolEvent?.call(toolName, title);
+              return;
+            },
+            onToolEnd: (toolCallId, toolName, result) async {
+              await child.onToolEnd(toolCallId, toolName, result);
+              return;
+            },
+            onToolError: (toolCallId, toolName, error) async {
+              await child.onError(Exception(error));
+              return;
             },
             onCompletion: (content) async {
               await child.onCompletion(
@@ -204,37 +227,34 @@ ToolDef createTaskTool({
         agent: subagentType,
         title: titleInput,
         taskId: taskId,
-        abortSignal: ctx.abortSignal,
       );
 
-      final effectiveTaskId = taskId ?? 'task_${_toSessionId(sessionId).value}';
+      final childTaskId = taskId ?? 'task_${childResult.sessionId.value}';
 
       final xml = _buildTaskXml(
-        sessionId: sessionId,
-        taskId: effectiveTaskId,
+        sessionId: rawSessionId,
+        taskId: childTaskId,
         agent: agent.name,
         state: childResult.aborted ? 'cancelled' : 'completed',
         summary: childResult.output,
         content: childResult.output,
       );
+      LogTags.chatService.logInfo(
+        'TaskTool: child finished agent=$subagentType aborted=${childResult.aborted} outputLen=${childResult.output.length}',
+      );
       return ToolOutput(
         xml,
         metadata: {
-          'task_id': effectiveTaskId,
+          'task_id': childTaskId,
           'subagent_type': subagentType,
           'agent_name': agent.name,
           'description': description,
-          'session_id': sessionId,
+          'session_id': rawSessionId,
           if (childResult.aborted) 'aborted': true,
         },
       );
     },
   );
-}
-
-SessionID _toSessionId(String raw) {
-  final value = raw.startsWith('ses_') ? raw : 'ses_$raw';
-  return SessionID.fromString(value);
 }
 
 ToolSet deriveSubagentTools(ToolRegistry registry) {

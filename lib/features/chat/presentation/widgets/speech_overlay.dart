@@ -87,10 +87,9 @@ class _SpeechOverlayWidgetState extends State<SpeechOverlayWidget>
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
-              color: (isDark
-                      ? ChatoraiColors.pureBlack
-                      : ChatoraiColors.pureWhite)
-                  .withValues(alpha: 0.75),
+              color:
+                  (isDark ? ChatoraiColors.pureBlack : ChatoraiColors.pureWhite)
+                      .withValues(alpha: 0.75),
             ),
           ),
           Center(
@@ -230,7 +229,8 @@ class _WavePainter extends CustomPainter {
     for (double x = 0; x <= size.width; x++) {
       final progress = x / size.width;
       final fade = math.sin(progress * math.pi);
-      final y = centerY +
+      final y =
+          centerY +
           math.sin(
                 (progress * frequency * math.pi * 2) +
                     animationValue * math.pi * 2 +
@@ -279,8 +279,10 @@ class _PulsingDotState extends State<_PulsingDot>
       duration: const Duration(milliseconds: 1100),
     )..repeat(reverse: true);
 
-    _animation = Tween<double>(begin: 0.4, end: 1.0)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _animation = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override

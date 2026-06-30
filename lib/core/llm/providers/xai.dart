@@ -2,7 +2,6 @@
 library;
 
 import 'package:chatorai/core/llm/models/auth_config.dart';
-import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/models/provider_config.dart';
 
 /// xAI — Grok models.
@@ -18,25 +17,5 @@ ProviderConfig xaiProvider() => ProviderConfig.full(
   ),
   sdk: 'openai-compatible',
   enabled: false,
-  models: [
-    ModelConfig.full(
-      id: 'xai/grok-2',
-      providerId: 'xai',
-      modelName: 'grok-2',
-      displayName: 'Grok 2',
-      description: 'xAI Grok 2 — general-purpose chat model',
-      contextLength: 131072,
-      defaultMaxTokens: 8192,
-      capabilities: ModelCapabilities(
-        reasoning: false,
-        multimodal: false,
-        vision: false,
-        tools: true,
-        streaming: true,
-        jsonMode: true,
-      ),
-      pricing: const ModelPricing(inputCostPer1k: 0.002, outputCostPer1k: 0.01),
-      enabled: true,
-    ),
-  ],
+  models: [],
 );

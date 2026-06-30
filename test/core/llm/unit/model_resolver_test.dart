@@ -41,14 +41,12 @@ void main() {
       sdk: 'openai-compatible',
       models: [
         ModelConfig.basic(
-          id: 'test-provider/gpt-4o',
           providerId: 'test-provider',
           modelName: 'gpt-4o',
           displayName: 'GPT-4o',
           contextLength: 128000,
         ),
         ModelConfig.basic(
-          id: 'test-provider/gpt-4o-mini',
           providerId: 'test-provider',
           modelName: 'gpt-4o-mini',
           displayName: 'GPT-4o Mini',
@@ -109,10 +107,11 @@ void main() {
         expect(provider.id, 'test-provider');
       });
 
-      test('handles colon-separated legacy format', () {
-        final provider = resolver.getProviderForModel('test-provider:gpt-4o');
-        expect(provider, isNotNull);
-        expect(provider.id, 'test-provider');
+      test('throws for colon-separated format (not supported)', () {
+        expect(
+          () => resolver.getProviderForModel('test-provider:gpt-4o'),
+          throwsA(isA<ModelResolutionError>()),
+        );
       });
 
       test('throws for invalid format without separator', () {
@@ -147,7 +146,6 @@ void main() {
           sdk: 'openai-compatible',
           models: [
             ModelConfig.basic(
-              id: 'auth-required/model-a',
               providerId: 'auth-required',
               modelName: 'model-a',
               displayName: 'Model A',
@@ -183,7 +181,6 @@ void main() {
           sdk: 'bedrock',
           models: [
             ModelConfig.basic(
-              id: 'bedrock-test/claude',
               providerId: 'bedrock-test',
               modelName: 'claude',
               displayName: 'Claude',
@@ -224,7 +221,6 @@ void main() {
           sdk: 'bedrock',
           models: [
             ModelConfig.basic(
-              id: 'bedrock-wrong-auth/claude',
               providerId: 'bedrock-wrong-auth',
               modelName: 'claude',
               displayName: 'Claude',
@@ -269,7 +265,6 @@ void main() {
           sdk: 'bedrock',
           models: [
             ModelConfig.basic(
-              id: 'bedrock-missing-secret/claude',
               providerId: 'bedrock-missing-secret',
               modelName: 'claude',
               displayName: 'Claude',
@@ -314,7 +309,6 @@ void main() {
           sdk: 'bedrock',
           models: [
             ModelConfig.basic(
-              id: 'bedrock-missing-region/claude',
               providerId: 'bedrock-missing-region',
               modelName: 'claude',
               displayName: 'Claude',
@@ -393,7 +387,6 @@ void main() {
           sdk: 'openai-compatible',
           models: [
             ModelConfig.basic(
-              id: 'nokey-provider/model-x',
               providerId: 'nokey-provider',
               modelName: 'model-x',
               displayName: 'Model X',

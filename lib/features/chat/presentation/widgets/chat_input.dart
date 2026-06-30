@@ -371,8 +371,11 @@ class _ChatInputState extends ConsumerState<ChatInput>
             final messageAsync = ref.watch(retryMessageProvider);
             final countdownAsync = ref.watch(retryCountdownProvider);
             final message = messageAsync.hasValue ? messageAsync.value : null;
-            final progress = countdownAsync.hasValue ? countdownAsync.value : null;
-            final isRetrying = progress != null && progress > 0 && progress <= 1;
+            final progress = countdownAsync.hasValue
+                ? countdownAsync.value
+                : null;
+            final isRetrying =
+                progress != null && progress > 0 && progress <= 1;
             if (message == null || message.isEmpty || !isRetrying) {
               return const SizedBox.shrink();
             }

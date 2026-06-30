@@ -2,7 +2,7 @@ name: chatorai
 description: "ChatORAI - AI Chat Application"
 publish_to: "none"
 
-version: 1.0.1
+version: 0.1.1
 
 environment:
   sdk: ^3.11.0
@@ -74,6 +74,9 @@ flutter:
   assets:
     - assets/chatorai_logo_black.png
     - assets/provider/
+
+executables:
+  chatorai:
 
 l10n:
   arb-dir: lib/l10n

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:chatorai/shared/theme/app_theme.dart' hide ChatoraiMarkdownStyles;
+import 'package:chatorai/shared/theme/app_theme.dart'
+    hide ChatoraiMarkdownStyles;
 import 'package:chatorai/shared/theme/markdown_styles.dart';
 import 'package:chatorai/shared/utils/message_utils.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
@@ -85,9 +86,7 @@ class _TableBlockState extends State<TableBlock> {
                   Row(
                     children: [
                       Icon(
-                        _isCollapsed
-                            ? Icons.chevron_right
-                            : Icons.expand_more,
+                        _isCollapsed ? Icons.chevron_right : Icons.expand_more,
                         color: headerColor,
                         size: ChatoraiIconSizes.lg,
                       ),
@@ -132,10 +131,7 @@ class _TableBlockState extends State<TableBlock> {
           ),
 
           // ── Table body ──
-          if (!_isCollapsed)
-            SelectionArea(
-              child: _buildTable(context, isDark),
-            ),
+          if (!_isCollapsed) SelectionArea(child: _buildTable(context, isDark)),
         ],
       ),
     );
@@ -184,17 +180,14 @@ class _TableBlockState extends State<TableBlock> {
     final colPixelWidths = List.filled(colCount, minColWidth);
     for (final row in normalizedRows) {
       for (int i = 0; i < row.cells.length; i++) {
-        final textWidth =
-            row.cells[i].length * charWidth + cellPadding;
+        final textWidth = row.cells[i].length * charWidth + cellPadding;
         if (textWidth > colPixelWidths[i]) {
-          colPixelWidths[i] =
-              textWidth.clamp(minColWidth, maxColWidth);
+          colPixelWidths[i] = textWidth.clamp(minColWidth, maxColWidth);
         }
       }
     }
 
-    final mdStyleSheet =
-        ChatoraiMarkdownStyles.getMarkdownStyles(context);
+    final mdStyleSheet = ChatoraiMarkdownStyles.getMarkdownStyles(context);
 
     final border = TableBorder(
       horizontalInside: BorderSide(
@@ -245,8 +238,7 @@ class _TableBlockState extends State<TableBlock> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth;
-        final naturalWidth =
-            colPixelWidths.fold(0.0, (a, b) => a + b);
+        final naturalWidth = colPixelWidths.fold(0.0, (a, b) => a + b);
 
         if (naturalWidth <= availableWidth) {
           final ratio = availableWidth / naturalWidth;
@@ -327,10 +319,7 @@ class TableParser {
       if (hasHeader && i == 1) continue; // Skip separator line
 
       final cells = _parseRow(pipeLines[i]);
-      rows.add(TableRowData(
-        cells: cells,
-        isHeader: hasHeader && i == 0,
-      ));
+      rows.add(TableRowData(cells: cells, isHeader: hasHeader && i == 0));
     }
 
     return rows;
@@ -340,10 +329,7 @@ class TableParser {
     // Remove leading and trailing pipes, then split by pipe
     final trimmed = line.replaceFirst(RegExp(r'^\|'), '');
     final withoutTrailing = trimmed.replaceFirst(RegExp(r'\|$'), '');
-    return withoutTrailing
-        .split('|')
-        .map((cell) => cell.trim())
-        .toList();
+    return withoutTrailing.split('|').map((cell) => cell.trim()).toList();
   }
 
   /// Extracts consecutive table lines from a list of lines starting at index.

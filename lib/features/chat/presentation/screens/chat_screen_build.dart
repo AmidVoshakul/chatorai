@@ -67,6 +67,20 @@ extension _ChatScreenBuildExt on _ChatScreenState {
       onHeadingsUpdated: _onHeadingsUpdated,
       onToggleNavigator: _toggleNavigator,
       onQuestionAnswer: _handleQuestionAnswer,
+      onTaskTap: (partSessionId) {
+        // Use part's sessionId (persisted from TaskPart), fallback to holder
+        final effectiveId = partSessionId ??
+            ref
+                .read(currentSessionRunnerProvider.notifier)
+                .activeChildSessionId;
+        if (effectiveId != null && effectiveId.isNotEmpty) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => ChildSessionScreen(sessionId: effectiveId),
+            ),
+          );
+        }
+      },
     );
 
     if (wrapWithGesture) {

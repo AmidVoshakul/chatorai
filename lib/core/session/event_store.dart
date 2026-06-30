@@ -3,14 +3,14 @@ import 'dart:convert';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:drift/drift.dart';
-import 'database.dart';
+import 'database.dart' as db;
 import 'events.dart';
 import 'session_id.dart';
 
 /// Append-only event store that persists [SessionEvent]s to the `events`
 /// SQLite table and allows replaying them via sequence-ordered queries.
 class EventStore {
-  final AppDatabase _db;
+  final db.AppDatabase _db;
 
   EventStore(this._db);
 
@@ -24,7 +24,7 @@ class EventStore {
       await _db
           .into(_db.events)
           .insert(
-            EventsCompanion.insert(
+            db.EventsCompanion.insert(
               sessionId: event.sessionId.value,
               eventType: event.runtimeType.toString(),
               eventData: jsonEncode(data),
@@ -48,7 +48,7 @@ class EventStore {
         await _db
             .into(_db.events)
             .insert(
-              EventsCompanion.insert(
+              db.EventsCompanion.insert(
                 sessionId: event.sessionId.value,
                 eventType: event.runtimeType.toString(),
                 eventData: jsonEncode(data),
@@ -70,7 +70,7 @@ class EventStore {
               ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
             .get();
 
-    return rows.map(_deserialize).toList();
+    return rows.map<SessionEvent>(_deserialize).toList();
   }
 
   /// Stream events for a session — emits the full ordered list on every
@@ -80,7 +80,23 @@ class EventStore {
           ..where((e) => e.sessionId.equals(sessionId.value))
           ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
         .watch()
-        .map((rows) => rows.map(_deserialize).toList());
+        .map((rows) => rows.map<SessionEvent>(_deserialize).toList());
+  }
+
+  /// Stream raw message rows for a session ordered by sequence.
+  Stream<List<db.Message>> watchMessages(SessionID sessionId) {
+    return (_db.select(_db.messages)
+          ..where((m) => m.sessionId.equals(sessionId.value))
+          ..orderBy([(m) => OrderingTerm(expression: m.seq)]))
+        .watch();
+  }
+
+  /// Stream raw tool result rows for a session ordered by creation time.
+  Stream<List<db.ToolResult>> watchToolResults(SessionID sessionId) {
+    return (_db.select(_db.toolResults)
+          ..where((t) => t.sessionId.equals(sessionId.value))
+          ..orderBy([(t) => OrderingTerm(expression: t.createdAt)]))
+        .watch();
   }
 
   /// Return the highest sequence number recorded for [sessionId],
@@ -230,7 +246,7 @@ class EventStore {
     };
   }
 
-  SessionEvent _deserialize(Event row) {
+  SessionEvent _deserialize(db.Event row) {
     final data = jsonDecode(row.eventData) as Map<String, dynamic>;
     final type = data['type'] as String;
 
@@ -372,6 +388,8 @@ class EventStore {
         tokensInput: data['tokensInput'] as int,
         tokensOutput: data['tokensOutput'] as int,
         tokensReasoning: data['tokensReasoning'] as int,
+        tokensCacheRead: data['tokensCacheRead'] as int? ?? 0,
+        tokensCacheWrite: data['tokensCacheWrite'] as int? ?? 0,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),

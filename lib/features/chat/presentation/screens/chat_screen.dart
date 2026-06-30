@@ -7,7 +7,7 @@ import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/constants/chat_constants.dart';
 import 'package:chatorai/core/context/compaction_orchestrator.dart';
 import 'package:chatorai/core/context/compaction_service.dart';
-import 'package:chatorai/core/session/database.dart' hide Message;
+// import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
@@ -15,6 +15,7 @@ import 'package:chatorai/core/tools/tool_output_persistence.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/models/model_card_model.dart';
+import 'package:chatorai/features/chat/presentation/screens/child_session_screen.dart';
 import 'package:chatorai/features/chat/data/models/model_settings.dart';
 import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_app_bar.dart';
@@ -42,7 +43,8 @@ import 'package:chatorai/providers.dart'
         toolRegistryProvider,
         currentAgentProvider,
         compactionConfigProvider,
-        currentSessionRunnerProvider;
+        currentSessionRunnerProvider,
+        sessionRepositoryProvider;
 import 'package:chatorai/shared/utils/chat_error_utils.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
@@ -102,6 +104,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   bool _autoScrollEnabled = true; // Auto-scroll enabled by default
 
+  /// Reusable session ID across multiple message turns in the same chat.
+  /// Created on the first message, reused on continuation.
+  String? _currentSessionId;
+
   /// Test-only accessor for auto-scroll state.
   bool get autoScrollEnabledForTest => _autoScrollEnabled;
 
@@ -125,9 +131,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void initState() {
     super.initState();
     _chatStorageService = ref.read(chatStorageServiceProvider);
-    _sessionRepositoryFuture = createFileDatabase().then(
-      (db) => SessionRepository(db),
-    );
+    _sessionRepositoryFuture = ref.read(sessionRepositoryProvider.future);
     _messageScrollController =
         widget.testScrollController ?? ScrollController();
     _messageScrollController.addListener(_handleScroll);

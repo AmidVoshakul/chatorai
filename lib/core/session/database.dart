@@ -11,7 +11,29 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (mgr) async {
+        await mgr.createAll();
+      },
+      beforeOpen: (details) async {
+        if (!details.wasCreated && (details.versionBefore ?? 0) < 3) {
+          await customStatement(
+            "DELETE FROM tool_results WHERE tool_name = '' OR tool_name IS NULL",
+          );
+        }
+      },
+      onUpgrade: (mgr, from, to) async {
+        if (from < 2) {
+          await mgr.addColumn(sessions, sessions.tokensCacheRead as dynamic);
+          await mgr.addColumn(sessions, sessions.tokensCacheWrite as dynamic);
+        }
+      },
+    );
+  }
 
   static Future<AppDatabase> create() async => createFileDatabase();
 

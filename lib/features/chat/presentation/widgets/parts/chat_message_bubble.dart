@@ -1,6 +1,7 @@
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
 import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat/error_message.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/question_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/reasoning_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/task_part_widget.dart';
@@ -12,7 +13,9 @@ import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/format_time_utils.dart';
 import 'package:chatorai/shared/utils/message_utils.dart';
+import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ChatMessageBubble extends StatefulWidget {
@@ -30,6 +33,7 @@ class ChatMessageBubble extends StatefulWidget {
   final Function(String messageId, String answer)? onQuestionAnswer;
   final int? cumulativeTokens;
   final int? contextLength;
+  final void Function(String? sessionId)? onTaskTap;
 
   const ChatMessageBubble({
     super.key,
@@ -47,6 +51,7 @@ class ChatMessageBubble extends StatefulWidget {
     this.onQuestionAnswer,
     this.cumulativeTokens,
     this.contextLength,
+    this.onTaskTap,
   });
 
   @override
@@ -352,7 +357,12 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.sm),
         child: Opacity(opacity: 0.3, child: ToolResultPartWidget(part: p)),
       ),
-      TaskPart p => TaskPartWidget(part: p),
+      TaskPart p => TaskPartWidget(
+        part: p,
+        onTap: widget.onTaskTap != null
+            ? () => widget.onTaskTap?.call(p.sessionId)
+            : null,
+      ),
       QuestionPart p => QuestionPartWidget(
         part: p,
         onAnswer: (answer) =>
@@ -378,27 +388,21 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
   }
 
   Widget _errorBubble(ErrorMessage m, BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(ChatoraiSpacing.md),
-      decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.error_outline,
-            color: Colors.red,
-            size: ChatoraiIconSizes.lg,
-          ),
-          const SizedBox(width: ChatoraiSpacing.sm),
-          Expanded(
-            child: SelectableText(m.content, style: theme.textTheme.bodyMedium),
-          ),
-        ],
-      ),
+    return ErrorMessageBubble(
+      errorMessage: m.content,
+      onCopy: () {
+        Clipboard.setData(ClipboardData(text: m.content));
+        if (mounted) {
+          SnackbarUtils.showSuccessSnackBar(
+            context: context,
+            message: AppLocalizations.of(context)!.messageCopied,
+            icon: Icons.copy,
+            duration: const Duration(seconds: 1),
+          );
+        }
+      },
+      onRegenerate: widget.onMessageRegenerate,
+      onDelete: widget.onMessageDeleted,
     );
   }
 

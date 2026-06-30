@@ -401,7 +401,8 @@ class InputLayoutBuilder {
         onStopStreaming: onStopStreaming,
       );
     }
-    final isListening = chatInputState.speechUiState == SpeechUiState.listening ||
+    final isListening =
+        chatInputState.speechUiState == SpeechUiState.listening ||
         chatInputState.speechUiState == SpeechUiState.preparing;
     final isIdle = chatInputState.speechUiState == SpeechUiState.idle;
     final showGradient = (hasText || hasAttachment) || !isIdle;
@@ -411,9 +412,7 @@ class InputLayoutBuilder {
       gradient: showGradient
           ? LinearGradient(
               colors: [
-                isListening
-                    ? ChatoraiColors.error
-                    : theme.colorScheme.primary,
+                isListening ? ChatoraiColors.error : theme.colorScheme.primary,
                 isListening
                     ? ChatoraiColors.error.withValues(alpha: 0.8)
                     : theme.colorScheme.primary.withValues(alpha: 0.8),
@@ -425,7 +424,9 @@ class InputLayoutBuilder {
           : (theme.brightness == Brightness.dark
                 ? ChatoraiColors.inputContainerDark
                 : ChatoraiColors.inputContainerLight),
-      onTap: isListening ? onMicrophoneAction : (hasText || hasAttachment ? onSend : onMicrophoneAction),
+      onTap: isListening
+          ? onMicrophoneAction
+          : (hasText || hasAttachment ? onSend : onMicrophoneAction),
       onLongPress: isListening ? null : onLongPressMic,
       child: Icon(
         InputWidgetBuilders.getActionIcon(

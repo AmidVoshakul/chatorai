@@ -1,17 +1,33 @@
 import 'dart:async';
 
-import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
+import 'package:chatorai/shared/utils/logger.dart';
+
+class SessionRunnerHolder {
+  SessionRunner? runner;
+  String? parentSessionId;
+
+  /// Real child session ID set by task tool when child session is created.
+  /// Only one task runs at a time per parent, so a single slot suffices.
+  String? activeChildSessionId;
+
+  /// Callback fired when a child tool starts executing during task delegation.
+  /// Used to forward child tool events to the parent TaskPart UI.
+  void Function(String toolName, String? title)? onChildToolEvent;
+
+  SessionRunnerHolder(this.runner, {this.parentSessionId});
+}
 
 class TaskChildResult {
   final String output;
   final bool aborted;
+  final SessionID sessionId;
 
-  const TaskChildResult(this.output, {this.aborted = false});
+  const TaskChildResult(this.output, {this.aborted = false, required this.sessionId});
 }
 
 class SessionRunner {
@@ -20,25 +36,24 @@ class SessionRunner {
 
   SessionRunner(this.repository, this.toolRegistry);
 
-  SessionRunnerSession startSession({
+SessionRunnerSession startSession({
     required String agent,
     String? modelRef,
     String? title,
     String? parentSessionId,
   }) {
-    final event = SessionCreated(
-      sessionId: SessionID.create(),
+    final sessionId = SessionID.create();
+    // Note: Event persisted later via initialize() for backward compatibility.
+    // Prefer startInitializedSession() for immediate persistence.
+    return SessionRunnerSession(
+      sessionId: sessionId,
+      repository: repository,
+      agent: agent,
+      modelRef: modelRef,
+      title: title,
       parentId: parentSessionId != null
           ? SessionID.fromString(parentSessionId)
           : null,
-      title: title ?? '',
-      agent: agent,
-      modelRef: modelRef,
-      timestamp: DateTime.now(),
-    );
-    return SessionRunnerSession._(
-      repository: repository,
-      creationEvent: event,
       toolRegistry: toolRegistry,
     );
   }
@@ -46,23 +61,34 @@ class SessionRunner {
   /// Creates a session that is immediately writable by appending the
   /// [SessionCreated] event to the store and setting [initialized] to true.
   /// Must be called once before any [onChunk]/[onReasoning]/[onTool*] calls.
+  ///
+  /// When [sessionId] is provided (continuation), reuses the existing session
+  /// without emitting a new [SessionCreated] event.
   Future<SessionRunnerSession> startInitializedSession({
     required String agent,
     String? modelRef,
     String? title,
     String? parentSessionId,
+    SessionID? sessionId,
   }) async {
+    if (sessionId != null) {
+      return SessionRunnerSession.forExisting(
+        repository: repository,
+        sessionId: sessionId,
+        toolRegistry: toolRegistry,
+      );
+    }
     final session = startSession(
       agent: agent,
       modelRef: modelRef,
       title: title,
       parentSessionId: parentSessionId,
     );
-    await session.initialize();
+    await session.initialize(agent: agent, modelRef: modelRef, title: title);
     return session;
   }
 
-  Future<TaskChildResult> runTaskInChild({
+Future<TaskChildResult> runTaskInChild({
     required SessionID parentSessionId,
     required String taskPrompt,
     required Future<void> Function(SessionRunnerSession child) streamFn,
@@ -70,7 +96,7 @@ class SessionRunner {
     String? modelRef,
     String? title,
     String? taskId,
-    sdk.CancellationToken? abortSignal,
+    SessionRunnerHolder? holder,
   }) async {
     final childState = await repository.createChildSession(
       parentSessionId,
@@ -80,77 +106,36 @@ class SessionRunner {
     );
     final childId = childState.id;
 
-    await repository.appendEvent(
-      TaskStarted(
-        sessionId: parentSessionId,
-        taskId: taskId ?? 'task_${childId.value}',
-        description: taskPrompt,
-        timestamp: DateTime.now(),
-      ),
-    );
-
-    final childRunner = SessionRunnerSession._(
+    final childSession = SessionRunnerSession.forExisting(
       repository: repository,
-      creationEvent: SessionCreated(
-        sessionId: childId,
-        parentId: parentSessionId,
-        title: childState.title,
-        agent: childState.agent,
-        modelRef: childState.modelRef,
-        permission: childState.permission,
-        timestamp: DateTime.now(),
-      ),
-      toolRegistry: toolRegistry,
+      sessionId: childId,
+      immediate: true,
     );
-    // Session already persisted by createChildSession above — skip append.
-    childRunner.initialized = true;
 
-    String accumulateText = '';
-    final completer = Completer<String>();
+    holder?.activeChildSessionId = childId.value;
 
-    childRunner._onChunk = (String text) {
-      accumulateText += text;
-      if (!completer.isCompleted) completer.complete(accumulateText);
-    };
-
-    Timer? abortTimer;
-    final abortCompleter = Completer<void>();
-    if (abortSignal != null) {
-      abortTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
-        if (abortSignal.isCancelled && !abortCompleter.isCompleted) {
-          abortCompleter.complete();
-        }
-      });
-    }
+    // Persist user prompt as first message in child session (mirrors parent UX)
+    await childSession.publishUserMessage(content: taskPrompt);
 
     try {
-      await Future.any([
-        streamFn(childRunner),
-        if (abortSignal != null) abortCompleter.future,
-      ]);
-      if (abortSignal?.isCancelled ?? false) {
-        return TaskChildResult(accumulateText, aborted: true);
-      }
-      if (!completer.isCompleted) completer.complete(accumulateText);
-      await childRunner.onCompletion(content: accumulateText);
-      final result = await completer.future.timeout(
-        const Duration(minutes: 30),
-        onTimeout: () => accumulateText,
-      );
-      return TaskChildResult(result);
+      await streamFn(childSession);
+      // fullText is accumulated via onChunk callback
+      return TaskChildResult(childSession.fullText, sessionId: childId);
     } finally {
-      abortTimer?.cancel();
-      childRunner.dispose();
+      childSession.dispose();
     }
   }
 }
 
 class SessionRunnerSession {
   final SessionRepository repository;
-  final SessionCreated creationEvent;
+  final SessionID sessionId;
   final ToolRegistry? toolRegistry;
-
-  SessionID get sessionId => creationEvent.sessionId;
+  final bool immediate;
+  final String? _agent;
+  final String? _modelRef;
+  final String? _title;
+  final SessionID? _parentId;
 
   bool initialized = false;
   bool textStarted = false;
@@ -161,21 +146,62 @@ class SessionRunnerSession {
   String pendingText = '';
   String pendingReasoning = '';
   DateTime lastFlushTime = DateTime.now();
-  void Function(String) _onChunk = (_) {};
   StreamSubscription<SessionEvent>? eventSubscription;
 
-  SessionRunnerSession._({
+  SessionRunnerSession({
     required this.repository,
-    required this.creationEvent,
+    required this.sessionId,
+    String? agent,
+    String? modelRef,
+    String? title,
+    SessionID? parentId,
     this.toolRegistry,
-  });
+    this.immediate = false,
+  })  : _agent = agent,
+        _modelRef = modelRef,
+        _title = title,
+        _parentId = parentId,
+        initialized = false;
+
+  /// Creates a session runner for an already-existing session (e.g. created by [SessionRepository.createChildSession]).
+  /// The session is already initialized, so this constructor sets [initialized] to true.
+  SessionRunnerSession.forExisting({
+    required this.repository,
+    required this.sessionId,
+    this.toolRegistry,
+    this.immediate = false,
+  })  : _agent = null,
+        _modelRef = null,
+        _title = null,
+        _parentId = null,
+        initialized = true;
+
+  /// Backing event for backward compatibility with tests.
+  SessionCreated get creationEvent => SessionCreated(
+        sessionId: sessionId,
+        parentId: _parentId,
+        agent: _agent ?? 'general',
+        modelRef: _modelRef,
+        title: _title ?? '',
+        timestamp: DateTime.now(),
+      );
 
   /// Appends the [SessionCreated] event to the event store and marks
   /// this session as ready for streaming. Must be called once before
   /// any [onChunk], [onReasoning], or [onTool*] calls.
-  Future<void> initialize() async {
+  Future<void> initialize({String? agent, String? modelRef, String? title}) async {
     if (initialized) return;
-    await repository.appendEvent(creationEvent);
+    final now = DateTime.now();
+    await repository.appendEvent(
+      SessionCreated(
+        sessionId: sessionId,
+        parentId: _parentId,
+        agent: agent ?? _agent ?? 'general',
+        modelRef: modelRef ?? _modelRef,
+        title: title ?? _title ?? '',
+        timestamp: now,
+      ),
+    );
     initialized = true;
   }
 
@@ -186,9 +212,23 @@ class SessionRunnerSession {
     int tokensInput = 0,
     int tokensOutput = 0,
     int tokensReasoning = 0,
+    int tokensCacheRead = 0,
+    int tokensCacheWrite = 0,
   }) async {
     final now = DateTime.now();
     await flushText(force: true);
+
+    if (!textStarted && content.isNotEmpty) {
+      messageId = 'msg_${DateTime.now().microsecondsSinceEpoch}';
+      textStarted = true;
+      await repository.appendEvent(
+        TextStarted(
+          sessionId: sessionId,
+          messageId: messageId!,
+          timestamp: now,
+        ),
+      );
+    }
 
     if (textStarted && messageId != null) {
       final text = content.isNotEmpty ? content : fullText;
@@ -224,6 +264,8 @@ class SessionRunnerSession {
         tokensInput: tokensInput,
         tokensOutput: tokensOutput,
         tokensReasoning: tokensReasoning,
+        tokensCacheRead: tokensCacheRead,
+        tokensCacheWrite: tokensCacheWrite,
         timestamp: now,
       ),
     );
@@ -304,82 +346,104 @@ class SessionRunnerSession {
     lastFlushTime = now;
   }
 
-  void Function(String) get onChunk => (content) {
-    _handleChunk(content);
-    _onChunk(content);
-  };
+  Future<void> Function(String) get onChunk => _handleChunk;
 
-  void _handleChunk(String content) {
+  Future<void> Function(String) get onReasoning => _onReasoning;
+
+  Future<void> Function(String, String, Map<String, dynamic>) get onToolStart =>
+      _onToolStart;
+
+  Future<void> Function(String, String, String) get onToolEnd => _onToolEnd;
+
+  Future<void> Function(String, String, String) get onToolError => _onToolError;
+
+  Future<void> _handleChunk(String content) async {
     if (!initialized || content.isEmpty) return;
 
     if (!textStarted) {
       messageId = 'msg_${DateTime.now().microsecondsSinceEpoch}';
       textStarted = true;
-      unawaited(
-        repository.appendEvent(
+      try {
+        await repository.appendEvent(
           TextStarted(
             sessionId: sessionId,
             messageId: messageId!,
             timestamp: DateTime.now(),
           ),
-        ),
-      );
+        );
+      } catch (e) {
+        LogTags.chatService.logError('TextStarted event failed', e);
+        return;
+      }
     }
 
-    fullText += content;
     pendingText += content;
-    unawaited(flushText());
+    fullText += content;
+
+    try {
+      await flushText(force: immediate);
+    } catch (e) {
+      LogTags.chatService.logError('flushText failed', e);
+    }
   }
 
-  void Function(String) get onReasoning => _onReasoning;
-
-  void _onReasoning(String content) {
+  Future<void> _onReasoning(String content) async {
     if (!initialized || content.isEmpty) return;
 
     if (!textStarted) {
       messageId = 'msg_${DateTime.now().microsecondsSinceEpoch}';
       textStarted = true;
-      unawaited(
-        repository.appendEvent(
+      try {
+        await repository.appendEvent(
           TextStarted(
             sessionId: sessionId,
             messageId: messageId!,
             timestamp: DateTime.now(),
           ),
-        ),
-      );
+        );
+      } catch (e) {
+        LogTags.chatService.logError('TextStarted (reasoning) event failed', e);
+        return;
+      }
     }
 
     if (!reasoningStarted) {
       reasoningStarted = true;
-      unawaited(
-        repository.appendEvent(
+      try {
+        await repository.appendEvent(
           ReasoningStarted(
             sessionId: sessionId,
             messageId: messageId!,
             timestamp: DateTime.now(),
           ),
-        ),
-      );
+        );
+      } catch (e) {
+        LogTags.chatService.logError('ReasoningStarted event failed', e);
+      }
     }
 
     fullReasoning += content;
     pendingReasoning += content;
-    unawaited(flushText());
+    try {
+      await flushText();
+    } catch (e) {
+      LogTags.chatService.logError('flushText (reasoning) failed', e);
+    }
   }
 
-  void Function(String, String, Map<String, dynamic>) get onToolStart =>
-      _onToolStart;
-
-  void _onToolStart(
+  Future<void> _onToolStart(
     String toolCallId,
     String toolName,
     Map<String, dynamic> input,
-  ) {
+  ) async {
     if (!initialized) return;
-    unawaited(flushText(force: true));
-    unawaited(
-      repository.appendEvent(
+    try {
+      await flushText(force: true);
+    } catch (e) {
+      LogTags.chatService.logError('flushText (tool start) failed', e);
+    }
+    try {
+      await repository.appendEvent(
         ToolCalled(
           sessionId: sessionId,
           toolCallId: toolCallId,
@@ -387,16 +451,21 @@ class SessionRunnerSession {
           input: input,
           timestamp: DateTime.now(),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      LogTags.chatService
+          .logError('ToolCalled event failed for $toolName', e);
+    }
   }
 
-  void Function(String, String, String) get onToolEnd => _onToolEnd;
-
-  void _onToolEnd(String toolCallId, String toolName, String result) {
+  Future<void> _onToolEnd(
+    String toolCallId,
+    String toolName,
+    String result,
+  ) async {
     if (!initialized) return;
-    unawaited(
-      repository.appendEvent(
+    try {
+      await repository.appendEvent(
         ToolSuccess(
           sessionId: sessionId,
           toolCallId: toolCallId,
@@ -404,24 +473,32 @@ class SessionRunnerSession {
           durationMs: 0,
           timestamp: DateTime.now(),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      LogTags.chatService
+          .logError('ToolSuccess event failed for $toolName', e);
+    }
   }
 
-  void Function(String, String, String) get onToolError => _onToolError;
-
-  void _onToolError(String toolCallId, String toolName, String error) {
+  Future<void> _onToolError(
+    String toolCallId,
+    String toolName,
+    String error,
+  ) async {
     if (!initialized) return;
-    unawaited(
-      repository.appendEvent(
+    try {
+      await repository.appendEvent(
         ToolFailed(
           sessionId: sessionId,
           toolCallId: toolCallId,
           error: error,
           timestamp: DateTime.now(),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      LogTags.chatService
+          .logError('ToolFailed event failed for $toolName', e);
+    }
   }
 
   static bool _isWordBoundary(String text) {

@@ -160,8 +160,7 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
                   fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
-              if (isActive)
-                const Spacer(),
+              if (isActive) const Spacer(),
             ],
           ),
         );

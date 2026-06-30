@@ -561,7 +561,6 @@ void main() {
         final providerWithModels = testProvider.copyWith(
           models: [
             ModelConfig.basic(
-              id: 'test-provider/gpt-4o',
               providerId: 'test-provider',
               modelName: 'gpt-4o',
               displayName: 'GPT-4o',
@@ -612,7 +611,6 @@ void main() {
         final providerWithModels = testProvider.copyWith(
           models: [
             ModelConfig.basic(
-              id: 'test-provider/gpt-4o',
               providerId: 'test-provider',
               modelName: 'gpt-4o',
               displayName: 'GPT-4o',
@@ -689,14 +687,12 @@ void main() {
         final providerWithModels = testProvider.copyWith(
           models: [
             ModelConfig.basic(
-              id: 'test-provider/gpt-4o',
               providerId: 'test-provider',
               modelName: 'gpt-4o',
               displayName: 'GPT-4o',
               contextLength: 128000,
             ),
             ModelConfig.basic(
-              id: 'test-provider/gpt-4o-mini',
               providerId: 'test-provider',
               modelName: 'gpt-4o-mini',
               displayName: 'GPT-4o Mini',
@@ -745,14 +741,12 @@ void main() {
           expect(catalog.getProvider('test-provider')?.models, isEmpty);
 
           final modelA = ModelConfig.basic(
-            id: 'test-provider/gpt-4o',
             providerId: 'test-provider',
             modelName: 'gpt-4o',
             displayName: 'GPT-4o',
             contextLength: 128000,
           );
           final modelB = ModelConfig.basic(
-            id: 'test-provider/gpt-4o-mini',
             providerId: 'test-provider',
             modelName: 'gpt-4o-mini',
             displayName: 'GPT-4o Mini',
@@ -786,7 +780,6 @@ void main() {
         );
 
         final modelA = ModelConfig.basic(
-          id: 'test-provider/gpt-4o',
           providerId: 'test-provider',
           modelName: 'gpt-4o',
           displayName: 'GPT-4o',
@@ -802,7 +795,6 @@ void main() {
 
         // Now overwrite with different models
         final modelB = ModelConfig.basic(
-          id: 'test-provider/claude-sonnet',
           providerId: 'test-provider',
           modelName: 'claude-sonnet',
           displayName: 'Claude Sonnet',
@@ -829,7 +821,6 @@ void main() {
           );
 
           final modelA = ModelConfig.basic(
-            id: 'test-provider/gpt-4o',
             providerId: 'test-provider',
             modelName: 'gpt-4o',
             displayName: 'GPT-4o',
@@ -869,7 +860,6 @@ void main() {
         expect(catalog.getProvider('test-provider')?.models, isEmpty);
 
         final modelA = ModelConfig.basic(
-          id: 'test-provider/llama-3',
           providerId: 'test-provider',
           modelName: 'llama-3',
           displayName: 'Llama 3',
@@ -900,14 +890,12 @@ void main() {
         );
 
         final modelA = ModelConfig.basic(
-          id: 'test-provider/model-a',
           providerId: 'test-provider',
           modelName: 'model-a',
           displayName: 'Model A',
           contextLength: 4096,
         );
         final modelB = ModelConfig.basic(
-          id: 'test-provider/model-b',
           providerId: 'test-provider',
           modelName: 'model-b',
           displayName: 'Model B',
@@ -1006,9 +994,9 @@ void main() {
       );
     });
 
-    group('_canonicalModelId idempotence fix', () {
+    group('canonicalId model naming', () {
       test(
-        'modelName already containing providerId is NOT double-prefixed',
+        'modelName already containing providerId is double-prefixed (OpenCode convention)',
         () async {
           SharedPreferences.setMockInitialValues({});
           final prefs = await SharedPreferences.getInstance();
@@ -1019,7 +1007,6 @@ void main() {
           );
 
           final model = ModelConfig.basic(
-            id: 'test-provider/free',
             providerId: 'test-provider',
             modelName: 'test-provider/free',
             displayName: 'Test Free',
@@ -1030,7 +1017,7 @@ void main() {
 
           final stored = catalog.getProvider('test-provider')?.models;
           expect(stored, hasLength(1));
-          expect(stored!.first.id, 'test-provider/free');
+          expect(stored!.first.id, 'test-provider/test-provider/free');
           expect(stored.first.modelName, 'test-provider/free');
           expect(stored.first.providerId, 'test-provider');
         },
@@ -1046,7 +1033,6 @@ void main() {
         );
 
         final model = ModelConfig.basic(
-          id: 'test-provider/model-a',
           providerId: 'test-provider',
           modelName: 'test-provider/model-a',
           displayName: 'Model A',
@@ -1058,38 +1044,36 @@ void main() {
 
         final resolved = catalog.getModel('test-provider/model-a');
         expect(resolved, isNotNull);
-        expect(resolved!.id, 'test-provider/model-a');
+        expect(resolved!.id, 'test-provider/test-provider/model-a');
         expect(resolved.modelName, 'test-provider/model-a');
       });
 
-      test('modelName with colon prefix gets normalized to slash', () async {
-        SharedPreferences.setMockInitialValues({});
-        final prefs = await SharedPreferences.getInstance();
-        mockStorage = MockSecureStorageService();
-        catalog = ProviderCatalogService(
-          secureStorage: mockStorage,
-          prefs: prefs,
-          builtInProviders: [testProvider],
-        );
+      test(
+        'colon in modelName preserved in canonicalId',
+        () async {
+          SharedPreferences.setMockInitialValues({});
+          final prefs = await SharedPreferences.getInstance();
+          mockStorage = MockSecureStorageService();
+          catalog = ProviderCatalogService(
+            secureStorage: mockStorage,
+            prefs: prefs,
+            builtInProviders: [testProvider],
+          );
 
-        // Model with modelName starting with "test-provider:" (colon format)
-        // This tests the backwards-compatible colon handling
-        final model = ModelConfig.basic(
-          id: 'test-provider/model-a',
-          providerId: 'test-provider',
-          modelName: 'test-provider:model-a',
-          displayName: 'Model A',
-          contextLength: 4096,
-        );
+          final model = ModelConfig.basic(
+            providerId: 'test-provider',
+            modelName: 'test-provider:model-a',
+            displayName: 'Model A',
+            contextLength: 4096,
+          );
 
-        await catalog.updateProviderModels('test-provider', [model]);
+          await catalog.updateProviderModels('test-provider', [model]);
 
-        final stored = catalog.getProvider('test-provider')?.models;
-        expect(stored, hasLength(1));
-        // Colon is normalized to slash: test-provider/model-a
-        // (because _canonicalModelId removes "test-provider:" and prepends "test-provider/")
-        expect(stored!.first.id, 'test-provider/model-a');
-      });
+          final stored = catalog.getProvider('test-provider')?.models;
+          expect(stored, hasLength(1));
+          expect(stored!.first.id, 'test-provider/test-provider:model-a');
+        },
+      );
 
       test('raw modelName without prefix gets single-prefixed', () async {
         SharedPreferences.setMockInitialValues({});
@@ -1101,7 +1085,6 @@ void main() {
         );
 
         final model = ModelConfig.basic(
-          id: 'test-provider/owl-alpha',
           providerId: 'test-provider',
           modelName: 'owl-alpha',
           displayName: 'Owl Alpha',
@@ -1116,40 +1099,35 @@ void main() {
         expect(stored.first.modelName, 'owl-alpha');
       });
 
-      test(
-        'two models with same root name get distinct single-prefixed IDs',
-        () async {
-          SharedPreferences.setMockInitialValues({});
-          final prefs = await SharedPreferences.getInstance();
-          catalog = ProviderCatalogService(
-            secureStorage: mockStorage,
-            prefs: prefs,
-            builtInProviders: [testProvider],
-          );
+      test('two models with same root name get distinct IDs', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [testProvider],
+        );
 
-          final modelA = ModelConfig.basic(
-            id: 'test-provider/free',
-            providerId: 'test-provider',
-            modelName: 'test-provider/free',
-            displayName: 'Test Free',
-            contextLength: 4096,
-          );
-          final modelB = ModelConfig.basic(
-            id: 'test-provider/owl-alpha',
-            providerId: 'test-provider',
-            modelName: 'owl-alpha',
-            displayName: 'Owl Alpha',
-            contextLength: 4096,
-          );
+        final modelA = ModelConfig.basic(
+          providerId: 'test-provider',
+          modelName: 'test-provider/free',
+          displayName: 'Test Free',
+          contextLength: 4096,
+        );
+        final modelB = ModelConfig.basic(
+          providerId: 'test-provider',
+          modelName: 'owl-alpha',
+          displayName: 'Owl Alpha',
+          contextLength: 4096,
+        );
 
-          await catalog.updateProviderModels('test-provider', [modelA, modelB]);
-          await catalog.setProviderEnabled('test-provider', true);
+        await catalog.updateProviderModels('test-provider', [modelA, modelB]);
+        await catalog.setProviderEnabled('test-provider', true);
 
-          final ids = catalog.getAllModels().map((m) => m.id).toSet();
-          expect(ids, contains('test-provider/free'));
-          expect(ids, contains('test-provider/owl-alpha'));
-        },
-      );
+        final ids = catalog.getAllModels().map((m) => m.id).toSet();
+        expect(ids, contains('test-provider/test-provider/free'));
+        expect(ids, contains('test-provider/owl-alpha'));
+      });
     });
 
     group('preloadApiKeys', () {
@@ -1246,7 +1224,6 @@ void main() {
           );
 
           final model = ModelConfig.basic(
-            id: 'test-provider/gpt-4o',
             providerId: 'test-provider',
             modelName: 'gpt-4o',
             displayName: 'GPT-4o',
@@ -1299,7 +1276,6 @@ void main() {
         final providerWithModels = testProvider.copyWith(
           models: [
             ModelConfig.basic(
-              id: 'test-provider/gpt-4o',
               providerId: 'test-provider',
               modelName: 'gpt-4o',
               displayName: 'GPT-4o',
@@ -1323,49 +1299,6 @@ void main() {
       });
     });
 
-    group('getModel colon format', () {
-      test('resolves model with colon separator', () async {
-        SharedPreferences.setMockInitialValues({});
-        final prefs = await SharedPreferences.getInstance();
-        mockStorage = MockSecureStorageService();
-        final providerWithModels = testProvider.copyWith(
-          models: [
-            ModelConfig.basic(
-              id: 'test-provider/gpt-4o',
-              providerId: 'test-provider',
-              modelName: 'gpt-4o',
-              displayName: 'GPT-4o',
-              contextLength: 128000,
-            ),
-          ],
-        );
-        catalog = ProviderCatalogService(
-          secureStorage: mockStorage,
-          prefs: prefs,
-          builtInProviders: [providerWithModels],
-        );
-
-        final model = catalog.getModel('test-provider:gpt-4o');
-        expect(model, isNotNull);
-        expect(model!.modelName, 'gpt-4o');
-      });
-
-      test(
-        'getModel returns null for colon format with unknown model',
-        () async {
-          SharedPreferences.setMockInitialValues({});
-          final prefs = await SharedPreferences.getInstance();
-          mockStorage = MockSecureStorageService();
-          catalog = ProviderCatalogService(
-            secureStorage: mockStorage,
-            prefs: prefs,
-            builtInProviders: [testProvider],
-          );
-
-          expect(catalog.getModel('test-provider:unknown'), isNull);
-        },
-      );
-    });
 
     group('custom providers persistence', () {
       test('loads custom providers from stored JSON', () async {
@@ -1476,7 +1409,6 @@ void main() {
 
           // First, populate models
           final model = ModelConfig.basic(
-            id: 'test-provider/gpt-4o',
             providerId: 'test-provider',
             modelName: 'gpt-4o',
             displayName: 'GPT-4o',

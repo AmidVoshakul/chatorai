@@ -107,4 +107,5 @@ class LogTags {
   static final Logger lsp = Logger('LSP');
   static final Logger format = Logger('Format');
   static final Logger mcp = Logger('MCP');
+  static final Logger config = Logger('Config');
 }

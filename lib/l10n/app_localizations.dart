@@ -133,7 +133,7 @@ abstract class AppLocalizations {
   /// No description provided for @enterApiKey.
   ///
   /// In en, this message translates to:
-  /// **'Enter your OpenRouter API key'**
+  /// **'Enter your OpenRouter API Key'**
   String get enterApiKey;
 
   /// No description provided for @baseUrl.
@@ -151,13 +151,13 @@ abstract class AppLocalizations {
   /// No description provided for @apiKeyValid.
   ///
   /// In en, this message translates to:
-  /// **'API key is valid'**
+  /// **'API Key is valid'**
   String get apiKeyValid;
 
   /// No description provided for @apiKeyInvalid.
   ///
   /// In en, this message translates to:
-  /// **'Invalid API key format'**
+  /// **'Invalid API Key format'**
   String get apiKeyInvalid;
 
   /// No description provided for @apiKeyEmpty.
@@ -217,7 +217,7 @@ abstract class AppLocalizations {
   /// No description provided for @fontSize.
   ///
   /// In en, this message translates to:
-  /// **'Font Size'**
+  /// **'Font size'**
   String get fontSize;
 
   /// No description provided for @currentSize.
@@ -235,19 +235,19 @@ abstract class AppLocalizations {
   /// No description provided for @reduceMotion.
   ///
   /// In en, this message translates to:
-  /// **'Reduce Motion'**
+  /// **'Reduce motion'**
   String get reduceMotion;
 
   /// No description provided for @disableAnimation.
   ///
   /// In en, this message translates to:
-  /// **'Disable or reduce animation effects'**
+  /// **'Disable or reduce motion effects'**
   String get disableAnimation;
 
   /// No description provided for @highContrast.
   ///
   /// In en, this message translates to:
-  /// **'High Contrast'**
+  /// **'High contrast'**
   String get highContrast;
 
   /// No description provided for @increaseContrast.
@@ -259,7 +259,7 @@ abstract class AppLocalizations {
   /// No description provided for @wideScreenMode.
   ///
   /// In en, this message translates to:
-  /// **'Wide Screen Mode'**
+  /// **'Wide screen mode'**
   String get wideScreenMode;
 
   /// No description provided for @useFullScreenWidth.
@@ -277,7 +277,7 @@ abstract class AppLocalizations {
   /// No description provided for @autoScrollDuringStreamingDesc.
   ///
   /// In en, this message translates to:
-  /// **'Automatically scroll down as new content arrives'**
+  /// **'Automatically scroll down when new content appears'**
   String get autoScrollDuringStreamingDesc;
 
   /// No description provided for @language.
@@ -307,7 +307,7 @@ abstract class AppLocalizations {
   /// No description provided for @arabic.
   ///
   /// In en, this message translates to:
-  /// **'Arabic (RTL)'**
+  /// **'Arabic (right-to-left)'**
   String get arabic;
 
   /// No description provided for @chinese.
@@ -325,13 +325,13 @@ abstract class AppLocalizations {
   /// No description provided for @resetSettings.
   ///
   /// In en, this message translates to:
-  /// **'Reset Settings'**
+  /// **'Reset settings'**
   String get resetSettings;
 
   /// No description provided for @resetAllSettings.
   ///
   /// In en, this message translates to:
-  /// **'Reset all settings to default values'**
+  /// **'Reset all settings to defaults'**
   String get resetAllSettings;
 
   /// No description provided for @save.
@@ -367,19 +367,19 @@ abstract class AppLocalizations {
   /// No description provided for @apiKeySaved.
   ///
   /// In en, this message translates to:
-  /// **'API key saved successfully'**
+  /// **'API key saved'**
   String get apiKeySaved;
 
   /// No description provided for @settingsSaved.
   ///
   /// In en, this message translates to:
-  /// **'Settings saved!'**
+  /// **'Settings saved'**
   String get settingsSaved;
 
   /// No description provided for @settingsReset.
   ///
   /// In en, this message translates to:
-  /// **'Settings reset to default values'**
+  /// **'Settings reset'**
   String get settingsReset;
 
   /// No description provided for @appInfo.
@@ -391,7 +391,7 @@ abstract class AppLocalizations {
   /// No description provided for @appDescription.
   ///
   /// In en, this message translates to:
-  /// **'Chat application with AI models through OpenRouter API.\n\nFeatures:\n• Chat with various AI models\n• Chat history storage\n• Dark and light themes\n• Adaptive interface\n\nDeveloped with ❤️ using Flutter'**
+  /// **'AI Chat Application powered by multiple LLM providers'**
   String get appDescription;
 
   /// No description provided for @shareChat.
@@ -411,12 +411,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rename Chat'**
   String get renameChat;
-
-  /// No description provided for @deleteChat.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete Chat'**
-  String get deleteChat;
 
   /// No description provided for @failedToShowMenu.
   ///
@@ -439,7 +433,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatSharingNotImplemented.
   ///
   /// In en, this message translates to:
-  /// **'Chat sharing is not implemented yet'**
+  /// **'Chat sharing not implemented'**
   String get chatSharingNotImplemented;
 
   /// No description provided for @newChat.
@@ -457,7 +451,7 @@ abstract class AppLocalizations {
   /// No description provided for @startConversation.
   ///
   /// In en, this message translates to:
-  /// **'Start a conversation by clicking \"New Chat\"'**
+  /// **'Start a conversation'**
   String get startConversation;
 
   /// No description provided for @reasoning.
@@ -487,13 +481,13 @@ abstract class AppLocalizations {
   /// No description provided for @chatRenamedTo.
   ///
   /// In en, this message translates to:
-  /// **'Chat renamed to: {title}'**
-  String chatRenamedTo(Object title);
+  /// **'Chat renamed to {name}'**
+  String chatRenamedTo(Object name);
 
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Chat ORAI'**
+  /// **'ChatORAI'**
   String get appTitle;
 
   /// No description provided for @justNow.
@@ -511,7 +505,7 @@ abstract class AppLocalizations {
   /// No description provided for @onlyOneMinuteAgo.
   ///
   /// In en, this message translates to:
-  /// **'1 min ago'**
+  /// **'1 minute ago'**
   String get onlyOneMinuteAgo;
 
   /// No description provided for @hoursAgo.
@@ -565,7 +559,7 @@ abstract class AppLocalizations {
   /// No description provided for @modelSelected.
   ///
   /// In en, this message translates to:
-  /// **'Model Selected'**
+  /// **'Model selected'**
   String get modelSelected;
 
   /// No description provided for @errorLoadingModels.
@@ -733,13 +727,13 @@ abstract class AppLocalizations {
   /// No description provided for @enterYourMessage.
   ///
   /// In en, this message translates to:
-  /// **'Enter your message...'**
+  /// **'Enter your message'**
   String get enterYourMessage;
 
   /// No description provided for @saveAndSend.
   ///
   /// In en, this message translates to:
-  /// **'Save & Send'**
+  /// **'Save and send'**
   String get saveAndSend;
 
   /// No description provided for @messageEditedSuccessfully.
@@ -775,7 +769,7 @@ abstract class AppLocalizations {
   /// No description provided for @confirmDeleteMessage.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure you want to delete the chat \"{chatTitle}\"?'**
+  /// **'Confirm delete message'**
   String confirmDeleteMessage(Object chatTitle);
 
   /// No description provided for @areYouSureYouWantToRegenerateThisMessage.
@@ -787,13 +781,13 @@ abstract class AppLocalizations {
   /// No description provided for @modelDoesNotSupportImages.
   ///
   /// In en, this message translates to:
-  /// **'Model {modelId} does not support images. You can attach a photo, but sending will not work.'**
+  /// **'Model does not support images'**
   String modelDoesNotSupportImages(Object modelId);
 
   /// No description provided for @chatTitleUpdated.
   ///
   /// In en, this message translates to:
-  /// **'Chat renamed to: {title}'**
+  /// **'Chat title updated'**
   String chatTitleUpdated(Object title);
 
   /// No description provided for @messageDeletedSuccessfully.
@@ -859,7 +853,7 @@ abstract class AppLocalizations {
   /// No description provided for @copyMessage.
   ///
   /// In en, this message translates to:
-  /// **'Copy Message'**
+  /// **'Copy message'**
   String get copyMessage;
 
   /// No description provided for @delete.
@@ -883,7 +877,7 @@ abstract class AppLocalizations {
   /// No description provided for @continueResponse.
   ///
   /// In en, this message translates to:
-  /// **'Continue Response'**
+  /// **'Continue response'**
   String get continueResponse;
 
   /// No description provided for @like.
@@ -925,7 +919,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeMessage.
   ///
   /// In en, this message translates to:
-  /// **'Welcome! How can I help you today?'**
+  /// **'Welcome to ChatORAI'**
   String get welcomeMessage;
 
   /// No description provided for @welcomeQuestion1.
@@ -961,13 +955,13 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion6.
   ///
   /// In en, this message translates to:
-  /// **'What are some good books for personal development?'**
+  /// **'What are some good books on personal growth?'**
   String get welcomeQuestion6;
 
   /// No description provided for @welcomeQuestion7.
   ///
   /// In en, this message translates to:
-  /// **'Help me brainstorm names for my new startup'**
+  /// **'Help me come up with names for my startup'**
   String get welcomeQuestion7;
 
   /// No description provided for @welcomeQuestion8.
@@ -985,19 +979,19 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion10.
   ///
   /// In en, this message translates to:
-  /// **'Explain the difference between async and sync programming'**
+  /// **'Explain the difference between asynchronous and synchronous programming'**
   String get welcomeQuestion10;
 
   /// No description provided for @welcomeQuestion11.
   ///
   /// In en, this message translates to:
-  /// **'How do I optimize my code for better performance?'**
+  /// **'How to optimize code for better performance?'**
   String get welcomeQuestion11;
 
   /// No description provided for @welcomeQuestion12.
   ///
   /// In en, this message translates to:
-  /// **'What are the most useful programming design patterns?'**
+  /// **'What are the most useful design patterns?'**
   String get welcomeQuestion12;
 
   /// No description provided for @welcomeQuestion13.
@@ -1015,7 +1009,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion15.
   ///
   /// In en, this message translates to:
-  /// **'Explain blockchain technology to a beginner'**
+  /// **'Explain blockchain technology for a beginner'**
   String get welcomeQuestion15;
 
   /// No description provided for @welcomeQuestion16.
@@ -1033,13 +1027,13 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion18.
   ///
   /// In en, this message translates to:
-  /// **'How can I improve my focus and concentration?'**
+  /// **'How to improve concentration and focus?'**
   String get welcomeQuestion18;
 
   /// No description provided for @welcomeQuestion19.
   ///
   /// In en, this message translates to:
-  /// **'Give me a daily routine for maximum productivity'**
+  /// **'Give me a daily schedule for maximum productivity'**
   String get welcomeQuestion19;
 
   /// No description provided for @welcomeQuestion20.
@@ -1051,13 +1045,13 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion21.
   ///
   /// In en, this message translates to:
-  /// **'How to prepare for a software engineering interview?'**
+  /// **'How to prepare for an IT interview?'**
   String get welcomeQuestion21;
 
   /// No description provided for @welcomeQuestion22.
   ///
   /// In en, this message translates to:
-  /// **'What skills are most valuable in tech industry?'**
+  /// **'What skills are needed in the tech industry?'**
   String get welcomeQuestion22;
 
   /// No description provided for @welcomeQuestion23.
@@ -1075,7 +1069,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion25.
   ///
   /// In en, this message translates to:
-  /// **'What are the latest breakthroughs in space exploration?'**
+  /// **'What are the latest breakthroughs in space research?'**
   String get welcomeQuestion25;
 
   /// No description provided for @welcomeQuestion26.
@@ -1105,7 +1099,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion30.
   ///
   /// In en, this message translates to:
-  /// **'How can I think more critically about problems?'**
+  /// **'How to learn to think more critically?'**
   String get welcomeQuestion30;
 
   /// No description provided for @welcomeQuestion31.
@@ -1117,19 +1111,19 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion32.
   ///
   /// In en, this message translates to:
-  /// **'How do I stay motivated when learning something difficult?'**
+  /// **'How to stay motivated when learning complex material?'**
   String get welcomeQuestion32;
 
   /// No description provided for @welcomeQuestion33.
   ///
   /// In en, this message translates to:
-  /// **'What are the best programming languages to learn in 2025?'**
+  /// **'Which programming languages are best to learn in 2025?'**
   String get welcomeQuestion33;
 
   /// No description provided for @welcomeQuestion34.
   ///
   /// In en, this message translates to:
-  /// **'How to build a strong portfolio for tech jobs?'**
+  /// **'How to create a strong portfolio for IT jobs?'**
   String get welcomeQuestion34;
 
   /// No description provided for @welcomeQuestion35.
@@ -1165,13 +1159,13 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion40.
   ///
   /// In en, this message translates to:
-  /// **'Explain REST API vs GraphQL'**
+  /// **'Explain the difference between REST API and GraphQL'**
   String get welcomeQuestion40;
 
   /// No description provided for @welcomeQuestion41.
   ///
   /// In en, this message translates to:
-  /// **'What are the best cloud platforms to learn?'**
+  /// **'Which cloud platforms are best to learn?'**
   String get welcomeQuestion41;
 
   /// No description provided for @welcomeQuestion42.
@@ -1183,25 +1177,25 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion43.
   ///
   /// In en, this message translates to:
-  /// **'What are soft skills every developer needs?'**
+  /// **'What soft skills does every developer need?'**
   String get welcomeQuestion43;
 
   /// No description provided for @welcomeQuestion44.
   ///
   /// In en, this message translates to:
-  /// **'How to negotiate salary as a developer?'**
+  /// **'How to negotiate a developer\'s salary?'**
   String get welcomeQuestion44;
 
   /// No description provided for @welcomeQuestion45.
   ///
   /// In en, this message translates to:
-  /// **'What are the best remote work tools?'**
+  /// **'What are the best tools for remote work?'**
   String get welcomeQuestion45;
 
   /// No description provided for @welcomeQuestion46.
   ///
   /// In en, this message translates to:
-  /// **'How to stay productive working from home?'**
+  /// **'How to stay productive while working remotely?'**
   String get welcomeQuestion46;
 
   /// No description provided for @welcomeQuestion47.
@@ -1213,19 +1207,19 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion48.
   ///
   /// In en, this message translates to:
-  /// **'How to handle difficult coworkers?'**
+  /// **'How to work with difficult colleagues?'**
   String get welcomeQuestion48;
 
   /// No description provided for @welcomeQuestion49.
   ///
   /// In en, this message translates to:
-  /// **'What are the best books for leadership?'**
+  /// **'What are the best books on leadership?'**
   String get welcomeQuestion49;
 
   /// No description provided for @welcomeQuestion50.
   ///
   /// In en, this message translates to:
-  /// **'How to start a successful tech startup?'**
+  /// **'How to launch a successful tech startup?'**
   String get welcomeQuestion50;
 
   /// No description provided for @welcomeQuestion51.
@@ -1243,19 +1237,19 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion53.
   ///
   /// In en, this message translates to:
-  /// **'What are NFTs and should I care?'**
+  /// **'What are NFTs and are they worth paying attention to?'**
   String get welcomeQuestion53;
 
   /// No description provided for @welcomeQuestion54.
   ///
   /// In en, this message translates to:
-  /// **'Explain the metaverse concept'**
+  /// **'Explain the concept of the metaverse'**
   String get welcomeQuestion54;
 
   /// No description provided for @welcomeQuestion55.
   ///
   /// In en, this message translates to:
-  /// **'What are the best AI models for coding?'**
+  /// **'What are the best AI models for programming?'**
   String get welcomeQuestion55;
 
   /// No description provided for @welcomeQuestion56.
@@ -1267,13 +1261,13 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion57.
   ///
   /// In en, this message translates to:
-  /// **'What are the ethics of AI?'**
+  /// **'What are the ethical aspects of AI to consider?'**
   String get welcomeQuestion57;
 
   /// No description provided for @welcomeQuestion58.
   ///
   /// In en, this message translates to:
-  /// **'How will AI change jobs in the future?'**
+  /// **'How will AI change work in the future?'**
   String get welcomeQuestion58;
 
   /// No description provided for @welcomeQuestion59.
@@ -1285,7 +1279,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion60.
   ///
   /// In en, this message translates to:
-  /// **'How to protect my privacy online?'**
+  /// **'How to protect your privacy online?'**
   String get welcomeQuestion60;
 
   /// No description provided for @welcomeQuestion61.
@@ -1303,13 +1297,13 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion63.
   ///
   /// In en, this message translates to:
-  /// **'What are the best mobile app frameworks?'**
+  /// **'What are the best frameworks for mobile apps?'**
   String get welcomeQuestion63;
 
   /// No description provided for @welcomeQuestion64.
   ///
   /// In en, this message translates to:
-  /// **'How to build cross-platform apps?'**
+  /// **'How to build cross-platform applications?'**
   String get welcomeQuestion64;
 
   /// No description provided for @welcomeQuestion65.
@@ -1321,7 +1315,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion66.
   ///
   /// In en, this message translates to:
-  /// **'How to get started with 3D modeling?'**
+  /// **'How to start working with 3D modeling?'**
   String get welcomeQuestion66;
 
   /// No description provided for @welcomeQuestion67.
@@ -1357,7 +1351,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion72.
   ///
   /// In en, this message translates to:
-  /// **'How to give a great presentation?'**
+  /// **'How to make a great presentation?'**
   String get welcomeQuestion72;
 
   /// No description provided for @welcomeQuestion73.
@@ -1387,19 +1381,19 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion77.
   ///
   /// In en, this message translates to:
-  /// **'What are the best exercise routines?'**
+  /// **'What are the best workouts?'**
   String get welcomeQuestion77;
 
   /// No description provided for @welcomeQuestion78.
   ///
   /// In en, this message translates to:
-  /// **'How to eat healthy on a budget?'**
+  /// **'How to eat healthy on a limited budget?'**
   String get welcomeQuestion78;
 
   /// No description provided for @welcomeQuestion79.
   ///
   /// In en, this message translates to:
-  /// **'What are the best travel destinations for tech workers?'**
+  /// **'What are the best travel destinations for tech specialists?'**
   String get welcomeQuestion79;
 
   /// No description provided for @welcomeQuestion80.
@@ -1429,7 +1423,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion84.
   ///
   /// In en, this message translates to:
-  /// **'How to design scalable database systems?'**
+  /// **'How to design scalable databases?'**
   String get welcomeQuestion84;
 
   /// No description provided for @welcomeQuestion85.
@@ -1447,19 +1441,19 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion87.
   ///
   /// In en, this message translates to:
-  /// **'What are container orchestration platforms?'**
+  /// **'What is container orchestration?'**
   String get welcomeQuestion87;
 
   /// No description provided for @welcomeQuestion88.
   ///
   /// In en, this message translates to:
-  /// **'Explain serverless computing benefits'**
+  /// **'Explain the benefits of serverless computing'**
   String get welcomeQuestion88;
 
   /// No description provided for @welcomeQuestion89.
   ///
   /// In en, this message translates to:
-  /// **'What are the best practices for API security?'**
+  /// **'What are the best API security practices?'**
   String get welcomeQuestion89;
 
   /// No description provided for @welcomeQuestion90.
@@ -1477,7 +1471,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion92.
   ///
   /// In en, this message translates to:
-  /// **'How to build accessible web applications?'**
+  /// **'How to create accessible web applications?'**
   String get welcomeQuestion92;
 
   /// No description provided for @welcomeQuestion93.
@@ -1489,7 +1483,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion94.
   ///
   /// In en, this message translates to:
-  /// **'How to conduct user research effectively?'**
+  /// **'How to conduct effective user research?'**
   String get welcomeQuestion94;
 
   /// No description provided for @welcomeQuestion95.
@@ -1501,7 +1495,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion96.
   ///
   /// In en, this message translates to:
-  /// **'How to analyze user behavior data?'**
+  /// **'How to analyze user behavior?'**
   String get welcomeQuestion96;
 
   /// No description provided for @welcomeQuestion97.
@@ -1513,7 +1507,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion98.
   ///
   /// In en, this message translates to:
-  /// **'How to build a community around your product?'**
+  /// **'How to build a community around a product?'**
   String get welcomeQuestion98;
 
   /// No description provided for @welcomeQuestion99.
@@ -1525,13 +1519,13 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion100.
   ///
   /// In en, this message translates to:
-  /// **'How to handle customer feedback effectively?'**
+  /// **'How to effectively handle customer feedback?'**
   String get welcomeQuestion100;
 
   /// No description provided for @welcomeQuestion101.
   ///
   /// In en, this message translates to:
-  /// **'What are the differences between React and Vue?'**
+  /// **'What is the difference between React and Vue?'**
   String get welcomeQuestion101;
 
   /// No description provided for @welcomeQuestion102.
@@ -1555,7 +1549,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion105.
   ///
   /// In en, this message translates to:
-  /// **'What are GraphQL advantages over REST?'**
+  /// **'What are the advantages of GraphQL over REST?'**
   String get welcomeQuestion105;
 
   /// No description provided for @welcomeQuestion106.
@@ -1579,7 +1573,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion109.
   ///
   /// In en, this message translates to:
-  /// **'What are the best testing frameworks for JavaScript?'**
+  /// **'What are the best JavaScript testing frameworks?'**
   String get welcomeQuestion109;
 
   /// No description provided for @welcomeQuestion110.
@@ -1609,13 +1603,13 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion114.
   ///
   /// In en, this message translates to:
-  /// **'How to handle merge conflicts effectively?'**
+  /// **'How to effectively resolve merge conflicts?'**
   String get welcomeQuestion114;
 
   /// No description provided for @welcomeQuestion115.
   ///
   /// In en, this message translates to:
-  /// **'What are containerization best practices?'**
+  /// **'What are the best practices for containerization?'**
   String get welcomeQuestion115;
 
   /// No description provided for @welcomeQuestion116.
@@ -1639,7 +1633,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion119.
   ///
   /// In en, this message translates to:
-  /// **'What are the best logging practices?'**
+  /// **'What are the best practices for logging?'**
   String get welcomeQuestion119;
 
   /// No description provided for @welcomeQuestion120.
@@ -1651,25 +1645,25 @@ abstract class AppLocalizations {
   /// No description provided for @continueConversation.
   ///
   /// In en, this message translates to:
-  /// **'Continue the conversation'**
+  /// **'Continue conversation'**
   String get continueConversation;
 
   /// No description provided for @generatingSuggestions.
   ///
   /// In en, this message translates to:
-  /// **'Generating suggestions...'**
+  /// **'Generating suggestions'**
   String get generatingSuggestions;
 
   /// No description provided for @searchChats.
   ///
   /// In en, this message translates to:
-  /// **'Search chats...'**
+  /// **'Search chats'**
   String get searchChats;
 
   /// No description provided for @noChatsFound.
   ///
   /// In en, this message translates to:
-  /// **'No chats found for \"{query}\"'**
+  /// **'No chats found'**
   String noChatsFound(Object query);
 
   /// No description provided for @tryDifferentSearchTerm.
@@ -1681,31 +1675,31 @@ abstract class AppLocalizations {
   /// No description provided for @appShortName.
   ///
   /// In en, this message translates to:
-  /// **'ChatORAI'**
+  /// **'Chatorai'**
   String get appShortName;
 
   /// No description provided for @typeYourMessage.
   ///
   /// In en, this message translates to:
-  /// **'Type your message...'**
+  /// **'Type your message'**
   String get typeYourMessage;
 
   /// No description provided for @addImage.
   ///
   /// In en, this message translates to:
-  /// **'Image'**
+  /// **'Add image'**
   String get addImage;
 
   /// No description provided for @addCamera.
   ///
   /// In en, this message translates to:
-  /// **'Camera'**
+  /// **'Take photo'**
   String get addCamera;
 
   /// No description provided for @addFile.
   ///
   /// In en, this message translates to:
-  /// **'File'**
+  /// **'Add file'**
   String get addFile;
 
   /// No description provided for @selectLanguage.
@@ -1717,19 +1711,19 @@ abstract class AppLocalizations {
   /// No description provided for @searchFavorites.
   ///
   /// In en, this message translates to:
-  /// **'Search favorites...'**
+  /// **'Search favorites'**
   String get searchFavorites;
 
   /// No description provided for @showAllModels.
   ///
   /// In en, this message translates to:
-  /// **'Show All Models'**
+  /// **'Show all models'**
   String get showAllModels;
 
   /// No description provided for @showFavoritesOnly.
   ///
   /// In en, this message translates to:
-  /// **'Show Favorites Only'**
+  /// **'Show favorites only'**
   String get showFavoritesOnly;
 
   /// No description provided for @noFavoriteModels.
@@ -1741,7 +1735,7 @@ abstract class AppLocalizations {
   /// No description provided for @tapHeartToAddFavorites.
   ///
   /// In en, this message translates to:
-  /// **'Tap the heart icon on models to add them to your favorites'**
+  /// **'Tap heart to add favorites'**
   String get tapHeartToAddFavorites;
 
   /// No description provided for @addToFavorites.
@@ -1756,496 +1750,16 @@ abstract class AppLocalizations {
   /// **'Remove from favorites'**
   String get removeFromFavorites;
 
-  /// No description provided for @startListening.
-  ///
-  /// In en, this message translates to:
-  /// **'Start voice input'**
-  String get startListening;
-
-  /// No description provided for @stopListening.
-  ///
-  /// In en, this message translates to:
-  /// **'Stop voice input'**
-  String get stopListening;
-
-  /// No description provided for @listening.
-  ///
-  /// In en, this message translates to:
-  /// **'Listening...'**
-  String get listening;
-
-  /// No description provided for @micUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Microphone unavailable'**
-  String get micUnavailable;
-
-  /// No description provided for @sendMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Send message'**
-  String get sendMessage;
-
-  /// No description provided for @modelSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Model Settings'**
-  String get modelSettings;
-
-  /// No description provided for @temperature.
-  ///
-  /// In en, this message translates to:
-  /// **'Temperature'**
-  String get temperature;
-
-  /// No description provided for @temperatureDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Controls randomness: lower = more focused, higher = more creative'**
-  String get temperatureDescription;
-
-  /// No description provided for @maxTokens.
-  ///
-  /// In en, this message translates to:
-  /// **'Max Tokens'**
-  String get maxTokens;
-
-  /// No description provided for @maxTokensDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Maximum length of generated response'**
-  String get maxTokensDescription;
-
-  /// No description provided for @systemPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'System Prompt'**
-  String get systemPrompt;
-
-  /// No description provided for @systemPromptDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Instructions for the AI assistant'**
-  String get systemPromptDescription;
-
-  /// No description provided for @resetToDefaults.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset to Defaults'**
-  String get resetToDefaults;
-
-  /// No description provided for @applySettings.
-  ///
-  /// In en, this message translates to:
-  /// **'Apply Settings'**
-  String get applySettings;
-
-  /// No description provided for @modelParameters.
-  ///
-  /// In en, this message translates to:
-  /// **'Model Parameters'**
-  String get modelParameters;
-
-  /// No description provided for @activeModel.
-  ///
-  /// In en, this message translates to:
-  /// **'Active Model'**
-  String get activeModel;
-
-  /// No description provided for @noModelSelected.
-  ///
-  /// In en, this message translates to:
-  /// **'No model selected'**
-  String get noModelSelected;
-
-  /// No description provided for @settingsApplied.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings applied successfully'**
-  String get settingsApplied;
-
-  /// No description provided for @apiLimitExceeded.
-  ///
-  /// In en, this message translates to:
-  /// **'API limit exceeded: {limit}'**
-  String apiLimitExceeded(Object limit);
-
-  /// No description provided for @valueExceedsApiLimit.
-  ///
-  /// In en, this message translates to:
-  /// **'Value exceeds API limit ({limit}). Maximum value will be used.'**
-  String valueExceedsApiLimit(Object limit);
-
-  /// No description provided for @micStartFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to start microphone'**
-  String get micStartFailed;
-
-  /// No description provided for @micStopFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to stop microphone'**
-  String get micStopFailed;
-
-  /// No description provided for @speechErrorNoMatch.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not recognize speech. Please try again.'**
-  String get speechErrorNoMatch;
-
-  /// No description provided for @speechErrorTimeout.
-  ///
-  /// In en, this message translates to:
-  /// **'Listening timeout. Nothing heard.'**
-  String get speechErrorTimeout;
-
-  /// No description provided for @speechErrorNetwork.
-  ///
-  /// In en, this message translates to:
-  /// **'Network error. Check your internet connection.'**
-  String get speechErrorNetwork;
-
-  /// No description provided for @speechErrorNotAuthorized.
-  ///
-  /// In en, this message translates to:
-  /// **'No microphone access. Check permissions in settings.'**
-  String get speechErrorNotAuthorized;
-
-  /// No description provided for @speechErrorServer.
-  ///
-  /// In en, this message translates to:
-  /// **'Recognition server error. Please try again later.'**
-  String get speechErrorServer;
-
-  /// No description provided for @speechErrorTooManyRequests.
-  ///
-  /// In en, this message translates to:
-  /// **'Too many requests. Please try again later.'**
-  String get speechErrorTooManyRequests;
-
-  /// No description provided for @speechErrorUnknown.
-  ///
-  /// In en, this message translates to:
-  /// **'Speech recognition error'**
-  String get speechErrorUnknown;
-
-  /// No description provided for @speechPreparing.
-  ///
-  /// In en, this message translates to:
-  /// **'Preparing...'**
-  String get speechPreparing;
-
-  /// No description provided for @speechListening.
-  ///
-  /// In en, this message translates to:
-  /// **'Speak now...'**
-  String get speechListening;
-
-  /// No description provided for @speechProcessing.
-  ///
-  /// In en, this message translates to:
-  /// **'Processing...'**
-  String get speechProcessing;
-
-  /// No description provided for @micNoSpeechDetected.
-  ///
-  /// In en, this message translates to:
-  /// **'I didn\'t hear you. Please try again.'**
-  String get micNoSpeechDetected;
-
-  /// No description provided for @micAutoRestart.
-  ///
-  /// In en, this message translates to:
-  /// **'Retrying...'**
-  String get micAutoRestart;
-
-  /// No description provided for @speechPhase2.
-  ///
-  /// In en, this message translates to:
-  /// **'I can\'t hear you...speak louder'**
-  String get speechPhase2;
-
-  /// No description provided for @speechStartError.
-  ///
-  /// In en, this message translates to:
-  /// **'Start error: {error}'**
-  String speechStartError(Object error);
-
-  /// No description provided for @errorProcessingRequest.
-  ///
-  /// In en, this message translates to:
-  /// **'Sorry, I encountered an error while processing your request. Please try again.'**
-  String get errorProcessingRequest;
-
-  /// No description provided for @rateLimitRetryMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Rate limit exceeded. Retrying in {seconds} seconds...'**
-  String rateLimitRetryMessage(Object seconds);
-
-  /// No description provided for @messageNotFound.
-  ///
-  /// In en, this message translates to:
-  /// **'Message not found'**
-  String get messageNotFound;
-
-  /// No description provided for @errorEditingMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Error editing message'**
-  String get errorEditingMessage;
-
-  /// No description provided for @errorEditAndSendMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Error editing and sending message'**
-  String get errorEditAndSendMessage;
-
-  /// No description provided for @generatingSuggestionsFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to generate suggestions: {error}'**
-  String generatingSuggestionsFailed(Object error);
-
-  /// No description provided for @selectModelTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Select Model'**
-  String get selectModelTooltip;
-
-  /// No description provided for @toggleNavigatorTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Toggle Navigator'**
-  String get toggleNavigatorTooltip;
-
-  /// No description provided for @defaultSuggestion1.
-  ///
-  /// In en, this message translates to:
-  /// **'Tell me more about this topic'**
-  String get defaultSuggestion1;
-
-  /// No description provided for @defaultSuggestion2.
-  ///
-  /// In en, this message translates to:
-  /// **'Can you provide examples?'**
-  String get defaultSuggestion2;
-
-  /// No description provided for @defaultSuggestion3.
-  ///
-  /// In en, this message translates to:
-  /// **'What are the alternatives?'**
-  String get defaultSuggestion3;
-
-  /// No description provided for @defaultSuggestion4.
-  ///
-  /// In en, this message translates to:
-  /// **'How does this apply in practice?'**
-  String get defaultSuggestion4;
-
-  /// No description provided for @systemPromptSuggestion.
-  ///
-  /// In en, this message translates to:
-  /// **'You are a helpful assistant. Continue the conversation by providing 3 specific and logical continuations of the last message. Respond in the same language as the user.'**
-  String get systemPromptSuggestion;
-
-  /// No description provided for @userPromptSuggestion.
-  ///
-  /// In en, this message translates to:
-  /// **'Provide 3 specific and logical continuations for this message. Answer only with the list, no additional text.'**
-  String get userPromptSuggestion;
-
-  /// No description provided for @refreshQuestions.
-  ///
-  /// In en, this message translates to:
-  /// **'Refresh questions'**
-  String get refreshQuestions;
-
-  /// No description provided for @noInternetConnection.
-  ///
-  /// In en, this message translates to:
-  /// **'No internet connection'**
-  String get noInternetConnection;
-
-  /// No description provided for @modelDoesNotSupportFiles.
-  ///
-  /// In en, this message translates to:
-  /// **'Model {modelId} does not support files. You can attach a file, but sending will not work.'**
-  String modelDoesNotSupportFiles(Object modelId);
-
-  /// No description provided for @fileAttachedButNotSupported.
-  ///
-  /// In en, this message translates to:
-  /// **'File attached but not supported by the current model'**
-  String get fileAttachedButNotSupported;
-
-  /// No description provided for @copyCodeTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy code'**
-  String get copyCodeTooltip;
-
-  /// No description provided for @expandTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Expand'**
-  String get expandTooltip;
-
-  /// No description provided for @collapseTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Collapse'**
-  String get collapseTooltip;
-
-  /// No description provided for @welcomeGreeting1.
-  ///
-  /// In en, this message translates to:
-  /// **'Ask, explore, create — let\'s figure it out together.'**
-  String get welcomeGreeting1;
-
-  /// No description provided for @welcomeGreeting2.
-  ///
-  /// In en, this message translates to:
-  /// **'Ask a question, describe a task, or just start a conversation.'**
-  String get welcomeGreeting2;
-
-  /// No description provided for @welcomeGreeting3.
-  ///
-  /// In en, this message translates to:
-  /// **'Ask a question or start an exploration.'**
-  String get welcomeGreeting3;
-
-  /// No description provided for @welcomeGreeting4.
-  ///
-  /// In en, this message translates to:
-  /// **'Ask any question, share an idea, or ask for help — I\'m here to help.'**
-  String get welcomeGreeting4;
-
-  /// No description provided for @welcomeGreeting5.
-  ///
-  /// In en, this message translates to:
-  /// **'Got an idea? Let\'s figure it out.'**
-  String get welcomeGreeting5;
-
-  /// No description provided for @welcomeGreeting6.
-  ///
-  /// In en, this message translates to:
-  /// **'Set a direction for the conversation.'**
-  String get welcomeGreeting6;
-
-  /// No description provided for @welcomeGreeting7.
-  ///
-  /// In en, this message translates to:
-  /// **'What are we exploring today?'**
-  String get welcomeGreeting7;
-
-  /// No description provided for @welcomeGreeting8.
-  ///
-  /// In en, this message translates to:
-  /// **'Write a thought. Let\'s analyze it together.'**
-  String get welcomeGreeting8;
-
-  /// No description provided for @welcomeGreeting9.
-  ///
-  /// In en, this message translates to:
-  /// **'Curiosity is welcome.'**
-  String get welcomeGreeting9;
-
-  /// No description provided for @welcomeGreeting10.
-  ///
-  /// In en, this message translates to:
-  /// **'Your question is my next answer.'**
-  String get welcomeGreeting10;
-
-  /// No description provided for @welcomeGreeting11.
-  ///
-  /// In en, this message translates to:
-  /// **'Let\'s turn an idea into an answer.'**
-  String get welcomeGreeting11;
-
-  /// No description provided for @welcomeGreeting12.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a question. The rest is my job.'**
-  String get welcomeGreeting12;
-
-  /// No description provided for @versionLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Version:'**
-  String get versionLabel;
-
-  /// No description provided for @permissionDialogPatterns.
-  ///
-  /// In en, this message translates to:
-  /// **'Requesting access to:'**
-  String get permissionDialogPatterns;
-
-  /// No description provided for @permissionOnce.
-  ///
-  /// In en, this message translates to:
-  /// **'Once'**
-  String get permissionOnce;
-
-  /// No description provided for @permissionAlways.
-  ///
-  /// In en, this message translates to:
-  /// **'Always allow'**
-  String get permissionAlways;
-
-  /// No description provided for @permissionReject.
-  ///
-  /// In en, this message translates to:
-  /// **'Reject'**
-  String get permissionReject;
-
-  /// No description provided for @permissionAlwaysConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Always allow'**
-  String get permissionAlwaysConfirm;
-
-  /// No description provided for @providers.
-  ///
-  /// In en, this message translates to:
-  /// **'Providers'**
-  String get providers;
-
-  /// No description provided for @manageProviders.
-  ///
-  /// In en, this message translates to:
-  /// **'Manage AI providers'**
-  String get manageProviders;
-
-  /// No description provided for @openaiCompatibleApi.
-  ///
-  /// In en, this message translates to:
-  /// **'AI Providers'**
-  String get openaiCompatibleApi;
-
-  /// No description provided for @openaiCompatibleApiDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Configure AI providers and manage their API keys and models'**
-  String get openaiCompatibleApiDescription;
-
-  /// No description provided for @addProvider.
-  ///
-  /// In en, this message translates to:
-  /// **'Add Provider'**
-  String get addProvider;
-
   /// No description provided for @loadingSkills.
   ///
   /// In en, this message translates to:
-  /// **'Loading skills...'**
+  /// **'Loading skills'**
   String get loadingSkills;
 
   /// No description provided for @noSkillsInstalled.
   ///
   /// In en, this message translates to:
-  /// **'No skills installed. Add in .chatorai/skills/'**
+  /// **'No skills installed'**
   String get noSkillsInstalled;
 
   /// No description provided for @noSkillsMatchSearch.
@@ -2263,8 +1777,476 @@ abstract class AppLocalizations {
   /// No description provided for @skillExecuted.
   ///
   /// In en, this message translates to:
-  /// **'Skill executed: {name}'**
+  /// **'Skill executed'**
   String skillExecuted(Object name);
+
+  /// No description provided for @configuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration'**
+  String get configuration;
+
+  /// No description provided for @stats.
+  ///
+  /// In en, this message translates to:
+  /// **'Stats'**
+  String get stats;
+
+  /// No description provided for @usageStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage Statistics'**
+  String get usageStatistics;
+
+  /// No description provided for @totalSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get totalSessions;
+
+  /// No description provided for @totalMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get totalMessages;
+
+  /// No description provided for @days.
+  ///
+  /// In en, this message translates to:
+  /// **'Days'**
+  String get days;
+
+  /// No description provided for @totalTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Tokens'**
+  String get totalTokens;
+
+  /// No description provided for @totalCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Cost'**
+  String get totalCost;
+
+  /// No description provided for @avgCostPerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg Cost/Day'**
+  String get avgCostPerDay;
+
+  /// No description provided for @avgTokensPerSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg Tokens/Session'**
+  String get avgTokensPerSession;
+
+  /// No description provided for @medianTokensPerSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Median Tokens/Session'**
+  String get medianTokensPerSession;
+
+  /// No description provided for @cacheRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache Read'**
+  String get cacheRead;
+
+  /// No description provided for @cacheWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache Write'**
+  String get cacheWrite;
+
+  /// No description provided for @toolUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool Usage'**
+  String get toolUsage;
+
+  /// No description provided for @modelUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Usage'**
+  String get modelUsage;
+
+  /// No description provided for @noStatsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No statistics available'**
+  String get noStatsAvailable;
+
+  /// No description provided for @reasoningTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Reasoning'**
+  String get reasoningTokens;
+
+  /// No description provided for @addProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Provider'**
+  String get addProvider;
+
+  /// No description provided for @applySettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Settings'**
+  String get applySettings;
+
+  /// No description provided for @copyCodeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy code'**
+  String get copyCodeTooltip;
+
+  /// No description provided for @defaultSuggestion1.
+  ///
+  /// In en, this message translates to:
+  /// **'What can you do?'**
+  String get defaultSuggestion1;
+
+  /// No description provided for @defaultSuggestion2.
+  ///
+  /// In en, this message translates to:
+  /// **'Help me write code'**
+  String get defaultSuggestion2;
+
+  /// No description provided for @defaultSuggestion3.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain a concept'**
+  String get defaultSuggestion3;
+
+  /// No description provided for @deleteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete chat'**
+  String get deleteChat;
+
+  /// No description provided for @manageProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Providers'**
+  String get manageProviders;
+
+  /// No description provided for @micAutoRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-restarting microphone...'**
+  String get micAutoRestart;
+
+  /// No description provided for @micNoSpeechDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'No speech detected'**
+  String get micNoSpeechDetected;
+
+  /// No description provided for @micStartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start microphone'**
+  String get micStartFailed;
+
+  /// No description provided for @micUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone not available'**
+  String get micUnavailable;
+
+  /// No description provided for @modelParameters.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Parameters'**
+  String get modelParameters;
+
+  /// No description provided for @modelSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Model Settings'**
+  String get modelSettings;
+
+  /// No description provided for @noInternetConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection'**
+  String get noInternetConnection;
+
+  /// No description provided for @noModelSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No model selected'**
+  String get noModelSelected;
+
+  /// No description provided for @openaiCompatibleApi.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI-Compatible API'**
+  String get openaiCompatibleApi;
+
+  /// No description provided for @openaiCompatibleApiDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to any OpenAI-compatible API endpoint'**
+  String get openaiCompatibleApiDescription;
+
+  /// No description provided for @permissionAlways.
+  ///
+  /// In en, this message translates to:
+  /// **'Always'**
+  String get permissionAlways;
+
+  /// No description provided for @permissionAlwaysConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Always allow this action?'**
+  String get permissionAlwaysConfirm;
+
+  /// No description provided for @permissionDialogPatterns.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission patterns'**
+  String get permissionDialogPatterns;
+
+  /// No description provided for @permissionOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'Once'**
+  String get permissionOnce;
+
+  /// No description provided for @permissionReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get permissionReject;
+
+  /// No description provided for @providers.
+  ///
+  /// In en, this message translates to:
+  /// **'Providers'**
+  String get providers;
+
+  /// No description provided for @refreshQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh questions'**
+  String get refreshQuestions;
+
+  /// No description provided for @resetToDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to Defaults'**
+  String get resetToDefaults;
+
+  /// No description provided for @settingsApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings applied'**
+  String get settingsApplied;
+
+  /// No description provided for @speechErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error'**
+  String get speechErrorNetwork;
+
+  /// No description provided for @speechErrorNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No speech match'**
+  String get speechErrorNoMatch;
+
+  /// No description provided for @speechErrorNotAuthorized.
+  ///
+  /// In en, this message translates to:
+  /// **'Not authorized'**
+  String get speechErrorNotAuthorized;
+
+  /// No description provided for @speechErrorServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Server error'**
+  String get speechErrorServer;
+
+  /// No description provided for @speechErrorTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeout'**
+  String get speechErrorTimeout;
+
+  /// No description provided for @speechErrorTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests'**
+  String get speechErrorTooManyRequests;
+
+  /// No description provided for @speechErrorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown error'**
+  String get speechErrorUnknown;
+
+  /// No description provided for @speechListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening...'**
+  String get speechListening;
+
+  /// No description provided for @speechPhase2.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing speech...'**
+  String get speechPhase2;
+
+  /// No description provided for @speechPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing...'**
+  String get speechPreparing;
+
+  /// No description provided for @speechProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing...'**
+  String get speechProcessing;
+
+  /// No description provided for @speechStartError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start speech recognition'**
+  String speechStartError(Object error);
+
+  /// No description provided for @systemPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'System Prompt'**
+  String get systemPrompt;
+
+  /// No description provided for @systemPromptDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions that define how the AI behaves'**
+  String get systemPromptDescription;
+
+  /// No description provided for @systemPromptSuggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'You are a helpful assistant.'**
+  String get systemPromptSuggestion;
+
+  /// No description provided for @temperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get temperature;
+
+  /// No description provided for @temperatureDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher values make output more random'**
+  String get temperatureDescription;
+
+  /// No description provided for @toggleNavigatorTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle navigation'**
+  String get toggleNavigatorTooltip;
+
+  /// No description provided for @userPromptSuggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'How can I help you today?'**
+  String get userPromptSuggestion;
+
+  /// No description provided for @versionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get versionLabel;
+
+  /// No description provided for @welcomeGreeting1.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome!'**
+  String get welcomeGreeting1;
+
+  /// No description provided for @welcomeGreeting2.
+  ///
+  /// In en, this message translates to:
+  /// **'How can I help you?'**
+  String get welcomeGreeting2;
+
+  /// No description provided for @welcomeGreeting3.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask me anything'**
+  String get welcomeGreeting3;
+
+  /// No description provided for @welcomeGreeting4.
+  ///
+  /// In en, this message translates to:
+  /// **'I can help you with coding, writing, and analysis'**
+  String get welcomeGreeting4;
+
+  /// No description provided for @welcomeGreeting5.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s get started'**
+  String get welcomeGreeting5;
+
+  /// No description provided for @welcomeGreeting6.
+  ///
+  /// In en, this message translates to:
+  /// **'What would you like to work on?'**
+  String get welcomeGreeting6;
+
+  /// No description provided for @welcomeGreeting7.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to help'**
+  String get welcomeGreeting7;
+
+  /// No description provided for @welcomeGreeting8.
+  ///
+  /// In en, this message translates to:
+  /// **'Your AI companion is here'**
+  String get welcomeGreeting8;
+
+  /// No description provided for @welcomeGreeting9.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a conversation'**
+  String get welcomeGreeting9;
+
+  /// No description provided for @welcomeGreeting10.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover what I can do'**
+  String get welcomeGreeting10;
+
+  /// No description provided for @welcomeGreeting11.
+  ///
+  /// In en, this message translates to:
+  /// **'Need help? Just ask'**
+  String get welcomeGreeting11;
+
+  /// No description provided for @welcomeGreeting12.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m here to help'**
+  String get welcomeGreeting12;
+
+  /// No description provided for @modelDoesNotSupportFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'This model does not support file attachments'**
+  String modelDoesNotSupportFiles(Object modelId);
+
+  /// No description provided for @generatingSuggestionsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to generate suggestions'**
+  String generatingSuggestionsFailed(Object error);
 }
 
 class _AppLocalizationsDelegate

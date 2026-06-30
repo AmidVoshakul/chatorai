@@ -52,10 +52,9 @@ class ModelResolver {
   /// Get the [ProviderConfig] that owns a given model.
   ///
   /// [modelId] must be a full model identifier in the format
-  /// `providerId/modelName` (e.g., 'openrouter/gpt-4o') or legacy
-  /// `providerId:modelName`. The provider part is extracted and validated
-  /// against the catalog, and it is verified that the provider actually
-  /// contains a model with the given [modelName].
+  /// `providerId/modelName` (e.g., 'openrouter/gpt-4o'). The provider part is
+  /// extracted and validated against the catalog, and it is verified that the
+  /// provider actually contains a model with the given [modelName].
   ///
   /// Throws [ModelResolutionError] if the format is invalid, provider not
   /// found, or model does not belong to that provider.
@@ -67,10 +66,6 @@ class ModelResolver {
       final parts = modelId.split('/');
       providerId = parts[0];
       modelName = parts.sublist(1).join('/');
-    } else if (modelId.contains(':')) {
-      final parts = modelId.split(':');
-      providerId = parts[0];
-      modelName = parts.sublist(1).join(':');
     } else {
       throw ModelResolutionError(
         'Invalid model identifier: $modelId. '

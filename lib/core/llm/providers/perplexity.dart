@@ -2,7 +2,6 @@
 library;
 
 import 'package:chatorai/core/llm/models/auth_config.dart';
-import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/models/provider_config.dart';
 
 /// Perplexity — online LLM with web search integration.
@@ -18,50 +17,5 @@ ProviderConfig perplexityProvider() => ProviderConfig.full(
   ),
   sdk: 'openai-compatible',
   enabled: false,
-  models: [
-    ModelConfig.full(
-      id: 'perplexity/sonar-pro',
-      providerId: 'perplexity',
-      modelName: 'sonar-pro',
-      displayName: 'Sonar Pro',
-      description: 'Perplexity Sonar Pro — online with web search',
-      contextLength: 200000,
-      defaultMaxTokens: 8192,
-      capabilities: ModelCapabilities(
-        reasoning: false,
-        multimodal: false,
-        vision: false,
-        tools: false,
-        streaming: true,
-        jsonMode: false,
-      ),
-      pricing: const ModelPricing(
-        inputCostPer1k: 0.001,
-        outputCostPer1k: 0.003,
-      ),
-      enabled: true,
-    ),
-    ModelConfig.full(
-      id: 'perplexity/sonar',
-      providerId: 'perplexity',
-      modelName: 'sonar',
-      displayName: 'Sonar',
-      description: 'Perplexity Sonar — lightweight online model',
-      contextLength: 127000,
-      defaultMaxTokens: 8192,
-      capabilities: ModelCapabilities(
-        reasoning: false,
-        multimodal: false,
-        vision: false,
-        tools: false,
-        streaming: true,
-        jsonMode: false,
-      ),
-      pricing: const ModelPricing(
-        inputCostPer1k: 0.0005,
-        outputCostPer1k: 0.001,
-      ),
-      enabled: true,
-    ),
-  ],
+  models: [],
 );

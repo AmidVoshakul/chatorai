@@ -165,9 +165,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get renameChat => '重命名聊天';
 
   @override
-  String get deleteChat => '删除聊天';
-
-  @override
   String get failedToShowMenu => '无法显示菜单';
 
   @override
@@ -201,8 +198,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get expand => '展开';
 
   @override
-  String chatRenamedTo(Object title) {
-    return '聊天已重命名为: $title';
+  String chatRenamedTo(Object name) {
+    return '聊天已重命名为: $name';
   }
 
   @override
@@ -853,146 +850,81 @@ class AppLocalizationsZh extends AppLocalizations {
   String get removeFromFavorites => '从收藏中移除';
 
   @override
-  String get startListening => '开始语音输入';
+  String get loadingSkills => 'Loading skills';
 
   @override
-  String get stopListening => '停止语音输入';
+  String get noSkillsInstalled => 'No skills installed';
 
   @override
-  String get listening => '请说话...';
+  String get noSkillsMatchSearch => 'No skills match your search';
 
   @override
-  String get micUnavailable => '麦克风不可用';
+  String get allSkillsRequirePermission => 'All skills require permission';
 
   @override
-  String get sendMessage => '发送消息';
+  String skillExecuted(Object name) {
+    return 'Skill executed';
+  }
 
   @override
-  String get modelSettings => '模型设置';
+  String get configuration => 'Configuration';
 
   @override
-  String get temperature => '温度';
+  String get stats => 'Stats';
 
   @override
-  String get temperatureDescription => '控制随机性: 低=更集中, 高=更具创造性';
+  String get usageStatistics => 'Usage Statistics';
 
   @override
-  String get maxTokens => '最大令牌数';
+  String get totalSessions => 'Sessions';
 
   @override
-  String get maxTokensDescription => '生成响应的最大长度';
+  String get totalMessages => 'Messages';
 
   @override
-  String get systemPrompt => '系统提示';
+  String get days => 'Days';
 
   @override
-  String get systemPromptDescription => 'AI助手的指令';
+  String get totalTokens => 'Total Tokens';
 
   @override
-  String get resetToDefaults => '重置为默认值';
+  String get totalCost => 'Total Cost';
+
+  @override
+  String get avgCostPerDay => 'Avg Cost/Day';
+
+  @override
+  String get avgTokensPerSession => 'Avg Tokens/Session';
+
+  @override
+  String get medianTokensPerSession => 'Median Tokens/Session';
+
+  @override
+  String get cacheRead => 'Cache Read';
+
+  @override
+  String get cacheWrite => 'Cache Write';
+
+  @override
+  String get toolUsage => 'Tool Usage';
+
+  @override
+  String get modelUsage => 'Model Usage';
+
+  @override
+  String get noStatsAvailable => 'No statistics available';
+
+  @override
+  String get reasoningTokens => 'Reasoning';
+
+  @override
+  String get addProvider => 'Add Provider';
 
   @override
   String get applySettings => '应用设置';
 
   @override
-  String get modelParameters => '模型参数';
-
-  @override
-  String get activeModel => '活动模型';
-
-  @override
-  String get noModelSelected => '未选择模型';
-
-  @override
-  String get settingsApplied => '设置应用成功';
-
-  @override
-  String apiLimitExceeded(Object limit) {
-    return 'API限制已超出: $limit';
-  }
-
-  @override
-  String valueExceedsApiLimit(Object limit) {
-    return '值超出API限制 ($limit)。将使用最大值。';
-  }
-
-  @override
-  String get micStartFailed => '无法启动麦克风';
-
-  @override
-  String get micStopFailed => '无法停止麦克风';
-
-  @override
-  String get speechErrorNoMatch => '无法识别语音。请重试。';
-
-  @override
-  String get speechErrorTimeout => '监听超时。未听到任何内容。';
-
-  @override
-  String get speechErrorNetwork => '网络错误。检查您的互联网连接。';
-
-  @override
-  String get speechErrorNotAuthorized => '无麦克风访问权限。检查设置中的权限。';
-
-  @override
-  String get speechErrorServer => '识别服务器错误。请稍后再试。';
-
-  @override
-  String get speechErrorTooManyRequests => '请求过多。请稍后再试。';
-
-  @override
-  String get speechErrorUnknown => '语音识别错误';
-
-  @override
-  String get speechPreparing => '准备中...';
-
-  @override
-  String get speechListening => '请说话...';
-
-  @override
-  String get speechProcessing => '处理中...';
-
-  @override
-  String get micNoSpeechDetected => '我没听到您的声音，请再试一次。';
-
-  @override
-  String get micAutoRestart => '重试中...';
-
-  @override
-  String get speechPhase2 => '我听不到您...请大声一点';
-
-  @override
-  String speechStartError(Object error) {
-    return '启动错误: $error';
-  }
-
-  @override
-  String get errorProcessingRequest => '抱歉，处理您的请求时发生错误。请重试。';
-
-  @override
-  String rateLimitRetryMessage(Object seconds) {
-    return '已达到速率限制。$seconds秒后重试...';
-  }
-
-  @override
-  String get messageNotFound => '未找到消息';
-
-  @override
-  String get errorEditingMessage => '编辑消息错误';
-
-  @override
-  String get errorEditAndSendMessage => '编辑和发送消息错误';
-
-  @override
-  String generatingSuggestionsFailed(Object error) {
-    return '生成建议失败: $error';
-  }
-
-  @override
-  String get selectModelTooltip => '选择模型';
-
-  @override
-  String get toggleNavigatorTooltip => '切换导航器';
+  String get copyCodeTooltip => '复制代码';
 
   @override
   String get defaultSuggestion1 => '请告诉我更多关于这个主题';
@@ -1004,37 +936,131 @@ class AppLocalizationsZh extends AppLocalizations {
   String get defaultSuggestion3 => '有什么替代方案？';
 
   @override
-  String get defaultSuggestion4 => '这在实践中如何应用？';
+  String get deleteChat => '删除聊天';
+
+  @override
+  String get manageProviders => 'Manage Providers';
+
+  @override
+  String get micAutoRestart => '重试中...';
+
+  @override
+  String get micNoSpeechDetected => '我没听到您的声音，请再试一次。';
+
+  @override
+  String get micStartFailed => '无法启动麦克风';
+
+  @override
+  String get micUnavailable => '麦克风不可用';
+
+  @override
+  String get modelParameters => '模型参数';
+
+  @override
+  String get modelSettings => '模型设置';
+
+  @override
+  String get noInternetConnection => '无网络连接';
+
+  @override
+  String get noModelSelected => '未选择模型';
+
+  @override
+  String get openaiCompatibleApi => 'OpenAI-Compatible API';
+
+  @override
+  String get openaiCompatibleApiDescription =>
+      'Connect to any OpenAI-compatible API endpoint';
+
+  @override
+  String get permissionAlways => '始终允许';
+
+  @override
+  String get permissionAlwaysConfirm => 'Always allow';
+
+  @override
+  String get permissionDialogPatterns => '请求访问:';
+
+  @override
+  String get permissionOnce => '仅一次';
+
+  @override
+  String get permissionReject => '拒绝';
+
+  @override
+  String get providers => 'Providers';
+
+  @override
+  String get refreshQuestions => '刷新问题';
+
+  @override
+  String get resetToDefaults => '重置为默认值';
+
+  @override
+  String get settingsApplied => '设置应用成功';
+
+  @override
+  String get speechErrorNetwork => '网络错误。检查您的互联网连接。';
+
+  @override
+  String get speechErrorNoMatch => '无法识别语音。请重试。';
+
+  @override
+  String get speechErrorNotAuthorized => '无麦克风访问权限。检查设置中的权限。';
+
+  @override
+  String get speechErrorServer => '识别服务器错误。请稍后再试。';
+
+  @override
+  String get speechErrorTimeout => '监听超时。未听到任何内容。';
+
+  @override
+  String get speechErrorTooManyRequests => '请求过多。请稍后再试。';
+
+  @override
+  String get speechErrorUnknown => '语音识别错误';
+
+  @override
+  String get speechListening => '请说话...';
+
+  @override
+  String get speechPhase2 => '我听不到您...请大声一点';
+
+  @override
+  String get speechPreparing => '准备中...';
+
+  @override
+  String get speechProcessing => '处理中...';
+
+  @override
+  String speechStartError(Object error) {
+    return '启动错误: $error';
+  }
+
+  @override
+  String get systemPrompt => '系统提示';
+
+  @override
+  String get systemPromptDescription => 'AI助手的指令';
 
   @override
   String get systemPromptSuggestion =>
       '你是一个有用的助手。继续对话，为最后一条消息提供3个具体且合乎逻辑的延续。用中文回答。';
 
   @override
+  String get temperature => '温度';
+
+  @override
+  String get temperatureDescription => '控制随机性: 低=更集中, 高=更具创造性';
+
+  @override
+  String get toggleNavigatorTooltip => '切换导航器';
+
+  @override
   String get userPromptSuggestion => '为这条消息提供3个具体且合乎逻辑的延续。只回答列表，不要额外文本。';
 
   @override
-  String get refreshQuestions => '刷新问题';
-
-  @override
-  String get noInternetConnection => '无网络连接';
-
-  @override
-  String modelDoesNotSupportFiles(Object modelId) {
-    return '模型 $modelId 不支持文件。您可以附加文件，但发送将不起作用。';
-  }
-
-  @override
-  String get fileAttachedButNotSupported => '文件已附加，但当前模型不支持';
-
-  @override
-  String get copyCodeTooltip => '复制代码';
-
-  @override
-  String get expandTooltip => '展开';
-
-  @override
-  String get collapseTooltip => '折叠';
+  String get versionLabel => '版本:';
 
   @override
   String get welcomeGreeting1 => '问吧、探索吧、创造吧 — 让我们一起弄清楚。';
@@ -1073,54 +1099,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get welcomeGreeting12 => '输入问题。其他的是我的工作。';
 
   @override
-  String get versionLabel => '版本:';
+  String modelDoesNotSupportFiles(Object modelId) {
+    return '模型 $modelId 不支持文件。您可以附加文件，但发送将不起作用。';
+  }
 
   @override
-  String get permissionDialogPatterns => '请求访问:';
-
-  @override
-  String get permissionOnce => '仅一次';
-
-  @override
-  String get permissionAlways => '始终允许';
-
-  @override
-  String get permissionReject => '拒绝';
-
-  @override
-  String get permissionAlwaysConfirm => 'Always allow';
-
-  @override
-  String get providers => 'Providers';
-
-  @override
-  String get manageProviders => 'Manage AI providers';
-
-  @override
-  String get openaiCompatibleApi => 'AI Providers';
-
-  @override
-  String get openaiCompatibleApiDescription =>
-      'Configure AI providers and manage their API keys and models';
-
-  @override
-  String get addProvider => 'Add Provider';
-
-  @override
-  String get loadingSkills => 'Loading skills...';
-
-  @override
-  String get noSkillsInstalled =>
-      'No skills installed. Add in .chatorai/skills/';
-
-  @override
-  String get noSkillsMatchSearch => 'No skills match your search';
-
-  @override
-  String get allSkillsRequirePermission => 'All skills require permission';
-
-  @override
-  String skillExecuted(Object name) {
-    return 'Skill executed: $name';
+  String generatingSuggestionsFailed(Object error) {
+    return '生成建议失败: $error';
   }
 }

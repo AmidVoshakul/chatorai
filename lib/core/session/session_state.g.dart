@@ -69,6 +69,11 @@ SessionState _$SessionStateFromJson(Map<String, dynamic> json) => SessionState(
   tokensInput: (json['tokensInput'] as num?)?.toInt() ?? 0,
   tokensOutput: (json['tokensOutput'] as num?)?.toInt() ?? 0,
   tokensReasoning: (json['tokensReasoning'] as num?)?.toInt() ?? 0,
+  tokensCacheRead: (json['tokensCacheRead'] as num?)?.toInt() ?? 0,
+  tokensCacheWrite: (json['tokensCacheWrite'] as num?)?.toInt() ?? 0,
+  permission: SessionState._permissionFromJson(
+    json['permission'] as Map<String, dynamic>?,
+  ),
   messages:
       (json['messages'] as List<dynamic>?)
           ?.map((e) => SessionMessage.fromJson(e as Map<String, dynamic>))
@@ -97,6 +102,9 @@ Map<String, dynamic> _$SessionStateToJson(SessionState instance) =>
       'tokensInput': instance.tokensInput,
       'tokensOutput': instance.tokensOutput,
       'tokensReasoning': instance.tokensReasoning,
+      'tokensCacheRead': instance.tokensCacheRead,
+      'tokensCacheWrite': instance.tokensCacheWrite,
+      'permission': SessionState._permissionToJson(instance.permission),
       'messages': instance.messages,
       'toolResults': instance.toolResults,
       'createdAt': instance.createdAt.toIso8601String(),

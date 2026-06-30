@@ -23,6 +23,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     final toolOutputPersistence = ToolOutputPersistence.instance;
     final toolInputs = <String, Map<String, dynamic>>{};
     final toolStartTimes = <String, DateTime>{};
+    final processedToolEndCalls = <String>{};
+    String? activeTaskSessionId;
 
     bool isWordBoundary(String text) {
       if (text.isEmpty) return false;
@@ -105,6 +107,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     final attemptMsgs = aiService.sanitizeMessages(messages);
     int? latestTokensInput;
     int? latestTokensOutput;
+    int? latestTokensCacheRead;
+    int? latestTokensCacheWrite;
     final modelContextLength = ref
         .read(modelProvider)
         .selectedModelObject
@@ -119,8 +123,18 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     // Set by _initiateStream before calling this method
     final runnerSession = _sessionRunner;
     if (runnerSession == null) {
-      throw StateError('SessionRunner not initialized — call _initiateStream first');
+      throw StateError(
+        'SessionRunner not initialized — call _initiateStream first',
+      );
     }
+
+    // Forward child tool events to parent TaskPart UI (task delegation)
+    final holder = ref.read(currentSessionRunnerProvider.notifier);
+    holder.onChildToolEvent = (toolName, title) {
+      ref
+          .read(streamingMessageProvider.notifier)
+          .onTaskToolExecuted(toolName, title);
+    };
 
     // ── Pre-send overflow check (OpenCode-style) ─────────────────────────
     // Estimate BEFORE sending to LLM; compact proactively if needed.
@@ -186,7 +200,6 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         tools: toolRegistry.toSDKTools(),
         onRetry: (info) {
           flushPendingUpdates();
-          // Show retry indicator under the last message
           ref
               .read(chatScreenProvider.notifier)
               .setRetryInfo(
@@ -194,7 +207,11 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                 retryMessage: info.message,
                 retryAttempt: info.attempt,
               );
-          // Preserve accumulated text in the request to avoid restarting from scratch
+          if (activeTaskSessionId != null) {
+            ref
+                .read(streamingMessageProvider.notifier)
+                .onTaskError(info.message, info.attempt);
+          }
           final streamingState = ref.read(streamingMessageProvider);
           final partialText = streamingState.accumulatedParts
               .whereType<TextPart>()
@@ -209,14 +226,42 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             attemptMsgs.add({'role': 'assistant', 'content': partialText});
           }
         },
-        onUsage: (input, output) {
+        onUsage: (input, output, cacheRead, cacheWrite) {
           latestTokensInput = input;
           latestTokensOutput = output;
+          latestTokensCacheRead = cacheRead;
+          latestTokensCacheWrite = cacheWrite;
         },
-        onToolStart: (toolCallId, toolName, input) {
+        onToolStart: (toolCallId, toolName, input) async {
           toolInputs[toolCallId] = input;
           toolStartTimes[toolCallId] = DateTime.now();
-          runnerSession.onToolStart(toolCallId, toolName, input);
+          await runnerSession.onToolStart(toolCallId, toolName, input);
+
+          if (toolName == 'task') {
+            final description = input['description'] as String? ?? '';
+            final subagentType = input['subagent_type'] as String? ?? 'general';
+            final agent = AgentRegistry().get(subagentType);
+            final agentName = agent?.name ?? subagentType;
+            // Use toolCallId as fallback — LLM rarely provides task_id
+            final childId = input['task_id'] as String? ?? 'task_$toolCallId';
+            ref
+                .read(streamingMessageProvider.notifier)
+                .onTaskStart(
+                  description: description,
+                  agent: agentName,
+                  sessionId: childId,
+                );
+            activeTaskSessionId = childId;
+          } else if (activeTaskSessionId != null) {
+            final toolTitle =
+                input['command'] as String? ??
+                input['query'] as String? ??
+                input['filePath'] as String? ??
+                input['path'] as String?;
+            ref
+                .read(streamingMessageProvider.notifier)
+                .onTaskToolExecuted(toolName, toolTitle);
+          }
 
           if (toolName == 'question') {
             // For question tool, create a QuestionPart in the streaming message
@@ -247,19 +292,48 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                 'onToolStart(question): DUPLICATE skipped "$questionText"',
               );
             }
-          } else {
+          } else if (toolName != 'task') {
             ref
                 .read(streamingMessageProvider.notifier)
                 .onToolCall(toolCallId, toolName, input);
           }
         },
-        onToolEnd: (toolCallId, toolName, result) {
+        onToolEnd: (toolCallId, toolName, result) async {
+          if (!processedToolEndCalls.add(toolCallId)) return;
           final resultStr = result.toString();
-          runnerSession.onToolEnd(toolCallId, toolName, resultStr);
+          await runnerSession.onToolEnd(toolCallId, toolName, resultStr);
+
+          if (toolName == 'task' && activeTaskSessionId != null) {
+            // Update TaskPart with real child session ID from the holder
+            final realChildId = ref
+                .read(currentSessionRunnerProvider.notifier)
+                .activeChildSessionId;
+            if (realChildId != null && realChildId.isNotEmpty) {
+              ref
+                  .read(streamingMessageProvider.notifier)
+                  .updateTaskSessionId(realChildId);
+            }
+            ref.read(streamingMessageProvider.notifier).onTaskEnd();
+            activeTaskSessionId = null;
+            // Clear holder state
+            ref
+                    .read(currentSessionRunnerProvider.notifier)
+                    .activeChildSessionId =
+                null;
+          } else if (activeTaskSessionId != null) {
+            final toolInput = toolInputs[toolCallId];
+            final title = toolInput != null
+                ? (toolInput['command'] as String? ??
+                      toolInput['query'] as String? ??
+                      toolInput['filePath'] as String? ??
+                      toolInput['path'] as String?)
+                : null;
+            ref
+                .read(streamingMessageProvider.notifier)
+                .onTaskToolExecuted(toolName, title);
+          }
 
           if (toolName == 'question') {
-            // Update the QuestionPart in streaming with the user's answer
-            // Get the current streaming parts to find the question
             final streamingState = ref.read(streamingMessageProvider);
             for (final part in streamingState.accumulatedParts) {
               if (part is QuestionPart && part.answer == null) {
@@ -278,7 +352,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             LogTags.chatScreen.logInfo(
               'onToolEnd(question): answer="$resultStr"',
             );
-          } else {
+          } else if (toolName != 'task') {
             ref
                 .read(streamingMessageProvider.notifier)
                 .onToolEnd(toolCallId, toolName, resultStr);
@@ -304,12 +378,19 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                 }),
           );
         },
-        onToolError: (toolCallId, toolName, error) {
+        onToolError: (toolCallId, toolName, error) async {
           final errorStr = error.toString();
-          runnerSession.onToolError(toolCallId, toolName, errorStr);
-          ref
-              .read(streamingMessageProvider.notifier)
-              .onToolError(toolCallId, toolName, errorStr);
+          await runnerSession.onToolError(toolCallId, toolName, errorStr);
+          if (activeTaskSessionId != null) {
+            ref
+                .read(streamingMessageProvider.notifier)
+                .onTaskError(errorStr, null);
+          }
+          if (toolName != 'task') {
+            ref
+                .read(streamingMessageProvider.notifier)
+                .onToolError(toolCallId, toolName, errorStr);
+          }
           final startTime = toolStartTimes.remove(toolCallId);
           final durationMs = startTime != null
               ? DateTime.now().difference(startTime).inMilliseconds
@@ -329,22 +410,29 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                   LogTags.chatService.logError('saveResult failed: $e');
                 }),
           );
+          return;
         },
-        onChunk: (content) {
+        onChunk: (content) async {
           if (content.isEmpty) return;
-          runnerSession.onChunk(content);
+          await runnerSession.onChunk(content);
           pendingContent.write(content);
           throttleUpdate();
+          return;
         },
-        onReasoning: (reasoning) {
+        onReasoning: (reasoning) async {
           if (reasoning.isEmpty) return;
-          runnerSession.onReasoning(reasoning);
+          await runnerSession.onReasoning(reasoning);
           pendingReasoning.write(reasoning);
           throttleUpdate();
+          return;
         },
         onCompletion: (sdkText) async {
           flushPendingUpdates();
           if (!mounted) return;
+          if (activeTaskSessionId != null) {
+            ref.read(streamingMessageProvider.notifier).onTaskEnd();
+            activeTaskSessionId = null;
+          }
           // Reset retry state on successful completion
           ref
               .read(chatScreenProvider.notifier)
@@ -384,6 +472,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             model: modelId,
             tokensInput: latestTokensInput ?? 0,
             tokensOutput: latestTokensOutput ?? 0,
+            tokensCacheRead: latestTokensCacheRead ?? 0,
+            tokensCacheWrite: latestTokensCacheWrite ?? 0,
           );
 
           LogTags.chatScreen.logInfo(
@@ -407,11 +497,21 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           }
           final content = textBuffer.toString().isNotEmpty
               ? textBuffer.toString()
-              : sdkText;
+              : (sdkText.isNotEmpty ? sdkText : reasoningBuffer.toString());
           final reasoningRaw = reasoningBuffer.toString();
           final reasoning = reasoningRaw.trim().isNotEmpty
               ? reasoningRaw
               : null;
+
+          if (content.isEmpty && reasoningRaw.isNotEmpty) {
+            LogTags.chatScreen.logWarning(
+              'onCompletion: model returned zero text parts, using reasoning as content fallback (len=${reasoningRaw.length})',
+            );
+          } else if (content.isEmpty) {
+            LogTags.chatScreen.logWarning(
+              'onCompletion: model returned zero text and zero reasoning parts (sdkText empty)',
+            );
+          }
 
           LogTags.chatScreen.logDebug(
             'onCompletion: extracted contentLen=${content.length}, reasoningLen=${reasoning?.length ?? 0} raw=${reasoningRaw.length}',
@@ -451,7 +551,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               tokensInput: latestTokensInput,
               tokensOutput: latestTokensOutput,
               partsJson: partsJson,
-            contextLength: modelContextLength,
+              contextLength: modelContextLength,
             );
             newMessages = [...chat.messages, completedMessage];
           }
@@ -465,6 +565,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           ref.read(chatListProvider.notifier).updateChat(newChat);
           ref.read(chatScreenProvider.notifier).setStreaming(false);
           await ref.read(streamingMessageProvider.notifier).stopStreaming();
+          // Clear child tool event callback
+          holder.onChildToolEvent = null;
           await _chatStorageService.updateMessageInChat(
             newChat.id,
             completedMessage.id,
@@ -487,6 +589,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     } catch (e) {
       ref.read(chatScreenProvider.notifier).setStreaming(false);
       ref.read(streamingMessageProvider.notifier).reset();
+      holder.onChildToolEvent = null;
       // Mark session step as failed
       await runnerSession.onError(e);
       await _handleStreamingError(e);

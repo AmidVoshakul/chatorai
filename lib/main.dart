@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' show PlatformDispatcher;
 
+import 'package:chatorai/core/config/config_initializer.dart';
 import 'package:chatorai/core/tools/tool_output_persistence.dart';
 import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/permission_overlay.dart';
@@ -24,6 +25,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await XdgPaths.init();
+  await ConfigInitializer.ensureGlobalConfig();
 
   LogConfig.enabled = true;
   LogConfig.minimumLevel = LogLevel.debug;

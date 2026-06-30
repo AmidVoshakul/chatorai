@@ -74,8 +74,16 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       updatedAt: event.timestamp,
     ),
 
-    TextDelta _ =>
-      state, // deltas are ephemeral, final state comes from TextEnded
+TextDelta(:final messageId, :final delta) =>
+       state.copyWith(
+         messages: state.messages.map((m) {
+           if (m.id == messageId) {
+             return m.copyWith(content: (m.content + delta));
+           }
+           return m;
+         }).toList(),
+         updatedAt: event.timestamp,
+       ),
 
     TextEnded(:final messageId, :final fullText, :final model) =>
       state.copyWith(
@@ -174,11 +182,15 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       :final tokensInput,
       :final tokensOutput,
       :final tokensReasoning,
+      :final tokensCacheRead,
+      :final tokensCacheWrite,
     ) =>
       state.copyWith(
         tokensInput: state.tokensInput + tokensInput,
         tokensOutput: state.tokensOutput + tokensOutput,
         tokensReasoning: state.tokensReasoning + tokensReasoning,
+        tokensCacheRead: state.tokensCacheRead + tokensCacheRead,
+        tokensCacheWrite: state.tokensCacheWrite + tokensCacheWrite,
         updatedAt: event.timestamp,
       ),
 
@@ -290,6 +302,26 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
             mode: InsertMode.insertOrReplace,
           );
 
+    case TextStarted(:final messageId):
+      final seq = await _existingOrNextMessageSeq(
+        db,
+        event.sessionId,
+        messageId,
+      );
+      await db
+          .into(db.messages)
+          .insert(
+            MessagesCompanion.insert(
+              id: messageId,
+              sessionId: event.sessionId.value,
+              seq: seq,
+              role: 'assistant',
+              content: const Value<String>(''),
+              createdAt: event.timestamp,
+            ),
+            mode: InsertMode.insertOrReplace,
+          );
+
     case TextEnded(:final messageId, :final fullText, :final model):
       await (db.update(
         db.messages,
@@ -314,7 +346,7 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
         event.sessionId,
         toolCallId,
       );
-      final stored = jsonEncode({'toolName': toolName, 'input': input});
+      final inputJson = jsonEncode(input);
       await db
           .into(db.messages)
           .insert(
@@ -323,7 +355,23 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
               sessionId: event.sessionId.value,
               seq: seq,
               role: 'tool',
-              content: Value<String>(stored),
+              content: Value<String>(inputJson),
+              createdAt: event.timestamp,
+            ),
+            mode: InsertMode.insertOrReplace,
+          );
+      await db
+          .into(db.toolResults)
+          .insert(
+            ToolResultsCompanion.insert(
+              id: toolCallId,
+              sessionId: event.sessionId.value,
+              messageId: toolCallId,
+              toolName: toolName,
+              inputJson: Value(inputJson),
+              outputText: Value(''),
+              durationMs: const Value(0),
+              status: const Value('running'),
               createdAt: event.timestamp,
             ),
             mode: InsertMode.insertOrReplace,
@@ -333,7 +381,7 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
       final toolName = await _lookupToolName(db, toolCallId);
       await (db.update(db.messages)..where((t) => t.id.equals(toolCallId)))
           .write(MessagesCompanion(content: Value(outputText)));
-      await db
+      await (db
           .into(db.toolResults)
           .insert(
             ToolResultsCompanion.insert(
@@ -341,20 +389,20 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
               sessionId: event.sessionId.value,
               messageId: toolCallId,
               toolName: toolName,
-              inputJson: Value('{}'),
+              inputJson: const Value('{}'),
               outputText: Value(outputText),
               durationMs: Value(durationMs),
-              status: Value('success'),
+              status: const Value('success'),
               createdAt: event.timestamp,
             ),
             mode: InsertMode.insertOrReplace,
-          );
+          ));
 
     case ToolFailed(:final toolCallId, :final error):
       final toolName = await _lookupToolName(db, toolCallId);
       await (db.update(db.messages)..where((t) => t.id.equals(toolCallId)))
           .write(MessagesCompanion(error: Value<String?>(error)));
-      await db
+      await (db
           .into(db.toolResults)
           .insert(
             ToolResultsCompanion.insert(
@@ -362,19 +410,21 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
               sessionId: event.sessionId.value,
               messageId: toolCallId,
               toolName: toolName,
-              inputJson: Value('{}'),
+              inputJson: const Value('{}'),
               outputText: Value(error),
-              durationMs: Value(0),
-              status: Value('error'),
+              durationMs: const Value(0),
+              status: const Value('error'),
               createdAt: event.timestamp,
             ),
             mode: InsertMode.insertOrReplace,
-          );
+          ));
 
     case StepEnded(
       :final tokensInput,
       :final tokensOutput,
       :final tokensReasoning,
+      :final tokensCacheRead,
+      :final tokensCacheWrite,
     ):
       final current = await (db.select(
         db.sessions,
@@ -386,6 +436,8 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
           tokensInput: Value(current.tokensInput + tokensInput),
           tokensOutput: Value(current.tokensOutput + tokensOutput),
           tokensReasoning: Value(current.tokensReasoning + tokensReasoning),
+          tokensCacheRead: Value(current.tokensCacheRead + tokensCacheRead),
+          tokensCacheWrite: Value(current.tokensCacheWrite + tokensCacheWrite),
           updatedAt: Value(event.timestamp),
         ),
       );
@@ -465,23 +517,19 @@ Future<int> _existingOrNextMessageSeq(
   return _nextMessageSeq(db, sessionId);
 }
 
-/// Extracts the [toolName] from the JSON previously stored by the
-/// [ToolCalled] projection. Returns the name on success, or an empty
-/// string if the message row is missing or its content is malformed.
+/// Extracts the [toolName] from the [toolResults] table previously stored
+/// by the [ToolCalled] projection. Returns the name on success, or an empty
+/// string if the row is missing.
 Future<String> _lookupToolName(AppDatabase db, String toolCallId) async {
-  try {
-    final row = await (db.selectOnly(
-      db.messages,
-    )..addColumns([db.messages.content])).getSingleOrNull();
-    if (row == null) return '';
-    final stored = row.read(db.messages.content);
-    if (stored == null || stored.isEmpty) return '';
-    final parsed = jsonDecode(stored);
-    if (parsed is Map && parsed['toolName'] is String) {
-      return parsed['toolName'] as String;
-    }
-  } catch (_) {}
-  return '';
+  if (toolCallId.isEmpty) return '';
+  final row =
+      await (db.selectOnly(db.toolResults)
+            ..where(db.toolResults.id.equals(toolCallId))
+            ..addColumns([db.toolResults.toolName]))
+          .getSingleOrNull();
+  if (row == null) return '';
+  final name = row.read(db.toolResults.toolName);
+  return name ?? '';
 }
 
 Map<String, dynamic>? _serializePermission(PermissionRuleset? pr) {

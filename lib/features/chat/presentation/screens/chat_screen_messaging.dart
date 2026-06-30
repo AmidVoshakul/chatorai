@@ -32,6 +32,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       final agent = AgentRegistry().get(delegateAgentId);
       if (agent != null && agent.systemPrompt != null) {
         messages.insert(0, {'role': 'system', 'content': agent.systemPrompt!});
+        LogTags.chatScreen.logInfo(
+          '_buildApiMessages: injected agent system prompt for delegateAgentId=$delegateAgentId agent=${agent.name}',
+        );
       }
     } else {
       final currentAgent = ref.read(currentAgentProvider);
@@ -58,13 +61,20 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     final runnerSession = await sessionRunner.startInitializedSession(
       agent: ref.read(currentAgentProvider).name,
       modelRef: selectedModelId,
+      sessionId: _currentSessionId != null
+          ? SessionID.fromString(_currentSessionId!)
+          : null,
     );
+    _currentSessionId ??= runnerSession.sessionId.value;
     _sessionRunner = runnerSession;
-    ref.read(currentSessionRunnerProvider.notifier).set(sessionRunner);
+    ref
+        .read(currentSessionRunnerProvider.notifier)
+        .set(sessionRunner, runnerSession.sessionId.value);
 
     if (!isContinuation) {
-      final userMessages =
-          chat.messages.where((m) => m.role == MessageRole.user).toList();
+      final userMessages = chat.messages
+          .where((m) => m.role == MessageRole.user)
+          .toList();
       if (userMessages.isNotEmpty) {
         final lastUserMsg = userMessages.last;
         try {
@@ -122,10 +132,12 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       ref.read(currentSessionRunnerProvider.notifier).clear();
     }
   }
+
   Future<void> _handleSendMessage(MessageData messageData) async {
     ref.read(chatScreenProvider.notifier).hideAllSuggestions();
     Chat chat;
     if (currentChat == null) {
+      _currentSessionId = null;
       chat = await ref.read(chatListProvider.notifier).createNewChat();
       ref.read(currentChatIdProvider.notifier).setChatId(chat.id);
     } else {
@@ -154,6 +166,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     final messages = _buildApiMessages(
       streamChat,
       delegateAgentId: messageData.delegateAgentId,
+    );
+    LogTags.chatScreen.logInfo(
+      '_handleSendMessage: sending to LLM messages=${messages.length} delegateAgentId=${messageData.delegateAgentId ?? "none"}',
     );
     await _initiateStream(
       chat: streamChat,
@@ -218,8 +233,6 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     // Send answer as a new user message
     await _handleSendMessage(MessageData(text: answer));
   }
-
-
 
   Message _createUserMessage(
     String content, {
@@ -352,6 +365,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     }
 
     ref.read(chatScreenProvider.notifier).setStreaming(false);
+    ref
+        .read(chatScreenProvider.notifier)
+        .setRetryInfo(isRetrying: false, retryMessage: null, retryAttempt: 0);
     await ref.read(streamingMessageProvider.notifier).stopStreaming();
     ref.read(streamingMessageProvider.notifier).reset();
   }

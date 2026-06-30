@@ -119,9 +119,9 @@ void main() {
       expect(result, 'openrouter/anthropic/claude-sonnet-4');
     });
 
-    test('handles modelId with colon separator (legacy format)', () {
-      // The getModel method in ProviderCatalogService handles colon format too
-      // But since we're using a mock, we need to add the model with colon format
+    test('handles modelId with colon separator (fallback)', () {
+      // The catalog has a model with this ID, but getModel only handles slash format
+      // The mock catalog's getModel fails on colon format, so it falls back to modelId
       catalog.addModel(
         ModelConfig.basic(
           id: 'openai:gpt-4-turbo',
@@ -132,8 +132,6 @@ void main() {
         ),
       );
 
-      // Note: The mock catalog doesn't handle colon format, so this returns modelId
-      // This tests the fallback behavior
       final result = resolveModelDisplayName(
         modelId: 'openai:gpt-4-turbo',
         catalog: catalog,

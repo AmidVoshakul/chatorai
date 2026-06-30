@@ -41,6 +41,7 @@ class ChatMessages extends ConsumerStatefulWidget {
   final Function(List<MarkdownHeadingInfoWithKey> headings)? onHeadingsUpdated;
   final Function()? onToggleNavigator;
   final Function(String messageId, String answer)? onQuestionAnswer;
+  final void Function(String? taskSessionId)? onTaskTap;
 
   const ChatMessages({
     super.key,
@@ -65,6 +66,7 @@ class ChatMessages extends ConsumerStatefulWidget {
     this.onHeadingsUpdated,
     this.onToggleNavigator,
     this.onQuestionAnswer,
+    this.onTaskTap,
   });
 
   @override
@@ -312,7 +314,9 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                         message.role == MessageRole.assistant &&
                         message.content.isEmpty;
 
-                    if (isEmptyAssistantMessage && isLastMessage && !message.isComplete) {
+                    if (isEmptyAssistantMessage &&
+                        isLastMessage &&
+                        !message.isComplete) {
                       return const SizedBox.shrink();
                     }
 
@@ -323,29 +327,30 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                           )
                         : chatMsg;
                     return ChatMessageBubble(
-                    key: ValueKey(message.id),
-                    message: resolvedMsg,
-                    chatId: widget.chat!.id,
-                    messageId: message.id,
-                    chatStorageService: widget.chatStorageService,
-                    agentName: currentAgent.name,
-                    onContinuationSelected:
-                    message.role == MessageRole.assistant
-                    ? (suggestion) =>
-                    widget.onContinueResponse?.call(suggestion)
-                    : null,
-                    onMessageDeleted: widget.onMessageDeleted,
-                    onMessageRegenerate: widget.onRegenerateResponse != null
-                    ? () => widget.onRegenerateResponse!(message.id)
-                    : null,
-                    onMessageEdited: widget.onMessageEdited,
-                    onMessageEditedAndSend: widget.onMessageEditAndSend,
-                    isLastMessage: isLastMessage,
+                      key: ValueKey(message.id),
+                      message: resolvedMsg,
+                      chatId: widget.chat!.id,
+                      messageId: message.id,
+                      chatStorageService: widget.chatStorageService,
+                      agentName: currentAgent.name,
+                      onContinuationSelected:
+                          message.role == MessageRole.assistant
+                          ? (suggestion) =>
+                                widget.onContinueResponse?.call(suggestion)
+                          : null,
+                      onMessageDeleted: widget.onMessageDeleted,
+                      onMessageRegenerate: widget.onRegenerateResponse != null
+                          ? () => widget.onRegenerateResponse!(message.id)
+                          : null,
+                      onMessageEdited: widget.onMessageEdited,
+                      onMessageEditedAndSend: widget.onMessageEditAndSend,
+                      isLastMessage: isLastMessage,
                       cumulativeTokens: message.role == MessageRole.assistant
-                           ? cumulativeForIndex(msgIndex)
-                           : null,
-                       contextLength: message.contextLength,
-                     );
+                          ? cumulativeForIndex(msgIndex)
+                          : null,
+                      contextLength: message.contextLength,
+                      onTaskTap: widget.onTaskTap,
+                    );
                   }
 
                   final afterMessages = welcomeOffset + messages.length;
@@ -373,6 +378,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                           agentName: currentAgent.name,
                           cumulativeTokens: lastAssistantCumulative,
                           contextLength: lastMessage?.contextLength,
+                          onTaskTap: widget.onTaskTap,
                         ),
                       );
                     }

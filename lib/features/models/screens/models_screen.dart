@@ -266,9 +266,7 @@ class _DeferredModelTileState extends State<_DeferredModelTile> {
       key: ValueKey('grp_${widget.providerKey}'),
       initiallyExpanded: false,
       leading: ProviderIcon(providerId: widget.providerKey),
-      title: Text(
-        '${widget.providerName} · ${widget.models.length}',
-      ),
+      title: Text('${widget.providerName} · ${widget.models.length}'),
       tilePadding: const EdgeInsets.symmetric(horizontal: 8),
       childrenPadding: const EdgeInsets.only(left: 8, bottom: 4),
       onExpansionChanged: (expanded) {

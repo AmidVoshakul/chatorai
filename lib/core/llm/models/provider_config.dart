@@ -166,16 +166,10 @@ class ProviderConfig extends Equatable {
     try {
       return models.firstWhere((m) => m.modelName == modelName);
     } catch (_) {
-      final normalized = modelName.replaceAll(':', '/');
       try {
-        return models.firstWhere((m) => m.id == normalized);
+        return models.firstWhere((m) => m.modelName.endsWith('/$modelName'));
       } catch (_) {
-        final prefixed = '$id/$normalized';
-        try {
-          return models.firstWhere((m) => m.id == prefixed);
-        } catch (_) {
-          return null;
-        }
+        return null;
       }
     }
   }

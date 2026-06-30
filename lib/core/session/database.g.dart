@@ -504,6 +504,30 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _tokensCacheReadMeta = const VerificationMeta(
+    'tokensCacheRead',
+  );
+  @override
+  late final GeneratedColumn<int> tokensCacheRead = GeneratedColumn<int>(
+    'tokens_cache_read',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _tokensCacheWriteMeta = const VerificationMeta(
+    'tokensCacheWrite',
+  );
+  @override
+  late final GeneratedColumn<int> tokensCacheWrite = GeneratedColumn<int>(
+    'tokens_cache_write',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _permissionRulesMeta = const VerificationMeta(
     'permissionRules',
   );
@@ -559,6 +583,8 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     tokensInput,
     tokensOutput,
     tokensReasoning,
+    tokensCacheRead,
+    tokensCacheWrite,
     permissionRules,
     createdAt,
     updatedAt,
@@ -638,6 +664,24 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
         ),
       );
     }
+    if (data.containsKey('tokens_cache_read')) {
+      context.handle(
+        _tokensCacheReadMeta,
+        tokensCacheRead.isAcceptableOrUnknown(
+          data['tokens_cache_read']!,
+          _tokensCacheReadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tokens_cache_write')) {
+      context.handle(
+        _tokensCacheWriteMeta,
+        tokensCacheWrite.isAcceptableOrUnknown(
+          data['tokens_cache_write']!,
+          _tokensCacheWriteMeta,
+        ),
+      );
+    }
     if (data.containsKey('permission_rules')) {
       context.handle(
         _permissionRulesMeta,
@@ -714,6 +758,14 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
         DriftSqlType.int,
         data['${effectivePrefix}tokens_reasoning'],
       )!,
+      tokensCacheRead: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_cache_read'],
+      )!,
+      tokensCacheWrite: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_cache_write'],
+      )!,
       permissionRules: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}permission_rules'],
@@ -749,6 +801,8 @@ class Session extends DataClass implements Insertable<Session> {
   final int tokensInput;
   final int tokensOutput;
   final int tokensReasoning;
+  final int tokensCacheRead;
+  final int tokensCacheWrite;
   final String? permissionRules;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -763,6 +817,8 @@ class Session extends DataClass implements Insertable<Session> {
     required this.tokensInput,
     required this.tokensOutput,
     required this.tokensReasoning,
+    required this.tokensCacheRead,
+    required this.tokensCacheWrite,
     this.permissionRules,
     required this.createdAt,
     required this.updatedAt,
@@ -784,6 +840,8 @@ class Session extends DataClass implements Insertable<Session> {
     map['tokens_input'] = Variable<int>(tokensInput);
     map['tokens_output'] = Variable<int>(tokensOutput);
     map['tokens_reasoning'] = Variable<int>(tokensReasoning);
+    map['tokens_cache_read'] = Variable<int>(tokensCacheRead);
+    map['tokens_cache_write'] = Variable<int>(tokensCacheWrite);
     if (!nullToAbsent || permissionRules != null) {
       map['permission_rules'] = Variable<String>(permissionRules);
     }
@@ -810,6 +868,8 @@ class Session extends DataClass implements Insertable<Session> {
       tokensInput: Value(tokensInput),
       tokensOutput: Value(tokensOutput),
       tokensReasoning: Value(tokensReasoning),
+      tokensCacheRead: Value(tokensCacheRead),
+      tokensCacheWrite: Value(tokensCacheWrite),
       permissionRules: permissionRules == null && nullToAbsent
           ? const Value.absent()
           : Value(permissionRules),
@@ -836,6 +896,8 @@ class Session extends DataClass implements Insertable<Session> {
       tokensInput: serializer.fromJson<int>(json['tokensInput']),
       tokensOutput: serializer.fromJson<int>(json['tokensOutput']),
       tokensReasoning: serializer.fromJson<int>(json['tokensReasoning']),
+      tokensCacheRead: serializer.fromJson<int>(json['tokensCacheRead']),
+      tokensCacheWrite: serializer.fromJson<int>(json['tokensCacheWrite']),
       permissionRules: serializer.fromJson<String?>(json['permissionRules']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -855,6 +917,8 @@ class Session extends DataClass implements Insertable<Session> {
       'tokensInput': serializer.toJson<int>(tokensInput),
       'tokensOutput': serializer.toJson<int>(tokensOutput),
       'tokensReasoning': serializer.toJson<int>(tokensReasoning),
+      'tokensCacheRead': serializer.toJson<int>(tokensCacheRead),
+      'tokensCacheWrite': serializer.toJson<int>(tokensCacheWrite),
       'permissionRules': serializer.toJson<String?>(permissionRules),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -872,6 +936,8 @@ class Session extends DataClass implements Insertable<Session> {
     int? tokensInput,
     int? tokensOutput,
     int? tokensReasoning,
+    int? tokensCacheRead,
+    int? tokensCacheWrite,
     Value<String?> permissionRules = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -886,6 +952,8 @@ class Session extends DataClass implements Insertable<Session> {
     tokensInput: tokensInput ?? this.tokensInput,
     tokensOutput: tokensOutput ?? this.tokensOutput,
     tokensReasoning: tokensReasoning ?? this.tokensReasoning,
+    tokensCacheRead: tokensCacheRead ?? this.tokensCacheRead,
+    tokensCacheWrite: tokensCacheWrite ?? this.tokensCacheWrite,
     permissionRules: permissionRules.present
         ? permissionRules.value
         : this.permissionRules,
@@ -910,6 +978,12 @@ class Session extends DataClass implements Insertable<Session> {
       tokensReasoning: data.tokensReasoning.present
           ? data.tokensReasoning.value
           : this.tokensReasoning,
+      tokensCacheRead: data.tokensCacheRead.present
+          ? data.tokensCacheRead.value
+          : this.tokensCacheRead,
+      tokensCacheWrite: data.tokensCacheWrite.present
+          ? data.tokensCacheWrite.value
+          : this.tokensCacheWrite,
       permissionRules: data.permissionRules.present
           ? data.permissionRules.value
           : this.permissionRules,
@@ -933,6 +1007,8 @@ class Session extends DataClass implements Insertable<Session> {
           ..write('tokensInput: $tokensInput, ')
           ..write('tokensOutput: $tokensOutput, ')
           ..write('tokensReasoning: $tokensReasoning, ')
+          ..write('tokensCacheRead: $tokensCacheRead, ')
+          ..write('tokensCacheWrite: $tokensCacheWrite, ')
           ..write('permissionRules: $permissionRules, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -952,6 +1028,8 @@ class Session extends DataClass implements Insertable<Session> {
     tokensInput,
     tokensOutput,
     tokensReasoning,
+    tokensCacheRead,
+    tokensCacheWrite,
     permissionRules,
     createdAt,
     updatedAt,
@@ -970,6 +1048,8 @@ class Session extends DataClass implements Insertable<Session> {
           other.tokensInput == this.tokensInput &&
           other.tokensOutput == this.tokensOutput &&
           other.tokensReasoning == this.tokensReasoning &&
+          other.tokensCacheRead == this.tokensCacheRead &&
+          other.tokensCacheWrite == this.tokensCacheWrite &&
           other.permissionRules == this.permissionRules &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -986,6 +1066,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
   final Value<int> tokensInput;
   final Value<int> tokensOutput;
   final Value<int> tokensReasoning;
+  final Value<int> tokensCacheRead;
+  final Value<int> tokensCacheWrite;
   final Value<String?> permissionRules;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -1001,6 +1083,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.tokensInput = const Value.absent(),
     this.tokensOutput = const Value.absent(),
     this.tokensReasoning = const Value.absent(),
+    this.tokensCacheRead = const Value.absent(),
+    this.tokensCacheWrite = const Value.absent(),
     this.permissionRules = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1017,6 +1101,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.tokensInput = const Value.absent(),
     this.tokensOutput = const Value.absent(),
     this.tokensReasoning = const Value.absent(),
+    this.tokensCacheRead = const Value.absent(),
+    this.tokensCacheWrite = const Value.absent(),
     this.permissionRules = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -1035,6 +1121,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     Expression<int>? tokensInput,
     Expression<int>? tokensOutput,
     Expression<int>? tokensReasoning,
+    Expression<int>? tokensCacheRead,
+    Expression<int>? tokensCacheWrite,
     Expression<String>? permissionRules,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -1051,6 +1139,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       if (tokensInput != null) 'tokens_input': tokensInput,
       if (tokensOutput != null) 'tokens_output': tokensOutput,
       if (tokensReasoning != null) 'tokens_reasoning': tokensReasoning,
+      if (tokensCacheRead != null) 'tokens_cache_read': tokensCacheRead,
+      if (tokensCacheWrite != null) 'tokens_cache_write': tokensCacheWrite,
       if (permissionRules != null) 'permission_rules': permissionRules,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1069,6 +1159,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     Value<int>? tokensInput,
     Value<int>? tokensOutput,
     Value<int>? tokensReasoning,
+    Value<int>? tokensCacheRead,
+    Value<int>? tokensCacheWrite,
     Value<String?>? permissionRules,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -1085,6 +1177,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       tokensInput: tokensInput ?? this.tokensInput,
       tokensOutput: tokensOutput ?? this.tokensOutput,
       tokensReasoning: tokensReasoning ?? this.tokensReasoning,
+      tokensCacheRead: tokensCacheRead ?? this.tokensCacheRead,
+      tokensCacheWrite: tokensCacheWrite ?? this.tokensCacheWrite,
       permissionRules: permissionRules ?? this.permissionRules,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1123,6 +1217,12 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     if (tokensReasoning.present) {
       map['tokens_reasoning'] = Variable<int>(tokensReasoning.value);
     }
+    if (tokensCacheRead.present) {
+      map['tokens_cache_read'] = Variable<int>(tokensCacheRead.value);
+    }
+    if (tokensCacheWrite.present) {
+      map['tokens_cache_write'] = Variable<int>(tokensCacheWrite.value);
+    }
     if (permissionRules.present) {
       map['permission_rules'] = Variable<String>(permissionRules.value);
     }
@@ -1153,6 +1253,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
           ..write('tokensInput: $tokensInput, ')
           ..write('tokensOutput: $tokensOutput, ')
           ..write('tokensReasoning: $tokensReasoning, ')
+          ..write('tokensCacheRead: $tokensCacheRead, ')
+          ..write('tokensCacheWrite: $tokensCacheWrite, ')
           ..write('permissionRules: $permissionRules, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -2969,6 +3071,8 @@ typedef $$SessionsTableCreateCompanionBuilder =
       Value<int> tokensInput,
       Value<int> tokensOutput,
       Value<int> tokensReasoning,
+      Value<int> tokensCacheRead,
+      Value<int> tokensCacheWrite,
       Value<String?> permissionRules,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -2986,6 +3090,8 @@ typedef $$SessionsTableUpdateCompanionBuilder =
       Value<int> tokensInput,
       Value<int> tokensOutput,
       Value<int> tokensReasoning,
+      Value<int> tokensCacheRead,
+      Value<int> tokensCacheWrite,
       Value<String?> permissionRules,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -3044,6 +3150,16 @@ class $$SessionsTableFilterComposer
 
   ColumnFilters<int> get tokensReasoning => $composableBuilder(
     column: $table.tokensReasoning,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensCacheRead => $composableBuilder(
+    column: $table.tokensCacheRead,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensCacheWrite => $composableBuilder(
+    column: $table.tokensCacheWrite,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3122,6 +3238,16 @@ class $$SessionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get tokensCacheRead => $composableBuilder(
+    column: $table.tokensCacheRead,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokensCacheWrite => $composableBuilder(
+    column: $table.tokensCacheWrite,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get permissionRules => $composableBuilder(
     column: $table.permissionRules,
     builder: (column) => ColumnOrderings(column),
@@ -3185,6 +3311,16 @@ class $$SessionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get tokensCacheRead => $composableBuilder(
+    column: $table.tokensCacheRead,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tokensCacheWrite => $composableBuilder(
+    column: $table.tokensCacheWrite,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get permissionRules => $composableBuilder(
     column: $table.permissionRules,
     builder: (column) => column,
@@ -3239,6 +3375,8 @@ class $$SessionsTableTableManager
                 Value<int> tokensInput = const Value.absent(),
                 Value<int> tokensOutput = const Value.absent(),
                 Value<int> tokensReasoning = const Value.absent(),
+                Value<int> tokensCacheRead = const Value.absent(),
+                Value<int> tokensCacheWrite = const Value.absent(),
                 Value<String?> permissionRules = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -3254,6 +3392,8 @@ class $$SessionsTableTableManager
                 tokensInput: tokensInput,
                 tokensOutput: tokensOutput,
                 tokensReasoning: tokensReasoning,
+                tokensCacheRead: tokensCacheRead,
+                tokensCacheWrite: tokensCacheWrite,
                 permissionRules: permissionRules,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -3271,6 +3411,8 @@ class $$SessionsTableTableManager
                 Value<int> tokensInput = const Value.absent(),
                 Value<int> tokensOutput = const Value.absent(),
                 Value<int> tokensReasoning = const Value.absent(),
+                Value<int> tokensCacheRead = const Value.absent(),
+                Value<int> tokensCacheWrite = const Value.absent(),
                 Value<String?> permissionRules = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -3286,6 +3428,8 @@ class $$SessionsTableTableManager
                 tokensInput: tokensInput,
                 tokensOutput: tokensOutput,
                 tokensReasoning: tokensReasoning,
+                tokensCacheRead: tokensCacheRead,
+                tokensCacheWrite: tokensCacheWrite,
                 permissionRules: permissionRules,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

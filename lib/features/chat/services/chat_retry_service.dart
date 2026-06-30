@@ -68,7 +68,8 @@ class ChatRetryService {
   });
 
   Stream<double> get retryCountdown {
-    final c = _retryCountdownController ??= StreamController<double>.broadcast();
+    final c = _retryCountdownController ??=
+        StreamController<double>.broadcast();
     return c.stream;
   }
 
@@ -78,6 +79,7 @@ class ChatRetryService {
   }
 
   void _resetRetryState() {
+    isRetrying = false;
     _emit(null, '');
   }
 
@@ -92,17 +94,19 @@ class ChatRetryService {
     final rc = _retryCountdownController;
     final mc = _retryMessageController;
     if (progress != null && rc != null && !rc.isClosed) {
-      try { rc.add(progress); } catch (_) {}
+      try {
+        rc.add(progress);
+      } catch (_) {}
     }
     if (message != null && mc != null && !mc.isClosed) {
-      try { mc.add(message); } catch (_) {}
+      try {
+        mc.add(message);
+      } catch (_) {}
     }
   }
 
   Future<T> execute<T>(
-    Future<T> Function({
-      void Function()? onChunkReceived,
-    }) operation, {
+    Future<T> Function({void Function()? onChunkReceived}) operation, {
     void Function(RichRetryInfo info)? onRetry,
     bool Function()? isStillValid,
   }) async {
@@ -233,8 +237,10 @@ class ChatRetryService {
 
   String _retryMessage(ClassifiedError error, int displayAttempt) {
     return switch (error) {
-      RateLimitError(:final reason) =>
-        _rateLimitTemplate(reason, displayAttempt),
+      RateLimitError(:final reason) => _rateLimitTemplate(
+        reason,
+        displayAttempt,
+      ),
       AuthenticationError() => 'Auth error',
       ServerError(:final statusCode) =>
         (statusCode != null && statusCode >= 500)
@@ -260,8 +266,8 @@ class ChatRetryService {
     final countdown = secs <= 1
         ? 'retrying now…'
         : secs < 60
-            ? 'retrying in ${secs}s'
-            : 'retrying in ${(secs / 60).ceil()}min';
+        ? 'retrying in ${secs}s'
+        : 'retrying in ${(secs / 60).ceil()}min';
     return template.replaceFirst('[attempt #', '[$countdown attempt #');
   }
 
@@ -271,8 +277,11 @@ class ChatRetryService {
   }
 
   Duration _nextDelay(int attempt) {
-    final exponential = policy.baseDelay * pow(policy.factor, attempt.toDouble());
-    final capped = exponential > policy.maxDelay ? policy.maxDelay : exponential;
+    final exponential =
+        policy.baseDelay * pow(policy.factor, attempt.toDouble());
+    final capped = exponential > policy.maxDelay
+        ? policy.maxDelay
+        : exponential;
     return Duration(milliseconds: capped.inMilliseconds.round());
   }
 

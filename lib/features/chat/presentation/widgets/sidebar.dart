@@ -312,8 +312,9 @@ class Sidebar extends ConsumerWidget {
                           formatSidebarDate(chat.updatedAt, context: context),
                           style: TextStyle(
                             fontSize: ChatoraiFontSizes.sidebarDate,
-                            color: theme.textTheme.bodySmall?.color
-                                ?.withValues(alpha: 0.5),
+                            color: theme.textTheme.bodySmall?.color?.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,

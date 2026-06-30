@@ -37,7 +37,7 @@ class _QuestionPartWidgetState extends State<QuestionPartWidget> {
       padding: const EdgeInsets.all(ChatoraiSpacing.md),
       decoration: BoxDecoration(
         // Theme-aware background: black for dark, white for light
-        color: isDark ? Colors.black26 : Colors.white,
+        color: isDark ? Colors.black26 : Colors.white38,
         borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
       ),
       child: Column(
@@ -50,7 +50,7 @@ class _QuestionPartWidgetState extends State<QuestionPartWidget> {
             child: Text(
               '# Question',
               style: theme.textTheme.labelSmall?.copyWith(
-                color: Colors.white24,
+                color: isDark ? Colors.white24 : Colors.black26,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -72,6 +72,7 @@ class _QuestionPartWidgetState extends State<QuestionPartWidget> {
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
+                    color: isDark ? Colors.white24 : Colors.black26,
                   ),
                 ),
               ),
@@ -79,7 +80,7 @@ class _QuestionPartWidgetState extends State<QuestionPartWidget> {
           ),
           if (hasAnswer && displayAnswer != null)
             Padding(
-              padding: const EdgeInsets.only(top: 8, left: 14),
+              padding: const EdgeInsets.only(top: 8),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: ChatoraiSpacing.sm,
@@ -88,14 +89,18 @@ class _QuestionPartWidgetState extends State<QuestionPartWidget> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.arrow_upward, size: 10, color: Colors.white60),
+                    // Icon(
+                    //   Icons.arrow_upward,
+                    //   size: 10,
+                    //   color: isDark ? Colors.white70 : Colors.black,
+                    // ),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
                         displayAnswer,
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w500,
-                          color: Colors.white60,
+                          color: isDark ? Colors.white70 : Colors.black,
                         ),
                       ),
                     ),

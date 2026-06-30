@@ -75,6 +75,25 @@ class _FakeChatAiService extends ChatAiService {
     onChunk('Fake subagent output');
     onCompletion('Fake completion');
   }
+
+  @override
+  Future<void> runChildCompletion({
+    required List<Map<String, dynamic>> messages,
+    required String model,
+    required double temperature,
+    required Function(String) onChunk,
+    required Function(String) onReasoning,
+    required Function(String) onCompletion,
+    ToolSet tools = const {},
+    ToolStartCallback? onToolStart,
+    ToolEndCallback? onToolEnd,
+    ToolErrorCallback? onToolError,
+    int maxSteps = 5,
+  }) async {
+    // Simulate immediate response (same as streamChatCompletion fake)
+    onChunk('Fake subagent output');
+    onCompletion('Fake completion');
+  }
 }
 
 /// Test harness that provides all dependencies for the task tool.

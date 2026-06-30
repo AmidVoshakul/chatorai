@@ -1,70 +1,112 @@
-import 'package:flutter/material.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-class TaskPartWidget extends StatelessWidget {
+class TaskPartWidget extends StatefulWidget {
   final TaskPart part;
   final VoidCallback? onTap;
 
   const TaskPartWidget({super.key, required this.part, this.onTap});
 
   @override
+  State<TaskPartWidget> createState() => _TaskPartWidgetState();
+}
+
+class _TaskPartWidgetState extends State<TaskPartWidget> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final progress = part.subtaskCount > 0
-        ? part.completedCount / part.subtaskCount
-        : 0.0;
+    final part = widget.part;
+    final isRunning = part.status == TaskStatus.running;
+    final isCompleted = part.status == TaskStatus.completed;
+    final hasError = part.error != null && part.error!.isNotEmpty;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 2),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: InkWell(
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-      ),
-      child: Row(
-        children: [
-          _statusIcon(theme),
-          const SizedBox(width: 8),
-          Expanded(
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 2),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.4,
+            ),
+            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+          ),
+          child: Opacity(
+            opacity: _isHovered ? 1.0 : 0.5,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  part.description,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _statusIcon(theme, isRunning: isRunning),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${part.agent} Task — ${part.description}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  part.agent,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontSize: ChatoraiFontSizes.xs,
-                    color: theme.colorScheme.onSurfaceVariant,
+                if (isRunning &&
+                    part.currentTool != null &&
+                    part.currentTool!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 24, top: 2),
+                    child: Text(
+                      '  ↳ ${_capitalize(part.currentTool!)} ${part.currentToolTitle ?? ""}'
+                          .trim(),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: ChatoraiFontSizes.xs,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-                if (part.subtaskCount > 0) ...[
-                  const SizedBox(height: 4),
+                if (isRunning && hasError)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 24, top: 2),
+                    child: Text(
+                      '  ↳ Retrying${part.retryAttempt != null ? " (attempt #${part.retryAttempt})" : ""} · ${part.error}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: ChatoraiFontSizes.xs,
+                        color: theme.colorScheme.error,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                if (isCompleted) ...[
+                  const SizedBox(height: 2),
                   Row(
                     children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(2),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            minHeight: 3,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
                       Text(
-                        '${part.completedCount}/${part.subtaskCount}',
+                        '└ ',
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: ChatoraiFontSizes.xs,
-                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${part.toolCallsCount} toolcall${part.toolCallsCount == 1 ? "" : "s"} • ${_formatDuration(part.durationMs)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: ChatoraiFontSizes.xs,
                         ),
                       ),
                     ],
@@ -73,28 +115,53 @@ class TaskPartWidget extends StatelessWidget {
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _statusIcon(ThemeData theme) {
-    switch (part.status) {
+  String _formatDuration(int? ms) {
+    if (ms == null || ms <= 0) return '0s';
+    final totalSeconds = ms ~/ 1000;
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    if (minutes > 0) {
+      return '${minutes}m ${seconds}s';
+    }
+    return '${seconds}s';
+  }
+
+  String _capitalize(String s) {
+    if (s.isEmpty) return s;
+    return s[0].toUpperCase() + s.substring(1);
+  }
+
+  Widget _statusIcon(ThemeData theme, {required bool isRunning}) {
+    if (isRunning) {
+      return SizedBox(
+        width: 16,
+        height: 16,
+        child: SpinKitCircle(size: 16, color: theme.colorScheme.onSurface),
+      );
+    }
+
+    switch (widget.part.status) {
+      case TaskStatus.completed:
+        return Text(
+          '│',
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontSize: ChatoraiFontSizes.xs,
+            fontWeight: FontWeight.w500,
+          ),
+        );
+      case TaskStatus.error:
+        return Icon(Icons.error, size: 16, color: theme.colorScheme.error);
       case TaskStatus.running:
         return SizedBox(
           width: 16,
           height: 16,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              theme.colorScheme.primary,
-            ),
-          ),
+          child: SpinKitCircle(size: 16, color: theme.colorScheme.onSurface),
         );
-      case TaskStatus.completed:
-        return Icon(Icons.check_circle, size: 16, color: Colors.green);
-      case TaskStatus.error:
-        return Icon(Icons.error, size: 16, color: theme.colorScheme.error);
     }
   }
 }

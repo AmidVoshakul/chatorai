@@ -1,6 +1,7 @@
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/format/format_service.dart';
 import 'package:chatorai/core/lsp/lsp_service.dart';
+import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/skills/skill_service.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/features/chat/services/chat_ai_service.dart';

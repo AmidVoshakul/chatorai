@@ -47,7 +47,6 @@ Future<void> toggleProvider({
 bool _isModelFromProvider(String modelId, String providerId, WidgetRef ref) {
   if (modelId.isEmpty) return false;
   if (modelId.startsWith('$providerId/')) return true;
-  if (modelId.startsWith('$providerId:')) return true;
   if (providerId == 'ollama') {
     final catalog = ref.read(providerCatalogServiceProvider);
     return catalog.getSelectedModelIds('ollama').contains(modelId);
@@ -88,9 +87,7 @@ Future<bool> deleteProvider({
   if (confirmed != true) return false;
 
   final currentModel = ref.read(modelProvider).selectedModelId;
-  final wasFromThisProvider =
-      currentModel.startsWith('$providerId/') ||
-      currentModel.startsWith('$providerId:');
+  final wasFromThisProvider = currentModel.startsWith('$providerId/');
 
   final catalog = ref.read(providerCatalogServiceProvider);
   await catalog.deleteApiKey(providerId);

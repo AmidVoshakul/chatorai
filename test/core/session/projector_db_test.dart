@@ -166,8 +166,7 @@ void main() {
       expect(messages.length, 1);
       expect(messages.first.id, 'tc_1');
       expect(messages.first.role, 'tool');
-      expect(messages.first.content, contains('bash'));
-      expect(messages.first.content, contains('ls'));
+      expect(messages.first.content, '{"cmd":"ls"}');
     });
 
     test('ToolSuccess updates message and inserts tool_result', () async {

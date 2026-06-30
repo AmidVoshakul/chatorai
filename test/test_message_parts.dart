@@ -405,30 +405,19 @@ void main() {
         description: 'Analyze security',
         agent: 'security-auditor',
         status: TaskStatus.completed,
-        subtaskCount: 5,
-        completedCount: 5,
+        toolCallsCount: 5,
+        durationMs: 120000,
       );
       expect(part.status, TaskStatus.completed);
-      expect(part.subtaskCount, 5);
-      expect(part.completedCount, 5);
+      expect(part.toolCallsCount, 5);
+      expect(part.durationMs, 120000);
     });
 
     test('copyWith updates status', () {
       const part = TaskPart(description: 'task', agent: 'agent');
       final updated = part.copyWith(status: TaskStatus.completed);
       expect(updated.status, TaskStatus.completed);
-      expect(updated.description, 'task'); // unchanged
-    });
-
-    test('copyWith updates completedCount', () {
-      const part = TaskPart(
-        description: 'task',
-        agent: 'agent',
-        subtaskCount: 10,
-      );
-      final updated = part.copyWith(completedCount: 7);
-      expect(updated.completedCount, 7);
-      expect(updated.subtaskCount, 10); // unchanged
+      expect(updated.description, 'task');
     });
 
     test('toJson serializes status as name', () {
@@ -450,21 +439,21 @@ void main() {
         'description': 'desc',
         'agent': 'agent',
         'status': 'completed',
-        'subtaskCount': 3,
-        'completedCount': 2,
+        'toolCallsCount': 3,
+        'durationMs': 5000,
       };
       final part = TaskPart.fromJson(json);
       expect(part.status, TaskStatus.completed);
-      expect(part.subtaskCount, 3);
-      expect(part.completedCount, 2);
+      expect(part.toolCallsCount, 3);
+      expect(part.durationMs, 5000);
     });
 
     test('fromJson defaults status to running', () {
       final json = {'type': 'task', 'description': 'desc', 'agent': 'agent'};
       final part = TaskPart.fromJson(json);
       expect(part.status, TaskStatus.running);
-      expect(part.subtaskCount, 0);
-      expect(part.completedCount, 0);
+      expect(part.toolCallsCount, 0);
+      expect(part.durationMs, isNull);
     });
 
     test('roundtrip serialization', () {
@@ -472,15 +461,15 @@ void main() {
         description: 'Deep analysis',
         agent: 'deepresearch',
         status: TaskStatus.completed,
-        subtaskCount: 8,
-        completedCount: 8,
+        toolCallsCount: 8,
+        durationMs: 200000,
       );
       final restored = TaskPart.fromJson(original.toJson());
       expect(restored.description, original.description);
       expect(restored.agent, original.agent);
       expect(restored.status, original.status);
-      expect(restored.subtaskCount, original.subtaskCount);
-      expect(restored.completedCount, original.completedCount);
+      expect(restored.toolCallsCount, original.toolCallsCount);
+      expect(restored.durationMs, original.durationMs);
     });
   });
 

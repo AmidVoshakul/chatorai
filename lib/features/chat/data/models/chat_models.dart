@@ -8,7 +8,8 @@ import 'package:flutter/foundation.dart';
 enum MessageRole {
   user,
   assistant,
-  system;
+  system,
+  tool;
 
   Color get color {
     switch (this) {
@@ -18,6 +19,8 @@ enum MessageRole {
         return Colors.green;
       case MessageRole.system:
         return Colors.orange;
+      case MessageRole.tool:
+        return Colors.purple;
     }
   }
 
@@ -29,6 +32,8 @@ enum MessageRole {
         return 'AI';
       case MessageRole.system:
         return 'System';
+      case MessageRole.tool:
+        return 'Tool';
     }
   }
 }

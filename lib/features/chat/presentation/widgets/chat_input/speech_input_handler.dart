@@ -19,7 +19,9 @@ mixin SpeechInputHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     final prefix = _textBeforeSpeech;
     final separator = prefix.isNotEmpty ? ' ' : '';
     textController.text = '$prefix$separator$text';
-    textController.selection = TextSelection.collapsed(offset: textController.text.length);
+    textController.selection = TextSelection.collapsed(
+      offset: textController.text.length,
+    );
     onRecognizedText?.call(text);
   }
 

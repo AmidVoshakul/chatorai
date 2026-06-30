@@ -4,6 +4,7 @@ import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:drift/drift.dart';
 
+import 'database.dart' as db show ToolResult;
 import 'database.dart' hide ToolResult;
 import 'event_store.dart';
 import 'events.dart';
@@ -107,6 +108,21 @@ class SessionRepository {
     final state = _rowToState(row);
     _stateCache[sessionId] = state;
     return state;
+  }
+
+  String _stripSesPrefix(String value) {
+    if (value.startsWith('ses_')) return value;
+    return 'ses_$value';
+  }
+
+  Future<SessionState?> getSessionMetaFromId(String sessionId) async {
+    final stripped = _stripSesPrefix(sessionId);
+    return getSessionMeta(SessionID.fromString(stripped));
+  }
+
+  Stream<SessionState?> streamSessionFromId(String sessionId) {
+    final stripped = _stripSesPrefix(sessionId);
+    return streamSession(SessionID.fromString(stripped));
   }
 
   Stream<SessionState?> streamSession(SessionID sessionId) {
@@ -326,6 +342,11 @@ class SessionRepository {
     return result;
   }
 
+  Future<List<SessionState>> getChildSessionsFromId(String parentId) async {
+    final stripped = _stripSesPrefix(parentId);
+    return getChildSessions(SessionID.fromString(stripped));
+  }
+
   Future<Map<String, int>> getAggregateUsage(SessionID sessionId) async {
     final tree = await buildTree();
     final descendants = tree.getDescendants(sessionId);
@@ -351,6 +372,75 @@ class SessionRepository {
       'tokensOutput': totalOutput,
       'tokensReasoning': totalReasoning,
     };
+  }
+
+  Future<List<ToolResult>> getSessionToolResults(SessionID sessionId) async {
+    final rows =
+        await (_db.select(_db.toolResults)
+              ..where((t) => t.sessionId.equals(sessionId.value))
+              ..orderBy([(t) => OrderingTerm(expression: t.createdAt)]))
+            .get();
+    return rows.map(_rowToToolResult).toList();
+  }
+
+  static ToolResult _rowToToolResult(db.ToolResult row) {
+    Map<String, dynamic> input;
+    try {
+      input = jsonDecode(row.inputJson) as Map<String, dynamic>;
+    } catch (_) {
+      input = {};
+    }
+    return ToolResult(
+      id: row.id,
+      toolName: row.toolName,
+      input: input,
+      outputText: row.outputText,
+      durationMs: row.durationMs,
+      status: row.status,
+      createdAt: row.createdAt,
+    );
+  }
+
+  Future<List<SessionMessage>> getSessionMessages(SessionID sessionId) async {
+    final rows =
+        await (_db.select(_db.messages)
+              ..where((m) => m.sessionId.equals(sessionId.value))
+              ..orderBy([(m) => OrderingTerm(expression: m.seq)]))
+            .get();
+    return rows.map(_rowToSessionMessage).toList();
+  }
+
+  static SessionMessage _rowToSessionMessage(Message row) {
+    return SessionMessage(
+      id: row.id,
+      role: MessageRole.values.firstWhere(
+        (r) => r.name == row.role,
+        orElse: () => MessageRole.user,
+      ),
+      content: row.content,
+      seq: row.seq,
+      model: row.model,
+      reasoning: row.reasoning,
+      error: row.error,
+      createdAt: row.createdAt,
+    );
+  }
+
+  Stream<List<SessionMessage>> watchSessionMessages(SessionID sessionId) {
+    return _eventStore
+        .watchMessages(sessionId)
+        .map((rows) => rows.map(_rowToSessionMessage).toList());
+  }
+
+  Stream<List<ToolResult>> watchSessionToolResults(SessionID sessionId) {
+    return _eventStore
+        .watchToolResults(sessionId)
+        .map((rows) => rows.map(_rowToToolResult).toList());
+  }
+
+  Future<SessionState> loadSessionState(SessionID sessionId) async {
+    final events = await _eventStore.getEvents(sessionId);
+    return replayEvents(events);
   }
 
   SessionState _rowToState(Session row) {
