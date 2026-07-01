@@ -1,5 +1,6 @@
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/permission/rule.dart';
+import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:equatable/equatable.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -200,6 +201,10 @@ class SessionState extends Equatable {
   @Default([])
   final List<ToolResult> toolResults;
 
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @Default([])
+  final List<AssistantContent> parts;
+
   final DateTime createdAt;
 
   final DateTime updatedAt;
@@ -221,6 +226,7 @@ class SessionState extends Equatable {
     this.permission,
     this.messages = const [],
     this.toolResults = const [],
+    this.parts = const [],
     required this.createdAt,
     required this.updatedAt,
     this.archivedAt,
@@ -246,6 +252,7 @@ class SessionState extends Equatable {
     PermissionRuleset? permission,
     List<SessionMessage>? messages,
     List<ToolResult>? toolResults,
+    List<AssistantContent>? parts,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? archivedAt,
@@ -269,6 +276,7 @@ class SessionState extends Equatable {
       permission: clearPermission ? null : (permission ?? this.permission),
       messages: messages ?? this.messages,
       toolResults: toolResults ?? this.toolResults,
+      parts: parts ?? this.parts,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       archivedAt: clearArchivedAt ? null : (archivedAt ?? this.archivedAt),
@@ -357,6 +365,7 @@ class SessionState extends Equatable {
     permission,
     messages,
     toolResults,
+    parts,
     createdAt,
     updatedAt,
     archivedAt,

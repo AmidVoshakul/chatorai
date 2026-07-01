@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:chatorai/shared/utils/xdg_paths.dart';
+import 'package:chatorai/shared/utils/xdg_paths_cli.dart';
 import 'schema.dart';
 
 part 'database.g.dart';

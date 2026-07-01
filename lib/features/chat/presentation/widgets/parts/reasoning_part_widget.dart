@@ -156,7 +156,7 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
           builder: (context, child) {
             return Row(
               children: [
-                SpinKitRing(color: orange, size: 14, lineWidth: 2),
+                 SpinKitCircle(color: orange, size: 16),
                 const SizedBox(width: 8),
                 ShaderMask(
                   shaderCallback: (bounds) {

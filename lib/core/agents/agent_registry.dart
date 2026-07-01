@@ -8,7 +8,6 @@ class AgentDefinition {
   final String? description;
   final AgentMode mode;
   final String? systemPrompt;
-  final String? prompt;
   final String? modelOverride;
   final PermissionRuleset permissions;
   final bool hidden;
@@ -21,7 +20,6 @@ class AgentDefinition {
     this.description,
     this.mode = AgentMode.subagent,
     this.systemPrompt,
-    this.prompt,
     this.modelOverride,
     this.permissions = const PermissionRuleset(),
     this.hidden = false,
@@ -60,7 +58,7 @@ class AgentRegistry {
     'general': AgentDefinition(
       id: 'general',
       name: 'General',
-      description: 'General-purpose subagent for multi-step tasks.',
+      description: 'General-purpose agent for researching complex questions and executing multi-step tasks. Use this agent to execute multiple units of work in parallel.',
       mode: AgentMode.subagent,
       hidden: false,
       systemPrompt:
@@ -73,9 +71,7 @@ class AgentRegistry {
       description: 'Read-only exploration. Uses read, glob, grep only.',
       mode: AgentMode.subagent,
       hidden: false,
-      systemPrompt:
-          'You are an exploration agent. Use read, glob, grep tools only. NEVER edit, write, or modify files.',
-      prompt: '''
+      systemPrompt: '''
 You are a file search specialist. You excel at thoroughly navigating and exploring codebases.
 
 Your strengths:
@@ -104,9 +100,7 @@ Complete the user's search request efficiently and report your findings clearly.
       description: 'Context compaction agent. Summarizes conversation.',
       mode: AgentMode.primary,
       hidden: true,
-      systemPrompt:
-          'Summarize the following conversation context concisely. Preserve key decisions, errors, and code references.',
-      prompt: '''
+      systemPrompt: '''
 You are an anchored context summarization assistant for coding sessions.
 
 Summarize only the conversation history you are given. The newest turns may be kept verbatim outside your summary, so focus on the older context that still matters for continuing the work.
@@ -126,9 +120,7 @@ Do not answer the conversation itself. Do not mention that you are summarizing, 
       description: 'Generates short titles (hidden).',
       mode: AgentMode.primary,
       hidden: true,
-      systemPrompt:
-          'Generate a ≤60 character title for this conversation. Same language as user. No tool names.',
-      prompt: '''
+      systemPrompt: '''
 You are a title generator. You output ONLY a thread title. Nothing else.
 
 <task>
@@ -183,9 +175,7 @@ Your output must be:
       description: 'Generates structured summaries (hidden).',
       mode: AgentMode.primary,
       hidden: true,
-      systemPrompt:
-          'Generate a PR-style summary: Key Decisions, Files Changed, Commands Run, Outcomes.',
-      prompt: '''
+      systemPrompt: '''
 Summarize what was done in this conversation. Write like a pull request description.
 
 Rules:

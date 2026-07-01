@@ -7,7 +7,6 @@ import 'package:chatorai/features/chat/presentation/widgets/parts/reasoning_part
 import 'package:chatorai/features/chat/presentation/widgets/parts/task_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/text_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/todo_part_widget.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/tool_call_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
@@ -286,8 +285,6 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
     for (final part in m.parts) {
       if (part is ReasoningPart) {
         groupedParts.add(ReasoningPartWidget(part: part));
-      } else if (part is ToolCallPart || part is ToolResultPart) {
-        groupedParts.add(_buildPart(part, context));
       } else {
         groupedParts.add(_buildPart(part, context));
       }
@@ -297,10 +294,11 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AnimatedSize(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
-          child: Container(
+        if (m.isStreaming)
+          Container(
+            // During streaming we avoid AnimatedSize — height changes every frame
+            // as new text parts arrive, and implicit animation here would fight
+            // with the scroll sync in _scrollToBottom, causing visible jumping.
             width: double.infinity,
             padding: const EdgeInsets.symmetric(
               horizontal: ChatoraiSpacing.md,
@@ -320,8 +318,33 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
               mainAxisSize: MainAxisSize.min,
               children: groupedParts,
             ),
+          )
+        else
+          AnimatedSize(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: ChatoraiSpacing.md,
+                vertical: ChatoraiSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+                boxShadow: ChatoraiShadows.cardShadow,
+                border: Border.all(
+                  color: theme.dividerColor.withValues(alpha: 0.3),
+                  width: ChatoraiBorderWidth.thinBold,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: groupedParts,
+              ),
+            ),
           ),
-        ),
         _buildActionRow(
           isUser: false,
           content: textContent,
@@ -349,13 +372,9 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         child: TextPartWidget(part: p),
       ),
       ReasoningPart p => ReasoningPartWidget(part: p),
-      ToolCallPart p => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.sm),
-        child: Opacity(opacity: 0.3, child: ToolCallPartWidget(part: p)),
-      ),
       ToolResultPart p => Padding(
         padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.sm),
-        child: Opacity(opacity: 0.3, child: ToolResultPartWidget(part: p)),
+        child: ToolResultPartWidget(part: p),
       ),
       TaskPart p => TaskPartWidget(
         part: p,

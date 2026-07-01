@@ -68,6 +68,38 @@ String toolTitle(String toolName, Map<String, dynamic> input) {
   }
 }
 
+String toolPendingText(String toolName, Map<String, dynamic> input) {
+  switch (toolName.toLowerCase()) {
+    case 'read':
+      return 'Reading file...';
+    case 'write':
+      return 'Preparing write...';
+    case 'edit':
+      return 'Preparing edit...';
+    case 'bash':
+      final cmd = (input['command'] as String? ?? '').trim();
+      return cmd.isNotEmpty ? cmd : 'Writing command...';
+    case 'glob':
+      return 'Finding files...';
+    case 'grep':
+      return 'Searching content...';
+    case 'webfetch':
+      return 'Fetching from the web...';
+    case 'websearch':
+      return 'Searching web...';
+    case 'apply_patch':
+      return 'Preparing patch...';
+    case 'todowrite':
+      return 'Updating todos...';
+    case 'task':
+      return 'Delegating...';
+    case 'question':
+      return 'Asking questions...';
+    default:
+      return toolName;
+  }
+}
+
 String toolResultSummary(String toolName, String? result) {
   if (result == null || result.isEmpty) return '';
   final lines = result.split('\n').length;

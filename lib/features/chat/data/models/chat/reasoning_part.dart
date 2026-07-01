@@ -49,7 +49,7 @@ class ReasoningPart extends MessagePart {
 
   factory ReasoningPart.fromJson(Map<String, dynamic> json) {
     return ReasoningPart(
-      content: json['content'] as String,
+      content: json['content'] as String? ?? '',
       title: json['title'] as String?,
       isStreaming: json['isStreaming'] as bool? ?? false,
       startedAt: json['startedAt'] != null

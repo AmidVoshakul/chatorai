@@ -5,9 +5,11 @@ import 'dart:io';
 import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/stats/stats_service.dart';
 import 'package:chatorai/core/llm/providers/built_in_providers.dart';
-import 'package:chatorai/shared/utils/xdg_paths.dart';
+import 'package:chatorai/shared/utils/xdg_paths_cli.dart';
 
 Future<void> main(List<String> args) async {
+  XdgPaths.init();
+
   if (args.isEmpty) {
     _printMainHelp();
     return;

@@ -74,6 +74,7 @@ flutter:
   assets:
     - assets/chatorai_logo_black.png
     - assets/provider/
+    # - assets/agents/
 
 executables:
   chatorai:

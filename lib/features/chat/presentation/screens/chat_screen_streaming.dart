@@ -242,16 +242,18 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             final subagentType = input['subagent_type'] as String? ?? 'general';
             final agent = AgentRegistry().get(subagentType);
             final agentName = agent?.name ?? subagentType;
-            // Use toolCallId as fallback — LLM rarely provides task_id
-            final childId = input['task_id'] as String? ?? 'task_$toolCallId';
+            final taskId = input['task_id'] as String?;
+            final sessionId = (taskId != null && taskId.startsWith('ses_'))
+                ? taskId
+                : null;
             ref
                 .read(streamingMessageProvider.notifier)
                 .onTaskStart(
                   description: description,
                   agent: agentName,
-                  sessionId: childId,
+                  sessionId: sessionId,
                 );
-            activeTaskSessionId = childId;
+            activeTaskSessionId = taskId ?? toolCallId;
           } else if (activeTaskSessionId != null) {
             final toolTitle =
                 input['command'] as String? ??
@@ -441,13 +443,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                 retryMessage: null,
                 retryAttempt: 0,
               );
-          // Auto-scroll to bottom when streaming completes (if enabled)
-          if (_autoScrollEnabled &&
-              ref.read(themeProvider).autoScrollDuringStreaming) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _scrollToBottom(force: false);
-            });
-          }
+           // Auto-scroll during streaming is handled by throttleUpdate;
+           // do NOT scroll again here, this block runs on stream completion.
 
           // Extract text + reasoning from accumulated parts for session runner
           final streamingStateBeforeFinalize = ref.read(
@@ -572,17 +569,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             completedMessage.id,
             completedMessage,
           );
-          LogTags.chatService.logInfo(
-            'ChatScreen.onCompletion: message saved, scrolling to bottom',
-          );
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            LogTags.chatService.logInfo(
-              'ChatScreen.onCompletion: postFrame scrollToBottom call',
-            );
-            _scrollToBottom(force: true);
-            // Restore focus to chat input after streaming completes (Bug 4)
-            _chatInputFocusNode.requestFocus();
-          });
+           WidgetsBinding.instance.addPostFrameCallback((_) {
+             _chatInputFocusNode.requestFocus();
+           });
           _showContinuationSuggestions(completedMessage);
         },
       );

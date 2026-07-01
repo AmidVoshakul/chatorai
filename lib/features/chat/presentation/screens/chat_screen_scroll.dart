@@ -42,12 +42,10 @@ extension _ChatScreenScrollExt on _ChatScreenState {
         curve: Curves.easeOut,
       );
     } else {
-      // Smooth animation during streaming synchronized with bubble expansion (150ms)
-      _messageScrollController.animateTo(
-        maxScroll,
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOut,
-      );
+      // Instant jump during streaming — no animation, because maxScrollExtent
+      // changes every frame while new chunks arrive. animateTo would compete
+      // with the growing content and cause visible jumping.
+      _messageScrollController.jumpTo(maxScroll);
     }
   }
 

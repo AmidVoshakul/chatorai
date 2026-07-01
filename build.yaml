@@ -5,3 +5,8 @@ targets:
         generate_for:
           include:
             - lib/core/session/session_state.dart
+            - lib/features/chat/data/models/chat/assistant_content.dart
+      json_serializable:
+        generate_for:
+          include:
+            - lib/features/chat/data/models/chat/assistant_content.dart

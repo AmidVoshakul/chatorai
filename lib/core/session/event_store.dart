@@ -83,6 +83,22 @@ class EventStore {
         .map((rows) => rows.map<SessionEvent>(_deserialize).toList());
   }
 
+  /// Same as [streamEvents] but filters out ephemeral delta events
+  /// (TextDelta, ReasoningDelta, ToolInputDelta). Use for efficient replay
+  /// when only the final `*Ended` values are needed (e.g. full state rebuild).
+  Stream<List<SessionEvent>> streamDurableEvents(SessionID sessionId) {
+    return streamEvents(sessionId).map(
+      (events) => events.where((e) => !isDeltaEvent(e)).toList(),
+    );
+  }
+
+  /// Returns all durable (non-delta) events for a session ordered by sequence.
+  /// Skips ephemeral delta events — use for fast full replay.
+  Future<List<SessionEvent>> getDurableEvents(SessionID sessionId) async {
+    final all = await getEvents(sessionId);
+    return all.where((e) => !isDeltaEvent(e)).toList();
+  }
+
   /// Stream raw message rows for a session ordered by sequence.
   Stream<List<db.Message>> watchMessages(SessionID sessionId) {
     return (_db.select(_db.messages)

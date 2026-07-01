@@ -68,12 +68,17 @@ extension _ChatScreenBuildExt on _ChatScreenState {
       onToggleNavigator: _toggleNavigator,
       onQuestionAnswer: _handleQuestionAnswer,
       onTaskTap: (partSessionId) {
-        // Use part's sessionId (persisted from TaskPart), fallback to holder
-        final effectiveId = partSessionId ??
-            ref
+        final isRealSessionId =
+            partSessionId != null && partSessionId.startsWith('ses_');
+        final effectiveId = isRealSessionId
+            ? partSessionId
+            : ref
                 .read(currentSessionRunnerProvider.notifier)
                 .activeChildSessionId;
         if (effectiveId != null && effectiveId.isNotEmpty) {
+          ref.read(sessionStackProvider.notifier).push(
+            SessionID.fromString(effectiveId),
+          );
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => ChildSessionScreen(sessionId: effectiveId),

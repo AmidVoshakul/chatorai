@@ -23,7 +23,7 @@ class TextPart extends MessagePart {
 
   factory TextPart.fromJson(Map<String, dynamic> json) {
     return TextPart(
-      content: json['content'] as String,
+      content: json['content'] as String? ?? '',
       isStreaming: json['isStreaming'] as bool? ?? false,
     );
   }

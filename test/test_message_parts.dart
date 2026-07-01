@@ -794,7 +794,6 @@ void main() {
             'toolCallId': 'tc1',
             'toolName': 'read',
             'input': {'path': 'file.txt'},
-            'createdAt': DateTime.now().toIso8601String(),
           },
         ],
         'isStreaming': false,
@@ -805,7 +804,11 @@ void main() {
       expect(msg.parts, hasLength(3));
       expect(msg.parts[0], isA<TextPart>());
       expect(msg.parts[1], isA<ReasoningPart>());
-      expect(msg.parts[2], isA<ToolCallPart>());
+      // tool_call normalized to tool_result for unified handling
+      expect(msg.parts[2], isA<ToolResultPart>());
+      final toolPart = msg.parts[2] as ToolResultPart;
+      expect(toolPart.toolCallId, 'tc1');
+      expect(toolPart.toolName, 'read');
     });
 
     test('handles empty parts list in fromJson', () {

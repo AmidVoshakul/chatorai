@@ -5,20 +5,20 @@ import 'package:flutter/material.dart';
 IconData toolIcon(String toolName) {
   switch (toolName.toLowerCase()) {
     case 'read':
-      return Icons.arrow_forward;
+      return Icons.visibility;
     case 'question':
     case 'skill':
       return Icons.arrow_forward;
     case 'edit':
-      return Icons.arrow_back;
+      return Icons.edit_note;
     case 'write':
       return Icons.arrow_back;
     case 'bash':
       return Icons.terminal;
     case 'glob':
-      return Icons.shuffle;
+      return Icons.manage_search_rounded;
     case 'grep':
-      return Icons.search;
+      return Icons.find_in_page;
     case 'webfetch':
       return Icons.read_more;
     case 'apply_patch':
@@ -28,7 +28,7 @@ IconData toolIcon(String toolName) {
     case 'task':
       return Icons.more_horiz;
     case 'todowrite':
-      return Icons.check_circle;
+      return Icons.wrap_text;
     default:
       return Icons.build;
   }

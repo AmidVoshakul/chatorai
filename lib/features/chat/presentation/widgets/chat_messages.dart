@@ -42,6 +42,7 @@ class ChatMessages extends ConsumerStatefulWidget {
   final Function()? onToggleNavigator;
   final Function(String messageId, String answer)? onQuestionAnswer;
   final void Function(String? taskSessionId)? onTaskTap;
+  final String? agentName;
 
   const ChatMessages({
     super.key,
@@ -67,6 +68,7 @@ class ChatMessages extends ConsumerStatefulWidget {
     this.onToggleNavigator,
     this.onQuestionAnswer,
     this.onTaskTap,
+    this.agentName,
   });
 
   @override
@@ -305,20 +307,21 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                     welcomeOffset = 1;
                   }
 
-                  final msgIndex = index - welcomeOffset;
-                  if (msgIndex >= 0 && msgIndex < messages.length) {
-                    final message = messages[msgIndex];
-                    final isLastMessage = msgIndex == messages.length - 1;
+final msgIndex = index - welcomeOffset;
+                    if (msgIndex >= 0 && msgIndex < messages.length) {
+                      final message = messages[msgIndex];
+                      final isLastMessage = msgIndex == messages.length - 1;
 
-                    final isEmptyAssistantMessage =
-                        message.role == MessageRole.assistant &&
-                        message.content.isEmpty;
+                      final isEmptyAssistantMessage =
+                          message.role == MessageRole.assistant &&
+                          message.content.isEmpty &&
+                          (message.partsJson == null || message.partsJson!.isEmpty);
 
-                    if (isEmptyAssistantMessage &&
-                        isLastMessage &&
-                        !message.isComplete) {
-                      return const SizedBox.shrink();
-                    }
+                      if (isEmptyAssistantMessage &&
+                          isLastMessage &&
+                          !message.isComplete) {
+                        return const SizedBox.shrink();
+                      }
 
                     final chatMsg = messageToChatMessage(message);
                     final resolvedMsg = (chatMsg is AssistantMessage)
@@ -332,7 +335,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                       chatId: widget.chat!.id,
                       messageId: message.id,
                       chatStorageService: widget.chatStorageService,
-                      agentName: currentAgent.name,
+                      agentName: widget.agentName ?? currentAgent.name,
                       onContinuationSelected:
                           message.role == MessageRole.assistant
                           ? (suggestion) =>
@@ -375,7 +378,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                           chatId: widget.chat?.id ?? '',
                           messageId: lastMessage?.id ?? 'streaming',
                           chatStorageService: widget.chatStorageService,
-                          agentName: currentAgent.name,
+                          agentName: widget.agentName ?? currentAgent.name,
                           cumulativeTokens: lastAssistantCumulative,
                           contextLength: lastMessage?.contextLength,
                           onTaskTap: widget.onTaskTap,

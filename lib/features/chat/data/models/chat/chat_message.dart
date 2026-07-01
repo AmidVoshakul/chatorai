@@ -1,7 +1,6 @@
 import 'message_part.dart';
 import 'text_part.dart';
 import 'reasoning_part.dart';
-import 'tool_call_part.dart';
 import 'tool_result_part.dart';
 import 'task_part.dart';
 import 'question_part.dart';
@@ -10,7 +9,6 @@ import 'todo_part.dart';
 export 'message_part.dart';
 export 'text_part.dart';
 export 'reasoning_part.dart';
-export 'tool_call_part.dart';
 export 'tool_result_part.dart';
 export 'task_part.dart';
 export 'question_part.dart';
@@ -19,15 +17,20 @@ export 'todo_part.dart';
 // ── Part deserialization helper ──────────────────────────────
 
 MessagePart partFromJson(Map<String, dynamic> json) {
-  return switch (json['type'] as String) {
+  final type = json['type'] as String;
+
+  // Normalize tool_call → tool_result for unified handling
+  // ToolCallPart is deprecated; use ToolResultPart with state field
+  final normalizedType = type == 'tool_call' ? 'tool_result' : type;
+
+  return switch (normalizedType) {
     'text' => TextPart.fromJson(json),
     'reasoning' => ReasoningPart.fromJson(json),
-    'tool_call' => ToolCallPart.fromJson(json),
     'tool_result' => ToolResultPart.fromJson(json),
     'task' => TaskPart.fromJson(json),
     'question' => QuestionPart.fromJson(json),
     'todo' => TodoPart.fromJson(json),
-    _ => throw ArgumentError('Unknown part type: ${json['type']}'),
+    _ => throw ArgumentError('Unknown part type: $type'),
   };
 }
 

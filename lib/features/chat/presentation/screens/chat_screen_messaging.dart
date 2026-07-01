@@ -65,11 +65,13 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
           ? SessionID.fromString(_currentSessionId!)
           : null,
     );
+    final isNewSession = _currentSessionId == null;
     _currentSessionId ??= runnerSession.sessionId.value;
     _sessionRunner = runnerSession;
     ref
         .read(currentSessionRunnerProvider.notifier)
         .set(sessionRunner, runnerSession.sessionId.value);
+    _pushSessionToStack(isNewSession: isNewSession);
 
     if (!isContinuation) {
       final userMessages = chat.messages
@@ -176,6 +178,16 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       isContinuation: false,
       delegateAgentId: messageData.delegateAgentId,
     );
+  }
+
+  /// Push the current session onto the navigation stack.
+  /// Only pushes on the first creation (when sessionId was null before).
+  void _pushSessionToStack({required bool isNewSession}) {
+    if (_currentSessionId != null && isNewSession) {
+      ref.read(sessionStackProvider.notifier).push(
+        SessionID.fromString(_currentSessionId!),
+      );
+    }
   }
 
   Future<void> _handleQuestionAnswer(String messageId, String answer) async {

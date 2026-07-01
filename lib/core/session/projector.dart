@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:drift/drift.dart';
 
 import 'database.dart' hide ToolResult;
@@ -93,6 +94,15 @@ TextDelta(:final messageId, :final delta) =>
           }
           return m;
         }).toList(),
+        parts: [
+          ...state.parts,
+          AssistantText(
+            id: 'part_${event.timestamp.millisecondsSinceEpoch}',
+            sessionId: event.sessionId.value,
+            messageId: messageId,
+            text: fullText,
+          ),
+        ],
         updatedAt: event.timestamp,
       ),
 
@@ -107,6 +117,7 @@ TextDelta(:final messageId, :final delta) =>
         }
         return m;
       }).toList(),
+      parts: _appendReasoningPart(state.parts, fullReasoning, messageId, event.sessionId.value),
       updatedAt: event.timestamp,
     ),
 
@@ -116,7 +127,11 @@ TextDelta(:final messageId, :final delta) =>
 
     ToolInputEnded _ => state,
 
-    ToolCalled(toolCallId: final toolCallId, toolName: _, input: final input) =>
+    ToolCalled(
+      toolCallId: final toolCallId,
+      toolName: final toolName,
+      input: final input,
+    ) =>
       state.copyWith(
         messages: [
           ...state.messages,
@@ -126,6 +141,30 @@ TextDelta(:final messageId, :final delta) =>
             content: jsonEncode(input),
             seq: state.messages.length + 1,
             createdAt: event.timestamp,
+          ),
+        ],
+        toolResults: [
+          ...state.toolResults,
+          ToolResult(
+            id: toolCallId,
+            toolName: toolName,
+            input: input,
+            outputText: '',
+            durationMs: 0,
+            status: 'running',
+            createdAt: event.timestamp,
+          ),
+        ],
+        parts: [
+          ...state.parts,
+          AssistantTool(
+            id: 'part_${event.timestamp.millisecondsSinceEpoch}',
+            sessionId: event.sessionId.value,
+            messageId: _lastAssistantMsgId(state),
+            callId: toolCallId,
+            tool: toolName,
+            state: ToolState.running,
+            input: input,
           ),
         ],
         updatedAt: event.timestamp,
@@ -139,9 +178,19 @@ TextDelta(:final messageId, :final delta) =>
           }
           return m;
         }).toList(),
-        toolResults: [
-          ...state.toolResults,
-          ToolResult(
+        toolResults: _updateToolResult(
+          state.toolResults,
+          toolCallId,
+          (tr) => ToolResult(
+            id: tr.id,
+            toolName: tr.toolName,
+            input: tr.input,
+            outputText: outputText,
+            durationMs: durationMs,
+            status: 'success',
+            createdAt: event.timestamp,
+          ),
+          () => ToolResult(
             id: toolCallId,
             toolName: '',
             input: {},
@@ -150,7 +199,9 @@ TextDelta(:final messageId, :final delta) =>
             status: 'success',
             createdAt: event.timestamp,
           ),
-        ],
+        ),
+        parts: _updateToolPart(state.parts, toolCallId, ToolState.completed,
+            outputText: outputText, durationMs: durationMs),
         updatedAt: event.timestamp,
       ),
 
@@ -161,9 +212,19 @@ TextDelta(:final messageId, :final delta) =>
         }
         return m;
       }).toList(),
-      toolResults: [
-        ...state.toolResults,
-        ToolResult(
+      toolResults: _updateToolResult(
+        state.toolResults,
+        toolCallId,
+        (tr) => ToolResult(
+          id: tr.id,
+          toolName: tr.toolName,
+          input: tr.input,
+          outputText: error,
+          durationMs: 0,
+          status: 'error',
+          createdAt: event.timestamp,
+        ),
+        () => ToolResult(
           id: toolCallId,
           toolName: '',
           input: {},
@@ -172,7 +233,9 @@ TextDelta(:final messageId, :final delta) =>
           status: 'error',
           createdAt: event.timestamp,
         ),
-      ],
+      ),
+      parts: _updateToolPart(state.parts, toolCallId, ToolState.error,
+          outputText: error),
       updatedAt: event.timestamp,
     ),
 
@@ -475,6 +538,92 @@ SessionState replayEvents(Iterable<SessionEvent> events) {
   }
   return state;
 }
+
+/// Updates or appends a [ToolResult] in the list.
+/// If [toolCallId] exists, applies [update]; otherwise appends via [create].
+List<ToolResult> _updateToolResult(
+  List<ToolResult> results,
+  String toolCallId,
+  ToolResult Function(ToolResult) update,
+  ToolResult Function() create,
+) {
+  var found = false;
+  final updated = results.map((tr) {
+    if (tr.id == toolCallId) {
+      found = true;
+      return update(tr);
+    }
+    return tr;
+  }).toList();
+  if (!found) {
+    updated.add(create());
+  }
+  return updated;
+}
+
+/// Finds the last assistant message ID from [state].
+/// Used to associate tool calls with the assistant message that generated them.
+String _lastAssistantMsgId(SessionState state) {
+  for (var i = state.messages.length - 1; i >= 0; i--) {
+    if (state.messages[i].role == MessageRole.assistant) {
+      return state.messages[i].id;
+    }
+  }
+  return '';
+}
+
+// ── Helper functions for typed AssistantContent parts ──────────────────────
+
+/// Appends a reasoning part to the parts list.
+/// Inserts before the last text part if present (ReasoningEnded often arrives
+/// after TextEnded in the runner, but reasoning should display before text).
+List<AssistantContent> _appendReasoningPart(
+  List<AssistantContent> parts,
+  String content,
+  String messageId,
+  String sessionId,
+) {
+  final reasoningPart = AssistantReasoning(
+    id: 'part_${DateTime.now().microsecondsSinceEpoch}',
+    sessionId: sessionId,
+    messageId: messageId,
+    text: content,
+    started: DateTime.now(),
+  );
+
+  if (parts.isNotEmpty && parts.any((p) => p is AssistantText)) {
+    final textIndex = parts.lastIndexWhere((p) => p is AssistantText);
+    return [
+      ...parts.sublist(0, textIndex),
+      reasoningPart,
+      ...parts.sublist(textIndex),
+    ];
+  }
+  return [...parts, reasoningPart];
+}
+
+/// Updates a tool part in the parts list by [toolCallId].
+/// Sets [state] and adds optional [outputText]/[durationMs].
+List<AssistantContent> _updateToolPart(
+  List<AssistantContent> parts,
+  String toolCallId,
+  ToolState newState, {
+  String? outputText,
+  int? durationMs,
+}) {
+  return parts.map((p) {
+    if (p is AssistantTool && p.callId == toolCallId) {
+      return p.copyWith(
+        state: newState,
+        output: outputText,
+        durationMs: durationMs ?? p.durationMs,
+      );
+    }
+    return p;
+  }).toList();
+}
+
+// ── Legacy helpers kept for compatibility ───────────────────────────────────
 
 // === Helpers ===
 

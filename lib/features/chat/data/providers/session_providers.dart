@@ -1,29 +1,14 @@
-import 'package:chatorai/core/session/database.dart' hide ToolResult;
-import 'package:chatorai/core/session/session_runner.dart';
+export 'package:chatorai/core/session/session_db_provider.dart'
+    show sessionDatabaseProvider, sessionRepositoryProvider;
+
+import 'package:chatorai/core/session/session_db_provider.dart'
+    show sessionRepositoryProvider;
 import 'package:chatorai/core/session/session_id.dart';
-import 'package:chatorai/core/session/session_repository.dart';
+import 'package:chatorai/core/session/session_runner.dart';
+import 'package:chatorai/core/session/session_stack.dart';
 import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/core/session/projector.dart' show projectEvent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-/// Provides a file-based persistent [AppDatabase] instance for session event sourcing.
-///
-/// Uses SQLite in the app documents directory (`chatorai_sessions.sqlite`).
-/// The database is created lazily on first access.
-final sessionDatabaseProvider = FutureProvider<AppDatabase>((ref) async {
-  return createFileDatabase();
-});
-
-/// Provides the [SessionRepository] backed by the file-based database.
-///
-/// This is a [FutureProvider] because the underlying database initialization
-/// is asynchronous (file I/O on first access).
-final sessionRepositoryProvider = FutureProvider<SessionRepository>((
-  ref,
-) async {
-  final db = await ref.watch(sessionDatabaseProvider.future);
-  return SessionRepository(db);
-});
 
 /// Provides all active (non-archived) sessions sorted by [SessionState.updatedAt]
 /// descending.
@@ -112,11 +97,28 @@ final childSessionStateProvider =
   );
   yield state;
 
-  // Then stream and accumulate new events
-  await for (final events in repo.eventStore.streamEvents(sid)) {
+  // Load durable events first (skip ephemeral deltas) for fast initial replay
+  final initialEvents = await repo.eventStore.getDurableEvents(sid);
+  for (final event in initialEvents) {
+    state = projectEvent(state, event);
+  }
+  yield state;
+
+  // Then stream new events, filtering ephemeral deltas
+  await for (final events in repo.eventStore.streamDurableEvents(sid)) {
     for (final event in events) {
       state = projectEvent(state, event);
     }
     yield state;
   }
 });
+
+/// Manages the navigation stack of sessions (parent → child → child).
+/// The top of the stack is the currently viewed session.
+///
+/// Used for session hierarchy navigation: push child, pop to parent,
+/// navigate between siblings.
+final sessionStackProvider =
+    NotifierProvider<SessionStackNotifier, SessionStackState>(
+  SessionStackNotifier.new,
+);

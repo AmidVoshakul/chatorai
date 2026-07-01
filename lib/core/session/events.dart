@@ -342,3 +342,13 @@ class TaskCompleted extends SessionEvent {
     super.sequence,
   });
 }
+
+/// Returns `true` for ephemeral delta events that should be skipped during
+/// durable event store replay. Deltas are live-only streaming fragments;
+/// only their corresponding `*Ended` events carry the final value.
+bool isDeltaEvent(SessionEvent event) => switch (event) {
+  TextDelta _ => true,
+  ReasoningDelta _ => true,
+  ToolInputDelta _ => true,
+  _ => false,
+};

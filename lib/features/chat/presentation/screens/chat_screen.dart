@@ -44,7 +44,8 @@ import 'package:chatorai/providers.dart'
         currentAgentProvider,
         compactionConfigProvider,
         currentSessionRunnerProvider,
-        sessionRepositoryProvider;
+        sessionRepositoryProvider,
+        sessionStackProvider;
 import 'package:chatorai/shared/utils/chat_error_utils.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
@@ -137,6 +138,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _messageScrollController.addListener(_handleScroll);
     _messageScrollController.addListener(_handleHeadingSync);
     _chatInputFocusNode = FocusNode();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showWelcomeSuggestions();
     });
@@ -150,6 +152,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _chatInputFocusNode.dispose();
     _sessionRunner?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Sync current chat ID with session stack on first build
+    final chatId = ref.read(currentChatIdProvider);
+    if (chatId != null && ref.read(sessionStackProvider).rootChatId == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(sessionStackProvider.notifier).init(chatId);
+      });
+    }
   }
 
   void _showWelcomeSuggestions() {
