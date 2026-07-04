@@ -74,7 +74,10 @@ class _TodoItemRow extends StatelessWidget {
             SizedBox(
               width: 16,
               height: 16,
-              child: SpinKitCircle(size: 16, color: theme.colorScheme.onSurface),
+              child: SpinKitCircle(
+                size: 16,
+                color: theme.colorScheme.onSurface,
+              ),
             )
           else
             Checkbox(

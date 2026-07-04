@@ -75,16 +75,15 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       updatedAt: event.timestamp,
     ),
 
-TextDelta(:final messageId, :final delta) =>
-       state.copyWith(
-         messages: state.messages.map((m) {
-           if (m.id == messageId) {
-             return m.copyWith(content: (m.content + delta));
-           }
-           return m;
-         }).toList(),
-         updatedAt: event.timestamp,
-       ),
+    TextDelta(:final messageId, :final delta) => state.copyWith(
+      messages: state.messages.map((m) {
+        if (m.id == messageId) {
+          return m.copyWith(content: (m.content + delta));
+        }
+        return m;
+      }).toList(),
+      updatedAt: event.timestamp,
+    ),
 
     TextEnded(:final messageId, :final fullText, :final model) =>
       state.copyWith(
@@ -117,7 +116,12 @@ TextDelta(:final messageId, :final delta) =>
         }
         return m;
       }).toList(),
-      parts: _appendReasoningPart(state.parts, fullReasoning, messageId, event.sessionId.value),
+      parts: _appendReasoningPart(
+        state.parts,
+        fullReasoning,
+        messageId,
+        event.sessionId.value,
+      ),
       updatedAt: event.timestamp,
     ),
 
@@ -200,8 +204,13 @@ TextDelta(:final messageId, :final delta) =>
             createdAt: event.timestamp,
           ),
         ),
-        parts: _updateToolPart(state.parts, toolCallId, ToolState.completed,
-            outputText: outputText, durationMs: durationMs),
+        parts: _updateToolPart(
+          state.parts,
+          toolCallId,
+          ToolState.completed,
+          outputText: outputText,
+          durationMs: durationMs,
+        ),
         updatedAt: event.timestamp,
       ),
 
@@ -234,8 +243,12 @@ TextDelta(:final messageId, :final delta) =>
           createdAt: event.timestamp,
         ),
       ),
-      parts: _updateToolPart(state.parts, toolCallId, ToolState.error,
-          outputText: error),
+      parts: _updateToolPart(
+        state.parts,
+        toolCallId,
+        ToolState.error,
+        outputText: error,
+      ),
       updatedAt: event.timestamp,
     ),
 

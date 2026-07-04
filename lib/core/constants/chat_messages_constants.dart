@@ -16,14 +16,6 @@ class ChatMessagesConstants {
   // LOADING
   // =======================================================================
   static const double loadingIndicatorSize = 12.0;
-  static const Duration updateInterval = Duration(milliseconds: 16);
-  static const int minChunkLengthForUpdate = 1;
-
-  // =======================================================================
-  // PREVIEW
-  // =======================================================================
-  static const int maxPreviewLength = 50;
-  static const int maxReasoningPreviewLength = 100;
 
   // =======================================================================
   // ERROR MESSAGES

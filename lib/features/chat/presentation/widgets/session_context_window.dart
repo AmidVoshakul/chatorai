@@ -1,5 +1,4 @@
-import 'package:chatorai/core/session/session_state.dart'
-    show SessionState;
+import 'package:chatorai/core/session/session_state.dart' show SessionState;
 import 'package:chatorai/features/chat/data/models/chat_models.dart'
     show Chat, Message, MessageRole;
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
@@ -132,9 +131,7 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
-    final stateAsync = ref.watch(
-      childSessionStateProvider(widget.sessionId),
-    );
+    final stateAsync = ref.watch(childSessionStateProvider(widget.sessionId));
 
     if (stateAsync.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -144,9 +141,9 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
       return Center(
         child: Text(
           localizations.noChatsYet,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).hintColor,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).hintColor),
         ),
       );
     }
@@ -156,9 +153,9 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
       return Center(
         child: Text(
           localizations.noChatsYet,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).hintColor,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).hintColor),
         ),
       );
     }
@@ -171,8 +168,7 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
       return Center(
         child: Text(
           localizations.noChatsYet,
-          style:
-              theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
+          style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
         ),
       );
     }
@@ -185,27 +181,20 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
       updatedAt: legacyMessages.last.timestamp,
     );
 
-    return ProviderScope(
-      overrides: [
-        streamingMessageProvider.overrideWith(
-          StreamingMessageNotifier.new,
-        ),
-      ],
-      child: ChatMessages(
-        key: ValueKey(widget.sessionId),
-        chatStorageService: ref.read(chatStorageServiceProvider),
-        chat: chat,
-        agentName: state.agent,
-        selectedModel: ref.watch(modelProvider).selectedModelId,
-        onSendMessage: (messageData) {},
-        onMessageDeleted: () {},
-        onMessageEdited: (_, _) {},
-        onMessageEditAndSend: (_, _) {},
-        onContinueResponse: (_) {},
-        onRegenerateResponse: (_) {},
-        scrollController: _scrollController,
-        onTaskTap: widget.onTaskTap,
-      ),
+    return ChatMessages(
+      key: ValueKey(widget.sessionId),
+      chatStorageService: ref.read(chatStorageServiceProvider),
+      chat: chat,
+      agentName: state.agent,
+      selectedModel: ref.watch(modelProvider).selectedModelId,
+      onSendMessage: (messageData) {},
+      onMessageDeleted: () {},
+      onMessageEdited: (_, _) {},
+      onMessageEditAndSend: (_, _) {},
+      onContinueResponse: (_) {},
+      onRegenerateResponse: (_) {},
+      scrollController: _scrollController,
+      onTaskTap: widget.onTaskTap,
     );
   }
 }

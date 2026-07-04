@@ -535,7 +535,7 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 fontStyle: FontStyle.italic,
               ),
-             ),
+            ),
           if (cmd.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 2),
@@ -732,15 +732,15 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               const SizedBox(width: 4),
-               Text(
-                 'Edit $filePath',
-                 style: TextStyle(
-                   fontFamily: 'monospace',
-                   fontSize: ChatoraiFontSizes.sm,
-                   color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                   fontStyle: FontStyle.italic,
-                 ),
-               ),
+              Text(
+                'Edit $filePath',
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: ChatoraiFontSizes.sm,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
               if (_isLoadingDiagnostics) ...[
                 const SizedBox(width: 8),
                 SizedBox(
@@ -809,15 +809,15 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-           Text(
-             'Patch $filePath',
-             style: TextStyle(
-               fontFamily: 'monospace',
-               fontSize: ChatoraiFontSizes.sm,
-               color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-               fontStyle: FontStyle.italic,
-             ),
-           ),
+          Text(
+            'Patch $filePath',
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: ChatoraiFontSizes.sm,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              fontStyle: FontStyle.italic,
+            ),
+          ),
           const SizedBox(height: 4),
           if (diffLines.isNotEmpty) ...diffLines.map((d) => _DiffLine(data: d)),
           _buildResultFooter(theme, result, isError),
@@ -846,15 +846,15 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-           Text(
-             'Write $filePath',
-             style: TextStyle(
-               fontFamily: 'monospace',
-               fontSize: ChatoraiFontSizes.sm,
-               color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-               fontStyle: FontStyle.italic,
-             ),
-           ),
+          Text(
+            'Write $filePath',
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: ChatoraiFontSizes.sm,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              fontStyle: FontStyle.italic,
+            ),
+          ),
           const SizedBox(height: 4),
           if (previewLines.isNotEmpty)
             Container(
@@ -863,15 +863,15 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
                 color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(4),
               ),
-                 child: SelectableText(
-                   previewLines.join('\n'),
-                   style: TextStyle(
-                     fontFamily: 'monospace',
-                     fontSize: ChatoraiFontSizes.xs,
-                     color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                   ),
-                   maxLines: displayFull ? null : 20,
-                 ),
+              child: SelectableText(
+                previewLines.join('\n'),
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: ChatoraiFontSizes.xs,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+                maxLines: displayFull ? null : 20,
+              ),
             ),
           _buildResultFooter(theme, result, isError),
         ],
@@ -890,17 +890,17 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-         Padding(
-           padding: const EdgeInsets.only(left: 12),
-           child: SelectableText(
-             displayedBody,
-             style: TextStyle(
-               fontFamily: 'monospace',
-               fontSize: ChatoraiFontSizes.sm,
-               color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-             ),
-           ),
-         ),
+        Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: SelectableText(
+            displayedBody,
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: ChatoraiFontSizes.sm,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+        ),
         _buildResultFooter(theme, displayedBody, isError),
       ],
     );
@@ -1025,19 +1025,19 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
                         ? Icons.warning_amber_rounded
                         : Icons.check_circle)
                   : Icons.info_outline,
-               size: 16,
-               color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              size: 16,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
             const SizedBox(width: 6),
             Text(
               action == 'diagnostics'
                   ? '$filePath — $errorCount errors, $warningCount warnings'
                   : '$action: $filePath',
-               style: TextStyle(
-                 fontSize: 12,
-                 fontWeight: FontWeight.w500,
-                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-               ),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
             ),
           ],
         ),
@@ -1049,13 +1049,13 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
               color: theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(4),
             ),
-             child: Text(
-               result,
-               style: TextStyle(
-                 fontSize: 11,
-                 fontFamily: 'monospace',
-                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-               ),
+            child: Text(
+              result,
+              style: TextStyle(
+                fontSize: 11,
+                fontFamily: 'monospace',
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
               maxLines: displayFull ? null : 20,
               overflow: displayFull ? null : TextOverflow.ellipsis,
             ),

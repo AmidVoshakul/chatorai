@@ -144,10 +144,6 @@ class InputWidgetBuilders {
               ),
         color: isRetrying ? Colors.transparent : null,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: isRetrying ? ChatoraiColors.error : Colors.transparent,
-          width: isRetrying ? ChatoraiBorderWidth.medium : 0.0,
-        ),
         boxShadow: isRetrying ? null : ChatoraiShadows.cardShadow,
       ),
       child: Stack(
@@ -156,7 +152,8 @@ class InputWidgetBuilders {
           if (isRetrying)
             CircularProgressIndicator(
               value: retryProgress,
-              strokeWidth: ChatoraiBorderWidth.medium,
+              strokeWidth: ChatoraiBorderWidth.bold,
+              strokeCap: StrokeCap.round,
               backgroundColor: ChatoraiColors.error.withValues(alpha: 0.12),
               valueColor: const AlwaysStoppedAnimation<Color>(
                 ChatoraiColors.error,

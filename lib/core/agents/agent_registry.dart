@@ -58,7 +58,8 @@ class AgentRegistry {
     'general': AgentDefinition(
       id: 'general',
       name: 'General',
-      description: 'General-purpose agent for researching complex questions and executing multi-step tasks. Use this agent to execute multiple units of work in parallel.',
+      description:
+          'General-purpose agent for researching complex questions and executing multi-step tasks. Use this agent to execute multiple units of work in parallel.',
       mode: AgentMode.subagent,
       hidden: false,
       systemPrompt:

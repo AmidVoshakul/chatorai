@@ -12,8 +12,7 @@ class ChildSessionScreen extends ConsumerStatefulWidget {
   const ChildSessionScreen({super.key, required this.sessionId});
 
   @override
-  ConsumerState<ChildSessionScreen> createState() =>
-      _ChildSessionScreenState();
+  ConsumerState<ChildSessionScreen> createState() => _ChildSessionScreenState();
 }
 
 class _ChildSessionScreenState extends ConsumerState<ChildSessionScreen> {
@@ -68,7 +67,9 @@ class _ChildSessionScreenState extends ConsumerState<ChildSessionScreen> {
 
   Future<void> _navigateToSibling(int direction) async {
     // Resolve sibling ID BEFORE mutating stack state to avoid desync
-    final siblingId = await ref.read(sessionStackProvider.notifier).getSiblingId(direction);
+    final siblingId = await ref
+        .read(sessionStackProvider.notifier)
+        .getSiblingId(direction);
     if (siblingId == null || !mounted) return;
     if (siblingId.value == widget.sessionId) return;
 
@@ -89,9 +90,9 @@ class _ChildSessionScreenState extends ConsumerState<ChildSessionScreen> {
 
   void _onTaskTap(String? taskSessionId) {
     if (taskSessionId == null || taskSessionId.isEmpty) return;
-    ref.read(sessionStackProvider.notifier).push(
-      SessionID.fromString(taskSessionId),
-    );
+    ref
+        .read(sessionStackProvider.notifier)
+        .push(SessionID.fromString(taskSessionId));
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ChildSessionScreen(sessionId: taskSessionId),

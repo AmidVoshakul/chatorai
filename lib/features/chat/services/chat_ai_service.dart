@@ -290,7 +290,10 @@ class ChatAiService implements CompletionProvider {
                   ? rawInput
                   : <String, dynamic>{'raw': rawInput};
               await onToolStart?.call(
-                  event.toolCallId, event.toolName, inputMap);
+                event.toolCallId,
+                event.toolName,
+                inputMap,
+              );
             },
           );
           LogTags.chatService.logDebug(
@@ -349,7 +352,11 @@ class ChatAiService implements CompletionProvider {
                   :final toolName,
                   :final error,
                 ):
-                  await onToolError?.call(toolCallId, toolName, error.toString());
+                  await onToolError?.call(
+                    toolCallId,
+                    toolName,
+                    error.toString(),
+                  );
                 case StreamTextReasoningStartEvent():
                   break;
                 case StreamTextReasoningEndEvent():
@@ -449,7 +456,7 @@ class ChatAiService implements CompletionProvider {
   /// Unlike [streamChatCompletion], this method does **not** check
   /// `_isRunning` and does **not** call `cancelAllRequests()`, so a child
   /// agent can safely run its own LLM cycle while the parent stream is still
-  /// active.  A fresh [CancellationToken] is created for each invocation.
+  /// active. Uses the shared [retry] service so parent cancel stops child too.
   Future<void> runChildCompletion({
     required List<Map<String, dynamic>> messages,
     required String model,
@@ -478,75 +485,82 @@ class ChatAiService implements CompletionProvider {
       rethrow;
     }
 
-    final childAbort = CancellationToken();
-
     try {
-      final result = await streamText(
-        model: lm,
-        messages: _toModelMessages(messages),
-        temperature: temperature,
-        maxRetries: 0,
-        headers: activeHeaders,
-        abortSignal: childAbort,
-        tools: tools,
-        maxSteps: maxSteps,
-        onInputAvailable: (event) {
-          final rawInput = event.input;
-          final inputMap = rawInput is Map<String, dynamic>
-              ? rawInput
-              : <String, dynamic>{'raw': rawInput};
-          onToolStart?.call(event.toolCallId, event.toolName, inputMap);
+      await _retryService.execute(
+        ({void Function()? onChunkReceived}) async {
+          LogTags.chatService.logDebug(
+            'runChildCompletion: calling streamText device=…',
+          );
+          final result = await streamText(
+            model: lm,
+            messages: _toModelMessages(messages),
+            temperature: temperature,
+            maxRetries: 0, // We handle retries ourselves
+            headers: activeHeaders,
+            abortSignal: _cancellation.token,
+            tools: tools,
+            maxSteps: maxSteps,
+            onInputAvailable: (event) {
+              final rawInput = event.input;
+              final inputMap = rawInput is Map<String, dynamic>
+                  ? rawInput
+                  : <String, dynamic>{'raw': rawInput};
+              onToolStart?.call(event.toolCallId, event.toolName, inputMap);
+            },
+          );
+          LogTags.chatService.logDebug(
+            'runChildCompletion: streamText returned, consuming stream',
+          );
+
+          try {
+            await for (final event in result.fullStream.handleError((
+              Object error,
+              StackTrace stack,
+            ) {
+              if (error is DioException) return;
+              throw error;
+            })) {
+              switch (event) {
+                case StreamTextTextDeltaEvent(:final delta):
+                  onChunkReceived?.call();
+                  await onChunk(delta);
+                case StreamTextReasoningDeltaEvent(:final delta):
+                  await onReasoning(delta);
+                case StreamTextToolResultEvent(
+                  :final toolResult,
+                  :final preliminary,
+                ):
+                  if (!preliminary) {
+                    final outputText = switch (toolResult.output) {
+                      ToolResultOutputText(:final text) => text,
+                      ToolResultOutputContent(:final parts) =>
+                        parts.map((p) => p.toString()).join(),
+                    };
+                    await onToolEnd?.call(
+                      toolResult.toolCallId,
+                      toolResult.toolName,
+                      outputText,
+                    );
+                  }
+                case StreamTextToolErrorEvent(
+                  :final toolCallId,
+                  :final toolName,
+                  :final error,
+                ):
+                  await onToolError?.call(toolCallId, toolName, error.toString());
+                case StreamTextFinishEvent(:final text):
+                  await onCompletion(text);
+                default:
+                  break;
+              }
+            }
+          } catch (_) {
+            rethrow;
+          }
         },
       );
-
-      try {
-        await for (final event in result.fullStream.handleError((
-          Object error,
-          StackTrace stack,
-        ) {
-          if (error is DioException) return;
-          throw error;
-        })) {
-          switch (event) {
-            case StreamTextTextDeltaEvent(:final delta):
-              await onChunk(delta);
-            case StreamTextReasoningDeltaEvent(:final delta):
-              await onReasoning(delta);
-            case StreamTextToolResultEvent(
-              :final toolResult,
-              :final preliminary,
-            ):
-              if (!preliminary) {
-                final outputText = switch (toolResult.output) {
-                  ToolResultOutputText(:final text) => text,
-                  ToolResultOutputContent(:final parts) =>
-                    parts.map((p) => p.toString()).join(),
-                };
-                await onToolEnd?.call(
-                  toolResult.toolCallId,
-                  toolResult.toolName,
-                  outputText,
-                );
-              }
-            case StreamTextToolErrorEvent(
-              :final toolCallId,
-              :final toolName,
-              :final error,
-            ):
-              await onToolError?.call(toolCallId, toolName, error.toString());
-            case StreamTextFinishEvent(:final text):
-              await onCompletion(text);
-            default:
-              break;
-          }
-        }
-      } catch (_) {
-        rethrow;
-      }
     } catch (_) {
       rethrow;
-    } finally {
-      childAbort.cancel();
     }
   }
 

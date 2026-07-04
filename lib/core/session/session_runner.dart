@@ -27,7 +27,11 @@ class TaskChildResult {
   final bool aborted;
   final SessionID sessionId;
 
-  const TaskChildResult(this.output, {this.aborted = false, required this.sessionId});
+  const TaskChildResult(
+    this.output, {
+    this.aborted = false,
+    required this.sessionId,
+  });
 }
 
 class SessionRunner {
@@ -36,7 +40,7 @@ class SessionRunner {
 
   SessionRunner(this.repository, this.toolRegistry);
 
-SessionRunnerSession startSession({
+  SessionRunnerSession startSession({
     required String agent,
     String? modelRef,
     String? title,
@@ -88,7 +92,7 @@ SessionRunnerSession startSession({
     return session;
   }
 
-Future<TaskChildResult> runTaskInChild({
+  Future<TaskChildResult> runTaskInChild({
     required SessionID parentSessionId,
     required String taskPrompt,
     required Future<void> Function(SessionRunnerSession child) streamFn,
@@ -157,11 +161,11 @@ class SessionRunnerSession {
     SessionID? parentId,
     this.toolRegistry,
     this.immediate = false,
-  })  : _agent = agent,
-        _modelRef = modelRef,
-        _title = title,
-        _parentId = parentId,
-        initialized = false;
+  }) : _agent = agent,
+       _modelRef = modelRef,
+       _title = title,
+       _parentId = parentId,
+       initialized = false;
 
   /// Creates a session runner for an already-existing session (e.g. created by [SessionRepository.createChildSession]).
   /// The session is already initialized, so this constructor sets [initialized] to true.
@@ -170,26 +174,30 @@ class SessionRunnerSession {
     required this.sessionId,
     this.toolRegistry,
     this.immediate = false,
-  })  : _agent = null,
-        _modelRef = null,
-        _title = null,
-        _parentId = null,
-        initialized = true;
+  }) : _agent = null,
+       _modelRef = null,
+       _title = null,
+       _parentId = null,
+       initialized = true;
 
   /// Backing event for backward compatibility with tests.
   SessionCreated get creationEvent => SessionCreated(
-        sessionId: sessionId,
-        parentId: _parentId,
-        agent: _agent ?? 'general',
-        modelRef: _modelRef,
-        title: _title ?? '',
-        timestamp: DateTime.now(),
-      );
+    sessionId: sessionId,
+    parentId: _parentId,
+    agent: _agent ?? 'general',
+    modelRef: _modelRef,
+    title: _title ?? '',
+    timestamp: DateTime.now(),
+  );
 
   /// Appends the [SessionCreated] event to the event store and marks
   /// this session as ready for streaming. Must be called once before
   /// any [onChunk], [onReasoning], or [onTool*] calls.
-  Future<void> initialize({String? agent, String? modelRef, String? title}) async {
+  Future<void> initialize({
+    String? agent,
+    String? modelRef,
+    String? title,
+  }) async {
     if (initialized) return;
     final now = DateTime.now();
     await repository.appendEvent(
@@ -453,8 +461,7 @@ class SessionRunnerSession {
         ),
       );
     } catch (e) {
-      LogTags.chatService
-          .logError('ToolCalled event failed for $toolName', e);
+      LogTags.chatService.logError('ToolCalled event failed for $toolName', e);
     }
   }
 
@@ -475,8 +482,7 @@ class SessionRunnerSession {
         ),
       );
     } catch (e) {
-      LogTags.chatService
-          .logError('ToolSuccess event failed for $toolName', e);
+      LogTags.chatService.logError('ToolSuccess event failed for $toolName', e);
     }
   }
 
@@ -496,8 +502,7 @@ class SessionRunnerSession {
         ),
       );
     } catch (e) {
-      LogTags.chatService
-          .logError('ToolFailed event failed for $toolName', e);
+      LogTags.chatService.logError('ToolFailed event failed for $toolName', e);
     }
   }
 

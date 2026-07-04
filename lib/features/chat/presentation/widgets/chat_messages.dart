@@ -205,7 +205,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
   Widget build(BuildContext context) {
     super.build(context);
 
-    final streamingState = ref.watch(streamingMessageProvider);
+    final streamingState = ref.watch(streamingMessageProvider(widget.chat?.id ?? ''));
     final streamingParts = streamingState.accumulatedParts;
     final streamingIsActive = streamingState.isStreaming;
     final currentAgent = ref.watch(currentAgentProvider);
@@ -307,21 +307,22 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                     welcomeOffset = 1;
                   }
 
-final msgIndex = index - welcomeOffset;
-                    if (msgIndex >= 0 && msgIndex < messages.length) {
-                      final message = messages[msgIndex];
-                      final isLastMessage = msgIndex == messages.length - 1;
+                  final msgIndex = index - welcomeOffset;
+                  if (msgIndex >= 0 && msgIndex < messages.length) {
+                    final message = messages[msgIndex];
+                    final isLastMessage = msgIndex == messages.length - 1;
 
-                      final isEmptyAssistantMessage =
-                          message.role == MessageRole.assistant &&
-                          message.content.isEmpty &&
-                          (message.partsJson == null || message.partsJson!.isEmpty);
+                    final isEmptyAssistantMessage =
+                        message.role == MessageRole.assistant &&
+                        message.content.isEmpty &&
+                        (message.partsJson == null ||
+                            message.partsJson!.isEmpty);
 
-                      if (isEmptyAssistantMessage &&
-                          isLastMessage &&
-                          !message.isComplete) {
-                        return const SizedBox.shrink();
-                      }
+                    if (isEmptyAssistantMessage &&
+                        isLastMessage &&
+                        !message.isComplete) {
+                      return const SizedBox.shrink();
+                    }
 
                     final chatMsg = messageToChatMessage(message);
                     final resolvedMsg = (chatMsg is AssistantMessage)

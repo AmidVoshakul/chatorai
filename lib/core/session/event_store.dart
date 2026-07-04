@@ -87,9 +87,9 @@ class EventStore {
   /// (TextDelta, ReasoningDelta, ToolInputDelta). Use for efficient replay
   /// when only the final `*Ended` values are needed (e.g. full state rebuild).
   Stream<List<SessionEvent>> streamDurableEvents(SessionID sessionId) {
-    return streamEvents(sessionId).map(
-      (events) => events.where((e) => !isDeltaEvent(e)).toList(),
-    );
+    return streamEvents(
+      sessionId,
+    ).map((events) => events.where((e) => !isDeltaEvent(e)).toList());
   }
 
   /// Returns all durable (non-delta) events for a session ordered by sequence.

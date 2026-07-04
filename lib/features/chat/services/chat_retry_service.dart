@@ -26,18 +26,17 @@ class RetryPolicy {
   final Duration baseDelay;
   final Duration maxDelay;
   final double factor;
-  final int maxAttempts;
+  final int? maxAttempts;
 
   static const Duration defaultBaseDelay = Duration(milliseconds: 500);
   static const Duration defaultMaxDelay = Duration(hours: 24);
   static const double defaultFactor = 2.0;
-  static const int defaultMaxAttempts = 3;
 
   const RetryPolicy({
     this.baseDelay = defaultBaseDelay,
     this.maxDelay = defaultMaxDelay,
     this.factor = defaultFactor,
-    this.maxAttempts = defaultMaxAttempts,
+    this.maxAttempts,
   });
 
   static const RetryPolicy defaults = RetryPolicy();
@@ -45,11 +44,8 @@ class RetryPolicy {
 
 /// OpenCode-compatible bounded exponential backoff retry engine.
 ///
-/// Behaviour per error type (after [maxAttempts] failures):
-/// - **429 with `retryAfter` header** → retry FOREVER using the server-provided delay
-/// - **429 without `retryAfter` header** → fail fast (no info on when to retry)
-/// - **5xx / Network errors** → fail fast once after [maxAttempts]
-/// - **Other retryable + error type changed** → continue retrying
+/// Infinite retries for retryable errors; stop only when
+/// `ClassifiedError.isRetryable == false`.
 class ChatRetryService {
   final RetryPolicy policy;
   final ChatCancellation cancellation;
@@ -65,16 +61,18 @@ class ChatRetryService {
   ChatRetryService({
     this.policy = RetryPolicy.defaults,
     required this.cancellation,
-  });
+  }) {
+    _retryCountdownController = StreamController<double>.broadcast();
+    _retryMessageController = StreamController<String>.broadcast();
+  }
 
   Stream<double> get retryCountdown {
-    final c = _retryCountdownController ??=
-        StreamController<double>.broadcast();
+    final c = _retryCountdownController!;
     return c.stream;
   }
 
   Stream<String> get retryMessageStream {
-    final c = _retryMessageController ??= StreamController<String>.broadcast();
+    final c = _retryMessageController!;
     return c.stream;
   }
 
@@ -134,15 +132,11 @@ class ChatRetryService {
           'ChatRetryService.execute attempt $attempt caught: ${e.runtimeType}: $e',
         );
 
-        // If the operation emitted at least one data chunk before failing,
-        // reset attempt counter so the next retry starts fresh:
-        //   1s → 2s → 4s (after success) → 1s → 2s → 4s …
         if (chunkReceived) {
           attempt = 0;
           chunkReceived = false;
         }
 
-        // ── Pre-flight checks ───────────────────────────────────────────
         final classified = _errorClassifier.classify(e);
 
         if (!classified.isRetryable) {
@@ -169,38 +163,6 @@ class ChatRetryService {
           throw Exception('cancelled');
         }
 
-        // ── Stop policy (maxAttempts exhausted) ─────────────────────────
-        if (attempt >= policy.maxAttempts) {
-          final reclassified = _errorClassifier.classify(e);
-          if (!reclassified.isRetryable) {
-            LogTags.chatService.logWarning(
-              'ChatRetryService.execute attempt $attempt: error no longer retryable (${reclassified.runtimeType}), rethrowing',
-            );
-            _resetRetryState();
-            rethrow;
-          }
-
-          if (reclassified is! RateLimitError) {
-            LogTags.chatService.logWarning(
-              'ChatRetryService.execute attempt $attempt: maxAttempts (${policy.maxAttempts}) reached for ${reclassified.runtimeType}, rethrowing',
-            );
-            _resetRetryState();
-            rethrow;
-          }
-
-          final effectiveRetryAfter = reclassified.retryAfter;
-
-          if (effectiveRetryAfter == Duration.zero &&
-              attempt >= policy.maxAttempts * 2) {
-            LogTags.chatService.logWarning(
-              'ChatRetryService.execute attempt $attempt: 429 with zero retry-after for too long, fail fast',
-            );
-            _resetRetryState();
-            rethrow;
-          }
-        }
-
-        // ── Compute delay ──────────────────────────────────────────────
         final delay = classified.retryAfter ?? _nextDelay(attempt);
         final info = _buildRetryInfo(classified, attempt, delay);
         onRetry?.call(info);
@@ -236,19 +198,35 @@ class ChatRetryService {
   }
 
   String _retryMessage(ClassifiedError error, int displayAttempt) {
+    final rawMessage = switch (error) {
+      RateLimitError(:final rawMessage) when rawMessage != null &&
+          rawMessage.isNotEmpty => rawMessage,
+      ServerError(:final rawMessage) when rawMessage != null &&
+          rawMessage.isNotEmpty => rawMessage,
+      NetworkError(:final rawMessage) when rawMessage != null &&
+          rawMessage.isNotEmpty => rawMessage,
+      UnknownError(:final rawMessage) when rawMessage != null &&
+          rawMessage.isNotEmpty => rawMessage,
+      _ => null,
+    };
+
+    if (rawMessage != null) {
+      return '$rawMessage [attempt #$displayAttempt]';
+    }
+
     return switch (error) {
       RateLimitError(:final reason) => _rateLimitTemplate(
         reason,
         displayAttempt,
       ),
-      AuthenticationError() => 'Auth error',
+      AuthenticationError() => 'Auth error [attempt #$displayAttempt]',
       ServerError(:final statusCode) =>
         (statusCode != null && statusCode >= 500)
-            ? 'Server error ($statusCode)'
-            : 'Request error ($statusCode)',
-      NetworkError() => 'Network error',
-      OverflowError() => 'Context overflow',
-      UnknownError() => 'Retrying',
+            ? 'Server error ($statusCode) [attempt #$displayAttempt]'
+            : 'Request error ($statusCode) [attempt #$displayAttempt]',
+      NetworkError() => 'Network error [attempt #$displayAttempt]',
+      OverflowError() => 'Context overflow [attempt #$displayAttempt]',
+      UnknownError() => 'Retrying [attempt #$displayAttempt]',
     };
   }
 

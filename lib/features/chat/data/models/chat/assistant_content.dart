@@ -65,32 +65,41 @@ class AssistantText extends AssistantContent {
     this.title,
   }) : super(id: id, sessionId: sessionId, messageId: messageId);
 
-  factory AssistantText.raw(String text) => RawText(text: text) as AssistantText;
+  factory AssistantText.raw(String text) =>
+      RawText(text: text) as AssistantText;
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'text',
-        'id': id,
-        'sessionId': sessionId,
-        'messageId': messageId,
-        'text': text,
-        'synthetic': synthetic,
-        'ignored': ignored,
-        if (title != null) 'title': title,
-      };
+    'type': 'text',
+    'id': id,
+    'sessionId': sessionId,
+    'messageId': messageId,
+    'text': text,
+    'synthetic': synthetic,
+    'ignored': ignored,
+    if (title != null) 'title': title,
+  };
 
   factory AssistantText.fromJson(Map<String, dynamic> json) => AssistantText(
-        id: json['id'] as String,
-        sessionId: json['sessionId'] as String,
-        messageId: json['messageId'] as String,
-        text: json['text'] as String? ?? '',
-        synthetic: json['synthetic'] as bool? ?? false,
-        ignored: json['ignored'] as bool? ?? false,
-        title: json['title'] as String?,
-      );
+    id: json['id'] as String,
+    sessionId: json['sessionId'] as String,
+    messageId: json['messageId'] as String,
+    text: json['text'] as String? ?? '',
+    synthetic: json['synthetic'] as bool? ?? false,
+    ignored: json['ignored'] as bool? ?? false,
+    title: json['title'] as String?,
+  );
 
   @override
-  List<Object?> get props => [id, sessionId, messageId, text, synthetic, ignored, title];
+  List<Object?> get props => [
+    id,
+    sessionId,
+    messageId,
+    text,
+    synthetic,
+    ignored,
+    title,
+  ];
 }
 
 // ── Reasoning ──────────────────────────────────────────────────────────
@@ -111,16 +120,17 @@ class AssistantReasoning extends AssistantContent {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'reasoning',
-        'id': id,
-        'sessionId': sessionId,
-        'messageId': messageId,
-        'text': text,
-        'started': started.toIso8601String(),
-        if (ended != null) 'ended': ended!.toIso8601String(),
-      };
+    'type': 'reasoning',
+    'id': id,
+    'sessionId': sessionId,
+    'messageId': messageId,
+    'text': text,
+    'started': started.toIso8601String(),
+    if (ended != null) 'ended': ended!.toIso8601String(),
+  };
 
-  factory AssistantReasoning.fromJson(Map<String, dynamic> json) => AssistantReasoning(
+  factory AssistantReasoning.fromJson(Map<String, dynamic> json) =>
+      AssistantReasoning(
         id: json['id'] as String,
         sessionId: json['sessionId'] as String,
         messageId: json['messageId'] as String,
@@ -128,7 +138,9 @@ class AssistantReasoning extends AssistantContent {
         started: json['started'] != null
             ? DateTime.parse(json['started'] as String)
             : DateTime.now(),
-        ended: json['ended'] != null ? DateTime.parse(json['ended'] as String) : null,
+        ended: json['ended'] != null
+            ? DateTime.parse(json['ended'] as String)
+            : null,
       );
 
   @override
@@ -159,33 +171,42 @@ class AssistantTool extends AssistantContent {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'tool',
-        'id': id,
-        'sessionId': sessionId,
-        'messageId': messageId,
-        'callId': callId,
-        'tool': tool,
-        'state': state.name,
-        'input': input,
-        if (output != null) 'output': output,
-        'durationMs': durationMs,
-      };
+    'type': 'tool',
+    'id': id,
+    'sessionId': sessionId,
+    'messageId': messageId,
+    'callId': callId,
+    'tool': tool,
+    'state': state.name,
+    'input': input,
+    if (output != null) 'output': output,
+    'durationMs': durationMs,
+  };
 
   factory AssistantTool.fromJson(Map<String, dynamic> json) => AssistantTool(
-        id: json['id'] as String,
-        sessionId: json['sessionId'] as String,
-        messageId: json['messageId'] as String,
-        callId: json['callId'] as String,
-        tool: json['tool'] as String,
-        state: ToolState.values.byName(json['state'] as String),
-        input: json['input'] as Map<String, dynamic>? ?? {},
-        output: json['output'] as String?,
-        durationMs: json['durationMs'] as int? ?? 0,
-      );
+    id: json['id'] as String,
+    sessionId: json['sessionId'] as String,
+    messageId: json['messageId'] as String,
+    callId: json['callId'] as String,
+    tool: json['tool'] as String,
+    state: ToolState.values.byName(json['state'] as String),
+    input: json['input'] as Map<String, dynamic>? ?? {},
+    output: json['output'] as String?,
+    durationMs: json['durationMs'] as int? ?? 0,
+  );
 
   @override
-  List<Object?> get props =>
-      [id, sessionId, messageId, callId, tool, state, input, output, durationMs];
+  List<Object?> get props => [
+    id,
+    sessionId,
+    messageId,
+    callId,
+    tool,
+    state,
+    input,
+    output,
+    durationMs,
+  ];
 
   AssistantTool copyWith({
     String? id,
@@ -232,28 +253,36 @@ class AssistantFile extends AssistantContent {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'file',
-        'id': id,
-        'sessionId': sessionId,
-        'messageId': messageId,
-        'filename': filename,
-        'mimeType': mimeType,
-        'url': url,
-        if (source != null) 'source': source,
-      };
+    'type': 'file',
+    'id': id,
+    'sessionId': sessionId,
+    'messageId': messageId,
+    'filename': filename,
+    'mimeType': mimeType,
+    'url': url,
+    if (source != null) 'source': source,
+  };
 
   factory AssistantFile.fromJson(Map<String, dynamic> json) => AssistantFile(
-        id: json['id'] as String,
-        sessionId: json['sessionId'] as String,
-        messageId: json['messageId'] as String,
-        filename: json['filename'] as String,
-        mimeType: json['mimeType'] as String,
-        url: json['url'] as String,
-        source: json['source'] as String?,
-      );
+    id: json['id'] as String,
+    sessionId: json['sessionId'] as String,
+    messageId: json['messageId'] as String,
+    filename: json['filename'] as String,
+    mimeType: json['mimeType'] as String,
+    url: json['url'] as String,
+    source: json['source'] as String?,
+  );
 
   @override
-  List<Object?> get props => [id, sessionId, messageId, filename, mimeType, url, source];
+  List<Object?> get props => [
+    id,
+    sessionId,
+    messageId,
+    filename,
+    mimeType,
+    url,
+    source,
+  ];
 }
 
 // ── Image ──────────────────────────────────────────────────────────────
@@ -278,31 +307,39 @@ class AssistantImage extends AssistantContent {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'image',
-        'id': id,
-        'sessionId': sessionId,
-        'messageId': messageId,
-        'mimeType': mimeType,
-        'url': url,
-        if (width != null) 'width': width,
-        if (height != null) 'height': height,
-        if (filename != null) 'filename': filename,
-      };
+    'type': 'image',
+    'id': id,
+    'sessionId': sessionId,
+    'messageId': messageId,
+    'mimeType': mimeType,
+    'url': url,
+    if (width != null) 'width': width,
+    if (height != null) 'height': height,
+    if (filename != null) 'filename': filename,
+  };
 
   factory AssistantImage.fromJson(Map<String, dynamic> json) => AssistantImage(
-        id: json['id'] as String,
-        sessionId: json['sessionId'] as String,
-        messageId: json['messageId'] as String,
-        mimeType: json['mimeType'] as String,
-        url: json['url'] as String,
-        width: json['width'] as int?,
-        height: json['height'] as int?,
-        filename: json['filename'] as String?,
-      );
+    id: json['id'] as String,
+    sessionId: json['sessionId'] as String,
+    messageId: json['messageId'] as String,
+    mimeType: json['mimeType'] as String,
+    url: json['url'] as String,
+    width: json['width'] as int?,
+    height: json['height'] as int?,
+    filename: json['filename'] as String?,
+  );
 
   @override
-  List<Object?> get props =>
-      [id, sessionId, messageId, mimeType, url, width, height, filename];
+  List<Object?> get props => [
+    id,
+    sessionId,
+    messageId,
+    mimeType,
+    url,
+    width,
+    height,
+    filename,
+  ];
 }
 
 // ── Agent ──────────────────────────────────────────────────────────────
@@ -319,19 +356,19 @@ class AssistantAgent extends AssistantContent {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'agent',
-        'id': id,
-        'sessionId': sessionId,
-        'messageId': messageId,
-        'name': name,
-      };
+    'type': 'agent',
+    'id': id,
+    'sessionId': sessionId,
+    'messageId': messageId,
+    'name': name,
+  };
 
   factory AssistantAgent.fromJson(Map<String, dynamic> json) => AssistantAgent(
-        id: json['id'] as String,
-        sessionId: json['sessionId'] as String,
-        messageId: json['messageId'] as String,
-        name: json['name'] as String,
-      );
+    id: json['id'] as String,
+    sessionId: json['sessionId'] as String,
+    messageId: json['messageId'] as String,
+    name: json['name'] as String,
+  );
 
   @override
   List<Object?> get props => [id, sessionId, messageId, name];
@@ -347,7 +384,8 @@ class RawText extends AssistantContent {
   @override
   Map<String, dynamic> toJson() => {'type': 'rawText', 'text': text};
 
-  factory RawText.fromJson(Map<String, dynamic> json) => RawText(text: json['text'] as String? ?? '');
+  factory RawText.fromJson(Map<String, dynamic> json) =>
+      RawText(text: json['text'] as String? ?? '');
 
   @override
   List<Object?> get props => [text];
@@ -361,15 +399,15 @@ class RawReasoning extends AssistantContent {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'rawReasoning',
-        'text': text,
-        if (title != null) 'title': title,
-      };
+    'type': 'rawReasoning',
+    'text': text,
+    if (title != null) 'title': title,
+  };
 
   factory RawReasoning.fromJson(Map<String, dynamic> json) => RawReasoning(
-        text: json['text'] as String? ?? '',
-        title: json['title'] as String?,
-      );
+    text: json['text'] as String? ?? '',
+    title: json['title'] as String?,
+  );
 
   @override
   List<Object?> get props => [text, title];

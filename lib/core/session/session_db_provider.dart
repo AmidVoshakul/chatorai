@@ -8,7 +8,9 @@ final sessionDatabaseProvider = FutureProvider<AppDatabase>((ref) async {
 });
 
 /// Provides the [SessionRepository] backed by the file-based database.
-final sessionRepositoryProvider = FutureProvider<SessionRepository>((ref) async {
+final sessionRepositoryProvider = FutureProvider<SessionRepository>((
+  ref,
+) async {
   final db = await ref.watch(sessionDatabaseProvider.future);
   return SessionRepository(db);
 });

@@ -32,6 +32,9 @@ sealed class ClassifiedError {
 
   /// OpenCode-compatible upsell reason (free_tier_limit, account_rate_limit).
   String? get reason;
+
+  /// Raw error message from API/error body, if available.
+  String? get rawMessage;
 }
 
 /// Rate limit error (HTTP 429).
@@ -47,7 +50,15 @@ class RateLimitError extends ClassifiedError {
   /// "free_tier_limit", "account_rate_limit", or null.
   final String? reason;
 
-  const RateLimitError({this.statusCode = 429, this.retryAfter, this.reason});
+  @override
+  final String? rawMessage;
+
+  const RateLimitError({
+    this.statusCode = 429,
+    this.retryAfter,
+    this.reason,
+    this.rawMessage,
+  });
 
   @override
   bool get isRetryable => true;
@@ -68,7 +79,10 @@ class OverflowError extends ClassifiedError {
 
   final String? detail;
 
-  const OverflowError({this.statusCode, this.detail});
+  @override
+  final String? rawMessage;
+
+  const OverflowError({this.statusCode, this.detail, this.rawMessage});
 
   @override
   Duration? get retryAfter => null;
@@ -93,7 +107,10 @@ class AuthenticationError extends ClassifiedError {
 
   final String? detail;
 
-  const AuthenticationError({this.statusCode, this.detail});
+  @override
+  final String? rawMessage;
+
+  const AuthenticationError({this.statusCode, this.detail, this.rawMessage});
 
   @override
   Duration? get retryAfter => null;
@@ -118,7 +135,10 @@ class ServerError extends ClassifiedError {
 
   final String? detail;
 
-  const ServerError({this.statusCode, this.detail});
+  @override
+  final String? rawMessage;
+
+  const ServerError({this.statusCode, this.detail, this.rawMessage});
 
   @override
   Duration? get retryAfter => null;
@@ -140,7 +160,10 @@ class ServerError extends ClassifiedError {
 class NetworkError extends ClassifiedError {
   final String? detail;
 
-  const NetworkError({this.detail});
+  @override
+  final String? rawMessage;
+
+  const NetworkError({this.detail, this.rawMessage});
 
   @override
   Duration? get retryAfter => null;
@@ -164,7 +187,10 @@ class NetworkError extends ClassifiedError {
 class UnknownError extends ClassifiedError {
   final Object? original;
 
-  const UnknownError({this.original});
+  @override
+  final String? rawMessage;
+
+  const UnknownError({this.original, this.rawMessage});
 
   @override
   Duration? get retryAfter => null;
@@ -206,6 +232,7 @@ class ErrorClassifier {
 
   ClassifiedError _classifyDioException(DioException e) {
     final response = e.response;
+    final rawMessage = _extractRawMessage(e);
 
     if (response != null) {
       final statusCode = response.statusCode;
@@ -219,11 +246,12 @@ class ErrorClassifier {
           statusCode: statusCode,
           retryAfter: retryAfter,
           reason: reason,
+          rawMessage: rawMessage,
         );
       }
 
       if (statusCode == 401 || statusCode == 403) {
-        return AuthenticationError(statusCode: statusCode);
+        return AuthenticationError(statusCode: statusCode, rawMessage: rawMessage);
       }
 
       // Detect context overflow from error response body (400-level)
@@ -231,11 +259,12 @@ class ErrorClassifier {
         return OverflowError(
           statusCode: statusCode,
           detail: _extractOverflowDetail(e),
+          rawMessage: rawMessage,
         );
       }
 
       if (statusCode != null && statusCode >= 400) {
-        return ServerError(statusCode: statusCode);
+        return ServerError(statusCode: statusCode, rawMessage: rawMessage);
       }
     }
 
@@ -244,15 +273,29 @@ class ErrorClassifier {
         e.type == DioExceptionType.receiveTimeout ||
         e.type == DioExceptionType.sendTimeout ||
         e.type == DioExceptionType.connectionError) {
-      return NetworkError(detail: e.type.name);
+      return NetworkError(detail: e.type.name, rawMessage: rawMessage);
     }
 
     // String-based overflow check as fallback
     if (e.message != null && _isOverflowString(e.message!)) {
-      return OverflowError(detail: e.message);
+      return OverflowError(detail: e.message, rawMessage: rawMessage);
     }
 
-    return UnknownError(original: e);
+    return UnknownError(original: e, rawMessage: rawMessage);
+  }
+
+  String? _extractRawMessage(DioException e) {
+    final data = e.response?.data;
+    if (data is String && data.isNotEmpty) return data;
+    if (data is Map) {
+      final msg = data['error']?['message'] ?? data['message'];
+      if (msg is String && msg.isNotEmpty) return msg;
+    }
+    final statusMessage = e.response?.statusMessage;
+    if (statusMessage != null && statusMessage.isNotEmpty) return statusMessage;
+    final message = e.message;
+    if (message != null && message.isNotEmpty) return message;
+    return null;
   }
 
   bool _isOverflowError(DioException e) {
@@ -282,7 +325,7 @@ class ErrorClassifier {
           : lower.contains('go limit') || lower.contains('account')
           ? 'account_rate_limit'
           : null;
-      return RateLimitError(reason: reason);
+      return RateLimitError(reason: reason, rawMessage: errStr);
     }
 
     // Auth patterns
@@ -291,7 +334,7 @@ class ErrorClassifier {
         lower.contains('unauthorized') ||
         lower.contains('forbidden')) {
       final code = _extractStatusCode(lower);
-      return AuthenticationError(statusCode: code);
+      return AuthenticationError(statusCode: code, rawMessage: errStr);
     }
 
     // Server error patterns (5xx)
@@ -304,7 +347,7 @@ class ErrorClassifier {
         lower.contains('service unavailable') ||
         lower.contains('gateway timeout')) {
       final code = _extractStatusCode(lower);
-      return ServerError(statusCode: code);
+      return ServerError(statusCode: code, rawMessage: errStr);
     }
 
     // Client error patterns (4xx, non-429)
@@ -315,7 +358,7 @@ class ErrorClassifier {
         lower.contains('not found') ||
         lower.contains('unprocessable')) {
       final code = _extractStatusCode(lower);
-      return ServerError(statusCode: code);
+      return ServerError(statusCode: code, rawMessage: errStr);
     }
 
     // Network patterns
@@ -325,15 +368,15 @@ class ErrorClassifier {
         lower.contains('socket') ||
         lower.contains('econnreset') ||
         lower.contains('etimedout')) {
-      return NetworkError(detail: errStr);
+      return NetworkError(detail: errStr, rawMessage: errStr);
     }
 
     // Context overflow patterns (before UnknownError fallback)
     if (_isOverflowString(errStr)) {
-      return OverflowError(detail: errStr);
+      return OverflowError(detail: errStr, rawMessage: errStr);
     }
 
-    return UnknownError(original: errStr);
+    return UnknownError(original: errStr, rawMessage: errStr);
   }
 
   /// Extract Retry-After duration from response headers.

@@ -4,35 +4,31 @@ import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 // ===========================================================================
 // PROVIDER
 // ===========================================================================
-final streamingMessageProvider =
-    NotifierProvider<StreamingMessageNotifier, StreamingMessageState>(
-      StreamingMessageNotifier.new,
-    );
+final streamingMessageProvider = NotifierProvider.family<
+    StreamingMessageNotifier, StreamingMessageState, String>(
+  (_) => StreamingMessageNotifier(),
+);
 
 // ===========================================================================
 // STATE
 // ===========================================================================
 class StreamingMessageState {
-  final String chatId;
   final List<MessagePart> accumulatedParts;
   final bool isStreaming;
   final bool justEnded;
 
   const StreamingMessageState({
-    this.chatId = '',
     this.accumulatedParts = const [],
     this.isStreaming = false,
     this.justEnded = false,
   });
 
   StreamingMessageState copyWith({
-    String? chatId,
     List<MessagePart>? accumulatedParts,
     bool? isStreaming,
     bool? justEnded,
   }) {
     return StreamingMessageState(
-      chatId: chatId ?? this.chatId,
       accumulatedParts: accumulatedParts ?? this.accumulatedParts,
       isStreaming: isStreaming ?? this.isStreaming,
       justEnded: justEnded ?? this.justEnded,
@@ -49,9 +45,8 @@ class StreamingMessageNotifier extends Notifier<StreamingMessageState> {
   @override
   StreamingMessageState build() => const StreamingMessageState();
 
-  void startStreaming(String chatId) {
+  void startStreaming() {
     state = StreamingMessageState(
-      chatId: chatId,
       accumulatedParts: [],
       isStreaming: true,
     );

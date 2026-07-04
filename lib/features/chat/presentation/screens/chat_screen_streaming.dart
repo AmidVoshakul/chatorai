@@ -12,7 +12,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
       '_handleStreamingResponse START: chatId=${chat.id}, model=$modelId, isContinuation=$isContinuation',
     );
     ref.read(chatScreenProvider.notifier).setStreaming(true);
-    ref.read(streamingMessageProvider.notifier).startStreaming(chat.id);
+    ref.read(streamingMessageProvider(chat.id).notifier).startStreaming();
     final StringBuffer pendingContent = StringBuffer();
     final StringBuffer fullContent = StringBuffer();
     final StringBuffer pendingReasoning = StringBuffer();
@@ -58,12 +58,12 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         if (mounted && chat.messages.isNotEmpty) {
           if (pendingContentStr.isNotEmpty) {
             ref
-                .read(streamingMessageProvider.notifier)
+                .read(streamingMessageProvider(chat.id).notifier)
                 .onChunk(pendingContentStr);
           }
           if (pendingReasoningStr.isNotEmpty) {
             ref
-                .read(streamingMessageProvider.notifier)
+                .read(streamingMessageProvider(chat.id).notifier)
                 .onReasoning(pendingReasoningStr);
           }
           fullContent.write(pendingContentStr);
@@ -88,12 +88,12 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
       final pendingContentStr = pendingContent.toString();
       final pendingReasoningStr = pendingReasoning.toString();
       if (pendingContentStr.isNotEmpty) {
-        ref.read(streamingMessageProvider.notifier).onChunk(pendingContentStr);
+        ref.read(streamingMessageProvider(chat.id).notifier).onChunk(pendingContentStr);
         fullContent.write(pendingContentStr);
       }
       if (pendingReasoningStr.isNotEmpty) {
         ref
-            .read(streamingMessageProvider.notifier)
+            .read(streamingMessageProvider(chat.id).notifier)
             .onReasoning(pendingReasoningStr);
         fullReasoning.write(pendingReasoningStr);
       }
@@ -132,7 +132,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     final holder = ref.read(currentSessionRunnerProvider.notifier);
     holder.onChildToolEvent = (toolName, title) {
       ref
-          .read(streamingMessageProvider.notifier)
+          .read(streamingMessageProvider(chat.id).notifier)
           .onTaskToolExecuted(toolName, title);
     };
 
@@ -209,10 +209,10 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               );
           if (activeTaskSessionId != null) {
             ref
-                .read(streamingMessageProvider.notifier)
+                .read(streamingMessageProvider(chat.id).notifier)
                 .onTaskError(info.message, info.attempt);
           }
-          final streamingState = ref.read(streamingMessageProvider);
+          final streamingState = ref.read(streamingMessageProvider(chat.id));
           final partialText = streamingState.accumulatedParts
               .whereType<TextPart>()
               .map((p) => p.content)
@@ -247,7 +247,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                 ? taskId
                 : null;
             ref
-                .read(streamingMessageProvider.notifier)
+                .read(streamingMessageProvider(chat.id).notifier)
                 .onTaskStart(
                   description: description,
                   agent: agentName,
@@ -261,7 +261,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                 input['filePath'] as String? ??
                 input['path'] as String?;
             ref
-                .read(streamingMessageProvider.notifier)
+                .read(streamingMessageProvider(chat.id).notifier)
                 .onTaskToolExecuted(toolName, toolTitle);
           }
 
@@ -280,7 +280,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
 
             if (!isDuplicate) {
               ref
-                  .read(streamingMessageProvider.notifier)
+                  .read(streamingMessageProvider(chat.id).notifier)
                   .onQuestion(
                     QuestionPart(question: questionText, options: options),
                   );
@@ -296,7 +296,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             }
           } else if (toolName != 'task') {
             ref
-                .read(streamingMessageProvider.notifier)
+                .read(streamingMessageProvider(chat.id).notifier)
                 .onToolCall(toolCallId, toolName, input);
           }
         },
@@ -312,10 +312,10 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                 .activeChildSessionId;
             if (realChildId != null && realChildId.isNotEmpty) {
               ref
-                  .read(streamingMessageProvider.notifier)
+                  .read(streamingMessageProvider(chat.id).notifier)
                   .updateTaskSessionId(realChildId);
             }
-            ref.read(streamingMessageProvider.notifier).onTaskEnd();
+            ref.read(streamingMessageProvider(chat.id).notifier).onTaskEnd();
             activeTaskSessionId = null;
             // Clear holder state
             ref
@@ -331,16 +331,16 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                       toolInput['path'] as String?)
                 : null;
             ref
-                .read(streamingMessageProvider.notifier)
+                .read(streamingMessageProvider(chat.id).notifier)
                 .onTaskToolExecuted(toolName, title);
           }
 
           if (toolName == 'question') {
-            final streamingState = ref.read(streamingMessageProvider);
+            final streamingState = ref.read(streamingMessageProvider(chat.id));
             for (final part in streamingState.accumulatedParts) {
               if (part is QuestionPart && part.answer == null) {
                 ref
-                    .read(streamingMessageProvider.notifier)
+                    .read(streamingMessageProvider(chat.id).notifier)
                     .onQuestion(
                       QuestionPart(
                         question: part.question,
@@ -356,7 +356,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             );
           } else if (toolName != 'task') {
             ref
-                .read(streamingMessageProvider.notifier)
+                .read(streamingMessageProvider(chat.id).notifier)
                 .onToolEnd(toolCallId, toolName, resultStr);
           }
 
@@ -385,12 +385,12 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           await runnerSession.onToolError(toolCallId, toolName, errorStr);
           if (activeTaskSessionId != null) {
             ref
-                .read(streamingMessageProvider.notifier)
+                .read(streamingMessageProvider(chat.id).notifier)
                 .onTaskError(errorStr, null);
           }
           if (toolName != 'task') {
             ref
-                .read(streamingMessageProvider.notifier)
+                .read(streamingMessageProvider(chat.id).notifier)
                 .onToolError(toolCallId, toolName, errorStr);
           }
           final startTime = toolStartTimes.remove(toolCallId);
@@ -432,7 +432,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           flushPendingUpdates();
           if (!mounted) return;
           if (activeTaskSessionId != null) {
-            ref.read(streamingMessageProvider.notifier).onTaskEnd();
+            ref.read(streamingMessageProvider(chat.id).notifier).onTaskEnd();
             activeTaskSessionId = null;
           }
           // Reset retry state on successful completion
@@ -443,12 +443,12 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                 retryMessage: null,
                 retryAttempt: 0,
               );
-           // Auto-scroll during streaming is handled by throttleUpdate;
-           // do NOT scroll again here, this block runs on stream completion.
+          // Auto-scroll during streaming is handled by throttleUpdate;
+          // do NOT scroll again here, this block runs on stream completion.
 
           // Extract text + reasoning from accumulated parts for session runner
           final streamingStateBeforeFinalize = ref.read(
-            streamingMessageProvider,
+            streamingMessageProvider(chat.id),
           );
           final partsBeforeFinalize =
               streamingStateBeforeFinalize.accumulatedParts;
@@ -476,7 +476,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           LogTags.chatScreen.logInfo(
             'onCompletion: flushing done, proceeding to finalize message',
           );
-          final streamingState = ref.read(streamingMessageProvider);
+          final streamingState = ref.read(streamingMessageProvider(chat.id));
           final allParts = streamingState.accumulatedParts;
           LogTags.chatScreen.logDebug(
             'onCompletion: totalParts=${allParts.length}, will extract text+reasoning',
@@ -561,7 +561,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           );
           ref.read(chatListProvider.notifier).updateChat(newChat);
           ref.read(chatScreenProvider.notifier).setStreaming(false);
-          await ref.read(streamingMessageProvider.notifier).stopStreaming();
+          await ref.read(streamingMessageProvider(chat.id).notifier).stopStreaming();
           // Clear child tool event callback
           holder.onChildToolEvent = null;
           await _chatStorageService.updateMessageInChat(
@@ -569,17 +569,21 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             completedMessage.id,
             completedMessage,
           );
-           WidgetsBinding.instance.addPostFrameCallback((_) {
-             _chatInputFocusNode.requestFocus();
-           });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _chatInputFocusNode.requestFocus();
+          });
           _showContinuationSuggestions(completedMessage);
         },
       );
     } catch (e) {
       ref.read(chatScreenProvider.notifier).setStreaming(false);
-      ref.read(streamingMessageProvider.notifier).reset();
+      ref.read(chatScreenProvider.notifier).setRetryInfo(
+        isRetrying: false,
+        retryMessage: null,
+        retryAttempt: 0,
+      );
+      ref.read(streamingMessageProvider(chat.id).notifier).reset();
       holder.onChildToolEvent = null;
-      // Mark session step as failed
       await runnerSession.onError(e);
       await _handleStreamingError(e);
     } finally {

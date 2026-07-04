@@ -2,7 +2,8 @@
 // Bridges Session Core to Chat UI without legacy Message types.
 
 import 'package:chatorai/core/session/session_state.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart' hide ToolState;
+import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
+    hide ToolState;
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 
 /// Converts [SessionMessage] + [AssistantContent] parts to [ChatMessage].
@@ -42,7 +43,8 @@ MessagePart _assistantContentToMessagePart(AssistantContent content) {
       content: content.text,
       startedAt: content.started,
       durationMs: content.ended != null
-          ? content.ended!.millisecondsSinceEpoch - content.started.millisecondsSinceEpoch
+          ? content.ended!.millisecondsSinceEpoch -
+                content.started.millisecondsSinceEpoch
           : null,
     );
   }
@@ -77,8 +79,13 @@ MessagePart _assistantContentToMessagePart(AssistantContent content) {
 }
 
 /// Converts `List<AssistantContent>` to `List<Map<String, dynamic>>` for legacy Message.
-List<Map<String, dynamic>> assistantContentToPartMaps(List<AssistantContent> parts) {
-  return parts.map(_assistantContentToMessagePart).map((p) => p.toJson()).toList();
+List<Map<String, dynamic>> assistantContentToPartMaps(
+  List<AssistantContent> parts,
+) {
+  return parts
+      .map(_assistantContentToMessagePart)
+      .map((p) => p.toJson())
+      .toList();
 }
 
 /// Extracts text content from [AssistantContent] parts.

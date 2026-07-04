@@ -74,18 +74,20 @@ final currentSessionRunnerProvider =
 /// Reactive stream of tool results for a session, keyed by session ID.
 final childSessionToolResultsProvider =
     StreamProvider.family<List<ToolResult>, String>((ref, sessionIdRaw) async* {
-  final repo = await ref.read(sessionRepositoryProvider.future);
-  final sid = SessionID.fromString(sessionIdRaw);
-  yield await repo.getSessionToolResults(sid);
-  await for (final toolResults in repo.watchSessionToolResults(sid)) {
-    yield toolResults;
-  }
-});
+      final repo = await ref.read(sessionRepositoryProvider.future);
+      final sid = SessionID.fromString(sessionIdRaw);
+      yield await repo.getSessionToolResults(sid);
+      await for (final toolResults in repo.watchSessionToolResults(sid)) {
+        yield toolResults;
+      }
+    });
 
 /// Reactive stream of session state (including messages) for a session,
 /// keyed by session ID. Uses event stream + replay for true reactive streaming.
-final childSessionStateProvider =
-    StreamProvider.family<SessionState, String>((ref, sessionIdRaw) async* {
+final childSessionStateProvider = StreamProvider.family<SessionState, String>((
+  ref,
+  sessionIdRaw,
+) async* {
   final repo = await ref.read(sessionRepositoryProvider.future);
   final sid = SessionID.fromString(sessionIdRaw);
 
@@ -120,5 +122,5 @@ final childSessionStateProvider =
 /// navigate between siblings.
 final sessionStackProvider =
     NotifierProvider<SessionStackNotifier, SessionStackState>(
-  SessionStackNotifier.new,
-);
+      SessionStackNotifier.new,
+    );

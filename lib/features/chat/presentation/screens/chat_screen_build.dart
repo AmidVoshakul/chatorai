@@ -73,12 +73,12 @@ extension _ChatScreenBuildExt on _ChatScreenState {
         final effectiveId = isRealSessionId
             ? partSessionId
             : ref
-                .read(currentSessionRunnerProvider.notifier)
-                .activeChildSessionId;
+                  .read(currentSessionRunnerProvider.notifier)
+                  .activeChildSessionId;
         if (effectiveId != null && effectiveId.isNotEmpty) {
-          ref.read(sessionStackProvider.notifier).push(
-            SessionID.fromString(effectiveId),
-          );
+          ref
+              .read(sessionStackProvider.notifier)
+              .push(SessionID.fromString(effectiveId));
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => ChildSessionScreen(sessionId: effectiveId),

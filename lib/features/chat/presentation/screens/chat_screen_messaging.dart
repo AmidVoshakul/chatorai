@@ -116,7 +116,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       );
     } catch (e, s) {
       ref.read(chatScreenProvider.notifier).setStreaming(false);
-      ref.read(streamingMessageProvider.notifier).reset();
+      ref.read(streamingMessageProvider(chat.id).notifier).reset();
       try {
         await _handleStreamingError(e);
       } catch (e2) {
@@ -184,9 +184,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
   /// Only pushes on the first creation (when sessionId was null before).
   void _pushSessionToStack({required bool isNewSession}) {
     if (_currentSessionId != null && isNewSession) {
-      ref.read(sessionStackProvider.notifier).push(
-        SessionID.fromString(_currentSessionId!),
-      );
+      ref
+          .read(sessionStackProvider.notifier)
+          .push(SessionID.fromString(_currentSessionId!));
     }
   }
 
@@ -297,7 +297,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     // before we snapshot the streaming state.
     await Future<void>.delayed(const Duration(milliseconds: 50));
 
-    final streamingState = ref.read(streamingMessageProvider);
+    final streamingState = ref.read(streamingMessageProvider(currentChat?.id ?? ''));
     if (!streamingState.isStreaming) {
       return;
     }
@@ -380,8 +380,8 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     ref
         .read(chatScreenProvider.notifier)
         .setRetryInfo(isRetrying: false, retryMessage: null, retryAttempt: 0);
-    await ref.read(streamingMessageProvider.notifier).stopStreaming();
-    ref.read(streamingMessageProvider.notifier).reset();
+    await ref.read(streamingMessageProvider(currentChat?.id ?? '').notifier).stopStreaming();
+    ref.read(streamingMessageProvider(currentChat?.id ?? '').notifier).reset();
   }
 
   void _refreshChatMessages() async {

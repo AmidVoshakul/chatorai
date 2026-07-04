@@ -8,10 +8,7 @@ class SessionStackState {
   final List<SessionID> stack;
   final String? rootChatId;
 
-  const SessionStackState({
-    this.stack = const [],
-    this.rootChatId,
-  });
+  const SessionStackState({this.stack = const [], this.rootChatId});
 
   SessionID? get current => stack.isNotEmpty ? stack.last : null;
   SessionID? get parent => stack.length >= 2 ? stack[stack.length - 2] : null;
@@ -87,7 +84,11 @@ class SessionStackNotifier extends Notifier<SessionStackState> {
 
       return childIds[targetIndex];
     } catch (e, stack) {
-      LogTags.session.logError('getSiblingId failed for direction=$direction', e, stack);
+      LogTags.session.logError(
+        'getSiblingId failed for direction=$direction',
+        e,
+        stack,
+      );
       return null;
     }
   }

@@ -79,33 +79,25 @@ class _QuestionPartWidgetState extends State<QuestionPartWidget> {
             ],
           ),
           if (hasAnswer && displayAnswer != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: ChatoraiSpacing.sm,
-                  vertical: ChatoraiSpacing.xs,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Icon(
-                    //   Icons.arrow_upward,
-                    //   size: 10,
-                    //   color: isDark ? Colors.white70 : Colors.black,
-                    // ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        displayAnswer,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: isDark ? Colors.white70 : Colors.black,
-                        ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ChatoraiSpacing.sm,
+                vertical: ChatoraiSpacing.xs,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(width: 2),
+                  Flexible(
+                    child: Text(
+                      displayAnswer,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white70 : Colors.black,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           if (!hasAnswer && hasOptions) ...[

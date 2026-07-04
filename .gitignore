@@ -32,6 +32,7 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+.ruff_cache/
 
 # Symbolication related
 app.*.symbols
@@ -49,6 +50,7 @@ app.*.map.json
 .codegraph
 .chatorai/
 AGENTS.md
+.kilo
 callgraph.db
 chatorai_memory.jsonl
 
@@ -60,3 +62,5 @@ test/fixtures/skills/invalid/*/SKILL.md
 apply_patch_add_test.txt
 apply_patch_mismatch_test.txt
 .kanban/
+COMPARE.md
+etalon/
