@@ -8,11 +8,17 @@ import 'package:chatorai/core/constants/chat_constants.dart';
 import 'package:chatorai/core/context/compaction_orchestrator.dart';
 import 'package:chatorai/core/context/compaction_service.dart';
 // import 'package:chatorai/core/session/database.dart';
+import 'package:chatorai/core/keyboard/shortcut_handler.dart';
+import 'package:chatorai/core/keyboard/shortcuts.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/tools/tool_output_persistence.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
+    hide ToolState;
+import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart'
+    show assistantContentToPartMaps;
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/models/model_card_model.dart';
 import 'package:chatorai/features/chat/presentation/screens/child_session_screen.dart';
@@ -33,7 +39,6 @@ import 'package:chatorai/providers.dart'
         themeProvider,
         modelProvider,
         modelSettingsProvider,
-        streamingMessageProvider,
         chatListProvider,
         chatStorageServiceProvider,
         chatAiServiceProvider,
@@ -108,6 +113,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   /// Reusable session ID across multiple message turns in the same chat.
   /// Created on the first message, reused on continuation.
   String? _currentSessionId;
+  bool _streamCancelled = false;
 
   /// Test-only accessor for auto-scroll state.
   bool get autoScrollEnabledForTest => _autoScrollEnabled;
@@ -235,20 +241,80 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         : _buildDesktopLayout(chatInput);
 
     final uiState = ref.watch(chatScreenProvider);
-    if (uiState.navigatorHeadings.isNotEmpty) {
-      return Stack(
-        children: [
-          baseLayout,
-          MarkdownNavigatorSidebar(
-            headings: uiState.navigatorHeadings,
-            activeHeadingIndex: uiState.activeHeadingIndex,
-            isOpen: uiState.isNavigatorVisible,
-            onClose: _toggleNavigator,
-            onHeadingTap: _onHeadingTap,
-          ),
-        ],
+    final screenContent = uiState.navigatorHeadings.isNotEmpty
+        ? Stack(
+            children: [
+              baseLayout,
+              MarkdownNavigatorSidebar(
+                headings: uiState.navigatorHeadings,
+                activeHeadingIndex: uiState.activeHeadingIndex,
+                isOpen: uiState.isNavigatorVisible,
+                onClose: _toggleNavigator,
+                onHeadingTap: _onHeadingTap,
+              ),
+            ],
+          )
+        : baseLayout;
+
+    final shortcuts = [
+      AppShortcuts.cancelStreaming(
+        _stopStreaming,
+        isActive: (r) => r.read(chatScreenProvider).isStreaming,
+      ),
+      AppShortcuts.openLatestChildSession(_navigateToLastChildSession),
+    ];
+
+    return ShortcutHandler(shortcuts: shortcuts, child: screenContent);
+  }
+
+  void _navigateToLastChildSession() {
+    String? sessionId;
+
+    // Check active child session first (during streaming)
+    sessionId = ref
+        .read(currentSessionRunnerProvider.notifier)
+        .activeChildSessionId;
+
+    if (sessionId == null) {
+      final state = ref.read(chatScreenProvider);
+      for (int i = state.streamingParts.length - 1; i >= 0; i--) {
+        final part = state.streamingParts[i];
+        if (part is AssistantTask &&
+            part.taskSessionId != null &&
+            part.taskSessionId!.isNotEmpty) {
+          sessionId = part.taskSessionId;
+          break;
+        }
+      }
+    }
+
+    if (sessionId == null) {
+      final chat = currentChat;
+      if (chat == null) return;
+      for (final msg in chat.messages.reversed) {
+        if (msg.partsJson == null) continue;
+        for (final partJson in msg.partsJson!.reversed) {
+          if (partJson['type'] == 'task') {
+            final sid = partJson['sessionId'] as String?;
+            if (sid != null && sid.isNotEmpty) {
+              sessionId = sid;
+              break;
+            }
+          }
+        }
+        if (sessionId != null) break;
+      }
+    }
+
+    if (sessionId != null) {
+      ref
+          .read(sessionStackProvider.notifier)
+          .push(SessionID.fromString(sessionId));
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ChildSessionScreen(sessionId: sessionId!),
+        ),
       );
     }
-    return baseLayout;
   }
 }

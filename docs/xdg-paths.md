@@ -1,5 +1,7 @@
 # XdgPaths — Platform-Aware Application Paths
 
+**Last updated:** 2026-07-07
+
 **Source:** `lib/shared/utils/xdg_paths.dart`
 
 ## Why XdgPaths Exists

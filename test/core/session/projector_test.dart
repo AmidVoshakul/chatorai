@@ -3,6 +3,7 @@ import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/projector.dart';
+import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 
 void main() {
   group('projectEvent', () {
@@ -162,7 +163,6 @@ void main() {
           sessionId: id,
           toolCallId: 'tc_1',
           outputText: 'result',
-          durationMs: 100,
           timestamp: DateTime.now(),
         ),
       );
@@ -171,7 +171,6 @@ void main() {
       expect(state.messages.first.content, 'result');
       expect(state.toolResults.length, 1);
       expect(state.toolResults.first.status, 'success');
-      expect(state.toolResults.first.durationMs, 100);
     });
 
     test('ToolFailed adds error to message', () {
@@ -337,103 +336,134 @@ void main() {
       },
     );
 
-    test('ToolCalled → ToolSuccess flow publishes correctly', () {
-      var state = projectEvent(
-        empty,
-        ToolCalled(
-          sessionId: id,
-          toolCallId: 'tc_full',
-          toolName: 'bash',
-          input: {'cmd': 'ls -la'},
-          timestamp: DateTime.now(),
-        ),
-      );
-
-      expect(state.messages.length, 1);
-      expect(state.messages.first.role, MessageRole.tool);
-      expect(state.messages.first.content, contains('ls -la'));
-
-      state = projectEvent(
-        state,
-        ToolSuccess(
-          sessionId: id,
-          toolCallId: 'tc_full',
-          outputText: 'total 42\n-rw-r--r-- 1 file',
-          durationMs: 150,
-          timestamp: DateTime.now(),
-        ),
-      );
-
-      expect(state.messages.length, 1);
-      expect(state.messages.first.content, 'total 42\n-rw-r--r-- 1 file');
-      expect(state.toolResults.length, 1);
-      expect(state.toolResults.first.status, 'success');
-      expect(state.toolResults.first.durationMs, 150);
-      expect(state.toolResults.first.outputText, 'total 42\n-rw-r--r-- 1 file');
-    });
-
     test(
-      'Full chain replay (MessageAdded → TextStarted → TextDelta → TextEnded) produces correct state',
+      'TextStarted → ToolCalled → TextEnded keeps text before tool in parts',
       () {
-        final chainId = SessionID.create();
         final now = DateTime.now();
         final events = [
-          SessionCreated(
-            sessionId: chainId,
-            title: 'Chain',
-            agent: 'general',
-            timestamp: now,
-          ),
+          SessionCreated(sessionId: id, timestamp: now),
           MessageAdded(
-            sessionId: chainId,
-            messageId: 'user_msg',
+            sessionId: id,
+            messageId: 'u1',
             role: 'user',
-            content: 'Hello, how are you?',
+            content: 'hi',
             timestamp: now,
           ),
-          TextStarted(
-            sessionId: chainId,
-            messageId: 'asst_msg',
+          TextStarted(sessionId: id, messageId: 'a1', timestamp: now),
+          ToolCalled(
+            sessionId: id,
+            toolCallId: 'tc1',
+            toolName: 'bash',
+            input: {'cmd': 'ls'},
             timestamp: now,
           ),
-          TextDelta(
-            sessionId: chainId,
-            messageId: 'asst_msg',
-            delta: 'I am ',
+          ReasoningStarted(sessionId: id, messageId: 'a1', timestamp: now),
+          ReasoningDelta(
+            sessionId: id,
+            messageId: 'a1',
+            delta: 'thinking',
             timestamp: now,
           ),
-          TextDelta(
-            sessionId: chainId,
-            messageId: 'asst_msg',
-            delta: 'doing well, ',
-            timestamp: now,
-          ),
-          TextDelta(
-            sessionId: chainId,
-            messageId: 'asst_msg',
-            delta: 'thank you!',
+          ReasoningEnded(
+            sessionId: id,
+            messageId: 'a1',
+            fullReasoning: 'thought',
             timestamp: now,
           ),
           TextEnded(
-            sessionId: chainId,
-            messageId: 'asst_msg',
-            fullText: 'I am doing well, thank you!',
-            model: 'claude-4',
+            sessionId: id,
+            messageId: 'a1',
+            fullText: 'ok',
+            model: 'm1',
+            timestamp: now,
+          ),
+          ToolSuccess(
+            sessionId: id,
+            toolCallId: 'tc1',
+            outputText: 'files',
             timestamp: now,
           ),
         ];
 
         final state = replayEvents(events);
 
-        expect(state.title, 'Chain');
-        expect(state.messages.length, 2);
-        expect(state.messages[0].content, 'Hello, how are you?');
-        expect(state.messages[0].role, MessageRole.user);
-        expect(state.messages[1].content, 'I am doing well, thank you!');
-        expect(state.messages[1].role, MessageRole.assistant);
-        expect(state.messages[1].model, 'claude-4');
+        expect(state.parts.length, 3);
+        expect(state.parts[0], isA<AssistantReasoning>());
+        expect(state.parts[1], isA<AssistantText>());
+        expect(state.parts[2], isA<AssistantTool>());
+        if (state.parts[1] is AssistantText) {
+          expect((state.parts[1] as AssistantText).text, 'ok');
+        }
+        if (state.parts[2] is AssistantTool) {
+          expect((state.parts[2] as AssistantTool).state, ToolState.completed);
+        }
       },
     );
+
+    test('TextDelta updates existing text part in place', () {
+      final now = DateTime.now();
+      final events = [
+        SessionCreated(sessionId: id, timestamp: now),
+        TextStarted(sessionId: id, messageId: 'a1', timestamp: now),
+        TextDelta(sessionId: id, messageId: 'a1', delta: 'Hel', timestamp: now),
+        TextDelta(sessionId: id, messageId: 'a1', delta: 'lo', timestamp: now),
+        TextEnded(
+          sessionId: id,
+          messageId: 'a1',
+          fullText: 'Hello',
+          model: 'm1',
+          timestamp: now,
+        ),
+      ];
+
+      final state = replayEvents(events);
+
+      expect(state.parts.length, 1);
+      expect(state.parts.first, isA<AssistantText>());
+      expect((state.parts.first as AssistantText).text, 'Hello');
+    });
+
+    test('ReasoningDelta/Ended updates existing reasoning part in place', () {
+      final now = DateTime.now();
+      final events = [
+        SessionCreated(sessionId: id, timestamp: now),
+        TextStarted(sessionId: id, messageId: 'a1', timestamp: now),
+        ReasoningStarted(sessionId: id, messageId: 'a1', timestamp: now),
+        ReasoningDelta(
+          sessionId: id,
+          messageId: 'a1',
+          delta: 'thi',
+          timestamp: now,
+        ),
+        ReasoningDelta(
+          sessionId: id,
+          messageId: 'a1',
+          delta: 'nk',
+          timestamp: now,
+        ),
+        ReasoningEnded(
+          sessionId: id,
+          messageId: 'a1',
+          fullReasoning: 'think',
+          timestamp: now,
+        ),
+        TextEnded(
+          sessionId: id,
+          messageId: 'a1',
+          fullText: 'done',
+          model: 'm1',
+          timestamp: now,
+        ),
+      ];
+
+      final state = replayEvents(events);
+
+      expect(state.parts.length, 2);
+      expect(state.parts[0], isA<AssistantReasoning>());
+      expect((state.parts[0] as AssistantReasoning).text, 'think');
+      expect(state.parts[1], isA<AssistantText>());
+      expect((state.parts[1] as AssistantText).text, 'done');
+    });
   });
 
   group('replayEvents', () {
@@ -465,7 +495,6 @@ void main() {
           sessionId: id,
           toolCallId: 'tc1',
           outputText: 'files',
-          durationMs: 50,
           timestamp: now,
         ),
         StepEnded(

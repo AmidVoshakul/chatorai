@@ -30,7 +30,7 @@ MessagePart partFromJson(Map<String, dynamic> json) {
     'task' => TaskPart.fromJson(json),
     'question' => QuestionPart.fromJson(json),
     'todo' => TodoPart.fromJson(json),
-    _ => throw ArgumentError('Unknown part type: $type'),
+    _ => TextPart(content: '[$type]'),
   };
 }
 

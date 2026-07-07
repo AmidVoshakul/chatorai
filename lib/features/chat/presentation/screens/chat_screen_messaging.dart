@@ -55,8 +55,13 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     required bool isContinuation,
     String? delegateAgentId,
   }) async {
+    LogTags.chatScreen.logInfo(
+      '_initiateStream: enter model=$selectedModelId isContinuation=$isContinuation',
+    );
     final repo = await _sessionRepositoryFuture;
+    LogTags.chatScreen.logInfo('_initiateStream: repo ready');
     final toolRegistry = await ref.read(toolRegistryProvider.future);
+    LogTags.chatScreen.logInfo('_initiateStream: toolRegistry ready');
     final sessionRunner = SessionRunner(repo, toolRegistry);
     final runnerSession = await sessionRunner.startInitializedSession(
       agent: ref.read(currentAgentProvider).name,
@@ -64,6 +69,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       sessionId: _currentSessionId != null
           ? SessionID.fromString(_currentSessionId!)
           : null,
+    );
+    LogTags.chatScreen.logInfo(
+      '_initiateStream: session ready id=${runnerSession.sessionId.value}',
     );
     final isNewSession = _currentSessionId == null;
     _currentSessionId ??= runnerSession.sessionId.value;
@@ -96,6 +104,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     try {
       final modelSettingsNotifier = ref.read(modelSettingsProvider.notifier);
       final settings = await modelSettingsNotifier.getSettings(selectedModelId);
+      LogTags.chatScreen.logInfo('_initiateStream: settings ready');
 
       if (delegateAgentId == null &&
           settings.systemPrompt != null &&
@@ -107,6 +116,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
         });
       }
 
+      LogTags.chatScreen.logInfo(
+        '_initiateStream: calling _handleStreamingResponse model=$selectedModelId',
+      );
       await _handleStreamingResponse(
         chat: chat,
         messages: messages,
@@ -115,8 +127,8 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
         modelSettings: settings,
       );
     } catch (e, s) {
+      LogTags.chatScreen.logError('_initiateStream: streaming error $e');
       ref.read(chatScreenProvider.notifier).setStreaming(false);
-      ref.read(streamingMessageProvider(chat.id).notifier).reset();
       try {
         await _handleStreamingError(e);
       } catch (e2) {
@@ -290,98 +302,97 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
   }
 
   void _stopStreaming() async {
+    _streamCancelled = true;
     final aiService = ref.read(chatAiServiceProvider);
     aiService.cancelAllRequests();
 
-    // Brief yield so any in‑flight stream event can be captured
-    // before we snapshot the streaming state.
     await Future<void>.delayed(const Duration(milliseconds: 50));
 
-    final streamingState = ref.read(streamingMessageProvider(currentChat?.id ?? ''));
-    if (!streamingState.isStreaming) {
+    final chat = currentChat;
+    if (chat == null || chat.messages.isEmpty) {
+      ref.read(chatScreenProvider.notifier).finalizeStreaming();
+      ref
+          .read(chatScreenProvider.notifier)
+          .setRetryInfo(isRetrying: false, retryMessage: null, retryAttempt: 0);
       return;
     }
 
-    final chat = currentChat;
-    if (chat != null && chat.messages.isNotEmpty) {
-      final content = streamingState.accumulatedParts
-          .whereType<TextPart>()
-          .map((p) => (p).content)
-          .join();
-      final reasoning = streamingState.accumulatedParts
-          .whereType<ReasoningPart>()
-          .map((p) => (p).content)
-          .join();
-      final toolParts = streamingState.accumulatedParts
-          .where((p) => p is ToolResultPart || p is TodoPart || p is TaskPart)
-          .toList();
-      final partsJson = toolParts.isNotEmpty
-          ? toolParts.map((p) => p.toJson()).toList()
-          : null;
+    final notifier = ref.read(chatScreenProvider.notifier);
+    final closedParts = notifier.snapshotClosedStreamingParts();
 
-      final lastMessage = chat.messages.last;
-      Message completedMessage;
-      List<Message> newMessages;
+    final content = closedParts
+        .whereType<AssistantText>()
+        .map((p) => p.text)
+        .join();
+    final reasoning = closedParts
+        .whereType<AssistantReasoning>()
+        .map((p) => p.text)
+        .join();
+    final toolParts = closedParts
+        .where(
+          (p) =>
+              p is AssistantTool ||
+              p is AssistantTask ||
+              p is AssistantQuestion ||
+              p is AssistantTodo,
+        )
+        .toList();
+    final partsJson = toolParts.isNotEmpty
+        ? assistantContentToPartMaps(toolParts)
+        : null;
 
-      if (lastMessage.role == MessageRole.assistant &&
-          !lastMessage.isComplete) {
-        completedMessage = lastMessage.copyWith(
-          content: content,
-          reasoning: reasoning.isNotEmpty ? reasoning : null,
-          isComplete: true,
-          partsJson: partsJson,
-          tokensInput: aiService.tokenCounter.totalTokens,
-          contextLength: ref
-              .read(modelProvider)
-              .selectedModelObject
-              ?.contextLength,
-        );
-        newMessages = [
-          for (int i = 0; i < chat.messages.length - 1; i++) chat.messages[i],
-          completedMessage,
-        ];
-      } else {
-        completedMessage = _createAssistantMessage(
-          content: content,
-          reasoning: reasoning.isNotEmpty ? reasoning : null,
-          isComplete: true,
-          tokensInput: aiService.tokenCounter.totalTokens,
-          partsJson: partsJson,
-          contextLength: ref
-              .read(modelProvider)
-              .selectedModelObject
-              ?.contextLength,
-        );
-        newMessages = [...chat.messages, completedMessage];
-      }
+    final lastMessage = chat.messages.last;
+    Message completedMessage;
+    List<Message> newMessages;
 
-      final newChat = chat.copyWith(
-        messages: newMessages,
-        updatedAt: DateTime.now(),
+    if (lastMessage.role == MessageRole.assistant && !lastMessage.isComplete) {
+      completedMessage = lastMessage.copyWith(
+        content: content,
+        reasoning: reasoning.isNotEmpty ? reasoning : null,
+        isComplete: true,
+        partsJson: partsJson,
+        tokensInput: aiService.tokenCounter.totalTokens,
+        contextLength: ref
+            .read(modelProvider)
+            .selectedModelObject
+            ?.contextLength,
       );
-      ref.read(chatListProvider.notifier).updateChat(newChat);
-      if (lastMessage.role == MessageRole.assistant &&
-          !lastMessage.isComplete) {
-        await _chatStorageService.updateMessageInChat(
-          newChat.id,
-          lastMessage.id,
-          completedMessage,
-        );
-      } else {
-        await _chatStorageService.addMessageToChat(
-          newChat.id,
-          completedMessage,
-        );
-      }
-      _showContinuationSuggestions(completedMessage);
+      newMessages = [
+        for (int i = 0; i < chat.messages.length - 1; i++) chat.messages[i],
+        completedMessage,
+      ];
+    } else {
+      completedMessage = _createAssistantMessage(
+        content: content,
+        reasoning: reasoning.isNotEmpty ? reasoning : null,
+        isComplete: true,
+        partsJson: partsJson,
+        tokensInput: aiService.tokenCounter.totalTokens,
+        contextLength: ref
+            .read(modelProvider)
+            .selectedModelObject
+            ?.contextLength,
+      );
+      newMessages = [...chat.messages, completedMessage];
     }
 
-    ref.read(chatScreenProvider.notifier).setStreaming(false);
-    ref
-        .read(chatScreenProvider.notifier)
-        .setRetryInfo(isRetrying: false, retryMessage: null, retryAttempt: 0);
-    await ref.read(streamingMessageProvider(currentChat?.id ?? '').notifier).stopStreaming();
-    ref.read(streamingMessageProvider(currentChat?.id ?? '').notifier).reset();
+    final newChat = chat.copyWith(
+      messages: newMessages,
+      updatedAt: DateTime.now(),
+    );
+    ref.read(chatListProvider.notifier).updateChat(newChat);
+    if (lastMessage.role == MessageRole.assistant && !lastMessage.isComplete) {
+      await _chatStorageService.updateMessageInChat(
+        newChat.id,
+        lastMessage.id,
+        completedMessage,
+      );
+    } else {
+      await _chatStorageService.addMessageToChat(newChat.id, completedMessage);
+    }
+    _showContinuationSuggestions(completedMessage);
+
+    notifier.finalizeStreaming();
   }
 
   void _refreshChatMessages() async {

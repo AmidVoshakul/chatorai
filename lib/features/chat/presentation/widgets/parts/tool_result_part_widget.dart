@@ -447,17 +447,6 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
             ),
           ),
         ),
-        if (part.duration != null && isCompleted)
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Text(
-              '${part.duration!.inMilliseconds}ms',
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontSize: 10,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
         if (canExpand)
           Padding(
             padding: const EdgeInsets.only(top: 2),

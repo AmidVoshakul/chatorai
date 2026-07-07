@@ -269,14 +269,12 @@ void main() {
           sessionId: sid,
           toolCallId: 'tc-2',
           outputText: 'file1.txt',
-          durationMs: 150,
           timestamp: ts,
         ),
       );
       final events = await store.getEvents(sid);
       final restored = events.first as ToolSuccess;
       expect(restored.outputText, 'file1.txt');
-      expect(restored.durationMs, 150);
     });
 
     test('ToolFailed', () async {

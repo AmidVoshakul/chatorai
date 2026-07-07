@@ -1,5 +1,7 @@
 # Security Model
 
+**Last updated:** 2026-07-07
+
 ChatORAI implements a defense-in-depth security approach, covering permission controls, secret handling, logging sanitization, and secure communication.
 
 ## Permission System
@@ -125,3 +127,8 @@ Tools discovered from external MCP servers are treated as **untrusted**:
 - All user inputs (including file paths, patterns, and commands) are validated before processing.
 - The permission system acts as a gatekeeper for filesystem access, preventing unauthorized reads/writes outside allowed patterns.
 - Tool inputs are sanitized to remove potentially harmful content (e.g., extremely long messages, error patterns).
+
+## Diagrams
+
+- [Permission Evaluation Pipeline](../diagrams/architecture-overview.md#tool-execution-lifecycle)
+- [Permission Ruleset ER](../diagrams/tools.md#tool-registry-conditional-registration)

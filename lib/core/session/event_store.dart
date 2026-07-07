@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/features/chat/data/models/chat/todo_part.dart';
 import 'package:drift/drift.dart';
 import 'database.dart' as db;
 import 'events.dart';
@@ -169,10 +170,15 @@ class EventStore {
         'role': e.role,
         'content': e.content,
       },
-      TextStarted e => {'type': 'TextStarted', 'messageId': e.messageId},
+      TextStarted e => {
+        'type': 'TextStarted',
+        'messageId': e.messageId,
+        if (e.partId != null) 'partId': e.partId,
+      },
       TextDelta e => {
         'type': 'TextDelta',
         'messageId': e.messageId,
+        if (e.partId != null) 'partId': e.partId,
         'delta': e.delta,
       },
       TextEnded e => {
@@ -180,20 +186,24 @@ class EventStore {
         'messageId': e.messageId,
         'fullText': e.fullText,
         'model': e.model,
+        if (e.partId != null) 'partId': e.partId,
       },
       ReasoningStarted e => {
         'type': 'ReasoningStarted',
         'messageId': e.messageId,
+        if (e.partId != null) 'partId': e.partId,
       },
       ReasoningDelta e => {
         'type': 'ReasoningDelta',
         'messageId': e.messageId,
+        if (e.partId != null) 'partId': e.partId,
         'delta': e.delta,
       },
       ReasoningEnded e => {
         'type': 'ReasoningEnded',
         'messageId': e.messageId,
         'fullReasoning': e.fullReasoning,
+        if (e.partId != null) 'partId': e.partId,
       },
       ToolInputStarted e => {
         'type': 'ToolInputStarted',
@@ -219,7 +229,6 @@ class EventStore {
         'type': 'ToolSuccess',
         'toolCallId': e.toolCallId,
         'outputText': e.outputText,
-        'durationMs': e.durationMs,
       },
       ToolFailed e => {
         'type': 'ToolFailed',
@@ -259,6 +268,36 @@ class EventStore {
         'taskId': e.taskId,
         'output': e.output,
       },
+      TaskPartStarted e => {
+        'type': 'TaskPartStarted',
+        'partId': e.partId,
+        'description': e.description,
+        'agent': e.agent,
+        'taskSessionId': e.taskSessionId,
+      },
+      TaskPartCompleted e => {'type': 'TaskPartCompleted', 'partId': e.partId},
+      TaskPartError e => {
+        'type': 'TaskPartError',
+        'partId': e.partId,
+        'error': e.error,
+      },
+      QuestionPartStarted e => {
+        'type': 'QuestionPartStarted',
+        'partId': e.partId,
+        'questionText': e.questionText,
+        'options': e.options,
+      },
+      QuestionPartAnswered e => {
+        'type': 'QuestionPartAnswered',
+        'partId': e.partId,
+        'answer': e.answer,
+      },
+      TodoPartStarted e => {
+        'type': 'TodoPartStarted',
+        'partId': e.partId,
+        'todos': e.todos,
+      },
+      TodoPartCompleted e => {'type': 'TodoPartCompleted', 'partId': e.partId},
     };
   }
 
@@ -311,6 +350,7 @@ class EventStore {
       'TextStarted' => TextStarted(
         sessionId: sid,
         messageId: data['messageId'] as String,
+        partId: data['partId'] as String?,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -318,6 +358,7 @@ class EventStore {
         sessionId: sid,
         messageId: data['messageId'] as String,
         delta: data['delta'] as String,
+        partId: data['partId'] as String?,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -326,12 +367,14 @@ class EventStore {
         messageId: data['messageId'] as String,
         fullText: data['fullText'] as String,
         model: data['model'] as String?,
+        partId: data['partId'] as String?,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
       'ReasoningStarted' => ReasoningStarted(
         sessionId: sid,
         messageId: data['messageId'] as String,
+        partId: data['partId'] as String?,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -339,6 +382,7 @@ class EventStore {
         sessionId: sid,
         messageId: data['messageId'] as String,
         delta: data['delta'] as String,
+        partId: data['partId'] as String?,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -346,6 +390,7 @@ class EventStore {
         sessionId: sid,
         messageId: data['messageId'] as String,
         fullReasoning: data['fullReasoning'] as String,
+        partId: data['partId'] as String?,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -374,6 +419,7 @@ class EventStore {
         toolCallId: data['toolCallId'] as String,
         toolName: data['toolName'] as String,
         input: Map<String, dynamic>.from(data['input'] as Map),
+        partId: data['partId'] as String?,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -381,7 +427,7 @@ class EventStore {
         sessionId: sid,
         toolCallId: data['toolCallId'] as String,
         outputText: data['outputText'] as String,
-        durationMs: data['durationMs'] as int,
+        partId: data['partId'] as String?,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -389,6 +435,7 @@ class EventStore {
         sessionId: sid,
         toolCallId: data['toolCallId'] as String,
         error: data['error'] as String,
+        partId: data['partId'] as String?,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -450,6 +497,62 @@ class EventStore {
         sessionId: sid,
         taskId: data['taskId'] as String,
         output: data['output'] as String,
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'TaskPartStarted' => TaskPartStarted(
+        sessionId: sid,
+        partId: data['partId'] as String,
+        description: data['description'] as String,
+        agent: data['agent'] as String,
+        taskSessionId: data['taskSessionId'] as String?,
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'TaskPartCompleted' => TaskPartCompleted(
+        sessionId: sid,
+        partId: data['partId'] as String,
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'TaskPartError' => TaskPartError(
+        sessionId: sid,
+        partId: data['partId'] as String,
+        error: data['error'] as String,
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'QuestionPartStarted' => QuestionPartStarted(
+        sessionId: sid,
+        partId: data['partId'] as String,
+        questionText: data['questionText'] as String,
+        options: (data['options'] as List?)?.cast<String>() ?? const [],
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'QuestionPartAnswered' => QuestionPartAnswered(
+        sessionId: sid,
+        partId: data['partId'] as String,
+        answer: data['answer'] as String,
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'TodoPartStarted' => TodoPartStarted(
+        sessionId: sid,
+        partId: data['partId'] as String,
+        todos:
+            (data['todos'] as List<dynamic>?)
+                ?.map<TodoItem>(
+                  (e) => TodoItem.fromJson(e as Map<String, dynamic>),
+                )
+                .toList() ??
+            const [],
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'TodoPartCompleted' => TodoPartCompleted(
+        sessionId: sid,
+        partId: data['partId'] as String,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),

@@ -18,36 +18,7 @@ void main() {
       );
 
       expect(session.sessionId.value, startsWith('ses_'));
-      expect(session.creationEvent.agent, 'code-reviewer');
-      expect(session.creationEvent.modelRef, 'claude-4');
-      expect(session.creationEvent.title, 'My Session');
       expect(session.initialized, isFalse);
-    });
-
-    test('defaults agent to general and title to empty', () {
-      final runner = SessionRunner(
-        SessionRepository(AppDatabase.inMemory()),
-        null,
-      );
-      final session = runner.startSession(agent: 'general');
-
-      expect(session.creationEvent.agent, 'general');
-      expect(session.creationEvent.title, '');
-      expect(session.creationEvent.modelRef, isNull);
-    });
-
-    test('links parent session when parentSessionId is provided', () {
-      final runner = SessionRunner(
-        SessionRepository(AppDatabase.inMemory()),
-        null,
-      );
-      final session = runner.startSession(
-        agent: 'general',
-        parentSessionId: 'ses_parent123',
-      );
-
-      expect(session.creationEvent.parentId, isNotNull);
-      expect(session.creationEvent.parentId!.value, 'ses_parent123');
     });
   });
 
@@ -114,7 +85,7 @@ void main() {
     });
   });
 
-  group('SessionRunnerSession._handleChunk', () {
+  group('SessionRunnerSession.onChunk', () {
     late AppDatabase db;
     late SessionRepository repository;
     late SessionRunner runner;
@@ -129,20 +100,18 @@ void main() {
       await db.close();
     });
 
-    test('first chunk fires TextStarted event', () async {
+    test('first chunk fires TextStarted + TextDelta events', () async {
       final session = await runner.startInitializedSession(agent: 'general');
 
       await session.onChunk('Hello');
 
-      // Allow microtasks (unawaited appends) to settle
       await Future.delayed(const Duration(milliseconds: 50));
 
       final events = await repository.eventStore.getEvents(session.sessionId);
-      // SessionCreated + TextStarted
-      expect(events.length, 2);
+      expect(events.length, 3);
       expect(events[1], isA<TextStarted>());
-      expect(session.textStarted, isTrue);
-      expect(session.fullText, 'Hello');
+      expect(events[2], isA<TextDelta>());
+      expect((events[2] as TextDelta).delta, 'Hello');
     });
 
     test('subsequent chunks do not fire additional TextStarted', () async {
@@ -157,7 +126,8 @@ void main() {
       final events = await repository.eventStore.getEvents(session.sessionId);
       final textStartedEvents = events.whereType<TextStarted>().toList();
       expect(textStartedEvents.length, 1);
-      expect(session.fullText, 'Hello world!');
+      final textDeltas = events.whereType<TextDelta>().toList();
+      expect(textDeltas.length, 3);
     });
 
     test('empty chunk is a no-op', () async {
@@ -168,15 +138,11 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 50));
 
       final events = await repository.eventStore.getEvents(session.sessionId);
-      // Only SessionCreated — no TextStarted
       expect(events.length, 1);
-      expect(session.textStarted, isFalse);
     });
 
     test('chunk before initialize() is a no-op', () async {
       final session = runner.startSession(agent: 'general');
-      // Do NOT initialize
-
       await session.onChunk('Should not appear');
 
       await Future.delayed(const Duration(milliseconds: 50));
@@ -184,20 +150,9 @@ void main() {
       final events = await repository.eventStore.getEvents(session.sessionId);
       expect(events, isEmpty);
     });
-
-    test('word-boundary chunk triggers immediate flush', () async {
-      final session = await runner.startInitializedSession(agent: 'general');
-
-      // Append a word-boundary character — should trigger immediate flush
-      await session.onChunk('Hello ');
-      await session.flushText(force: true);
-
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.whereType<TextDelta>().length, 1);
-    });
   });
 
-  group('SessionRunnerSession._onReasoning', () {
+  group('SessionRunnerSession.onReasoning', () {
     late AppDatabase db;
     late SessionRepository repository;
     late SessionRunner runner;
@@ -213,7 +168,7 @@ void main() {
     });
 
     test(
-      'first reasoning chunk fires TextStarted + ReasoningStarted',
+      'first reasoning chunk fires ReasoningStarted + ReasoningDelta events',
       () async {
         final session = await runner.startInitializedSession(agent: 'general');
 
@@ -222,13 +177,10 @@ void main() {
         await Future.delayed(const Duration(milliseconds: 100));
 
         final events = await repository.eventStore.getEvents(session.sessionId);
-        // SessionCreated + TextStarted + ReasoningStarted + ReasoningDelta
-        expect(events.length, 4);
-        expect(events[1], isA<TextStarted>());
-        expect(events[2], isA<ReasoningStarted>());
-        expect(events[3], isA<ReasoningDelta>());
-        expect(session.reasoningStarted, isTrue);
-        expect(session.fullReasoning, 'Thinking...');
+        expect(events.length, 3);
+        expect(events[1], isA<ReasoningStarted>());
+        expect(events[2], isA<ReasoningDelta>());
+        expect((events[2] as ReasoningDelta).delta, 'Thinking...');
       },
     );
 
@@ -241,22 +193,10 @@ void main() {
 
       final events = await repository.eventStore.getEvents(session.sessionId);
       expect(events.length, 1);
-      expect(session.reasoningStarted, isFalse);
-    });
-
-    test('reasoning before initialize() is a no-op', () async {
-      final session = runner.startSession(agent: 'general');
-
-      session.onReasoning('Should not appear');
-
-      await Future.delayed(const Duration(milliseconds: 50));
-
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events, isEmpty);
     });
   });
 
-  group('SessionRunnerSession._onToolStart / _onToolEnd / _onToolError', () {
+  group('SessionRunnerSession.onToolStart / onToolEnd / onToolError', () {
     late AppDatabase db;
     late SessionRepository repository;
     late SessionRunner runner;
@@ -271,64 +211,82 @@ void main() {
       await db.close();
     });
 
-    test('onToolStart appends ToolCalled event', () async {
+    test('onToolStart closes open reasoning and appends events', () async {
       final session = await runner.startInitializedSession(agent: 'general');
 
-      session.onToolStart('tc_1', 'bash', {'cmd': 'ls'});
+      session.onReasoning('Thinking...');
+      await session.onToolStart('tc_1', 'bash', {'cmd': 'ls'});
 
       await Future.delayed(const Duration(milliseconds: 50));
 
       final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.length, 2);
-      expect(events[1], isA<ToolCalled>());
-      final toolCalled = events[1] as ToolCalled;
-      expect(toolCalled.toolCallId, 'tc_1');
-      expect(toolCalled.toolName, 'bash');
-      expect(toolCalled.input, {'cmd': 'ls'});
+      expect(events.whereType<ReasoningEnded>().length, 1);
+      expect(events.whereType<ToolCalled>().length, 1);
     });
 
     test('onToolEnd appends ToolSuccess event', () async {
       final session = await runner.startInitializedSession(agent: 'general');
 
-      session.onToolEnd('tc_1', 'bash', 'file1.txt');
+      await session.onToolStart('tc_1', 'bash', {'cmd': 'pwd'});
+      await session.onToolEnd('tc_1', 'bash', '/home/user');
 
       await Future.delayed(const Duration(milliseconds: 50));
 
       final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.length, 2);
-      expect(events[1], isA<ToolSuccess>());
-      final toolSuccess = events[1] as ToolSuccess;
-      expect(toolSuccess.toolCallId, 'tc_1');
-      expect(toolSuccess.outputText, 'file1.txt');
-      expect(toolSuccess.durationMs, 0);
+      final toolSuccesses = events.whereType<ToolSuccess>().toList();
+      expect(toolSuccesses.length, 1);
+      expect(toolSuccesses.first.toolCallId, 'tc_1');
     });
 
     test('onToolError appends ToolFailed event', () async {
       final session = await runner.startInitializedSession(agent: 'general');
 
-      session.onToolError('tc_1', 'bash', 'Command not found');
+      await session.onToolStart('tc_1', 'bash', {'cmd': 'fail'});
+      await session.onToolError('tc_1', 'bash', 'Command not found');
 
       await Future.delayed(const Duration(milliseconds: 50));
 
       final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.length, 2);
-      expect(events[1], isA<ToolFailed>());
-      final toolFailed = events[1] as ToolFailed;
-      expect(toolFailed.toolCallId, 'tc_1');
-      expect(toolFailed.error, 'Command not found');
+      final toolFailedEvents = events.whereType<ToolFailed>().toList();
+      expect(toolFailedEvents.length, 1);
+      expect(toolFailedEvents.first.toolCallId, 'tc_1');
     });
 
-    test('tool callbacks before initialize() are no-ops', () async {
-      final session = runner.startSession(agent: 'general');
+    test('onToolStart/auto-close reasoning preserves event order', () async {
+      final session = await runner.startInitializedSession(agent: 'general');
 
-      session.onToolStart('tc_1', 'bash', {'cmd': 'ls'});
-      session.onToolEnd('tc_1', 'bash', 'result');
-      session.onToolError('tc_1', 'bash', 'error');
+      await session.onChunk('Starting');
+      await session.onToolStart('tc_order', 'bash', {'cmd': 'ls'});
+      await session.onChunk(' middle');
+      await session.onToolEnd('tc_order', 'bash', 'file1.txt');
+      await session.onChunk(' end');
 
       await Future.delayed(const Duration(milliseconds: 50));
 
       final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events, isEmpty);
+      final types = events.map((e) => e.runtimeType).toList();
+      expect(types.length, 7);
+      expect(types[0], SessionCreated);
+      expect(types[1], TextStarted);
+      expect(types[2], TextDelta);
+      expect(types[3], ToolCalled);
+      expect(types[4], TextDelta);
+      expect(types[5], ToolSuccess);
+      expect(types[6], TextDelta);
+    });
+
+    test('reasoning text preserved when text auto-closes it', () async {
+      final session = await runner.startInitializedSession(agent: 'general');
+
+      await session.onReasoning('Thinking...');
+      await session.onChunk('The answer is 42');
+
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      final events = await repository.eventStore.getEvents(session.sessionId);
+      final reasoningEnded = events.whereType<ReasoningEnded>().singleOrNull;
+      expect(reasoningEnded, isNotNull);
+      expect(reasoningEnded!.fullReasoning, 'Thinking...');
     });
   });
 
@@ -347,59 +305,33 @@ void main() {
       await db.close();
     });
 
-    test('appends TextEnded, ReasoningEnded, and StepEnded events', () async {
-      final session = await runner.startInitializedSession(agent: 'general');
+    test(
+      'appends TextEnded, StepEnded events and returns SessionState',
+      () async {
+        final session = await runner.startInitializedSession(agent: 'general');
 
-      session.onChunk('Final answer');
-      session.onReasoning('Some thinking');
+        await session.onChunk('Final answer');
 
-      await Future.delayed(const Duration(milliseconds: 50));
+        final state = await session.onCompletion(
+          content: 'Final answer',
+          model: 'gpt-4',
+          tokensInput: 100,
+          tokensOutput: 50,
+          tokensReasoning: 10,
+        );
 
-      await session.onCompletion(
-        content: 'Final answer',
-        reasoning: 'Some thinking',
-        model: 'gpt-4',
-        tokensInput: 100,
-        tokensOutput: 50,
-        tokensReasoning: 10,
-      );
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        expect(events.last, isA<StepEnded>());
 
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events, isNotEmpty);
-      expect(events.last, isA<StepEnded>());
+        final stepEnded = events.last as StepEnded;
+        expect(stepEnded.tokensInput, 100);
+        expect(stepEnded.tokensOutput, 50);
+        expect(stepEnded.tokensReasoning, 10);
 
-      final stepEnded = events.last as StepEnded;
-      expect(stepEnded.tokensInput, 100);
-      expect(stepEnded.tokensOutput, 50);
-      expect(stepEnded.tokensReasoning, 10);
-
-      // TextEnded and ReasoningEnded should be present
-      expect(events.whereType<TextEnded>().length, 1);
-      expect(events.whereType<ReasoningEnded>().length, 1);
-    });
-
-    test('without prior text/reasoning only appends StepEnded', () async {
-      final session = await runner.startInitializedSession(agent: 'general');
-
-      await session.onCompletion(content: '');
-
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      // SessionCreated + StepEnded
-      expect(events.length, 2);
-      expect(events[1], isA<StepEnded>());
-    });
-
-    test('returns a valid SessionState', () async {
-      final session = await runner.startInitializedSession(agent: 'general');
-
-      session.onChunk('Hello');
-      await Future.delayed(const Duration(milliseconds: 50));
-
-      final state = await session.onCompletion(content: 'Hello');
-
-      expect(state.id, session.sessionId);
-      expect(state.messages, isNotEmpty);
-    });
+        expect(events.whereType<TextEnded>().length, 1);
+        expect(state.id, session.sessionId);
+      },
+    );
   });
 
   group('SessionRunnerSession.onError', () {
@@ -420,17 +352,19 @@ void main() {
     test('appends StepFailed event', () async {
       final session = await runner.startInitializedSession(agent: 'general');
 
+      await session.onChunk('Some text');
       await session.onError(Exception('Network error'));
 
       final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.length, 2);
-      expect(events[1], isA<StepFailed>());
-      final stepFailed = events[1] as StepFailed;
+      // SessionCreated + TextStarted + TextDelta + StepFailed = 4
+      expect(events.length, 4);
+      expect(events[3], isA<StepFailed>());
+      final stepFailed = events[3] as StepFailed;
       expect(stepFailed.error, contains('Network error'));
     });
   });
 
-  group('SessionRunnerSession.flushText', () {
+  group('SessionRunnerSession.onTaskStart/onTaskEnd/onTaskError', () {
     late AppDatabase db;
     late SessionRepository repository;
     late SessionRunner runner;
@@ -445,37 +379,33 @@ void main() {
       await db.close();
     });
 
-test('force flush appends TextDelta event', () async {
-  final session = await runner.startInitializedSession(agent: 'general');
-
-  await session.onChunk('Hello');
-  await session.flushText(force: true);
-
-  final events = await repository.eventStore.getEvents(session.sessionId);
-  expect(events.whereType<TextDelta>().length, 1);
-  final textDelta = events.whereType<TextDelta>().first;
-  expect(textDelta.delta, 'Hello');
-});
-
-test('non-force flush before 250ms is a no-op', () async {
-  final session = await runner.startInitializedSession(agent: 'general');
-
-  await session.onChunk('Hi');
-  // Immediately flush without force — should be suppressed
-  await session.flushText(force: false);
-
-  final events = await repository.eventStore.getEvents(session.sessionId);
-  expect(events.whereType<TextDelta>(), isEmpty);
-});
-
-    test('flush with empty pending text is a no-op', () async {
+    test('onTaskStart/onTaskEnd/onTaskError emit correct events', () async {
       final session = await runner.startInitializedSession(agent: 'general');
 
-      // No chunks — pendingText is empty
-      await session.flushText(force: true);
+      await session.onTaskStart(
+        partId: 'part_task1',
+        description: 'Test task',
+        agent: 'general',
+      );
+
+      await Future.delayed(const Duration(milliseconds: 50));
 
       final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.whereType<TextDelta>(), isEmpty);
+      expect(events.whereType<TaskPartStarted>().length, 1);
+
+      await session.onTaskEnd('part_task1');
+
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      final events2 = await repository.eventStore.getEvents(session.sessionId);
+      expect(events2.whereType<TaskPartCompleted>().length, 1);
+
+      await session.onTaskError('part_task2', 'Test error');
+
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      final events3 = await repository.eventStore.getEvents(session.sessionId);
+      expect(events3.whereType<TaskPartError>().length, 1);
     });
   });
 

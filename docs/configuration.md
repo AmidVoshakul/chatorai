@@ -1,6 +1,6 @@
 # Configuration
 
-**Last updated:** 2026-06-28
+**Last updated:** 2026-07-07
 
 ChatORAI can be configured via a JSON file (`chatorai.json`) to customize permissions, keybindings, provider settings, MCP servers, and more.
 
@@ -105,9 +105,14 @@ Tools without a ruleset entry (e.g. `apply_patch`, `format`, `invalid`, `plan_ex
 
 ### `keybinding`
 
-Customizes keyboard shortcuts. The keybinds system is implemented via `KeybindManager` (`lib/core/keybinding/keybind_manager.dart`). See `.opencode/plans/keybinds-system.md` for the.
+Customizes keyboard shortcuts. The config field is parsed and stored in
+`ChatOrAIConfig.keybinding`, but the actual shortcuts are **hardcoded** in
+`lib/core/keyboard/shortcuts.dart` (`AppShortcuts` widget). The configuration
+is not currently applied at runtime — the `KeybindManager` class referenced in
+earlier drafts does not exist. Future work: wire `chatorai.json` keybinding
+settings into the shortcut system.
 
-Example:
+Example (for reference; not yet functional):
 
 ```json
 {
@@ -276,3 +281,8 @@ On startup, the configuration is loaded and validated. If the JSON is malformed 
 - Patterns are case-sensitive on Linux/macOS and case-insensitive on Windows.
 - The `always` permission granted via UI is stored in memory only and resets on app restart.
 - For advanced use, combine string defaults and pattern objects within the same permission section.
+
+## Diagrams
+
+- [Config Resolution Chain](../diagrams/architecture-overview.md#config-resolution-chain)
+- [Permission Evaluator Pipeline](../diagrams/architecture-overview.md#tool-execution-lifecycle)

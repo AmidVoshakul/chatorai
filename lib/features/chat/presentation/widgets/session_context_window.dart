@@ -2,7 +2,7 @@ import 'package:chatorai/core/session/session_state.dart' show SessionState;
 import 'package:chatorai/features/chat/data/models/chat_models.dart'
     show Chat, Message, MessageRole;
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
-    show AssistantContent, AssistantText, AssistantReasoning;
+    show AssistantContent, AssistantText;
 import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart'
     show assistantContentToPartMaps;
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages.dart';
@@ -32,32 +32,59 @@ class SessionContextWindow extends ConsumerStatefulWidget {
 
 class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
   late ScrollController _scrollController;
+  bool _autoScrollEnabled = true;
+  int _previousPartsLength = 0;
 
   @override
   void initState() {
     super.initState();
     _scrollController = widget.scrollController ?? ScrollController();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     if (widget.scrollController == null) {
       _scrollController.dispose();
     }
     super.dispose();
   }
 
-  Message? _buildAssistantMessageFromParts(List<AssistantContent> parts) {
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final offset = _scrollController.offset;
+    final max = _scrollController.position.maxScrollExtent;
+    final distanceFromBottom = max - offset;
+    _autoScrollEnabled = distanceFromBottom <= 150;
+  }
+
+  void _scrollToBottom() {
+    if (!_scrollController.hasClients) return;
+    if (!_autoScrollEnabled) return;
+    final position = _scrollController.position;
+    if (!position.hasContentDimensions) return;
+    final maxScroll = position.maxScrollExtent;
+    final currentScroll = _scrollController.offset;
+    final diff = (maxScroll - currentScroll).abs();
+    if (diff < 5) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    });
+  }
+
+  Message? _buildAssistantMessageFromParts(
+    List<AssistantContent> parts, {
+    String? model,
+  }) {
     if (parts.isEmpty) return null;
 
     String? textContent;
-    String? reasoningContent;
 
     for (final part in parts) {
       if (part is AssistantText) {
-        textContent = part.text;
-      } else if (part is AssistantReasoning) {
-        reasoningContent = part.text;
+        textContent = (textContent ?? '') + part.text;
       }
     }
 
@@ -66,9 +93,12 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
       role: MessageRole.assistant,
       content: textContent ?? '',
       timestamp: DateTime.now(),
-      reasoning: reasoningContent,
+      // FIX #1: Do NOT flatten reasoning — partsJson is the source of truth.
+      reasoning: null,
       isComplete: true,
       partsJson: assistantContentToPartMaps(parts),
+      // FIX #2: Set model from state when available.
+      model: model,
     );
   }
 
@@ -93,7 +123,10 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
     // All assistant parts (reasoning + text + tools) go into ONE message
     // This matches OpenCode's architecture where an assistant message contains
     // an array of parts, and matches ChatMessages expectation
-    final assistantMessage = _buildAssistantMessageFromParts(state.parts);
+    final assistantMessage = _buildAssistantMessageFromParts(
+      state.parts,
+      model: state.modelRef,
+    );
     if (assistantMessage != null) {
       result.add(assistantMessage);
     }
@@ -131,7 +164,7 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
-    final stateAsync = ref.watch(childSessionStateProvider(widget.sessionId));
+    final stateAsync = ref.watch(sessionPartsProvider(widget.sessionId));
 
     if (stateAsync.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -160,6 +193,11 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
       );
     }
 
+    if (state.parts.length > _previousPartsLength) {
+      _previousPartsLength = state.parts.length;
+      _scrollToBottom();
+    }
+
     final legacyMessages = _buildMessages(state);
     _applySessionTokens(legacyMessages, state);
 
@@ -185,8 +223,12 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
       key: ValueKey(widget.sessionId),
       chatStorageService: ref.read(chatStorageServiceProvider),
       chat: chat,
+      sessionId: widget.sessionId,
       agentName: state.agent,
       selectedModel: ref.watch(modelProvider).selectedModelId,
+      isActiveSession: false,
+      totalTokens:
+          state.tokensInput + state.tokensOutput + state.tokensReasoning,
       onSendMessage: (messageData) {},
       onMessageDeleted: () {},
       onMessageEdited: (_, _) {},

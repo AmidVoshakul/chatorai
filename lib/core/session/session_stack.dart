@@ -63,7 +63,7 @@ class SessionStackNotifier extends Notifier<SessionStackState> {
     state = state.copyWith(stack: newStack);
   }
 
-  Future<SessionID?> getSiblingId(int direction) async {
+  Future<SessionID?> getSiblingId(int direction, {bool cycle = false}) async {
     if (state.stack.length < 2) return null;
 
     final currentId = state.current;
@@ -80,6 +80,14 @@ class SessionStackNotifier extends Notifier<SessionStackState> {
       if (currentIndex < 0) return null;
 
       final targetIndex = currentIndex + direction;
+
+      if (cycle && childIds.isNotEmpty) {
+        final cycledIndex =
+            ((targetIndex % childIds.length) + childIds.length) %
+            childIds.length;
+        return childIds[cycledIndex];
+      }
+
       if (targetIndex < 0 || targetIndex >= childIds.length) return null;
 
       return childIds[targetIndex];

@@ -1048,32 +1048,29 @@ void main() {
         expect(resolved.modelName, 'test-provider/model-a');
       });
 
-      test(
-        'colon in modelName preserved in canonicalId',
-        () async {
-          SharedPreferences.setMockInitialValues({});
-          final prefs = await SharedPreferences.getInstance();
-          mockStorage = MockSecureStorageService();
-          catalog = ProviderCatalogService(
-            secureStorage: mockStorage,
-            prefs: prefs,
-            builtInProviders: [testProvider],
-          );
+      test('colon in modelName preserved in canonicalId', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        mockStorage = MockSecureStorageService();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [testProvider],
+        );
 
-          final model = ModelConfig.basic(
-            providerId: 'test-provider',
-            modelName: 'test-provider:model-a',
-            displayName: 'Model A',
-            contextLength: 4096,
-          );
+        final model = ModelConfig.basic(
+          providerId: 'test-provider',
+          modelName: 'test-provider:model-a',
+          displayName: 'Model A',
+          contextLength: 4096,
+        );
 
-          await catalog.updateProviderModels('test-provider', [model]);
+        await catalog.updateProviderModels('test-provider', [model]);
 
-          final stored = catalog.getProvider('test-provider')?.models;
-          expect(stored, hasLength(1));
-          expect(stored!.first.id, 'test-provider/test-provider:model-a');
-        },
-      );
+        final stored = catalog.getProvider('test-provider')?.models;
+        expect(stored, hasLength(1));
+        expect(stored!.first.id, 'test-provider/test-provider:model-a');
+      });
 
       test('raw modelName without prefix gets single-prefixed', () async {
         SharedPreferences.setMockInitialValues({});
@@ -1298,7 +1295,6 @@ void main() {
         expect(allModels.first.modelName, 'gpt-4o');
       });
     });
-
 
     group('custom providers persistence', () {
       test('loads custom providers from stored JSON', () async {

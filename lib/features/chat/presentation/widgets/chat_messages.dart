@@ -4,6 +4,9 @@ import 'package:chatorai/core/llm/catalog_providers.dart'
     show providerCatalogServiceProvider;
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
+import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart';
+import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart'
+    show ChatScreenState;
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart'
@@ -11,7 +14,7 @@ import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart'
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages_suggestions.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages_waiting_animation.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/chat_message_bubble.dart';
-import 'package:chatorai/providers.dart' show streamingMessageProvider;
+import 'package:chatorai/providers.dart' show chatScreenProvider;
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:flutter/material.dart';
@@ -43,6 +46,16 @@ class ChatMessages extends ConsumerStatefulWidget {
   final Function(String messageId, String answer)? onQuestionAnswer;
   final void Function(String? taskSessionId)? onTaskTap;
   final String? agentName;
+  final String? sessionId;
+
+  /// Total cumulative tokens for non-active sessions (used in child session windows)
+  final int? totalTokens;
+
+  /// When `false`, this widget does NOT watch the global `chatScreenProvider`
+  /// streaming state. Use this for child session windows which render their
+  /// own history via stored messages and must not pick up the parent's
+  /// currently-streaming parts.
+  final bool isActiveSession;
 
   const ChatMessages({
     super.key,
@@ -69,6 +82,9 @@ class ChatMessages extends ConsumerStatefulWidget {
     this.onQuestionAnswer,
     this.onTaskTap,
     this.agentName,
+    this.sessionId,
+    this.totalTokens,
+    this.isActiveSession = true,
   });
 
   @override
@@ -100,7 +116,6 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
 
   @override
   void dispose() {
-    // Only dispose if we created the controller (widget.scrollController was null)
     if (widget.scrollController == null) {
       _scrollController.dispose();
     }
@@ -205,16 +220,25 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
   Widget build(BuildContext context) {
     super.build(context);
 
-    final streamingState = ref.watch(streamingMessageProvider(widget.chat?.id ?? ''));
-    final streamingParts = streamingState.accumulatedParts;
-    final streamingIsActive = streamingState.isStreaming;
+    final screenState = widget.isActiveSession
+        ? ref.watch(chatScreenProvider)
+        : const ChatScreenState();
+    final streamingParts = screenState.streamingParts;
+    final streamingIsActive = screenState.isStreaming;
+
+    List<MessagePart> streamingMessageParts = streamingParts
+        .map(assistantContentToMessagePart)
+        .where((p) => !(p is TextPart && p.content.isEmpty && p.isStreaming))
+        .toList();
+
     final currentAgent = ref.watch(currentAgentProvider);
 
-    final isWaitingForStream = streamingIsActive && streamingParts.isEmpty;
+    final isWaitingForStream =
+        streamingIsActive && streamingMessageParts.isEmpty;
     final hasReasoningOnly =
         streamingIsActive &&
-        streamingParts.isNotEmpty &&
-        streamingParts.every((p) => p is ReasoningPart);
+        streamingMessageParts.isNotEmpty &&
+        streamingMessageParts.every((p) => p is ReasoningPart);
 
     final theme = Theme.of(context);
 
@@ -223,8 +247,6 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     final hasAssistantMessage =
         hasMessages && messages.last.role == MessageRole.assistant;
 
-    // Compute cumulative token sum for each assistant message
-    // Each message stores only its own tokens; cumulative is derived.
     int cumulativeForIndex(int msgIndex) {
       var total = 0;
       for (var i = 0; i <= msgIndex && i < messages.length; i++) {
@@ -238,17 +260,11 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
       return total;
     }
 
-    final lastAssistantIndex = hasAssistantMessage
-        ? messages.lastIndexWhere((m) => m.role == MessageRole.assistant)
-        : -1;
-    final lastAssistantCumulative = lastAssistantIndex >= 0
-        ? cumulativeForIndex(lastAssistantIndex)
-        : 0;
-
     final lastMessageIsComplete =
         hasAssistantMessage && messages.last.isComplete;
+
     final showStreamingBubble =
-        streamingParts.isNotEmpty &&
+        streamingMessageParts.isNotEmpty &&
         streamingIsActive &&
         !lastMessageIsComplete;
 
@@ -312,18 +328,6 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                     final message = messages[msgIndex];
                     final isLastMessage = msgIndex == messages.length - 1;
 
-                    final isEmptyAssistantMessage =
-                        message.role == MessageRole.assistant &&
-                        message.content.isEmpty &&
-                        (message.partsJson == null ||
-                            message.partsJson!.isEmpty);
-
-                    if (isEmptyAssistantMessage &&
-                        isLastMessage &&
-                        !message.isComplete) {
-                      return const SizedBox.shrink();
-                    }
-
                     final chatMsg = messageToChatMessage(message);
                     final resolvedMsg = (chatMsg is AssistantMessage)
                         ? chatMsg.copyWith(
@@ -350,7 +354,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                       onMessageEditedAndSend: widget.onMessageEditAndSend,
                       isLastMessage: isLastMessage,
                       cumulativeTokens: message.role == MessageRole.assistant
-                          ? cumulativeForIndex(msgIndex)
+                          ? (widget.totalTokens ?? cumulativeForIndex(msgIndex))
                           : null,
                       contextLength: message.contextLength,
                       onTaskTap: widget.onTaskTap,
@@ -360,7 +364,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                   final afterMessages = welcomeOffset + messages.length;
                   var extraPos = afterMessages;
 
-                  if (showStreamingBubble && streamingParts.isNotEmpty) {
+                  if (showStreamingBubble) {
                     if (index == extraPos) {
                       final lastMessage = messages.isNotEmpty
                           ? messages.last
@@ -370,7 +374,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                         child: ChatMessageBubble(
                           message: AssistantMessage(
                             id: lastMessage?.id ?? 'streaming',
-                            parts: streamingParts,
+                            parts: streamingMessageParts,
                             model: _resolveModelDisplayName(lastMessage?.model),
                             isStreaming: streamingIsActive,
                             timestamp: lastMessage?.timestamp ?? DateTime.now(),
@@ -380,8 +384,6 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                           messageId: lastMessage?.id ?? 'streaming',
                           chatStorageService: widget.chatStorageService,
                           agentName: widget.agentName ?? currentAgent.name,
-                          cumulativeTokens: lastAssistantCumulative,
-                          contextLength: lastMessage?.contextLength,
                           onTaskTap: widget.onTaskTap,
                         ),
                       );

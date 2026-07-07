@@ -35,7 +35,7 @@ class SecureFileService {
         metadata: {
           'filepath': resolution.path,
           'parentDir': p.dirname(resolution.path),
-          if (tool != null) 'tool': tool,
+          'tool': ?tool,
         },
       );
     }

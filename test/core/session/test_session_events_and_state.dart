@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_id.dart';
@@ -150,7 +149,6 @@ void main() {
         sessionId: testSid,
         toolCallId: 'tc-2',
         outputText: 'file1.txt',
-        durationMs: 150,
         timestamp: ts,
       );
       final failed = ToolFailed(
@@ -163,7 +161,6 @@ void main() {
       expect(called.toolName, equals('bash'));
       expect(called.input, equals({'command': 'ls'}));
       expect(success.outputText, equals('file1.txt'));
-      expect(success.durationMs, equals(150));
       expect(failed.error, equals('Command not found'));
     });
 
@@ -195,7 +192,7 @@ void main() {
     });
 
     test('CompactionStarted/CompactionEnded', () {
-      final started = CompactionStarted(sessionId: testSid, timestamp: ts);
+      CompactionStarted(sessionId: testSid, timestamp: ts);
       final ended = CompactionEnded(
         sessionId: testSid,
         summary: 'Conversation about X',
@@ -408,7 +405,6 @@ void main() {
     });
 
     test('copyWith preserves fields', () {
-      final now = DateTime.now();
       final now2 = DateTime(2024);
       final msg = SessionMessage(
         id: 'msg-2',

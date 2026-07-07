@@ -431,12 +431,25 @@ class ProviderCatalogService {
   /// Get API key for a provider from secure storage (with caching).
   Future<String?> getApiKey(String providerId) async {
     if (_apiKeyCache.containsKey(providerId)) {
-      return _apiKeyCache[providerId];
+      final key = _apiKeyCache[providerId];
+      LogTags.network.logDebug(
+        '[Catalog] getApiKey: provider=$providerId '
+        'cached=true '
+        'length=${key?.length ?? -1} '
+        'prefix=${key != null && key.isNotEmpty ? key.substring(0, key.length.clamp(0, 8)) : 'null'}',
+      );
+      return key;
     }
     final key = await _secureStorage.read(
       key: '${_PrefKeys.apiKey}$providerId',
     );
     _apiKeyCache[providerId] = key;
+    LogTags.network.logDebug(
+      '[Catalog] getApiKey: provider=$providerId '
+      'cached=false '
+      'length=${key?.length ?? -1} '
+      'prefix=${key != null && key.isNotEmpty ? key.substring(0, key.length.clamp(0, 8)) : 'null'}',
+    );
     return key;
   }
 

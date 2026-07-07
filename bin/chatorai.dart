@@ -31,7 +31,7 @@ Future<void> main(List<String> args) async {
 }
 
 Future<void> _runStats(List<String> args) async {
-  final db = await createFileDatabase();
+  final db = await createFileDatabase(dataDir: XdgPaths.dataHome);
   try {
     final aggregator = StatsAggregator(db);
 

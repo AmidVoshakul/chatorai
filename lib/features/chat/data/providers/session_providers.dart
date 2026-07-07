@@ -7,7 +7,6 @@ import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/session/session_stack.dart';
 import 'package:chatorai/core/session/session_state.dart';
-import 'package:chatorai/core/session/projector.dart' show projectEvent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Provides all active (non-archived) sessions sorted by [SessionState.updatedAt]
@@ -53,7 +52,8 @@ class _CurrentRunnerNotifier
   }
 
   /// Set child tool event callback on the holder.
-  // ignore: avoid_setters_without_getters
+  void Function(String, String?)? get onChildToolEvent =>
+      _holder?.onChildToolEvent;
   set onChildToolEvent(void Function(String, String?)? callback) {
     _holder?.onChildToolEvent = callback;
   }
@@ -81,39 +81,6 @@ final childSessionToolResultsProvider =
         yield toolResults;
       }
     });
-
-/// Reactive stream of session state (including messages) for a session,
-/// keyed by session ID. Uses event stream + replay for true reactive streaming.
-final childSessionStateProvider = StreamProvider.family<SessionState, String>((
-  ref,
-  sessionIdRaw,
-) async* {
-  final repo = await ref.read(sessionRepositoryProvider.future);
-  final sid = SessionID.fromString(sessionIdRaw);
-
-  // Emit initial empty state immediately to avoid isLoading deadlock
-  var state = SessionState(
-    id: sid,
-    createdAt: DateTime.now(),
-    updatedAt: DateTime.now(),
-  );
-  yield state;
-
-  // Load durable events first (skip ephemeral deltas) for fast initial replay
-  final initialEvents = await repo.eventStore.getDurableEvents(sid);
-  for (final event in initialEvents) {
-    state = projectEvent(state, event);
-  }
-  yield state;
-
-  // Then stream new events, filtering ephemeral deltas
-  await for (final events in repo.eventStore.streamDurableEvents(sid)) {
-    for (final event in events) {
-      state = projectEvent(state, event);
-    }
-    yield state;
-  }
-});
 
 /// Manages the navigation stack of sessions (parent → child → child).
 /// The top of the stack is the currently viewed session.

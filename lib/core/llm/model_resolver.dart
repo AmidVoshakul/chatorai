@@ -121,6 +121,13 @@ class ModelResolver {
 
     if (provider.auth.type != AuthType.none &&
         (apiKey == null || apiKey.isEmpty)) {
+      LogTags.network.logError(
+        '[Resolver] buildLanguageModel AUTH FAILED: '
+        'provider=${provider.id} '
+        'apiKey=$apiKey '
+        'length=${apiKey?.length ?? -1} '
+        'isEmpty=${apiKey?.isEmpty ?? true}',
+      );
       throw ModelResolutionError(
         'API key not configured for provider: ${provider.id}. '
         'Please set it in Settings.',

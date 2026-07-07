@@ -1,6 +1,6 @@
 # Environment & System Requirements
 
-**Last updated:** 2026-06-28
+**Last updated:** 2026-07-07
 
 This document describes the software and hardware requirements, environment variables, and system dependencies needed to develop, build, and run ChatORAI.
 
@@ -13,7 +13,7 @@ This document describes the software and hardware requirements, environment vari
 | Tool        | Version                             | Notes                                         |
 | ----------- | ----------------------------------- | --------------------------------------------- |
 | Flutter SDK | 3.41.0 (stable)                     | Download from https://flutter.dev             |
-| Dart SDK    | 3.9 (bundled with Flutter)          |                                               |
+| Dart SDK | 3.11.0 (bundled with Flutter) | pubspec.yaml requires `^3.11.0` |
 | Git         | 2.x                                 | For dependency management and version control |
 | IDE         | VS Code / Android Studio / IntelliJ | With Flutter & Dart plugins                   |
 

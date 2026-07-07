@@ -60,31 +60,28 @@ void main() {
       });
     });
 
-    test(
-      'getModel matches by exact modelName',
-      () {
-        final provider = ProviderConfig.full(
-          id: 'openrouter',
-          name: 'OpenRouter',
-          baseUrl: 'https://openrouter.ai/api/v1',
-          auth: AuthConfig.none(),
-          models: [
-            ModelConfig.basic(
-              providerId: 'openrouter',
-              modelName: 'openai/gpt-4o',
-              displayName: 'GPT-4o',
-              contextLength: 128000,
-            ),
-          ],
-        );
+    test('getModel matches by exact modelName', () {
+      final provider = ProviderConfig.full(
+        id: 'openrouter',
+        name: 'OpenRouter',
+        baseUrl: 'https://openrouter.ai/api/v1',
+        auth: AuthConfig.none(),
+        models: [
+          ModelConfig.basic(
+            providerId: 'openrouter',
+            modelName: 'openai/gpt-4o',
+            displayName: 'GPT-4o',
+            contextLength: 128000,
+          ),
+        ],
+      );
 
-        expect(
-          provider.getModel('openai/gpt-4o')?.id,
-          'openrouter/openai/gpt-4o',
-        );
-        expect(provider.getModel('nonexistent'), isNull);
-      },
-    );
+      expect(
+        provider.getModel('openai/gpt-4o')?.id,
+        'openrouter/openai/gpt-4o',
+      );
+      expect(provider.getModel('nonexistent'), isNull);
+    });
 
     test('copyWith preserves unchanged fields', () {
       final copied = basicProvider.copyWith(description: 'Updated description');

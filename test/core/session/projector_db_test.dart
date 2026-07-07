@@ -187,7 +187,6 @@ void main() {
           sessionId: sessionId,
           toolCallId: 'tc_1',
           outputText: 'file1.txt',
-          durationMs: 100,
           timestamp: timestamp,
         ),
       );
@@ -200,7 +199,6 @@ void main() {
       expect(toolResults.first.id, 'tc_1');
       expect(toolResults.first.toolName, 'bash');
       expect(toolResults.first.outputText, 'file1.txt');
-      expect(toolResults.first.durationMs, 100);
       expect(toolResults.first.status, 'success');
     });
 
@@ -310,7 +308,6 @@ void main() {
           sessionId: sessionId,
           toolCallId: 'orphan_tc',
           outputText: 'some result',
-          durationMs: 50,
           timestamp: timestamp,
         ),
       );
@@ -374,7 +371,7 @@ void main() {
       expect(state.updatedAt, empty.updatedAt);
     });
 
-    test('TaskCompleted appends assistant message', () {
+    test('TaskCompleted is a no-op on state', () {
       final state = projectEvent(
         empty,
         TaskCompleted(
@@ -385,9 +382,8 @@ void main() {
         ),
       );
 
-      expect(state.messages.length, 1);
-      expect(state.messages.first.role, MessageRole.assistant);
-      expect(state.messages.first.content, 'Task result');
+      expect(state.messages, isEmpty);
+      expect(state.updatedAt.isAfter(empty.updatedAt), isTrue);
     });
 
     test('ChildSessionCreated updates updatedAt', () {
@@ -414,7 +410,6 @@ void main() {
           sessionId: id,
           toolCallId: 'unknown_tc',
           outputText: 'result',
-          durationMs: 100,
           timestamp: DateTime.now(),
         ),
       );

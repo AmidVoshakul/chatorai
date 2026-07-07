@@ -88,10 +88,12 @@ class _FakeChatAiService extends ChatAiService {
     ToolStartCallback? onToolStart,
     ToolEndCallback? onToolEnd,
     ToolErrorCallback? onToolError,
+    UsageCallback? onUsage,
     int maxSteps = 5,
   }) async {
     // Simulate immediate response (same as streamChatCompletion fake)
     onChunk('Fake subagent output');
+    onUsage?.call(10, 20, 5, 3);
     onCompletion('Fake completion');
   }
 }

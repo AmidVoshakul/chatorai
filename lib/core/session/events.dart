@@ -1,5 +1,6 @@
 import 'package:chatorai/core/permission/ruleset.dart';
 
+import 'package:chatorai/features/chat/data/models/chat/todo_part.dart';
 import 'session_id.dart';
 
 sealed class SessionEvent {
@@ -80,10 +81,12 @@ class MessageAdded extends SessionEvent {
 
 class TextStarted extends SessionEvent {
   final String messageId;
+  final String? partId;
 
   const TextStarted({
     required super.sessionId,
     required this.messageId,
+    this.partId,
     required super.timestamp,
     super.sequence,
   });
@@ -92,11 +95,13 @@ class TextStarted extends SessionEvent {
 class TextDelta extends SessionEvent {
   final String messageId;
   final String delta;
+  final String? partId;
 
   const TextDelta({
     required super.sessionId,
     required this.messageId,
     required this.delta,
+    this.partId,
     required super.timestamp,
     super.sequence,
   });
@@ -106,12 +111,14 @@ class TextEnded extends SessionEvent {
   final String messageId;
   final String fullText;
   final String? model;
+  final String? partId;
 
   const TextEnded({
     required super.sessionId,
     required this.messageId,
     required this.fullText,
     this.model,
+    this.partId,
     required super.timestamp,
     super.sequence,
   });
@@ -119,10 +126,12 @@ class TextEnded extends SessionEvent {
 
 class ReasoningStarted extends SessionEvent {
   final String messageId;
+  final String? partId;
 
   const ReasoningStarted({
     required super.sessionId,
     required this.messageId,
+    this.partId,
     required super.timestamp,
     super.sequence,
   });
@@ -131,11 +140,13 @@ class ReasoningStarted extends SessionEvent {
 class ReasoningDelta extends SessionEvent {
   final String messageId;
   final String delta;
+  final String? partId;
 
   const ReasoningDelta({
     required super.sessionId,
     required this.messageId,
     required this.delta,
+    this.partId,
     required super.timestamp,
     super.sequence,
   });
@@ -144,11 +155,13 @@ class ReasoningDelta extends SessionEvent {
 class ReasoningEnded extends SessionEvent {
   final String messageId;
   final String fullReasoning;
+  final String? partId;
 
   const ReasoningEnded({
     required super.sessionId,
     required this.messageId,
     required this.fullReasoning,
+    this.partId,
     required super.timestamp,
     super.sequence,
   });
@@ -195,12 +208,14 @@ class ToolCalled extends SessionEvent {
   final String toolCallId;
   final String toolName;
   final Map<String, dynamic> input;
+  final String? partId;
 
   const ToolCalled({
     required super.sessionId,
     required this.toolCallId,
     required this.toolName,
     required this.input,
+    this.partId,
     required super.timestamp,
     super.sequence,
   });
@@ -209,13 +224,13 @@ class ToolCalled extends SessionEvent {
 class ToolSuccess extends SessionEvent {
   final String toolCallId;
   final String outputText;
-  final int durationMs;
+  final String? partId;
 
   const ToolSuccess({
     required super.sessionId,
     required this.toolCallId,
     required this.outputText,
-    required this.durationMs,
+    this.partId,
     required super.timestamp,
     super.sequence,
   });
@@ -224,11 +239,13 @@ class ToolSuccess extends SessionEvent {
 class ToolFailed extends SessionEvent {
   final String toolCallId;
   final String error;
+  final String? partId;
 
   const ToolFailed({
     required super.sessionId,
     required this.toolCallId,
     required this.error,
+    this.partId,
     required super.timestamp,
     super.sequence,
   });
@@ -338,6 +355,99 @@ class TaskCompleted extends SessionEvent {
     required super.sessionId,
     required this.taskId,
     required this.output,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
+class TaskPartStarted extends SessionEvent {
+  final String partId;
+  final String description;
+  final String agent;
+  final String? taskSessionId;
+
+  const TaskPartStarted({
+    required super.sessionId,
+    required this.partId,
+    required this.description,
+    required this.agent,
+    this.taskSessionId,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
+class TaskPartCompleted extends SessionEvent {
+  final String partId;
+
+  const TaskPartCompleted({
+    required super.sessionId,
+    required this.partId,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
+class TaskPartError extends SessionEvent {
+  final String partId;
+  final String error;
+
+  const TaskPartError({
+    required super.sessionId,
+    required this.partId,
+    required this.error,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
+class QuestionPartStarted extends SessionEvent {
+  final String partId;
+  final String questionText;
+  final List<String> options;
+
+  const QuestionPartStarted({
+    required super.sessionId,
+    required this.partId,
+    required this.questionText,
+    this.options = const [],
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
+class QuestionPartAnswered extends SessionEvent {
+  final String partId;
+  final String answer;
+
+  const QuestionPartAnswered({
+    required super.sessionId,
+    required this.partId,
+    required this.answer,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
+class TodoPartStarted extends SessionEvent {
+  final String partId;
+  final List<TodoItem> todos;
+
+  const TodoPartStarted({
+    required super.sessionId,
+    required this.partId,
+    required this.todos,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
+class TodoPartCompleted extends SessionEvent {
+  final String partId;
+
+  const TodoPartCompleted({
+    required super.sessionId,
+    required this.partId,
     required super.timestamp,
     super.sequence,
   });

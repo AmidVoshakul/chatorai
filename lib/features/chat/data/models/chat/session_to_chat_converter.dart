@@ -26,7 +26,7 @@ ChatMessage? sessionMessageToChatMessage(
     case MessageRole.tool:
       return AssistantMessage(
         id: id,
-        parts: parts.map(_assistantContentToMessagePart).toList(),
+        parts: parts.map(assistantContentToMessagePart).toList(),
         model: sessionMsg.model,
         timestamp: timestamp,
       );
@@ -34,7 +34,7 @@ ChatMessage? sessionMessageToChatMessage(
 }
 
 /// Converts [AssistantContent] to legacy [MessagePart] for widget compatibility.
-MessagePart _assistantContentToMessagePart(AssistantContent content) {
+MessagePart assistantContentToMessagePart(AssistantContent content) {
   if (content is AssistantText) {
     return TextPart(content: content.text, isStreaming: content.synthetic);
   }
@@ -46,6 +46,7 @@ MessagePart _assistantContentToMessagePart(AssistantContent content) {
           ? content.ended!.millisecondsSinceEpoch -
                 content.started.millisecondsSinceEpoch
           : null,
+      isStreaming: content.ended == null,
     );
   }
   if (content is AssistantTool) {
@@ -57,7 +58,6 @@ MessagePart _assistantContentToMessagePart(AssistantContent content) {
       error: state == ToolState.error ? content.output : null,
       state: state,
       input: content.input,
-      duration: Duration(milliseconds: content.durationMs),
     );
   }
   if (content is AssistantFile) {
@@ -68,6 +68,40 @@ MessagePart _assistantContentToMessagePart(AssistantContent content) {
   }
   if (content is AssistantAgent) {
     return TextPart(content: '[Agent: ${content.name}]');
+  }
+  if (content is AssistantTask) {
+    final startedAt = content.startedAt;
+    final endedAt = content.endedAt;
+    final computedDuration = startedAt != null && endedAt != null
+        ? endedAt.difference(startedAt).inMilliseconds
+        : null;
+    return TaskPart(
+      description: content.description,
+      agent: content.agent,
+      status: content.state.name == 'completed'
+          ? TaskStatus.completed
+          : content.state.name == 'error'
+          ? TaskStatus.error
+          : TaskStatus.running,
+      sessionId: content.taskSessionId,
+      error: content.error,
+      retryAttempt: content.retryAttempt,
+      currentTool: content.currentTool,
+      currentToolTitle: content.currentToolTitle,
+      toolCallsCount: content.toolCallsCount,
+      durationMs: content.durationMs ?? computedDuration,
+      startedAt: startedAt,
+    );
+  }
+  if (content is AssistantQuestion) {
+    return QuestionPart(
+      question: content.question,
+      options: content.options,
+      answer: content.answer,
+    );
+  }
+  if (content is AssistantTodo) {
+    return TodoPart(todos: content.todos);
   }
   if (content is RawText) {
     return TextPart(content: content.text);
@@ -83,7 +117,7 @@ List<Map<String, dynamic>> assistantContentToPartMaps(
   List<AssistantContent> parts,
 ) {
   return parts
-      .map(_assistantContentToMessagePart)
+      .map(assistantContentToMessagePart)
       .map((p) => p.toJson())
       .toList();
 }

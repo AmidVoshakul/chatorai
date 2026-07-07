@@ -61,31 +61,60 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
         updatedAt: event.timestamp,
       ),
 
-    TextStarted(:final messageId) => state.copyWith(
-      messages: [
-        ...state.messages,
-        SessionMessage(
-          id: messageId,
-          role: MessageRole.assistant,
-          content: '',
-          seq: state.messages.length + 1,
-          createdAt: event.timestamp,
+    TextStarted(:final messageId, :final partId) => state.copyWith(
+      messages: state.messages.any((m) => m.id == messageId)
+          ? state.messages
+          : [
+              ...state.messages,
+              SessionMessage(
+                id: messageId,
+                role: MessageRole.assistant,
+                content: '',
+                seq: state.messages.length + 1,
+                createdAt: event.timestamp,
+              ),
+            ],
+      parts: [
+        ..._closeOpenReasoning(state.parts, event.timestamp),
+        AssistantText(
+          id:
+              partId ??
+              'part_${event.timestamp.millisecondsSinceEpoch}_$messageId',
+          sessionId: event.sessionId.value,
+          messageId: messageId,
+          text: '',
+          synthetic: true,
         ),
       ],
       updatedAt: event.timestamp,
     ),
 
-    TextDelta(:final messageId, :final delta) => state.copyWith(
+    TextDelta(:final messageId, :final delta, :final partId) => state.copyWith(
       messages: state.messages.map((m) {
         if (m.id == messageId) {
           return m.copyWith(content: (m.content + delta));
         }
         return m;
       }).toList(),
+      parts: partId != null && partId.isNotEmpty
+          ? _updatePartById<AssistantText>(
+              state.parts,
+              partId,
+              (current) => AssistantText(
+                id: current.id!,
+                sessionId: current.sessionId!,
+                messageId: current.messageId!,
+                text: current.text + delta,
+                synthetic: current.synthetic,
+                ignored: current.ignored,
+                title: current.title,
+              ),
+            )
+          : _updateLastTextPart(state.parts, messageId, delta),
       updatedAt: event.timestamp,
     ),
 
-    TextEnded(:final messageId, :final fullText, :final model) =>
+    TextEnded(:final messageId, :final fullText, :final model, :final partId) =>
       state.copyWith(
         messages: state.messages.map((m) {
           if (m.id == messageId) {
@@ -93,37 +122,113 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
           }
           return m;
         }).toList(),
-        parts: [
-          ...state.parts,
-          AssistantText(
-            id: 'part_${event.timestamp.millisecondsSinceEpoch}',
-            sessionId: event.sessionId.value,
-            messageId: messageId,
-            text: fullText,
-          ),
-        ],
+        parts: partId != null && partId.isNotEmpty
+            ? _updatePartById<AssistantText>(
+                state.parts,
+                partId,
+                (current) => AssistantText(
+                  id: current.id!,
+                  sessionId: current.sessionId!,
+                  messageId: current.messageId!,
+                  text: fullText,
+                  synthetic: current.synthetic,
+                  ignored: current.ignored,
+                  title: current.title,
+                ),
+              )
+            : state.parts.map((p) {
+                if (p is AssistantText && p.messageId == messageId) {
+                  return AssistantText(
+                    id: p.id!,
+                    sessionId: p.sessionId!,
+                    messageId: p.messageId!,
+                    text: fullText,
+                    synthetic: p.synthetic,
+                    ignored: p.ignored,
+                    title: p.title,
+                  );
+                }
+                return p;
+              }).toList(),
         updatedAt: event.timestamp,
       ),
 
-    ReasoningStarted _ => state,
-
-    ReasoningDelta _ => state,
-
-    ReasoningEnded(:final messageId, :final fullReasoning) => state.copyWith(
-      messages: state.messages.map((m) {
-        if (m.id == messageId) {
-          return m.copyWith(reasoning: fullReasoning);
-        }
-        return m;
-      }).toList(),
-      parts: _appendReasoningPart(
-        state.parts,
-        fullReasoning,
-        messageId,
-        event.sessionId.value,
-      ),
+    ReasoningStarted(:final messageId, :final partId) => state.copyWith(
+      messages: state.messages.any((m) => m.id == messageId)
+          ? state.messages
+          : [
+              ...state.messages,
+              SessionMessage(
+                id: messageId,
+                role: MessageRole.assistant,
+                content: '',
+                seq: state.messages.length + 1,
+                createdAt: event.timestamp,
+              ),
+            ],
+      parts: [
+        ...state.parts,
+        AssistantReasoning(
+          id:
+              partId ??
+              'part_${event.timestamp.millisecondsSinceEpoch}_$messageId',
+          sessionId: event.sessionId.value,
+          messageId: messageId,
+          text: '',
+          started: event.timestamp,
+        ),
+      ],
       updatedAt: event.timestamp,
     ),
+
+    ReasoningDelta(:final messageId, :final delta, :final partId) =>
+      state.copyWith(
+        parts: partId != null && partId.isNotEmpty
+            ? _updatePartById<AssistantReasoning>(
+                state.parts,
+                partId,
+                (current) => AssistantReasoning(
+                  id: current.id!,
+                  sessionId: current.sessionId!,
+                  messageId: current.messageId!,
+                  text: current.text + delta,
+                  started: current.started,
+                  ended: current.ended,
+                ),
+              )
+            : _updateLastReasoningPart(state.parts, messageId, delta),
+        updatedAt: event.timestamp,
+      ),
+
+    ReasoningEnded(:final messageId, :final fullReasoning, :final partId) =>
+      state.copyWith(
+        messages: state.messages.map((m) {
+          if (m.id == messageId) {
+            return m.copyWith(reasoning: fullReasoning);
+          }
+          return m;
+        }).toList(),
+        parts: partId != null && partId.isNotEmpty
+            ? _updatePartById<AssistantReasoning>(
+                state.parts,
+                partId,
+                (current) => AssistantReasoning(
+                  id: current.id!,
+                  sessionId: current.sessionId!,
+                  messageId: current.messageId!,
+                  text: fullReasoning,
+                  started: current.started,
+                  ended: event.timestamp,
+                ),
+              )
+            : _updateLastReasoningPart(
+                state.parts,
+                messageId,
+                fullReasoning,
+                ended: event.timestamp,
+              ),
+        updatedAt: event.timestamp,
+      ),
 
     ToolInputStarted _ => state,
 
@@ -135,6 +240,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       toolCallId: final toolCallId,
       toolName: final toolName,
       input: final input,
+      partId: final partId,
     ) =>
       state.copyWith(
         messages: [
@@ -160,9 +266,11 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
           ),
         ],
         parts: [
-          ...state.parts,
+          ..._closeOpenReasoning(state.parts, event.timestamp),
           AssistantTool(
-            id: 'part_${event.timestamp.millisecondsSinceEpoch}',
+            id:
+                partId ??
+                'part_${event.timestamp.millisecondsSinceEpoch}_$toolCallId',
             sessionId: event.sessionId.value,
             messageId: _lastAssistantMsgId(state),
             callId: toolCallId,
@@ -174,7 +282,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
         updatedAt: event.timestamp,
       ),
 
-    ToolSuccess(:final toolCallId, :final outputText, :final durationMs) =>
+    ToolSuccess(:final toolCallId, :final outputText, :final partId) =>
       state.copyWith(
         messages: state.messages.map((m) {
           if (m.id == toolCallId) {
@@ -190,7 +298,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
             toolName: tr.toolName,
             input: tr.input,
             outputText: outputText,
-            durationMs: durationMs,
+            durationMs: 0,
             status: 'success',
             createdAt: event.timestamp,
           ),
@@ -199,58 +307,88 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
             toolName: '',
             input: {},
             outputText: outputText,
-            durationMs: durationMs,
+            durationMs: 0,
             status: 'success',
             createdAt: event.timestamp,
           ),
         ),
-        parts: _updateToolPart(
-          state.parts,
-          toolCallId,
-          ToolState.completed,
-          outputText: outputText,
-          durationMs: durationMs,
-        ),
+        parts: partId != null && partId.isNotEmpty
+            ? _updatePartById<AssistantTool>(
+                state.parts,
+                partId,
+                (current) => AssistantTool(
+                  id: current.id!,
+                  sessionId: current.sessionId!,
+                  messageId: current.messageId!,
+                  callId: current.callId,
+                  tool: current.tool,
+                  state: ToolState.completed,
+                  input: current.input,
+                  output: outputText,
+                ),
+              )
+            : _updateToolPart(
+                state.parts,
+                toolCallId,
+                ToolState.completed,
+                outputText: outputText,
+              ),
         updatedAt: event.timestamp,
       ),
 
-    ToolFailed(:final toolCallId, :final error) => state.copyWith(
-      messages: state.messages.map((m) {
-        if (m.id == toolCallId) {
-          return m.copyWith(error: error);
-        }
-        return m;
-      }).toList(),
-      toolResults: _updateToolResult(
-        state.toolResults,
-        toolCallId,
-        (tr) => ToolResult(
-          id: tr.id,
-          toolName: tr.toolName,
-          input: tr.input,
-          outputText: error,
-          durationMs: 0,
-          status: 'error',
-          createdAt: event.timestamp,
+    ToolFailed(:final toolCallId, :final error, :final partId) =>
+      state.copyWith(
+        messages: state.messages.map((m) {
+          if (m.id == toolCallId) {
+            return m.copyWith(error: error);
+          }
+          return m;
+        }).toList(),
+        toolResults: _updateToolResult(
+          state.toolResults,
+          toolCallId,
+          (tr) => ToolResult(
+            id: tr.id,
+            toolName: tr.toolName,
+            input: tr.input,
+            outputText: error,
+            durationMs: 0,
+            status: 'error',
+            createdAt: event.timestamp,
+          ),
+          () => ToolResult(
+            id: toolCallId,
+            toolName: '',
+            input: {},
+            outputText: error,
+            durationMs: 0,
+            status: 'error',
+            createdAt: event.timestamp,
+          ),
         ),
-        () => ToolResult(
-          id: toolCallId,
-          toolName: '',
-          input: {},
-          outputText: error,
-          durationMs: 0,
-          status: 'error',
-          createdAt: event.timestamp,
-        ),
+        parts: partId != null && partId.isNotEmpty
+            ? _updatePartById<AssistantTool>(
+                state.parts,
+                partId,
+                (current) => AssistantTool(
+                  id: current.id!,
+                  sessionId: current.sessionId!,
+                  messageId: current.messageId!,
+                  callId: current.callId,
+                  tool: current.tool,
+                  state: ToolState.error,
+                  input: current.input,
+                  output: error,
+                ),
+              )
+            : _updateToolPart(
+                state.parts,
+                toolCallId,
+                ToolState.error,
+                outputText: error,
+              ),
+        updatedAt: event.timestamp,
       ),
-      parts: _updateToolPart(
-        state.parts,
-        toolCallId,
-        ToolState.error,
-        outputText: error,
-      ),
-      updatedAt: event.timestamp,
-    ),
 
     StepStarted _ => state,
 
@@ -280,19 +418,149 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
 
     TaskStarted _ => state,
 
-    TaskCompleted(:final taskId, :final output) => state.copyWith(
-      messages: [
-        ...state.messages,
-        SessionMessage(
-          id: taskId,
-          role: MessageRole.assistant,
-          content: output,
-          seq: state.messages.length + 1,
-          createdAt: event.timestamp,
+    TaskCompleted(:final taskId) => state.copyWith(
+      parts: _updatePartById<AssistantTask>(
+        state.parts,
+        taskId,
+        (current) => AssistantTask(
+          id: current.id!,
+          sessionId: current.sessionId!,
+          messageId: current.messageId!,
+          description: current.description,
+          agent: current.agent,
+          state: ToolState.completed,
+          taskSessionId: current.taskSessionId,
+          error: null,
+          retryAttempt: current.retryAttempt,
+          currentTool: null,
+          currentToolTitle: null,
+          toolCallsCount: current.toolCallsCount,
+          durationMs: current.durationMs,
+          startedAt: current.startedAt,
+          endedAt: event.timestamp,
+        ),
+      ),
+      updatedAt: event.timestamp,
+    ),
+
+    TaskPartStarted(
+      :final partId,
+      :final description,
+      :final agent,
+      :final taskSessionId,
+    ) =>
+      state.copyWith(
+        parts: [
+          ..._closeOpenReasoning(state.parts, event.timestamp),
+          AssistantTask(
+            id: partId,
+            sessionId: event.sessionId.value,
+            messageId: _lastAssistantMsgId(state),
+            description: description,
+            agent: agent,
+            state: ToolState.running,
+            taskSessionId: taskSessionId,
+            startedAt: event.timestamp,
+          ),
+        ],
+        updatedAt: event.timestamp,
+      ),
+
+    TaskPartCompleted(:final partId) => state.copyWith(
+      parts: _updatePartById<AssistantTask>(
+        state.parts,
+        partId,
+        (current) => AssistantTask(
+          id: current.id!,
+          sessionId: current.sessionId!,
+          messageId: current.messageId!,
+          description: current.description,
+          agent: current.agent,
+          state: ToolState.completed,
+          taskSessionId: current.taskSessionId,
+          error: null,
+          retryAttempt: current.retryAttempt,
+          currentTool: null,
+          currentToolTitle: null,
+          toolCallsCount: current.toolCallsCount,
+          durationMs: current.durationMs,
+          startedAt: current.startedAt,
+          endedAt: event.timestamp,
+        ),
+      ),
+      updatedAt: event.timestamp,
+    ),
+
+    TaskPartError(:final partId, :final error) => state.copyWith(
+      parts: _updatePartById<AssistantTask>(
+        state.parts,
+        partId,
+        (current) => AssistantTask(
+          id: current.id!,
+          sessionId: current.sessionId!,
+          messageId: current.messageId!,
+          description: current.description,
+          agent: current.agent,
+          state: ToolState.error,
+          taskSessionId: current.taskSessionId,
+          error: error,
+          retryAttempt: current.retryAttempt,
+          currentTool: null,
+          currentToolTitle: null,
+          toolCallsCount: current.toolCallsCount,
+          durationMs: current.durationMs,
+          startedAt: current.startedAt,
+          endedAt: event.timestamp,
+        ),
+      ),
+      updatedAt: event.timestamp,
+    ),
+
+    QuestionPartStarted(:final partId, :final questionText, :final options) =>
+      state.copyWith(
+        parts: [
+          ..._closeOpenReasoning(state.parts, event.timestamp),
+          AssistantQuestion(
+            id: partId,
+            sessionId: event.sessionId.value,
+            messageId: _lastAssistantMsgId(state),
+            question: questionText,
+            options: options,
+          ),
+        ],
+        updatedAt: event.timestamp,
+      ),
+
+    QuestionPartAnswered(:final partId, :final answer) => state.copyWith(
+      parts: _updatePartById<AssistantQuestion>(
+        state.parts,
+        partId,
+        (current) => AssistantQuestion(
+          id: current.id!,
+          sessionId: current.sessionId!,
+          messageId: current.messageId!,
+          question: current.question,
+          options: current.options,
+          answer: answer,
+        ),
+      ),
+      updatedAt: event.timestamp,
+    ),
+
+    TodoPartStarted(:final partId, :final todos) => state.copyWith(
+      parts: [
+        ..._closeOpenReasoning(state.parts, event.timestamp),
+        AssistantTodo(
+          id: partId,
+          sessionId: event.sessionId.value,
+          messageId: _lastAssistantMsgId(state),
+          todos: todos,
         ),
       ],
       updatedAt: event.timestamp,
     ),
+
+    TodoPartCompleted _ => state,
   };
 }
 
@@ -453,7 +721,7 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
             mode: InsertMode.insertOrReplace,
           );
 
-    case ToolSuccess(:final toolCallId, :final outputText, :final durationMs):
+    case ToolSuccess(:final toolCallId, :final outputText):
       final toolName = await _lookupToolName(db, toolCallId);
       await (db.update(db.messages)..where((t) => t.id.equals(toolCallId)))
           .write(MessagesCompanion(content: Value(outputText)));
@@ -467,7 +735,7 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
               toolName: toolName,
               inputJson: const Value('{}'),
               outputText: Value(outputText),
-              durationMs: Value(durationMs),
+              durationMs: const Value(0),
               status: const Value('success'),
               createdAt: event.timestamp,
             ),
@@ -574,6 +842,69 @@ List<ToolResult> _updateToolResult(
   return updated;
 }
 
+/// Updates the last [AssistantReasoning] part for [messageId] with new [text].
+/// Optionally sets its [ended] timestamp.
+/// Reasoning parts are kept before any text parts for the same messageId
+/// so that the display order matches the parent window: thoughts → answer.
+List<AssistantContent> _updateLastReasoningPart(
+  List<AssistantContent> parts,
+  String messageId,
+  String text, {
+  DateTime? ended,
+}) {
+  final idx = parts.lastIndexWhere(
+    (p) =>
+        p is AssistantReasoning && p.messageId == messageId && p.ended == null,
+  );
+  if (idx == -1) return parts;
+  final existing = parts[idx] as AssistantReasoning;
+  final updated = AssistantReasoning(
+    id: existing.id!,
+    sessionId: existing.sessionId!,
+    messageId: existing.messageId!,
+    text: text,
+    started: existing.started,
+    ended: ended,
+  );
+  final without = List<AssistantContent>.from(parts)..removeAt(idx);
+  final textIdx = without.indexWhere(
+    (p) => p is AssistantText && p.messageId == messageId,
+  );
+  if (textIdx == -1) return without..insert(idx, updated);
+  return without..insert(textIdx, updated);
+}
+
+// ── Helper functions for typed AssistantContent parts ──────────────────────
+
+/// Closes the last open AssistantReasoning (ended == null) by setting its
+/// [ended] timestamp to [now]. This prevents subsequent ReasoningDelta events
+/// from merging into a block that should be independent (e.g. separated by a
+/// tool call, question, or task).
+///
+/// Mirror of ChatScreenNotifier._closeOpenReasoning — both must stay in sync.
+List<AssistantContent> _closeOpenReasoning(
+  List<AssistantContent> parts,
+  DateTime now,
+) {
+  final idx = parts.lastIndexWhere(
+    (p) => p is AssistantReasoning && p.ended == null,
+  );
+  if (idx == -1) return parts;
+  final existing = parts[idx] as AssistantReasoning;
+  return [
+    ...parts.sublist(0, idx),
+    AssistantReasoning(
+      id: existing.id!,
+      sessionId: existing.sessionId!,
+      messageId: existing.messageId!,
+      text: existing.text,
+      started: existing.started,
+      ended: now,
+    ),
+    ...parts.sublist(idx + 1),
+  ];
+}
+
 /// Finds the last assistant message ID from [state].
 /// Used to associate tool calls with the assistant message that generated them.
 String _lastAssistantMsgId(SessionState state) {
@@ -585,52 +916,51 @@ String _lastAssistantMsgId(SessionState state) {
   return '';
 }
 
-// ── Helper functions for typed AssistantContent parts ──────────────────────
-
-/// Appends a reasoning part to the parts list.
-/// Inserts before the last text part if present (ReasoningEnded often arrives
-/// after TextEnded in the runner, but reasoning should display before text).
-List<AssistantContent> _appendReasoningPart(
+List<AssistantContent> _updatePartById<T extends AssistantContent>(
   List<AssistantContent> parts,
-  String content,
-  String messageId,
-  String sessionId,
+  String partId,
+  T Function(T current) update,
 ) {
-  final reasoningPart = AssistantReasoning(
-    id: 'part_${DateTime.now().microsecondsSinceEpoch}',
-    sessionId: sessionId,
-    messageId: messageId,
-    text: content,
-    started: DateTime.now(),
-  );
+  final idx = parts.indexWhere((p) => p.id == partId);
+  if (idx == -1) return parts;
+  final updated = List<AssistantContent>.from(parts);
+  updated[idx] = update(updated[idx] as T);
+  return updated;
+}
 
-  if (parts.isNotEmpty && parts.any((p) => p is AssistantText)) {
-    final textIndex = parts.lastIndexWhere((p) => p is AssistantText);
-    return [
-      ...parts.sublist(0, textIndex),
-      reasoningPart,
-      ...parts.sublist(textIndex),
-    ];
-  }
-  return [...parts, reasoningPart];
+List<AssistantContent> _updateLastTextPart(
+  List<AssistantContent> parts,
+  String messageId,
+  String delta,
+) {
+  final idx = parts.lastIndexWhere(
+    (p) => p is AssistantText && p.messageId == messageId,
+  );
+  if (idx == -1) return parts;
+  final existing = parts[idx] as AssistantText;
+  final updated = AssistantText(
+    id: existing.id!,
+    sessionId: existing.sessionId!,
+    messageId: existing.messageId!,
+    text: existing.text + delta,
+    synthetic: existing.synthetic,
+    ignored: existing.ignored,
+    title: existing.title,
+  );
+  return [...parts.sublist(0, idx), updated, ...parts.sublist(idx + 1)];
 }
 
 /// Updates a tool part in the parts list by [toolCallId].
-/// Sets [state] and adds optional [outputText]/[durationMs].
+/// Sets [state] and adds optional [outputText].
 List<AssistantContent> _updateToolPart(
   List<AssistantContent> parts,
   String toolCallId,
   ToolState newState, {
   String? outputText,
-  int? durationMs,
 }) {
   return parts.map((p) {
     if (p is AssistantTool && p.callId == toolCallId) {
-      return p.copyWith(
-        state: newState,
-        output: outputText,
-        durationMs: durationMs ?? p.durationMs,
-      );
+      return p.copyWith(state: newState, output: outputText);
     }
     return p;
   }).toList();

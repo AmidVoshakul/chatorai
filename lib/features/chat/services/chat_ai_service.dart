@@ -272,6 +272,7 @@ class ChatAiService implements CompletionProvider {
     try {
       await _retryService.execute(
         ({void Function()? onChunkReceived}) async {
+          final seenToolResults = <String>{};
           LogTags.chatService.logDebug(
             'streamChatCompletion: calling streamText device=…',
           );
@@ -331,7 +332,9 @@ class ChatAiService implements CompletionProvider {
                     'streamChatCompletion: ToolResultEvent tool=${toolResult.toolName} '
                     'callId=${toolResult.toolCallId} preliminary=$preliminary',
                   );
-                  if (!preliminary) {
+                  if (!preliminary &&
+                      !seenToolResults.contains(toolResult.toolCallId)) {
+                    seenToolResults.add(toolResult.toolCallId);
                     final outputText = switch (toolResult.output) {
                       ToolResultOutputText(:final text) => text,
                       ToolResultOutputContent(:final parts) =>
@@ -352,11 +355,14 @@ class ChatAiService implements CompletionProvider {
                   :final toolName,
                   :final error,
                 ):
-                  await onToolError?.call(
-                    toolCallId,
-                    toolName,
-                    error.toString(),
-                  );
+                  if (!seenToolResults.contains(toolCallId)) {
+                    seenToolResults.add(toolCallId);
+                    await onToolError?.call(
+                      toolCallId,
+                      toolName,
+                      error.toString(),
+                    );
+                  }
                 case StreamTextReasoningStartEvent():
                   break;
                 case StreamTextReasoningEndEvent():
@@ -468,6 +474,7 @@ class ChatAiService implements CompletionProvider {
     ToolStartCallback? onToolStart,
     ToolEndCallback? onToolEnd,
     ToolErrorCallback? onToolError,
+    UsageCallback? onUsage,
     int maxSteps = 5,
   }) async {
     ModelConfig? resolvedConfig;
@@ -486,79 +493,97 @@ class ChatAiService implements CompletionProvider {
     }
 
     try {
-      await _retryService.execute(
-        ({void Function()? onChunkReceived}) async {
-          LogTags.chatService.logDebug(
-            'runChildCompletion: calling streamText device=…',
-          );
-          final result = await streamText(
-            model: lm,
-            messages: _toModelMessages(messages),
-            temperature: temperature,
-            maxRetries: 0, // We handle retries ourselves
-            headers: activeHeaders,
-            abortSignal: _cancellation.token,
-            tools: tools,
-            maxSteps: maxSteps,
-            onInputAvailable: (event) {
-              final rawInput = event.input;
-              final inputMap = rawInput is Map<String, dynamic>
-                  ? rawInput
-                  : <String, dynamic>{'raw': rawInput};
-              onToolStart?.call(event.toolCallId, event.toolName, inputMap);
-            },
-          );
-          LogTags.chatService.logDebug(
-            'runChildCompletion: streamText returned, consuming stream',
-          );
+      await _retryService.execute(({void Function()? onChunkReceived}) async {
+        final seenToolResults = <String>{};
+        LogTags.chatService.logDebug(
+          'runChildCompletion: calling streamText device=…',
+        );
+        final result = await streamText(
+          model: lm,
+          messages: _toModelMessages(messages),
+          temperature: temperature,
+          maxRetries: 0, // We handle retries ourselves
+          headers: activeHeaders,
+          abortSignal: _cancellation.token,
+          tools: tools,
+          maxSteps: maxSteps,
+          onInputAvailable: (event) {
+            final rawInput = event.input;
+            final inputMap = rawInput is Map<String, dynamic>
+                ? rawInput
+                : <String, dynamic>{'raw': rawInput};
+            onToolStart?.call(event.toolCallId, event.toolName, inputMap);
+          },
+        );
+        LogTags.chatService.logDebug(
+          'runChildCompletion: streamText returned, consuming stream',
+        );
 
-          try {
-            await for (final event in result.fullStream.handleError((
-              Object error,
-              StackTrace stack,
-            ) {
-              if (error is DioException) return;
-              throw error;
-            })) {
-              switch (event) {
-                case StreamTextTextDeltaEvent(:final delta):
-                  onChunkReceived?.call();
-                  await onChunk(delta);
-                case StreamTextReasoningDeltaEvent(:final delta):
-                  await onReasoning(delta);
-                case StreamTextToolResultEvent(
-                  :final toolResult,
-                  :final preliminary,
-                ):
-                  if (!preliminary) {
-                    final outputText = switch (toolResult.output) {
-                      ToolResultOutputText(:final text) => text,
-                      ToolResultOutputContent(:final parts) =>
-                        parts.map((p) => p.toString()).join(),
-                    };
-                    await onToolEnd?.call(
-                      toolResult.toolCallId,
-                      toolResult.toolName,
-                      outputText,
-                    );
-                  }
-                case StreamTextToolErrorEvent(
-                  :final toolCallId,
-                  :final toolName,
-                  :final error,
-                ):
-                  await onToolError?.call(toolCallId, toolName, error.toString());
-                case StreamTextFinishEvent(:final text):
-                  await onCompletion(text);
-                default:
-                  break;
-              }
+        try {
+          await for (final event in result.fullStream.handleError((
+            Object error,
+            StackTrace stack,
+          ) {
+            if (error is DioException) return;
+            throw error;
+          })) {
+            switch (event) {
+              case StreamTextTextDeltaEvent(:final delta):
+                onChunkReceived?.call();
+                await onChunk(delta);
+              case StreamTextReasoningDeltaEvent(:final delta):
+                await onReasoning(delta);
+              case StreamTextToolResultEvent(
+                :final toolResult,
+                :final preliminary,
+              ):
+                if (!preliminary &&
+                    !seenToolResults.contains(toolResult.toolCallId)) {
+                  seenToolResults.add(toolResult.toolCallId);
+                  final outputText = switch (toolResult.output) {
+                    ToolResultOutputText(:final text) => text,
+                    ToolResultOutputContent(:final parts) =>
+                      parts.map((p) => p.toString()).join(),
+                  };
+                  LogTags.chatService.logInfo(
+                    'runChildCompletion: onToolEnd tool=${toolResult.toolName} '
+                    'outputLen=${outputText.length}',
+                  );
+                  onToolEnd?.call(
+                    toolResult.toolCallId,
+                    toolResult.toolName,
+                    outputText,
+                  );
+                }
+              case StreamTextToolErrorEvent(
+                :final toolCallId,
+                :final toolName,
+                :final error,
+              ):
+                if (!seenToolResults.contains(toolCallId)) {
+                  seenToolResults.add(toolCallId);
+                  await onToolError?.call(
+                    toolCallId,
+                    toolName,
+                    error.toString(),
+                  );
+                }
+              case StreamTextFinishEvent(:final text, :final usage):
+                onUsage?.call(
+                  usage?.inputTokens ?? 0,
+                  usage?.outputTokens ?? 0,
+                  usage?.inputTokenDetails?.cacheReadTokens ?? 0,
+                  usage?.inputTokenDetails?.cacheWriteTokens ?? 0,
+                );
+                await onCompletion(text);
+              default:
+                break;
             }
-          } catch (_) {
-            rethrow;
           }
-        },
-      );
+        } catch (_) {
+          rethrow;
+        }
+      });
     } catch (_) {
       rethrow;
     }

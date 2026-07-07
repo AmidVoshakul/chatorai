@@ -199,14 +199,18 @@ class ChatRetryService {
 
   String _retryMessage(ClassifiedError error, int displayAttempt) {
     final rawMessage = switch (error) {
-      RateLimitError(:final rawMessage) when rawMessage != null &&
-          rawMessage.isNotEmpty => rawMessage,
-      ServerError(:final rawMessage) when rawMessage != null &&
-          rawMessage.isNotEmpty => rawMessage,
-      NetworkError(:final rawMessage) when rawMessage != null &&
-          rawMessage.isNotEmpty => rawMessage,
-      UnknownError(:final rawMessage) when rawMessage != null &&
-          rawMessage.isNotEmpty => rawMessage,
+      RateLimitError(:final rawMessage)
+          when rawMessage != null && rawMessage.isNotEmpty =>
+        rawMessage,
+      ServerError(:final rawMessage)
+          when rawMessage != null && rawMessage.isNotEmpty =>
+        rawMessage,
+      NetworkError(:final rawMessage)
+          when rawMessage != null && rawMessage.isNotEmpty =>
+        rawMessage,
+      UnknownError(:final rawMessage)
+          when rawMessage != null && rawMessage.isNotEmpty =>
+        rawMessage,
       _ => null,
     };
 

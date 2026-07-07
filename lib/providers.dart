@@ -18,7 +18,7 @@ export 'package:chatorai/features/chat/data/providers/chat_input_provider.dart';
 export 'package:chatorai/features/chat/data/providers/chat_providers.dart';
 export 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
 export 'package:chatorai/features/chat/data/providers/sidebar_provider.dart';
-export 'package:chatorai/features/chat/data/providers/streaming_message_provider.dart';
+export 'package:chatorai/features/chat/data/providers/session_parts_provider.dart';
 // Feature: Models Browser
 export 'package:chatorai/features/models/providers/model_provider.dart'
     show modelProvider;

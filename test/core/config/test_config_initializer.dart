@@ -16,8 +16,10 @@ void main() {
       final projectExisted = await projectConfig.exists();
       final globalExisted = await globalConfig.exists();
 
-      if (projectExisted) originalProjectContent = await projectConfig.readAsString();
-      if (globalExisted) originalGlobalContent = await globalConfig.readAsString();
+      if (projectExisted)
+        originalProjectContent = await projectConfig.readAsString();
+      if (globalExisted)
+        originalGlobalContent = await globalConfig.readAsString();
 
       try {
         if (projectExisted) await projectConfig.delete();
@@ -50,7 +52,8 @@ void main() {
 
       String? originalProjectContent;
       final projectExisted = await projectConfig.exists();
-      if (projectExisted) originalProjectContent = await projectConfig.readAsString();
+      if (projectExisted)
+        originalProjectContent = await projectConfig.readAsString();
 
       try {
         if (projectExisted) await projectConfig.delete();

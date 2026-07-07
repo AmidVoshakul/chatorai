@@ -251,7 +251,10 @@ class ErrorClassifier {
       }
 
       if (statusCode == 401 || statusCode == 403) {
-        return AuthenticationError(statusCode: statusCode, rawMessage: rawMessage);
+        return AuthenticationError(
+          statusCode: statusCode,
+          rawMessage: rawMessage,
+        );
       }
 
       // Detect context overflow from error response body (400-level)

@@ -1,6 +1,6 @@
 # Commands Reference
 
-**Last updated:** 2026-06-28
+**Last updated:** 2026-07-07
 
 ChatORAI supports:
 
@@ -158,6 +158,11 @@ These are not interactive commands but JSON configuration options.
 - `?` matches a single character.
 - Patterns are matched against the tool's primary input (e.g., `path` for read/edit, `command` for bash).
 
-For environment variables and system dependencies, see `docs/ENVIRONMENT.md`.  
-For API reference, see `docs/API.md`.  
+For environment variables and system dependencies, see `docs/ENVIRONMENT.md`.
+For API reference, see `docs/API.md`.
 For architecture, see `ARCHITECTURE.md`.
+
+## Diagrams
+
+- [Subagent @-mention Routing](../diagrams/architecture-overview.md#high-level-data-flow)
+- [Tool Execution Lifecycle](../diagrams/architecture-overview.md#tool-execution-lifecycle)

@@ -1,3 +1,5 @@
+import 'package:chatorai/core/keyboard/shortcut_handler.dart';
+import 'package:chatorai/core/keyboard/shortcuts.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/features/chat/data/providers/session_providers.dart';
@@ -65,11 +67,11 @@ class _ChildSessionScreenState extends ConsumerState<ChildSessionScreen> {
     });
   }
 
-  Future<void> _navigateToSibling(int direction) async {
+  Future<void> _navigateToSibling(int direction, {bool cycle = false}) async {
     // Resolve sibling ID BEFORE mutating stack state to avoid desync
     final siblingId = await ref
         .read(sessionStackProvider.notifier)
-        .getSiblingId(direction);
+        .getSiblingId(direction, cycle: cycle);
     if (siblingId == null || !mounted) return;
     if (siblingId.value == widget.sessionId) return;
 
@@ -112,26 +114,9 @@ class _ChildSessionScreenState extends ConsumerState<ChildSessionScreen> {
     final canGoNext = selectedIndex < _childIds.length - 1;
     final canGoUp = _parentId != null && !isTop;
 
-    final actions = <Widget>[
-      if (canGoUp)
-        IconButton(
-          icon: const Icon(Icons.arrow_upward),
-          onPressed: _navigateToParent,
-          tooltip: 'Go to parent session',
-        ),
-      if (canGoPrev)
-        IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
-          onPressed: () => _navigateToSibling(-1),
-          tooltip: 'Previous sibling',
-        ),
-      if (canGoNext)
-        IconButton(
-          icon: const Icon(Icons.arrow_forward_ios),
-          onPressed: () => _navigateToSibling(1),
-          tooltip: 'Next sibling',
-        ),
-    ];
+    final navigationText = _childIds.length > 1
+        ? '${currentIndex + 1} of ${_childIds.length}'
+        : '';
 
     Widget body;
     if (_isLoadingSessions) {
@@ -146,15 +131,54 @@ class _ChildSessionScreenState extends ConsumerState<ChildSessionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-          tooltip: localizations.close,
-        ),
+        leading: canGoUp
+            ? IconButton(
+                icon: const Icon(Icons.arrow_upward),
+                onPressed: _navigateToParent,
+                tooltip: 'Go to parent session',
+              )
+            : IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+                tooltip: localizations.close,
+              ),
         title: Text(_sessionTitle),
-        actions: actions,
+        actions: <Widget>[
+          if (_childIds.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                navigationText,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.arrow_left),
+              onPressed: canGoPrev ? () => _navigateToSibling(-1) : null,
+              tooltip: 'Previous sibling',
+            ),
+            IconButton(
+              icon: const Icon(Icons.arrow_right),
+              onPressed: canGoNext ? () => _navigateToSibling(1) : null,
+              tooltip: 'Next sibling',
+            ),
+          ],
+        ],
       ),
-      body: body,
+      body: ShortcutHandler(
+        shortcuts: [
+          if (canGoUp) AppShortcuts.goToParentSession(_navigateToParent),
+          if (canGoPrev)
+            AppShortcuts.navigateToPreviousSibling(
+              () => _navigateToSibling(-1, cycle: false),
+            ),
+          if (canGoNext)
+            AppShortcuts.navigateToNextSibling(
+              () => _navigateToSibling(1, cycle: false),
+            ),
+        ],
+        child: body,
+      ),
     );
   }
 }

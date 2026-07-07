@@ -189,12 +189,22 @@ ToolDef createTaskTool({
           LogTags.chatService.logInfo(
             'TaskTool: child stream starting agent=$subagentType parent=$normalizedSessionId child=${child.sessionId.value}',
           );
+          var lastTokensInput = 0;
+          var lastTokensOutput = 0;
+          var lastTokensCacheRead = 0;
+          var lastTokensCacheWrite = 0;
           await chatAiService!.runChildCompletion(
             messages: messages,
             model: currentModel,
             temperature: temperatureToUse,
             tools: subagentTools,
             maxSteps: agent.maxSteps,
+            onUsage: (input, output, cacheRead, cacheWrite) {
+              lastTokensInput = input;
+              lastTokensOutput = output;
+              lastTokensCacheRead = cacheRead;
+              lastTokensCacheWrite = cacheWrite;
+            },
             onChunk: child.onChunk,
             onReasoning: child.onReasoning,
             onToolStart: (toolCallId, toolName, input) async {
@@ -220,12 +230,16 @@ ToolDef createTaskTool({
                 content: content,
                 reasoning: null,
                 model: currentModel,
+                tokensInput: lastTokensInput,
+                tokensOutput: lastTokensOutput,
+                tokensCacheRead: lastTokensCacheRead,
+                tokensCacheWrite: lastTokensCacheWrite,
               );
             },
           );
         },
         agent: subagentType,
-        title: titleInput,
+        title: titleInput ?? description,
         taskId: taskId,
       );
 

@@ -43,6 +43,7 @@ extension _ChatScreenBuildExt on _ChatScreenState {
       chatStorageService: _chatStorageService,
       chat: chat,
       selectedModel: selectedModelId,
+      sessionId: _currentSessionId,
       onSendMessage: _handleSendMessage,
       onMessageDeleted: _refreshChatMessages,
       onMessageEdited: _handleMessageEdited,

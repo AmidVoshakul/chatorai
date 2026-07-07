@@ -238,7 +238,7 @@ class SessionRepository {
   ///
   /// The child inherits [agent], [modelRef], and [permission] from the
   /// parent unless explicitly overridden. The [title] defaults to the
-  /// parent's title with a " → Sub-task" suffix.
+  /// parent's title with a "Sub-task" suffix.
   ///
   /// Permission derivation follows [deriveChildPermissions]: parent deny
   /// rules are propagated, and `task` / `todowrite` are unconditionally
@@ -257,7 +257,7 @@ class SessionRepository {
     final effectiveModelRef = modelRef ?? parentState?.modelRef;
     final effectiveTitle =
         title ??
-        (parentState != null ? '${parentState.title} → Sub-task' : 'Sub-task');
+        (parentState != null ? '${parentState.title} Sub-task' : 'Sub-task');
 
     // Derive permissions from parent unless explicitly overridden
     final childPermission =

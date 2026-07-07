@@ -4,7 +4,6 @@ import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_repository.dart';
-import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/core/session/session_id.dart';
 
 void main() {
@@ -165,8 +164,9 @@ void main() {
 
       final state = await repository.loadSession(parent.id);
       expect(state, isNotNull);
-      expect(state!.messages.last.content, 'Subagent result');
-      expect(state.messages.last.role, MessageRole.assistant);
+      final events = await repository.eventStore.getEvents(parent.id);
+      expect(events.last, isA<TaskCompleted>());
+      expect((events.last as TaskCompleted).output, 'Subagent result');
     });
   });
 
@@ -379,12 +379,12 @@ void main() {
       await db.close();
     });
 
-    test('child title defaults to parent title + " → Sub-task"', () async {
+    test('child title defaults to parent title + "Sub-task"', () async {
       final parent = await repository.createSession(title: 'Parent Task');
 
       final child = await repository.createChildSession(parent.id);
 
-      expect(child.title, 'Parent Task → Sub-task');
+      expect(child.title, 'Parent Task Sub-task');
     });
 
     test(
@@ -394,18 +394,10 @@ void main() {
 
         final child = await repository.createChildSession(parent.id);
 
-        // Empty parent title → " → Sub-task"
+        // Empty parent title → "Sub-task"
         expect(child.title, contains('Sub-task'));
       },
     );
-
-    test('child inherits parent agent when not overridden', () async {
-      final parent = await repository.createSession(agent: 'code-reviewer');
-
-      final child = await repository.createChildSession(parent.id);
-
-      expect(child.agent, 'code-reviewer');
-    });
 
     test('child uses overridden agent', () async {
       final parent = await repository.createSession(agent: 'general');

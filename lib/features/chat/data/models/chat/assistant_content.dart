@@ -3,6 +3,7 @@
 // Each part has id, sessionId, messageId for proper identity tracking.
 
 import 'package:equatable/equatable.dart';
+import 'todo_part.dart' show TodoItem;
 
 enum ToolState { pending, running, completed, error }
 
@@ -26,6 +27,12 @@ abstract class AssistantContent extends Equatable {
         return AssistantReasoning.fromJson(json);
       case 'tool':
         return AssistantTool.fromJson(json);
+      case 'task':
+        return AssistantTask.fromJson(json);
+      case 'question':
+        return AssistantQuestion.fromJson(json);
+      case 'todo':
+        return AssistantTodo.fromJson(json);
       case 'file':
         return AssistantFile.fromJson(json);
       case 'image':
@@ -231,6 +238,228 @@ class AssistantTool extends AssistantContent {
       durationMs: durationMs ?? this.durationMs,
     );
   }
+}
+
+// ── Task ───────────────────────────────────────────────────────────────
+
+class AssistantTask extends AssistantContent {
+  final String description;
+  final String agent;
+  final ToolState state;
+  final String? taskSessionId;
+  final String? error;
+  final int? retryAttempt;
+  final String? currentTool;
+  final String? currentToolTitle;
+  final int toolCallsCount;
+  final int? durationMs;
+  final DateTime? startedAt;
+  final DateTime? endedAt;
+
+  const AssistantTask({
+    required String id,
+    required String sessionId,
+    required String messageId,
+    required this.description,
+    required this.agent,
+    this.state = ToolState.running,
+    this.taskSessionId,
+    this.error,
+    this.retryAttempt,
+    this.currentTool,
+    this.currentToolTitle,
+    this.toolCallsCount = 0,
+    this.durationMs,
+    this.startedAt,
+    this.endedAt,
+  }) : super(id: id, sessionId: sessionId, messageId: messageId);
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': 'task',
+    'id': id,
+    'sessionId': sessionId,
+    'messageId': messageId,
+    'description': description,
+    'agent': agent,
+    'state': state.name,
+    if (taskSessionId != null) 'taskSessionId': taskSessionId,
+    if (error != null) 'error': error,
+    if (retryAttempt != null) 'retryAttempt': retryAttempt,
+    if (currentTool != null) 'currentTool': currentTool,
+    if (currentToolTitle != null) 'currentToolTitle': currentToolTitle,
+    'toolCallsCount': toolCallsCount,
+    if (durationMs != null) 'durationMs': durationMs,
+    if (startedAt != null) 'startedAt': startedAt!.toIso8601String(),
+    if (endedAt != null) 'endedAt': endedAt!.toIso8601String(),
+  };
+
+  factory AssistantTask.fromJson(Map<String, dynamic> json) => AssistantTask(
+    id: json['id'] as String,
+    sessionId: json['sessionId'] as String,
+    messageId: json['messageId'] as String,
+    description: json['description'] as String,
+    agent: json['agent'] as String,
+    state: ToolState.values.byName(json['state'] as String? ?? 'running'),
+    taskSessionId: json['taskSessionId'] as String?,
+    error: json['error'] as String?,
+    retryAttempt: json['retryAttempt'] as int?,
+    currentTool: json['currentTool'] as String?,
+    currentToolTitle: json['currentToolTitle'] as String?,
+    toolCallsCount: json['toolCallsCount'] as int? ?? 0,
+    durationMs: json['durationMs'] as int?,
+    startedAt: json['startedAt'] != null
+        ? DateTime.parse(json['startedAt'] as String)
+        : null,
+    endedAt: json['endedAt'] != null
+        ? DateTime.parse(json['endedAt'] as String)
+        : null,
+  );
+
+  @override
+  List<Object?> get props => [
+    id,
+    sessionId,
+    messageId,
+    description,
+    agent,
+    state,
+    taskSessionId,
+    error,
+    retryAttempt,
+    currentTool,
+    currentToolTitle,
+    toolCallsCount,
+    durationMs,
+    startedAt,
+    endedAt,
+  ];
+
+  AssistantTask copyWith({
+    String? description,
+    String? agent,
+    ToolState? state,
+    String? taskSessionId,
+    String? error,
+    int? retryAttempt,
+    String? currentTool,
+    String? currentToolTitle,
+    int? toolCallsCount,
+    int? durationMs,
+    DateTime? startedAt,
+    DateTime? endedAt,
+  }) {
+    return AssistantTask(
+      id: id!,
+      sessionId: sessionId!,
+      messageId: messageId!,
+      description: description ?? this.description,
+      agent: agent ?? this.agent,
+      state: state ?? this.state,
+      taskSessionId: taskSessionId ?? this.taskSessionId,
+      error: error ?? this.error,
+      retryAttempt: retryAttempt ?? this.retryAttempt,
+      currentTool: currentTool ?? this.currentTool,
+      currentToolTitle: currentToolTitle ?? this.currentToolTitle,
+      toolCallsCount: toolCallsCount ?? this.toolCallsCount,
+      durationMs: durationMs ?? this.durationMs,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+    );
+  }
+}
+
+// ── Question ───────────────────────────────────────────────────────────
+
+class AssistantQuestion extends AssistantContent {
+  final String question;
+  final List<String> options;
+  final String? answer;
+
+  const AssistantQuestion({
+    required String id,
+    required String sessionId,
+    required String messageId,
+    required this.question,
+    this.options = const [],
+    this.answer,
+  }) : super(id: id, sessionId: sessionId, messageId: messageId);
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': 'question',
+    'id': id,
+    'sessionId': sessionId,
+    'messageId': messageId,
+    'question': question,
+    'options': options,
+    if (answer != null) 'answer': answer,
+  };
+
+  factory AssistantQuestion.fromJson(Map<String, dynamic> json) =>
+      AssistantQuestion(
+        id: json['id'] as String,
+        sessionId: json['sessionId'] as String,
+        messageId: json['messageId'] as String,
+        question: json['question'] as String,
+        options: (json['options'] as List?)?.cast<String>() ?? const [],
+        answer: json['answer'] as String?,
+      );
+
+  @override
+  List<Object?> get props => [
+    id,
+    sessionId,
+    messageId,
+    question,
+    options,
+    answer,
+  ];
+
+  AssistantQuestion copyWith({String? answer}) => AssistantQuestion(
+    id: id!,
+    sessionId: sessionId!,
+    messageId: messageId!,
+    question: question,
+    options: options,
+    answer: answer ?? this.answer,
+  );
+}
+
+// ── Todo ───────────────────────────────────────────────────────────────
+
+class AssistantTodo extends AssistantContent {
+  final List<TodoItem> todos;
+
+  const AssistantTodo({
+    required String id,
+    required String sessionId,
+    required String messageId,
+    required this.todos,
+  }) : super(id: id, sessionId: sessionId, messageId: messageId);
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': 'todo',
+    'id': id,
+    'sessionId': sessionId,
+    'messageId': messageId,
+    'todos': todos.map((t) => t.toJson()).toList(),
+  };
+
+  factory AssistantTodo.fromJson(Map<String, dynamic> json) => AssistantTodo(
+    id: json['id'] as String,
+    sessionId: json['sessionId'] as String,
+    messageId: json['messageId'] as String,
+    todos:
+        (json['todos'] as List?)
+            ?.map((e) => TodoItem.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [],
+  );
+
+  @override
+  List<Object?> get props => [id, sessionId, messageId, todos];
 }
 
 // ── File ───────────────────────────────────────────────────────────────

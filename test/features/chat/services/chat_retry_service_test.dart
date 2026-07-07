@@ -45,23 +45,21 @@ void main() {
       final service = ChatRetryService(cancellation: cancellation);
       int attempts = 0;
 
-      await service.execute(
-        ({void Function()? onChunkReceived}) async {
-          attempts++;
-          if (attempts < 3) {
-            throw DioException(
+      await service.execute(({void Function()? onChunkReceived}) async {
+        attempts++;
+        if (attempts < 3) {
+          throw DioException(
+            requestOptions: RequestOptions(path: '/test'),
+            response: Response(
               requestOptions: RequestOptions(path: '/test'),
-              response: Response(
-                requestOptions: RequestOptions(path: '/test'),
-                statusCode: 503,
-                data: 'Service Unavailable',
-              ),
-              type: DioExceptionType.badResponse,
-            );
-          }
-          return 'ok';
-        },
-      );
+              statusCode: 503,
+              data: 'Service Unavailable',
+            ),
+            type: DioExceptionType.badResponse,
+          );
+        }
+        return 'ok';
+      });
 
       expect(attempts, equals(3));
       expect(service.isRetrying, isFalse);
@@ -134,19 +132,18 @@ void main() {
       int attempts = 0;
 
       expect(
-        () async => await service.execute(
-          ({void Function()? onChunkReceived}) async {
-            attempts++;
-            throw DioException(
-              requestOptions: RequestOptions(path: '/test'),
-              response: Response(
+        () async =>
+            await service.execute(({void Function()? onChunkReceived}) async {
+              attempts++;
+              throw DioException(
                 requestOptions: RequestOptions(path: '/test'),
-                statusCode: 401,
-              ),
-              type: DioExceptionType.badResponse,
-            );
-          },
-        ),
+                response: Response(
+                  requestOptions: RequestOptions(path: '/test'),
+                  statusCode: 401,
+                ),
+                type: DioExceptionType.badResponse,
+              );
+            }),
         throwsA(isA<DioException>()),
       );
 
@@ -160,12 +157,11 @@ void main() {
       int attempts = 0;
 
       expect(
-        () async => await service.execute(
-          ({void Function()? onChunkReceived}) async {
-            attempts++;
-            throw OverflowError(detail: 'context too long');
-          },
-        ),
+        () async =>
+            await service.execute(({void Function()? onChunkReceived}) async {
+              attempts++;
+              throw OverflowError(detail: 'context too long');
+            }),
         throwsA(isA<OverflowError>()),
       );
 
@@ -178,12 +174,12 @@ void main() {
       final service = ChatRetryService(cancellation: cancellation);
       int attempts = 0;
 
-      final future = service.execute(
-        ({void Function()? onChunkReceived}) async {
-          attempts++;
-          throw const FakeError('always fails');
-        },
-      );
+      final future = service.execute(({
+        void Function()? onChunkReceived,
+      }) async {
+        attempts++;
+        throw const FakeError('always fails');
+      });
 
       await Future<void>.delayed(const Duration(milliseconds: 100));
       service.cancelRetry();
@@ -202,16 +198,14 @@ void main() {
       final service = ChatRetryService(cancellation: cancellation);
       int attempts = 0;
 
-      await service.execute(
-        ({void Function()? onChunkReceived}) async {
-          attempts++;
-          if (attempts == 1) {
-            onChunkReceived?.call();
-            throw const FakeError('fail after chunk');
-          }
-          return 'ok';
-        },
-      );
+      await service.execute(({void Function()? onChunkReceived}) async {
+        attempts++;
+        if (attempts == 1) {
+          onChunkReceived?.call();
+          throw const FakeError('fail after chunk');
+        }
+        return 'ok';
+      });
 
       expect(attempts, equals(2));
     });
@@ -221,23 +215,21 @@ void main() {
       final service = ChatRetryService(cancellation: cancellation);
       int attempts = 0;
 
-      await service.execute(
-        ({void Function()? onChunkReceived}) async {
-          attempts++;
-          if (attempts < 2) {
-            throw DioException(
+      await service.execute(({void Function()? onChunkReceived}) async {
+        attempts++;
+        if (attempts < 2) {
+          throw DioException(
+            requestOptions: RequestOptions(path: '/test'),
+            response: Response(
               requestOptions: RequestOptions(path: '/test'),
-              response: Response(
-                requestOptions: RequestOptions(path: '/test'),
-                statusCode: 429,
-                headers: Headers.fromMap({}),
-              ),
-              type: DioExceptionType.badResponse,
-            );
-          }
-          return 'ok';
-        },
-      );
+              statusCode: 429,
+              headers: Headers.fromMap({}),
+            ),
+            type: DioExceptionType.badResponse,
+          );
+        }
+        return 'ok';
+      });
 
       expect(attempts, equals(2));
     });
@@ -269,7 +261,10 @@ void main() {
         },
       );
 
-      expect(captured, contains('FreeUsageLimitError: you exceeded your free tier'));
+      expect(
+        captured,
+        contains('FreeUsageLimitError: you exceeded your free tier'),
+      );
       expect(captured, contains('attempt #1'));
     });
   });

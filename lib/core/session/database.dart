@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:chatorai/shared/utils/xdg_paths_cli.dart';
+import 'package:path/path.dart' as p;
+import 'package:chatorai/shared/utils/logger.dart';
 import 'schema.dart';
 
 part 'database.g.dart';
@@ -35,24 +36,29 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  static Future<AppDatabase> create() async => createFileDatabase();
-
   /// Creates an in-memory database for testing.
   factory AppDatabase.inMemory() {
     return AppDatabase(NativeDatabase.memory());
   }
 
-  /// Creates a file-based persistent database in the app data directory.
+  /// Creates a file-based persistent database at [path].
   factory AppDatabase.file(String path) {
     return AppDatabase(NativeDatabase(File(path)));
   }
 }
 
 /// Top-level helper: creates a file-based [AppDatabase] at
-/// `<xdg-data>/chatorai_sessions.sqlite`.
-Future<AppDatabase> createFileDatabase() async {
-  final dataDir = await XdgPaths.dataHomeAsync;
-  await XdgPaths.ensureDir(dataDir);
-  final dbPath = '$dataDir/chatorai_sessions.sqlite';
-  return AppDatabase.file(dbPath);
+/// `{dataDir}/chatorai_sessions.sqlite`.
+Future<AppDatabase> createFileDatabase({required String dataDir}) async {
+  LogTags.session.logInfo('createFileDatabase: start dataDir=$dataDir');
+  final dir = Directory(dataDir);
+  if (!dir.existsSync()) {
+    await dir.create(recursive: true);
+  }
+  LogTags.session.logInfo('createFileDatabase: dir ensured');
+  final dbPath = p.join(dataDir, 'chatorai_sessions.sqlite');
+  LogTags.session.logInfo('createFileDatabase: opening dbPath=$dbPath');
+  final db = AppDatabase.file(dbPath);
+  LogTags.session.logInfo('createFileDatabase: done');
+  return db;
 }

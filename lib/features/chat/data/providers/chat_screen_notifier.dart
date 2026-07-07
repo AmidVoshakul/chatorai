@@ -1,9 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
-
-// ===========================================================================
-// CHAT SCREEN STATE (UNIFIED)
-// ===========================================================================
+import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
+import 'package:chatorai/features/chat/data/models/chat/todo_part.dart'
+    show TodoItem;
 
 class ChatScreenState {
   final bool isStreaming;
@@ -17,12 +16,11 @@ class ChatScreenState {
   final List<MarkdownHeadingInfoWithKey> navigatorHeadings;
   final int activeHeadingIndex;
   final bool isRetrying;
-
-  /// Kept for backward compatibility; no longer actively updated
-  /// in stream — ChatInput uses retryCountdownProvider directly.
   final double retryProgress;
   final String? retryMessage;
   final int retryAttempt;
+  final List<AssistantContent> streamingParts;
+  final String? streamingSessionId;
 
   const ChatScreenState({
     this.isStreaming = false,
@@ -39,6 +37,8 @@ class ChatScreenState {
     this.retryProgress = 1.0,
     this.retryMessage,
     this.retryAttempt = 0,
+    this.streamingParts = const [],
+    this.streamingSessionId,
   });
 
   ChatScreenState copyWith({
@@ -56,6 +56,9 @@ class ChatScreenState {
     double? retryProgress,
     String? retryMessage,
     int? retryAttempt,
+    List<AssistantContent>? streamingParts,
+    String? streamingSessionId,
+    bool clearStreamingSessionId = false,
   }) {
     return ChatScreenState(
       isStreaming: isStreaming ?? this.isStreaming,
@@ -74,19 +77,310 @@ class ChatScreenState {
       retryProgress: retryProgress ?? this.retryProgress,
       retryMessage: retryMessage ?? this.retryMessage,
       retryAttempt: retryAttempt ?? this.retryAttempt,
+      streamingParts: streamingParts ?? this.streamingParts,
+      streamingSessionId: clearStreamingSessionId
+          ? null
+          : streamingSessionId ?? this.streamingSessionId,
     );
   }
 }
 
-// ===========================================================================
-// CHAT SCREEN NOTIFIER (UNIFIED)
-// ===========================================================================
-
 class ChatScreenNotifier extends Notifier<ChatScreenState> {
+  bool _textBlockOpen = false;
+
   @override
   ChatScreenState build() => const ChatScreenState();
 
-  // Streaming & Suggestions
+  void startStreaming(String sessionId) {
+    _textBlockOpen = false;
+    _seenToolEnds.clear();
+    state = state.copyWith(
+      isStreaming: true,
+      streamingSessionId: sessionId,
+      streamingParts: const [],
+    );
+  }
+
+  void onChunk(
+    String partId,
+    String messageId,
+    String sessionId,
+    String delta,
+  ) {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+
+    final textIdx = parts.lastIndexWhere((p) => p is AssistantText);
+    if (_textBlockOpen && textIdx >= 0) {
+      final prev = parts[textIdx] as AssistantText;
+      parts[textIdx] = AssistantText(
+        id: prev.id ?? partId,
+        sessionId: prev.sessionId ?? sessionId,
+        messageId: prev.messageId ?? messageId,
+        text: prev.text + delta,
+        synthetic: prev.synthetic,
+        ignored: prev.ignored,
+        title: prev.title,
+      );
+    } else {
+      parts.add(
+        AssistantText(
+          id: partId,
+          sessionId: sessionId,
+          messageId: messageId,
+          text: delta,
+        ),
+      );
+      _textBlockOpen = true;
+    }
+
+    state = state.copyWith(streamingParts: parts);
+  }
+
+  void onReasoning(
+    String partId,
+    String messageId,
+    String sessionId,
+    String delta,
+  ) {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+
+    final openIdx = parts.lastIndexWhere(
+      (p) => p is AssistantReasoning && p.ended == null,
+    );
+    if (openIdx >= 0) {
+      final prev = parts[openIdx] as AssistantReasoning;
+      parts[openIdx] = AssistantReasoning(
+        id: prev.id ?? partId,
+        sessionId: prev.sessionId ?? sessionId,
+        messageId: prev.messageId ?? messageId,
+        text: prev.text + delta,
+        started: prev.started,
+        ended: null,
+      );
+    } else {
+      parts.add(
+        AssistantReasoning(
+          id: partId,
+          sessionId: sessionId,
+          messageId: messageId,
+          text: delta,
+          started: DateTime.now(),
+          ended: null,
+        ),
+      );
+    }
+
+    state = state.copyWith(streamingParts: parts);
+  }
+
+  void onToolCall(
+    String partId,
+    String callId,
+    String messageId,
+    String sessionId,
+    String toolName,
+    Map<String, dynamic> input,
+  ) {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+    if (parts.any((p) => p is AssistantTool && p.callId == callId)) return;
+    parts = _interruptStreaming(parts);
+    parts.add(
+      AssistantTool(
+        id: partId,
+        sessionId: sessionId,
+        messageId: messageId,
+        callId: callId,
+        tool: toolName,
+        state: ToolState.running,
+        input: input,
+      ),
+    );
+    state = state.copyWith(streamingParts: parts);
+  }
+
+  final Set<String> _seenToolEnds = {};
+
+  void onToolEnd(String callId, String toolName, String result) {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+    if (_seenToolEnds.contains(callId)) return;
+    _seenToolEnds.add(callId);
+    final idx = parts.indexWhere(
+      (p) => p is AssistantTool && p.callId == callId,
+    );
+    if (idx >= 0) {
+      final tool = parts[idx] as AssistantTool;
+      parts[idx] = tool.copyWith(state: ToolState.completed, output: result);
+      state = state.copyWith(streamingParts: parts);
+    }
+  }
+
+  void onToolError(String callId, String error) {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+    final idx = parts.indexWhere(
+      (p) => p is AssistantTool && p.callId == callId,
+    );
+    if (idx >= 0) {
+      final tool = parts[idx] as AssistantTool;
+      parts[idx] = tool.copyWith(state: ToolState.error, output: error);
+      state = state.copyWith(streamingParts: parts);
+    }
+  }
+
+  void onQuestion(
+    String partId,
+    String messageId,
+    String sessionId,
+    String questionText,
+    List<String> options,
+  ) {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+    parts = _interruptStreaming(parts);
+    parts.add(
+      AssistantQuestion(
+        id: partId,
+        sessionId: sessionId,
+        messageId: messageId,
+        question: questionText,
+        options: options,
+      ),
+    );
+    state = state.copyWith(streamingParts: parts);
+  }
+
+  void onQuestionEnd(String partId, String answer) {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+    final idx = parts.indexWhere(
+      (p) => p is AssistantQuestion && p.id == partId,
+    );
+    if (idx >= 0) {
+      final q = parts[idx] as AssistantQuestion;
+      parts[idx] = q.copyWith(answer: answer);
+      state = state.copyWith(streamingParts: parts);
+    }
+  }
+
+  void onTodo(
+    String partId,
+    String messageId,
+    String sessionId,
+    List<TodoItem> todos,
+  ) {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+    parts = _interruptStreaming(parts);
+    parts.add(
+      AssistantTodo(
+        id: partId,
+        sessionId: sessionId,
+        messageId: messageId,
+        todos: todos,
+      ),
+    );
+    state = state.copyWith(streamingParts: parts);
+  }
+
+  void onTaskStart(
+    String partId,
+    String messageId,
+    String sessionId,
+    String desc,
+    String agent, {
+    String? taskSessionId,
+  }) {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+    if (parts.any((p) => p is AssistantTask && p.id == partId)) return;
+    parts = _interruptStreaming(parts);
+    parts.add(
+      AssistantTask(
+        id: partId,
+        sessionId: sessionId,
+        messageId: messageId,
+        description: desc,
+        agent: agent,
+        state: ToolState.running,
+        taskSessionId: taskSessionId,
+        startedAt: DateTime.now(),
+      ),
+    );
+    state = state.copyWith(streamingParts: parts);
+  }
+
+  void onTaskToolExecuted(String partId, String toolName, String? toolTitle) {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+    final idx = parts.indexWhere((p) => p is AssistantTask && p.id == partId);
+    if (idx >= 0) {
+      final task = parts[idx] as AssistantTask;
+      parts[idx] = task.copyWith(
+        currentTool: toolName,
+        currentToolTitle: toolTitle,
+        toolCallsCount: task.toolCallsCount + 1,
+      );
+      state = state.copyWith(streamingParts: parts);
+    }
+  }
+
+  void onTaskEnd(String partId) {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+    final idx = parts.indexWhere((p) => p is AssistantTask && p.id == partId);
+    if (idx >= 0) {
+      final task = parts[idx] as AssistantTask;
+      final now = DateTime.now();
+      parts[idx] = task.copyWith(
+        state: ToolState.completed,
+        endedAt: now,
+        durationMs: task.startedAt != null
+            ? now.difference(task.startedAt!).inMilliseconds
+            : null,
+      );
+      state = state.copyWith(streamingParts: parts);
+    }
+  }
+
+  void onTaskSessionIdResolved(String partId, String taskSessionId) {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+    final idx = parts.indexWhere((p) => p is AssistantTask && p.id == partId);
+    if (idx >= 0) {
+      final task = parts[idx] as AssistantTask;
+      if (task.taskSessionId == null || task.taskSessionId!.isEmpty) {
+        parts[idx] = task.copyWith(taskSessionId: taskSessionId);
+        state = state.copyWith(streamingParts: parts);
+      }
+    }
+  }
+
+  void onTaskError(String partId, String error) {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+    final idx = parts.indexWhere((p) => p is AssistantTask && p.id == partId);
+    if (idx >= 0) {
+      final task = parts[idx] as AssistantTask;
+      final now = DateTime.now();
+      parts[idx] = task.copyWith(
+        state: ToolState.error,
+        error: error,
+        endedAt: now,
+        durationMs: task.startedAt != null
+            ? now.difference(task.startedAt!).inMilliseconds
+            : null,
+      );
+      state = state.copyWith(streamingParts: parts);
+    }
+  }
+
+  List<AssistantContent> snapshotClosedStreamingParts() {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+    parts = _closeOpenReasoning(parts);
+    state = state.copyWith(streamingParts: parts);
+    return List.unmodifiable(parts);
+  }
+
+  void finalizeStreaming() {
+    _textBlockOpen = false;
+    state = state.copyWith(
+      isStreaming: false,
+      clearStreamingSessionId: true,
+      streamingParts: const [],
+    );
+  }
+
   void setStreaming(bool isStreaming) {
     state = state.copyWith(isStreaming: isStreaming);
   }
@@ -131,7 +425,6 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
     );
   }
 
-  // Sidebar
   void toggleSidebar() {
     state = state.copyWith(isSidebarCollapsed: !state.isSidebarCollapsed);
   }
@@ -142,7 +435,6 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
     }
   }
 
-  // Navigator
   void toggleNavigator() {
     state = state.copyWith(isNavigatorVisible: !state.isNavigatorVisible);
   }
@@ -167,7 +459,6 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
     state = state.copyWith(navigatorHeadings: [], activeHeadingIndex: -1);
   }
 
-  // Retry UI state
   void setRetrying(bool retrying) {
     if (state.isRetrying != retrying) {
       state = state.copyWith(isRetrying: retrying);
@@ -191,11 +482,35 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
       retryAttempt: retryAttempt,
     );
   }
-}
 
-// ===========================================================================
-// PROVIDER
-// ===========================================================================
+  List<AssistantContent> _closeOpenReasoning(List<AssistantContent> parts) {
+    final idx = parts.lastIndexWhere(
+      (p) => p is AssistantReasoning && p.ended == null,
+    );
+    if (idx >= 0) {
+      final last = parts[idx] as AssistantReasoning;
+      final now = DateTime.now();
+      return [
+        ...parts.sublist(0, idx),
+        AssistantReasoning(
+          id: last.id!,
+          sessionId: last.sessionId!,
+          messageId: last.messageId!,
+          text: last.text,
+          started: last.started,
+          ended: now,
+        ),
+        ...parts.sublist(idx + 1),
+      ];
+    }
+    return parts;
+  }
+
+  List<AssistantContent> _interruptStreaming(List<AssistantContent> parts) {
+    _textBlockOpen = false;
+    return _closeOpenReasoning(parts);
+  }
+}
 
 final chatScreenProvider =
     NotifierProvider<ChatScreenNotifier, ChatScreenState>(

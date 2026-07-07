@@ -1,6 +1,6 @@
 # API Reference
 
-**Last updated:** 2026-06-28
+**Last updated:** 2026-07-07
 
 This document describes the public APIs of ChatORAI for developers, contributors, and advanced users.
 
@@ -46,18 +46,18 @@ All providers are defined using Riverpod 3.x and can be accessed via `ref.watch(
 
 ### Core Services
 
-| Provider                        | Type                              | Description                                                         |
-| ------------------------------- | --------------------------------- | ------------------------------------------------------------------- |
-| `chatAiServiceProvider`         | `Provider<ChatAiService>`         | AI completion service with tool execution loop.                     |
-| `sessionRunnerProvider`         | `Provider<SessionRunner>`         | Event-sourced session orchestrator.                                 |
-| `sessionRepositoryProvider`     | `Provider<SessionRepository>`     | Session CRUD + event replay.                                        |
-| `sessionTreeProvider`           | `Provider<SessionTree>`           | Parent-child session navigation.                                    |
-| `chatRepositoryProvider`        | `Provider<ChatRepository>`        | Chat persistence repository.                                        |
-| `chatStorageServiceProvider`    | `Provider<ChatStorageService>`    | Local storage abstraction (SharedPreferences).                      |
-| `toolRegistryProvider`          | `FutureProvider<ToolRegistry>`    | Registry of all available tools (16 built-in + dynamic skills).     |
-| `skillServiceProvider`          | `FutureProvider<SkillService>`    | Skill management service for dynamic capabilities.                  |
-| `mcpClientServiceProvider`      | `Provider<McpClientService>`     | MCP server connections for external tool integration.               |
-| `lspServiceProvider`           | `Provider<LspService>`           | LSP integration for code intelligence.                              |
+| Provider                     | Type                           | Description                                                     |
+| ---------------------------- | ------------------------------ | --------------------------------------------------------------- |
+| `chatAiServiceProvider`      | `Provider<ChatAiService>`      | AI completion service with tool execution loop.                 |
+| `sessionRunnerProvider`      | `Provider<SessionRunner>`      | Event-sourced session orchestrator.                             |
+| `sessionRepositoryProvider`  | `Provider<SessionRepository>`  | Session CRUD + event replay.                                    |
+| `sessionTreeProvider`        | `Provider<SessionTree>`        | Parent-child session navigation.                                |
+| `chatRepositoryProvider`     | `Provider<ChatRepository>`     | Chat persistence repository.                                    |
+| `chatStorageServiceProvider` | `Provider<ChatStorageService>` | Local storage abstraction (SharedPreferences).                  |
+| `toolRegistryProvider`       | `FutureProvider<ToolRegistry>` | Registry of all available tools (16 built-in + dynamic skills). |
+| `skillServiceProvider`       | `FutureProvider<SkillService>` | Skill management service for dynamic capabilities.              |
+| `mcpClientServiceProvider`   | `Provider<McpClientService>`   | MCP server connections for external tool integration.           |
+| `lspServiceProvider`         | `Provider<LspService>`         | LSP integration for code intelligence.                          |
 
 ---
 
@@ -106,26 +106,26 @@ Controls tool execution based on user-defined rules from `chatorai.json` and bui
 
 **Default rules** (defined in `PermissionRuleset.defaults()`, `lib/core/permission/ruleset.dart`):
 
-| Tool               | Default Action |
-| ------------------ | -------------- |
-| `read`             | `allow`        |
-| `glob`             | `allow`        |
-| `grep`             | `allow`        |
-| `webfetch`         | `allow`        |
-| `websearch`        | `allow`        |
-| `task`             | `allow`        |
-| `question`         | `allow`        |
-| `todowrite`        | `allow`        |
-| `skill`            | `allow`        |
-| `lsp`              | `allow`        |
-| `bash`             | `ask`          |
-| `edit`             | `ask`          |
-| `write`            | `ask`          |
-| `doom_loop`        | `ask`          |
-| `external_directory` | `ask`        |
-| `apply_patch`      | `ask` (fallback — no ruleset entry) |
-| `format`           | `ask` (fallback — no ruleset entry) |
-| `invalid`          | `ask` (fallback — no ruleset entry) |
+| Tool                 | Default Action                      |
+| -------------------- | ----------------------------------- |
+| `read`               | `allow`                             |
+| `glob`               | `allow`                             |
+| `grep`               | `allow`                             |
+| `webfetch`           | `allow`                             |
+| `websearch`          | `allow`                             |
+| `task`               | `allow`                             |
+| `question`           | `allow`                             |
+| `todowrite`          | `allow`                             |
+| `skill`              | `allow`                             |
+| `lsp`                | `allow`                             |
+| `bash`               | `ask`                               |
+| `edit`               | `ask`                               |
+| `write`              | `ask`                               |
+| `doom_loop`          | `ask`                               |
+| `external_directory` | `ask`                               |
+| `apply_patch`        | `ask` (fallback — no ruleset entry) |
+| `format`             | `ask` (fallback — no ruleset entry) |
+| `invalid`            | `ask` (fallback — no ruleset entry) |
 
 **Usage:**
 
@@ -134,7 +134,7 @@ await permissionService.ask(
   PermissionRequest(
     id: 'unique_id',
     toolName: 'bash',
-    permission: 'execute',
+    permission: 'bash', // matches PermissionRule.permission name
     patterns: ['/home/**'],
     metadata: {...},
   ),
@@ -158,29 +158,31 @@ Registry for all built-in and custom tools. Converts internal `ToolDef` to `ai_s
 
 ### SessionRunner
 
-Orchestrates session lifecycle with event sourcing. Created via `Session跑了.runTaskInChild()` or through `session_providers.dart`.
+Orchestrates session lifecycle with event sourcing. Accessed via the
+`sessionRunnerProvider` Riverpod provider or through `session_providers.dart`.
 
 **Key methods:**
 
 ```dart
-// Start a new root session
-Future<SessionRunnerSession> startSession({
-  required String agent,        // 'general', 'explore', 'code-reviewer', etc.
-  String? modelRef,             // model identifier from catalog
-  String? title,                // optional session title
-  String? parentSessionId,      // for hierarchical sessions
+// Start a new root session (synchronous — session is created immediately)
+SessionRunnerSession startSession({
+  required String agent, // 'general', 'explore', etc.
+  String? modelRef, // model identifier from catalog
+  String? title, // optional session title (auto-generated if omitted)
+  String? parentSessionId, // for hierarchical sessions
 })
 
-// Start a pre-initialized session
+// Start a re-initialization of an existing session
 Future<SessionRunnerSession> startInitializedSession({
   required String agent,
   String? modelRef,
   String? title,
   String? parentSessionId,
+  SessionID? sessionId, // existing session to continue
 })
 
-// Run a task in a child session (delegated subagent work)
-Future<void> runTaskInChild({
+// Run a delegated subagent task in a child session
+Future<TaskChildResult> runTaskInChild({
   required SessionID parentSessionId,
   required String taskPrompt,
   required Future<void> Function(SessionRunnerSession child) streamFn,
@@ -188,8 +190,60 @@ Future<void> runTaskInChild({
   String? modelRef,
   String? title,
   String? taskId,
-  sdk.CancellationToken? abortSignal,
+  SessionRunnerHolder? holder,
 })
+```
+
+**`SessionRunnerSession` fields (selected public API):**
+
+```dart
+class SessionRunnerSession {
+  final SessionID sessionId;
+  final SessionID? _parentId; // private; access via getter if needed
+  final String? _agent;       // private
+  final String? _modelRef;    // private
+  final SessionRepository repository;
+  final ToolRegistry? toolRegistry;
+  final bool immediate;
+  bool get initialized;
+}
+```
+
+`SessionRunnerSession` is an internal state object. Use the `SessionRepository`
+and Riverpod providers (`sessionProviders`) for UI-level session operations.
+
+**Usage via Riverpod providers:**
+
+```dart
+// In a widget or notifier:
+final sessionRunner = ref.read(sessionRunnerProvider);
+final session = sessionRunner.startSession(agent: 'general');
+```
+
+**`SessionRunnerSession` fields (selected public API):**
+
+```dart
+class SessionRunnerSession {
+  final SessionID sessionId;
+  final SessionID? _parentId; // private; access via getter if needed
+  final String? _agent;       // private
+  final String? _modelRef;    // private
+  final SessionRepository repository;
+  final ToolRegistry? toolRegistry;
+  final bool immediate;
+  bool get initialized;
+}
+```
+
+`SessionRunnerSession` is an internal state object. Use the `SessionRepository`
+and Riverpod providers (`sessionProviders`) for UI-level session operations.
+
+**Usage via Riverpod providers:**
+
+```dart
+// In a widget or notifier:
+final sessionRunner = ref.read(sessionRunnerProvider);
+final session = sessionRunner.startSession(agent: 'general');
 ```
 
 **Properties of `SessionRunnerSession`:**
@@ -240,26 +294,26 @@ The message system uses a concrete `Message` class (not abstract) with `MessageR
 
 **MessageParts** (serialized as JSON with `type` field):
 
-| Part Type        | Description                                                            | Widget                 |
-| ---------------- | ---------------------------------------------------------------------- | ---------------------- |
-| `TextPart`       | Plain text content                                                     | `TextPartWidget`       |
-| `ReasoningPart`  | Model's thinking process (collapsible, with optional duration)         | `ReasoningPartWidget`  |
-| `ToolCallPart`   | Tool invocation (toolName, input)                                      | `ToolCallPartWidget`   |
-| `ToolResultPart` | Tool output (state, output, duration, error)                           | `ToolResultPartWidget` |
-| `TaskPart`       | Delegated subagent task                                                | `TaskPartWidget`       |
-| `QuestionPart`   | Multi-question flow awaiting user response                             | `QuestionPartWidget`   |
-| `TodoPart`       | Todo list with items                                                   | `TodoPartWidget`       |
+| Part Type        | Description                                                    | Widget                 |
+| ---------------- | -------------------------------------------------------------- | ---------------------- |
+| `TextPart`       | Plain text content                                             | `TextPartWidget`       |
+| `ReasoningPart`  | Model's thinking process (collapsible, with optional duration) | `ReasoningPartWidget`  |
+| `ToolCallPart`   | Tool invocation (toolName, input)                              | `ToolCallPartWidget`   |
+| `ToolResultPart` | Tool output (state, output, duration, error)                   | `ToolResultPartWidget` |
+| `TaskPart`       | Delegated subagent task                                        | `TaskPartWidget`       |
+| `QuestionPart`   | Multi-question flow awaiting user response                     | `QuestionPartWidget`   |
+| `TodoPart`       | Todo list with items                                           | `TodoPartWidget`       |
 
 **ReasoningPart fields** (defined in `lib/features/chat/data/models/chat/reasoning_part.dart`):
 
-| Field         | Type        | Description                                                 |
-| ------------- | ----------- | ----------------------------------------------------------- |
-| `content`     | `String`    | The reasoning/thinking text                                 |
-| `title`       | `String?`   | Optional display title                                      |
-| `isStreaming` | `bool`      | Whether the part is still being streamed                    |
-| `startedAt`   | `DateTime?` | When the reasoning started (used to compute `durationMs`)   |
+| Field         | Type        | Description                                                  |
+| ------------- | ----------- | ------------------------------------------------------------ |
+| `content`     | `String`    | The reasoning/thinking text                                  |
+| `title`       | `String?`   | Optional display title                                       |
+| `isStreaming` | `bool`      | Whether the part is still being streamed                     |
+| `startedAt`   | `DateTime?` | When the reasoning started (used to compute `durationMs`)    |
 | `durationMs`  | `int?`      | Computed duration in ms (set when streaming ends, persisted) |
-| `isExpanded`  | `bool?`     | UI expand/collapse state                                    |
+| `isExpanded`  | `bool?`     | UI expand/collapse state                                     |
 
 `durationMs` is computed in `StreamingMessageNotifier._markReasoningAsDone()` and `stopStreaming()` when reasoning streaming ends. It is persisted via `toJson()`/`fromJson()` and survives chat switches and app reloads. The `ReasoningPartWidget._displayDuration` getter prefers `widget.part.durationMs` over a locally computed `_thoughtDuration`.
 
@@ -275,42 +329,36 @@ All tools implement the `Tool` interface from `ai_sdk_dart`. The `ToolRegistry` 
 
 **Always registered (16):**
 
-| Tool                | Description                                                   | Input Schema                                                                       | Default Permission |
-| ----------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------ |
-| `bash`             | Execute shell command                                         | `{ "command": string, "timeoutMs": number }`                                       | ask                |
-| `read`             | Read file contents                                            | `{ "path": string, "offset": number, "limit": number }`                            | allow              |
-| `edit`             | Replace text in file                                          | `{ "path": string, "oldString": string, "newString": string }`                     | ask                |
-| `write`            | Create/overwrite file                                         | `{ "path": string, "content": string }`                                            | ask                |
-| `glob`             | Find files by pattern                                         | `{ "pattern": string, "path": string }`                                            | allow              |
-| `grep`             | Search file contents                                          | `{ "pattern": string, "path": string, "filePattern": string }`                     | allow              |
-| `webfetch`         | Fetch URL content                                             | `{ "url": string, "format": "text" \| "markdown" \| "html" }`                      | allow              |
-| `websearch`        | Search web via SearXNG                                        | `{ "query": string, "engines": string[], "categories": string[] }`                 | allow              |
-| `task`             | Spawn subagent via `SessionRunner`                            | `{ "prompt": string, "context": object, "subagentType": string }`                  | allow              |
-| `todowrite`        | Update todo list                                              | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }`            | allow              |
-| `question`         | Ask user question (with dedup)                                | `{ "question": string, "options": string[], "multiple": bool }`                    | allow              |
-| `skill`            | Load specialized skill                                        | `{ "name": string, "params": object }`                                             | allow              |
-| `apply_patch`      | Apply unified diff                                            | `{ "patch": string, "dryRun": bool }`                                              | ask                |
-| `invalid`          | Invalid tool placeholder                                      | `{}`                                                                               | ask                |
+| Tool          | Description                        | Input Schema                                                            | Default Permission |
+| ------------- | ---------------------------------- | ----------------------------------------------------------------------- | ------------------ |
+| `bash`        | Execute shell command              | `{ "command": string, "timeoutMs": number }`                            | ask                |
+| `read`        | Read file contents                 | `{ "path": string, "offset": number, "limit": number }`                 | allow              |
+| `edit`        | Replace text in file               | `{ "path": string, "oldString": string, "newString": string }`          | ask                |
+| `write`       | Create/overwrite file              | `{ "path": string, "content": string }`                                 | ask                |
+| `glob`        | Find files by pattern              | `{ "pattern": string, "path": string }`                                 | allow              |
+| `grep`        | Search file contents               | `{ "pattern": string, "path": string, "filePattern": string }`          | allow              |
+| `webfetch`    | Fetch URL content                  | `{ "url": string, "format": "text" \| "markdown" \| "html" }`           | allow              |
+| `websearch`   | Search web via SearXNG             | `{ "query": string, "engines": string[], "categories": string[] }`      | allow              |
+| `task` | Spawn subagent via `SessionRunner` | `{ "prompt": string, "context": object, "subagentType": string }` | allow |
+| `todowrite` | Update todo list | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }` | allow |
+| `question` | Ask user question (with dedup) | `{ "question": string, "options": string[], "multiple": bool }` | allow |
+| `apply_patch` | Apply unified diff | `{ "patch": string, "dryRun": bool }` | no default (fallback `ask`) |
+| `invalid` | Invalid tool placeholder | `{}` | no default (fallback `ask`) |
+| `external_directory` | Directory operations (builtin) | — | ask |
+| `plan_exit` | Exit plan mode, switch to build agent | — | no default (fallback `ask`) |
+| `json_schema` | JSON schema validation | — | no default (fallback `ask`) |
 
-**Conditionally registered (up to 3):**
+**Conditionally registered (up to 3):** All three checks are independent `if` statements — all three can be active simultaneously.
 
-| Tool                         | Condition                                            | Default Permission |
-| ---------------------------- | ---------------------------------------------------- | ------------------ |
-| `lsp`                        | When `LspService` is provided                        | allow              |
-| `format`                     | When `FormatService` is provided                     | ask                |
-| `skill` (dynamic loading)    | When `SkillService` is provided                      | allow              |
+| Tool | Condition | Default Permission |
+| ------------------------- | -------------------------------- | ------------------ |
+| `lsp` | When `LspService` is provided | allow |
+| `format` | When `FormatService` is provided | no default (fallback `ask`) |
+| `skill` | When `SkillService` is provided | allow |
 
-**Additional tools** (also always registered, listed separately for clarity):
+The actual registration in `registerBuiltInTools()` (see `lib/core/tools/built_in/built_in_tools.dart`) registers exactly **16 tools unconditionally**, plus up to 3 conditional tools (`lsp`, `format`, `skill`). Total: 16–19 built-in tools depending on available services. `skill` is **never** unconditionally registered — it requires `skillService != null`.
 
-| Tool                   | Description                                       | Default Permission |
-| ---------------------- | ------------------------------------------------- | ------------------ |
-| `external_directory`   | Directory operations (builtin)                     | ask                |
-| `plan_exit`            | Exit plan mode, switch to build agent              | ask                |
-| `json_schema`          | JSON schema validation                            | ask (fallback)     |
-
-The actual registration in `registerBuiltInTools()` (see `lib/core/tools/built_in/built_in_tools.dart`) registers 16 tools unconditionally, plus up to 3 conditional tools (`lsp`, `format`, `skill`). Total: 19 possible built-in tools.
-
-**Note:** All tool outputs are truncated to 2000 lines or 50KB when displayed.
+**Note on defaults:** `format`, `json_schema`, `apply_patch`, `invalid`, and `plan_exit` have no entry in `PermissionRuleset.defaults()`. When no rule matches the `evaluate()` function, the fallback action is `ask`.
 
 ---
 
@@ -333,23 +381,23 @@ Streamed from `ChatAiService.streamChatCompletion()` (legacy pipeline):
 
 Persisted to Drift `events` table. All events extend `sealed class SessionEvent`:
 
-| Event Type                  | Purpose                                                    |
-| --------------------------- | ---------------------------------------------------------- |
-| `SessionCreated`            | New session with optional parent, title, agent, model.     |
-| `SessionArchived`           | Session archived (soft delete).                            |
-| `SessionAgentSwitched`      | Agent changed mid-session.                                  |
-| `SessionModelSwitched`      | Model reference changed.                                   |
-| `MessageAdded`              | User/assistant/system message persisted.                   |
-| `TextStarted/Delta/Ended`   | Assistant streaming text lifecycle.                        |
-| `ReasoningStarted/Delta/Ended` | Reasoning/thinking stream lifecycle.                    |
-| `ToolInputStarted/Delta/Ended` | Tool JSON input streaming (for progress UI).            |
-| `ToolCalled`                | Tool invoked with full input.                              |
-| `ToolSuccess`               | Tool completed (output, duration).                         |
-| `ToolFailed`                | Tool failed (error message).                               |
-| `StepStarted/Ended/Failed`  | Turn lifecycle with token tracking.                        |
-| `CompactionStarted/Ended`   | Context compaction with summary.                           |
-| `ChildSessionCreated`       | Parent-child session hierarchy.                            |
-| `TaskStarted/Completed`     | Delegated subagent task tracking.                           |
+| Event Type                     | Purpose                                                |
+| ------------------------------ | ------------------------------------------------------ |
+| `SessionCreated`               | New session with optional parent, title, agent, model. |
+| `SessionArchived`              | Session archived (soft delete).                        |
+| `SessionAgentSwitched`         | Agent changed mid-session.                             |
+| `SessionModelSwitched`         | Model reference changed.                               |
+| `MessageAdded`                 | User/assistant/system message persisted.               |
+| `TextStarted/Delta/Ended`      | Assistant streaming text lifecycle.                    |
+| `ReasoningStarted/Delta/Ended` | Reasoning/thinking stream lifecycle.                   |
+| `ToolInputStarted/Delta/Ended` | Tool JSON input streaming (for progress UI).           |
+| `ToolCalled`                   | Tool invoked with full input.                          |
+| `ToolSuccess`                  | Tool completed (output, duration).                     |
+| `ToolFailed`                   | Tool failed (error message).                           |
+| `StepStarted/Ended/Failed`     | Turn lifecycle with token tracking.                    |
+| `CompactionStarted/Ended`      | Context compaction with summary.                       |
+| `ChildSessionCreated`          | Parent-child session hierarchy.                        |
+| `TaskStarted/Completed`        | Delegated subagent task tracking.                      |
 
 ---
 
@@ -370,35 +418,40 @@ Validated against JSON Schema in `lib/core/config/chatorai_schema.dart`.
 
 ```json5
 {
-  "version": 1,
-  "permission": {
-    "default": "ask",
-    "rules": [
-      { "tool": "read", "action": "*", "resource": "*", "permission": "allow" },
-      { "tool": "bash", "action": "execute", "resource": "/home/**", "permission": "deny" }
-    ]
+  version: 1,
+  permission: {
+    default: "ask",
+    rules: [
+      { tool: "read", action: "*", resource: "*", permission: "allow" },
+      {
+        tool: "bash",
+        action: "execute",
+        resource: "/home/**",
+        permission: "deny",
+      },
+    ],
   },
-  "keybinding": {
-    "leader": "ctrl+x",
-    "timeout": 2000,
-    "bindings": { "session_child_next": "ctrl+right" }
+  keybinding: {
+    leader: "ctrl+x",
+    timeout: 2000,
+    bindings: { session_child_next: "ctrl+right" },
   },
-  "skills": {
-    "paths": [".opencode/skills/"],
-    "urls": []
+  skills: {
+    paths: [".opencode/skills/"],
+    urls: [],
   },
-  "compaction": { "auto": true, "prune": true },
-  "formatter": { "formatters": {} },
-  "mcp": {
-    "default_timeout": 30000,
-    "servers": {
+  compaction: { auto: true, prune: true },
+  formatter: { formatters: {} },
+  mcp: {
+    default_timeout: 30000,
+    servers: {
       "my-server": {
-        "type": "local",
-        "command": "npx",
-        "args": ["-y", "my-mcp-server"]
-      }
-    }
-  }
+        type: "local",
+        command: "npx",
+        args: ["-y", "my-mcp-server"],
+      },
+    },
+  },
 }
 ```
 
@@ -434,6 +487,15 @@ CHATORAI_DEBUG=true
 
 ---
 
-For command-line usage and slash commands, see `docs/COMMANDS.md`.  
-For environment setup, see `docs/ENVIRONMENT.md`.  
+For command-line usage and slash commands, see `docs/COMMANDS.md`.
+For environment setup, see `docs/ENVIRONMENT.md`.
 For architecture overview, see `ARCHITECTURE.md`.
+
+## Diagrams
+
+- [High-Level Data Flow](../diagrams/architecture-overview.md#high-level-data-flow)
+- [Session Event Pipeline](../diagrams/architecture-overview.md#session-event-pipeline)
+- [Tool Execution Lifecycle](../diagrams/architecture-overview.md#tool-execution-lifecycle)
+- [MCP Connection Architecture](../diagrams/architecture-overview.md#mcp-connection-architecture)
+- [Session Core ER & State Machine](../diagrams/sessions.md)
+- [Tool Registry & Conditional Registration](../diagrams/tools.md)
