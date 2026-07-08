@@ -85,6 +85,7 @@ class AssistantMessage extends ChatMessage {
   final int? tokensOutput;
   final int? tokensReasoning;
   final int? contextLength;
+  final String? agent;
 
   const AssistantMessage({
     required super.id,
@@ -97,6 +98,7 @@ class AssistantMessage extends ChatMessage {
     this.tokensReasoning,
     required super.timestamp,
     this.contextLength,
+    this.agent,
   });
 
   AssistantMessage copyWith({
@@ -108,6 +110,7 @@ class AssistantMessage extends ChatMessage {
     int? tokensOutput,
     int? tokensReasoning,
     int? contextLength,
+    String? agent,
   }) {
     return AssistantMessage(
       id: id,
@@ -121,6 +124,7 @@ class AssistantMessage extends ChatMessage {
       tokensOutput: tokensOutput ?? this.tokensOutput,
       tokensReasoning: tokensReasoning ?? this.tokensReasoning,
       contextLength: contextLength ?? this.contextLength,
+      agent: agent ?? this.agent,
     );
   }
 
@@ -137,6 +141,7 @@ class AssistantMessage extends ChatMessage {
     'tokensOutput': tokensOutput,
     'tokensReasoning': tokensReasoning,
     'contextLength': contextLength,
+    'agent': agent,
   };
 
   factory AssistantMessage.fromJson(Map<String, dynamic> json) {
@@ -156,6 +161,7 @@ class AssistantMessage extends ChatMessage {
       tokensOutput: json['tokensOutput'] as int?,
       tokensReasoning: json['tokensReasoning'] as int?,
       contextLength: json['contextLength'] as int?,
+      agent: json['agent'] as String?,
     );
   }
 }

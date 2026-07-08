@@ -3,6 +3,7 @@
 // Each part has id, sessionId, messageId for proper identity tracking.
 
 import 'package:equatable/equatable.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'todo_part.dart' show TodoItem;
 
 enum ToolState { pending, running, completed, error }
@@ -373,8 +374,9 @@ class AssistantTask extends AssistantContent {
 
 class AssistantQuestion extends AssistantContent {
   final String question;
-  final List<String> options;
+  final List<QuestionOption> options;
   final String? answer;
+  final bool multiple;
 
   const AssistantQuestion({
     required String id,
@@ -383,6 +385,7 @@ class AssistantQuestion extends AssistantContent {
     required this.question,
     this.options = const [],
     this.answer,
+    this.multiple = false,
   }) : super(id: id, sessionId: sessionId, messageId: messageId);
 
   @override
@@ -392,7 +395,8 @@ class AssistantQuestion extends AssistantContent {
     'sessionId': sessionId,
     'messageId': messageId,
     'question': question,
-    'options': options,
+    'options': options.map((o) => o.toJson()).toList(),
+    'multiple': multiple,
     if (answer != null) 'answer': answer,
   };
 
@@ -402,7 +406,12 @@ class AssistantQuestion extends AssistantContent {
         sessionId: json['sessionId'] as String,
         messageId: json['messageId'] as String,
         question: json['question'] as String,
-        options: (json['options'] as List?)?.cast<String>() ?? const [],
+        options:
+            (json['options'] as List?)
+                ?.map((e) => QuestionOption.fromJson(e))
+                .toList() ??
+            const [],
+        multiple: json['multiple'] as bool? ?? false,
         answer: json['answer'] as String?,
       );
 
@@ -414,16 +423,19 @@ class AssistantQuestion extends AssistantContent {
     question,
     options,
     answer,
+    multiple,
   ];
 
-  AssistantQuestion copyWith({String? answer}) => AssistantQuestion(
-    id: id!,
-    sessionId: sessionId!,
-    messageId: messageId!,
-    question: question,
-    options: options,
-    answer: answer ?? this.answer,
-  );
+  AssistantQuestion copyWith({String? answer, bool? multiple}) =>
+      AssistantQuestion(
+        id: id!,
+        sessionId: sessionId!,
+        messageId: messageId!,
+        question: question,
+        options: options,
+        answer: answer ?? this.answer,
+        multiple: multiple ?? this.multiple,
+      );
 }
 
 // ── Todo ───────────────────────────────────────────────────────────────

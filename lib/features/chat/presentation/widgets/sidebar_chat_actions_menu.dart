@@ -32,16 +32,20 @@ class ChatActionsMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () => _showChatActionsMenu(context),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          child: Icon(
-            Icons.more_vert,
-            size: 18,
-            color: theme.iconTheme.color?.withValues(alpha: 0.6),
+        child: Tooltip(
+          message: localizations.chatActionsMenuTooltip,
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            child: Icon(
+              Icons.more_vert,
+              size: 18,
+              color: theme.iconTheme.color?.withValues(alpha: 0.6),
+            ),
           ),
         ),
       ),

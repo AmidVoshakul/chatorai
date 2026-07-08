@@ -59,6 +59,7 @@ class Message {
   final int? contextLength; // Model's context window length
   final List<Map<String, dynamic>>?
   partsJson; // Serialized MessageParts (tool calls, etc.)
+  final String? agent; // Agent name who responded (for assistant messages)
 
   Message({
     String? id,
@@ -76,6 +77,7 @@ class Message {
     this.tokensReasoning,
     this.contextLength,
     this.partsJson,
+    this.agent,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
   // ===========================================================================
@@ -98,6 +100,7 @@ class Message {
     int? tokensReasoning,
     int? contextLength,
     List<Map<String, dynamic>>? partsJson,
+    String? agent,
   }) {
     return Message(
       id: id ?? this.id,
@@ -115,6 +118,7 @@ class Message {
       tokensReasoning: tokensReasoning ?? this.tokensReasoning,
       contextLength: contextLength ?? this.contextLength,
       partsJson: partsJson ?? this.partsJson,
+      agent: agent ?? this.agent,
     );
   }
 
@@ -168,6 +172,7 @@ class Message {
       'tokensReasoning': tokensReasoning,
       'contextLength': contextLength,
       'partsJson': partsJson,
+      'agent': agent,
     };
 
     return json;
@@ -196,6 +201,7 @@ class Message {
       partsJson: json['partsJson'] != null
           ? (json['partsJson'] as List<dynamic>).cast<Map<String, dynamic>>()
           : null,
+      agent: json['agent'] as String?,
     );
   }
 }

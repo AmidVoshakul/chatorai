@@ -469,7 +469,7 @@ void main() {
   });
 
   group('PermissionService.attachPreferences', () {
-    test('loads approved rules from SharedPreferences', () async {
+    test('session-scoped: does not load any rules', () async {
       SharedPreferences.setMockInitialValues({
         'permission_approved_rules': ['read|*.txt|allow', 'bash|git *|allow'],
       });
@@ -477,23 +477,7 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       service.attachPreferences(prefs);
 
-      expect(service.approvedRules, hasLength(2));
-      expect(service.approvedRules[0].permission, equals('read'));
-      expect(service.approvedRules[0].pattern, equals('*.txt'));
-      expect(service.approvedRules[0].action, equals(PermissionAction.allow));
-    });
-
-    test('ignores corrupt prefs entries', () async {
-      SharedPreferences.setMockInitialValues({
-        'permission_approved_rules': ['invalid-entry', 'read|*.txt|allow'],
-      });
-
-      final prefs = await SharedPreferences.getInstance();
-      service.attachPreferences(prefs);
-
-      // Should only load the valid entry
-      expect(service.approvedRules, hasLength(1));
-      expect(service.approvedRules[0].permission, equals('read'));
+      expect(service.approvedRules, isEmpty);
     });
   });
 }

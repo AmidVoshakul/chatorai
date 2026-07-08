@@ -67,6 +67,7 @@ class ChatOrAIConfig {
   final CompactionConfig? compaction;
   final FormatterConfig? formatter;
   final McpConfig? mcp;
+  final AgentSectionConfig? agent;
 
   const ChatOrAIConfig({
     required this.version,
@@ -76,6 +77,7 @@ class ChatOrAIConfig {
     this.compaction,
     this.formatter,
     this.mcp,
+    this.agent,
   });
 
   factory ChatOrAIConfig.fromJson(Map<String, dynamic> json) {
@@ -102,6 +104,9 @@ class ChatOrAIConfig {
       mcp: json['mcp'] != null
           ? McpConfig.fromJson(json['mcp'] as Map<String, dynamic>?)
           : null,
+      agent: json['agent'] != null
+          ? AgentSectionConfig.fromJson(json['agent'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -113,6 +118,7 @@ class ChatOrAIConfig {
     if (compaction != null) 'compaction': compaction!.toJson(),
     if (formatter != null) 'formatter': formatter!.toJson(),
     if (mcp != null) 'mcp': mcp!.toJson(),
+    if (agent != null) 'agent': agent!.toJson(),
   };
 }
 
@@ -185,4 +191,72 @@ class SkillConfig {
     if (paths.isNotEmpty) 'paths': paths,
     if (urls.isNotEmpty) 'urls': urls,
   };
+}
+
+/// Configuration for a single agent override in chatorai.json.
+class AgentConfig {
+  final String? name;
+  final String? description;
+  final String? prompt;
+  final bool? disabled;
+  final bool? hidden;
+  final int? maxSteps;
+
+  const AgentConfig({
+    this.name,
+    this.description,
+    this.prompt,
+    this.disabled,
+    this.hidden,
+    this.maxSteps,
+  });
+
+  factory AgentConfig.fromJson(Map<String, dynamic> json) {
+    return AgentConfig(
+      name: json['name'] as String?,
+      description: json['description'] as String?,
+      prompt: json['prompt'] as String?,
+      disabled: json['disabled'] as bool?,
+      hidden: json['hidden'] as bool?,
+      maxSteps: json['max_steps'] is int
+          ? json['max_steps'] as int
+          : (json['maxSteps'] is int ? json['maxSteps'] as int : null),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    if (name != null) 'name': name,
+    if (description != null) 'description': description,
+    if (prompt != null) 'prompt': prompt,
+    if (disabled != null) 'disabled': disabled,
+    if (hidden != null) 'hidden': hidden,
+    if (maxSteps != null) 'max_steps': maxSteps,
+  };
+}
+
+/// Agent section in chatorai.json.
+class AgentSectionConfig {
+  final Map<String, AgentConfig> agents;
+
+  const AgentSectionConfig({this.agents = const {}});
+
+  factory AgentSectionConfig.fromJson(Map<String, dynamic> json) {
+    final agents = <String, AgentConfig>{};
+    for (final entry in json.entries) {
+      if (entry.value is Map<String, dynamic>) {
+        agents[entry.key] = AgentConfig.fromJson(
+          entry.value as Map<String, dynamic>,
+        );
+      }
+    }
+    return AgentSectionConfig(agents: agents);
+  }
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    for (final entry in agents.entries) {
+      map[entry.key] = entry.value.toJson();
+    }
+    return map;
+  }
 }

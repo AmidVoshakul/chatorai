@@ -1,4 +1,13 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:chatorai/core/config/models/chatorai_config.dart';
+import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/shared/utils/xdg_paths.dart';
+import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 enum AgentMode { primary, subagent, all }
 
@@ -8,10 +17,8 @@ class AgentDefinition {
   final String? description;
   final AgentMode mode;
   final String? systemPrompt;
-  final String? modelOverride;
   final PermissionRuleset permissions;
   final bool hidden;
-  final String? color;
   final int maxSteps;
 
   const AgentDefinition({
@@ -20,38 +27,64 @@ class AgentDefinition {
     this.description,
     this.mode = AgentMode.subagent,
     this.systemPrompt,
-    this.modelOverride,
     this.permissions = const PermissionRuleset(),
     this.hidden = false,
-    this.color,
     this.maxSteps = 5,
   });
+
+  AgentDefinition copyWith({
+    String? id,
+    String? name,
+    String? description,
+    AgentMode? mode,
+    String? systemPrompt,
+    PermissionRuleset? permissions,
+    bool? hidden,
+    int? maxSteps,
+  }) {
+    return AgentDefinition(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      mode: mode ?? this.mode,
+      systemPrompt: systemPrompt ?? this.systemPrompt,
+      permissions: permissions ?? this.permissions,
+      hidden: hidden ?? this.hidden,
+      maxSteps: maxSteps ?? this.maxSteps,
+    );
+  }
 }
 
-class AgentRegistry {
-  static final AgentRegistry _instance = AgentRegistry._();
-  AgentRegistry._();
-  factory AgentRegistry() => _instance;
-
-  final Map<String, AgentDefinition> _agents = {
-    'build': AgentDefinition(
-      id: 'build',
-      name: 'Build',
-      description: 'Default agent. Executes tools with standard permissions.',
-      mode: AgentMode.primary,
-      hidden: false,
-      systemPrompt:
-          'You are ChatORAI in BUILD mode agent. Execute tasks using available tools. Ask for permission when required.',
-      maxSteps: 25,
+// Built-in agent fallback definitions (always available)
+// These are hardcoded defaults that can be overridden via chatorai.json
+final Map<String, AgentDefinition> _builtInAgents = {
+  'build': const AgentDefinition(
+    id: 'build',
+    name: 'build',
+    description: 'Build agent. Executes tools with standard permissions.',
+    mode: AgentMode.primary,
+    hidden: false,
+    maxSteps: 25,
+    permissions: PermissionRuleset(
+      rules: [
+        // Default allow for all tools, but specific overrides
+        PermissionRule(
+          permission: '*',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+      ],
     ),
-    'plan': AgentDefinition(
-      id: 'plan',
-      name: 'Plan',
-      description:
-          'Planning agent. No file editing — only analysis and planning.',
-      mode: AgentMode.primary,
-      hidden: false,
-      systemPrompt: '''
+  ),
+  'plan': const AgentDefinition(
+    id: 'plan',
+    name: 'plan',
+    description:
+        'Planning agent. No file editing — only analysis and planning.',
+    mode: AgentMode.primary,
+    hidden: false,
+    maxSteps: 10,
+    systemPrompt: '''
 You are ChatORAI in PLAN mode. Your role is that of a system architect and strategic engineer, not a code implementer.
 
 Expertise:
@@ -83,7 +116,7 @@ Response format:
 Main goal:
 Create a clear, implementable and logical plan that can be directly transferred to implementation mode (code).
 
-- Always structure the problem first, don’t jump straight to solutions
+- Always structure the problem first, don't jump straight to solutions
 - If the task is not completely clear, ask clarifying questions before creating a plan
 - Prefer simple and reliable solutions instead of overly complex ones
 - Break the plan into small, logically completed steps
@@ -91,39 +124,37 @@ Create a clear, implementable and logical plan that can be directly transferred 
 - Consider scalability and future support
 - Suggest alternatives if there are several reasonable approaches
 - Do not write full code - only pseudocode or examples if necessary
-- Avoid “magic” - all decisions must be explainable
+- Avoid "magic" - all decisions must be explainable
 - Highlight potential risks and bottlenecks
 - Think like an engineer who delegates a task to another developer
-
 ''',
-      maxSteps: 10,
+    permissions: PermissionRuleset(
+      rules: [
+        PermissionRule(
+          permission: '*',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+      ],
     ),
-    'general': AgentDefinition(
-      id: 'general',
-      name: 'General',
-      description:
-          'General-purpose agent for researching complex questions and executing multi-step tasks. Use this agent to execute multiple units of work in parallel.',
-      mode: AgentMode.subagent,
-      hidden: false,
-      systemPrompt:
-          'You are a general-purpose agent. Complete the given task using available tools.',
-      maxSteps: 10,
-    ),
-    'explore': AgentDefinition(
-      id: 'explore',
-      name: 'Explore',
-      description: 'Read-only exploration. Uses read, glob, grep only.',
-      mode: AgentMode.subagent,
-      hidden: false,
-      systemPrompt: '''
+  ),
+  'explore': const AgentDefinition(
+    id: 'explore',
+    name: 'explore',
+    description: 'Read-only exploration. Uses read, glob, grep only.',
+    mode: AgentMode.subagent,
+    hidden: false,
+    systemPrompt: '''
 You are a file search specialist. You excel at thoroughly navigating and exploring codebases.
 
 Your strengths:
+
 - Rapidly finding files using glob patterns
 - Searching code and text with powerful regex patterns
 - Reading and analyzing file contents
 
 Guidelines:
+
 - Use Glob for broad file pattern matching
 - Use Grep for searching file contents with regex
 - Use Read when you know the specific file path you need to read
@@ -134,37 +165,92 @@ Guidelines:
 - Do not create any files, or run bash commands that modify the user's system state in any way
 
 Complete the user's search request efficiently and report your findings clearly.
-
 ''',
-      maxSteps: 10,
+    permissions: PermissionRuleset(
+      rules: [
+        PermissionRule(
+          permission: '*',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+        PermissionRule(
+          permission: 'read',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'glob',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'grep',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+      ],
     ),
-    'compaction': AgentDefinition(
-      id: 'compaction',
-      name: 'Compaction',
-      description: 'Context compaction agent. Summarizes conversation.',
-      mode: AgentMode.primary,
-      hidden: true,
-      systemPrompt: '''
-You are an anchored context summarization assistant for coding sessions.
+  ),
+  'general': const AgentDefinition(
+    id: 'general',
+    name: 'general',
+    description:
+        'General-purpose agent for researching complex questions and executing multi-step tasks.',
+    mode: AgentMode.subagent,
+    hidden: false,
+    maxSteps: 10,
+    systemPrompt:
+        'You are a general-purpose agent. Complete the given task using available tools.',
+    permissions: PermissionRuleset(
+      rules: [
+        PermissionRule(
+          permission: '*',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+      ],
+    ),
+  ),
+  // Hidden agents - deny all by default
+  'summary': const AgentDefinition(
+    id: 'summary',
+    name: 'summary',
+    description: 'Generates PR-style summary for conversations.',
+    mode: AgentMode.primary,
+    hidden: true,
+    maxSteps: 5,
+    systemPrompt: '''
+Summarize what was done in this conversation. Write like a pull request description.
 
-Summarize only the conversation history you are given. The newest turns may be kept verbatim outside your summary, so focus on the older context that still matters for continuing the work.
+Rules:
 
-If the prompt includes a <previous-summary> block, treat it as the current anchored summary. Update it with the new history by preserving still-true details, removing stale details, and merging in new facts.
-
-Always follow the exact output structure requested by the user prompt. Keep every section, preserve exact file paths and identifiers when known, and prefer terse bullets over paragraphs.
-
-Do not answer the conversation itself. Do not mention that you are summarizing, compacting, or merging context. Respond in the same language as the conversation.
-
+- 2-3 sentences max
+- Describe the changes made, not the process
+- Do not mention running tests, builds, or other validation steps
+- Do not explain what the user asked for
+- Write in first person (I added..., I fixed...)
+- Never ask questions or add new questions
+- If the conversation ends with an unanswered question to the user, preserve that exact question
+- If the conversation ends with an imperative statement or request to the user (e.g. "Now please run the command and paste the console output"), always include that exact request in the summary
 ''',
-      maxSteps: 3,
+    permissions: PermissionRuleset(
+      rules: [
+        PermissionRule(
+          permission: '*',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+      ],
     ),
-    'title': AgentDefinition(
-      id: 'title',
-      name: 'Title',
-      description: 'Generates short titles (hidden).',
-      mode: AgentMode.primary,
-      hidden: true,
-      systemPrompt: '''
+  ),
+  'title': const AgentDefinition(
+    id: 'title',
+    name: 'title',
+    description: 'Generates short titles for conversations.',
+    mode: AgentMode.primary,
+    hidden: true,
+    maxSteps: 1,
+    systemPrompt: '''
 You are a title generator. You output ONLY a thread title. Nothing else.
 
 <task>
@@ -173,6 +259,7 @@ Generate a brief title that would help the user find this conversation later.
 Follow all rules in <rules>
 Use the <examples> so you know what a good title looks like.
 Your output must be:
+
 - A single line
 - ≤60 characters
 - No explanations
@@ -196,60 +283,289 @@ Your output must be:
 - If the user message is short or conversational (e.g. "hello", "lol", "what's up", "hey"):
   → create a title that reflects the user's tone or intent (such as Greeting, Quick check-in, Light chat, Intro message, etc.)
 </rules>
-
-<examples>
-"debug 500 errors in production" → Debugging production 500 errors
-"refactor user service" → Refactoring user service
-"why is app.js failing" → app.js failure investigation
-"implement rate limiting" → Rate limiting implementation
-"how do I connect postgres to my API" → Postgres API connection
-"best practices for React hooks" → React hooks best practices
-"@src/auth.ts can you add refresh token support" → Auth refresh token support
-"@utils/parser.ts this is broken" → Parser bug fix
-"look at @config.json" → Config review
-"@App.tsx add dark mode toggle" → Dark mode toggle in App
-</examples>
-
 ''',
-      maxSteps: 1,
+    permissions: PermissionRuleset(
+      rules: [
+        PermissionRule(
+          permission: '*',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+      ],
     ),
-    'summary': AgentDefinition(
-      id: 'summary',
-      name: 'Summary',
-      description: 'Generates structured summaries (hidden).',
-      mode: AgentMode.primary,
-      hidden: true,
-      systemPrompt: '''
-Summarize what was done in this conversation. Write like a pull request description.
+  ),
+  'compaction': const AgentDefinition(
+    id: 'compaction',
+    name: 'compaction',
+    description:
+        'Context compaction agent for summarizing conversation history.',
+    mode: AgentMode.primary,
+    hidden: true,
+    maxSteps: 5,
+    systemPrompt: '''
+You are an anchored context summarization assistant for coding sessions.
 
-Rules:
-- 2-3 sentences max
-- Describe the changes made, not the process
-- Do not mention running tests, builds, or other validation steps
-- Do not explain what the user asked for
-- Write in first person (I added..., I fixed...)
-- Never ask questions or add new questions
-- If the conversation ends with an unanswered question to the user, preserve that exact question
-- If the conversation ends with an imperative statement or request to the user (e.g. "Now please run the command and paste the console output"), always include that exact request in the summary
+Summarize only the conversation history you are given. The newest turns may be kept verbatim outside your summary, so focus on the older context that still matters for continuing the work.
 
+If the prompt includes a <previous-summary> block, treat it as the current anchored summary. Update it with the new history by preserving still-true details, removing stale details, and merging in new facts.
+
+Always follow the exact output structure requested by the user prompt. Keep every section, preserve exact file paths and identifiers when known, and prefer terse bullets over paragraphs.
+
+Do not answer the conversation itself. Do not mention that you are summarizing, compacting, or merging context. Respond in the same language as the conversation.
 ''',
-      maxSteps: 1,
+    permissions: PermissionRuleset(
+      rules: [
+        PermissionRule(
+          permission: '*',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+      ],
     ),
-  };
+  ),
+};
 
-  AgentDefinition? get(String id) => _agents[id];
+/// Parses an AGENT.md file into an [AgentDefinition].
+///
+/// Expects YAML frontmatter between `---` delimiters, followed by markdown body.
+/// Required fields in frontmatter: `description` (string).
+class AgentParser {
+  static AgentDefinition parse(String filePath, String content) {
+    final lines = content.split('\n');
 
-  /// Primary agents (build, plan) — visible in agent switcher button.
-  List<AgentDefinition> getPrimaryAgents() => _agents.values
-      .where((a) => a.mode == AgentMode.primary && !a.hidden)
-      .toList();
+    int? fmStart, fmEnd;
+    for (int i = 0; i < lines.length; i++) {
+      if (lines[i].trim() == '---') {
+        if (fmStart == null) {
+          fmStart = i;
+        } else {
+          fmEnd = i;
+          break;
+        }
+      }
+    }
 
-  /// Subagents (explore, general, compaction) — shown in @-mention popup.
-  List<AgentDefinition> getSubagents() => _agents.values
-      .where((a) => a.mode == AgentMode.subagent && !a.hidden)
-      .toList();
+    if (fmStart == null || fmEnd == null) {
+      throw FormatException('Missing frontmatter delimiters (---)', filePath);
+    }
 
-  /// All non-hidden agents.
-  List<AgentDefinition> getVisibleAgents() =>
-      _agents.values.where((a) => !a.hidden).toList();
+    final frontMatterLines = lines.sublist(fmStart + 1, fmEnd);
+    final bodyLines = lines.sublist(fmEnd + 1);
+    final body = bodyLines.join('\n').trimLeft();
+
+    final fileName = p.basename(filePath);
+    final agentId = fileName.replaceAll('.md', '').toLowerCase();
+
+    final frontMatterStr = frontMatterLines.join('\n');
+    YamlMap? yaml;
+    try {
+      yaml = loadYaml(frontMatterStr) as YamlMap?;
+    } catch (e) {
+      throw FormatException('YAML parse error: $e', filePath);
+    }
+
+    if (yaml == null) {
+      throw FormatException('Empty frontmatter', filePath);
+    }
+
+    final name = yaml['name']?.toString() ?? agentId;
+    final description = yaml['description']?.toString();
+
+    if (description == null || description.isEmpty) {
+      throw FormatException('Missing or empty "description" field', filePath);
+    }
+
+    final modeValue = yaml['mode'];
+    final modeStr = (modeValue != null ? modeValue.toString() : 'subagent')
+        .toLowerCase();
+    final mode = switch (modeStr) {
+      'primary' => AgentMode.primary,
+      'subagent' => AgentMode.subagent,
+      'all' => AgentMode.all,
+      _ => AgentMode.primary,
+    };
+
+    final maxSteps = yaml['max_steps'] is int
+        ? yaml['max_steps'] as int
+        : (yaml['maxSteps'] is int ? yaml['maxSteps'] as int : 5);
+
+    final hidden = yaml['hidden'] as bool? ?? false;
+    final systemPrompt = body.isNotEmpty ? body : null;
+
+    PermissionRuleset permissions = const PermissionRuleset();
+    if (yaml['permission'] != null) {
+      final permYaml = yaml['permission'];
+      if (permYaml is Map) {
+        final rules = PermissionRuleset.fromConfig(
+          Map<String, dynamic>.from(permYaml),
+        );
+        permissions = PermissionRuleset(rules: rules);
+      }
+    }
+
+    return AgentDefinition(
+      id: agentId,
+      name: name,
+      description: description,
+      mode: mode,
+      systemPrompt: systemPrompt,
+      hidden: hidden,
+      maxSteps: maxSteps < 0 ? 5 : maxSteps,
+      permissions: permissions,
+    );
+  }
+}
+
+/// Agent registry loaded from markdown files.
+class AgentRegistry {
+  static final AgentRegistry _instance = AgentRegistry._();
+  AgentRegistry._();
+  factory AgentRegistry() => _instance;
+
+  final Map<String, AgentDefinition> _agents = {};
+  bool _initialized = false;
+  Completer<void>? _initCompleter;
+
+  Future<void> init([ChatOrAIConfig? config]) async {
+    if (_initialized) return;
+    if (_initCompleter != null) return _initCompleter!.future;
+
+    _initCompleter = Completer<void>();
+    try {
+      // 1. Built-in fallback (always available)
+      _agents.addAll(_builtInAgents);
+
+      // 2. Load custom agents (override built-in)
+      final customAgents = await _loadCustomAgents();
+      _agents.addAll(customAgents);
+
+      // 3. Apply JSON overrides
+      if (config != null) {
+        _applyOverrides(_agents, config);
+      }
+
+      _initialized = true;
+      _initCompleter!.complete();
+    } catch (e) {
+      _initCompleter!.completeError(e);
+      rethrow;
+    }
+  }
+
+  bool get isInitialized => _initialized;
+
+  AgentDefinition? get(String id) {
+    if (!_initialized) return null;
+    return _agents[id];
+  }
+
+  List<AgentDefinition> getPrimaryAgents() {
+    if (!_initialized) return [];
+    return _agents.values
+        .where((a) => a.mode == AgentMode.primary && !a.hidden)
+        .toList();
+  }
+
+  List<AgentDefinition> getSubagents() {
+    if (!_initialized) return [];
+    return _agents.values
+        .where((a) => a.mode == AgentMode.subagent && !a.hidden)
+        .toList();
+  }
+
+  List<AgentDefinition> getVisibleAgents() {
+    if (!_initialized) return [];
+    return _agents.values.where((a) => !a.hidden).toList();
+  }
+
+  List<String> getAllIds() {
+    if (!_initialized) return [];
+    return _agents.keys.toList();
+  }
+
+  static Future<Map<String, AgentDefinition>> _loadCustomAgents() async {
+    final agents = <String, AgentDefinition>{};
+
+    // Project agents
+    final projectDir = Directory('.chatorai/agents');
+    if (projectDir.existsSync()) {
+      await for (final entity in projectDir.list()) {
+        if (entity is! File) continue;
+        if (!entity.path.endsWith('.md')) continue;
+        try {
+          final content = await entity.readAsString();
+          final agent = AgentParser.parse(entity.path, content);
+          agents[agent.id] = agent;
+          LogTags.agentLoader.logInfo('Loaded project agent: ${agent.id}');
+        } catch (e) {
+          LogTags.agentLoader.logWarning(
+            'Failed to load project agent ${entity.path}: $e',
+          );
+        }
+      }
+    }
+
+    // Global agents
+    final globalDir = Directory(p.join(XdgPaths.configHome, 'agents'));
+    if (globalDir.existsSync()) {
+      await for (final entity in globalDir.list()) {
+        if (entity is! File) continue;
+        if (!entity.path.endsWith('.md')) continue;
+        try {
+          final content = await entity.readAsString();
+          final agent = AgentParser.parse(entity.path, content);
+          agents[agent.id] = agent;
+          LogTags.agentLoader.logInfo('Loaded global agent: ${agent.id}');
+        } catch (e) {
+          LogTags.agentLoader.logWarning(
+            'Failed to load global agent ${entity.path}: $e',
+          );
+        }
+      }
+    }
+
+    return agents;
+  }
+
+  static void _applyOverrides(
+    Map<String, AgentDefinition> agents,
+    ChatOrAIConfig config,
+  ) {
+    final agentSection = config.agent;
+    if (agentSection == null) return;
+
+    for (final entry in agentSection.agents.entries) {
+      final agentId = entry.key;
+      final override = entry.value;
+      final existing = agents[agentId];
+
+      if (override.disabled == true) {
+        agents.remove(agentId);
+        LogTags.agentLoader.logInfo('Removed disabled agent: $agentId');
+        continue;
+      }
+
+      if (existing == null) {
+        agents[agentId] = AgentDefinition(
+          id: agentId,
+          name: override.name ?? agentId,
+          description: override.description,
+          mode: AgentMode.all,
+          hidden: override.hidden ?? false,
+          maxSteps: override.maxSteps ?? 5,
+        );
+        LogTags.agentLoader.logInfo('Created new agent from config: $agentId');
+        continue;
+      }
+
+      agents[agentId] = existing.copyWith(
+        name: override.name ?? existing.name,
+        description: override.description ?? existing.description,
+        systemPrompt: override.prompt ?? existing.systemPrompt,
+        hidden: override.hidden ?? existing.hidden,
+        maxSteps: override.maxSteps ?? existing.maxSteps,
+      );
+      LogTags.agentLoader.logInfo('Applied override to agent: $agentId');
+    }
+  }
 }

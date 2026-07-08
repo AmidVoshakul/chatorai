@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/permission_provider.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/shared/theme/chatorai_divider.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 
 /// Bridges [PermissionService.onAsked] → UI dialog.
@@ -125,12 +128,13 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
     );
 
     _customController.clear();
-    String? selectedOption;
+    final selectedOptions = <String>{};
 
     final answer = await showDialog<String>(
       context: context,
       barrierDismissible: true,
       builder: (ctx) {
+        final localizations = AppLocalizations.of(context)!;
         return StatefulBuilder(
           builder: (context, setDialogState) {
             final theme = Theme.of(context);
@@ -140,7 +144,10 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
                   const Icon(Icons.help_outline, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text('Question', style: theme.textTheme.titleMedium),
+                    child: Text(
+                      localizations.question,
+                      style: theme.textTheme.titleMedium,
+                    ),
                   ),
                 ],
               ),
@@ -164,8 +171,17 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
                           child: InkWell(
                             onTap: () {
                               setDialogState(() {
-                                selectedOption = option;
-                                _customController.clear();
+                                if (req.multiple) {
+                                  if (selectedOptions.contains(option.label)) {
+                                    selectedOptions.remove(option.label);
+                                  } else {
+                                    selectedOptions.add(option.label);
+                                  }
+                                } else {
+                                  selectedOptions.clear();
+                                  selectedOptions.add(option.label);
+                                  _customController.clear();
+                                }
                               });
                             },
                             borderRadius: BorderRadius.circular(8),
@@ -176,31 +192,66 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: selectedOption == option
+                                color: selectedOptions.contains(option.label)
                                     ? theme.colorScheme.primary.withValues(
                                         alpha: 0.15,
                                       )
-                                    : theme.colorScheme.surface,
+                                    : theme.colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: selectedOption == option
-                                      ? theme.colorScheme.primary
-                                      : theme.colorScheme.outlineVariant,
-                                ),
+                                border: selectedOptions.contains(option.label)
+                                    ? Border.all(
+                                        color: theme.colorScheme.primary,
+                                      )
+                                    : null,
                               ),
                               child: Row(
                                 children: [
                                   Icon(
-                                    selectedOption == option
-                                        ? Icons.radio_button_checked
-                                        : Icons.radio_button_unchecked,
+                                    req.multiple
+                                        ? (selectedOptions.contains(
+                                                option.label,
+                                              )
+                                              ? Icons.check_box
+                                              : Icons.check_box_outline_blank)
+                                        : (selectedOptions.contains(
+                                                option.label,
+                                              )
+                                              ? Icons.radio_button_checked
+                                              : Icons.radio_button_unchecked),
                                     size: 18,
-                                    color: selectedOption == option
+                                    color:
+                                        selectedOptions.contains(option.label)
                                         ? theme.colorScheme.primary
                                         : theme.colorScheme.onSurfaceVariant,
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(option),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          option.label,
+                                          style: theme.textTheme.bodySmall,
+                                        ),
+                                        if (option.description != null &&
+                                            option.description!.isNotEmpty)
+                                          Text(
+                                            option.description!,
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onSurfaceVariant
+                                                      .withValues(alpha: 0.7),
+                                                  fontSize:
+                                                      ChatoraiFontSizes.xs,
+                                                  fontStyle: FontStyle.italic,
+                                                ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -208,7 +259,7 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Divider(),
+                      const ChatoraiDivider(),
                       const SizedBox(height: 4),
                     ],
                     TextField(
@@ -225,7 +276,7 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
                       maxLength: 1000,
                       onChanged: (_) {
                         setDialogState(() {
-                          selectedOption = null;
+                          selectedOptions.clear();
                         });
                       },
                     ),
@@ -235,17 +286,20 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, ''),
-                  child: const Text('Skip'),
+                  child: Text(localizations.skip),
                 ),
                 FilledButton(
                   onPressed: () {
                     if (_customController.text.trim().isNotEmpty) {
                       Navigator.pop(ctx, _customController.text.trim());
-                    } else if (selectedOption != null) {
-                      Navigator.pop(ctx, selectedOption);
+                    } else if (selectedOptions.isNotEmpty) {
+                      final answer = req.multiple
+                          ? jsonEncode(selectedOptions.toList())
+                          : selectedOptions.first;
+                      Navigator.pop(ctx, answer);
                     }
                   },
-                  child: const Text('Answer'),
+                  child: Text(localizations.answer),
                 ),
               ],
             );

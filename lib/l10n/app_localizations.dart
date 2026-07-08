@@ -280,6 +280,30 @@ abstract class AppLocalizations {
   /// **'Automatically scroll down when new content appears'**
   String get autoScrollDuringStreamingDesc;
 
+  /// No description provided for @showContinuationSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Show continuation suggestions'**
+  String get showContinuationSuggestions;
+
+  /// No description provided for @showContinuationSuggestionsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Display suggested follow-up messages after AI responses'**
+  String get showContinuationSuggestionsDesc;
+
+  /// No description provided for @expandReasoningByDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand reasoning by default'**
+  String get expandReasoningByDefault;
+
+  /// No description provided for @expandReasoningByDefaultDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Show reasoning/thought blocks expanded when AI responds'**
+  String get expandReasoningByDefaultDesc;
+
   /// No description provided for @language.
   ///
   /// In en, this message translates to:
@@ -2247,6 +2271,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to generate suggestions'**
   String generatingSuggestionsFailed(Object error);
+
+  /// No description provided for @toggleSidebarTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle sidebar'**
+  String get toggleSidebarTooltip;
+
+  /// No description provided for @openMenuTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Open menu'**
+  String get openMenuTooltip;
+
+  /// No description provided for @addFileTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add file'**
+  String get addFileTooltip;
+
+  /// No description provided for @modelSettingsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Model settings'**
+  String get modelSettingsTooltip;
+
+  /// No description provided for @switchAgentTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch agent'**
+  String get switchAgentTooltip;
+
+  /// No description provided for @selectModelTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Select model'**
+  String get selectModelTooltip;
+
+  /// No description provided for @removeFileTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove file'**
+  String get removeFileTooltip;
+
+  /// No description provided for @goToParentSessionTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to parent session'**
+  String get goToParentSessionTooltip;
+
+  /// No description provided for @previousSiblingTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous sibling'**
+  String get previousSiblingTooltip;
+
+  /// No description provided for @nextSiblingTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Next sibling'**
+  String get nextSiblingTooltip;
+
+  /// No description provided for @cancellingRetryTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling retry...'**
+  String get cancellingRetryTooltip;
+
+  /// No description provided for @stopGenerationTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop generation'**
+  String get stopGenerationTooltip;
+
+  /// No description provided for @question.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get question;
+
+  /// No description provided for @skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skip;
+
+  /// No description provided for @answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer'**
+  String get answer;
+
+  /// No description provided for @noAgentsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No agents available'**
+  String get noAgentsAvailable;
+
+  /// No description provided for @permissionAlwaysConfirmDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This will allow \"{title}\" until the app is restarted.'**
+  String permissionAlwaysConfirmDescription(Object title);
+
+  /// No description provided for @chatActionsMenuTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat menu'**
+  String get chatActionsMenuTooltip;
+
+  /// No description provided for @startListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Start voice input'**
+  String get startListening;
+
+  /// No description provided for @stopListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop voice input'**
+  String get stopListening;
+
+  /// No description provided for @listening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening...'**
+  String get listening;
+
+  /// No description provided for @sendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Send message'**
+  String get sendMessage;
+
+  /// No description provided for @maxTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Tokens'**
+  String get maxTokens;
+
+  /// No description provided for @maxTokensDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum length of generated response'**
+  String get maxTokensDescription;
+
+  /// No description provided for @activeModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Model'**
+  String get activeModel;
+
+  /// No description provided for @apiLimitExceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'API limit exceeded: {limit}'**
+  String apiLimitExceeded(Object limit);
+
+  /// No description provided for @valueExceedsApiLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Value exceeds API limit ({limit}). Maximum value will be used.'**
+  String valueExceedsApiLimit(Object limit);
+
+  /// No description provided for @micStopFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to stop microphone'**
+  String get micStopFailed;
+
+  /// No description provided for @errorProcessingRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorry, I encountered an error while processing your request. Please try again.'**
+  String get errorProcessingRequest;
+
+  /// No description provided for @rateLimitRetryMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate limit exceeded. Retrying in {seconds} seconds...'**
+  String rateLimitRetryMessage(Object seconds);
+
+  /// No description provided for @messageNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Message not found'**
+  String get messageNotFound;
+
+  /// No description provided for @errorEditingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error editing message'**
+  String get errorEditingMessage;
+
+  /// No description provided for @errorEditAndSendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Error editing and sending message'**
+  String get errorEditAndSendMessage;
+
+  /// No description provided for @defaultSuggestion4.
+  ///
+  /// In en, this message translates to:
+  /// **'How does this apply in practice?'**
+  String get defaultSuggestion4;
+
+  /// No description provided for @fileAttachedButNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'File attached but not supported by the current model'**
+  String get fileAttachedButNotSupported;
+
+  /// No description provided for @expandTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand'**
+  String get expandTooltip;
+
+  /// No description provided for @collapseTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get collapseTooltip;
 }
 
 class _AppLocalizationsDelegate

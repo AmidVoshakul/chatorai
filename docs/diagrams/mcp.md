@@ -1,6 +1,6 @@
 # MCP Integration Diagrams
 
-**Last updated:** 2026-07-07
+**Last updated:** 2026-07-08
 
 This file documents the Model Context Protocol (MCP) client architecture: transport
 selection, connection lifecycle, and tool proxying.  MCP extends ChatORAI's tool

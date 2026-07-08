@@ -67,6 +67,7 @@ ChatMessage messageToChatMessage(Message message) {
         id: id,
         parts: parts,
         model: message.model,
+        agent: message.agent,
         timestamp: timestamp,
         tokensInput: message.tokensInput,
         tokensOutput: message.tokensOutput,

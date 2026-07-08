@@ -1,5 +1,6 @@
 import 'package:chatorai/core/permission/ruleset.dart';
 
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat/todo_part.dart';
 import 'session_id.dart';
 
@@ -404,13 +405,15 @@ class TaskPartError extends SessionEvent {
 class QuestionPartStarted extends SessionEvent {
   final String partId;
   final String questionText;
-  final List<String> options;
+  final List<QuestionOption> options;
+  final bool multiple;
 
   const QuestionPartStarted({
     required super.sessionId,
     required this.partId,
     required this.questionText,
     this.options = const [],
+    this.multiple = false,
     required super.timestamp,
     super.sequence,
   });

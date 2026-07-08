@@ -1,6 +1,6 @@
 # Tool System Diagrams
 
-**Last updated:** 2026-07-07
+**Last updated:** 2026-07-08
 
 This file documents the tool registry, conditional registration, and execution
 lifecycle.  See also `docs/API.md` → Tools for the full input-schema table.

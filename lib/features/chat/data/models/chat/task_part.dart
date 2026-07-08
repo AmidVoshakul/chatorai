@@ -29,6 +29,7 @@ class TaskPart extends MessagePart {
     this.toolCallsCount = 0,
     this.durationMs,
     this.startedAt,
+    super.synthetic,
   });
 
   TaskPart copyWith({
@@ -43,6 +44,7 @@ class TaskPart extends MessagePart {
     int? toolCallsCount,
     int? durationMs,
     DateTime? startedAt,
+    bool? synthetic,
   }) {
     return TaskPart(
       description: description ?? this.description,
@@ -56,6 +58,7 @@ class TaskPart extends MessagePart {
       toolCallsCount: toolCallsCount ?? this.toolCallsCount,
       durationMs: durationMs ?? this.durationMs,
       startedAt: startedAt ?? this.startedAt,
+      synthetic: synthetic ?? this.synthetic,
     );
   }
 
@@ -65,6 +68,7 @@ class TaskPart extends MessagePart {
     'description': description,
     'agent': agent,
     'status': status.name,
+    'synthetic': synthetic,
     if (sessionId != null) 'sessionId': sessionId,
     if (error != null) 'error': error,
     if (retryAttempt != null) 'retryAttempt': retryAttempt,
@@ -92,6 +96,7 @@ class TaskPart extends MessagePart {
       startedAt: json['startedAt'] != null
           ? DateTime.tryParse(json['startedAt'] as String)
           : null,
+      synthetic: json['synthetic'] as bool? ?? false,
     );
   }
 }

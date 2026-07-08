@@ -32,7 +32,7 @@ flutter run -d linux   # или windows, chrome, android, ios
 - [API Reference](docs/API.md) — API, провайдеры, инструменты
 - [Commands](docs/COMMANDS.md) — Команды и @-упоминания
 - [Environment](docs/ENVIRONMENT.md) — Настройка окружения
-- [Roadmap](docs/ROADMAP.md) — Планы и завершенные задачи
+- [Changelog](CHANGELOG.md) — Изменения и история версий
 
 ## 📦 Установка
 

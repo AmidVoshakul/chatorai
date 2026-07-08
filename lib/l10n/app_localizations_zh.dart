@@ -98,6 +98,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get autoScrollDuringStreamingDesc => '出现新内容时自动向下滚动列表';
 
   @override
+  String get showContinuationSuggestions => '显示对话续写建议';
+
+  @override
+  String get showContinuationSuggestionsDesc => '在 AI 回复后显示续写建议';
+
+  @override
+  String get expandReasoningByDefault => '默认展开推理过程';
+
+  @override
+  String get expandReasoningByDefaultDesc => 'AI 回复时默认展开思考/推理块';
+
+  @override
   String get language => '语言';
 
   @override
@@ -1107,4 +1119,123 @@ class AppLocalizationsZh extends AppLocalizations {
   String generatingSuggestionsFailed(Object error) {
     return '生成建议失败: $error';
   }
+
+  @override
+  String get toggleSidebarTooltip => 'Toggle sidebar';
+
+  @override
+  String get openMenuTooltip => 'Open menu';
+
+  @override
+  String get addFileTooltip => 'Add file';
+
+  @override
+  String get modelSettingsTooltip => 'Model settings';
+
+  @override
+  String get switchAgentTooltip => 'Switch agent';
+
+  @override
+  String get selectModelTooltip => '选择模型';
+
+  @override
+  String get removeFileTooltip => 'Remove file';
+
+  @override
+  String get goToParentSessionTooltip => 'Go to parent session';
+
+  @override
+  String get previousSiblingTooltip => 'Previous sibling';
+
+  @override
+  String get nextSiblingTooltip => 'Next sibling';
+
+  @override
+  String get cancellingRetryTooltip => 'Cancelling retry...';
+
+  @override
+  String get stopGenerationTooltip => 'Stop generation';
+
+  @override
+  String get question => 'Question';
+
+  @override
+  String get skip => 'Skip';
+
+  @override
+  String get answer => 'Answer';
+
+  @override
+  String get noAgentsAvailable => 'No agents available';
+
+  @override
+  String permissionAlwaysConfirmDescription(Object title) {
+    return 'This will allow \"$title\" until the app is restarted.';
+  }
+
+  @override
+  String get chatActionsMenuTooltip => 'Chat menu';
+
+  @override
+  String get startListening => '开始语音输入';
+
+  @override
+  String get stopListening => '停止语音输入';
+
+  @override
+  String get listening => '请说话...';
+
+  @override
+  String get sendMessage => '发送消息';
+
+  @override
+  String get maxTokens => '最大令牌数';
+
+  @override
+  String get maxTokensDescription => '生成响应的最大长度';
+
+  @override
+  String get activeModel => '活动模型';
+
+  @override
+  String apiLimitExceeded(Object limit) {
+    return 'API限制已超出: $limit';
+  }
+
+  @override
+  String valueExceedsApiLimit(Object limit) {
+    return '值超出API限制 ($limit)。将使用最大值。';
+  }
+
+  @override
+  String get micStopFailed => '无法停止麦克风';
+
+  @override
+  String get errorProcessingRequest => '抱歉，处理您的请求时发生错误。请重试。';
+
+  @override
+  String rateLimitRetryMessage(Object seconds) {
+    return '已达到速率限制。$seconds秒后重试...';
+  }
+
+  @override
+  String get messageNotFound => '未找到消息';
+
+  @override
+  String get errorEditingMessage => '编辑消息错误';
+
+  @override
+  String get errorEditAndSendMessage => '编辑和发送消息错误';
+
+  @override
+  String get defaultSuggestion4 => '这在实践中如何应用？';
+
+  @override
+  String get fileAttachedButNotSupported => '文件已附加，但当前模型不支持';
+
+  @override
+  String get expandTooltip => '展开';
+
+  @override
+  String get collapseTooltip => '折叠';
 }

@@ -1,4 +1,5 @@
 import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 
 /// Tracks recently asked questions to prevent repeat prompts within cooldown window.
@@ -47,20 +48,32 @@ ToolDef createQuestionTool() {
         },
         'options': {
           'type': 'array',
-          'items': {'type': 'string'},
+          'items': {
+            'oneOf': [
+              {'type': 'string'},
+              {
+                'type': 'object',
+                'properties': {
+                  'label': {'type': 'string'},
+                  'description': {'type': 'string'},
+                },
+                'required': ['label'],
+              },
+            ],
+          },
           'description':
               'Optional list of predefined options for the user to choose from',
         },
         'multiple': {
           'type': 'boolean',
-          'description': 'Allow selecting multiple options (not yet supported)',
+          'description': 'Allow selecting multiple options',
         },
       },
       'required': ['question'],
     },
     execute: (input, ctx) async {
       String question;
-      List<String> options;
+      List<QuestionOption> options;
       bool multiple;
 
       // Support both new format (single question) and legacy format (questions array)
@@ -68,11 +81,19 @@ ToolDef createQuestionTool() {
       if (questionsLegacy != null && questionsLegacy.isNotEmpty) {
         final first = questionsLegacy.first as Map<String, dynamic>;
         question = first['question'] as String? ?? '';
-        options = (first['options'] as List?)?.cast<String>() ?? [];
+        options =
+            (first['options'] as List?)
+                ?.map(QuestionOption.fromJson)
+                .toList() ??
+            const [];
         multiple = first['multiple'] as bool? ?? false;
       } else {
         question = input['question'] as String? ?? '';
-        options = (input['options'] as List?)?.cast<String>() ?? [];
+        options =
+            (input['options'] as List?)
+                ?.map(QuestionOption.fromJson)
+                .toList() ??
+            const [];
         multiple = input['multiple'] as bool? ?? false;
       }
 

@@ -2,6 +2,7 @@ import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/features/chat/data/providers/chat_input_provider.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/input_widget_builders.dart';
 import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -99,6 +100,7 @@ class InputLayoutBuilder {
     required bool isStreaming,
     required AgentDefinition currentAgent,
   }) {
+    final localizations = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,6 +112,7 @@ class InputLayoutBuilder {
               state: chatInputState,
               isMobile: isMobile,
               onRemove: onClearAttachedFile,
+              localizations: localizations,
             ),
           ),
         ],
@@ -190,6 +193,7 @@ class InputLayoutBuilder {
     required bool isStreaming,
     required AgentDefinition currentAgent,
   }) {
+    final localizations = AppLocalizations.of(context)!;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -200,6 +204,7 @@ class InputLayoutBuilder {
               ? ChatoraiColors.inputContainerDark
               : ChatoraiColors.inputContainerLight,
           onTap: onPlusMenu,
+          tooltip: localizations.addFileTooltip,
           child: Icon(Icons.add, color: theme.iconTheme.color),
         ),
         const SizedBox(width: ChatoraiSpacing.sm),
@@ -210,6 +215,7 @@ class InputLayoutBuilder {
               ? ChatoraiColors.inputContainerDark
               : ChatoraiColors.inputContainerLight,
           onTap: onModelSettings,
+          tooltip: localizations.modelSettingsTooltip,
           child: Icon(
             Icons.settings_input_component_outlined,
             color: theme.iconTheme.color,
@@ -221,6 +227,7 @@ class InputLayoutBuilder {
           theme: theme,
           currentAgent: currentAgent,
           onTap: onAgentSwitcher,
+          tooltip: localizations.switchAgentTooltip,
         ),
         const SizedBox(width: ChatoraiSpacing.md),
         Expanded(
@@ -239,6 +246,7 @@ class InputLayoutBuilder {
                       state: chatInputState,
                       isMobile: isMobile,
                       onRemove: onClearAttachedFile,
+                      localizations: localizations,
                     ),
                   ),
                 ),
@@ -311,6 +319,7 @@ class InputLayoutBuilder {
     required bool isStreaming,
     required AgentDefinition currentAgent,
   }) {
+    final localizations = AppLocalizations.of(context)!;
     return Row(
       children: [
         InputWidgetBuilders.buildActionButton(
@@ -330,6 +339,7 @@ class InputLayoutBuilder {
                     ? ChatoraiColors.inputContainerDark
                     : ChatoraiColors.inputContainerLight),
           onTap: onPlusMenu,
+          tooltip: localizations.addFileTooltip,
           child: Icon(
             Icons.add,
             size: iconSize,
@@ -346,6 +356,7 @@ class InputLayoutBuilder {
               ? ChatoraiColors.inputContainerDark
               : ChatoraiColors.inputContainerLight,
           onTap: onModelSettings,
+          tooltip: localizations.modelSettingsTooltip,
           child: Icon(
             Icons.settings_input_component_outlined,
             size: iconSize,
@@ -358,6 +369,7 @@ class InputLayoutBuilder {
           theme: theme,
           currentAgent: currentAgent,
           onTap: onAgentSwitcher,
+          tooltip: localizations.switchAgentTooltip,
         ),
         const Spacer(),
         _buildActionOrStopButton(

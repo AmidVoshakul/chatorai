@@ -115,8 +115,12 @@ class ToolRegistry {
     return sdk.Tool<dynamic, dynamic>(
       inputSchema: sdk.Schema(jsonSchema: def.inputSchema, fromJson: (j) => j),
       description: def.description,
-      executeDynamic: (input, options) =>
-          _executor.execute(def, input, options),
+      executeDynamic: (input, options) async {
+        final result = await _executor.execute(def, input, options);
+        if (result.containsKey('output')) return result['output'] as String;
+        if (result.containsKey('message')) return result['message'] as String;
+        return result.toString();
+      },
     );
   }
 

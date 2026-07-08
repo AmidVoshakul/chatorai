@@ -142,15 +142,7 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
                 height: 8,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isActive
-                      ? Theme.of(context).colorScheme.primary
-                      : (agent.color != null
-                            ? Color(
-                                int.parse(
-                                  agent.color!.replaceFirst('#', '0xFF'),
-                                ),
-                              )
-                            : Theme.of(context).colorScheme.outline),
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               const SizedBox(width: ChatoraiSpacing.sm),

@@ -118,7 +118,7 @@ class _PermissionDialogState extends ConsumerState<PermissionDialog> {
             widget.onReply(PermissionReply.once);
             Navigator.of(context).pop();
           },
-          child: const Text('Allow once'),
+          child: Text(localizations.permissionOnce),
         ),
       ],
     );
@@ -136,7 +136,8 @@ class _PermissionDialogState extends ConsumerState<PermissionDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'This will allow "${widget.title}" until the app is restarted.',
+            localizations?.permissionAlwaysConfirmDescription(widget.title) ??
+                'This will allow "${widget.title}" until the app is restarted.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           if (widget.patterns.isNotEmpty) ...[
@@ -157,14 +158,14 @@ class _PermissionDialogState extends ConsumerState<PermissionDialog> {
       actions: [
         TextButton(
           onPressed: () => setState(() => _showAlwaysConfirmation = false),
-          child: const Text('Cancel'),
+          child: Text(localizations?.cancel ?? 'Cancel'),
         ),
         FilledButton(
           onPressed: () {
             widget.onReply(PermissionReply.always);
             Navigator.of(context).pop();
           },
-          child: const Text('Confirm'),
+          child: Text(localizations?.ok ?? 'OK'),
         ),
       ],
     );

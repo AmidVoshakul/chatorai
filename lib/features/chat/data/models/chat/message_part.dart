@@ -6,7 +6,8 @@ enum ToolState { pending, running, completed, error }
 // across multiple files (split architecture).
 // Existing switch-by-type patterns remain exhaustive.
 abstract class MessagePart {
-  const MessagePart();
+  final bool synthetic;
+  const MessagePart({this.synthetic = false});
 
   Map<String, dynamic> toJson();
 }

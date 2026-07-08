@@ -1,3 +1,4 @@
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 
 class SchemaValidationError {
@@ -34,7 +35,7 @@ class ToolContext {
 
   final Future<String> Function({
     required String question,
-    List<String> options,
+    List<QuestionOption> options,
     bool multiple,
   })
   askQuestion;

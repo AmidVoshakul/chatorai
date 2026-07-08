@@ -124,7 +124,7 @@ class _DiffLine extends StatelessWidget {
       case 3:
         return theme.colorScheme.primary;
       default:
-        return theme.colorScheme.onSurface.withValues(alpha: 0.6);
+        return theme.colorScheme.onSurface.withValues(alpha: 0.5);
     }
   }
 
@@ -222,7 +222,7 @@ class _DiffLine extends StatelessWidget {
                 color:
                     hasDiagnostics == true &&
                         diagnostics!.any((d) => d.severity == 1)
-                    ? theme.colorScheme.error.withValues(alpha: 0.9)
+                    ? theme.colorScheme.error.withValues(alpha: 0.5)
                     : theme.colorScheme.onSurface,
               ),
             ),
@@ -248,7 +248,10 @@ class ToolResultPartWidget extends ConsumerStatefulWidget {
 }
 
 class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
+  static const _noBodyTools = {'websearch', 'webfetch', 'read', 'glob', 'grep'};
+
   bool _isExpanded = false;
+  bool _isCopied = false;
   final Map<int, List<LspDiagnostic>> _diagnosticsByLine = {};
   bool _isLoadingDiagnostics = false;
 
@@ -343,7 +346,7 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
                 'Source: ${diag.source}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
             ],
@@ -352,7 +355,7 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
               'Line ${diag.range.start.line + 1}:${diag.range.start.character + 1}',
               style: TextStyle(
                 fontSize: 12,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -368,7 +371,8 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
     final isError = part.error != null;
     final isRunning = part.state == ToolState.running;
     final isCompleted = part.state == ToolState.completed;
-    final canExpand = (isCompleted || isError) && !isRunning;
+    final isNoBodyTool = _noBodyTools.contains(part.toolName.toLowerCase());
+    final canExpand = (isCompleted || isError) && !isRunning && !isNoBodyTool;
 
     return GestureDetector(
       onTap: canExpand
@@ -380,26 +384,35 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(
-              theme,
-              isError,
-              isRunning,
-              isCompleted,
-              part,
-              canExpand,
-            ),
-            AnimatedCrossFade(
-              firstChild: const SizedBox.shrink(),
-              secondChild: Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: _buildBody(theme, isError, part),
+            Opacity(
+              opacity: 0.5,
+              child: _buildHeader(
+                theme,
+                isError,
+                isRunning,
+                isCompleted,
+                part,
+                canExpand,
               ),
-              crossFadeState: _isExpanded
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-              duration: const Duration(milliseconds: 200),
-              sizeCurve: Curves.easeInOut,
             ),
+            if (!isNoBodyTool)
+              part.toolName.toLowerCase() == 'bash'
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: _buildBody(theme, isError, part),
+                    )
+                  : AnimatedCrossFade(
+                      firstChild: const SizedBox.shrink(),
+                      secondChild: Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: _buildBody(theme, isError, part),
+                      ),
+                      crossFadeState: _isExpanded
+                          ? CrossFadeState.showSecond
+                          : CrossFadeState.showFirst,
+                      duration: const Duration(milliseconds: 200),
+                      sizeCurve: Curves.easeInOut,
+                    ),
           ],
         ),
       ),
@@ -502,51 +515,72 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
   }) {
     final input = part.input ?? {};
     final cmd = input['command'] as String? ?? '';
-    final desc = input['description'] as String?;
     final originalResult = part.result ?? '';
     final displayedResult = displayFull
         ? originalResult
-        : _truncateOutput(originalResult);
+        : _bashPreview(originalResult);
     final isError = part.error != null;
+    final isDark = theme.brightness == Brightness.dark;
+    final terminal = theme.colorScheme.onSurface.withValues(alpha: 0.7);
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.5);
+    const pad = 12.0;
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      color: isDark ? Colors.black26 : Colors.white38,
+      padding: const EdgeInsets.all(pad),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (desc != null && desc.isNotEmpty)
-            Text(
-              '# $desc',
-              style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: ChatoraiFontSizes.sm,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                fontStyle: FontStyle.italic,
-              ),
-            ),
           if (cmd.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                r'$ ' + cmd,
-                style: TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: ChatoraiFontSizes.sm,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Text(
+                    r'$ ',
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: ChatoraiFontSizes.md,
+                      fontWeight: FontWeight.w700,
+                      color: isError ? theme.colorScheme.error : terminal,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      cmd,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: ChatoraiFontSizes.md,
+                        fontWeight: FontWeight.w600,
+                        color: terminal,
+                      ),
+                      softWrap: true,
+                    ),
+                  ),
+                  if (isError)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: Icon(
+                        Icons.error_outline,
+                        size: 14,
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                ],
               ),
             ),
           if (originalResult.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(left: 12),
+            SingleChildScrollView(
               child: SelectableText(
                 displayedResult,
                 style: TextStyle(
                   fontFamily: 'monospace',
-                  fontSize: ChatoraiFontSizes.sm,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  fontSize: ChatoraiFontSizes.md,
+                  color: isError
+                      ? (isDark ? Colors.red[200] : Colors.red[700])
+                      : terminal,
                 ),
               ),
             ),
@@ -921,6 +955,24 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
     return result;
   }
 
+  String _bashPreview(String text) {
+    const maxLines = 10;
+    const maxChars = 500;
+    if (text.isEmpty) return text;
+    final lines = text.split('\n');
+    if (lines.length <= maxLines && text.length <= maxChars) return text;
+    String truncated;
+    if (lines.length > maxLines) {
+      truncated = lines.take(maxLines).join('\n');
+    } else {
+      truncated = text;
+    }
+    if (truncated.length > maxChars) {
+      truncated = truncated.substring(0, maxChars);
+    }
+    return '$truncated\n[...]';
+  }
+
   Widget _buildResultFooter(
     ThemeData theme,
     String displayedBody,
@@ -945,31 +997,55 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
               color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
-          InkWell(
-            onTap: () => _copyToClipboard(original),
-            borderRadius: BorderRadius.circular(4),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.copy,
-                    size: 12,
+          if (_isCopied)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '✅',
+                  style: TextStyle(
+                    fontSize: 10,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
-                  const SizedBox(width: 2),
-                  Text(
-                    'Copy',
-                    style: TextStyle(
-                      fontSize: 10,
+                ),
+                const SizedBox(width: 2),
+                Text(
+                  'Copied',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            )
+          else
+            InkWell(
+              onTap: () => _copyToClipboard(original),
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.copy,
+                      size: 12,
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 2),
+                    Text(
+                      'Copy',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -977,6 +1053,10 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
 
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text));
+    setState(() => _isCopied = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _isCopied = false);
+    });
   }
 
   Widget _lspBody(

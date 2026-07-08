@@ -15,7 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // SIDEBAR WIDGET
 // ===========================================================================
 
-class Sidebar extends ConsumerWidget {
+class Sidebar extends ConsumerStatefulWidget {
   final double width;
   final bool isCollapsed;
   final VoidCallback onToggleSidebar;
@@ -34,7 +34,20 @@ class Sidebar extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<Sidebar> createState() => _SidebarState();
+}
+
+class _SidebarState extends ConsumerState<Sidebar> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Оптимизация: минимизируем количество watch вызовов
     // Используем select для отслеживания только нужных полей
     final themeNotifier = ref.read(themeProvider.notifier);
@@ -57,7 +70,7 @@ class Sidebar extends ConsumerWidget {
     );
 
     return AnimatedContainer(
-      width: width,
+      width: widget.width,
       duration: ChatoraiDurations.normal,
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
@@ -73,9 +86,10 @@ class Sidebar extends ConsumerWidget {
       child: Column(
         children: [
           _buildHeader(context, theme, localizations),
-          if (!isCollapsed) _buildSearchBar(context, ref, theme, localizations),
+          if (!widget.isCollapsed)
+            _buildSearchBar(context, theme, localizations),
           Expanded(
-            child: isCollapsed
+            child: widget.isCollapsed
                 ? Container()
                 : isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -95,7 +109,6 @@ class Sidebar extends ConsumerWidget {
                       final chat = filteredChats[index];
                       return _buildChatItem(
                         context,
-                        ref,
                         chat,
                         theme,
                         language,
@@ -105,7 +118,7 @@ class Sidebar extends ConsumerWidget {
                     },
                   ),
           ),
-          if (!isCollapsed) _buildFooter(context, theme, localizations),
+          if (!widget.isCollapsed) _buildFooter(context, theme, localizations),
         ],
       ),
     );
@@ -118,10 +131,10 @@ class Sidebar extends ConsumerWidget {
   ) {
     return Container(
       padding: EdgeInsets.only(
-        left: isCollapsed ? ChatoraiSpacing.xs : ChatoraiSpacing.lg,
-        right: isCollapsed ? ChatoraiSpacing.xs : ChatoraiSpacing.lg,
-        top: isCollapsed ? 0 : ChatoraiSpacing.md,
-        bottom: isCollapsed ? 0 : ChatoraiSpacing.sm,
+        left: widget.isCollapsed ? ChatoraiSpacing.xs : ChatoraiSpacing.lg,
+        right: widget.isCollapsed ? ChatoraiSpacing.xs : ChatoraiSpacing.lg,
+        top: widget.isCollapsed ? 0 : ChatoraiSpacing.md,
+        bottom: widget.isCollapsed ? 0 : ChatoraiSpacing.sm,
       ),
       decoration: BoxDecoration(
         border: Border(
@@ -134,7 +147,7 @@ class Sidebar extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          if (!isCollapsed)
+          if (!widget.isCollapsed)
             Expanded(
               child: Text(
                 localizations.appShortName,
@@ -147,22 +160,23 @@ class Sidebar extends ConsumerWidget {
                 softWrap: false,
               ),
             ),
-          if (isCollapsed) const Spacer(),
+          if (widget.isCollapsed) const Spacer(),
           IconButton(
             icon: Icon(
-              isCollapsed ? Icons.menu : Icons.close,
+              widget.isCollapsed ? Icons.menu : Icons.close,
               color: theme.iconTheme.color,
               size: ChatoraiIconSizes.sidebarMenuIcon,
             ),
-            onPressed: onToggleSidebar,
-            padding: isCollapsed
+            onPressed: widget.onToggleSidebar,
+            tooltip: localizations.toggleSidebarTooltip,
+            padding: widget.isCollapsed
                 ? const EdgeInsets.all(ChatoraiSpacing.xs)
                 : const EdgeInsets.all(ChatoraiSpacing.sm),
             constraints: const BoxConstraints(
               minWidth: ChatoraiSizes.sidebarIconButtonSize,
               minHeight: ChatoraiSizes.sidebarIconButtonSize,
             ),
-            splashRadius: isCollapsed
+            splashRadius: widget.isCollapsed
                 ? ChatoraiSizes.sidebarSplashRadiusCollapsed
                 : ChatoraiSizes.sidebarSplashRadiusExpanded,
           ),
@@ -173,11 +187,11 @@ class Sidebar extends ConsumerWidget {
 
   Widget _buildSearchBar(
     BuildContext context,
-    WidgetRef ref,
     ThemeData theme,
     AppLocalizations localizations,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final searchQuery = ref.watch(sidebarProvider.select((s) => s.searchQuery));
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -188,12 +202,26 @@ class Sidebar extends ConsumerWidget {
         children: [
           Expanded(
             child: TextField(
+              controller: _searchController,
               decoration: InputDecoration(
                 hintText: localizations.searchChats,
                 prefixIcon: const Icon(
                   Icons.search,
                   size: ChatoraiIconSizes.lg,
                 ),
+                suffixIcon: searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          size: ChatoraiIconSizes.md,
+                          color: theme.iconTheme.color?.withValues(alpha: 0.6),
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          ref.read(sidebarProvider.notifier).clearSearch();
+                        },
+                      )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(ChatoraiBorderRadius.sm),
@@ -239,8 +267,9 @@ class Sidebar extends ConsumerWidget {
           Container(
             margin: const EdgeInsets.only(left: ChatoraiSpacing.xs),
             child: IconButton(
-              onPressed: onNewChat,
+              onPressed: widget.onNewChat,
               icon: const Icon(Icons.edit_square),
+              tooltip: localizations.newChat,
               style: IconButton.styleFrom(
                 side: BorderSide(
                   color: theme.dividerColor,
@@ -266,7 +295,6 @@ class Sidebar extends ConsumerWidget {
 
   Widget _buildChatItem(
     BuildContext context,
-    WidgetRef ref,
     Chat chat,
     ThemeData theme,
     String language,
@@ -278,7 +306,7 @@ class Sidebar extends ConsumerWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => onChatSelect(chat.id),
+        onTap: () => widget.onChatSelect(chat.id),
         borderRadius: BorderRadius.zero,
         hoverColor: ChatoraiColors.hoverLight,
         child: Container(
@@ -355,7 +383,7 @@ class Sidebar extends ConsumerWidget {
                       }
                     }
                   },
-                  onDelete: () => onChatDelete(chat.id),
+                  onDelete: () => widget.onChatDelete(chat.id),
                 ),
               ),
             ],

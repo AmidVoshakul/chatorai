@@ -100,6 +100,21 @@ class AppLocalizationsUk extends AppLocalizations {
       'Автоматично прокручувати список вниз при появи нового контенту';
 
   @override
+  String get showContinuationSuggestions => 'Показувати продовження діалогу';
+
+  @override
+  String get showContinuationSuggestionsDesc =>
+      'Відображати пропозиції для продовження після відповіді AI';
+
+  @override
+  String get expandReasoningByDefault =>
+      'Розгортати reasoning за замовчуванням';
+
+  @override
+  String get expandReasoningByDefaultDesc =>
+      'Показувати блоки розмірковування розгорнутими при відповіді AI';
+
+  @override
   String get language => 'Мова';
 
   @override
@@ -1175,4 +1190,127 @@ class AppLocalizationsUk extends AppLocalizations {
   String generatingSuggestionsFailed(Object error) {
     return 'Не вдалося згенерувати пропозиції: $error';
   }
+
+  @override
+  String get toggleSidebarTooltip => 'Перемкнути бічну панель';
+
+  @override
+  String get openMenuTooltip => 'Відкрити меню';
+
+  @override
+  String get addFileTooltip => 'Додати файл';
+
+  @override
+  String get modelSettingsTooltip => 'Налаштування моделі';
+
+  @override
+  String get switchAgentTooltip => 'Змінити агента';
+
+  @override
+  String get selectModelTooltip => 'Вибрати модель';
+
+  @override
+  String get removeFileTooltip => 'Видалити файл';
+
+  @override
+  String get goToParentSessionTooltip => 'Перейти до батьківського сеансу';
+
+  @override
+  String get previousSiblingTooltip => 'Попередній сеанс';
+
+  @override
+  String get nextSiblingTooltip => 'Наступний сеанс';
+
+  @override
+  String get cancellingRetryTooltip => 'Скасування повторної спроби...';
+
+  @override
+  String get stopGenerationTooltip => 'Зупинити генерацію';
+
+  @override
+  String get question => 'Питання';
+
+  @override
+  String get skip => 'Пропустити';
+
+  @override
+  String get answer => 'Відповідь';
+
+  @override
+  String get noAgentsAvailable => 'Немає доступних агентів';
+
+  @override
+  String permissionAlwaysConfirmDescription(Object title) {
+    return 'Це дозволить \"$title\" до перезапуску додатка.';
+  }
+
+  @override
+  String get chatActionsMenuTooltip => 'Меню чату';
+
+  @override
+  String get startListening => 'Почати голосовий ввід';
+
+  @override
+  String get stopListening => 'Зупинити голосовий ввід';
+
+  @override
+  String get listening => 'Говоріть...';
+
+  @override
+  String get sendMessage => 'Надіслати повідомлення';
+
+  @override
+  String get maxTokens => 'Макс. токенів';
+
+  @override
+  String get maxTokensDescription =>
+      'Максимальна довжина згенерованої відповіді';
+
+  @override
+  String get activeModel => 'Активна модель';
+
+  @override
+  String apiLimitExceeded(Object limit) {
+    return 'Перевищено ліміт API: $limit';
+  }
+
+  @override
+  String valueExceedsApiLimit(Object limit) {
+    return 'Значення перевищує ліміт API ($limit). Буде використано максимальне значення.';
+  }
+
+  @override
+  String get micStopFailed => 'Не вдалося зупинити мікрофон';
+
+  @override
+  String get errorProcessingRequest =>
+      'Вибачте, сталася помилка при обробці вашого запиту. Будь ласка, спробуйте ще раз.';
+
+  @override
+  String rateLimitRetryMessage(Object seconds) {
+    return 'Перевищено ліміт запитів. Повторна спроба через $seconds секунд...';
+  }
+
+  @override
+  String get messageNotFound => 'Повідомлення не знайдено';
+
+  @override
+  String get errorEditingMessage => 'Помилка редагування повідомлення';
+
+  @override
+  String get errorEditAndSendMessage =>
+      'Помилка редагування та відправлення повідомлення';
+
+  @override
+  String get defaultSuggestion4 => 'Як це застосовується на практиці?';
+
+  @override
+  String get fileAttachedButNotSupported =>
+      'Файл прикріплено, але не підтримується поточною моделлю';
+
+  @override
+  String get expandTooltip => 'Розгорнути';
+
+  @override
+  String get collapseTooltip => 'Згорнути';
 }

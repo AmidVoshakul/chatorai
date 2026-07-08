@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat/todo_part.dart';
 import 'package:drift/drift.dart';
 import 'database.dart' as db;
@@ -526,7 +527,12 @@ class EventStore {
         sessionId: sid,
         partId: data['partId'] as String,
         questionText: data['questionText'] as String,
-        options: (data['options'] as List?)?.cast<String>() ?? const [],
+        options:
+            (data['options'] as List?)
+                ?.map((e) => QuestionOption.fromJson(e))
+                .toList() ??
+            const [],
+        multiple: data['multiple'] as bool? ?? false,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),

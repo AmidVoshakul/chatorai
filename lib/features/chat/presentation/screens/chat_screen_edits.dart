@@ -58,12 +58,15 @@ extension _ChatScreenEditsExt on _ChatScreenState {
     }
 
     final messagesBeforeEdit = messages.sublist(0, messageIndex + 1);
-    messagesBeforeEdit[messagesBeforeEdit.length - 1] = editedUserMessage;
+    messagesBeforeEdit[messageIndex] = editedUserMessage;
     final updatedChat = currentChat!.copyWith(
       messages: messagesBeforeEdit,
       updatedAt: DateTime.now(),
     );
-    final assistantMessage = _createAssistantMessage();
+
+    final assistantMessage = _createAssistantMessage(
+      agent: ref.read(currentAgentProvider).name,
+    );
     final chatWithAssistant = updatedChat.copyWith(
       messages: [...messagesBeforeEdit, assistantMessage],
       updatedAt: DateTime.now(),
@@ -79,11 +82,15 @@ extension _ChatScreenEditsExt on _ChatScreenState {
       _scrollToBottom(force: true);
     });
 
-    final apiMessages = _buildApiMessages(chatWithAssistant);
+    final apiMessages = _buildApiMessages(
+      chatWithAssistant,
+      delegateAgentName: null,
+    );
     await _initiateStream(
       chat: chatWithAssistant,
       messages: apiMessages,
       isContinuation: false,
+      delegateAgentId: null,
     );
 
     if (!mounted) return;

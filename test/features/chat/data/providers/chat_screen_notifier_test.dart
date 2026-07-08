@@ -10,6 +10,8 @@ import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
         ToolState;
 import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart'
     show assistantContentToPartMaps;
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart'
+    show QuestionOption;
 import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
 
 void main() {
@@ -245,7 +247,10 @@ void main() {
     test('onQuestion closes open text/reasoning', () {
       notifier.onReasoning('r1', 'm1', 'ses_abc', 'pre-question reasoning');
       notifier.onReasoning('r1', 'm1', 'ses_abc', ' more');
-      notifier.onQuestion('q1', 'm1', 'ses_abc', 'Pick one', ['A', 'B']);
+      notifier.onQuestion('q1', 'm1', 'ses_abc', 'Pick one', const [
+        QuestionOption(label: 'A'),
+        QuestionOption(label: 'B'),
+      ], false);
 
       final reasonings = container
           .read(chatScreenProvider)

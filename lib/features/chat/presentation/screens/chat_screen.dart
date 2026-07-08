@@ -17,6 +17,7 @@ import 'package:chatorai/core/tools/tool_output_persistence.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
     hide ToolState;
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart'
     show assistantContentToPartMaps;
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
@@ -50,7 +51,8 @@ import 'package:chatorai/providers.dart'
         compactionConfigProvider,
         currentSessionRunnerProvider,
         sessionRepositoryProvider,
-        sessionStackProvider;
+        sessionStackProvider,
+        permissionServiceProvider;
 import 'package:chatorai/shared/utils/chat_error_utils.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
@@ -189,6 +191,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   }
 
   Future<void> _showContinuationSuggestions(Message message) async {
+    final theme = ref.read(themeProvider);
+    if (!theme.showContinuationSuggestions) return;
     await _suggestionService.showSuggestions(
       ref: ref,
       context: context,

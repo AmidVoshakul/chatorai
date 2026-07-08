@@ -184,6 +184,26 @@ class SettingsScreen extends ConsumerWidget {
               .read(themeProvider.notifier)
               .setAutoScrollDuringStreaming(value),
         ),
+        const SizedBox(height: ChatoraiSpacing.lg),
+        SettingsToggleTile(
+          context: context,
+          title: localizations.showContinuationSuggestions,
+          subtitle: localizations.showContinuationSuggestionsDesc,
+          value: theme.showContinuationSuggestions,
+          onChanged: (value) => ref
+              .read(themeProvider.notifier)
+              .setShowContinuationSuggestions(value),
+        ),
+        const SizedBox(height: ChatoraiSpacing.lg),
+        SettingsToggleTile(
+          context: context,
+          title: localizations.expandReasoningByDefault,
+          subtitle: localizations.expandReasoningByDefaultDesc,
+          value: theme.expandReasoningByDefault,
+          onChanged: (value) => ref
+              .read(themeProvider.notifier)
+              .setExpandReasoningByDefault(value),
+        ),
       ],
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message_export.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 
 void main() {
@@ -486,7 +487,10 @@ void main() {
     test('creates with options and answer', () {
       const part = QuestionPart(
         question: 'Choose one',
-        options: ['Option A', 'Option B'],
+        options: [
+          const QuestionOption(label: 'Option A', description: null),
+          const QuestionOption(label: 'Option B', description: null),
+        ],
         answer: 'Option A',
       );
       expect(part.options, ['Option A', 'Option B']);
@@ -501,15 +505,29 @@ void main() {
     });
 
     test('copyWith updates options', () {
-      const part = QuestionPart(question: 'Q', options: ['old']);
-      final updated = part.copyWith(options: ['new1', 'new2']);
-      expect(updated.options, ['new1', 'new2']);
+      const part = QuestionPart(
+        question: 'Q',
+        options: [const QuestionOption(label: 'old', description: null)],
+      );
+      final updated = part.copyWith(
+        options: const [
+          QuestionOption(label: 'new1', description: null),
+          QuestionOption(label: 'new2', description: null),
+        ],
+      );
+      expect(updated.options, [
+        const QuestionOption(label: 'new1', description: null),
+        QuestionOption(label: 'new2', description: null),
+      ]);
     });
 
     test('toJson roundtrip', () {
       const original = QuestionPart(
         question: 'Proceed?',
-        options: ['Yes', 'No'],
+        options: [
+          const QuestionOption(label: 'Yes', description: null),
+          const QuestionOption(label: 'No', description: null),
+        ],
         answer: 'Yes',
       );
       final json = original.toJson();

@@ -10,6 +10,7 @@ import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
         AssistantFile,
         ToolState;
 import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 
 void main() {
   group('assistantContentToMessagePart', () {
@@ -184,13 +185,21 @@ void main() {
         sessionId: 'ses',
         messageId: 'm',
         question: 'Pick one',
-        options: ['A', 'B', 'C'],
+        options: const [
+          QuestionOption(label: 'A', description: null),
+          QuestionOption(label: 'B', description: null),
+          QuestionOption(label: 'C', description: null),
+        ],
       );
       final json = assistantContentToPartMaps([p]).first;
 
       expect(json['type'], 'question');
       expect(json['question'], 'Pick one');
-      expect(json['options'], ['A', 'B', 'C']);
+      expect(json['options'], [
+        {'label': 'A'},
+        {'label': 'B'},
+        {'label': 'C'},
+      ]);
     });
 
     test('AssistantTodo converts to TodoPart', () {

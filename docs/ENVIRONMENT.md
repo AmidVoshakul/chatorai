@@ -1,6 +1,6 @@
 # Environment & System Requirements
 
-**Last updated:** 2026-07-07
+**Last updated:** 2026-07-08
 
 This document describes the software and hardware requirements, environment variables, and system dependencies needed to develop, build, and run ChatORAI.
 
@@ -12,7 +12,7 @@ This document describes the software and hardware requirements, environment vari
 
 | Tool        | Version                             | Notes                                         |
 | ----------- | ----------------------------------- | --------------------------------------------- |
-| Flutter SDK | 3.41.0 (stable)                     | Download from https://flutter.dev             |
+| Flutter SDK | 3.44.0 (stable)                     | Download from https://flutter.dev             |
 | Dart SDK | 3.11.0 (bundled with Flutter) | pubspec.yaml requires `^3.11.0` |
 | Git         | 2.x                                 | For dependency management and version control |
 | IDE         | VS Code / Android Studio / IntelliJ | With Flutter & Dart plugins                   |
@@ -138,6 +138,14 @@ Where `<package>` is the runtime bundle ID (e.g. `com.chatorai.app`). A project-
     prune: true,
     keep: { tokens: 4000 },
     buffer: 2000,
+  },
+  agent: {
+    "general": {
+      max_steps: 10
+    },
+    "my-custom-agent": {
+      hidden: true
+    }
   },
   mcp: {
     default_timeout: 30000,
@@ -285,7 +293,7 @@ flutter pub cache repair
 
 ### Tests fail due to version mismatch
 
-Ensure Flutter SDK is exactly 3.41.0 (check `flutter --version`). Some packages require specific Flutter versions.
+Ensure Flutter SDK is exactly 3.44.0 (check `flutter --version`). Some packages require specific Flutter versions.
 
 ### Linux: App fails to start with GTK errors
 

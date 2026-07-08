@@ -99,6 +99,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Automatically scroll down when new content appears';
 
   @override
+  String get showContinuationSuggestions => 'Show continuation suggestions';
+
+  @override
+  String get showContinuationSuggestionsDesc =>
+      'Display suggested follow-up messages after AI responses';
+
+  @override
+  String get expandReasoningByDefault => 'Expand reasoning by default';
+
+  @override
+  String get expandReasoningByDefaultDesc =>
+      'Show reasoning/thought blocks expanded when AI responds';
+
+  @override
   String get language => 'Language';
 
   @override
@@ -1164,4 +1178,125 @@ class AppLocalizationsEn extends AppLocalizations {
   String generatingSuggestionsFailed(Object error) {
     return 'Failed to generate suggestions';
   }
+
+  @override
+  String get toggleSidebarTooltip => 'Toggle sidebar';
+
+  @override
+  String get openMenuTooltip => 'Open menu';
+
+  @override
+  String get addFileTooltip => 'Add file';
+
+  @override
+  String get modelSettingsTooltip => 'Model settings';
+
+  @override
+  String get switchAgentTooltip => 'Switch agent';
+
+  @override
+  String get selectModelTooltip => 'Select model';
+
+  @override
+  String get removeFileTooltip => 'Remove file';
+
+  @override
+  String get goToParentSessionTooltip => 'Go to parent session';
+
+  @override
+  String get previousSiblingTooltip => 'Previous sibling';
+
+  @override
+  String get nextSiblingTooltip => 'Next sibling';
+
+  @override
+  String get cancellingRetryTooltip => 'Cancelling retry...';
+
+  @override
+  String get stopGenerationTooltip => 'Stop generation';
+
+  @override
+  String get question => 'Question';
+
+  @override
+  String get skip => 'Skip';
+
+  @override
+  String get answer => 'Answer';
+
+  @override
+  String get noAgentsAvailable => 'No agents available';
+
+  @override
+  String permissionAlwaysConfirmDescription(Object title) {
+    return 'This will allow \"$title\" until the app is restarted.';
+  }
+
+  @override
+  String get chatActionsMenuTooltip => 'Chat menu';
+
+  @override
+  String get startListening => 'Start voice input';
+
+  @override
+  String get stopListening => 'Stop voice input';
+
+  @override
+  String get listening => 'Listening...';
+
+  @override
+  String get sendMessage => 'Send message';
+
+  @override
+  String get maxTokens => 'Max Tokens';
+
+  @override
+  String get maxTokensDescription => 'Maximum length of generated response';
+
+  @override
+  String get activeModel => 'Active Model';
+
+  @override
+  String apiLimitExceeded(Object limit) {
+    return 'API limit exceeded: $limit';
+  }
+
+  @override
+  String valueExceedsApiLimit(Object limit) {
+    return 'Value exceeds API limit ($limit). Maximum value will be used.';
+  }
+
+  @override
+  String get micStopFailed => 'Failed to stop microphone';
+
+  @override
+  String get errorProcessingRequest =>
+      'Sorry, I encountered an error while processing your request. Please try again.';
+
+  @override
+  String rateLimitRetryMessage(Object seconds) {
+    return 'Rate limit exceeded. Retrying in $seconds seconds...';
+  }
+
+  @override
+  String get messageNotFound => 'Message not found';
+
+  @override
+  String get errorEditingMessage => 'Error editing message';
+
+  @override
+  String get errorEditAndSendMessage => 'Error editing and sending message';
+
+  @override
+  String get defaultSuggestion4 => 'How does this apply in practice?';
+
+  @override
+  String get fileAttachedButNotSupported =>
+      'File attached but not supported by the current model';
+
+  @override
+  String get expandTooltip => 'Expand';
+
+  @override
+  String get collapseTooltip => 'Collapse';
 }

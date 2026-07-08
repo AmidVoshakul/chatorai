@@ -1,9 +1,46 @@
 part of 'chat_screen.dart';
 
 extension _ChatScreenMessagingExt on _ChatScreenState {
+  /// Builds unified system message chain from agent prompt + user system prompt.
+  /// Returns empty list if no prompts, otherwise single system message.
+  List<Map<String, dynamic>> _buildSystemChain({
+    required AgentDefinition agent,
+    String? userSystemPrompt,
+    String? delegateAgentId,
+  }) {
+    final prompts = <String>[];
+
+    // 1. Agent prompt (only for primary agents, and only if explicitly set)
+    if (delegateAgentId != null) {
+      final delegateAgent = AgentRegistry().get(delegateAgentId);
+      if (delegateAgent != null &&
+          delegateAgent.mode == AgentMode.primary &&
+          delegateAgent.systemPrompt != null &&
+          delegateAgent.systemPrompt!.isNotEmpty) {
+        prompts.add(delegateAgent.systemPrompt!);
+      }
+    } else if (agent.mode == AgentMode.primary &&
+        agent.systemPrompt != null &&
+        agent.systemPrompt!.isNotEmpty) {
+      prompts.add(agent.systemPrompt!);
+    }
+
+    // 2. User's system prompt (always added if present)
+    if (userSystemPrompt != null && userSystemPrompt.isNotEmpty) {
+      prompts.add(userSystemPrompt);
+    }
+
+    // Return single combined system message or empty
+    if (prompts.isEmpty) return [];
+    return [
+      {'role': 'system', 'content': prompts.join('\n\n---\n\n')},
+    ];
+  }
+
   List<Map<String, dynamic>> _buildApiMessages(
     Chat chat, {
     String? delegateAgentId,
+    String? delegateAgentName,
   }) {
     const int maxHistoryMessages = 20;
     final recentMessages = chat.messages.length > maxHistoryMessages
@@ -28,24 +65,47 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       return result;
     }).toList();
 
-    if (delegateAgentId != null) {
-      final agent = AgentRegistry().get(delegateAgentId);
-      if (agent != null && agent.systemPrompt != null) {
-        messages.insert(0, {'role': 'system', 'content': agent.systemPrompt!});
-        LogTags.chatScreen.logInfo(
-          '_buildApiMessages: injected agent system prompt for delegateAgentId=$delegateAgentId agent=${agent.name}',
+    // Inject system prompt chain at the beginning
+    final currentAgent = ref.read(currentAgentProvider);
+    final settings = ref.read(modelSettingsProvider).activeSettings;
+
+    String? resolvedDelegateId = delegateAgentId;
+    if (delegateAgentName != null && delegateAgentId == null) {
+      try {
+        resolvedDelegateId = AgentRegistry().getAllIds().firstWhere(
+          (id) => AgentRegistry().get(id)?.name == delegateAgentName,
         );
-      }
-    } else {
-      final currentAgent = ref.read(currentAgentProvider);
-      final isDefault = currentAgent.id == 'build';
-      if (!isDefault && currentAgent.systemPrompt != null) {
-        messages.insert(0, {
-          'role': 'system',
-          'content': currentAgent.systemPrompt!,
-        });
+      } catch (_) {
+        resolvedDelegateId = null;
       }
     }
+
+    // Add agent transition reminder only if delegate agent resolved
+    if (delegateAgentName != null && resolvedDelegateId != null) {
+      final systemChain = _buildSystemChain(
+        agent: currentAgent,
+        userSystemPrompt: settings?.systemPrompt,
+        delegateAgentId: resolvedDelegateId,
+      );
+      for (final sys in systemChain) {
+        messages.insert(0, sys);
+      }
+      final reminderIndex = systemChain.length;
+      messages.insert(reminderIndex, {
+        'role': 'system',
+        'content': 'Mode switched to: $delegateAgentName',
+      });
+    } else {
+      final systemChain = _buildSystemChain(
+        agent: currentAgent,
+        userSystemPrompt: settings?.systemPrompt,
+        delegateAgentId: null,
+      );
+      for (final sys in systemChain) {
+        messages.insert(0, sys);
+      }
+    }
+
     return messages;
   }
 
@@ -62,9 +122,18 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     LogTags.chatScreen.logInfo('_initiateStream: repo ready');
     final toolRegistry = await ref.read(toolRegistryProvider.future);
     LogTags.chatScreen.logInfo('_initiateStream: toolRegistry ready');
+
+    String agentName = ref.read(currentAgentProvider).name;
+    if (delegateAgentId != null) {
+      final delegateAgent = AgentRegistry().get(delegateAgentId);
+      if (delegateAgent != null) {
+        agentName = delegateAgent.name;
+      }
+    }
+
     final sessionRunner = SessionRunner(repo, toolRegistry);
     final runnerSession = await sessionRunner.startInitializedSession(
-      agent: ref.read(currentAgentProvider).name,
+      agent: agentName,
       modelRef: selectedModelId,
       sessionId: _currentSessionId != null
           ? SessionID.fromString(_currentSessionId!)
@@ -106,25 +175,29 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       final settings = await modelSettingsNotifier.getSettings(selectedModelId);
       LogTags.chatScreen.logInfo('_initiateStream: settings ready');
 
-      if (delegateAgentId == null &&
-          settings.systemPrompt != null &&
-          messages.isNotEmpty &&
-          messages.first['role'] != 'system') {
-        messages.insert(0, {
-          'role': 'system',
-          'content': settings.systemPrompt!,
-        });
-      }
-
       LogTags.chatScreen.logInfo(
         '_initiateStream: calling _handleStreamingResponse model=$selectedModelId',
       );
+
+      // Resolve delegate agent first (for both maxSteps and activeAgent)
+      final delegateAgent = delegateAgentId != null
+          ? AgentRegistry().get(delegateAgentId)
+          : null;
+      final activeAgent =
+          delegateAgent?.name ?? ref.read(currentAgentProvider).name;
+
+      // Get maxSteps from the effective agent
+      final int maxSteps =
+          delegateAgent?.maxSteps ?? ref.read(currentAgentProvider).maxSteps;
+
       await _handleStreamingResponse(
         chat: chat,
         messages: messages,
         isContinuation: isContinuation,
         modelId: selectedModelId,
         modelSettings: settings,
+        maxSteps: maxSteps,
+        activeAgent: activeAgent,
       );
     } catch (e, s) {
       LogTags.chatScreen.logError('_initiateStream: streaming error $e');
@@ -149,6 +222,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
 
   Future<void> _handleSendMessage(MessageData messageData) async {
     ref.read(chatScreenProvider.notifier).hideAllSuggestions();
+
     Chat chat;
     if (currentChat == null) {
       _currentSessionId = null;
@@ -167,7 +241,11 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     var streamChat = await _chatStorageService.getChat(chat.id);
     if (streamChat == null) return;
 
-    final assistantMessage = _createAssistantMessage();
+    final agentName = messageData.delegateAgentId != null
+        ? AgentRegistry().get(messageData.delegateAgentId!)?.name ??
+              ref.read(currentAgentProvider).name
+        : ref.read(currentAgentProvider).name;
+    final assistantMessage = _createAssistantMessage(agent: agentName);
     await _chatStorageService.addMessageToChat(streamChat.id, assistantMessage);
     streamChat = await _chatStorageService.getChat(streamChat.id) ?? streamChat;
     ref.read(chatListProvider.notifier).updateChat(streamChat);
@@ -180,6 +258,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     final messages = _buildApiMessages(
       streamChat,
       delegateAgentId: messageData.delegateAgentId,
+      delegateAgentName: agentName,
     );
     LogTags.chatScreen.logInfo(
       '_handleSendMessage: sending to LLM messages=${messages.length} delegateAgentId=${messageData.delegateAgentId ?? "none"}',
@@ -284,6 +363,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     int? tokensReasoning,
     int? contextLength,
     List<Map<String, dynamic>>? partsJson,
+    String? agent,
   }) {
     return Message(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -298,6 +378,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       tokensReasoning: tokensReasoning,
       contextLength: contextLength,
       partsJson: partsJson,
+      agent: agent ?? ref.read(currentAgentProvider).name,
     );
   }
 
@@ -305,6 +386,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     _streamCancelled = true;
     final aiService = ref.read(chatAiServiceProvider);
     aiService.cancelAllRequests();
+
+    final permissionService = ref.read(permissionServiceProvider);
+    permissionService.cancelAllPendingRequests();
 
     await Future<void>.delayed(const Duration(milliseconds: 50));
 
@@ -372,6 +456,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
             .read(modelProvider)
             .selectedModelObject
             ?.contextLength,
+        agent: lastMessage.agent ?? ref.read(currentAgentProvider).name,
       );
       newMessages = [...chat.messages, completedMessage];
     }
@@ -390,7 +475,6 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     } else {
       await _chatStorageService.addMessageToChat(newChat.id, completedMessage);
     }
-    _showContinuationSuggestions(completedMessage);
 
     notifier.finalizeStreaming();
   }

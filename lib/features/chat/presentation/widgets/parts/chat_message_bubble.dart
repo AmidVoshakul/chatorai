@@ -33,6 +33,8 @@ class ChatMessageBubble extends StatefulWidget {
   final int? cumulativeTokens;
   final int? contextLength;
   final void Function(String? sessionId)? onTaskTap;
+  final bool expandReasoningByDefault;
+  final bool reasoningEnabled;
 
   const ChatMessageBubble({
     super.key,
@@ -51,6 +53,8 @@ class ChatMessageBubble extends StatefulWidget {
     this.cumulativeTokens,
     this.contextLength,
     this.onTaskTap,
+    this.expandReasoningByDefault = true,
+    this.reasoningEnabled = true,
   });
 
   @override
@@ -270,10 +274,16 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
   }
 
   Widget _assistantBubble(AssistantMessage m, BuildContext context) {
-    if (m.parts.isEmpty) return const SizedBox.shrink();
+    // Filter out synthetic parts and hidden reasoning parts from UI display
+    final visibleParts = m.parts.where((p) {
+      if (p.synthetic) return false;
+      if (p is ReasoningPart && !widget.reasoningEnabled) return false;
+      return true;
+    }).toList();
+    if (visibleParts.isEmpty) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
-    final textContent = m.parts
+    final textContent = visibleParts
         .whereType<TextPart>()
         .map((p) => p.content)
         .join('\n');
@@ -282,7 +292,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
     // Tools and Questions are rendered as standalone widgets, NOT inside reasoning block
     List<Widget> groupedParts = [];
 
-    for (final part in m.parts) {
+    for (final part in visibleParts) {
       if (part is ReasoningPart) {
         groupedParts.add(ReasoningPartWidget(part: part));
       } else {
@@ -371,7 +381,10 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         padding: const EdgeInsets.only(top: 4, bottom: 12),
         child: TextPartWidget(part: p),
       ),
-      ReasoningPart p => ReasoningPartWidget(part: p),
+      ReasoningPart p => ReasoningPartWidget(
+        part: p,
+        expandByDefault: widget.expandReasoningByDefault,
+      ),
       ToolResultPart p => Padding(
         padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.sm),
         child: ToolResultPartWidget(part: p),
@@ -382,11 +395,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
             ? () => widget.onTaskTap?.call(p.sessionId)
             : null,
       ),
-      QuestionPart p => QuestionPartWidget(
-        part: p,
-        onAnswer: (answer) =>
-            widget.onQuestionAnswer?.call(widget.messageId, answer),
-      ),
+      QuestionPart p => QuestionPartWidget(part: p),
       TodoPart p => TodoPartWidget(part: p),
       MessagePart() => const SizedBox.shrink(),
     };
@@ -825,7 +834,8 @@ class _ActionMenuButton extends StatelessWidget {
           onRegenerate: () => onMessageRegenerate?.call(),
         );
       case 'continue':
-        if (content != null) onContinuationSelected?.call(content!);
+        onContinuationSelected?.call(messageId);
+        break;
     }
   }
 }

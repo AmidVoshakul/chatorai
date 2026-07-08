@@ -1,6 +1,6 @@
 # Security Model
 
-**Last updated:** 2026-07-07
+**Last updated:** 2026-07-08
 
 ChatORAI implements a defense-in-depth security approach, covering permission controls, secret handling, logging sanitization, and secure communication.
 

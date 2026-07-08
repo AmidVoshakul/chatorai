@@ -1,4 +1,5 @@
 // ignore_for_file: unused_import
+import 'dart:async';
 import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
@@ -56,7 +57,7 @@ class ModelState {
 class ModelNotifier extends Notifier<ModelState> {
   static const String _selectedModelKey = 'selected_model_id';
   static const String _favoriteModelsKey = 'favorite_models';
-  bool _settingsLoaded = false;
+  final Completer<void> _settingsLoaded = Completer<void>();
   bool _loadingModels = false;
 
   @override
@@ -70,8 +71,7 @@ class ModelNotifier extends Notifier<ModelState> {
       },
     );
 
-    if (!_settingsLoaded) {
-      _settingsLoaded = true;
+    if (!_settingsLoaded.isCompleted) {
       _loadSettingsAsync();
     }
     return const ModelState();
@@ -91,9 +91,11 @@ class ModelNotifier extends Notifier<ModelState> {
       _logger.logInfo('[ModelNotifier] Settings loaded');
 
       _loadModelsAsync();
+      _settingsLoaded.complete();
     } catch (e) {
       _logger.logError('[ModelNotifier] Error loading settings: $e');
       state = state.copyWith(isLoading: false);
+      _settingsLoaded.complete();
     }
   }
 
@@ -115,6 +117,8 @@ class ModelNotifier extends Notifier<ModelState> {
     state = state.copyWith(isLoadingModels: true);
 
     try {
+      await _settingsLoaded.future;
+
       _logger.logInfo(
         '[ModelNotifier] Loading models from catalog… forceRefresh=$forceRefresh',
       );
@@ -161,19 +165,18 @@ class ModelNotifier extends Notifier<ModelState> {
       String selectedModelId = state.selectedModelId;
       ChatModel? selectedModelObject;
 
-      // Primary source: catalog's per-provider selections (set by the dialog).
-      // Fallback: stored prefs value (set by explicit setSelectedModel in chat UI).
-      // Never silently overwrite prefs on reload — only explicit user action does that.
-      String? catalogSelectedId;
-      for (final prov in catalog.getAllProvidersRaw()) {
-        final ids = catalog.getSelectedModelIds(prov.id);
-        if (ids.isNotEmpty) {
-          catalogSelectedId = ids.first;
-          break;
+      if (selectedModelId.isEmpty) {
+        String? catalogSelectedId;
+        for (final prov in catalog.getAllProvidersRaw()) {
+          final ids = catalog.getSelectedModelIds(prov.id);
+          if (ids.isNotEmpty) {
+            catalogSelectedId = ids.first;
+            break;
+          }
         }
-      }
-      if (catalogSelectedId != null) {
-        selectedModelId = catalogSelectedId;
+        if (catalogSelectedId != null) {
+          selectedModelId = catalogSelectedId;
+        }
       }
 
       if (selectedModelId.isEmpty && availableModels.isNotEmpty) {
@@ -181,24 +184,17 @@ class ModelNotifier extends Notifier<ModelState> {
         selectedModelObject = availableModels.first;
         await _saveSettings();
       } else if (selectedModelId.isNotEmpty) {
-        // Look in visible (enabled) models first
         try {
           selectedModelObject = availableModels.firstWhere(
             (model) => model.id == selectedModelId,
           );
         } catch (_) {
-          // Fallback: search ALL models (including disabled providers)
-          // so the selected model object is available for display even if
-          // its provider is temporarily disabled.
           final allModels = catalog.getAllModelsRaw();
           try {
             selectedModelObject = allModels
                 .map(ChatModel.fromModelConfig)
                 .firstWhere((model) => model.id == selectedModelId);
           } catch (_) {
-            // Model truly gone — keep the stored ID so it doesn't
-            // silently change on restart. selectedModelObject stays null
-            // and the UI shows a clear indicator.
             selectedModelObject = null;
           }
         }

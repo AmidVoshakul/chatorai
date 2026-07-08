@@ -8,6 +8,8 @@ import 'package:chatorai/core/tools/built_in/question.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/tool_execution.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_part.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -46,7 +48,7 @@ class RecordingToolContext {
       askQuestion:
           ({
             required String question,
-            List<String> options = const [],
+            List<QuestionOption> options = const [],
             bool multiple = false,
           }) async {
             questionCalls.add(
@@ -64,7 +66,7 @@ class RecordingToolContext {
 
 class QuestionCall {
   final String question;
-  final List<String> options;
+  final List<QuestionOption> options;
   final bool multiple;
 
   const QuestionCall({
@@ -100,7 +102,10 @@ void main() {
       final future = service.askQuestion(
         id: 'q-1',
         question: 'What is your name?',
-        options: ['Alice', 'Bob'],
+        options: [
+          const QuestionOption(label: 'Alice', description: null),
+          const QuestionOption(label: 'Bob', description: null),
+        ],
       );
 
       // Answer from "user" on the next microtask
@@ -326,7 +331,7 @@ void main() {
         service.askQuestion(
           id: 'stream-q1',
           question: 'First?',
-          options: ['A'],
+          options: [const QuestionOption(label: 'A', description: null)],
         );
         service.askQuestion(id: 'stream-q2', question: 'Second?');
       });
@@ -334,7 +339,7 @@ void main() {
       final requests = await Future.wait(streamFutures);
 
       expect(requests[0].question, equals('First?'));
-      expect(requests[0].options, equals(['A']));
+      expect(requests[0].options.map((o) => o.label), equals(['A']));
       expect(requests[1].question, equals('Second?'));
     });
   });
@@ -345,39 +350,54 @@ void main() {
     test('copyWith with no arguments preserves all fields', () {
       const original = QuestionPart(
         question: 'Proceed?',
-        options: ['Yes', 'No', 'Maybe'],
+        options: [
+          const QuestionOption(label: 'Yes', description: null),
+          const QuestionOption(label: 'No', description: null),
+          const QuestionOption(label: 'Maybe', description: null),
+        ],
         answer: 'Yes',
       );
       final copy = original.copyWith();
 
       expect(copy.question, equals('Proceed?'));
-      expect(copy.options, equals(['Yes', 'No', 'Maybe']));
+      expect(copy.options.map((o) => o.label), equals(['Yes', 'No', 'Maybe']));
       expect(copy.answer, equals('Yes'));
     });
 
     test('copyWith updates only question', () {
       const original = QuestionPart(
         question: 'Original?',
-        options: ['A'],
+        options: [const QuestionOption(label: 'A', description: null)],
         answer: 'A',
       );
       final copy = original.copyWith(question: 'Updated?');
 
       expect(copy.question, equals('Updated?'));
-      expect(copy.options, equals(['A']));
+      expect(copy.options.map((o) => o.label), equals(['A']));
       expect(copy.answer, equals('A'));
     });
 
     test('copyWith updates only options', () {
       const original = QuestionPart(
         question: 'Q?',
-        options: ['old'],
+        options: [const QuestionOption(label: 'old', description: null)],
         answer: 'old',
       );
-      final copy = original.copyWith(options: ['new1', 'new2']);
+      final copy = original.copyWith(
+        options: const [
+          QuestionOption(label: 'new1', description: null),
+          QuestionOption(label: 'new2', description: null),
+        ],
+      );
 
       expect(copy.question, equals('Q?'));
-      expect(copy.options, equals(['new1', 'new2']));
+      expect(
+        copy.options,
+        equals(const [
+          QuestionOption(label: 'new1', description: null),
+          QuestionOption(label: 'new2', description: null),
+        ]),
+      );
       expect(copy.answer, equals('old'));
     });
 
@@ -409,12 +429,24 @@ void main() {
 
   group('QuestionPart serialization edge cases', () {
     test('toJson includes all fields even when answer is null', () {
-      const part = QuestionPart(question: 'Q?', options: ['A', 'B']);
+      const part = QuestionPart(
+        question: 'Q?',
+        options: [
+          const QuestionOption(label: 'A', description: null),
+          const QuestionOption(label: 'B', description: null),
+        ],
+      );
       final json = part.toJson();
 
       expect(json['type'], equals('question'));
       expect(json['question'], equals('Q?'));
-      expect(json['options'], equals(['A', 'B']));
+      expect(
+        json['options'],
+        equals([
+          {'label': 'A'},
+          {'label': 'B'},
+        ]),
+      );
       expect(json['answer'], isNull);
     });
 
@@ -447,13 +479,21 @@ void main() {
     test('roundtrip with complex options', () {
       const original = QuestionPart(
         question: 'Choose color',
-        options: ['Red', 'Green', 'Blue', 'Yellow'],
+        options: [
+          const QuestionOption(label: 'Red', description: null),
+          const QuestionOption(label: 'Green', description: null),
+          const QuestionOption(label: 'Blue', description: null),
+          const QuestionOption(label: 'Yellow', description: null),
+        ],
         answer: 'Green',
       );
       final restored = QuestionPart.fromJson(original.toJson());
 
       expect(restored.question, equals('Choose color'));
-      expect(restored.options, equals(['Red', 'Green', 'Blue', 'Yellow']));
+      expect(
+        restored.options.map((o) => o.label),
+        equals(['Red', 'Green', 'Blue', 'Yellow']),
+      );
       expect(restored.answer, equals('Green'));
     });
 
@@ -526,7 +566,10 @@ void main() {
       expect(output.output, equals('Opt-A'));
       expect(ctx.questionCalls, hasLength(1));
       expect(ctx.questionCalls[0].question, equals('Pick one'));
-      expect(ctx.questionCalls[0].options, equals(['Opt-A', 'Opt-B']));
+      expect(
+        ctx.questionCalls[0].options.map((o) => o.label),
+        equals(['Opt-A', 'Opt-B']),
+      );
       expect(ctx.questionCalls[0].multiple, isFalse);
     });
 
@@ -572,7 +615,12 @@ void main() {
       }, ctx.create());
 
       expect(output.metadata?['question'], equals('Continue?'));
-      expect(output.metadata?['options'], equals(['Yes', 'No']));
+      expect(output.metadata?['options'] is List, isTrue);
+      expect((output.metadata?['options'] as List).length, equals(2));
+      expect(
+        (output.metadata?['options'] as List).first is QuestionOption,
+        isTrue,
+      );
       expect(output.metadata?['answer'], equals('Confirmed'));
     });
   });

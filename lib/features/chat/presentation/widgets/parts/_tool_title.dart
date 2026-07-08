@@ -29,7 +29,11 @@ String _formatArgs(Map<String, dynamic> input, {int maxArgs = 3}) {
 }
 
 String toolTitle(String toolName, Map<String, dynamic> input) {
-  final path = input['path'] as String? ?? input['filePath'] as String? ?? '';
+  final path =
+      input['path'] as String? ??
+      input['filePath'] as String? ??
+      input['file_path'] as String? ??
+      '';
   final url = input['url'] as String? ?? '';
   final pattern = input['pattern'] as String? ?? '';
   final args = _formatArgs(input);
@@ -39,10 +43,13 @@ String toolTitle(String toolName, Map<String, dynamic> input) {
     case 'edit':
       return 'Edit ${_breakablePath(path)}$args';
     case 'write':
-      return 'Write ${_breakablePath(path)}';
+      return 'Write ${_breakablePath(path)}$args';
     case 'bash':
-      final cmd = input['command'] as String? ?? '';
-      return '\$ $cmd';
+      {
+        final desc = input['description'] as String? ?? '';
+        if (desc.isNotEmpty) return '# $desc';
+        return toolName;
+      }
     case 'glob':
       return 'Glob "${_breakablePath(pattern)}"$args';
     case 'grep':
@@ -62,9 +69,13 @@ String toolTitle(String toolName, Map<String, dynamic> input) {
     case 'question':
       return 'Asked questions';
     case 'skill':
-      return 'Skill "${_breakablePath(path)}"';
+      {
+        final skillName = input['name'] as String? ?? '';
+        return 'Skill "$skillName"';
+      }
     default:
-      return toolName;
+      if (path.isNotEmpty) return '$toolName ${_breakablePath(path)}$args';
+      return args.isNotEmpty ? '$toolName$args' : toolName;
   }
 }
 

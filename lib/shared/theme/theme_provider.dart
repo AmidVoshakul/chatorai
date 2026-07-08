@@ -22,6 +22,8 @@ class ThemeState {
   final double fontSize;
   final bool wideScreenMode;
   final bool autoScrollDuringStreaming;
+  final bool showContinuationSuggestions;
+  final bool expandReasoningByDefault;
   final bool isLoading;
 
   const ThemeState({
@@ -29,6 +31,8 @@ class ThemeState {
     this.fontSize = 1.0,
     this.wideScreenMode = false,
     this.autoScrollDuringStreaming = false,
+    this.showContinuationSuggestions = true,
+    this.expandReasoningByDefault = true,
     this.isLoading = true,
   });
 
@@ -51,6 +55,8 @@ class ThemeState {
     double? fontSize,
     bool? wideScreenMode,
     bool? autoScrollDuringStreaming,
+    bool? showContinuationSuggestions,
+    bool? expandReasoningByDefault,
     bool? isLoading,
   }) {
     return ThemeState(
@@ -59,6 +65,10 @@ class ThemeState {
       wideScreenMode: wideScreenMode ?? this.wideScreenMode,
       autoScrollDuringStreaming:
           autoScrollDuringStreaming ?? this.autoScrollDuringStreaming,
+      showContinuationSuggestions:
+          showContinuationSuggestions ?? this.showContinuationSuggestions,
+      expandReasoningByDefault:
+          expandReasoningByDefault ?? this.expandReasoningByDefault,
       isLoading: isLoading ?? this.isLoading,
     );
   }
@@ -154,6 +164,10 @@ class ThemeNotifier extends Notifier<ThemeState> {
   static const String _wideScreenModeKey = 'wide_screen_mode';
   static const String _autoScrollDuringStreamingKey =
       'auto_scroll_during_streaming';
+  static const String _showContinuationSuggestionsKey =
+      'show_continuation_suggestions';
+  static const String _expandReasoningByDefaultKey =
+      'expand_reasoning_by_default';
 
   bool _settingsLoaded = false;
 
@@ -186,12 +200,18 @@ class ThemeNotifier extends Notifier<ThemeState> {
       final wideScreenMode = prefs.getBool(_wideScreenModeKey) ?? false;
       final autoScrollDuringStreaming =
           prefs.getBool(_autoScrollDuringStreamingKey) ?? false;
+      final showContinuationSuggestions =
+          prefs.getBool(_showContinuationSuggestionsKey) ?? true;
+      final expandReasoningByDefault =
+          prefs.getBool(_expandReasoningByDefaultKey) ?? true;
 
       state = ThemeState(
         themeMode: themeMode,
         fontSize: fontSize,
         wideScreenMode: wideScreenMode,
         autoScrollDuringStreaming: autoScrollDuringStreaming,
+        showContinuationSuggestions: showContinuationSuggestions,
+        expandReasoningByDefault: expandReasoningByDefault,
         isLoading: false,
       );
       _logger.logInfo('[ThemeNotifier] Settings loaded');
@@ -213,6 +233,14 @@ class ThemeNotifier extends Notifier<ThemeState> {
       await prefs.setBool(
         _autoScrollDuringStreamingKey,
         state.autoScrollDuringStreaming,
+      );
+      await prefs.setBool(
+        _showContinuationSuggestionsKey,
+        state.showContinuationSuggestions,
+      );
+      await prefs.setBool(
+        _expandReasoningByDefaultKey,
+        state.expandReasoningByDefault,
       );
       _logger.logVerbose('[ThemeNotifier] Settings saved');
     } catch (e) {
@@ -248,6 +276,20 @@ class ThemeNotifier extends Notifier<ThemeState> {
   void setAutoScrollDuringStreaming(bool value) {
     if (state.autoScrollDuringStreaming != value) {
       state = state.copyWith(autoScrollDuringStreaming: value);
+      _saveSettings();
+    }
+  }
+
+  void setShowContinuationSuggestions(bool value) {
+    if (state.showContinuationSuggestions != value) {
+      state = state.copyWith(showContinuationSuggestions: value);
+      _saveSettings();
+    }
+  }
+
+  void setExpandReasoningByDefault(bool value) {
+    if (state.expandReasoningByDefault != value) {
+      state = state.copyWith(expandReasoningByDefault: value);
       _saveSettings();
     }
   }

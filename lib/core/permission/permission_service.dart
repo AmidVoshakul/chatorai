@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'evaluator.dart';
@@ -29,6 +30,7 @@ class PermissionService {
   final _defaultRules = <PermissionRule>[];
   final _controller = StreamController<PermissionRequest>.broadcast();
   bool _rulesSeeded = false;
+  String? _sessionId;
 
   // Rate-limit tracking for repeated permission requests
   final _askHistory = <String, List<DateTime>>{};
@@ -42,21 +44,16 @@ class PermissionService {
   static const _questionLimitWindow = Duration(minutes: 5);
   static const _questionLimitMax = 10;
 
-  static const _prefsKey = 'permission_approved_rules';
-
-  SharedPreferences? _prefs;
-
   Stream<PermissionRequest> get onAsked => _controller.stream;
   Stream<QuestionRequest> get onQuestionAsked => _questionController.stream;
   List<PermissionRule> get approvedRules => List.unmodifiable(_approved);
 
   void attachPreferences(SharedPreferences prefs) {
-    _prefs = prefs;
-    _loadApprovedRules();
+    // Session-scoped: "Always allow" rules live in memory for the current
+    // session only. No persistence needed.
   }
 
   /// Seed the default rules from configuration.
-  /// This is called once at startup to load the permission rules from chatorai.json.
   void seedRules(PermissionRuleset ruleset) {
     if (!_rulesSeeded && ruleset.rules.isNotEmpty) {
       _defaultRules.addAll(ruleset.rules);
@@ -88,6 +85,15 @@ class PermissionService {
     LogTags.permission.logInfo(
       'PermissionService.ask: START for tool=${req.toolName}, permission=${req.permission}, patterns=${req.patterns}',
     );
+
+    final reqSessionId = req.metadata['sessionId'] as String?;
+    if (reqSessionId != null && reqSessionId != _sessionId) {
+      _sessionId = reqSessionId;
+      _approved.clear();
+      LogTags.permission.logInfo(
+        'PermissionService: session changed to $reqSessionId, cleared session-approved rules',
+      );
+    }
 
     var needsAsk = false;
 
@@ -163,11 +169,11 @@ class PermissionService {
   Future<String> askQuestion({
     required String id,
     required String question,
-    List<String> options = const [],
+    List<QuestionOption> options = const [],
     bool multiple = false,
   }) async {
     LogTags.permission.logInfo(
-      'PermissionService.askQuestion: id=$id, question="$question", options=$options',
+      'PermissionService.askQuestion: id=$id, question="$question", options=${options.map((o) => o.label).toList()}',
     );
 
     if (_isQuestionRateLimited('question')) {
@@ -195,25 +201,11 @@ class PermissionService {
     LogTags.permission.logInfo(
       'PermissionService.askQuestion: WAITING for user answer, id=$id',
     );
-    try {
-      final answer = await completer.future.timeout(
-        const Duration(seconds: 60),
-        onTimeout: () {
-          LogTags.permission.logWarning(
-            'PermissionService.askQuestion: TIMEOUT id=$id, returning empty',
-          );
-          _questionPending.remove(id);
-          return '';
-        },
-      );
-      LogTags.permission.logInfo(
-        'PermissionService.askQuestion: ANSWER RECEIVED id=$id, answer="$answer"',
-      );
-      return answer;
-    } catch (_) {
-      _questionPending.remove(id);
-      rethrow;
-    }
+    final answer = await completer.future;
+    LogTags.permission.logInfo(
+      'PermissionService.askQuestion: ANSWER RECEIVED id=$id, answer="$answer"',
+    );
+    return answer;
   }
 
   void answerQuestion(String id, String answer) {
@@ -240,7 +232,6 @@ class PermissionService {
   bool _isRateLimited(String key) {
     final now = DateTime.now();
     final history = _askHistory[key] ??= [];
-    // Prune old entries
     history.removeWhere((t) => now.difference(t) > _askLimitWindow);
     return history.length >= _askLimitMax;
   }
@@ -296,7 +287,6 @@ class PermissionService {
         }
         _approved.addAll(newRules);
         _resolveSiblings(entry, newRules);
-        unawaited(_persistApprovedRules());
       }
       entry.completer.complete();
       _pending.remove(requestId);
@@ -336,35 +326,6 @@ class PermissionService {
     }
   }
 
-  void _loadApprovedRules() {
-    if (_prefs == null) return;
-    final raw = _prefs!.getStringList(_prefsKey);
-    if (raw == null) return;
-    try {
-      for (final entry in raw) {
-        final parts = entry.split('|');
-        if (parts.length != 3) continue;
-        _approved.add(
-          PermissionRule(
-            permission: parts[0],
-            pattern: parts[1],
-            action: PermissionAction.values.byName(parts[2]),
-          ),
-        );
-      }
-    } catch (_) {
-      // ignore corrupt prefs
-    }
-  }
-
-  Future<void> _persistApprovedRules() async {
-    if (_prefs == null) return;
-    final serialized = _approved
-        .map((r) => '${r.permission}|${r.pattern}|${r.action.name}')
-        .toList();
-    await _prefs!.setStringList(_prefsKey, serialized);
-  }
-
   void cancelAllPendingRequests() {
     for (final entry in _pending.values) {
       entry.completer.completeError(
@@ -373,7 +334,6 @@ class PermissionService {
     }
     _pending.clear();
     _askHistory.clear();
-    // Cancel pending questions too
     for (final entry in _questionPending.values) {
       if (!entry.completer.isCompleted) {
         entry.completer.complete('');
@@ -383,11 +343,16 @@ class PermissionService {
     _questionAskHistory.clear();
   }
 
-  /// Clear rate-limit history (call on session end).
-  void clearRateLimitHistory() {
+  /// Clear rate-limit history and session-approved rules.
+  void clearSession() {
     _askHistory.clear();
     _questionAskHistory.clear();
+    _approved.clear();
+    _sessionId = null;
   }
+
+  @Deprecated('Use clearSession() instead')
+  void clearRateLimitHistory() => clearSession();
 }
 
 class _PendingEntry {
@@ -410,7 +375,7 @@ enum PermissionReply { once, always, reject }
 class QuestionRequest {
   final String id;
   final String question;
-  final List<String> options;
+  final List<QuestionOption> options;
   final bool multiple;
 
   const QuestionRequest({
@@ -423,7 +388,7 @@ class QuestionRequest {
 
 class _QuestionEntry {
   final String question;
-  final List<String> options;
+  final List<QuestionOption> options;
   final bool multiple;
   final Completer<String> completer;
 

@@ -1,6 +1,6 @@
 # API Reference
 
-**Last updated:** 2026-07-07
+**Last updated:** 2026-07-08
 
 This document describes the public APIs of ChatORAI for developers, contributors, and advanced users.
 
@@ -442,6 +442,7 @@ Validated against JSON Schema in `lib/core/config/chatorai_schema.dart`.
   },
   compaction: { auto: true, prune: true },
   formatter: { formatters: {} },
+  agent: {},
   mcp: {
     default_timeout: 30000,
     servers: {

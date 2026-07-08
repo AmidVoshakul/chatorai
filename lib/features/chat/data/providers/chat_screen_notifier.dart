@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat/todo_part.dart'
     show TodoItem;
 
@@ -231,7 +232,8 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
     String messageId,
     String sessionId,
     String questionText,
-    List<String> options,
+    List<QuestionOption> options,
+    bool multiple,
   ) {
     var parts = List<AssistantContent>.from(state.streamingParts);
     parts = _interruptStreaming(parts);
@@ -242,6 +244,7 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
         messageId: messageId,
         question: questionText,
         options: options,
+        multiple: multiple,
       ),
     );
     state = state.copyWith(streamingParts: parts);

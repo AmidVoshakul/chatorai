@@ -18,6 +18,8 @@ import 'package:chatorai/core/tools/built_in/task.dart';
 import 'package:chatorai/core/tools/built_in/question.dart';
 import 'package:chatorai/core/tools/built_in/apply_patch.dart';
 import 'package:chatorai/core/tools/built_in/todowrite.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart'
+    show QuestionOption;
 import 'package:chatorai/features/chat/services/chat_retry_service.dart';
 import 'package:chatorai/features/chat/services/chat_ai_service.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
@@ -422,7 +424,9 @@ void main() {
 
         expect(output.metadata?['question'], equals('Select a fruit'));
         expect(
-          output.metadata?['options'],
+          (output.metadata?['options'] as List)
+              .map((o) => (o as QuestionOption).label)
+              .toList(),
           equals(['Apple', 'Banana', 'Cherry']),
         );
         expect(output.metadata?['answer'], equals('Apple'));
@@ -471,7 +475,12 @@ void main() {
         }, ctx);
 
         expect(output.metadata?['question'], equals('Color?'));
-        expect(output.metadata?['options'], equals(['Red', 'Blue']));
+        expect(
+          (output.metadata?['options'] as List)
+              .map((o) => (o as QuestionOption).label)
+              .toList(),
+          equals(['Red', 'Blue']),
+        );
         expect(output.metadata?['answer'], equals('Red'));
       });
     });

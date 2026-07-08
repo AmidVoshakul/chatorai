@@ -1,3 +1,5 @@
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart'
+    show QuestionOption;
 import 'package:test/test.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/question.dart';
@@ -59,7 +61,12 @@ void main() {
 
       expect(output.output, equals('Alice'));
       expect(output.metadata?['question'], equals('What is your name?'));
-      expect(output.metadata?['options'], equals(['Alice', 'Bob']));
+      expect(
+        (output.metadata?['options'] as List)
+            .map((o) => (o as QuestionOption).label)
+            .toList(),
+        equals(['Alice', 'Bob']),
+      );
       expect(output.metadata?['answer'], equals('Alice'));
     });
 
@@ -78,7 +85,12 @@ void main() {
 
       expect(output.output, equals('Blue'));
       expect(output.metadata?['question'], equals('Favorite color?'));
-      expect(output.metadata?['options'], equals(['Red', 'Green', 'Blue']));
+      expect(
+        (output.metadata?['options'] as List)
+            .map((o) => (o as QuestionOption).label)
+            .toList(),
+        equals(['Red', 'Green', 'Blue']),
+      );
       expect(output.metadata?['answer'], equals('Blue'));
     });
 

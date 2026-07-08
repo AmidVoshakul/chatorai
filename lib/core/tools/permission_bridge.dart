@@ -1,5 +1,6 @@
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 import 'package:chatorai/core/permission/permission_service.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/tool_permission.dart';
@@ -32,7 +33,7 @@ class PermissionBridge {
       askQuestion:
           ({
             required String question,
-            List<String> options = const [],
+            List<QuestionOption> options = const [],
             bool multiple = false,
           }) async =>
               _askQuestion(toolId, toolCallId, question, options, multiple),
@@ -88,11 +89,11 @@ class PermissionBridge {
     String toolId,
     String toolCallId,
     String question,
-    List<String> options,
+    List<QuestionOption> options,
     bool multiple,
   ) async {
     LogTags.permission.logInfo(
-      'PermissionBridge._askQuestion: START question="$question", options=$options',
+      'PermissionBridge._askQuestion: START question="$question", options=${options.map((o) => o.label).toList()}',
     );
 
     await permissions.ask(
@@ -118,7 +119,7 @@ class PermissionBridge {
 
     final id = 'question_${DateTime.now().microsecondsSinceEpoch}';
     LogTags.permission.logInfo(
-      'PermissionBridge._askQuestion: id=$id, question="$question", options=$options',
+      'PermissionBridge._askQuestion: id=$id, question="$question", options=${options.map((o) => o.label).toList()}',
     );
     return permissions.askQuestion(
       id: id,

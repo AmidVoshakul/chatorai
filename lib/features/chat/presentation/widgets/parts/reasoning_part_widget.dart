@@ -8,8 +8,14 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 class ReasoningPartWidget extends StatefulWidget {
   final ReasoningPart part;
   final String? partKey;
+  final bool expandByDefault;
 
-  const ReasoningPartWidget({super.key, required this.part, this.partKey});
+  const ReasoningPartWidget({
+    super.key,
+    required this.part,
+    this.partKey,
+    this.expandByDefault = true,
+  });
 
   @override
   State<ReasoningPartWidget> createState() => _ReasoningPartWidgetState();
@@ -17,12 +23,11 @@ class ReasoningPartWidget extends StatefulWidget {
 
 class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     with TickerProviderStateMixin {
-  /// Static map to persist expand/collapse state across widget rebuilds.
   static final Map<String, bool> _expandState = {};
 
   bool get _isExpanded {
     final key = widget.partKey ?? widget.part.content.hashCode.toString();
-    return _expandState.putIfAbsent(key, () => widget.part.isExpanded ?? true);
+    return _expandState[key] ?? widget.expandByDefault;
   }
 
   set _isExpanded(bool value) {
@@ -49,8 +54,8 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     if (widget.part.isStreaming) {
       _shimmerController.repeat();
     }
-    // Initialize expand state from part or default to true.
-    _isExpanded = widget.part.isExpanded ?? true;
+    final key = widget.partKey ?? widget.part.content.hashCode.toString();
+    _expandState.putIfAbsent(key, () => widget.expandByDefault);
   }
 
   @override
@@ -66,6 +71,14 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
           widget.part.startedAt != null &&
           _thoughtDuration == null) {
         _thoughtDuration = DateTime.now().difference(widget.part.startedAt!);
+      }
+    }
+
+    if (oldWidget.expandByDefault != widget.expandByDefault) {
+      final key = widget.partKey ?? widget.part.content.hashCode.toString();
+      final current = _expandState[key];
+      if (current == null || current == oldWidget.expandByDefault) {
+        _expandState[key] = widget.expandByDefault;
       }
     }
   }

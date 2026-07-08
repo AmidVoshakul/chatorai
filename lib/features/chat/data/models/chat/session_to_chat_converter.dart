@@ -98,6 +98,7 @@ MessagePart assistantContentToMessagePart(AssistantContent content) {
       question: content.question,
       options: content.options,
       answer: content.answer,
+      multiple: content.multiple,
     );
   }
   if (content is AssistantTodo) {

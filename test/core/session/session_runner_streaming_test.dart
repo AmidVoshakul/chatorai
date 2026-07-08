@@ -265,14 +265,16 @@ void main() {
 
       final events = await repository.eventStore.getEvents(session.sessionId);
       final types = events.map((e) => e.runtimeType).toList();
-      expect(types.length, 7);
+      expect(types.length, 8);
       expect(types[0], SessionCreated);
       expect(types[1], TextStarted);
       expect(types[2], TextDelta);
       expect(types[3], ToolCalled);
-      expect(types[4], TextDelta);
-      expect(types[5], ToolSuccess);
-      expect(types[6], TextDelta);
+      // onToolStart resets _openTextPartId, so subsequent text creates a new part
+      expect(types[4], TextStarted);
+      expect(types[5], TextDelta);
+      expect(types[6], ToolSuccess);
+      expect(types[7], TextDelta);
     });
 
     test('reasoning text preserved when text auto-closes it', () async {

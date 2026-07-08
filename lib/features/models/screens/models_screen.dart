@@ -12,14 +12,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // MODELS SCREEN WIDGET
 // ===========================================================================
 
-class ModelsScreen extends ConsumerWidget {
+class ModelsScreen extends ConsumerStatefulWidget {
   final Function(String, ChatModel?)? onModelSelected;
   final String? currentModel;
 
   const ModelsScreen({super.key, this.onModelSelected, this.currentModel});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ModelsScreen> createState() => _ModelsScreenState();
+}
+
+class _ModelsScreenState extends ConsumerState<ModelsScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final state = ref.watch(modelsScreenProvider);
 
@@ -57,17 +70,35 @@ class ModelsScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          _buildSearchBar(context, ref, localizations, state),
+          _buildSearchBar(context, localizations, state),
           const SizedBox(height: 8),
-          Expanded(child: _buildContent(context, ref, localizations, state)),
+          Expanded(child: _buildContent(context, localizations, state)),
         ],
       ),
     );
   }
 
+  Widget _buildContent(
+    BuildContext context,
+    AppLocalizations localizations,
+    ModelsScreenState state,
+  ) {
+    if (state.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.filteredModels.isEmpty) {
+      return ModelsEmptyStateWidget(
+        isSearchEmpty: state.searchQuery.isNotEmpty,
+        isFavoritesEmpty: state.showFavoritesOnly,
+      );
+    }
+
+    return _buildGroupedList(context, state);
+  }
+
   Widget _buildSearchBar(
     BuildContext context,
-    WidgetRef ref,
     AppLocalizations localizations,
     ModelsScreenState state,
   ) {
@@ -76,6 +107,7 @@ class ModelsScreen extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: TextField(
+        controller: _searchController,
         onChanged: (value) {
           ref.read(modelsScreenProvider.notifier).setSearchQuery(value);
         },
@@ -106,6 +138,7 @@ class ModelsScreen extends ConsumerWidget {
                     color: isDark ? Colors.grey[300] : Colors.grey[700],
                   ),
                   onPressed: () {
+                    _searchController.clear();
                     ref.read(modelsScreenProvider.notifier).clearSearch();
                   },
                 ),
@@ -150,31 +183,7 @@ class ModelsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(
-    BuildContext context,
-    WidgetRef ref,
-    AppLocalizations localizations,
-    ModelsScreenState state,
-  ) {
-    if (state.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (state.filteredModels.isEmpty) {
-      return ModelsEmptyStateWidget(
-        isSearchEmpty: state.searchQuery.isNotEmpty,
-        isFavoritesEmpty: state.showFavoritesOnly,
-      );
-    }
-
-    return _buildGroupedList(context, ref, state);
-  }
-
-  Widget _buildGroupedList(
-    BuildContext context,
-    WidgetRef ref,
-    ModelsScreenState state,
-  ) {
+  Widget _buildGroupedList(BuildContext context, ModelsScreenState state) {
     final grouped = <String, List<ChatModel>>{};
     for (final m in state.filteredModels) {
       (grouped[m.provider ?? ''] ??= []).add(m);
@@ -190,7 +199,7 @@ class ModelsScreen extends ConsumerWidget {
             providerKey: entry.key,
             providerName: _providerName(entry.key),
             models: entry.value,
-            currentModel: currentModel,
+            currentModel: widget.currentModel,
             onSelect: (model) async {
               await ref
                   .read(modelsScreenProvider.notifier)

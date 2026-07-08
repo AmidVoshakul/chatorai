@@ -42,12 +42,21 @@ class TodoItem {
 class TodoPart extends MessagePart {
   final List<TodoItem> todos;
   final bool isStreaming;
-  const TodoPart({required this.todos, this.isStreaming = false});
+  const TodoPart({
+    required this.todos,
+    this.isStreaming = false,
+    super.synthetic,
+  });
 
-  TodoPart copyWith({List<TodoItem>? todos, bool? isStreaming}) {
+  TodoPart copyWith({
+    List<TodoItem>? todos,
+    bool? isStreaming,
+    bool? synthetic,
+  }) {
     return TodoPart(
       todos: todos ?? this.todos,
       isStreaming: isStreaming ?? this.isStreaming,
+      synthetic: synthetic ?? this.synthetic,
     );
   }
 
@@ -56,6 +65,7 @@ class TodoPart extends MessagePart {
     'type': 'todo',
     'todos': todos.map((t) => t.toJson()).toList(),
     'isStreaming': isStreaming,
+    'synthetic': synthetic,
   };
 
   factory TodoPart.fromJson(Map<String, dynamic> json) {
@@ -66,6 +76,7 @@ class TodoPart extends MessagePart {
               .toList() ??
           [],
       isStreaming: json['isStreaming'] as bool? ?? false,
+      synthetic: json['synthetic'] as bool? ?? false,
     );
   }
 }

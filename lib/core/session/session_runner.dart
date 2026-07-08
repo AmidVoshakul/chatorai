@@ -268,6 +268,7 @@ class SessionRunnerSession {
     final partId = _genPartId(toolCallId);
     _toolPartIds[toolCallId] = partId;
     await _closeReasoningIfOpen();
+    _openTextPartId = null;
     await repository.appendEvent(
       ToolCalled(
         sessionId: sessionId,

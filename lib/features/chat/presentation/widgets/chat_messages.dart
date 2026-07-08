@@ -14,9 +14,12 @@ import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart'
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages_suggestions.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages_waiting_animation.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/chat_message_bubble.dart';
-import 'package:chatorai/providers.dart' show chatScreenProvider;
+import 'package:chatorai/providers.dart'
+    show chatScreenProvider, themeProvider, modelSettingsProvider;
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -186,6 +189,16 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     return config?.displayName ?? modelId;
   }
 
+  static ScrollPhysics _scrollPhysics(BuildContext context) {
+    final isMobile = switch (defaultTargetPlatform) {
+      TargetPlatform.android || TargetPlatform.iOS => true,
+      _ => false,
+    };
+    return isMobile
+        ? const BouncingScrollPhysics()
+        : const ClampingScrollPhysics();
+  }
+
   void scrollToHeading(String messageId) {
     final messageIndex =
         widget.chat?.messages.indexWhere((m) => m.id == messageId) ?? -1;
@@ -287,7 +300,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
           Expanded(
             child: RepaintBoundary(
               child: ListView.builder(
-                physics: const BouncingScrollPhysics(),
+                physics: _scrollPhysics(context),
                 addAutomaticKeepAlives: false,
                 addRepaintBoundaries: true,
                 padding: EdgeInsets.only(
@@ -329,22 +342,34 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                     final isLastMessage = msgIndex == messages.length - 1;
 
                     final chatMsg = messageToChatMessage(message);
+                    final agentNameForMessage = (chatMsg is AssistantMessage)
+                        ? (chatMsg.agent ?? currentAgent.name)
+                        : currentAgent.name;
+                    final originalModelId = (chatMsg is AssistantMessage)
+                        ? chatMsg.model
+                        : null;
                     final resolvedMsg = (chatMsg is AssistantMessage)
                         ? chatMsg.copyWith(
                             model: _resolveModelDisplayName(chatMsg.model),
                           )
                         : chatMsg;
+                    final reasoningEnabled = originalModelId != null
+                        ? (ref
+                                  .read(modelSettingsProvider)
+                                  .settingsCache[originalModelId]
+                                  ?.reasoningEnabled ??
+                              true)
+                        : true;
                     return ChatMessageBubble(
                       key: ValueKey(message.id),
                       message: resolvedMsg,
                       chatId: widget.chat!.id,
                       messageId: message.id,
                       chatStorageService: widget.chatStorageService,
-                      agentName: widget.agentName ?? currentAgent.name,
+                      agentName: widget.agentName ?? agentNameForMessage,
                       onContinuationSelected:
                           message.role == MessageRole.assistant
-                          ? (suggestion) =>
-                                widget.onContinueResponse?.call(suggestion)
+                          ? (_) => widget.onContinueResponse?.call(message.id)
                           : null,
                       onMessageDeleted: widget.onMessageDeleted,
                       onMessageRegenerate: widget.onRegenerateResponse != null
@@ -358,6 +383,10 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                           : null,
                       contextLength: message.contextLength,
                       onTaskTap: widget.onTaskTap,
+                      expandReasoningByDefault: ref
+                          .read(themeProvider)
+                          .expandReasoningByDefault,
+                      reasoningEnabled: reasoningEnabled,
                     );
                   }
 
@@ -369,6 +398,10 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                       final lastMessage = messages.isNotEmpty
                           ? messages.last
                           : null;
+                      final agentNameForStream =
+                          lastMessage?.agent ??
+                          widget.agentName ??
+                          currentAgent.name;
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: ChatMessageBubble(
@@ -383,8 +416,18 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                           chatId: widget.chat?.id ?? '',
                           messageId: lastMessage?.id ?? 'streaming',
                           chatStorageService: widget.chatStorageService,
-                          agentName: widget.agentName ?? currentAgent.name,
+                          agentName: agentNameForStream,
                           onTaskTap: widget.onTaskTap,
+                          expandReasoningByDefault: ref
+                              .read(themeProvider)
+                              .expandReasoningByDefault,
+                          reasoningEnabled: lastMessage?.model != null
+                              ? (ref
+                                        .read(modelSettingsProvider)
+                                        .settingsCache[lastMessage!.model]
+                                        ?.reasoningEnabled ??
+                                    true)
+                              : true,
                         ),
                       );
                     }

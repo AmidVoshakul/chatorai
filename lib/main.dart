@@ -1,7 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui' show PlatformDispatcher;
 
+import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/config/config_initializer.dart';
+import 'package:chatorai/core/config/config_loader.dart';
+import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/tools/tool_output_persistence.dart';
 import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/permission_overlay.dart';
@@ -53,6 +57,17 @@ void main() async {
   };
 
   ToolOutputPersistence.instance.initialize();
+
+  // Initialize agent registry with config
+  ChatOrAIConfig? config;
+  try {
+    final rawJson = await ConfigLoader.load();
+    final data = json.decode(rawJson) as Map<String, dynamic>;
+    config = ChatOrAIConfig.fromJson(data);
+  } catch (_) {
+    // Config load failed, continue without overrides
+  }
+  await AgentRegistry().init(config);
 
   runApp(const ProviderScope(child: ChatoraiApp()));
 }

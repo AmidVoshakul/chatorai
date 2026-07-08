@@ -253,16 +253,6 @@ class _ChatInputState extends ConsumerState<ChatInput>
           );
         }
       },
-      // Escape: close any popup
-      SingleActivator(LogicalKeyboardKey.escape): () {
-        if (isAgentPopupVisible) {
-          hideAgentPopup();
-        } else if (isCommandPopupVisible) {
-          hideCommandPopup();
-        } else if (isSkillsPopupVisible) {
-          hideSkillsPopup();
-        }
-      },
       // Arrow keys: navigate popups
       SingleActivator(LogicalKeyboardKey.arrowDown): () {
         if (isAgentPopupVisible) {
@@ -284,17 +274,38 @@ class _ChatInputState extends ConsumerState<ChatInput>
       },
     };
 
-    final textField = InputWidgetBuilders.buildTextField(
-      key: _textFieldKey,
-      controller: _textController,
-      focusNode: widget.focusNode,
-      maxLines: maxLines,
-      isMobile: isMobile,
-      enabled: !chatInputState.isSending,
-      theme: theme,
-      localizations: localizations,
-      hintText: localizations.typeYourMessage,
-      keyboardBindings: keyboardBindings,
+    final textField = Focus(
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape) {
+          if (isAgentPopupVisible) {
+            hideAgentPopup();
+            return KeyEventResult.handled;
+          }
+          if (isCommandPopupVisible) {
+            hideCommandPopup();
+            return KeyEventResult.handled;
+          }
+          if (isSkillsPopupVisible) {
+            hideSkillsPopup();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: InputWidgetBuilders.buildTextField(
+        key: _textFieldKey,
+        controller: _textController,
+        focusNode: widget.focusNode,
+        maxLines: maxLines,
+        isMobile: isMobile,
+        enabled: !chatInputState.isSending,
+        theme: theme,
+        localizations: localizations,
+        hintText: localizations.typeYourMessage,
+        keyboardBindings: keyboardBindings,
+      ),
     );
 
     final hasText = _textController.text.trim().isNotEmpty;

@@ -49,6 +49,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
         builder: (context) => IconButton(
           icon: Icon(Icons.menu, size: ChatoraiIconSizes.buttonIcon),
           onPressed: onMenuPressed ?? () => Scaffold.of(context).openDrawer(),
+          tooltip: localizations.openMenuTooltip,
         ),
       ),
       actions: [
@@ -68,29 +69,33 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget _buildModelButton(BuildContext context, Color? modelTextColor) {
-    return TextButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ModelsScreen(
-              onModelSelected: (String modelId, ChatModel? modelObject) {
-                onModelSelected(modelId, modelObject);
-              },
-              currentModel: selectedModel,
+    final localizations = AppLocalizations.of(context)!;
+    return Tooltip(
+      message: localizations.selectModelTooltip,
+      child: TextButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ModelsScreen(
+                onModelSelected: (String modelId, ChatModel? modelObject) {
+                  onModelSelected(modelId, modelObject);
+                },
+                currentModel: selectedModel,
+              ),
             ),
+          );
+        },
+        child: Text(
+          selectedModelObject!.name,
+          style: TextStyle(
+            fontSize: ChatoraiFontSizes.sm,
+            fontWeight: FontWeight.w600,
+            color: modelTextColor,
           ),
-        );
-      },
-      child: Text(
-        selectedModelObject!.name,
-        style: TextStyle(
-          fontSize: ChatoraiFontSizes.sm,
-          fontWeight: FontWeight.w600,
-          color: modelTextColor,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
         ),
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
       ),
     );
   }

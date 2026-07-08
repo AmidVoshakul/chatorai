@@ -29,7 +29,8 @@ extension _ChatScreenAiExt on _ChatScreenState {
     }
 
     final updatedMessages = chat.messages.sublist(0, messageIndex);
-    final newAssistantMessage = _createAssistantMessage();
+    final agentName = ref.read(currentAgentProvider).name;
+    final newAssistantMessage = _createAssistantMessage(agent: agentName);
     final chatWithPlaceholder = chat.copyWith(
       messages: [...updatedMessages, newAssistantMessage],
       updatedAt: DateTime.now(),
@@ -42,11 +43,15 @@ extension _ChatScreenAiExt on _ChatScreenState {
       _scrollToBottom(force: true);
     });
 
-    final messages = _buildApiMessages(chatWithPlaceholder);
+    final messages = _buildApiMessages(
+      chatWithPlaceholder,
+      delegateAgentName: null,
+    );
     await _initiateStream(
       chat: chatWithPlaceholder,
       messages: messages,
       isContinuation: false,
+      delegateAgentId: null,
     );
   }
 
@@ -60,26 +65,42 @@ extension _ChatScreenAiExt on _ChatScreenState {
     );
     if (lastMessage.content.isEmpty) return;
 
-    final continuationMessage = _createAssistantMessage();
+    final continuationMessage = _createAssistantMessage(
+      agent: ref.read(currentAgentProvider).name,
+    );
     await _chatStorageService.addMessageToChat(
       currentChat!.id,
       continuationMessage,
     );
     final chatFromStorage = await _chatStorageService.getChat(currentChat!.id);
+    if (chatFromStorage == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _autoScrollEnabled = true;
       _scrollToBottom(force: true);
     });
 
-    final continuationPrompt = [
-      {'role': 'user', 'content': 'Please continue your previous response.'},
-      {'role': 'assistant', 'content': lastMessage.content},
-      {'role': 'user', 'content': 'Continue from where you left off.'},
-    ];
+    final continuationPrompt = _buildApiMessages(
+      chatFromStorage,
+      delegateAgentName: null,
+    );
+    // Replace last assistant content with continue instruction
+    if (continuationPrompt.isNotEmpty) {
+      continuationPrompt[continuationPrompt.length - 1] = {
+        'role': 'user',
+        'content': 'Please continue your previous response.',
+      };
+    } else {
+      continuationPrompt.addAll([
+        {'role': 'user', 'content': 'Please continue your previous response.'},
+        {'role': 'assistant', 'content': lastMessage.content},
+        {'role': 'user', 'content': 'Continue from where you left off.'},
+      ]);
+    }
     await _initiateStream(
-      chat: chatFromStorage!,
+      chat: chatFromStorage,
       messages: continuationPrompt,
       isContinuation: true,
+      delegateAgentId: null,
     );
   }
 }

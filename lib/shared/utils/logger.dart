@@ -109,4 +109,5 @@ class LogTags {
   static final Logger mcp = Logger('MCP');
   static final Logger config = Logger('Config');
   static final Logger session = Logger('Session');
+  static final Logger agentLoader = Logger('AgentLoader');
 }

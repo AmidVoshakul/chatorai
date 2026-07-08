@@ -16,6 +16,7 @@ class ReasoningPart extends MessagePart {
     this.startedAt,
     this.durationMs,
     this.isExpanded,
+    super.synthetic,
   });
 
   ReasoningPart copyWith({
@@ -25,6 +26,7 @@ class ReasoningPart extends MessagePart {
     DateTime? startedAt,
     int? durationMs,
     bool? isExpanded,
+    bool? synthetic,
   }) {
     return ReasoningPart(
       content: content ?? this.content,
@@ -33,6 +35,7 @@ class ReasoningPart extends MessagePart {
       startedAt: startedAt ?? this.startedAt,
       durationMs: durationMs ?? this.durationMs,
       isExpanded: isExpanded ?? this.isExpanded,
+      synthetic: synthetic ?? this.synthetic,
     );
   }
 
@@ -42,6 +45,7 @@ class ReasoningPart extends MessagePart {
     'content': content,
     'title': title,
     'isStreaming': isStreaming,
+    'synthetic': synthetic,
     if (startedAt != null) 'startedAt': startedAt!.toIso8601String(),
     if (durationMs != null) 'durationMs': durationMs,
     if (isExpanded != null) 'is_expanded': isExpanded,
@@ -52,6 +56,7 @@ class ReasoningPart extends MessagePart {
       content: json['content'] as String? ?? '',
       title: json['title'] as String?,
       isStreaming: json['isStreaming'] as bool? ?? false,
+      synthetic: json['synthetic'] as bool? ?? false,
       startedAt: json['startedAt'] != null
           ? DateTime.parse(json['startedAt'] as String)
           : null,

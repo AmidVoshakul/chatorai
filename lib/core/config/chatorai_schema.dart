@@ -144,5 +144,36 @@ const Map<String, dynamic> chatoraiSchema = {
         },
       },
     },
+    'agent': {
+      'type': 'object',
+      'description': 'Agent overrides and customizations.',
+      'additionalProperties': {
+        'type': 'object',
+        'properties': {
+          'prompt': {
+            'type': 'string',
+            'description': 'Override the agent system prompt.',
+          },
+          'disabled': {
+            'type': 'boolean',
+            'description': 'Remove this agent from registry.',
+          },
+          'hidden': {
+            'type': 'boolean',
+            'description': 'Hide this agent from UI.',
+          },
+          'max_steps': {
+            'type': 'integer',
+            'description': 'Override max steps for agent execution.',
+            'minimum': 1,
+          },
+          'maxSteps': {
+            'type': 'integer',
+            'description': 'Alias for max_steps.',
+            'minimum': 1,
+          },
+        },
+      },
+    },
   },
 };

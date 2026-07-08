@@ -10,6 +10,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     required bool isContinuation,
     required String modelId,
     required ModelSettings modelSettings,
+    required String? activeAgent,
+    int maxSteps = 5,
   }) async {
     LogTags.chatScreen.logInfo(
       '_handleStreamingResponse START: chatId=${chat.id}, model=$modelId, isContinuation=$isContinuation',
@@ -217,53 +219,14 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           currentMessageId ??= 'msg_${DateTime.now().microsecondsSinceEpoch}';
           flushPendingUpdates();
 
-          final partId = _genPartId(toolCallId);
-          if (toolName != 'task' && activeTaskSessionId == null) {
-            notifier.onToolCall(
-              partId,
-              toolCallId,
-              currentMessageId!,
-              sessionId,
-              toolName,
-              input,
-            );
-          }
-
-          if (toolName == 'task') {
-            final description = input['description'] as String? ?? '';
-            final subagentType = input['subagent_type'] as String? ?? 'general';
-            final agent = AgentRegistry().get(subagentType);
-            final agentName = agent?.name ?? subagentType;
-            final taskId = input['task_id'] as String?;
-            final sessionIdFromInput =
-                (taskId != null && taskId.startsWith('ses_')) ? taskId : null;
-            final taskPartId = taskId ?? toolCallId;
-
-            notifier.onTaskStart(
-              taskPartId,
-              currentMessageId!,
-              sessionId,
-              description,
-              agentName,
-              taskSessionId: sessionIdFromInput,
-            );
-            activeTaskSessionId = taskPartId;
-          } else if (activeTaskSessionId != null) {
-            final toolTitle =
-                input['command'] as String? ??
-                input['query'] as String? ??
-                input['filePath'] as String? ??
-                input['path'] as String?;
-            notifier.onTaskToolExecuted(
-              activeTaskSessionId!,
-              toolName,
-              toolTitle,
-            );
-          }
-
           if (toolName == 'question') {
             final questionText = input['question'] as String? ?? '';
-            final options = (input['options'] as List?)?.cast<String>() ?? [];
+            final options =
+                (input['options'] as List?)
+                    ?.map(QuestionOption.fromJson)
+                    .toList() ??
+                const [];
+            final multiple = input['multiple'] as bool? ?? false;
 
             final now = DateTime.now();
             final isDuplicate =
@@ -280,11 +243,57 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                 sessionId,
                 questionText,
                 options,
+                multiple,
               );
               lastAddedQuestionText = questionText;
               lastAddedQuestionTime = now;
               LogTags.chatScreen.logInfo(
                 'onToolStart(question): added QuestionPart "$questionText"',
+              );
+            }
+          } else {
+            final partId = _genPartId(toolCallId);
+            if (toolName != 'task' && activeTaskSessionId == null) {
+              notifier.onToolCall(
+                partId,
+                toolCallId,
+                currentMessageId!,
+                sessionId,
+                toolName,
+                input,
+              );
+            }
+
+            if (toolName == 'task') {
+              final description = input['description'] as String? ?? '';
+              final subagentType =
+                  input['subagent_type'] as String? ?? 'general';
+              final agent = AgentRegistry().get(subagentType);
+              final agentName = agent?.name ?? subagentType;
+              final taskId = input['task_id'] as String?;
+              final sessionIdFromInput =
+                  (taskId != null && taskId.startsWith('ses_')) ? taskId : null;
+              final taskPartId = taskId ?? toolCallId;
+
+              notifier.onTaskStart(
+                taskPartId,
+                currentMessageId!,
+                sessionId,
+                description,
+                agentName,
+                taskSessionId: sessionIdFromInput,
+              );
+              activeTaskSessionId = taskPartId;
+            } else if (activeTaskSessionId != null) {
+              final toolTitle =
+                  input['command'] as String? ??
+                  input['query'] as String? ??
+                  input['filePath'] as String? ??
+                  input['path'] as String?;
+              notifier.onTaskToolExecuted(
+                activeTaskSessionId!,
+                toolName,
+                toolTitle,
               );
             }
           }
@@ -295,7 +304,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           if (!processedToolEndCalls.add(toolCallId)) return;
           final resultStr = result.toString();
 
-          notifier.onToolEnd(toolCallId, toolName, resultStr);
+          if (toolName != 'question') {
+            notifier.onToolEnd(toolCallId, toolName, resultStr);
+          }
 
           if (toolName == 'task' && activeTaskSessionId != null) {
             resolveTaskChildSession(activeTaskSessionId!);
@@ -401,6 +412,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           unawaited(runnerSession.onReasoning(reasoning));
           throttleUpdate();
         },
+        maxSteps: maxSteps,
         onCompletion: (sdkText) async {
           flushPendingUpdates();
           if (!mounted || _streamCancelled) return;
@@ -502,6 +514,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               tokensInput: latestTokensInput,
               tokensOutput: latestTokensOutput,
               contextLength: modelContextLength,
+              agent: activeAgent,
             );
             newMessages = [...chat.messages, completedMessage];
           }

@@ -1,6 +1,6 @@
 # Configuration
 
-**Last updated:** 2026-07-07
+**Last updated:** 2026-07-08
 
 ChatORAI can be configured via a JSON file (`chatorai.json`) to customize permissions, keybindings, provider settings, MCP servers, and more.
 
@@ -42,6 +42,7 @@ IDE autocomplete may use this schema if the `$schema` field is added to the file
   "skills": { ... },
   "compaction": { ... },
   "formatter": { ... },
+  "agent": { ... },
   "mcp": { ... }
 }
 ```
@@ -191,6 +192,33 @@ Configures external code formatters (e.g. `dart format`).
   }
 }
 ```
+
+### `agent`
+
+Configures per-agent overrides and customizations. Each key is an agent name (e.g., `general`, `explore`, custom subagents).
+
+```json
+{
+  "agent": {
+    "general": {
+      "prompt": "Override the default system prompt for the general agent.",
+      "max_steps": 10
+    },
+    "my-custom-agent": {
+      "disabled": true,
+      "hidden": false
+    }
+  }
+}
+```
+
+| Field       | Type    | Description                                        |
+| ----------- | ------- | -------------------------------------------------- |
+| `prompt`    | `string`| Override the agent system prompt                   |
+| `disabled`  | `bool`  | Remove this agent from registry                    |
+| `hidden`    | `bool`  | Hide this agent from UI                            |
+| `max_steps` | `int`   | Override max steps for agent execution (minimum 1) |
+| `maxSteps`  | `int`   | Alias for `max_steps`                              |
 
 ### `mcp`
 

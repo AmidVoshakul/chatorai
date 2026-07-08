@@ -1,10 +1,10 @@
 # ChatORAI Architecture
 
-**Last updated:** 2026-06-28
+**Last updated:** 2026-07-08
 
 ## Project Overview
 
-ChatORAI is a multi-platform AI chat application built with Flutter 3.41.0 and Riverpod 3.x. It supports any OpenAI-compatible API (OpenRouter, local models, custom endpoints) via `ai_sdk_dart` v1.1.0. Drift (SQLite) provides event-sourced session persistence; MCP (Model Context Protocol) enables integration with external tool servers.
+ChatORAI is a multi-platform AI chat application built with Flutter 3.44.0 and Riverpod 3.x. It supports any OpenAI-compatible API (OpenRouter, local models, custom endpoints) via `ai_sdk_dart` v1.1.0. Drift (SQLite) provides event-sourced session persistence; MCP (Model Context Protocol) enables integration with external tool servers.
 
 Key characteristics:
 
@@ -29,14 +29,16 @@ lib/
 │   ├── error/               # Error classification and handling (sealed classes)
 │   ├── format/              # Code formatting service (dart-mcp-server integration)
 │   ├── i18n/                # Internationalization helpers
+│   ├── keyboard/            # Centralized keyboard shortcuts (ShortcutHandler, AppShortcuts)
 │   ├── llm/                 # LLM catalog system
-│   │   ├── models/          # ProviderConfig, ModelConfig, AuthConfig
+│   │   ├── models/          # ProviderConfig, ModelConfig, AuthConfig, ModelVariant
 │   │   ├── providers/       # Built-in provider definitions + catalog barrel
 │   │   ├── catalog_providers.dart
 │   │   └── provider_catalog_service.dart  # Centralized catalog with 24h cache
+│   │   └── model_resolver.dart            # Resolves provider + model + auth headers
 │   ├── lsp/                 # LSP service (dart-mcp-server_lsp integration)
 │   ├── mcp/                 # MCP support (McpClientService, McpConfig, McpTypes)
-│   ├── permission/          # Permission service and models
+│   ├── permission/          # Permission service and models (PermissionBridge)
 │   ├── session/             # Event-sourced session core (Drift)
 │   │   ├── schema.dart      # Drift table definitions
 │   │   ├── database.dart    # Drift database class
@@ -46,15 +48,27 @@ lib/
 │   │   ├── session_state.dart # Freezed immutable state models
 │   │   ├── session_repository.dart # CRUD + replay
 │   │   ├── session_runner.dart  # Session lifecycle orchestrator
-│   │   └── session_tree.dart    # Parent-child navigation
+│   │   ├── session_tree.dart    # Parent-child navigation
+│   │   ├── session_stack.dart   # Hierarchical session navigation
+│   │   ├── session_id.dart     # Branded SessionID type
+│   │   └── session_db_provider.dart # Riverpod provider for database
 │   ├── skills/              # SkillService for dynamic capability loading
-│   └── tools/               # Built-in tool implementations (16 tools)
+│   │   ├── directory_source.dart
+│   │   ├── url_source.dart
+│   │   ├── skill_cache.dart
+│   │   ├── skill_discovery.dart
+│   │   ├── skill_service.dart
+│   │   └── ...
+│   └── tools/               # Built-in tool implementations (16 tools + 3 conditional)
 │       ├── built_in/        # Individual tool implementations
+│       ├── permission_bridge.dart        # Integrates tool permission requests
+│       ├── secure_file_service.dart      # Filesystem boundary enforcement
+│       ├── tool_output_bounding_service.dart # Context-overflow prevention
 │       ├── tool_execution.dart  # Execution context with doom-loop guard
-│   │   ├── truncation_service.dart  # Output size limits
-│   │   ├── file_edit_guard.dart     # File edit permission checks
-│   │   ├── filesystem_boundary.dart # Path sandboxing
-│   │   utils/               # Shared utilities (logger, formatters, secure storage, xdg_paths)
+│       │   ├── truncation_service.dart  # Output size limits
+│       │   ├── file_edit_guard.dart     # File edit permission checks
+│       │   ├── filesystem_boundary.dart # Path sandboxing
+│       │   utils/               # Shared utilities (logger, formatters, secure storage, xdg_paths)
 ├── features/                # Feature-based modules (primary organization)
 │   ├── agents/              # Subagent system and registry
 │   ├── chat/                # Main chat feature (domain, data, presentation)
@@ -108,11 +122,28 @@ Each feature follows a multi-layer structure:
    - `ModelResolver` resolves provider + model configuration and auth headers.
    - `ChatAiService.streamChatCompletion()` sends messages to the provider API.
    - Stream of `StreamTextEvent` chunks (text, reasoning, tool events).
+   - `SessionRunnerSession` tracks explicit part IDs for text, reasoning, and tool segments.
+   - `sessionPartsProvider` provides reactive streaming of both parent and child sessions.
    - Tool invocation lifecycle: `onToolStart` → `tool.execute()` → `onToolEnd`/`onToolError`.
    - Each event is persisted to the `EventStore` (append-only).
    - The `Projector` replays events to reconstruct `SessionState` on demand.
+   - Complex assistant content (`AssistantTask`, `AssistantQuestion`, `AssistantTodo`) is projected as typed parts.
 4. Max steps: 5 per turn, with automatic compaction on overflow.
-5. Error handling: retries with exponential backoff, `Retry-After` support, sealed `ClassifiedError` hierarchy.
+5. Error handling: retries with exponential backoff via `ChatRetryService`, `Retry-After` support, sealed `ClassifiedError` hierarchy.
+
+### Chat Retry & Resilience
+
+`ChatRetryService` wraps child completions and API calls with unbounded retry logic:
+- Infinite retries for retryable errors (network failures, rate limits).
+- Exponential backoff with jitter (base 2s, cap 30s).
+- Respects `Retry-After` headers from providers.
+- Non-retryable errors (auth, content policy) fail immediately.
+
+### Keyboard Shortcuts
+
+`ShortcutHandler` and `AppShortcuts` provide centralized keyboard shortcut management:
+- Shortcuts are currently hardcoded; `chatorai.json` `keybinding` section is parsed but not applied at runtime.
+- Future work: wire config keybindings into the shortcut system.
 
 ### Permission System
 
@@ -128,7 +159,7 @@ Each feature follows a multi-layer structure:
 - **Development**: `.env` (gitignored) for API keys and dev settings.
 - **Runtime**: Users enter API key in app settings → stored in `SharedPreferences`.
 - **chatorai.json**: User-editable JSON with `$schema` URL for IDE autocomplete. Validated against `lib/core/config/chatorai_schema.dart`.
-- Sections: `permission`, `provider` (multi-provider registry, implemented), `keybinding` (reserved for keybinds system), `mcp` (MCP server definitions).
+- Sections: `permission`, `keybinding` (parsed but not applied at runtime), `skills`, `compaction`, `formatter`, `agent` (per-agent overrides), `mcp` (MCP server definitions).
 
 ### Internationalization
 
@@ -267,20 +298,42 @@ lib/features/chat/
 │   ├── repositories/
 │   │   └── chat_repository_impl.dart
 │   └── providers/
-│       ├── session_providers.dart # Session-based providers (new architecture)
+│       ├── session_providers.dart    # Session-based providers (new architecture)
+│       ├── session_parts_provider.dart # Unified reactive session streaming
 │       ├── chat_screen_notifier.dart
-│       ├── streaming_message_provider.dart
-│       └── chat_input_provider.dart
+│       ├── chat_input_provider.dart
+│       └── sidebar_provider.dart
 └── presentation/
     ├── screens/
     │   ├── chat_screen.dart
+    │   ├── chat_screen_ai.dart
+    │   ├── chat_screen_build.dart
+    │   ├── chat_screen_edits.dart
+    │   ├── chat_screen_management.dart
+    │   ├── chat_screen_messaging.dart
+    │   ├── chat_screen_navigator.dart
+    │   ├── chat_screen_part_placeholder.dart
     │   ├── chat_screen_scroll.dart
     │   ├── chat_screen_streaming.dart
-    │   └── chat_screen_content.dart
+    │   └── child_session_screen.dart
     ├── widgets/
     │   ├── chat_messages.dart
     │   ├── chat_message_bubble.dart
     │   ├── chat_input.dart          # @-mention triggers implemented; # and / planned
+    │   ├── chat_input/             # Input sub-components
+    │   │   ├── agent_mention_handler.dart
+    │   │   ├── agent_mention_popup.dart
+    │   │   ├── attachment_input_handler.dart
+    │   │   ├── command_popup.dart
+    │   │   ├── file_helpers.dart
+    │   │   ├── input_layout_builder.dart
+    │   │   ├── input_widget_builders.dart
+    │   │   ├── message_data.dart
+    │   │   ├── popup_controller.dart
+    │   │   ├── send_message_handler.dart
+    │   │   ├── skills_popup.dart
+    │   │   ├── slash_command_handler.dart
+    │   │   └── speech_input_handler.dart
     │   ├── parts/                  # One widget per MessagePart type
     │   │   ├── text_part_widget.dart
     │   │   ├── reasoning_part_widget.dart
@@ -289,9 +342,14 @@ lib/features/chat/
     │   │   ├── task_part_widget.dart
     │   │   ├── question_part_widget.dart
     │   │   └── todo_part_widget.dart
-    │   ├── chat_input/
-    │   │   └── agent_mention_popup.dart
-    │   └── agent_mention_popup.dart  # Alternate location
+    │   ├── permission_dialog.dart
+    │   ├── permission_overlay.dart
+    │   ├── sidebar.dart
+    │   ├── sidebar_wrapper.dart
+    │   ├── markdown_navigator_sidebar.dart
+    │   ├── model_settings_header.dart
+    │   ├── chat_app_bar.dart
+    │   └── ...
     └── view_models/                # Not used; logic in providers
 ```
 
@@ -322,6 +380,10 @@ lib/core/tools/
 │   ├── json_schema.dart          # JSON schema validation
 │   ├── plan.dart                 # Plan exit tool
 │   └── built_in_tools.dart       # Registration barrel (registers 16+ tools)
+├── permission_bridge.dart        # Integrates tool permission requests with PermissionService
+├── secure_file_service.dart      # Filesystem boundary checks and external directory access
+├── tool_output_bounding_service.dart # Prevents context overflow; truncates + saves large outputs
+├── tool_permission.dart          # Tool permission metadata and helpers
 ├── tool.dart                     # Tool interface
 ├── tool_definition.dart          # ToolDef model
 ├── tool_error.dart               # Tool error types (sealed ToolError)
@@ -456,4 +518,4 @@ Amazon Bedrock (`sdk: 'bedrock'`) requires `AuthType.aws` with `awsAccessKeyId`,
 
 ---
 
-For user-facing documentation, see `README.md`. For environment setup, see `docs/ENVIRONMENT.md`. For API reference, see `docs/API.md`. For roadmap, see `docs/ROADMAP.md`. For platform path conventions, see `docs/xdg-paths.md`.
+For user-facing documentation, see `README.md`. For environment setup, see `docs/ENVIRONMENT.md`. For API reference, see `docs/API.md`. For changelog and release notes, see `CHANGELOG.md`. For platform path conventions, see `docs/xdg-paths.md`.

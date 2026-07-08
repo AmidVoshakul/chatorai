@@ -1,4 +1,5 @@
 import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 
 ToolDef createPlanExitTool() {
   return ToolDef(
@@ -19,7 +20,16 @@ ToolDef createPlanExitTool() {
       final answer = await ctx.askQuestion(
         question:
             'Plan is complete. Would you like to switch to build agent and start implementing?',
-        options: ['Yes, switch to build agent', 'No, continue with plan agent'],
+        options: const [
+          QuestionOption(
+            label: 'Yes, switch to build agent',
+            description: null,
+          ),
+          QuestionOption(
+            label: 'No, continue with plan agent',
+            description: null,
+          ),
+        ],
         multiple: false,
       );
 

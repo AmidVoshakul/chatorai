@@ -21,7 +21,7 @@ A modern AI chat application built with Flutter and Riverpod. Connect to any Ope
 
 ### Prerequisites
 
-- Flutter 3.41.0 (stable)
+- Flutter 3.44.0 (stable)
 - Dart SDK 3.11.0+
 - Linux users: install system libs (`libgtk-3-0 libgdk-pixbuf-2.0-0 libpango-1.0-0 libcairo2`)
 

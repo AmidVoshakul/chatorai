@@ -1,3 +1,4 @@
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class SlashCommand {
@@ -59,6 +60,7 @@ class _CommandPopupState extends State<CommandPopup> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final query = widget.filter.toLowerCase();
     final filtered = query.isEmpty
         ? widget.commands
@@ -102,7 +104,7 @@ class _CommandPopupState extends State<CommandPopup> {
                 IconButton(
                   icon: const Icon(Icons.close, size: 18),
                   onPressed: widget.onClose,
-                  tooltip: 'Close',
+                  tooltip: localizations.close,
                   padding: const EdgeInsets.all(4),
                   constraints: const BoxConstraints(),
                 ),

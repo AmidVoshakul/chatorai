@@ -22,6 +22,7 @@ class ToolResultPart extends MessagePart {
     this.input,
     this.isStreaming = false,
     this.metadata,
+    super.synthetic,
   });
 
   ToolResultPart copyWith({
@@ -34,6 +35,7 @@ class ToolResultPart extends MessagePart {
     Map<String, dynamic>? input,
     bool? isStreaming,
     Map<String, dynamic>? metadata,
+    bool? synthetic,
   }) {
     return ToolResultPart(
       toolCallId: toolCallId ?? this.toolCallId,
@@ -45,6 +47,7 @@ class ToolResultPart extends MessagePart {
       input: input ?? this.input,
       isStreaming: isStreaming ?? this.isStreaming,
       metadata: metadata ?? this.metadata,
+      synthetic: synthetic ?? this.synthetic,
     );
   }
 
@@ -59,6 +62,7 @@ class ToolResultPart extends MessagePart {
     'duration': duration?.inMilliseconds,
     'input': input,
     'isStreaming': isStreaming,
+    'synthetic': synthetic,
     'metadata': metadata,
   };
 
@@ -77,6 +81,7 @@ class ToolResultPart extends MessagePart {
       input: json['input'] as Map<String, dynamic>?,
       isStreaming: json['isStreaming'] as bool? ?? false,
       metadata: json['metadata'] as Map<String, dynamic>?,
+      synthetic: json['synthetic'] as bool? ?? false,
     );
   }
 }

@@ -135,7 +135,7 @@ class _ChildSessionScreenState extends ConsumerState<ChildSessionScreen> {
             ? IconButton(
                 icon: const Icon(Icons.arrow_upward),
                 onPressed: _navigateToParent,
-                tooltip: 'Go to parent session',
+                tooltip: localizations.goToParentSessionTooltip,
               )
             : IconButton(
                 icon: const Icon(Icons.arrow_back),
@@ -155,12 +155,12 @@ class _ChildSessionScreenState extends ConsumerState<ChildSessionScreen> {
             IconButton(
               icon: const Icon(Icons.arrow_left),
               onPressed: canGoPrev ? () => _navigateToSibling(-1) : null,
-              tooltip: 'Previous sibling',
+              tooltip: localizations.previousSiblingTooltip,
             ),
             IconButton(
               icon: const Icon(Icons.arrow_right),
               onPressed: canGoNext ? () => _navigateToSibling(1) : null,
-              tooltip: 'Next sibling',
+              tooltip: localizations.nextSiblingTooltip,
             ),
           ],
         ],

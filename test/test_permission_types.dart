@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 
 /// Tests for PermissionAction enum, PermissionRule model, PermissionRequest,
 /// QuestionRequest, PermissionReply, and error classes.
@@ -279,20 +280,28 @@ void main() {
       const q = QuestionRequest(
         id: 'q-2',
         question: 'Pick one',
-        options: ['Yes', 'No', 'Maybe'],
+        options: [
+          const QuestionOption(label: 'Yes', description: null),
+          const QuestionOption(label: 'No', description: null),
+          const QuestionOption(label: 'Maybe', description: null),
+        ],
       );
 
       expect(q.options, hasLength(3));
-      expect(q.options, contains('Yes'));
-      expect(q.options, contains('No'));
-      expect(q.options, contains('Maybe'));
+      expect(q.options.map((o) => o.label), contains('Yes'));
+      expect(q.options.map((o) => o.label), contains('No'));
+      expect(q.options.map((o) => o.label), contains('Maybe'));
     });
 
     test('const constructor with multiple=true', () {
       const q = QuestionRequest(
         id: 'q-3',
         question: 'Select all that apply',
-        options: ['A', 'B', 'C'],
+        options: [
+          const QuestionOption(label: 'A', description: null),
+          const QuestionOption(label: 'B', description: null),
+          const QuestionOption(label: 'C', description: null),
+        ],
         multiple: true,
       );
 
@@ -304,7 +313,11 @@ void main() {
       const q = QuestionRequest(
         id: 'q-4',
         question: 'Choose model',
-        options: ['GPT-4', 'Claude', 'Gemini'],
+        options: [
+          const QuestionOption(label: 'GPT-4', description: null),
+          const QuestionOption(label: 'Claude', description: null),
+          const QuestionOption(label: 'Gemini', description: null),
+        ],
         multiple: false,
       );
 

@@ -99,6 +99,20 @@ class AppLocalizationsAr extends AppLocalizations {
       'التمرير لأسفل القائمة تلقائيًا عند ظهور محتوى جديد';
 
   @override
+  String get showContinuationSuggestions => 'إظهار اقتراحات المتابعة';
+
+  @override
+  String get showContinuationSuggestionsDesc =>
+      'عرض اقتراحات المتابعة بعد رد الذكاء الاصطناعي';
+
+  @override
+  String get expandReasoningByDefault => 'توسيع الاستدلال افتراضياً';
+
+  @override
+  String get expandReasoningByDefaultDesc =>
+      'عرض كتل الاستدلال/التفكير مفتوحة عند رد الذكاء الاصطناعي';
+
+  @override
   String get language => 'اللغة';
 
   @override
@@ -1130,4 +1144,125 @@ class AppLocalizationsAr extends AppLocalizations {
   String generatingSuggestionsFailed(Object error) {
     return 'فشل في إنشاء الاقتراحات: $error';
   }
+
+  @override
+  String get toggleSidebarTooltip => 'Toggle sidebar';
+
+  @override
+  String get openMenuTooltip => 'Open menu';
+
+  @override
+  String get addFileTooltip => 'Add file';
+
+  @override
+  String get modelSettingsTooltip => 'Model settings';
+
+  @override
+  String get switchAgentTooltip => 'Switch agent';
+
+  @override
+  String get selectModelTooltip => 'اختيار النموذج';
+
+  @override
+  String get removeFileTooltip => 'Remove file';
+
+  @override
+  String get goToParentSessionTooltip => 'Go to parent session';
+
+  @override
+  String get previousSiblingTooltip => 'Previous sibling';
+
+  @override
+  String get nextSiblingTooltip => 'Next sibling';
+
+  @override
+  String get cancellingRetryTooltip => 'Cancelling retry...';
+
+  @override
+  String get stopGenerationTooltip => 'Stop generation';
+
+  @override
+  String get question => 'Question';
+
+  @override
+  String get skip => 'Skip';
+
+  @override
+  String get answer => 'Answer';
+
+  @override
+  String get noAgentsAvailable => 'No agents available';
+
+  @override
+  String permissionAlwaysConfirmDescription(Object title) {
+    return 'This will allow \"$title\" until the app is restarted.';
+  }
+
+  @override
+  String get chatActionsMenuTooltip => 'Chat menu';
+
+  @override
+  String get startListening => 'بدء الإدخال الصوتي';
+
+  @override
+  String get stopListening => 'إيقاف الإدخال الصوتي';
+
+  @override
+  String get listening => 'تحدث الآن...';
+
+  @override
+  String get sendMessage => 'إرسال الرسالة';
+
+  @override
+  String get maxTokens => 'الحد الأقصى للرموز';
+
+  @override
+  String get maxTokensDescription => 'الحد الأقصى لطول الاستجابة المولدة';
+
+  @override
+  String get activeModel => 'النموذج النشط';
+
+  @override
+  String apiLimitExceeded(Object limit) {
+    return 'تم تجاوز حد API: $limit';
+  }
+
+  @override
+  String valueExceedsApiLimit(Object limit) {
+    return 'القيمة تتجاوز حد API ($limit). سيتم استخدام القيمة القصوى.';
+  }
+
+  @override
+  String get micStopFailed => 'فشل إيقاف الميكروفون';
+
+  @override
+  String get errorProcessingRequest =>
+      'عذرًا، حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String rateLimitRetryMessage(Object seconds) {
+    return 'تم تجاوز حد المعدل. إعادة المحاولة خلال $seconds ثوانٍ...';
+  }
+
+  @override
+  String get messageNotFound => 'الرسالة غير موجودة';
+
+  @override
+  String get errorEditingMessage => 'خطأ في تعديل الرسالة';
+
+  @override
+  String get errorEditAndSendMessage => 'خطأ في تعديل وإرسال الرسالة';
+
+  @override
+  String get defaultSuggestion4 => 'كيف يتم تطبيق هذا في الممارسة العملية؟';
+
+  @override
+  String get fileAttachedButNotSupported =>
+      'تم إرفاق الملف ولكن النموذج الحالي لا يدعمه';
+
+  @override
+  String get expandTooltip => 'توسيع';
+
+  @override
+  String get collapseTooltip => 'طي';
 }

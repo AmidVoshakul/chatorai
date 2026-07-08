@@ -9,4 +9,5 @@ export 'reasoning_part.dart';
 export 'tool_result_part.dart';
 export 'task_part.dart';
 export 'question_part.dart';
+export 'question_option.dart';
 export 'todo_part.dart';

@@ -98,6 +98,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get autoScrollDuringStreamingDesc => '新しいコンテンツが追加されるとリストを自動的に下にスクロール';
 
   @override
+  String get showContinuationSuggestions => '継続提案を表示';
+
+  @override
+  String get showContinuationSuggestionsDesc => 'AIの応答後にフォローアップ提案を表示します';
+
+  @override
+  String get expandReasoningByDefault => 'デフォルトで推論を展開';
+
+  @override
+  String get expandReasoningByDefaultDesc => 'AIの応答時に思考ブロックを展開して表示します';
+
+  @override
   String get language => '言語';
 
   @override
@@ -1112,4 +1124,124 @@ class AppLocalizationsJa extends AppLocalizations {
   String generatingSuggestionsFailed(Object error) {
     return '提案の生成に失敗しました: $error';
   }
+
+  @override
+  String get toggleSidebarTooltip => 'Toggle sidebar';
+
+  @override
+  String get openMenuTooltip => 'Open menu';
+
+  @override
+  String get addFileTooltip => 'Add file';
+
+  @override
+  String get modelSettingsTooltip => 'Model settings';
+
+  @override
+  String get switchAgentTooltip => 'Switch agent';
+
+  @override
+  String get selectModelTooltip => 'モデルを選択';
+
+  @override
+  String get removeFileTooltip => 'Remove file';
+
+  @override
+  String get goToParentSessionTooltip => 'Go to parent session';
+
+  @override
+  String get previousSiblingTooltip => 'Previous sibling';
+
+  @override
+  String get nextSiblingTooltip => 'Next sibling';
+
+  @override
+  String get cancellingRetryTooltip => 'Cancelling retry...';
+
+  @override
+  String get stopGenerationTooltip => 'Stop generation';
+
+  @override
+  String get question => 'Question';
+
+  @override
+  String get skip => 'Skip';
+
+  @override
+  String get answer => 'Answer';
+
+  @override
+  String get noAgentsAvailable => 'No agents available';
+
+  @override
+  String permissionAlwaysConfirmDescription(Object title) {
+    return 'This will allow \"$title\" until the app is restarted.';
+  }
+
+  @override
+  String get chatActionsMenuTooltip => 'Chat menu';
+
+  @override
+  String get startListening => '音声入力を開始';
+
+  @override
+  String get stopListening => '音声入力を停止';
+
+  @override
+  String get listening => '話してください...';
+
+  @override
+  String get sendMessage => 'メッセージを送信';
+
+  @override
+  String get maxTokens => '最大トークン数';
+
+  @override
+  String get maxTokensDescription => '生成される応答の最大長';
+
+  @override
+  String get activeModel => 'アクティブなモデル';
+
+  @override
+  String apiLimitExceeded(Object limit) {
+    return 'API制限超過: $limit';
+  }
+
+  @override
+  String valueExceedsApiLimit(Object limit) {
+    return '値がAPI制限 ($limit) を超えています。最大値を使用します。';
+  }
+
+  @override
+  String get micStopFailed => 'マイクの停止に失敗しました';
+
+  @override
+  String get errorProcessingRequest =>
+      '申し訳ありません。リクエストの処理中にエラーが発生しました。もう一度お試しください。';
+
+  @override
+  String rateLimitRetryMessage(Object seconds) {
+    return 'レート制限に達しました。$seconds秒後に再試行します...';
+  }
+
+  @override
+  String get messageNotFound => 'メッセージが見つかりません';
+
+  @override
+  String get errorEditingMessage => 'メッセージの編集エラー';
+
+  @override
+  String get errorEditAndSendMessage => 'メッセージの編集と送信エラー';
+
+  @override
+  String get defaultSuggestion4 => 'これは実際にどのように適用されますか？';
+
+  @override
+  String get fileAttachedButNotSupported => 'ファイルが添付されましたが、現在のモデルではサポートされていません';
+
+  @override
+  String get expandTooltip => '展開';
+
+  @override
+  String get collapseTooltip => '折りたたむ';
 }

@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Session Parts Provider**: New `sessionPartsProvider` for reactive streaming of both parent and child sessions, replacing the legacy `streamingMessageProvider` with a granular part-based approach.
+- **Explicit Part IDs**: `SessionRunnerSession` now tracks explicit part IDs for text, reasoning, and tool-related content segments.
+- **QuestionOption Model**: New `QuestionOption` model supports richer interactive questions with `multiple` selection support.
+- **ShortcutHandler & AppShortcuts**: Centralized keyboard shortcut management widget.
+- **SecureFileService**: New service for filesystem boundary enforcement and external directory access authorization.
+- **PermissionBridge**: New bridge integrating tool-specific permission requests with the existing `PermissionService`.
+- **ToolOutputBoundingService**: Prevents context overflow by truncating large tool outputs and saving them to disk.
+- **ChatRetryService**: Infinite retries for retryable errors with exponential backoff and `Retry-After` header support.
+- **Enhanced SessionEvent Schema**: Support for task-specific parts and improved metadata persistence.
+- **AssistantQuestion Multiple Selection**: `AssistantQuestion` now supports `multiple` boolean for multi-select questions.
+- **ChatScreen Refactor**: Split into focused files (`chat_screen_ai.dart`, `chat_screen_edits.dart`, `chat_screen_build.dart`, `chat_screen_messaging.dart`, `chat_screen_management.dart`, `chat_screen_navigator.dart`, `chat_screen_part_placeholder.dart`).
+
 ### Documentation
 
 - **docs/API.md**: Fixed tool permission table (7 tools had wrong defaults: `webfetch`, `websearch`, `task`, `todowrite`, `question`, `skill`, `lsp` were `ask` in docs but `allow` in code). Corrected total tool count from 16 to 19 (16 unconditional + 3 conditional). Added `ReasoningPart` field documentation with `durationMs` persistence details. Fixed `McpClientService` line (was truncated). Removed duplicate Internal APIs entries. Updated top-level schema sections to match actual `chatorai_schema.dart` (added `skills`, `compaction`, `formatter`; removed stale `provider`).
@@ -18,6 +32,9 @@ All notable changes to this project will be documented in this file.
   - `mcp.md`: Fixed `McpConnectionStatus` enum values (`connected/disabled/failed/needsAuth/needsClientRegistration`, not `Disconnected/Connecting/Connected/Error`); `McpOAuthConfig` corrected (`scope` singular not `scopes`, no `tokenUrl`, added `callbackPort` and `redirectUri`); `McpCallResult.content` corrected from `dynamic` to `List<McpContentPart>`; `McpConfig.defaultTimeout` corrected to `int?`; added missing `enabled`, `timeout`, `cwd`, `environment` on `McpServerConfig`.
 - **docs/API.md** (additional corrections): Fixed `SessionRunner` section — `startSession()` is synchronous (not `Future<...>`); `startInitializedSession()` has `SessionID? sessionId` parameter; `runTaskInChild()` returns `Future<TaskChildResult>` (not `Future<void>`), has `SessionRunnerHolder? holder` parameter; removed non-existent `sdk.CancellationToken? abortSignal`; fixed Chinese character artifact (`Session跑了` → `SessionRunner`); corrected `SessionRunnerSession` fields — `sessionId` (not `id`), `createdAt` does not exist; added note that most session fields are private. Fixed `PermissionRequest` example — `permission: 'execute'` changed to `permission: 'bash'`. Fixed tool defaults table — `format`, `json_schema`, `apply_patch`, `invalid`, `plan_exit` have no `defaults()` entry (fallback `ask`); `skill` is conditional not unconditional; corrected unconditional count to 16.
 - **docs/ENVIRONMENT.md**: Corrected Dart SDK version from 3.9 to 3.11.0 (matching `pubspec.yaml`).
+- **docs/ROADMAP.md**: Created roadmap documenting completed milestones and future plans.
+- **lib/l10n/app_en.arb / app_ru.arb**: Restored 19 missing localization keys to match the canonical 398-key set used by `app_uk.arb`, `app_zh.arb`, `app_ja.arb`, and `app_ar.arb`.
+- **Documentation SDK versions**: Aligned Flutter SDK references to 3.44.0 across `README.md`, `AGENTS.md`, `ARCHITECTURE.md`, and `docs/ENVIRONMENT.md`.
 
 ### Added
 
@@ -63,6 +80,16 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - **Android database hang**: `createFileDatabase()` in `lib/core/session/database.dart` no longer imports `xdg_paths_cli.dart`. The function now requires an explicit `dataDir` parameter and creates the directory inline with `Directory(dataDir).create(recursive: true)`. `session_db_provider.dart` imports the Flutter-aware `xdg_paths.dart` and passes `await XdgPaths.dataHomeAsync`, which resolves to the app's sandboxed support directory on Android. `bin/chatorai.dart` passes `XdgPaths.dataHome` from `xdg_paths_cli.dart`. Removed temporary `.timeout(10s)` debug wrapper from `chat_screen_messaging.dart`; removed unused `import 'dart:async'` from `chat_screen.dart`.
+
+## [0.1.1]
+
+### Fixed
+
+- **lib/core/tools/tool_registry_provider.dart [COMPLETED]** — Fixed permission defaults merging: defaults are applied first, config overrides on top. When `config.permission` is non-empty, the merged ruleset preserves default `allow` rules for tools not explicitly overridden in the config (e.g., `websearch`, `webfetch`, `skill`, `lsp`, `task`, `question`, `todowrite`), preventing unintended fallback to `ask`.
+- **lib/core/permission/permission_service.dart [REFACTORED]** — Removed cross-session persistence from "Always allow". Session scoping added via `_sessionId` field: `_approved` is cleared automatically when `sessionId` changes in `ask()`. Removed `SharedPreferences` import and persistence methods. Deprecated `clearRateLimitHistory()` as an alias for `clearSession()`.
+- **lib/features/chat/presentation/widgets/parts/_tool_title.dart [COMPLETED]** — Fixed path key detection by adding `file_path` fallback alongside `path` and `filePath`. Appended `$args` to the `write` case header. Bash header now shows `# $description` when a description exists, otherwise falls back to `toolName`. Fixed `skill` title to use `input['name']` instead of path. MCP/unknown tools now display `toolName [args]` when args are present.
+- **lib/features/chat/presentation/widgets/parts/tool_result_part_widget.dart [COMPLETED]** — Complete terminal-style bash output redesign: uniform background (`Colors.black26` / `Colors.white38`), monospaced `$` prompt with command on the same row, `SingleChildScrollView` with `SelectableText` for output, and copy button with "✅ Copied" timer feedback. Bash body is always visible (not hidden behind `AnimatedCrossFade`); collapsed state renders `_bashPreview` (max 10 lines / 500 chars), expanded state renders full output. Standardized all tool header opacity to `0.5`. Unified terminal color across prompt, command, and result using `onSurface` at `alpha: 0.7`.
+- **lib/core/tools/tool_registry.dart [COMPLETED]** — Fixed JSON wrapping in tool result streaming. `executeDynamic` now extracts the plain text output key from `Map<String, dynamic>` results (`'output'`, then `'message'`, then `toString()` fallback) before returning to the SDK. Eliminates the nested `{"output":"...","metadata":{...}}` JSON wrapping previously produced for all tool results (bash, read, grep, write, edit, etc.).
 
 ## [0.1.0] - 2026-06-28
 

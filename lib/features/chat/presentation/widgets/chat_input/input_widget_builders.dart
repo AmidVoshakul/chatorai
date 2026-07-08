@@ -95,6 +95,7 @@ class InputWidgetBuilders {
     Color? bgColor,
     VoidCallback? onTap,
     VoidCallback? onLongPress,
+    String? tooltip,
   }) {
     return Container(
       key: key,
@@ -105,14 +106,17 @@ class InputWidgetBuilders {
         color: gradient == null ? bgColor : null,
         borderRadius: BorderRadius.circular(buttonSize / 2),
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(buttonSize / 2),
-        child: InkWell(
+      child: Tooltip(
+        message: tooltip ?? '',
+        child: Material(
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(buttonSize / 2),
-          onTap: onTap,
-          onLongPress: onLongPress,
-          child: Center(child: child),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(buttonSize / 2),
+            onTap: onTap,
+            onLongPress: onLongPress,
+            child: Center(child: child),
+          ),
         ),
       ),
     );
@@ -123,6 +127,7 @@ class InputWidgetBuilders {
     WidgetRef ref, {
     required VoidCallback? onStopStreaming,
   }) {
+    final localizations = AppLocalizations.of(context)!;
     final retryAsync = ref.watch(retryCountdownProvider);
     final retryProgress = retryAsync.hasValue ? retryAsync.value : null;
     final isRetrying =
@@ -168,7 +173,9 @@ class InputWidgetBuilders {
             ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            tooltip: isRetrying ? 'Cancelling retry...' : 'Stop generation',
+            tooltip: isRetrying
+                ? localizations.cancellingRetryTooltip
+                : localizations.stopGenerationTooltip,
           ),
         ],
       ),
@@ -179,6 +186,7 @@ class InputWidgetBuilders {
     required ChatInputState state,
     required bool isMobile,
     required VoidCallback onRemove,
+    required AppLocalizations localizations,
   }) {
     if (state.attachedFilePath == null) return const SizedBox.shrink();
     return Container(
@@ -221,6 +229,7 @@ class InputWidgetBuilders {
               color: ChatoraiColors.error,
             ),
             onPressed: onRemove,
+            tooltip: localizations.removeFileTooltip,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(
               minWidth: ChatoraiSpacing.md,
@@ -238,6 +247,7 @@ class InputWidgetBuilders {
     required ThemeData theme,
     required AgentDefinition currentAgent,
     required VoidCallback onTap,
+    String? tooltip,
   }) {
     return Container(
       key: key,
@@ -249,19 +259,22 @@ class InputWidgetBuilders {
             : ChatoraiColors.inputContainerLight,
         borderRadius: BorderRadius.circular(22),
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(22),
-        child: InkWell(
+      child: Tooltip(
+        message: tooltip ?? '',
+        child: Material(
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(22),
-          onTap: onTap,
-          child: Center(
-            child: Text(
-              currentAgent.name,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.primary,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(22),
+            onTap: onTap,
+            child: Center(
+              child: Text(
+                currentAgent.name,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
               ),
             ),
           ),

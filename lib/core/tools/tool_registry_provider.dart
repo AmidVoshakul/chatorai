@@ -14,13 +14,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final toolRegistryProvider = FutureProvider<ToolRegistry>((ref) async {
   final config = await ref.watch(configProvider.future);
+
+  final defaults = PermissionRuleset.defaults();
   final rules = config.permission.isNotEmpty
       ? PermissionRuleset(
-          rules: PermissionRuleset.fromConfig(
-            config.permission as Map<String, dynamic>,
-          ),
+          rules: [
+            ...defaults.rules,
+            ...PermissionRuleset.fromConfig(
+              config.permission as Map<String, dynamic>,
+            ),
+          ],
         )
-      : PermissionRuleset.defaults();
+      : defaults;
   final aiService = ref.read(chatAiServiceProvider);
   final skillService = await ref.read(skillServiceProvider.future);
   final lspService = await ref.watch(lspServiceProvider.future);

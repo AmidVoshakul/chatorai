@@ -7,6 +7,7 @@ import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/json_schema_validator.dart';
 import 'package:chatorai/core/tools/tool_error.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'dart:async';
 
@@ -334,11 +335,11 @@ class _AskContext {
 
   Future<String> _askQuestion({
     required String question,
-    List<String> options = const [],
+    List<QuestionOption> options = const [],
     bool multiple = false,
   }) async {
     LogTags.permission.logInfo(
-      '_AskContext._askQuestion: START question="$question", options=$options',
+      '_AskContext._askQuestion: START question="$question", options=${options.map((o) => o.label).toList()}',
     );
 
     // Permission check: question tool goes through the same permission pipeline
@@ -370,7 +371,7 @@ class _AskContext {
 
     final id = 'question_${DateTime.now().microsecondsSinceEpoch}';
     LogTags.permission.logInfo(
-      '_AskContext._askQuestion: id=$id, question="$question", options=$options',
+      '_AskContext._askQuestion: id=$id, question="$question", options=${options.map((o) => o.label).toList()}',
     );
     return permissions.askQuestion(
       id: id,

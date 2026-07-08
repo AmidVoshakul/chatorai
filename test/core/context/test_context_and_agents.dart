@@ -3,6 +3,10 @@ import 'package:chatorai/core/context/token_counter.dart';
 import 'package:chatorai/core/context/overflow_detector.dart';
 import 'package:chatorai/core/agents/agent_registry.dart';
 
+// Note: AgentRegistry tests require initialization.
+// These tests are designed to run after the registry is initialized by the app.
+// For standalone testing, use test/core/agents/test_agent_parser.dart and test_agent_loader.dart
+
 void main() {
   // ── TokenCounter ───────────────────────────────────────────────────────
 
@@ -286,7 +290,6 @@ void main() {
       expect(def.modelOverride, isNull);
       expect(def.color, isNull);
       expect(def.systemPrompt, isNull);
-      expect(def.prompt, isNull);
     });
   });
 }

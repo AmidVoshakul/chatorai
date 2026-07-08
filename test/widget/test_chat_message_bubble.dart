@@ -186,7 +186,13 @@ void main() {
     });
 
     test('can extract question from QuestionPart', () {
-      const part = QuestionPart(question: 'Choose?', options: ['A', 'B']);
+      const part = QuestionPart(
+        question: 'Choose?',
+        options: [
+          const QuestionOption(label: 'A', description: null),
+          const QuestionOption(label: 'B', description: null),
+        ],
+      );
       final question = switch (part) {
         QuestionPart(question: final q) => q,
         _ => null,
@@ -599,7 +605,11 @@ void main() {
     testWidgets('renders QuestionPart with options', (tester) async {
       const questionPart = QuestionPart(
         question: 'Which approach?',
-        options: ['Option A', 'Option B', 'Option C'],
+        options: [
+          const QuestionOption(label: 'Option A', description: null),
+          const QuestionOption(label: 'Option B', description: null),
+          const QuestionOption(label: 'Option C', description: null),
+        ],
       );
 
       await tester.pumpWidget(
@@ -610,7 +620,7 @@ void main() {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(questionPart.question),
-                ...questionPart.options.map((opt) => Text(opt)),
+                ...questionPart.options.map((opt) => Text(opt.label)),
               ],
             ),
           ),

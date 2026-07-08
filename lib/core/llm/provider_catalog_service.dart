@@ -433,10 +433,7 @@ class ProviderCatalogService {
     if (_apiKeyCache.containsKey(providerId)) {
       final key = _apiKeyCache[providerId];
       LogTags.network.logDebug(
-        '[Catalog] getApiKey: provider=$providerId '
-        'cached=true '
-        'length=${key?.length ?? -1} '
-        'prefix=${key != null && key.isNotEmpty ? key.substring(0, key.length.clamp(0, 8)) : 'null'}',
+        '[Catalog] getApiKey: provider=$providerId cached=true length=${key?.length ?? -1}',
       );
       return key;
     }
@@ -445,10 +442,7 @@ class ProviderCatalogService {
     );
     _apiKeyCache[providerId] = key;
     LogTags.network.logDebug(
-      '[Catalog] getApiKey: provider=$providerId '
-      'cached=false '
-      'length=${key?.length ?? -1} '
-      'prefix=${key != null && key.isNotEmpty ? key.substring(0, key.length.clamp(0, 8)) : 'null'}',
+      '[Catalog] getApiKey: provider=$providerId cached=false length=${key?.length ?? -1}',
     );
     return key;
   }

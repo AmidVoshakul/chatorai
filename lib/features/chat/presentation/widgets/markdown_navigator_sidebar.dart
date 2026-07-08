@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:chatorai/core/constants/chat_constants.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
@@ -110,6 +111,7 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context)!;
 
     return AnimatedBuilder(
       animation: _animationController,
@@ -179,6 +181,7 @@ class _MarkdownNavigatorSidebarState extends State<MarkdownNavigatorSidebar>
                               IconButton(
                                 icon: const Icon(Icons.close, size: 20),
                                 onPressed: widget.onClose,
+                                tooltip: localizations.close,
                                 padding: const EdgeInsets.all(8),
                                 constraints: const BoxConstraints(
                                   minWidth: 32,

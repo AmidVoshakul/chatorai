@@ -75,6 +75,7 @@ class ModelSettingsHeader extends StatelessWidget {
                   : ChatoraiColors.secondaryTextColor,
             ),
             onPressed: onClose,
+            tooltip: localizations.close,
           ),
         ],
       ),

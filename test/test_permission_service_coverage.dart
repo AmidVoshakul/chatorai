@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 
 class MockSharedPreferences extends Mock implements SharedPreferences {}
 
@@ -173,7 +174,10 @@ void main() {
       final f = service.askQuestion(
         id: 'q1',
         question: 'Continue?',
-        options: ['Yes', 'No'],
+        options: [
+          const QuestionOption(label: 'Yes', description: null),
+          const QuestionOption(label: 'No', description: null),
+        ],
       );
       await Future<void>.delayed(Duration.zero);
 
@@ -198,51 +202,21 @@ void main() {
     });
   });
 
-  group('PermissionService — preferences persistence', () {
-    test('loads approved rules from pipe-delimited prefs', () async {
+  group('PermissionService — session-scoped approved rules', () {
+    test('attachPreferences does not load any rules', () async {
       final prefs = MockSharedPreferences();
       when(
         () => prefs.getStringList(any()),
       ).thenReturn(['read|lib/**|allow', 'write|src/**|deny']);
-      when(
-        () => prefs.setStringList(any(), any()),
-      ).thenAnswer((_) async => true);
 
       final s = PermissionService();
       s.attachPreferences(prefs);
 
-      expect(s.approvedRules.length, 2);
-      expect(s.approvedRules[0].permission, 'read');
-      expect(s.approvedRules[0].action, PermissionAction.allow);
+      expect(s.approvedRules, isEmpty);
     });
 
-    test('ignores malformed prefs entries', () async {
-      final prefs = MockSharedPreferences();
-      when(
-        () => prefs.getStringList(any()),
-      ).thenReturn(['read|lib/**|allow', 'corrupt', 'write|src/**']);
-      when(
-        () => prefs.setStringList(any(), any()),
-      ).thenAnswer((_) async => true);
-
+    test('reply(always) adds rules in memory only', () async {
       final s = PermissionService();
-      s.attachPreferences(prefs);
-
-      expect(s.approvedRules.length, 1);
-    });
-
-    test('persists approved rules on reply(always)', () async {
-      final prefs = MockSharedPreferences();
-      final captured = <List<String>>[];
-      when(() => prefs.getStringList(any())).thenReturn(null);
-      when(() => prefs.setStringList(any(), any())).thenAnswer((i) {
-        captured.add(i.positionalArguments[1] as List<String>);
-        return Future<bool>.value(true);
-      });
-
-      final s = PermissionService();
-      s.attachPreferences(prefs);
-
       s.seedRules(
         PermissionRuleset(
           rules: [rule('delete', 'tmp/**', PermissionAction.ask)],
@@ -261,8 +235,44 @@ void main() {
       s.reply(req.id, PermissionReply.always);
       await f;
 
-      expect(captured, isNotEmpty);
-      expect(captured.last.first, 'delete|tmp/old|allow');
+      expect(s.isAllowed('delete', 'tmp/old'), isTrue);
+    });
+
+    test('new session clears previously approved rules', () async {
+      final s = PermissionService();
+      s.seedRules(
+        PermissionRuleset(rules: [rule('write', '*', PermissionAction.ask)]),
+      );
+
+      // Session A: approve write
+      var req = PermissionRequest(
+        id: 's1',
+        toolName: 'write',
+        permission: 'write',
+        patterns: ['a.txt'],
+        metadata: {'sessionId': 'sess-a'},
+      );
+      var f = s.ask(req, PermissionRuleset());
+      await Future<void>.delayed(Duration.zero);
+      s.reply(req.id, PermissionReply.always);
+      await f;
+      expect(s.isAllowed('write', 'a.txt'), isTrue);
+
+      // Session B: old rules should be gone
+      req = PermissionRequest(
+        id: 's2',
+        toolName: 'write',
+        permission: 'write',
+        patterns: ['b.txt'],
+        metadata: {'sessionId': 'sess-b'},
+      );
+      f = s.ask(req, PermissionRuleset());
+      await Future<void>.delayed(Duration.zero);
+
+      // Confirm: approved rules were cleared
+      expect(s.approvedRules, isEmpty);
+      s.reply(req.id, PermissionReply.once);
+      await f;
     });
   });
 

@@ -1,4 +1,5 @@
 import 'package:chatorai/core/agents/agent_registry.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -18,6 +19,7 @@ class AgentMentionPopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     if (agents.isEmpty) {
       return Material(
         elevation: 8,
@@ -27,7 +29,7 @@ class AgentMentionPopup extends StatelessWidget {
           constraints: const BoxConstraints(maxHeight: 300, maxWidth: 340),
           padding: const EdgeInsets.all(16),
           child: Text(
-            'No agents available',
+            localizations.noAgentsAvailable,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
@@ -54,7 +56,7 @@ class AgentMentionPopup extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.close, size: 18),
                   onPressed: onClose,
-                  tooltip: 'Close',
+                  tooltip: localizations.close,
                   padding: const EdgeInsets.all(4),
                   constraints: const BoxConstraints(),
                 ),
