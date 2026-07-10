@@ -1,6 +1,6 @@
 import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/core/llm/models/auth_config.dart';
-import 'package:chatorai/features/chat/data/providers/models_provider.dart'
+import 'package:chatorai/features/models/providers/models_provider.dart'
     show modelsScreenProvider;
 import 'package:chatorai/features/models/providers/model_provider.dart'
     show modelProvider;

@@ -1,8 +1,8 @@
-import 'package:chatorai/features/chat/data/models/model_card_model.dart';
-import 'package:chatorai/features/models/screens/models_screen.dart';
+import 'package:chatorai/features/models/data/models/model_card_model.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:chatorai/features/models/screens/models_screen.dart';
 
 // ===========================================================================
 // WIDGET CLASS
@@ -14,6 +14,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool Function() hasHeadings;
   final VoidCallback onToggleNavigator;
   final Function(String modelId, ChatModel? modelObject) onModelSelected;
+  final VoidCallback? onOpenModelSelector;
   final VoidCallback? onMenuPressed;
 
   const ChatAppBar({
@@ -23,6 +24,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.hasHeadings,
     required this.onToggleNavigator,
     required this.onModelSelected,
+    this.onOpenModelSelector,
     this.onMenuPressed,
   });
 
@@ -73,19 +75,16 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     return Tooltip(
       message: localizations.selectModelTooltip,
       child: TextButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ModelsScreen(
-                onModelSelected: (String modelId, ChatModel? modelObject) {
-                  onModelSelected(modelId, modelObject);
-                },
-                currentModel: selectedModel,
-              ),
-            ),
-          );
-        },
+        onPressed:
+            onOpenModelSelector ??
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ModelsScreen(),
+                ),
+              );
+            },
         child: Text(
           selectedModelObject!.name,
           style: TextStyle(

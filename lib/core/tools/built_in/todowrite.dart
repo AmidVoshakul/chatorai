@@ -60,10 +60,14 @@ ToolDef createTodoWriteTool() {
       // Build output string
       String outputString;
       if (todos.isEmpty) {
-        outputString = 'Todo list updated:\n[]';
+        outputString = '[]';
       } else {
-        outputString =
-            'Todo list updated:\n${todos.map((t) => "[${(t['status'] ?? 'pending')}] ${(t['priority'] ?? 'medium')} ${(t['content'])}").join("\n")}';
+        outputString = todos
+            .map(
+              (t) =>
+                  "[${(t['status'] ?? 'pending')}] ${(t['priority'] ?? 'medium')} ${(t['content'])}",
+            )
+            .join("\n");
       }
 
       // Build metadata: error = false for empty list, no error key for non-empty (null)

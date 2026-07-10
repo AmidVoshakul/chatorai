@@ -1,5 +1,5 @@
-import 'package:chatorai/features/chat/data/models/model_card_model.dart';
-import 'package:chatorai/features/chat/data/providers/models_provider.dart';
+import 'package:chatorai/features/models/data/models/model_card_model.dart';
+import 'package:chatorai/features/models/providers/models_provider.dart';
 import 'package:chatorai/features/models/widgets/model_card_widget.dart';
 import 'package:chatorai/features/models/widgets/model_details_dialog_widget.dart';
 import 'package:chatorai/features/models/widgets/models_empty_state_widget.dart';

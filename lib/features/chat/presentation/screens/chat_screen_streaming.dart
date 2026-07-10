@@ -91,9 +91,18 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
       }
     }
 
+    void scrollOnContentAdd() {
+      if (!mounted || !_autoScrollEnabled) return;
+      if (!ref.read(themeProvider).autoScrollDuringStreaming) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom(force: false);
+      });
+    }
+
     void flushPendingUpdates() {
       flushPendingToNotifier();
       lastUpdateTime = DateTime.now();
+      scrollOnContentAdd();
     }
 
     final toolRegistry = await ref.read(toolRegistryProvider.future);
@@ -298,6 +307,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             }
           }
 
+          scrollOnContentAdd();
           unawaited(runnerSession.onToolStart(toolCallId, toolName, input));
         },
         onToolEnd: (toolCallId, toolName, result) async {
@@ -341,6 +351,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             );
           }
 
+          scrollOnContentAdd();
           unawaited(runnerSession.onToolEnd(toolCallId, toolName, resultStr));
 
           final startTime = toolStartTimes.remove(toolCallId);
@@ -376,6 +387,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             );
           }
 
+          scrollOnContentAdd();
           unawaited(runnerSession.onToolError(toolCallId, toolName, errorStr));
 
           final startTime = toolStartTimes.remove(toolCallId);

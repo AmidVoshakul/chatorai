@@ -127,11 +127,67 @@ Create a clear, implementable and logical plan that can be directly transferred 
 - Avoid "magic" - all decisions must be explainable
 - Highlight potential risks and bottlenecks
 - Think like an engineer who delegates a task to another developer
+- Create a plan in .chatorai/plans and ask the user, check the reliability plan. 
 ''',
     permissions: PermissionRuleset(
       rules: [
         PermissionRule(
           permission: '*',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+        PermissionRule(
+          permission: 'bash',
+          pattern: '*',
+          action: PermissionAction.ask,
+        ),
+        PermissionRule(
+          permission: 'write',
+          pattern: '.chatorai/plans/*.md',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'edit',
+          pattern: '.chatorai/plans/*.md',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'external_directory',
+          pattern: '.chatorai/plans/*.md',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'read',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'glob',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'grep',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'question',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'plan',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'websearch',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'webfetch',
           pattern: '*',
           action: PermissionAction.allow,
         ),
@@ -188,6 +244,21 @@ Complete the user's search request efficiently and report your findings clearly.
           pattern: '*',
           action: PermissionAction.allow,
         ),
+        PermissionRule(
+          permission: 'bash',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'websearch',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'webfetch',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
       ],
     ),
   ),
@@ -207,6 +278,11 @@ Complete the user's search request efficiently and report your findings clearly.
           permission: '*',
           pattern: '*',
           action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'todowrite',
+          pattern: '*',
+          action: PermissionAction.deny,
         ),
       ],
     ),

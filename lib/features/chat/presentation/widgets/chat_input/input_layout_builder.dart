@@ -8,6 +8,62 @@ import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+class ChatInputLayoutConfig {
+  final BuildContext context;
+  final ThemeData theme;
+  final ChatInputState chatInputState;
+  final Widget textField;
+  final bool isMobile;
+  final bool hasText;
+  final bool hasAttachment;
+  final double buttonSize;
+  final double iconSize;
+  final double sidePadding;
+  final double bottomPadding;
+  final VoidCallback onClearAttachedFile;
+  final VoidCallback onPlusMenu;
+  final VoidCallback onModelSettings;
+  final VoidCallback onAgentSwitcher;
+  final VoidCallback onMicrophoneAction;
+  final VoidCallback onSend;
+  final VoidCallback? onStopStreaming;
+  final VoidCallback? onLongPressMic;
+  final WidgetRef ref;
+  final GlobalKey plusKey;
+  final GlobalKey settingsKey;
+  final GlobalKey agentKey;
+  final bool isStreaming;
+  final AgentDefinition currentAgent;
+
+  const ChatInputLayoutConfig({
+    required this.context,
+    required this.theme,
+    required this.chatInputState,
+    required this.textField,
+    required this.isMobile,
+    required this.hasText,
+    required this.hasAttachment,
+    required this.buttonSize,
+    required this.iconSize,
+    required this.sidePadding,
+    required this.bottomPadding,
+    required this.onClearAttachedFile,
+    required this.onPlusMenu,
+    required this.onModelSettings,
+    required this.onAgentSwitcher,
+    required this.onMicrophoneAction,
+    required this.onSend,
+    this.onStopStreaming,
+    this.onLongPressMic,
+    required this.ref,
+    required this.plusKey,
+    required this.settingsKey,
+    required this.agentKey,
+    required this.isStreaming,
+    required this.currentAgent,
+  });
+}
+
 class InputLayoutBuilder {
   static Widget buildContainer({
     required bool isMobile,
@@ -73,34 +129,13 @@ class InputLayoutBuilder {
     );
   }
 
-  static Widget buildMobileLayout({
-    required BuildContext context,
-    required ThemeData theme,
-    required ChatInputState chatInputState,
-    required Widget textField,
-    required bool isMobile,
-    required bool hasText,
-    required bool hasAttachment,
-    required double buttonSize,
-    required double iconSize,
-    required double sidePadding,
-    required double bottomPadding,
-    required VoidCallback onClearAttachedFile,
-    required VoidCallback onPlusMenu,
-    required VoidCallback onModelSettings,
-    required VoidCallback onAgentSwitcher,
-    required VoidCallback onMicrophoneAction,
-    required VoidCallback onSend,
-    required VoidCallback? onStopStreaming,
-    required VoidCallback? onLongPressMic,
-    required WidgetRef ref,
-    required GlobalKey plusKey,
-    required GlobalKey settingsKey,
-    required GlobalKey agentKey,
-    required bool isStreaming,
-    required AgentDefinition currentAgent,
-  }) {
-    final localizations = AppLocalizations.of(context)!;
+  static Widget buildMobileLayout({required ChatInputLayoutConfig config}) {
+    final localizations = AppLocalizations.of(config.context)!;
+    final theme = config.theme;
+    final chatInputState = config.chatInputState;
+    final isMobile = config.isMobile;
+    final sidePadding = config.sidePadding;
+    final bottomPadding = config.bottomPadding;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,7 +146,7 @@ class InputLayoutBuilder {
             child: InputWidgetBuilders.buildAttachedFilePreview(
               state: chatInputState,
               isMobile: isMobile,
-              onRemove: onClearAttachedFile,
+              onRemove: config.onClearAttachedFile,
               localizations: localizations,
             ),
           ),
@@ -119,7 +154,7 @@ class InputLayoutBuilder {
         ConstrainedBox(
           constraints: BoxConstraints(
             minHeight: 48,
-            maxHeight: MediaQuery.of(context).size.height * 0.4,
+            maxHeight: MediaQuery.of(config.context).size.height * 0.4,
           ),
           child: Container(
             decoration: BoxDecoration(
@@ -131,7 +166,7 @@ class InputLayoutBuilder {
                 topRight: Radius.circular(ChatoraiBorderRadius.xl),
               ),
             ),
-            child: textField,
+            child: config.textField,
           ),
         ),
         Padding(
@@ -142,79 +177,58 @@ class InputLayoutBuilder {
             bottomPadding,
           ),
           child: buildButtonRow(
-            context: context,
+            context: config.context,
             theme: theme,
             chatInputState: chatInputState,
-            hasText: hasText,
-            hasAttachment: hasAttachment,
-            buttonSize: buttonSize,
-            iconSize: iconSize,
-            onPlusMenu: onPlusMenu,
-            onModelSettings: onModelSettings,
-            onAgentSwitcher: onAgentSwitcher,
-            onMicrophoneAction: onMicrophoneAction,
-            onSend: onSend,
-            onStopStreaming: onStopStreaming,
-            onLongPressMic: onLongPressMic,
-            ref: ref,
-            plusKey: plusKey,
-            settingsKey: settingsKey,
-            agentKey: agentKey,
-            isStreaming: isStreaming,
-            currentAgent: currentAgent,
+            hasText: config.hasText,
+            hasAttachment: config.hasAttachment,
+            buttonSize: config.buttonSize,
+            iconSize: config.iconSize,
+            onPlusMenu: config.onPlusMenu,
+            onModelSettings: config.onModelSettings,
+            onAgentSwitcher: config.onAgentSwitcher,
+            onMicrophoneAction: config.onMicrophoneAction,
+            onSend: config.onSend,
+            onStopStreaming: config.onStopStreaming,
+            onLongPressMic: config.onLongPressMic,
+            ref: config.ref,
+            plusKey: config.plusKey,
+            settingsKey: config.settingsKey,
+            agentKey: config.agentKey,
+            isStreaming: config.isStreaming,
+            currentAgent: config.currentAgent,
           ),
         ),
       ],
     );
   }
 
-  static Widget buildDesktopLayout({
-    required BuildContext context,
-    required ThemeData theme,
-    required ChatInputState chatInputState,
-    required Widget textField,
-    required bool isMobile,
-    required bool hasText,
-    required bool hasAttachment,
-    required double buttonSize,
-    required double iconSize,
-    required VoidCallback onClearAttachedFile,
-    required VoidCallback onPlusMenu,
-    required VoidCallback onModelSettings,
-    required VoidCallback onAgentSwitcher,
-    required VoidCallback onMicrophoneAction,
-    required VoidCallback onSend,
-    required VoidCallback? onStopStreaming,
-    required VoidCallback? onLongPressMic,
-    required WidgetRef ref,
-    required GlobalKey plusKey,
-    required GlobalKey settingsKey,
-    required GlobalKey agentKey,
-    required bool isStreaming,
-    required AgentDefinition currentAgent,
-  }) {
-    final localizations = AppLocalizations.of(context)!;
+  static Widget buildDesktopLayout({required ChatInputLayoutConfig config}) {
+    final localizations = AppLocalizations.of(config.context)!;
+    final theme = config.theme;
+    final chatInputState = config.chatInputState;
+    final isMobile = config.isMobile;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         InputWidgetBuilders.buildActionButton(
-          key: plusKey,
-          buttonSize: buttonSize,
+          key: config.plusKey,
+          buttonSize: config.buttonSize,
           bgColor: theme.brightness == Brightness.dark
               ? ChatoraiColors.inputContainerDark
               : ChatoraiColors.inputContainerLight,
-          onTap: onPlusMenu,
+          onTap: config.onPlusMenu,
           tooltip: localizations.addFileTooltip,
           child: Icon(Icons.add, color: theme.iconTheme.color),
         ),
         const SizedBox(width: ChatoraiSpacing.sm),
         InputWidgetBuilders.buildActionButton(
-          key: settingsKey,
-          buttonSize: buttonSize,
+          key: config.settingsKey,
+          buttonSize: config.buttonSize,
           bgColor: theme.brightness == Brightness.dark
               ? ChatoraiColors.inputContainerDark
               : ChatoraiColors.inputContainerLight,
-          onTap: onModelSettings,
+          onTap: config.onModelSettings,
           tooltip: localizations.modelSettingsTooltip,
           child: Icon(
             Icons.settings_input_component_outlined,
@@ -223,10 +237,10 @@ class InputLayoutBuilder {
         ),
         const SizedBox(width: ChatoraiSpacing.sm),
         InputWidgetBuilders.buildAgentButton(
-          key: agentKey,
+          key: config.agentKey,
           theme: theme,
-          currentAgent: currentAgent,
-          onTap: onAgentSwitcher,
+          currentAgent: config.currentAgent,
+          onTap: config.onAgentSwitcher,
           tooltip: localizations.switchAgentTooltip,
         ),
         const SizedBox(width: ChatoraiSpacing.md),
@@ -245,7 +259,7 @@ class InputLayoutBuilder {
                     child: InputWidgetBuilders.buildAttachedFilePreview(
                       state: chatInputState,
                       isMobile: isMobile,
-                      onRemove: onClearAttachedFile,
+                      onRemove: config.onClearAttachedFile,
                       localizations: localizations,
                     ),
                   ),
@@ -254,7 +268,7 @@ class InputLayoutBuilder {
               ],
               ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.4,
+                  maxHeight: MediaQuery.of(config.context).size.height * 0.4,
                 ),
                 child: Container(
                   decoration: BoxDecoration(
@@ -271,7 +285,7 @@ class InputLayoutBuilder {
                       width: ChatoraiBorderWidth.thinBold,
                     ),
                   ),
-                  child: textField,
+                  child: config.textField,
                 ),
               ),
             ],
@@ -279,19 +293,19 @@ class InputLayoutBuilder {
         ),
         const SizedBox(width: ChatoraiSpacing.md),
         _buildActionOrStopButton(
-          context: context,
+          context: config.context,
           theme: theme,
           chatInputState: chatInputState,
-          hasText: hasText,
-          hasAttachment: hasAttachment,
-          buttonSize: buttonSize,
-          iconSize: iconSize,
-          onMicrophoneAction: onMicrophoneAction,
-          onSend: onSend,
-          onStopStreaming: onStopStreaming,
-          onLongPressMic: onLongPressMic,
-          ref: ref,
-          isStreaming: isStreaming,
+          hasText: config.hasText,
+          hasAttachment: config.hasAttachment,
+          buttonSize: config.buttonSize,
+          iconSize: config.iconSize,
+          onMicrophoneAction: config.onMicrophoneAction,
+          onSend: config.onSend,
+          onStopStreaming: config.onStopStreaming,
+          onLongPressMic: config.onLongPressMic,
+          ref: config.ref,
+          isStreaming: config.isStreaming,
         ),
       ],
     );

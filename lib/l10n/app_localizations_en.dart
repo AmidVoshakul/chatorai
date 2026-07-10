@@ -340,6 +340,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiIsTyping => 'AI is typing';
 
   @override
+  String get loadingMsg1 => 'Waiting for server response…';
+
+  @override
+  String get loadingMsg2 => 'Data sent — almost there…';
+
+  @override
+  String get loadingMsg3 => 'Formulating thoughts…';
+
+  @override
+  String get loadingMsg4 => 'Finding the best answer…';
+
+  @override
+  String get loadingMsg5 => 'Loading response (almost)…';
+
+  @override
   String get failedToSendMessage => 'Failed to send message';
 
   @override

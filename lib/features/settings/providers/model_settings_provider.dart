@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:chatorai/features/chat/data/models/model_settings.dart';
+import 'package:chatorai/features/settings/data/models/model_settings.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 
 final _logger = LogTags.settings;

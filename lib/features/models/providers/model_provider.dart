@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
-import 'package:chatorai/features/chat/data/models/model_card_model.dart';
+import 'package:chatorai/features/models/data/models/model_card_model.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';

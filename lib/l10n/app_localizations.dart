@@ -736,6 +736,36 @@ abstract class AppLocalizations {
   /// **'AI is typing'**
   String get aiIsTyping;
 
+  /// No description provided for @loadingMsg1.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for server response…'**
+  String get loadingMsg1;
+
+  /// No description provided for @loadingMsg2.
+  ///
+  /// In en, this message translates to:
+  /// **'Data sent — almost there…'**
+  String get loadingMsg2;
+
+  /// No description provided for @loadingMsg3.
+  ///
+  /// In en, this message translates to:
+  /// **'Formulating thoughts…'**
+  String get loadingMsg3;
+
+  /// No description provided for @loadingMsg4.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding the best answer…'**
+  String get loadingMsg4;
+
+  /// No description provided for @loadingMsg5.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading response (almost)…'**
+  String get loadingMsg5;
+
   /// No description provided for @failedToSendMessage.
   ///
   /// In en, this message translates to:

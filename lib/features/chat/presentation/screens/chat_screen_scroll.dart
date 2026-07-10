@@ -15,7 +15,7 @@ extension _ChatScreenScrollExt on _ChatScreenState {
     }
   }
 
-  void _scrollToBottom({bool force = false}) {
+  void _scrollToBottom({bool force = false, double? offset}) {
     if (!_messageScrollController.hasClients) {
       return;
     }
@@ -26,26 +26,19 @@ extension _ChatScreenScrollExt on _ChatScreenState {
     }
 
     final maxScroll = position.maxScrollExtent;
-    final currentScroll = _messageScrollController.offset;
-    final diff = (maxScroll - currentScroll).abs();
 
-    // If not forcing and already near bottom (within 5px), skip
-    if (!force && diff < 5) {
-      return;
-    }
+    final targetScroll = offset != null
+        ? (maxScroll - offset).clamp(0.0, maxScroll)
+        : maxScroll;
 
     if (force) {
-      // Smooth animation after sending a message
-      _messageScrollController.animateTo(
-        maxScroll,
-        duration: ChatScreenConstants.scrollAnimationDuration,
-        curve: Curves.easeOut,
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_messageScrollController.hasClients) {
+          _messageScrollController.jumpTo(targetScroll);
+        }
+      });
     } else {
-      // Instant jump during streaming — no animation, because maxScrollExtent
-      // changes every frame while new chunks arrive. animateTo would compete
-      // with the growing content and cause visible jumping.
-      _messageScrollController.jumpTo(maxScroll);
+      _messageScrollController.jumpTo(targetScroll);
     }
   }
 

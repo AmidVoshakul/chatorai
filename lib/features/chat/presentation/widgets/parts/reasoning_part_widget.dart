@@ -1,6 +1,8 @@
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/shared/theme/markdown_styles.dart';
+import 'package:chatorai/shared/utils/format_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -103,7 +105,7 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
           borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
         ),
         child: Opacity(
-          opacity: 0.5,
+          opacity: ChatoraiOpacity.low,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -139,20 +141,11 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     );
   }
 
-  String _formatDuration(Duration d) {
-    final total = d.inSeconds;
-    if (total < 60) return '${total}s';
-    final minutes = total ~/ 60;
-    final seconds = total % 60;
-    if (seconds == 0) return '${minutes}m';
-    return '${minutes}m ${seconds}s';
-  }
-
   String? get _displayDuration {
     if (widget.part.durationMs != null) {
-      return _formatDuration(Duration(milliseconds: widget.part.durationMs!));
+      return formatDurationMs(widget.part.durationMs!);
     }
-    if (_thoughtDuration != null) return _formatDuration(_thoughtDuration!);
+    if (_thoughtDuration != null) return formatDuration(_thoughtDuration!);
     return null;
   }
 

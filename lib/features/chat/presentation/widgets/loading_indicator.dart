@@ -1,12 +1,14 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 
 // ===========================================================================
-// CHAT LOADING INDICATOR
+// CHAT LOADING INDICATOR — shimmer text
 // ===========================================================================
 
-class ChatLoadingIndicator extends StatelessWidget {
+class ChatLoadingIndicator extends StatefulWidget {
   final double size;
   final Color? color;
 
@@ -16,33 +18,76 @@ class ChatLoadingIndicator extends StatelessWidget {
     this.color,
   });
 
-  // =======================================================================
-  // BUILD METHOD
-  // =======================================================================
+  @override
+  State<ChatLoadingIndicator> createState() => _ChatLoadingIndicatorState();
+}
+
+class _ChatLoadingIndicatorState extends State<ChatLoadingIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shimmerController;
+  late final Animation<double> _shimmerAnimation;
+  late final int _messageIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _messageIndex = Random().nextInt(5);
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat();
+    _shimmerAnimation = Tween<double>(begin: -1, end: 1).animate(
+      CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOutSine),
+    );
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkTheme = theme.brightness == Brightness.dark;
+    final color = widget.color ?? theme.colorScheme.primary;
+    final l10n = AppLocalizations.of(context)!;
+    final messages = [
+      l10n.loadingMsg1,
+      l10n.loadingMsg2,
+      l10n.loadingMsg3,
+      l10n.loadingMsg4,
+      l10n.loadingMsg5,
+    ];
 
-    final indicatorColor =
-        color ??
-        (isDarkTheme ? ChatoraiColors.white70 : ChatoraiColors.mediumGray);
-
-    return Container(
-      constraints: const BoxConstraints(
-        maxWidth: ChatoraiSizes.loadingIndicatorMaxWidth,
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: ChatoraiSpacing.md,
-        vertical: ChatoraiSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: isDarkTheme ? ChatoraiColors.darkGray : ChatoraiColors.lightGray,
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xl),
-        boxShadow: ChatoraiShadows.cardShadow,
-      ),
-      child: SpinKitThreeBounce(color: indicatorColor, size: size),
+    return AnimatedBuilder(
+      animation: _shimmerAnimation,
+      builder: (context, child) {
+        return ShaderMask(
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              begin: Alignment(-1 + _shimmerAnimation.value, 0),
+              end: Alignment(1 + _shimmerAnimation.value, 0),
+              colors: [
+                color.withValues(alpha: 0.35),
+                color,
+                color.withValues(alpha: 0.35),
+              ],
+              stops: const [0.25, 0.5, 0.75],
+            ).createShader(bounds);
+          },
+          blendMode: BlendMode.srcIn,
+          child: Text(
+            messages[_messageIndex],
+            style: TextStyle(
+              fontSize: ChatoraiFontSizes.sm,
+              fontWeight: FontWeight.w500,
+              color: color,
+              height: 1.4,
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -60,10 +105,6 @@ class ChatTypingDotsIndicator extends StatelessWidget {
     this.dotSize = ChatoraiSizes.chatTypingDotsDefaultSize,
     this.color,
   });
-
-  // =======================================================================
-  // BUILD METHOD
-  // =======================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -109,10 +150,6 @@ class __TypingDotsAnimationState extends State<_TypingDotsAnimation>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
-  // =======================================================================
-  // LIFECYCLE
-  // =======================================================================
-
   @override
   void initState() {
     super.initState();
@@ -128,18 +165,10 @@ class __TypingDotsAnimationState extends State<_TypingDotsAnimation>
     super.dispose();
   }
 
-  // =======================================================================
-  // BUILD METHOD
-  // =======================================================================
-
   @override
   Widget build(BuildContext context) {
     return Row(children: [_buildDot(0), _buildDot(1), _buildDot(2)]);
   }
-
-  // =======================================================================
-  // HELPER METHODS
-  // =======================================================================
 
   Widget _buildDot(int index) {
     return AnimatedBuilder(

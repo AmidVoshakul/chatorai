@@ -1,9 +1,9 @@
+import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/presentation/widgets/parts/code_block.dart';
+import 'package:chatorai/features/chat/presentation/widgets/parts/table_block.dart';
+import 'package:chatorai/shared/theme/markdown_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/features/chat/presentation/widgets/code_block.dart';
-import 'package:chatorai/features/chat/presentation/widgets/table_block.dart';
 
 class TextPartWidget extends StatelessWidget {
   final TextPart part;

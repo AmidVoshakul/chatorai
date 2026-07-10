@@ -343,6 +343,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String get aiIsTyping => 'AI печатает';
 
   @override
+  String get loadingMsg1 => 'Жду ответа сервера…';
+
+  @override
+  String get loadingMsg2 => 'Данные отправлены — осталось чуть-чуть…';
+
+  @override
+  String get loadingMsg3 => 'Складываю мысли в ответ…';
+
+  @override
+  String get loadingMsg4 => 'Подбираю лучший вариант…';
+
+  @override
+  String get loadingMsg5 => 'Загружаю ответ (почти)…';
+
+  @override
   String get failedToSendMessage => 'Не удалось отправить сообщение';
 
   @override

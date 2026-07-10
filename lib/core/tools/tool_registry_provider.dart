@@ -9,7 +9,7 @@ import 'package:chatorai/core/skills/skill_providers.dart';
 import 'package:chatorai/core/tools/built_in/built_in_tools.dart' as built_in;
 import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/features/chat/data/providers/chat_providers.dart';
-import 'package:chatorai/features/chat/data/providers/session_providers.dart';
+import 'package:chatorai/features/sessions/providers/session_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final toolRegistryProvider = FutureProvider<ToolRegistry>((ref) async {

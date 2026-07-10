@@ -337,6 +337,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aiIsTyping => 'AI が入力中です';
 
   @override
+  String get loadingMsg1 => 'サーバーの応答を待っています…';
+
+  @override
+  String get loadingMsg2 => 'データ送信完了 — もう少し…';
+
+  @override
+  String get loadingMsg3 => '考えをまとめています…';
+
+  @override
+  String get loadingMsg4 => '最適な回答を選んでいます…';
+
+  @override
+  String get loadingMsg5 => '回答を読み込み中（もうすぐ）…';
+
+  @override
   String get failedToSendMessage => 'メッセージの送信に失敗しました';
 
   @override

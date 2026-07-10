@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/core/stats/stats_service.dart';
-import 'package:chatorai/features/chat/data/providers/session_providers.dart';
+import 'package:chatorai/features/sessions/providers/session_providers.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 

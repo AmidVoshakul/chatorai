@@ -17,8 +17,40 @@ All notable changes to this project will be documented in this file.
 - **Enhanced SessionEvent Schema**: Support for task-specific parts and improved metadata persistence.
 - **AssistantQuestion Multiple Selection**: `AssistantQuestion` now supports `multiple` boolean for multi-select questions.
 - **ChatScreen Refactor**: Split into focused files (`chat_screen_ai.dart`, `chat_screen_edits.dart`, `chat_screen_build.dart`, `chat_screen_messaging.dart`, `chat_screen_management.dart`, `chat_screen_navigator.dart`, `chat_screen_part_placeholder.dart`).
+- **Widget Parts Split**: Tool body and display widgets separated into individual files:
+  `_bash_body_widget.dart`, `_read_body_widget.dart`, `_grep_body_widget.dart`,
+  `_write_body_widget.dart`, `_edit_body_widget.dart`, `_lsp_body_widget.dart`,
+  `_patch_body_widget.dart`, `_generic_body_widget.dart`, `_diff_line_widget.dart`,
+  `_webfetch_body_widget.dart`, `_tool_icon.dart`, `_tool_title.dart`.
+   49 new tests added.
+- **Widget Refactoring Phase 2**: Extracted shared formatting utilities to `lib/shared/utils/format_utils.dart` with `formatTokenCount`, `tokenDisplay`, `formatDurationMs`, `formatDuration`, and `bashPreview` to eliminate code duplication across `action_row.dart`, `task_part_widget.dart`, and `reasoning_part_widget.dart`.
+- **UserMessageEdit Widget**: Extracted user message editing interface from `ChatMessageBubble` into a dedicated `lib/features/chat/presentation/widgets/parts/user_message_edit.dart` file, reducing `ChatMessageBubble` responsibility to message dispatching only.
+- **Unified ContinuationSuggestions**: Removed duplicate `_ContinuationSuggestions` from `assistant_bubble.dart`; now uses the shared `ContinuationSuggestions` from `action_menu_button.dart`.
+- **Renamed tool body widgets** (removed underscore prefix for consistency):
+  - `_bash_body_widget.dart` → `bash_body.dart`
+  - `_read_body_widget.dart` → `read_body.dart`
+  - `_grep_body_widget.dart` → `grep_body.dart`
+  - `_write_body_widget.dart` → `write_body.dart`
+  - `_edit_body_widget.dart` → `edit_body.dart`
+  - `_lsp_body_widget.dart` → `lsp_body.dart`
+  - `_patch_body_widget.dart` → `patch_body.dart`
+  - `_webfetch_body_widget.dart` → `webfetch_body.dart`
+  - `_generic_body_widget.dart` → `generic_body.dart`
+  - `_diff_line_widget.dart` → `diff_line.dart`
+  - `_tool_icon.dart` → `tool_icon.dart`
+  - `_tool_title.dart` → `tool_title.dart`
+- **Eliminated duplicate `bashPreview`**: Removed duplicate implementation from `tool_result_part_widget.dart`; now imports and uses the shared version from `format_utils.dart`.
+- **Centralized duration formatting**: `task_part_widget.dart` and `reasoning_part_widget.dart` now use shared `formatDurationMs(int?)` and `formatDuration(Duration)` from `format_utils.dart`.
+- **Empty directory cleanup**: Confirmed empty `lib/features/chat/presentation/widgets/chat/` directory already removed.
+
+### Fixed
+
+- **Linter warnings**: Resolved unused imports and dangling library doc comments introduced during refactoring. `flutter analyze` reports zero issues.
+- **Unused imports cleaned up**: Removed stale imports from `chat_message_bubble.dart`, `user_message_edit.dart`, and `format_utils.dart`.
+- **Bash tool security policy**: Changed command_shield policies in `lib/core/tools/built_in/bash.dart` from immediate `deny` to `review` (ask-permission flow). `DangerousCharacterPolicy` now returns `review` at `highRisk` level; `ArgumentPatternPolicy` for `chmod` and redirect patterns now return `review`; `ExecutableBlockListPolicy` uses `onMatch: CommandDecision.review`; replaced `RiskThresholdPolicy` with custom `_ReviewOnlyPolicy` that never denies and always asks permission for `mediumRisk` and above. Removed duplicate blocked-executable deny check. Verified with `dart analyze` (clean) and `flutter test test/integration/bash_integration_test.dart` (15/15 passed). Goal: commands such as `curl`, `rm -rf`, and `npm` now trigger a permission dialog instead of being immediately blocked.
 
 ### Documentation
+
 
 - **docs/API.md**: Fixed tool permission table (7 tools had wrong defaults: `webfetch`, `websearch`, `task`, `todowrite`, `question`, `skill`, `lsp` were `ask` in docs but `allow` in code). Corrected total tool count from 16 to 19 (16 unconditional + 3 conditional). Added `ReasoningPart` field documentation with `durationMs` persistence details. Fixed `McpClientService` line (was truncated). Removed duplicate Internal APIs entries. Updated top-level schema sections to match actual `chatorai_schema.dart` (added `skills`, `compaction`, `formatter`; removed stale `provider`).
 - **docs/COMMANDS.md**: Updated tool permission table to match corrected data. Removed redundant input schema column (now references API.md). Removed incorrect "5-min cooldown" mention for `question` tool (dedup mechanism differs).
@@ -82,6 +114,21 @@ All notable changes to this project will be documented in this file.
 - **Android database hang**: `createFileDatabase()` in `lib/core/session/database.dart` no longer imports `xdg_paths_cli.dart`. The function now requires an explicit `dataDir` parameter and creates the directory inline with `Directory(dataDir).create(recursive: true)`. `session_db_provider.dart` imports the Flutter-aware `xdg_paths.dart` and passes `await XdgPaths.dataHomeAsync`, which resolves to the app's sandboxed support directory on Android. `bin/chatorai.dart` passes `XdgPaths.dataHome` from `xdg_paths_cli.dart`. Removed temporary `.timeout(10s)` debug wrapper from `chat_screen_messaging.dart`; removed unused `import 'dart:async'` from `chat_screen.dart`.
 
 ## [0.1.1]
+
+### Added
+
+- **`ChatoraiFontSizes.mono()`** factory with `size`, `color`, `weight`, `height`, `fontStyle`, `letterSpacing` params.
+- **`ColorSchemeX`** theme extension with `muted` (0.5) and `dim` (0.7) for consistent alpha values.
+
+### Changed
+
+- All 17 monospace usages now use `ChatoraiFontSizes.monospaceFont` constant.
+- 14 of 17 TextStyles now use `ChatoraiFontSizes.mono()` factory.
+- Removed `Opacity(0.5)` wrapper around tool header — `_buildHeader` applies `muted` directly (fixes double-dimming).
+- `Clipboard.setData` now awaited with try-catch error handling.
+- LSP JSON parse errors now logged in debug mode instead of silently swallowed.
+- Migrated `markdown_styles.dart` to use `app_theme.dart` exclusively.
+- Removed abandoned `design_tokens/` directory (duplicate classes now consolidated).
 
 ### Fixed
 

@@ -335,6 +335,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aiIsTyping => 'AI 正在输入';
 
   @override
+  String get loadingMsg1 => '等待服务器响应…';
+
+  @override
+  String get loadingMsg2 => '数据已发送 — 马上就好…';
+
+  @override
+  String get loadingMsg3 => '整理思绪中…';
+
+  @override
+  String get loadingMsg4 => '寻找最佳答案…';
+
+  @override
+  String get loadingMsg5 => '加载答案（即将完成）…';
+
+  @override
   String get failedToSendMessage => '无法发送消息';
 
   @override

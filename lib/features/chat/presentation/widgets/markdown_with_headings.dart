@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:chatorai/shared/utils/markdown_parser.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/shared/theme/markdown_styles.dart';
 
 // ===========================================================================
 // PUBLIC WIDGET
@@ -114,7 +114,7 @@ class _HeadingBuilder extends MarkdownElementBuilder {
 
     return Container(
       key: ValueKey('heading_${messageId}_${level}_$text'),
-      padding: const EdgeInsets.only(top: 16, bottom: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Text(text, style: preferredStyle),
     );
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 /// ============================================================
 /// CHATORAI DESIGN SYSTEM
@@ -158,6 +157,15 @@ class ChatoraiBorderRadius {
 }
 
 // ===============================================================
+// OPACITY
+// ===============================================================
+class ChatoraiOpacity {
+  static const double low = 0.5;
+  static const double medium = 0.7;
+  static const double high = 0.9;
+}
+
+// ===============================================================
 // ICON SIZES
 // ===============================================================
 class ChatoraiIconSizes {
@@ -210,6 +218,42 @@ class ChatoraiFontSizes {
   static const double sidebarItem = 14.0;
   static const double sidebarDate = 11.0;
   static const double caption = 12.0;
+
+  static const String monospaceFont =
+      'Monaco, Consolas, "Courier New", monospace';
+
+  /// Creates a [TextStyle] using the application monospace font family.
+  ///
+  /// Parameters:
+  /// - [size]: Font size in logical pixels.
+  /// - [color]: Optional text color.
+  /// - [weight]: Optional font weight.
+  /// - [height]: Optional line height as a multiple of [size].
+  /// - [fontStyle]: Optional font style (e.g., italic).
+  /// - [letterSpacing]: Optional letter spacing in logical pixels.
+  ///
+  /// Usage:
+  /// ```dart
+  /// Text('42', style: ChatoraiFontSizes.mono(13, color: Colors.green))
+  /// ```
+  static TextStyle mono(
+    double size, {
+    Color? color,
+    FontWeight? weight,
+    double? height,
+    FontStyle? fontStyle,
+    double? letterSpacing,
+  }) {
+    return TextStyle(
+      fontFamily: monospaceFont,
+      fontSize: size,
+      color: color,
+      fontWeight: weight,
+      height: height,
+      fontStyle: fontStyle,
+      letterSpacing: letterSpacing,
+    );
+  }
 }
 
 // ===============================================================
@@ -397,93 +441,6 @@ class ChatoraiTypography {
       color: ChatoraiColors.darkSecondaryTextColor,
     ),
   );
-}
-
-// ===============================================================
-// MARKDOWN STYLES
-// ===============================================================
-class ChatoraiMarkdownStyles {
-  static final _cache = <int, MarkdownStyleSheet>{};
-
-  static MarkdownStyleSheet getMarkdownStyles(BuildContext context) {
-    final brightness = MediaQuery.platformBrightnessOf(context);
-    final theme = Theme.of(context);
-    final baseStyle = MarkdownStyleSheet.fromTheme(theme);
-
-    final isLight = brightness == Brightness.light;
-
-    // Use theme brightness hash as cache key
-    final cacheKey = Object.hash(brightness, theme.brightness);
-
-    if (_cache.containsKey(cacheKey)) {
-      return _cache[cacheKey]!;
-    }
-
-    final codeColor = isLight
-        ? ChatoraiColors.codeLight
-        : ChatoraiColors.codeDark;
-    final grayColor = isLight
-        ? ChatoraiColors.lightGray
-        : ChatoraiColors.darkGray;
-
-    final styleSheet = baseStyle.copyWith(
-      blockquote: baseStyle.blockquote?.copyWith(
-        color: isLight
-            ? ChatoraiColors.secondaryTextColor
-            : ChatoraiColors.darkSecondaryTextColor,
-        fontStyle: FontStyle.italic,
-        fontSize: ChatoraiFontSizes.base,
-      ),
-      blockquoteDecoration: BoxDecoration(
-        color: grayColor.withAlpha(isLight ? 50 : 150),
-        border: Border(
-          left: BorderSide(
-            color: ChatoraiColors.orange,
-            width: ChatoraiBorderWidth.bold,
-          ),
-        ),
-        borderRadius: const BorderRadius.horizontal(
-          right: Radius.circular(ChatoraiBorderRadius.sm),
-        ),
-      ),
-      code: baseStyle.code?.copyWith(
-        backgroundColor: grayColor.withAlpha(150),
-        color: codeColor,
-        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-        fontSize: ChatoraiFontSizes.code,
-        shadows: isLight
-            ? [
-                Shadow(
-                  color: grayColor.withAlpha(150),
-                  offset: const Offset(-2, 0),
-                  blurRadius: 0,
-                ),
-                Shadow(
-                  color: grayColor.withAlpha(150),
-                  offset: const Offset(2, 0),
-                  blurRadius: 0,
-                ),
-              ]
-            : null,
-      ),
-      a: baseStyle.a?.copyWith(
-        color: ChatoraiColors.orange,
-        decoration: TextDecoration.none,
-      ),
-      h1: baseStyle.h1?.copyWith(
-        color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,
-      ),
-      h2: baseStyle.h2?.copyWith(
-        color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,
-      ),
-      h3: baseStyle.h3?.copyWith(
-        color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,
-      ),
-    );
-
-    _cache[cacheKey] = styleSheet;
-    return styleSheet;
-  }
 }
 
 // ===============================================================

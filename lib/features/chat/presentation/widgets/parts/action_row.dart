@@ -1,11 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
 import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
-import 'package:chatorai/shared/utils/message_utils.dart';
+import 'package:chatorai/shared/utils/format_time_utils.dart';
+import 'package:chatorai/shared/utils/format_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Action row displayed below each message bubble.
-/// Shows edit/share/copy/delete/regenerate/continue buttons.
+import 'action_menu_button.dart';
+
 class ActionRow extends StatelessWidget {
   final bool isUser;
   final bool isLastMessage;
@@ -17,6 +20,11 @@ class ActionRow extends StatelessWidget {
   final VoidCallback? onMessageDeleted;
   final VoidCallback? onMessageRegenerate;
   final Future<void> Function(String)? onContinuationSelected;
+  final int? cumulativeTokens;
+  final int? contextLength;
+  final String? agentName;
+  final String? model;
+  final DateTime? timestamp;
 
   const ActionRow({
     super.key,
@@ -30,133 +38,162 @@ class ActionRow extends StatelessWidget {
     this.onMessageDeleted,
     this.onMessageRegenerate,
     this.onContinuationSelected,
+    this.cumulativeTokens,
+    this.contextLength,
+    this.agentName,
+    this.model,
+    this.timestamp,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final iconColor = theme.iconTheme.color?.withValues(
-      alpha: ChatoraiIconOpacity.medium,
-    );
     final localizations = AppLocalizations.of(context)!;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // User message: Edit
-        if (isUser && onEdit != null)
-          IconButton(
-            icon: Icon(
-              Icons.edit,
-              size: ChatoraiIconSizes.actionIcon,
-              color: iconColor,
-            ),
-            onPressed: onEdit,
-            splashRadius: 20,
-            tooltip: localizations.edit,
-          ),
+    final formattedTimestamp = timestamp != null
+        ? formatMessageTime(timestamp!, context: context)
+        : null;
 
-        // Assistant message: Share
-        if (!isUser)
-          IconButton(
-            icon: Icon(
-              Icons.share,
-              size: ChatoraiIconSizes.actionIcon,
-              color: iconColor,
-            ),
-            onPressed: content != null
-                ? () => MessageUtils.shareMessage(
-                    content: content!,
-                    context: context,
-                  )
-                : null,
-            splashRadius: 20,
-            tooltip: localizations.share,
-          ),
-
-        // All messages: Copy
-        IconButton(
-          icon: Icon(
-            Icons.copy_all,
-            size: ChatoraiIconSizes.actionIcon,
-            color: theme.iconTheme.color?.withValues(alpha: 0.8),
-          ),
-          onPressed: content != null
-              ? () => MessageUtils.copyMessage(
-                  content: content!,
-                  context: context,
-                )
-              : null,
-          splashRadius: 24,
-          hoverColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-          focusColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-          tooltip: localizations.copyMessage,
-        ),
-
-        // All messages: Delete
-        IconButton(
-          icon: Icon(
-            Icons.delete,
-            size: ChatoraiIconSizes.actionIcon,
-            color: Colors.red.withValues(alpha: 0.7),
-          ),
-          onPressed: () async {
-            FocusScope.of(context).unfocus();
-            final deleted = await MessageUtils.deleteMessage(
+    if (isUser) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            const Spacer(),
+            if (formattedTimestamp != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Text(
+                  formattedTimestamp,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.textTheme.bodySmall?.color?.withValues(
+                      alpha: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ActionMenuButton(
+              isUser: true,
+              content: content,
               chatId: chatId,
               messageId: messageId,
               chatStorageService: chatStorageService,
-              context: context,
-            );
-            if (deleted) {
-              onMessageDeleted?.call();
-            }
-          },
-          splashRadius: 20,
-          tooltip: localizations.delete,
+              onEdit: onEdit,
+              onMessageDeleted: onMessageDeleted,
+              onMessageRegenerate: onMessageRegenerate,
+              theme: theme,
+              localizations: localizations,
+            ),
+          ],
         ),
+      );
+    }
 
-        // Assistant only: Regenerate
-        if (!isUser)
-          IconButton(
-            icon: Icon(
-              Icons.refresh,
-              size: ChatoraiIconSizes.actionIcon,
-              color: iconColor,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Expanded(
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                const SizedBox(width: 4),
+                if (agentName != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Text(
+                      agentName!,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                if (model != null)
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 4, left: 4),
+                      child: Text(
+                        '•  $model',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.textTheme.bodySmall?.color?.withValues(
+                            alpha: 0.6,
+                          ),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ActionMenuButton(
+                  isUser: false,
+                  content: content,
+                  chatId: chatId,
+                  messageId: messageId,
+                  chatStorageService: chatStorageService,
+                  onMessageDeleted: onMessageDeleted,
+                  onMessageRegenerate: onMessageRegenerate,
+                  onContinuationSelected: onContinuationSelected,
+                  isLastMessage: isLastMessage,
+                  localizations: localizations,
+                  theme: theme,
+                ),
+              ],
             ),
-            onPressed: () async {
-              await MessageUtils.regenerateMessage(
-                chatId: chatId,
-                messageId: messageId,
-                chatStorageService: chatStorageService,
-                onRegenerate: () => onMessageRegenerate?.call(),
-              );
+          ),
+          Consumer(
+            builder: (context, ref, _) {
+              final retryState = ref.watch(chatScreenProvider);
+              if (isLastMessage && retryState.isRetrying) {
+                return _RetryIndicator(
+                  message: retryState.retryMessage ?? 'Retrying…',
+                );
+              }
+              if (cumulativeTokens != null) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 8),
+                  child: Text(
+                    tokenDisplay(cumulativeTokens!, contextLength),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: theme.textTheme.bodySmall?.color?.withValues(
+                        alpha: 0.5,
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
             },
-            splashRadius: 20,
-            tooltip: localizations.regenerate,
           ),
+        ],
+      ),
+    );
+  }
+}
 
-        // Assistant only: Continue (conditional)
-        if (!isUser &&
-            isLastMessage &&
-            content != null &&
-            content!.isNotEmpty &&
-            (content!.endsWith('...') || content!.split(' ').length > 30))
-          IconButton(
-            icon: Icon(
-              Icons.play_arrow,
-              size: ChatoraiIconSizes.actionIcon,
-              color: theme.colorScheme.primary.withValues(
-                alpha: ChatoraiIconOpacity.medium,
-              ),
-            ),
-            onPressed: onContinuationSelected != null
-                ? () => onContinuationSelected!(content!)
-                : null,
-            splashRadius: 20,
-            tooltip: localizations.continueResponse,
-          ),
-      ],
+class _RetryIndicator extends StatelessWidget {
+  final String message;
+
+  const _RetryIndicator({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = ChatoraiColors.error;
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, right: 8),
+      child: Text(
+        message,
+        style: theme.textTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.w500,
+          color: color,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 }

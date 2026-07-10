@@ -32,6 +32,7 @@ class ChatInput extends ConsumerStatefulWidget {
   final Function(double)? onSoundLevelChanged;
   final Function(String)? onRecognizedText;
   final VoidCallback? onMessageAdded;
+  final VoidCallback? onOpenModelSettings;
 
   const ChatInput({
     super.key,
@@ -45,6 +46,7 @@ class ChatInput extends ConsumerStatefulWidget {
     this.onSoundLevelChanged,
     this.onRecognizedText,
     this.onMessageAdded,
+    this.onOpenModelSettings,
   });
 
   @override
@@ -85,6 +87,9 @@ class _ChatInputState extends ConsumerState<ChatInput>
   @override
   bool Function(String)? get checkModelSupportsImages =>
       widget.checkModelSupportsImages;
+
+  @override
+  VoidCallback? get onOpenModelSettings => widget.onOpenModelSettings;
 
   @override
   void Function(SpeechUiState, String)? get onSpeechStateChanged =>
@@ -312,67 +317,41 @@ class _ChatInputState extends ConsumerState<ChatInput>
     final hasAttachment = chatInputState.attachedFilePath != null;
     final currentAgent = ref.watch(currentAgentProvider);
 
+    final layoutConfig = ChatInputLayoutConfig(
+      context: context,
+      theme: theme,
+      chatInputState: chatInputState,
+      textField: textField,
+      isMobile: isMobile,
+      hasText: hasText,
+      hasAttachment: hasAttachment,
+      buttonSize: buttonSize,
+      iconSize: iconSize,
+      sidePadding: sidePadding,
+      bottomPadding: bottomPadding,
+      onClearAttachedFile: clearAttachedFile,
+      onPlusMenu: () => _showPlusMenu(context),
+      onModelSettings: handleModelSettings,
+      onAgentSwitcher: () => showAgentSwitcher(context, _agentKey),
+      onMicrophoneAction: handleMicrophoneAction,
+      onSend: () => performSend(
+        onSendMessage: widget.onSendMessage,
+        onToggleStreaming: widget.onToggleStreaming,
+        onClearAttachedFile: clearAttachedFile,
+      ),
+      onStopStreaming: widget.onStopStreaming,
+      onLongPressMic: handleMicrophoneAction,
+      ref: ref,
+      plusKey: _plusKey,
+      settingsKey: _settingsKey,
+      agentKey: _agentKey,
+      isStreaming: widget.isStreaming,
+      currentAgent: currentAgent,
+    );
+
     final layoutChild = isMobile
-        ? InputLayoutBuilder.buildMobileLayout(
-            context: context,
-            theme: theme,
-            chatInputState: chatInputState,
-            textField: textField,
-            isMobile: isMobile,
-            hasText: hasText,
-            hasAttachment: hasAttachment,
-            buttonSize: buttonSize,
-            iconSize: iconSize,
-            sidePadding: sidePadding,
-            bottomPadding: bottomPadding,
-            onClearAttachedFile: clearAttachedFile,
-            onPlusMenu: () => _showPlusMenu(context),
-            onModelSettings: handleModelSettings,
-            onAgentSwitcher: () => showAgentSwitcher(context, _agentKey),
-            onMicrophoneAction: handleMicrophoneAction,
-            onSend: () => performSend(
-              onSendMessage: widget.onSendMessage,
-              onToggleStreaming: widget.onToggleStreaming,
-              onClearAttachedFile: clearAttachedFile,
-            ),
-            onStopStreaming: widget.onStopStreaming,
-            onLongPressMic: handleMicrophoneAction,
-            ref: ref,
-            plusKey: _plusKey,
-            settingsKey: _settingsKey,
-            agentKey: _agentKey,
-            isStreaming: widget.isStreaming,
-            currentAgent: currentAgent,
-          )
-        : InputLayoutBuilder.buildDesktopLayout(
-            context: context,
-            theme: theme,
-            chatInputState: chatInputState,
-            textField: textField,
-            isMobile: isMobile,
-            hasText: hasText,
-            hasAttachment: hasAttachment,
-            buttonSize: buttonSize,
-            iconSize: iconSize,
-            onClearAttachedFile: clearAttachedFile,
-            onPlusMenu: () => _showPlusMenu(context),
-            onModelSettings: handleModelSettings,
-            onAgentSwitcher: () => showAgentSwitcher(context, _agentKey),
-            onMicrophoneAction: handleMicrophoneAction,
-            onSend: () => performSend(
-              onSendMessage: widget.onSendMessage,
-              onToggleStreaming: widget.onToggleStreaming,
-              onClearAttachedFile: clearAttachedFile,
-            ),
-            onStopStreaming: widget.onStopStreaming,
-            onLongPressMic: handleMicrophoneAction,
-            ref: ref,
-            plusKey: _plusKey,
-            settingsKey: _settingsKey,
-            agentKey: _agentKey,
-            isStreaming: widget.isStreaming,
-            currentAgent: currentAgent,
-          );
+        ? InputLayoutBuilder.buildMobileLayout(config: layoutConfig)
+        : InputLayoutBuilder.buildDesktopLayout(config: layoutConfig);
 
     return Column(
       mainAxisSize: MainAxisSize.min,

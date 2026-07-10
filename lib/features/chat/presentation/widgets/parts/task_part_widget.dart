@@ -1,5 +1,6 @@
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/shared/utils/format_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
@@ -41,7 +42,7 @@ class _TaskPartWidgetState extends State<TaskPartWidget> {
             borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
           ),
           child: Opacity(
-            opacity: _isHovered ? 1.0 : 0.5,
+            opacity: _isHovered ? 1.0 : ChatoraiOpacity.low,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -104,7 +105,7 @@ class _TaskPartWidgetState extends State<TaskPartWidget> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${part.toolCallsCount} toolcall${part.toolCallsCount == 1 ? "" : "s"} • ${_formatDuration(part.durationMs)}',
+                        '${part.toolCallsCount} toolcall${part.toolCallsCount == 1 ? "" : "s"} • ${formatDurationMs(part.durationMs)}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: ChatoraiFontSizes.xs,
                         ),
@@ -118,17 +119,6 @@ class _TaskPartWidgetState extends State<TaskPartWidget> {
         ),
       ),
     );
-  }
-
-  String _formatDuration(int? ms) {
-    if (ms == null || ms <= 0) return '0s';
-    final totalSeconds = ms ~/ 1000;
-    final minutes = totalSeconds ~/ 60;
-    final seconds = totalSeconds % 60;
-    if (minutes > 0) {
-      return '${minutes}m ${seconds}s';
-    }
-    return '${seconds}s';
   }
 
   String _capitalize(String s) {

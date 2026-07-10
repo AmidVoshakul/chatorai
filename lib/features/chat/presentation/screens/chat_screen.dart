@@ -14,26 +14,28 @@ import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/tools/tool_output_persistence.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
     hide ToolState;
+import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart'
     show assistantContentToPartMaps;
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/chat/data/models/model_card_model.dart';
-import 'package:chatorai/features/chat/presentation/screens/child_session_screen.dart';
-import 'package:chatorai/features/chat/data/models/model_settings.dart';
 import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
+import 'package:chatorai/features/chat/presentation/screens/child_session_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_app_bar.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages.dart';
 import 'package:chatorai/features/chat/presentation/widgets/markdown_navigator_sidebar.dart';
-import 'package:chatorai/features/chat/presentation/widgets/sidebar_wrapper.dart';
 import 'package:chatorai/features/chat/presentation/widgets/speech_overlay.dart';
 import 'package:chatorai/features/chat/presentation/widgets/welcome_questions_data.dart';
 import 'package:chatorai/features/chat/services/continuation_suggestion_service.dart';
 import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
+import 'package:chatorai/features/models/data/models/model_card_model.dart';
+import 'package:chatorai/features/models/screens/models_screen.dart';
+import 'package:chatorai/features/sessions/presentation/widgets/sidebar_wrapper.dart';
+import 'package:chatorai/features/settings/data/models/model_settings.dart';
+import 'package:chatorai/features/settings/widgets/model_settings_sheet.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart'
     show
@@ -190,6 +192,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     return ref.read(chatScreenProvider).navigatorHeadings.isNotEmpty;
   }
 
+  void _openModelSelector() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ModelsScreen(),
+      ),
+    );
+  }
+
+  void _openModelSettings() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) => const ModelSettingsSheet(),
+      ),
+    );
+  }
+
+  void _openSettings() {
+    Navigator.of(context).pushNamed('/settings');
+  }
+
   Future<void> _showContinuationSuggestions(Message message) async {
     final theme = ref.read(themeProvider);
     if (!theme.showContinuationSuggestions) return;
@@ -235,9 +264,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       checkModelSupportsImages: (_) =>
           ref.read(modelProvider.notifier).modelSupportsImagesSelected(),
       onMessageAdded: () {
-        // Scroll to bottom when a new message is added (e.g., from skill execution)
-        _scrollToBottom(force: true);
+        // Scroll so the last assistant message hides behind AppBar,
+        // leaving user's message + loading visible.
+        final topPadding = MediaQuery.of(context).padding.top;
+        _scrollToBottom(
+          force: true,
+          offset: topPadding + kToolbarHeight + 8,
+        );
       },
+      onOpenModelSettings: _openModelSettings,
     );
 
     Widget baseLayout = _isMobile

@@ -1,18 +1,19 @@
 import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/message_data.dart';
-import 'package:chatorai/features/chat/presentation/widgets/model_settings_sheet.dart';
 import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:chatorai/features/settings/widgets/model_settings_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   TextEditingController get textController;
   SpeechToTextService? get speechService;
   bool Function(String)? get checkModelSupportsImages;
+  VoidCallback? get onOpenModelSettings;
 
   Future<void> performSend({
     required void Function(MessageData) onSendMessage,
@@ -90,25 +91,21 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       await settingsNotifier.setActiveModel(modelState.selectedModelId);
     }
     if (!mounted) return;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (context, scrollController) {
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: const ModelSettingsSheet(),
-          );
-        },
-      ),
-    );
+    if (onOpenModelSettings != null) {
+      onOpenModelSettings!();
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) => const ModelSettingsSheet(),
+        ),
+      );
+    }
   }
 
   void showAgentSwitcher(BuildContext context, GlobalKey agentKey) {

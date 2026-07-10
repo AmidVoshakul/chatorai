@@ -29,6 +29,7 @@ extension _ChatScreenBuildExt on _ChatScreenState {
             _createNewChat();
             Navigator.of(context).pop();
           },
+          onOpenSettings: _openSettings,
         ),
       );
     }
@@ -120,6 +121,7 @@ extension _ChatScreenBuildExt on _ChatScreenState {
               hasHeadings: () => hasHeadings,
               onToggleNavigator: _toggleNavigator,
               onModelSelected: _updateSelectedModel,
+onOpenModelSelector: _openModelSelector,
               onMenuPressed: () {
                 FocusScope.of(context).unfocus();
                 _scaffoldKey.currentState?.openDrawer();
@@ -166,6 +168,7 @@ extension _ChatScreenBuildExt on _ChatScreenState {
         hasHeadings: () => hasHeadings,
         onToggleNavigator: _toggleNavigator,
         onModelSelected: _updateSelectedModel,
+        onOpenModelSelector: _openModelSelector,
         onMenuPressed: () {
           FocusScope.of(context).unfocus();
           _scaffoldKey.currentState?.openDrawer();

@@ -345,6 +345,21 @@ class AppLocalizationsUk extends AppLocalizations {
   String get aiIsTyping => 'AI друкує';
 
   @override
+  String get loadingMsg1 => 'Чекаю відповіді сервера…';
+
+  @override
+  String get loadingMsg2 => 'Дані надіслано — залишилось трохи…';
+
+  @override
+  String get loadingMsg3 => 'Збираю думки у відповідь…';
+
+  @override
+  String get loadingMsg4 => 'Підбираю найкращий варіант…';
+
+  @override
+  String get loadingMsg5 => 'Завантажую відповідь (майже)…';
+
+  @override
   String get failedToSendMessage => 'Не вдалося надіслати повідомлення';
 
   @override

@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/truncation_service.dart';
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
+import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:command_shield/command_shield.dart';
 
@@ -50,7 +51,6 @@ const _blockedExecutables = <String>{
   'pip',
   'pip3',
   'cargo',
-  'go get',
 };
 
 const _defaultTimeoutMs = 60000;
@@ -63,8 +63,8 @@ final _bashValidator = CommandShield(
     // chains (; && ||), pipes (|), backgrounding (&), redirects (> < >>),
     // command substitution ($() ``), and embedded newlines.
     const DangerousCharacterPolicy(
-      onMatch: CommandDecision.deny,
-      level: SecurityLevel.critical,
+      onMatch: CommandDecision.review,
+      level: SecurityLevel.highRisk,
     ),
 
     // Layer 2 — argument-pattern defenses
@@ -74,14 +74,14 @@ final _bashValidator = CommandShield(
     ArgumentPatternPolicy(
       pattern: RegExp(r'\bchmod\s+[0-7]{3,4}\b'),
       description: 'chmod with octal mode',
-      onMatch: CommandDecision.deny,
+      onMatch: CommandDecision.review,
       level: SecurityLevel.highRisk,
       matchWholeCommand: true,
     ),
     ArgumentPatternPolicy(
-      pattern: RegExp(r'(?:>|>>)\s+/(etc|root|sys|proc)/'),
+      pattern: RegExp(r'(?:>|>>)\s*/+(?:etc|root|sys|proc)/'),
       description: 'redirect to system directory',
-      onMatch: CommandDecision.deny,
+      onMatch: CommandDecision.review,
       level: SecurityLevel.critical,
       matchWholeCommand: true,
     ),
@@ -92,12 +92,22 @@ final _bashValidator = CommandShield(
     // eval/exec/source allow arbitrary in-process execution.
     // ssh/scp/rsync open remote channels.
     // GUI browsers allow data exfiltration via opened pages.
-    ExecutableBlockListPolicy(_blockedExecutables),
+    ExecutableBlockListPolicy(
+      _blockedExecutables,
+      onMatch: CommandDecision.review,
+    ),
 
-    // Layer 4 — risk threshold
-    // Any command at mediumRisk or above requires explicit user approval.
-    // Catches: rm -rf, chmod 755, mkfs, npm install, git push, etc.
-    RiskThresholdPolicy(reviewAt: SecurityLevel.mediumRisk),
+    // Layer 4 — go package manager (not in blocklist due to space in name)
+    ArgumentPatternPolicy(
+      pattern: RegExp(r'\bgo\s+(?:get|install)\b'),
+      description: 'go get/install package manager',
+      onMatch: CommandDecision.review,
+      level: SecurityLevel.mediumRisk,
+      matchWholeCommand: true,
+    ),
+
+    // Layer 5 — risk threshold (never deny, only review)
+    _ReviewOnlyPolicy(),
   ]),
 );
 
@@ -180,6 +190,10 @@ void _scanPath(
   final resolved = _resolvePath(expanded, workingDir);
   if (resolved.isEmpty) return;
 
+  // Skip /dev/null — harmless redirect target, not a real external access
+  final normalized = p.normalize(resolved);
+  if (normalized == '/dev/null') return;
+
   final parent = p.normalize(p.dirname(resolved));
   if (!seen.add(parent)) return;
   if (parent == boundary.workspace.path) return; // workspace-relative, skip
@@ -191,6 +205,30 @@ void _scanPath(
 
 /// Matches chmod octal modes like `755`, `4755`, `777`.
 final _chmodModePattern = RegExp(r'^[0-7]{3,4}$');
+
+class _ReviewOnlyPolicy extends CommandPolicy {
+  const _ReviewOnlyPolicy();
+
+  @override
+  String get name => '_ReviewOnlyPolicy';
+
+  @override
+  CommandResult evaluate(CommandAnalysis analysis) {
+    // Check security level OR critical/high risk findings
+    final hasCriticalFindings = analysis.findings.any(
+      (f) => f.level.index >= SecurityLevel.highRisk.index,
+    );
+    if (analysis.securityLevel.index >= SecurityLevel.mediumRisk.index ||
+        hasCriticalFindings) {
+      return CommandResult(
+        decision: CommandDecision.review,
+        securityLevel: analysis.securityLevel,
+        findings: analysis.findings,
+      );
+    }
+    return allowResult;
+  }
+}
 
 /// Rolling output accumulator for streaming bash execution.
 ///
@@ -272,10 +310,10 @@ ToolDef createBashTool() {
         'operations, install dependencies, run tests, or perform OS-level '
         'tasks. Large output (>50KB) is truncated — use Read tool with '
         'offset/limit to inspect sections. Dangerous operators (pipes, '
-        'redirects, command substitution, command chains) are hard-blocked. '
-        'Blocked executables (curl, wget, nc, …) are denied immediately. '
-        'Medium-risk operations (rm, chmod, npm install, …) require '
-        'permission; safe commands run without prompts.',
+        'redirects, command substitution, command chains) require user '
+        'approval. Blocked executables (curl, wget, nc, …) and medium-risk '
+        'operations (rm, chmod, npm install, …) prompt for permission; '
+        'safe commands run without prompts.',
     inputSchema: {
       'type': 'object',
       'properties': {
@@ -334,44 +372,49 @@ ToolDef createBashTool() {
 
       final preflight = await _analyzeCommand(command, effectiveWorkingDir);
 
-      {
-        final firstWord = command
-            .trim()
-            .split(RegExp(r'\s+'))
-            .first
-            .toLowerCase();
-        if (_blockedExecutables.contains(firstWord)) {
-          return ToolOutput(
-            "command '$firstWord' is not allowed for security reasons",
-            metadata: {'error': true, 'blocked': true, 'banned': firstWord},
-          );
-        }
+      // External directories always require permission, regardless of decision
+      if (preflight.externalDirs.isNotEmpty) {
+        await ctx.ask(
+          permission: 'external_directory',
+          patterns: preflight.externalDirs,
+          always: preflight.externalDirs,
+          metadata: {'command': command, 'directories': preflight.externalDirs},
+        );
       }
 
       final decision = preflight.decision;
       if (decision == CommandDecision.deny) {
-        return ToolOutput(
-          'Command blocked by security policy',
-          metadata: {'error': true, 'blocked': true},
+        LogTags.permission.logWarning(
+          'BashTool: command_shield returned deny, falling back to review',
         );
-      }
-      if (decision == CommandDecision.review) {
-        if (preflight.externalDirs.isNotEmpty) {
+        // Never deny - convert to review
+        try {
           await ctx.ask(
-            permission: 'external_directory',
-            patterns: preflight.externalDirs,
-            always: preflight.externalDirs,
-            metadata: {
-              'command': command,
-              'directories': preflight.externalDirs,
-            },
+            permission: 'bash',
+            patterns: [command],
+            always: [command],
+            metadata: {'security_level': preflight.decision.name},
+          );
+        } on PermissionRejectedError catch (_) {
+          return ToolOutput(
+            'Command rejected by user',
+            metadata: {'error': true, 'rejected': true},
           );
         }
-        await ctx.ask(
-          permission: 'bash',
-          patterns: [command],
-          always: [command],
-        );
+      }
+      if (decision == CommandDecision.review) {
+        try {
+          await ctx.ask(
+            permission: 'bash',
+            patterns: [command],
+            always: [command],
+          );
+        } on PermissionRejectedError catch (_) {
+          return ToolOutput(
+            'Command rejected by user',
+            metadata: {'error': true, 'rejected': true},
+          );
+        }
       }
 
       if (ctx.abortSignal?.isCancelled ?? false) {

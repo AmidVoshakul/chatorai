@@ -2,7 +2,7 @@ import 'package:chatorai/core/keyboard/shortcut_handler.dart';
 import 'package:chatorai/core/keyboard/shortcuts.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
-import 'package:chatorai/features/chat/data/providers/session_providers.dart';
+import 'package:chatorai/features/sessions/providers/session_providers.dart';
 import 'package:chatorai/features/chat/presentation/widgets/session_context_window.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';

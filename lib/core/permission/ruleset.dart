@@ -84,7 +84,7 @@ class PermissionRuleset {
         const PermissionRule(
           permission: 'bash',
           pattern: '*',
-          action: PermissionAction.ask,
+          action: PermissionAction.allow,
         ),
         const PermissionRule(
           permission: 'edit',

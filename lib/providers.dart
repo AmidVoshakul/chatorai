@@ -11,18 +11,18 @@ export 'package:chatorai/core/permission/permission_provider.dart';
 // Feature: Skills
 export 'package:chatorai/core/skills/skills.dart';
 // Feature: Sessions
-export 'package:chatorai/features/chat/data/providers/session_providers.dart';
+export 'package:chatorai/features/sessions/providers/session_providers.dart';
+export 'package:chatorai/features/sessions/providers/session_parts_provider.dart';
+export 'package:chatorai/features/sessions/providers/sidebar_provider.dart';
 // Feature: Tools
 export 'package:chatorai/core/tools/tool_registry_provider.dart';
 export 'package:chatorai/features/chat/data/providers/chat_input_provider.dart';
 export 'package:chatorai/features/chat/data/providers/chat_providers.dart';
 export 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
-export 'package:chatorai/features/chat/data/providers/sidebar_provider.dart';
-export 'package:chatorai/features/chat/data/providers/session_parts_provider.dart';
 // Feature: Models Browser
 export 'package:chatorai/features/models/providers/model_provider.dart'
     show modelProvider;
-export 'package:chatorai/features/chat/data/providers/models_provider.dart'
+export 'package:chatorai/features/models/providers/models_provider.dart'
     show modelsScreenProvider;
 export 'package:chatorai/features/settings/providers/model_settings_provider.dart';
 // Core: Theme

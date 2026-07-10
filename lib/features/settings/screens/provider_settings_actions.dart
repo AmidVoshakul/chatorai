@@ -1,5 +1,5 @@
 import 'package:chatorai/core/llm/catalog_providers.dart';
-import 'package:chatorai/features/chat/data/providers/models_provider.dart';
+import 'package:chatorai/features/models/providers/models_provider.dart';
 import 'package:chatorai/features/models/providers/model_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -342,6 +342,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get aiIsTyping => 'الذكاء الاصطناعي يكتب';
 
   @override
+  String get loadingMsg1 => 'انتظار رد الخادم…';
+
+  @override
+  String get loadingMsg2 => 'تم إرسال البيانات — باقٍ القليل…';
+
+  @override
+  String get loadingMsg3 => 'أجمّع الأفكار…';
+
+  @override
+  String get loadingMsg4 => 'أبحث عن أفضل إجابة…';
+
+  @override
+  String get loadingMsg5 => 'تحميل الإجابة (تقريبًا)…';
+
+  @override
   String get failedToSendMessage => 'فشل في إرسال الرسالة';
 
   @override

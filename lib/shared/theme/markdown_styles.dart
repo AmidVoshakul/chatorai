@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
-import 'package:chatorai/shared/theme/design_tokens/borders.dart';
-import 'package:chatorai/shared/theme/design_tokens/colors.dart';
-import 'package:chatorai/shared/theme/design_tokens/typography.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
 
 /// Markdown stylesheet builder with light/dark theme support and caching.
 class ChatoraiMarkdownStyles {
@@ -53,7 +51,7 @@ class ChatoraiMarkdownStyles {
       code: baseStyle.code?.copyWith(
         backgroundColor: grayColor.withAlpha(150),
         color: codeColor,
-        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+        fontFamily: ChatoraiFontSizes.monospaceFont,
         fontSize: ChatoraiFontSizes.code,
         shadows: isLight
             ? [
@@ -76,12 +74,23 @@ class ChatoraiMarkdownStyles {
       ),
       h1: baseStyle.h1?.copyWith(
         color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,
+        height: 1.4,
+        fontSize: ChatoraiFontSizes.xxxl,
       ),
       h2: baseStyle.h2?.copyWith(
         color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,
+        height: 1.35,
+        fontSize: ChatoraiFontSizes.xxl,
       ),
       h3: baseStyle.h3?.copyWith(
         color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,
+        height: 1.3,
+        fontSize: ChatoraiFontSizes.xl,
+      ),
+      h4: baseStyle.h4?.copyWith(
+        color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,
+        height: 1.25,
+        fontSize: ChatoraiFontSizes.lg,
       ),
     );
 

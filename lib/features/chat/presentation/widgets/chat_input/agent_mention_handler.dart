@@ -1,5 +1,5 @@
 import 'package:chatorai/core/agents/agent_registry.dart';
-import 'package:chatorai/features/chat/presentation/widgets/agent_mention_popup.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/agent_mention_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
