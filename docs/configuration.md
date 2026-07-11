@@ -217,8 +217,8 @@ Configures per-agent overrides and customizations. Each key is an agent name (e.
 | `prompt`    | `string`| Override the agent system prompt                   |
 | `disabled`  | `bool`  | Remove this agent from registry                    |
 | `hidden`    | `bool`  | Hide this agent from UI                            |
-| `max_steps` | `int`   | Override max steps for agent execution (minimum 1) |
-| `maxSteps`  | `int`   | Alias for `max_steps`                              |
+| `max_steps` | `int?`  | Override max steps for agent execution. `null` = unlimited |
+| `maxSteps`  | `int?`  | Alias for `max_steps`. `null` = unlimited                |
 
 ### `mcp`
 

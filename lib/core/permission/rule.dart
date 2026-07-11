@@ -11,3 +11,20 @@ class PermissionRule {
     required this.action,
   });
 }
+
+PermissionAction? resolveToolAction(dynamic value) {
+  if (value is bool) {
+    return value ? PermissionAction.allow : PermissionAction.deny;
+  }
+  if (value is String) {
+    switch (value.toLowerCase()) {
+      case 'allow':
+        return PermissionAction.allow;
+      case 'ask':
+        return PermissionAction.ask;
+      case 'deny':
+        return PermissionAction.deny;
+    }
+  }
+  return null;
+}

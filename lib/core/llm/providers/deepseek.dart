@@ -12,8 +12,6 @@ ProviderConfig deepseekProvider() => ProviderConfig.full(
   baseUrl: 'https://api.deepseek.com/v1',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

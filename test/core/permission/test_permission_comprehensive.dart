@@ -287,9 +287,9 @@ void main() {
   // ── PermissionRuleset.defaults ─────────────────────────────────────────
 
   group('PermissionRuleset.defaults', () {
-    test('returns 15 default rules', () {
+    test('returns 20 default rules', () {
       final defaults = PermissionRuleset.defaults();
-      expect(defaults.rules, hasLength(15));
+      expect(defaults.rules, hasLength(20));
     });
 
     test('read is allowed by default', () {
@@ -298,10 +298,34 @@ void main() {
       expect(readRule.action, equals(PermissionAction.allow));
     });
 
-    test('bash is ask by default', () {
+    test('*.env files require ask for read', () {
+      final defaults = PermissionRuleset.defaults();
+      final envRule = defaults.rules.firstWhere(
+        (r) => r.permission == 'read' && r.pattern == '*.env',
+      );
+      expect(envRule.action, equals(PermissionAction.ask));
+    });
+
+    test('*.env.* files require ask for read', () {
+      final defaults = PermissionRuleset.defaults();
+      final envRule = defaults.rules.firstWhere(
+        (r) => r.permission == 'read' && r.pattern == '*.env.*',
+      );
+      expect(envRule.action, equals(PermissionAction.ask));
+    });
+
+    test('*.env.example is allowed for read', () {
+      final defaults = PermissionRuleset.defaults();
+      final envRule = defaults.rules.firstWhere(
+        (r) => r.permission == 'read' && r.pattern == '*.env.example',
+      );
+      expect(envRule.action, equals(PermissionAction.allow));
+    });
+
+    test('bash is allowed by default', () {
       final defaults = PermissionRuleset.defaults();
       final bashRule = defaults.rules.firstWhere((r) => r.permission == 'bash');
-      expect(bashRule.action, equals(PermissionAction.ask));
+      expect(bashRule.action, equals(PermissionAction.allow));
     });
 
     test('edit is ask by default', () {
@@ -330,16 +354,16 @@ void main() {
       expect(rule.action, equals(PermissionAction.allow));
     });
 
-    test('question is allowed by default', () {
+    test('question is denied by default', () {
       final defaults = PermissionRuleset.defaults();
       final rule = defaults.rules.firstWhere((r) => r.permission == 'question');
-      expect(rule.action, equals(PermissionAction.allow));
+      expect(rule.action, equals(PermissionAction.deny));
     });
 
-    test('task is allowed by default', () {
+    test('task is denied by default', () {
       final defaults = PermissionRuleset.defaults();
       final rule = defaults.rules.firstWhere((r) => r.permission == 'task');
-      expect(rule.action, equals(PermissionAction.allow));
+      expect(rule.action, equals(PermissionAction.deny));
     });
 
     test('default rules have empty sessionApproved', () {

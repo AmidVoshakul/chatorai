@@ -1,6 +1,7 @@
 import 'package:chatorai/core/config/models/permission_section.dart';
 import 'package:chatorai/shared/utils/xdg_paths.dart';
 
+import 'evaluator.dart';
 import 'rule.dart';
 
 class PermissionRuleset {
@@ -72,6 +73,21 @@ class PermissionRuleset {
           action: PermissionAction.allow,
         ),
         const PermissionRule(
+          permission: 'read',
+          pattern: '*.env',
+          action: PermissionAction.ask,
+        ),
+        const PermissionRule(
+          permission: 'read',
+          pattern: '*.env.*',
+          action: PermissionAction.ask,
+        ),
+        const PermissionRule(
+          permission: 'read',
+          pattern: '*.env.example',
+          action: PermissionAction.allow,
+        ),
+        const PermissionRule(
           permission: 'glob',
           pattern: '*',
           action: PermissionAction.allow,
@@ -124,12 +140,22 @@ class PermissionRuleset {
         const PermissionRule(
           permission: 'task',
           pattern: '*',
-          action: PermissionAction.allow,
+          action: PermissionAction.deny,
         ),
         const PermissionRule(
           permission: 'question',
           pattern: '*',
-          action: PermissionAction.allow,
+          action: PermissionAction.deny,
+        ),
+        const PermissionRule(
+          permission: 'plan_enter',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+        const PermissionRule(
+          permission: 'plan_exit',
+          pattern: '*',
+          action: PermissionAction.deny,
         ),
         const PermissionRule(
           permission: 'external_directory',
@@ -139,9 +165,16 @@ class PermissionRuleset {
         const PermissionRule(
           permission: 'todowrite',
           pattern: '*',
-          action: PermissionAction.allow,
+          action: PermissionAction.deny,
         ),
       ],
     );
+  }
+}
+
+extension PermissionRulesetX on PermissionRuleset {
+  bool isAllowed(String permission, String pattern) {
+    return evaluate(permission, pattern, [this]).action ==
+        PermissionAction.allow;
   }
 }

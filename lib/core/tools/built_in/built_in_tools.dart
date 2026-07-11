@@ -61,7 +61,8 @@ Future<void> registerBuiltInTools(
   // Register question tool
   registry.register(createQuestionTool());
 
-  // Register plan exit tool
+  // Register plan tools
+  registry.register(createPlanEnterTool());
   registry.register(createPlanExitTool());
 
   // Register LSP analysis tool

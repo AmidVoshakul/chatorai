@@ -46,7 +46,6 @@ void main() {
       // Add some known models
       catalog.addModel(
         ModelConfig.basic(
-          id: 'openai/gpt-4o',
           providerId: 'openai',
           modelName: 'gpt-4o',
           displayName: 'GPT-4o',
@@ -56,7 +55,6 @@ void main() {
 
       catalog.addModel(
         ModelConfig.basic(
-          id: 'anthropic/claude-3-5-sonnet',
           providerId: 'anthropic',
           modelName: 'claude-3-5-sonnet',
           displayName: 'Claude 3.5 Sonnet',
@@ -66,7 +64,6 @@ void main() {
 
       catalog.addModel(
         ModelConfig.basic(
-          id: 'google/gemini-2.5-pro',
           providerId: 'google',
           modelName: 'gemini-2.5-pro',
           displayName: 'Gemini 2.5 Pro',
@@ -124,7 +121,6 @@ void main() {
       // The mock catalog's getModel fails on colon format, so it falls back to modelId
       catalog.addModel(
         ModelConfig.basic(
-          id: 'openai:gpt-4-turbo',
           providerId: 'openai',
           modelName: 'gpt-4-turbo',
           displayName: 'GPT-4 Turbo',
@@ -151,7 +147,6 @@ void main() {
   group('ModelConfig.basic factory', () {
     test('creates ModelConfig with required fields', () {
       final config = ModelConfig.basic(
-        id: 'test/model',
         providerId: 'test',
         modelName: 'model',
         displayName: 'Model Display',

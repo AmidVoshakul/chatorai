@@ -3,10 +3,9 @@
 // Each part has id, sessionId, messageId for proper identity tracking.
 
 import 'package:equatable/equatable.dart';
+import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'todo_part.dart' show TodoItem;
-
-enum ToolState { pending, running, completed, error }
 
 /// Base sealed class for assistant message content parts.
 /// Using abstract class pattern for cross-file subclasses.

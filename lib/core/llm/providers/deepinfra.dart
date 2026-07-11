@@ -12,8 +12,6 @@ ProviderConfig deepinfraProvider() => ProviderConfig.basic(
   baseUrl: 'https://api.deepinfra.com/v1/openai',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

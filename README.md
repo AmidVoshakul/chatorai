@@ -19,13 +19,13 @@ A modern AI chat application built with Flutter and Riverpod. Connect to any Ope
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 1. Prerequisites
 
 - Flutter 3.44.0 (stable)
 - Dart SDK 3.11.0+
 - Linux users: install system libs (`libgtk-3-0 libgdk-pixbuf-2.0-0 libpango-1.0-0 libcairo2`)
 
-### 1. Configure API
+### 2. Configure API
 
 **For development** — copy `.env.example` to `.env` and add your API key:
 
@@ -37,7 +37,7 @@ OPENROUTER_API_KEY=your_key_here
 
 **For end users** — the app provides a settings screen to enter API key and base URL. Values are stored securely in `SharedPreferences`.
 
-### 2. Install & Run
+### 3. Install & Run
 
 ```bash
 flutter pub get
@@ -51,14 +51,33 @@ That's it! The app will launch and you can start chatting.
 
 ## 📚 Documentation
 
-For detailed information, see the docs directory:
+### Core Documentation
 
-- [Architecture](ARCHITECTURE.md) — System design and component boundaries
-- [API Reference](docs/API.md) — Providers, services, models, tools
+- [Architecture](ARCHITECTURE.md) — System design, component boundaries, and data flows
+- [API Reference](docs/API.md) — Providers, services, models, and tools
 - [Commands](docs/COMMANDS.md) — CLI commands and `@` agent mentions
-- [Environment](docs/ENVIRONMENT.md) — Setup and dependencies
+- [Environment](docs/ENVIRONMENT.md) — Setup, dependencies, and platform notes
 - [Roadmap](docs/ROADMAP.md) — Completed milestones and future plans
-- [XdgPaths](docs/xdg-paths.md) — Platform-aware path resolution (Linux/macOS/Windows/mobile)
+- [Configuration](docs/configuration.md) — chatorai.json schema and options
+- [Security](docs/security.md) — Permission system, secret handling, and trust boundaries
+- [Platform Paths](docs/xdg-paths.md) — XDG-aware path resolution (Linux/macOS/Windows/mobile)
+
+### Diagrams
+
+- [Architecture Overview](docs/diagrams/architecture-overview.md) — Data flow, session pipeline, MCP topology, config resolution
+- [Session Core](docs/diagrams/sessions.md) — Drift ER diagram and SessionEvent state machine
+- [Tool System](docs/diagrams/tools.md) — Tool registry, conditional registration, execution lifecycle
+- [MCP Integration](docs/diagrams/mcp.md) — Transport topology, connection lifecycle, config models
+
+### Platform Guides
+
+- [Windows Setup](WINDOWS_SETUP.md) — Visual Studio, CMake, and Windows-specific troubleshooting
+- [Privacy Policy](PRIVACY_POLICY.md) — Data handling and third-party services
+
+### Community
+
+- [Contributing](CONTRIBUTING.md) — Git workflow, code style, and testing requirements
+- [Code of Conduct](CODE_OF_CONDUCT.md) — Community standards and enforcement
 
 ## 🖥️ Installation Packages
 
@@ -101,7 +120,7 @@ flutter build <platform>    # build release bundle
 
 ## 🤝 Contributing
 
-See `CONTRIBUTING.md` for git workflow, code style, and testing requirements.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for git workflow, code style, and testing requirements.
 
 ## 📄 License
 

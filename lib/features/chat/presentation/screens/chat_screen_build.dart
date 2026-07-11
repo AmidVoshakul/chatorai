@@ -121,7 +121,7 @@ extension _ChatScreenBuildExt on _ChatScreenState {
               hasHeadings: () => hasHeadings,
               onToggleNavigator: _toggleNavigator,
               onModelSelected: _updateSelectedModel,
-onOpenModelSelector: _openModelSelector,
+              onOpenModelSelector: _openModelSelector,
               onMenuPressed: () {
                 FocusScope.of(context).unfocus();
                 _scaffoldKey.currentState?.openDrawer();

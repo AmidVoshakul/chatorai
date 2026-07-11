@@ -6,6 +6,7 @@ import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/config/config_initializer.dart';
 import 'package:chatorai/core/config/config_loader.dart';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
+import 'package:chatorai/core/mcp/mcp_client_service.dart';
 import 'package:chatorai/core/tools/tool_output_persistence.dart';
 import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/permission_overlay.dart';
@@ -64,10 +65,16 @@ void main() async {
     final rawJson = await ConfigLoader.load();
     final data = json.decode(rawJson) as Map<String, dynamic>;
     config = ChatOrAIConfig.fromJson(data);
-  } catch (_) {
-    // Config load failed, continue without overrides
+  } catch (e, st) {
+    LogTags.config.logError('Failed to load config', e, st);
   }
   await AgentRegistry().init(config);
+
+  // Eager MCP start: begin connecting servers in background so toolRegistry
+  // is ready by the time the user sends their first message.
+  if (config?.mcp != null && config!.mcp!.servers.isNotEmpty) {
+    unawaited(McpClientService.instance.initialize(config.mcp!));
+  }
 
   runApp(const ProviderScope(child: ChatoraiApp()));
 }

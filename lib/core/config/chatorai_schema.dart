@@ -101,6 +101,7 @@ const Map<String, dynamic> chatoraiSchema = {
       'type': 'object',
       'properties': {
         'default_timeout': {'type': 'integer'},
+        'defaultTimeout': {'type': 'integer'},
         'servers': {
           'type': 'object',
           'additionalProperties': {
@@ -113,7 +114,15 @@ const Map<String, dynamic> chatoraiSchema = {
               'enabled': {'type': 'boolean'},
               'timeout': {'type': 'integer'},
               // local
-              'command': {'type': 'string'},
+              'command': {
+                'oneOf': [
+                  {'type': 'string'},
+                  {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                  },
+                ],
+              },
               'args': {
                 'type': 'array',
                 'items': {'type': 'string'},
@@ -143,6 +152,50 @@ const Map<String, dynamic> chatoraiSchema = {
           },
         },
       },
+      'additionalProperties': {
+        'type': 'object',
+        'properties': {
+          'type': {
+            'type': 'string',
+            'enum': ['local', 'remote'],
+          },
+          'enabled': {'type': 'boolean'},
+          'timeout': {'type': 'integer'},
+          'command': {
+            'oneOf': [
+              {'type': 'string'},
+              {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            ],
+          },
+          'args': {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          'cwd': {'type': 'string'},
+          'environment': {
+            'type': 'object',
+            'additionalProperties': {'type': 'string'},
+          },
+          'url': {'type': 'string'},
+          'headers': {
+            'type': 'object',
+            'additionalProperties': {'type': 'string'},
+          },
+          'oauth': {
+            'type': 'object',
+            'properties': {
+              'client_id': {'type': 'string'},
+              'client_secret': {'type': 'string'},
+              'scope': {'type': 'string'},
+              'callback_port': {'type': 'integer'},
+              'redirect_uri': {'type': 'string'},
+            },
+          },
+        },
+      },
     },
     'agent': {
       'type': 'object',
@@ -150,6 +203,11 @@ const Map<String, dynamic> chatoraiSchema = {
       'additionalProperties': {
         'type': 'object',
         'properties': {
+          'name': {'type': 'string', 'description': 'Override the agent name.'},
+          'description': {
+            'type': 'string',
+            'description': 'Override the agent description.',
+          },
           'prompt': {
             'type': 'string',
             'description': 'Override the agent system prompt.',
@@ -163,16 +221,77 @@ const Map<String, dynamic> chatoraiSchema = {
             'description': 'Hide this agent from UI.',
           },
           'max_steps': {
-            'type': 'integer',
-            'description': 'Override max steps for agent execution.',
-            'minimum': 1,
+            'oneOf': [
+              {'type': 'integer', 'minimum': 1},
+              {'type': 'null'},
+            ],
+            'description':
+                'Override max steps for agent execution. Omit to inherit from built-in/YAML definition.',
           },
           'maxSteps': {
-            'type': 'integer',
-            'description': 'Alias for max_steps.',
-            'minimum': 1,
+            'oneOf': [
+              {'type': 'integer', 'minimum': 1},
+              {'type': 'null'},
+            ],
+            'description':
+                'Alias for max_steps. Omit to inherit from built-in/YAML definition.',
+          },
+          'model': {
+            'type': 'string',
+            'description': 'Override the model for this agent.',
+          },
+          'temperature': {
+            'type': 'number',
+            'description': 'Override the temperature for this agent.',
+          },
+          'permission': {
+            'type': 'object',
+            'description': 'Permission overrides for this agent.',
+            'additionalProperties': {
+              'oneOf': [
+                {
+                  'type': 'string',
+                  'enum': ['allow', 'ask', 'deny'],
+                },
+                {
+                  'type': 'object',
+                  'additionalProperties': {
+                    'type': 'string',
+                    'enum': ['allow', 'ask', 'deny'],
+                  },
+                },
+              ],
+            },
+          },
+          'tools': {
+            'type': 'object',
+            'description':
+                'Tool visibility overrides. Glob patterns map to true (allow), false (deny), or "ask"/"allow"/"deny".',
+            'additionalProperties': {
+              'oneOf': [
+                {'type': 'boolean'},
+                {
+                  'type': 'string',
+                  'enum': ['allow', 'ask', 'deny'],
+                },
+              ],
+            },
           },
         },
+      },
+    },
+    'tools': {
+      'type': 'object',
+      'description':
+          'Global tool visibility overrides. Glob patterns map to true (allow), false (deny), or "ask"/"allow"/"deny".',
+      'additionalProperties': {
+        'oneOf': [
+          {'type': 'boolean'},
+          {
+            'type': 'string',
+            'enum': ['allow', 'ask', 'deny'],
+          },
+        ],
       },
     },
   },

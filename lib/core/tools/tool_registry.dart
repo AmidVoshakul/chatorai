@@ -17,12 +17,26 @@ class ToolRegistry {
   final List<ToolDef> _tools = [];
   final List<ToolDefinition> _definitions = [];
   final PermissionRuleset _defaultRules;
+  final PermissionService _permissions;
 
   // Execution layer (composed, not inherited)
   final ToolExecutor _executor;
 
-  ToolRegistry(PermissionService permissions, this._defaultRules)
-    : _executor = ToolExecutor(permissions, _defaultRules);
+  void Function(String agentId, {String? messageText})? switchAgent;
+
+  ToolRegistry(this._permissions, this._defaultRules)
+    : _executor = ToolExecutor(_permissions, _defaultRules);
+
+  set agentRules(PermissionRuleset? rules) {
+    _executor.agentRules = rules;
+  }
+
+  set switchAgentCallback(
+    void Function(String agentId, {String? messageText})? callback,
+  ) {
+    switchAgent = callback;
+    _executor.switchAgent = callback;
+  }
 
   // ---- Registration API ----
 
@@ -72,13 +86,18 @@ class ToolRegistry {
     return null;
   }
 
-  List<ToolDef> get available => _tools
-      .where(
-        (t) =>
-            evaluate(t.id, '*', [_defaultRules]).action !=
-            PermissionAction.deny,
-      )
-      .toList();
+  List<ToolDef> get available {
+    final rulesets = <PermissionRuleset>[
+      PermissionRuleset(rules: [..._defaultRules.rules]),
+      if (_executor.agentRules != null) _executor.agentRules!,
+      PermissionRuleset(rules: [], sessionApproved: _permissions.approvedRules),
+    ];
+    return _tools
+        .where(
+          (t) => evaluate(t.id, '*', rulesets).action != PermissionAction.deny,
+        )
+        .toList();
+  }
 
   // ---- Named access (OpenCode pattern) ----
 
@@ -102,7 +121,7 @@ class ToolRegistry {
 
   Map<String, sdk.Tool<dynamic, dynamic>> toSDKTools() {
     final result = <String, sdk.Tool<dynamic, dynamic>>{};
-    for (final def in _tools) {
+    for (final def in available) {
       result[def.id] = _executor.bind(def, _convert(def));
     }
     return result;

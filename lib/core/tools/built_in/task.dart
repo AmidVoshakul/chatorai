@@ -50,6 +50,10 @@ ToolDef createTaskTool({
   ToolRegistry? toolRegistry,
   SessionRunnerHolder? currentSessionRunner,
 }) {
+  final delegatableAgents = AgentRegistry().getDelegatableAgents();
+  final agentTypes = delegatableAgents.map((a) => a.id).toList();
+  final agentDescription = agentTypes.join(', ');
+
   return ToolDef(
     id: 'task',
     description:
@@ -67,8 +71,8 @@ ToolDef createTaskTool({
         },
         'subagent_type': {
           'type': 'string',
-          'description': 'Agent type: build, explore, plan, general',
-          'enum': ['build', 'explore', 'plan', 'general'],
+          'description': 'Agent type: $agentDescription',
+          'enum': agentTypes,
         },
         'task_id': {
           'type': 'string',
@@ -126,6 +130,13 @@ ToolDef createTaskTool({
         );
       }
 
+      if (agent.mode != AgentMode.subagent || agent.hidden) {
+        return ToolOutput(
+          'Error: Cannot delegate to "$subagentType": not a delegatable subagent',
+          metadata: {'error': true},
+        );
+      }
+
       await ctx.ask(
         permission: 'task',
         patterns: [subagentType, agent.name],
@@ -172,7 +183,8 @@ ToolDef createTaskTool({
       }
 
       final currentModel = effectiveChatAiService.currentModel;
-      if (currentModel == null) {
+      final childModel = agent.model ?? currentModel;
+      if (childModel == null) {
         return const ToolOutput(
           'Error: No model selected in ChatAiService',
           metadata: {'error': true},
@@ -184,6 +196,10 @@ ToolDef createTaskTool({
       final childResult = await runner.runTaskInChild(
         parentSessionId: SessionID.fromString(normalizedSessionId),
         taskPrompt: prompt,
+        agent: subagentType,
+        modelRef: childModel,
+        title: titleInput ?? description,
+        taskId: taskId,
         holder: currentSessionRunner,
         streamFn: (child) async {
           LogTags.chatService.logInfo(
@@ -195,10 +211,10 @@ ToolDef createTaskTool({
           var lastTokensCacheWrite = 0;
           await chatAiService!.runChildCompletion(
             messages: messages,
-            model: currentModel,
+            model: childModel,
             temperature: temperatureToUse,
             tools: subagentTools,
-            maxSteps: agent.maxSteps,
+            maxSteps: agent.maxSteps ?? unlimitedMaxSteps,
             onUsage: (input, output, cacheRead, cacheWrite) {
               lastTokensInput = input;
               lastTokensOutput = output;
@@ -229,7 +245,7 @@ ToolDef createTaskTool({
               await child.onCompletion(
                 content: content,
                 reasoning: null,
-                model: currentModel,
+                model: childModel,
                 tokensInput: lastTokensInput,
                 tokensOutput: lastTokensOutput,
                 tokensCacheRead: lastTokensCacheRead,
@@ -238,9 +254,6 @@ ToolDef createTaskTool({
             },
           );
         },
-        agent: subagentType,
-        title: titleInput ?? description,
-        taskId: taskId,
       );
 
       final childTaskId = taskId ?? 'task_${childResult.sessionId.value}';

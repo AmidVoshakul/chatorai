@@ -12,8 +12,6 @@ ProviderConfig novitaProvider() => ProviderConfig.basic(
   baseUrl: 'https://api.novita.ai/v1',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

@@ -7,6 +7,11 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - **Session Parts Provider**: New `sessionPartsProvider` for reactive streaming of both parent and child sessions, replacing the legacy `streamingMessageProvider` with a granular part-based approach.
+
+### Changed
+
+- **Bash tool security policy**: Changed default `bash` permission from `allow` to `ask` in `PermissionRuleset.defaults()`. Removed `DangerousCharacterPolicy` from `lib/core/tools/built_in/bash.dart` that was overly aggressive in flagging safe shell metacharacters (`|`, `>`, `<`, `&`) as `highRisk`. Safe commands (`find`, `echo hello | cat`, etc.) now run without prompts; medium/high-risk commands (`echo foo; echo bar`, `rm -rf /`, blocked executables) trigger permission dialogs. Nothing is harshly denied — only `ask` or `allow`.
+- **Sensitive env file protection**: Added `*.env` and `*.env.*` to default `read` permission rules as `ask` (mirrors OpenCode's agent defaults). Added `ArgumentPatternPolicy` in bash tool to detect `cat/less/more/head/tail/vi/vim/nvim/nano .env` commands as `highRisk` review. `.env.example` remains `allow`.
 - **Explicit Part IDs**: `SessionRunnerSession` now tracks explicit part IDs for text, reasoning, and tool-related content segments.
 - **QuestionOption Model**: New `QuestionOption` model supports richer interactive questions with `multiple` selection support.
 - **ShortcutHandler & AppShortcuts**: Centralized keyboard shortcut management widget.

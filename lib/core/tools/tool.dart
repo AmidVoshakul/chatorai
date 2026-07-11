@@ -1,3 +1,4 @@
+import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 
@@ -21,9 +22,11 @@ class SchemaValidationError {
 }
 
 class ToolContext {
+  final String? agentId;
   final String toolCallId;
   final sdk.CancellationToken? abortSignal;
   final String? sessionId;
+  final PermissionRuleset? permissionRuleset;
 
   final Future<void> Function({
     required String permission,
@@ -43,13 +46,22 @@ class ToolContext {
   final void Function({String? title, Map<String, dynamic>? metadata})?
   onMetadata;
 
+  final void Function(String agentId, {String? messageText})? switchAgent;
+
+  bool hasPermission(String permission, String pattern) {
+    return permissionRuleset?.isAllowed(permission, pattern) ?? false;
+  }
+
   const ToolContext({
+    this.agentId,
     required this.toolCallId,
     this.abortSignal,
-    required this.sessionId,
+    this.sessionId,
+    this.permissionRuleset,
     required this.ask,
     required this.askQuestion,
     this.onMetadata,
+    this.switchAgent,
   });
 }
 
@@ -78,6 +90,7 @@ class ToolDef {
     List<SchemaValidationError> errors,
   )?
   formatValidationError;
+  final bool skipValidation;
 
   const ToolDef({
     required this.id,
@@ -85,5 +98,6 @@ class ToolDef {
     required this.inputSchema,
     required this.execute,
     this.formatValidationError,
+    this.skipValidation = false,
   });
 }

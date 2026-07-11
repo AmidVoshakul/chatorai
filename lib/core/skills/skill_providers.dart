@@ -76,15 +76,13 @@ final skillServiceProvider = FutureProvider<SkillService>((ref) async {
   final sources = buildSkillSources(config);
   final plugins = defaultSkillPlugins();
   final permissionService = ref.read(permissionServiceProvider);
-  // Seed permission service with config rules, or defaults if none provided
+  // Always start with defaults, layer config rules on top (last-match-wins)
   final permissionConfig = config.permission as Map<String, dynamic>? ?? {};
-  final List<PermissionRule> rulesList;
-  if (permissionConfig.isEmpty) {
-    // No custom permission rules, use built-in defaults (skills allowed)
-    rulesList = PermissionRuleset.defaults().rules;
-  } else {
-    rulesList = PermissionRuleset.fromConfig(permissionConfig);
-  }
+  final rulesList = <PermissionRule>[
+    ...PermissionRuleset.defaults().rules,
+    if (permissionConfig.isNotEmpty)
+      ...PermissionRuleset.fromConfig(permissionConfig),
+  ];
   permissionService.seedRules(PermissionRuleset(rules: rulesList));
   return SkillService(
     sources: sources,

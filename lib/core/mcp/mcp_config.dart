@@ -128,9 +128,29 @@ class McpServerConfig {
     final timeout = json['timeout'] as int?;
 
     if (type == McpServerType.local) {
+      String command;
+      List<String> args;
+      final rawCommand = json['command'];
+      if (rawCommand is List) {
+        // OpenCode-compatible format: "command": ["bin", "arg1", "arg2"]
+        final list = rawCommand.cast<String>();
+        if (list.isEmpty) {
+          throw ArgumentError.value(
+            rawCommand,
+            'command',
+            'Command array must not be empty',
+          );
+        }
+        command = list.first;
+        args = list.sublist(1);
+      } else {
+        // ChatORAI format: "command": "bin", "args": ["arg1", "arg2"]
+        command = rawCommand as String;
+        args = (json['args'] as List<dynamic>?)?.cast<String>() ?? const [];
+      }
       return McpServerConfig.local(
-        command: json['command'] as String,
-        args: (json['args'] as List<dynamic>?)?.cast<String>() ?? const [],
+        command: command,
+        args: args,
         cwd: json['cwd'] as String?,
         environment: Map<String, String>.from(json['environment'] ?? const {}),
         enabled: enabled,
@@ -179,7 +199,16 @@ class McpConfig {
     if (json == null) return const McpConfig();
 
     final servers = <String, McpServerConfig>{};
-    final serversJson = json['servers'] as Map<String, dynamic>? ?? {};
+    Map<String, dynamic> serversJson;
+
+    if (json.containsKey('servers')) {
+      serversJson = json['servers'] as Map<String, dynamic>? ?? {};
+    } else {
+      serversJson = Map<String, dynamic>.from(json)
+        ..remove('default_timeout')
+        ..remove('defaultTimeout');
+    }
+
     for (final entry in serversJson.entries) {
       if (entry.value is Map<String, dynamic>) {
         servers[entry.key] = McpServerConfig.fromJson(

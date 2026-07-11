@@ -31,8 +31,10 @@ class ToolExecutor {
 
   final PermissionService _permissions;
   final PermissionRuleset _defaultRules;
+  void Function(String agentId, {String? messageText})? switchAgent;
+  PermissionRuleset? agentRules;
 
-  ToolExecutor(this._permissions, this._defaultRules);
+  ToolExecutor(this._permissions, this._defaultRules, {this.switchAgent});
 
   /// Bind a ToolDef to the SDK Tool type, wiring execution through this executor.
   sdk.Tool<dynamic, dynamic> bind(
@@ -51,10 +53,25 @@ class ToolExecutor {
     final inputMap = rawInput is Map<String, dynamic>
         ? rawInput
         : <String, dynamic>{'raw': rawInput};
-    final validation = JsonSchemaValidator.validate(inputMap, def.inputSchema);
-    if (!validation.isValid) {
-      final message = validation.errors.map((e) => e.toString()).join('; ');
-      throw ToolInvalidArgsError(def.id, message);
+    if (!def.skipValidation) {
+      LogTags.permission.logDebug(
+        'ToolExecutor: validate ${def.id} '
+        'inputMap=$inputMap '
+        'inputSchema=${def.inputSchema}',
+      );
+      final validation = JsonSchemaValidator.validate(
+        inputMap,
+        def.inputSchema,
+      );
+      if (!validation.isValid) {
+        final message = validation.errors.map((e) => e.toString()).join('; ');
+        throw ToolInvalidArgsError(def.id, message);
+      }
+    } else {
+      LogTags.permission.logDebug(
+        'ToolExecutor: skip validation ${def.id} '
+        'inputMap=$inputMap',
+      );
     }
     final ctx = options.experimentalContext;
     final rawSessionId = ctx != null ? ctx['sessionId'] as String? : null;
@@ -62,6 +79,7 @@ class ToolExecutor {
         ? null
         : rawSessionId;
     final requestId = ctx != null ? ctx['requestId'] as String? : null;
+    final agentId = ctx != null ? ctx['agentId'] as String? : null;
     // Use toolCallId from SDK's ToolExecutionOptions as additional cache key source.
     // The ai_sdk_dart library may call executeDynamic multiple times for the same
     // toolCallId (preliminary + final dispatch). Using toolCallId ensures the
@@ -152,9 +170,12 @@ class ToolExecutor {
         def: def,
         inputMap: inputMap,
         sessionId: sessionId,
+        agentId: agentId,
         permissions: _permissions,
         defaultRules: _defaultRules,
+        agentRules: agentRules,
         abortSignal: abortSignal,
+        switchAgent: switchAgent,
       );
 
       final result = await def.execute(inputMap, askCtx.toToolContext());
@@ -255,12 +276,16 @@ class ToolExecutor {
 
   /// Evaluate a permission rule for a tool call.
   PermissionRule _evaluate(String permission, String toolId) {
-    return evaluate(permission, toolId, [
+    final rulesets = <PermissionRuleset>[
       PermissionRuleset(
         rules: [..._defaultRules.rules],
         sessionApproved: _permissions.approvedRules,
       ),
-    ]);
+    ];
+    if (agentRules != null) {
+      rulesets.add(agentRules!);
+    }
+    return evaluate(permission, toolId, rulesets);
   }
 
   bool _doomLoopCheck(
@@ -310,26 +335,46 @@ class _AskContext {
   final ToolDef def;
   final Map<String, dynamic> inputMap;
   final String? sessionId;
+  final String? agentId;
   final PermissionService permissions;
   final PermissionRuleset defaultRules;
+  final PermissionRuleset? agentRules;
   final sdk.CancellationToken? abortSignal;
+  final void Function(String agentId, {String? messageText})? switchAgent;
 
   _AskContext({
     required this.def,
     required this.inputMap,
     required this.sessionId,
+    required this.agentId,
     required this.permissions,
     required this.defaultRules,
+    this.agentRules,
     this.abortSignal,
+    this.switchAgent,
   });
+
+  PermissionRuleset get _combinedRules {
+    final rules = <PermissionRule>[...defaultRules.rules];
+    if (agentRules != null) {
+      rules.addAll(agentRules!.rules);
+    }
+    return PermissionRuleset(
+      rules: rules,
+      sessionApproved: permissions.approvedRules,
+    );
+  }
 
   ToolContext toToolContext() {
     return ToolContext(
+      agentId: agentId,
       toolCallId: '',
       sessionId: sessionId,
+      permissionRuleset: _combinedRules,
       abortSignal: abortSignal,
       ask: _ask,
       askQuestion: _askQuestion,
+      switchAgent: switchAgent,
     );
   }
 
@@ -342,28 +387,27 @@ class _AskContext {
       '_AskContext._askQuestion: START question="$question", options=${options.map((o) => o.label).toList()}',
     );
 
-    // Permission check: question tool goes through the same permission pipeline
-    // as other tools (bash, write, edit) — matching OpenCode's approach.
-    // Default: allow (configurable in chatorai.json per agent or globally).
-    // When allow → no dialog, proceeds directly to askQuestion().
-    // When ask → permission dialog first, then question if approved.
-    // When deny → PermissionDeniedError, tool call fails.
-    await permissions.ask(
-      PermissionRequest(
-        id: 'question_perm_${DateTime.now().microsecondsSinceEpoch}',
-        toolName: 'question',
-        permission: 'question',
-        patterns: ['*'],
-        metadata: {
-          if (sessionId != null) 'sessionId': sessionId,
-          'question': question,
-        },
-      ),
-      PermissionRuleset(
-        rules: [...defaultRules.rules],
-        sessionApproved: permissions.approvedRules,
-      ),
-    );
+    final combinedRules = _combinedRules;
+    final rule = evaluate('question', '*', [combinedRules]);
+    if (rule.action == PermissionAction.deny) {
+      throw PermissionDeniedError('question', '*');
+    }
+
+    if (rule.action == PermissionAction.ask) {
+      await permissions.ask(
+        PermissionRequest(
+          id: 'question_perm_${DateTime.now().microsecondsSinceEpoch}',
+          toolName: 'question',
+          permission: 'question',
+          patterns: ['*'],
+          metadata: {
+            if (sessionId != null) 'sessionId': sessionId,
+            'question': question,
+          },
+        ),
+        combinedRules,
+      );
+    }
 
     LogTags.permission.logInfo(
       '_AskContext._askQuestion: Permission granted, proceeding with question',
@@ -389,6 +433,25 @@ class _AskContext {
   }) async {
     final reqMetadata = Map<String, dynamic>.from(metadata ?? inputMap);
     if (sessionId != null) reqMetadata['sessionId'] = sessionId;
+
+    final combinedRules = _combinedRules;
+
+    var needsAsk = false;
+    for (final pattern in patterns) {
+      final normalized = pattern.trim().isEmpty ? '*' : pattern.trim();
+      final rule = evaluate(permission, normalized, [combinedRules]);
+      if (rule.action == PermissionAction.deny) {
+        throw PermissionDeniedError(def.id, normalized);
+      }
+      if (rule.action == PermissionAction.ask) {
+        needsAsk = true;
+      }
+    }
+
+    if (!needsAsk) {
+      return;
+    }
+
     await permissions.ask(
       PermissionRequest(
         id: 'req_${DateTime.now().microsecondsSinceEpoch}_${def.id}',
@@ -398,10 +461,7 @@ class _AskContext {
         metadata: reqMetadata,
         always: always ?? [],
       ),
-      PermissionRuleset(
-        rules: [...defaultRules.rules],
-        sessionApproved: permissions.approvedRules,
-      ),
+      combinedRules,
     );
   }
 }

@@ -14,8 +14,6 @@ ProviderConfig groqProvider() => ProviderConfig.full(
   baseUrl: 'https://api.groq.com/openai/v1',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

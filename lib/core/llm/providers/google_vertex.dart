@@ -15,8 +15,6 @@ ProviderConfig googleVertexProvider() => ProviderConfig.basic(
   baseUrl: 'https://LOCATION-aiplatform.googleapis.com',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

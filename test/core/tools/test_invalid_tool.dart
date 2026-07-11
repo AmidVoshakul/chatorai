@@ -1,3 +1,5 @@
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart'
+    show QuestionOption;
 import 'package:test/test.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/invalid.dart';
@@ -18,7 +20,7 @@ ToolContext _ctx() {
     askQuestion:
         ({
           required String question,
-          List<String>? options,
+          List<QuestionOption> options = const [],
           bool multiple = false,
         }) async => '',
   );

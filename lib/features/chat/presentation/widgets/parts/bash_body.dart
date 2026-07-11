@@ -53,7 +53,7 @@ class _BashBodyState extends State<BashBody> {
       children: [
         if (cmd.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.only(top: 5, bottom: 10),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -104,7 +104,7 @@ class _BashBodyState extends State<BashBody> {
           ),
         if (wasTruncated)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: 10),
             child: Text(
               w.displayFull ? 'Click to collapse' : 'Click to expand',
               style: TextStyle(fontSize: 11, color: muted),

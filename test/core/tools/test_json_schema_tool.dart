@@ -1,3 +1,5 @@
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart'
+    show QuestionOption;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/tools/built_in/json_schema.dart';
 import 'package:chatorai/core/tools/tool.dart';
@@ -50,7 +52,7 @@ void main() {
           askQuestion:
               ({
                 required String question,
-                List<String> options = const [],
+                List<QuestionOption> options = const [],
                 bool multiple = false,
               }) async => '',
         ),
@@ -87,7 +89,7 @@ void main() {
           askQuestion:
               ({
                 required String question,
-                List<String> options = const [],
+                List<QuestionOption> options = const [],
                 bool multiple = false,
               }) async => '',
         ),
@@ -116,7 +118,7 @@ void main() {
           askQuestion:
               ({
                 required String question,
-                List<String> options = const [],
+                List<QuestionOption> options = const [],
                 bool multiple = false,
               }) async => '',
         ),
@@ -144,7 +146,7 @@ void main() {
           askQuestion:
               ({
                 required String question,
-                List<String> options = const [],
+                List<QuestionOption> options = const [],
                 bool multiple = false,
               }) async => '',
         ),
@@ -187,7 +189,7 @@ void main() {
           askQuestion:
               ({
                 required String question,
-                List<String> options = const [],
+                List<QuestionOption> options = const [],
                 bool multiple = false,
               }) async => '',
         ),
@@ -228,7 +230,7 @@ void main() {
           askQuestion:
               ({
                 required String question,
-                List<String> options = const [],
+                List<QuestionOption> options = const [],
                 bool multiple = false,
               }) async => '',
         ),
@@ -265,7 +267,7 @@ void main() {
           askQuestion:
               ({
                 required String question,
-                List<String> options = const [],
+                List<QuestionOption> options = const [],
                 bool multiple = false,
               }) async => '',
         ),

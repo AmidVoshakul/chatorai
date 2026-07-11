@@ -107,10 +107,9 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     }
     final beforeCursor = text.substring(0, cursorPos);
     final slashIndex = beforeCursor.lastIndexOf('/');
-    if (slashIndex == -1 ||
-        (slashIndex > 0 && beforeCursor[slashIndex - 1] != ' ')) {
+    if (slashIndex != 0) {
       debugPrint(
-        '[SlashCommandHandler] no slash found or not preceded by space, hiding popups',
+        '[SlashCommandHandler] slash not at start of input, hiding popups',
       );
       hideCommandPopup();
       hideSkillsPopup();
@@ -416,22 +415,8 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
   }
 
   Future<void> selectCurrentSkill(SkillInfo skill) async {
-    final text = textController.text;
-    final cursorPos = textController.selection.baseOffset;
-    if (cursorPos < 0) return;
-    final beforeCursor = text.substring(0, cursorPos);
-    final slashIndex = beforeCursor.lastIndexOf('/');
-    if (slashIndex == -1) return;
-    final afterCursor = text.substring(cursorPos);
-    final newText = beforeCursor.substring(0, slashIndex) + afterCursor;
-    textController.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: slashIndex),
-    );
-
     final isAllowed = _allowedSkillNames.contains(skill.name);
     if (!isAllowed) {
-      // Request permission for this skill
       debugPrint(
         '[SlashCommandHandler] Skill ${skill.name} requires permission, requesting...',
       );
@@ -452,7 +437,6 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
         );
 
         await permissionService.ask(request, ruleset);
-        // Permission granted (or always)
         _allowedSkillNames.add(skill.name);
         debugPrint(
           '[SlashCommandHandler] Permission granted for skill ${skill.name}',
@@ -482,7 +466,25 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
       }
     }
 
-    await _executeSkill(skill.name);
+    _insertSkillCommand(skill.name);
+  }
+
+  void _insertSkillCommand(String skillName) {
+    final text = textController.text;
+    final cursorPos = textController.selection.baseOffset;
+    if (cursorPos < 0) return;
+    final beforeCursor = text.substring(0, cursorPos);
+    final slashIndex = beforeCursor.lastIndexOf('/');
+    if (slashIndex == -1) return;
+    final afterCursor = text.substring(cursorPos);
+    final newText =
+        '${beforeCursor.substring(0, slashIndex)}/$skillName $afterCursor';
+    textController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(
+        offset: slashIndex + skillName.length + 2,
+      ),
+    );
   }
 
   void selectCurrentSkillFromPopup() {
@@ -492,25 +494,82 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     }
   }
 
-  Future<void> _executeSkill(String skillName) async {
-    debugPrint('[SlashCommandHandler] Executing skill: $skillName');
-    final service = _skillService;
-    if (service == null) {
-      debugPrint('[SlashCommandHandler] SkillService not ready');
-      return;
+  /// Render skill content with argument substitution.
+  /// Supports $1, $2, $N (last $N gets all remaining args), $ARGUMENTS.
+  String _renderSkillContent(String content, String arguments) {
+    final argsRegex = RegExp(
+      r"""(?:\[Image\s+\d+\]|"[^"]*"|'[^']*'|[^\s"']+)""",
+    );
+    final List<String> rawArgs = argsRegex
+        .allMatches(arguments)
+        .map((m) => m.group(0)!)
+        .toList();
+    final quoteTrim = RegExp("""^["']|["']\$""");
+    final List<String> args = rawArgs
+        .map((a) => a.replaceAll(quoteTrim, ''))
+        .toList();
+
+    final placeholderRegex = RegExp(r"""\$(\d+)""");
+    final matches = placeholderRegex.allMatches(content).toList();
+    final List<int> placeholders = matches
+        .map((m) => int.parse(m.group(1)!))
+        .toList();
+    final last = placeholders.isEmpty
+        ? 0
+        : placeholders.reduce((a, b) => a > b ? a : b);
+
+    var result = content.replaceAllMapped(placeholderRegex, (match) {
+      final position = int.parse(match.group(1)!);
+      final argIndex = position - 1;
+      if (argIndex >= args.length) return '';
+      if (position == last) {
+        return args.sublist(argIndex).join(' ');
+      }
+      return args[argIndex];
+    });
+
+    final usesArguments = content.contains(r'$ARGUMENTS');
+    result = result.replaceAll(r'$ARGUMENTS', arguments);
+
+    if (placeholders.isEmpty && !usesArguments && arguments.trim().isNotEmpty) {
+      result = '$result\n\n$arguments';
     }
+
+    return result.trim();
+  }
+
+  /// Check if text starts with a skill command and return rendered content.
+  /// Returns null if not a skill command.
+  /// When [hasArgs] is false, the skill is inserted without AI response.
+  Future<({String content, SkillInfo skill})?> resolveSkillCommand(
+    String text,
+  ) async {
+    final match = RegExp(r'^/(\S+)').firstMatch(text);
+    if (match == null) return null;
+
+    final skillName = match.group(1)!;
+    final service = _skillService;
+    if (service == null) return null;
 
     final skill = await service.getByName(skillName);
-    if (skill == null) {
-      debugPrint('[SlashCommandHandler] Skill not found: $skillName');
-      return;
+    if (skill == null) return null;
+
+    final afterSkill = text.substring(match.end).trim();
+    String content;
+    if (afterSkill.isEmpty) {
+      // No args → insert skill content directly without AI
+      content = '**Loaded skill: ${skill.name}**\n\n${skill.content}';
+    } else {
+      // Has args → render template with arguments
+      content = _renderSkillContent(skill.content, afterSkill);
     }
 
-    debugPrint(
-      '[SlashCommandHandler] Skill found: ${skill.name}, content length: ${skill.content.length}',
-    );
+    return (content: content, skill: skill);
+  }
 
-    final content = '**Loaded skill: ${skill.name}**\n\n${skill.content}';
+  /// Insert skill content into chat history without triggering AI response.
+  Future<void> insertSkillMessage(SkillInfo skill, String content) async {
+    debugPrint('[SlashCommandHandler] Inserting skill: ${skill.name}');
     final storage = ref.read(chatStorageServiceProvider);
     final chatIdNotifier = ref.read(currentChatIdProvider.notifier);
     final chatListNotifier = ref.read(chatListProvider.notifier);
@@ -552,14 +611,9 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
       chatListNotifier.updateChat(updatedChat);
     }
 
-    debugPrint(
-      '[SlashCommandHandler] Skill executed: $skillName, message added',
-    );
-
-    // Notify that a message was added (for scrolling, etc.)
+    debugPrint('[SlashCommandHandler] Skill inserted: ${skill.name}');
     onMessageAdded?.call();
 
-    // Show toast notification
     if (mounted) {
       final localizations = AppLocalizations.of(context)!;
       SnackbarUtils.showSuccessSnackBar(

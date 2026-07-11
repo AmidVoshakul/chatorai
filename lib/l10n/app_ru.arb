@@ -302,6 +302,7 @@
   "skillExecuted": "Навык выполнен: {name}",
   "applySettings": "Применить настройки",
   "copyCodeTooltip": "Копировать код",
+  "copiedFeedback": "Скопировано",
   "defaultSuggestion1": "Что ты умеешь?",
   "defaultSuggestion2": "Помоги написать код",
   "defaultSuggestion3": "Объясни концепцию",

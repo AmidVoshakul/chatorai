@@ -8,7 +8,7 @@ import 'session_id.dart';
 
 part 'session_state.g.dart';
 
-enum MessageRole { user, assistant, tool }
+enum MessageRole { user, assistant, system, tool }
 
 /// Converter for [SessionID] — bridges brand type to plain JSON string.
 class SessionIDConverter implements JsonConverter<SessionID, String> {

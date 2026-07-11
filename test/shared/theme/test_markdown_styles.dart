@@ -7,60 +7,62 @@ import 'package:chatorai/shared/theme/app_theme.dart';
 void main() {
   group('ChatoraiMarkdownStyles', () {
     group('caching behavior', () {
-      testWidgets('returns cached style on repeated calls with same brightness', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
-        );
+      testWidgets(
+        'returns cached style on repeated calls with same brightness',
+        (tester) async {
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: AppTheme.lightTheme,
+              home: const _TestHomePage(),
+            ),
+          );
 
-        final context = tester.element(find.byType(_TestHomePage));
+          final context = tester.element(find.byType(_TestHomePage));
 
-        // First call - should cache
-        final style1 = ChatoraiMarkdownStyles.getMarkdownStyles(context);
-        // Second call - should return cached
-        final style2 = ChatoraiMarkdownStyles.getMarkdownStyles(context);
+          // First call - should cache
+          final style1 = ChatoraiMarkdownStyles.getMarkdownStyles(context);
+          // Second call - should return cached
+          final style2 = ChatoraiMarkdownStyles.getMarkdownStyles(context);
 
-        expect(identical(style1, style2), isTrue);
-      });
+          expect(identical(style1, style2), isTrue);
+        },
+      );
 
-      testWidgets('caches styles separately for light and dark brightness', (tester) async {
+      testWidgets('caches styles separately for light and dark brightness', (
+        tester,
+      ) async {
         // Test light theme caching
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final lightContext = tester.element(find.byType(_TestHomePage));
-        final lightStyle = ChatoraiMarkdownStyles.getMarkdownStyles(lightContext);
-        final lightStyleCached = ChatoraiMarkdownStyles.getMarkdownStyles(lightContext);
+        final lightStyle = ChatoraiMarkdownStyles.getMarkdownStyles(
+          lightContext,
+        );
+        final lightStyleCached = ChatoraiMarkdownStyles.getMarkdownStyles(
+          lightContext,
+        );
 
         expect(identical(lightStyle, lightStyleCached), isTrue);
 
         // Test dark theme caching
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.darkTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.darkTheme, home: const _TestHomePage()),
         );
 
         final darkContext = tester.element(find.byType(_TestHomePage));
         final darkStyle = ChatoraiMarkdownStyles.getMarkdownStyles(darkContext);
-        final darkStyleCached = ChatoraiMarkdownStyles.getMarkdownStyles(darkContext);
+        final darkStyleCached = ChatoraiMarkdownStyles.getMarkdownStyles(
+          darkContext,
+        );
 
         expect(identical(darkStyle, darkStyleCached), isTrue);
       });
 
       testWidgets('cache key uses Object.hash with brightness', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -77,12 +79,11 @@ void main() {
     });
 
     group('light theme styles', () {
-      testWidgets('returns non-null MarkdownStyleSheet for light brightness', (tester) async {
+      testWidgets('returns non-null MarkdownStyleSheet for light brightness', (
+        tester,
+      ) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -92,12 +93,11 @@ void main() {
         expect(style, isA<MarkdownStyleSheet>());
       });
 
-      testWidgets('light theme code color matches ChatoraiColors.codeLight', (tester) async {
+      testWidgets('light theme code color matches ChatoraiColors.codeLight', (
+        tester,
+      ) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -106,12 +106,11 @@ void main() {
         expect(style.code?.color, equals(ChatoraiColors.codeLight));
       });
 
-      testWidgets('light theme blockquote has italic fontStyle', (tester) async {
+      testWidgets('light theme blockquote has italic fontStyle', (
+        tester,
+      ) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -122,10 +121,7 @@ void main() {
 
       testWidgets('light theme blockquote fontSize is base', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -134,12 +130,11 @@ void main() {
         expect(style.blockquote?.fontSize, equals(ChatoraiFontSizes.base));
       });
 
-      testWidgets('light theme blockquote decoration has orange left border', (tester) async {
+      testWidgets('light theme blockquote decoration has orange left border', (
+        tester,
+      ) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -154,10 +149,7 @@ void main() {
 
       testWidgets('light theme code has shadows applied', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -169,10 +161,7 @@ void main() {
 
       testWidgets('light theme link color is orange', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -184,12 +173,11 @@ void main() {
     });
 
     group('dark theme styles', () {
-      testWidgets('returns non-null MarkdownStyleSheet for dark brightness', (tester) async {
+      testWidgets('returns non-null MarkdownStyleSheet for dark brightness', (
+        tester,
+      ) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.darkTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.darkTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -201,10 +189,7 @@ void main() {
 
       testWidgets('dark theme code color is correct', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.darkTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.darkTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -214,12 +199,11 @@ void main() {
         expect(style.code?.color, isNotNull);
       });
 
-      testWidgets('dark theme code shadows are null or set based on brightness', (tester) async {
+      testWidgets('dark theme code shadows are null or set based on brightness', (
+        tester,
+      ) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.darkTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.darkTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -231,10 +215,7 @@ void main() {
 
       testWidgets('dark theme blockquote color is set', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.darkTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.darkTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -246,10 +227,7 @@ void main() {
 
       testWidgets('dark theme h1 color is set', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.darkTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.darkTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -261,10 +239,7 @@ void main() {
 
       testWidgets('dark theme h2 color is set', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.darkTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.darkTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -276,10 +251,7 @@ void main() {
 
       testWidgets('dark theme h3 color is set', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.darkTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.darkTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -293,10 +265,7 @@ void main() {
     group('cache invalidation', () {
       testWidgets('cache persists across multiple calls', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -310,18 +279,20 @@ void main() {
         expect(identical(style2, style3), isTrue);
       });
 
-      testWidgets('cache returns same instance on subsequent calls', (tester) async {
+      testWidgets('cache returns same instance on subsequent calls', (
+        tester,
+      ) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
 
         // Get style multiple times
-        final styles = List.generate(5, (_) => ChatoraiMarkdownStyles.getMarkdownStyles(context));
+        final styles = List.generate(
+          5,
+          (_) => ChatoraiMarkdownStyles.getMarkdownStyles(context),
+        );
 
         // All should be identical (cached)
         for (int i = 1; i < styles.length; i++) {
@@ -331,12 +302,11 @@ void main() {
     });
 
     group('fontFamily inheritance', () {
-      testWidgets('code style uses monospaceFont from ChatoraiFontSizes', (tester) async {
+      testWidgets('code style uses monospaceFont from ChatoraiFontSizes', (
+        tester,
+      ) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -347,12 +317,11 @@ void main() {
     });
 
     group('edge cases', () {
-      testWidgets('returns valid style with all required properties', (tester) async {
+      testWidgets('returns valid style with all required properties', (
+        tester,
+      ) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -364,12 +333,11 @@ void main() {
         expect(style.blockquote, isNotNull);
       });
 
-      testWidgets('blockquote decoration has correct border width', (tester) async {
+      testWidgets('blockquote decoration has correct border width', (
+        tester,
+      ) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -381,12 +349,11 @@ void main() {
         expect(decoration?.border is Border, isTrue);
       });
 
-      testWidgets('code block background has correct opacity for light theme', (tester) async {
+      testWidgets('code block background has correct opacity for light theme', (
+        tester,
+      ) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));
@@ -396,12 +363,11 @@ void main() {
         expect(style.code?.backgroundColor?.alpha, equals(150));
       });
 
-      testWidgets('blockquote decoration has correct border radius', (tester) async {
+      testWidgets('blockquote decoration has correct border radius', (
+        tester,
+      ) async {
         await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const _TestHomePage(),
-          ),
+          MaterialApp(theme: AppTheme.lightTheme, home: const _TestHomePage()),
         );
 
         final context = tester.element(find.byType(_TestHomePage));

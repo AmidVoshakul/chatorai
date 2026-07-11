@@ -336,6 +336,7 @@
   "modelDoesNotSupportFiles": "Модель {modelId} не підтримує файли. Ви можете прикріпити файл, але відправлення не спрацює.",
   "fileAttachedButNotSupported": "Файл прикріплено, але не підтримується поточною моделлю",
   "copyCodeTooltip": "Копіювати код",
+  "copiedFeedback": "Скопійовано",
   "expandTooltip": "Розгорнути",
   "collapseTooltip": "Згорнути",
   "welcomeGreeting1": "Питай, досліджуй, створюй — давай розберемося разом.",

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
+import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat/todo_part.dart'
     show TodoItem;

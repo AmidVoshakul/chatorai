@@ -343,6 +343,7 @@
   "modelDoesNotSupportFiles": "النموذج {modelId} لا يدعم الملفات. يمكنك إرفاق ملف، لكن الإرسال لن يعمل.",
   "fileAttachedButNotSupported": "تم إرفاق الملف ولكن النموذج الحالي لا يدعمه",
   "copyCodeTooltip": "نسخ الكود",
+  "copiedFeedback": "تم النسخ",
   "expandTooltip": "توسيع",
   "collapseTooltip": "طي",
   "welcomeGreeting1": "اسأل، استكشف، اصنع — دعنا نكتشف معًا.",

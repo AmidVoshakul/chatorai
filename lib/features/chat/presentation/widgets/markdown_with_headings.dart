@@ -35,38 +35,10 @@ class MarkdownWithHeadings extends StatelessWidget {
       data: data,
       styleSheet: ChatoraiMarkdownStyles.getMarkdownStyles(context),
       selectable: true,
-      builders: {
-        'h1': _HeadingBuilder(
-          filteredHeadings,
-          level: 1,
-          messageId: effectiveMessageId,
-        ),
-        'h2': _HeadingBuilder(
-          filteredHeadings,
-          level: 2,
-          messageId: effectiveMessageId,
-        ),
-        'h3': _HeadingBuilder(
-          filteredHeadings,
-          level: 3,
-          messageId: effectiveMessageId,
-        ),
-        'h4': _HeadingBuilder(
-          filteredHeadings,
-          level: 4,
-          messageId: effectiveMessageId,
-        ),
-        'h5': _HeadingBuilder(
-          filteredHeadings,
-          level: 5,
-          messageId: effectiveMessageId,
-        ),
-        'h6': _HeadingBuilder(
-          filteredHeadings,
-          level: 6,
-          messageId: effectiveMessageId,
-        ),
-      },
+      builders: HeadingBuilder.headingBuilders(
+        headings: filteredHeadings,
+        messageId: effectiveMessageId,
+      ),
       onTapLink: (text, href, title) {
         if (href != null) {
           // Link handling reserved for future
@@ -80,20 +52,39 @@ class MarkdownWithHeadings extends StatelessWidget {
 // PRIVATE: HEADING BUILDER
 // ===========================================================================
 
-class _HeadingBuilder extends MarkdownElementBuilder {
+class HeadingBuilder extends MarkdownElementBuilder {
   final List<MarkdownHeadingInfoWithKey> headings;
   final int level;
   final String messageId;
 
-  _HeadingBuilder(
-    this.headings, {
+  HeadingBuilder({
+    this.headings = const [],
     required this.level,
-    required this.messageId,
+    this.messageId = '',
   });
 
-  // =======================================================================
-  // BUILD METHOD
-  // =======================================================================
+  static Map<String, MarkdownElementBuilder> headingBuilders({
+    List<MarkdownHeadingInfoWithKey> headings = const [],
+    String messageId = '',
+  }) => {
+    for (final level in [1, 2, 3, 4, 5, 6])
+      'h$level': HeadingBuilder(
+        headings: headings,
+        level: level,
+        messageId: messageId,
+      ),
+  };
+
+  static EdgeInsets paddingForLevel(int level) {
+    return switch (level) {
+      1 => EdgeInsets.fromLTRB(0, 24, 0, 12),
+      2 => EdgeInsets.fromLTRB(0, 20, 0, 10),
+      3 => EdgeInsets.fromLTRB(0, 16, 0, 8),
+      4 => EdgeInsets.fromLTRB(0, 12, 0, 8),
+      5 => EdgeInsets.fromLTRB(0, 10, 0, 6),
+      _ => EdgeInsets.fromLTRB(0, 8, 0, 6),
+    };
+  }
 
   @override
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
@@ -114,7 +105,7 @@ class _HeadingBuilder extends MarkdownElementBuilder {
 
     return Container(
       key: ValueKey('heading_${messageId}_${level}_$text'),
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: paddingForLevel(level),
       child: Text(text, style: preferredStyle),
     );
   }

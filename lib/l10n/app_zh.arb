@@ -343,6 +343,7 @@
   "modelDoesNotSupportFiles": "模型 {modelId} 不支持文件。您可以附加文件，但发送将不起作用。",
   "fileAttachedButNotSupported": "文件已附加，但当前模型不支持",
   "copyCodeTooltip": "复制代码",
+  "copiedFeedback": "已复制",
   "expandTooltip": "展开",
   "collapseTooltip": "折叠",
   "welcomeGreeting1": "问吧、探索吧、创造吧 — 让我们一起弄清楚。",

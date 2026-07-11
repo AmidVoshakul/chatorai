@@ -25,14 +25,17 @@ void main() {
         required List<String> patterns,
         Map<String, dynamic>? metadata,
         List<String>? always,
-      })? customAsk,
-      void Function({String? title, Map<String, dynamic>? metadata})? onMetadata,
+      })?
+      customAsk,
+      void Function({String? title, Map<String, dynamic>? metadata})?
+      onMetadata,
     }) {
       return ToolContext(
         toolCallId: 'test-call-id',
         sessionId: sessionId ?? 'test-session',
         abortSignal: abortSignal,
-        ask: customAsk ??
+        ask:
+            customAsk ??
             ({
               required String permission,
               required List<String> patterns,
@@ -57,44 +60,44 @@ void main() {
       test('echo hello → no ask() call, direct execution', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        final output = await bashTool.execute(
-          {'command': 'echo hello'},
-          ctx,
-        );
+        final output = await bashTool.execute({'command': 'echo hello'}, ctx);
 
         expect(output, isA<ToolOutput>());
         expect(output.metadata?['error'], isNull);
         expect(output.output, contains('hello'));
-        expect(askCalled, isFalse, reason: 'Safe command should not trigger ask()');
+        expect(
+          askCalled,
+          isFalse,
+          reason: 'Safe command should not trigger ask()',
+        );
       });
 
       test('ls -la → no ask() call', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        final output = await bashTool.execute(
-          {'command': 'ls -la'},
-          ctx,
-        );
+        final output = await bashTool.execute({'command': 'ls -la'}, ctx);
 
         expect(output, isA<ToolOutput>());
         expect(askCalled, isFalse);
@@ -103,20 +106,18 @@ void main() {
       test('pwd → no ask() call', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        final output = await bashTool.execute(
-          {'command': 'pwd'},
-          ctx,
-        );
+        final output = await bashTool.execute({'command': 'pwd'}, ctx);
 
         expect(output, isA<ToolOutput>());
         expect(output.output, isNotEmpty);
@@ -124,26 +125,24 @@ void main() {
       });
     });
 
-    group('Dangerous character detection', () {
+    group('Shell operator detection', () {
       test('cmd1; cmd2 → ask(permission: "bash") called once', () async {
         var askCalled = false;
         var capturedPermission = '';
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-            capturedPermission = permission;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+                capturedPermission = permission;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'echo foo; echo bar'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'echo foo; echo bar'}, ctx);
 
         expect(askCalled, isTrue);
         expect(capturedPermission, equals('bash'));
@@ -152,20 +151,18 @@ void main() {
       test('cmd1 && cmd2 → ask called once', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'echo foo && echo bar'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'echo foo && echo bar'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -173,64 +170,58 @@ void main() {
       test('cmd1 || cmd2 → ask called once', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'echo foo || echo bar'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'echo foo || echo bar'}, ctx);
 
         expect(askCalled, isTrue);
       });
 
-      test('cmd1 | cmd2 → ask called once', () async {
+      test('cmd1 | cmd2 → allowed without ask (lowRisk pipeline)', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'echo foo | cat'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'echo foo | cat'}, ctx);
 
-        expect(askCalled, isTrue);
+        expect(askCalled, isFalse);
       });
 
-      test('cmd1 & → ask called once', () async {
+      test('cmd1 & → allowed without ask (backgrounding is lowRisk)', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'echo foo &'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'echo foo &'}, ctx);
 
-        expect(askCalled, isTrue);
+        expect(askCalled, isFalse);
       });
     });
 
@@ -239,21 +230,19 @@ void main() {
         var askCalled = false;
         var capturedPermission = '';
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-            capturedPermission = permission;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+                capturedPermission = permission;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'curl example.com'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'curl example.com'}, ctx);
 
         expect(askCalled, isTrue);
         expect(capturedPermission, equals('bash'));
@@ -262,20 +251,18 @@ void main() {
       test('npm install → ask called once', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'npm install'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'npm install'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -283,20 +270,18 @@ void main() {
       test('wget file → ask called once', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'wget file'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'wget file'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -306,20 +291,18 @@ void main() {
       test('echo foo>/etc/passwd → ask called once (no space regex)', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'echo foo>/etc/passwd'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'echo foo>/etc/passwd'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -327,20 +310,20 @@ void main() {
       test('cat /etc/passwd > /etc/shadow → ask called once', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'cat /etc/passwd > /etc/shadow'},
-          ctx,
-        );
+        await bashTool.execute({
+          'command': 'cat /etc/passwd > /etc/shadow',
+        }, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -350,20 +333,20 @@ void main() {
       test('go get package → ask called once', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'go get github.com/example/pkg'},
-          ctx,
-        );
+        await bashTool.execute({
+          'command': 'go get github.com/example/pkg',
+        }, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -371,105 +354,171 @@ void main() {
       test('go install package → ask called once', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'go install github.com/example/pkg'},
-          ctx,
-        );
+        await bashTool.execute({
+          'command': 'go install github.com/example/pkg',
+        }, ctx);
 
         expect(askCalled, isTrue);
+      });
+    });
+
+    group('Sensitive env file detection', () {
+      test('cat .env → ask called once', () async {
+        var askCalled = false;
+        final ctx = _createMockContext(
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
+        );
+
+        await bashTool.execute({'command': 'cat .env'}, ctx);
+
+        expect(askCalled, isTrue);
+      });
+
+      test('cat .env.local → ask called once', () async {
+        var askCalled = false;
+        final ctx = _createMockContext(
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
+        );
+
+        await bashTool.execute({'command': 'cat .env.local'}, ctx);
+
+        expect(askCalled, isTrue);
+      });
+
+      test('less README.md → no ask (not an env file)', () async {
+        var askCalled = false;
+        final ctx = _createMockContext(
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
+        );
+
+        await bashTool.execute({'command': 'less README.md'}, ctx);
+
+        expect(askCalled, isFalse);
       });
     });
 
     group('External directory detection', () {
-      test('working_dir: /tmp (external) → ask(permission: "external_directory") called', () async {
-        var askCalled = false;
-        var capturedPermission = '';
-        final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-            capturedPermission = permission;
-          },
-        );
+      test(
+        'working_dir: /tmp (external) → ask(permission: "external_directory") called',
+        () async {
+          var askCalled = false;
+          var capturedPermission = '';
+          final ctx = _createMockContext(
+            customAsk:
+                ({
+                  required String permission,
+                  required List<String> patterns,
+                  Map<String, dynamic>? metadata,
+                  List<String>? always,
+                }) async {
+                  askCalled = true;
+                  capturedPermission = permission;
+                },
+          );
 
-        // Use /tmp which is typically external to project workspace
-        await bashTool.execute(
-          {'command': 'echo test', 'working_dir': '/tmp'},
-          ctx,
-        );
+          // Use /tmp which is typically external to project workspace
+          await bashTool.execute({
+            'command': 'echo test',
+            'working_dir': '/tmp',
+          }, ctx);
 
-        expect(askCalled, isTrue);
-        expect(capturedPermission, equals('external_directory'));
-      });
+          expect(askCalled, isTrue);
+          expect(capturedPermission, equals('external_directory'));
+        },
+      );
     });
 
     group('Permission rejection handling', () {
-      test('ask() throws PermissionRejectedError → returns ToolOutput.error with rejected:true', () async {
-        final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            throw PermissionRejectedError('bash');
-          },
-        );
+      test(
+        'ask() throws PermissionRejectedError → returns ToolOutput.error with rejected:true',
+        () async {
+          final ctx = _createMockContext(
+            customAsk:
+                ({
+                  required String permission,
+                  required List<String> patterns,
+                  Map<String, dynamic>? metadata,
+                  List<String>? always,
+                }) async {
+                  throw PermissionRejectedError('bash');
+                },
+          );
 
-        final output = await bashTool.execute(
-          {'command': 'curl example.com'},
-          ctx,
-        );
+          final output = await bashTool.execute({
+            'command': 'curl example.com',
+          }, ctx);
 
-        expect(output, isA<ToolOutput>());
-        expect(output.metadata?['error'], isTrue);
-        expect(output.metadata?['rejected'], isTrue);
-        expect(output.output, contains('rejected'));
-      });
+          expect(output, isA<ToolOutput>());
+          expect(output.metadata?['error'], isTrue);
+          expect(output.metadata?['rejected'], isTrue);
+          expect(output.output, contains('rejected'));
+        },
+      );
 
-      test('PermissionRejectedError on deny decision → returns rejected metadata', () async {
-        final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            throw PermissionRejectedError('bash');
-          },
-        );
+      test(
+        'PermissionRejectedError on deny decision → returns rejected metadata',
+        () async {
+          final ctx = _createMockContext(
+            customAsk:
+                ({
+                  required String permission,
+                  required List<String> patterns,
+                  Map<String, dynamic>? metadata,
+                  List<String>? always,
+                }) async {
+                  throw PermissionRejectedError('bash');
+                },
+          );
 
-        final output = await bashTool.execute(
-          {'command': 'echo foo; echo bar'},
-          ctx,
-        );
+          final output = await bashTool.execute({
+            'command': 'echo foo; echo bar',
+          }, ctx);
 
-        expect(output.metadata?['rejected'], isTrue);
-      });
+          expect(output.metadata?['rejected'], isTrue);
+        },
+      );
     });
 
     group('Input validation', () {
       test('null command → returns error metadata', () async {
         final ctx = _createMockContext();
 
-        final output = await bashTool.execute(
-          {},
-          ctx,
-        );
+        final output = await bashTool.execute({}, ctx);
 
         expect(output, isA<ToolOutput>());
         expect(output.metadata?['error'], isTrue);
@@ -479,10 +528,7 @@ void main() {
       test('empty command → returns error metadata', () async {
         final ctx = _createMockContext();
 
-        final output = await bashTool.execute(
-          {'command': ''},
-          ctx,
-        );
+        final output = await bashTool.execute({'command': ''}, ctx);
 
         expect(output, isA<ToolOutput>());
         expect(output.metadata?['error'], isTrue);
@@ -497,10 +543,7 @@ void main() {
 
         final ctx = _createMockContext(abortSignal: abortSignal);
 
-        final output = await bashTool.execute(
-          {'command': 'echo test'},
-          ctx,
-        );
+        final output = await bashTool.execute({'command': 'echo test'}, ctx);
 
         expect(output.metadata?['aborted'], isTrue);
         expect(output.output, contains('aborted'));
@@ -527,21 +570,22 @@ void main() {
       test('timeout parameter is passed correctly', () async {
         var capturedTimeout;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            // This won't be called for safe command
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                // This won't be called for safe command
+              },
         );
 
         // Just verify the tool accepts timeout parameter
-        final output = await bashTool.execute(
-          {'command': 'echo test', 'timeout': 5000},
-          ctx,
-        );
+        final output = await bashTool.execute({
+          'command': 'echo test',
+          'timeout': 5000,
+        }, ctx);
 
         expect(output, isA<ToolOutput>());
       });
@@ -551,10 +595,10 @@ void main() {
       test('description is passed as title in output', () async {
         final ctx = _createMockContext();
 
-        final output = await bashTool.execute(
-          {'command': 'echo test', 'description': 'Test command'},
-          ctx,
-        );
+        final output = await bashTool.execute({
+          'command': 'echo test',
+          'description': 'Test command',
+        }, ctx);
 
         expect(output, isA<ToolOutput>());
         expect(output.title, equals('Test command'));
@@ -565,10 +609,7 @@ void main() {
       test('successful command returns exit_code 0', () async {
         final ctx = _createMockContext();
 
-        final output = await bashTool.execute(
-          {'command': 'true'},
-          ctx,
-        );
+        final output = await bashTool.execute({'command': 'true'}, ctx);
 
         expect(output.metadata?['exit_code'], equals(0));
         expect(output.metadata?['error'], isNull);
@@ -577,10 +618,7 @@ void main() {
       test('failed command returns non-zero exit code', () async {
         final ctx = _createMockContext();
 
-        final output = await bashTool.execute(
-          {'command': 'false'},
-          ctx,
-        );
+        final output = await bashTool.execute({'command': 'false'}, ctx);
 
         expect(output.metadata?['exit_code'], isNot(0));
         expect(output.metadata?['error'], isTrue);
@@ -591,20 +629,18 @@ void main() {
       test('ssh is blocked', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'ssh user@host'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'ssh user@host'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -612,20 +648,18 @@ void main() {
       test('eval is blocked', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'eval "echo test"'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'eval "echo test"'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -635,20 +669,18 @@ void main() {
       test('command substitution \$(...) triggers ask', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': r'echo $(whoami)'},
-          ctx,
-        );
+        await bashTool.execute({'command': r'echo $(whoami)'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -659,10 +691,9 @@ void main() {
         // Use a command that will fail during execution
         final ctx = _createMockContext();
 
-        final output = await bashTool.execute(
-          {'command': 'ls /nonexistent_directory_xyz_12345'},
-          ctx,
-        );
+        final output = await bashTool.execute({
+          'command': 'ls /nonexistent_directory_xyz_12345',
+        }, ctx);
 
         // The command itself is safe (no dangerous chars), but will fail
         expect(output, isA<ToolOutput>());
@@ -675,20 +706,18 @@ void main() {
       test('chmod 777 triggers ask', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'chmod 777 file.txt'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'chmod 777 file.txt'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -696,20 +725,18 @@ void main() {
       test('chmod 755 triggers ask', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'chmod 755 file.txt'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'chmod 755 file.txt'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -717,20 +744,18 @@ void main() {
       test('chmod with symbolic mode is allowed', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
-        await bashTool.execute(
-          {'command': 'chmod +x file.txt'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'chmod +x file.txt'}, ctx);
 
         expect(askCalled, isFalse);
       });
@@ -745,10 +770,7 @@ void main() {
           },
         );
 
-        await bashTool.execute(
-          {'command': 'echo test'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'echo test'}, ctx);
 
         // onMetadata should be called during streaming
         expect(metadataCalled, isTrue);
@@ -759,22 +781,20 @@ void main() {
       test('chmod with -v flag skips octal mode check', () async {
         var askCalled = false;
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+              },
         );
 
         // chmod -v 777 should still trigger ask due to octal mode pattern
         // but the argument skip logic is tested
-        await bashTool.execute(
-          {'command': 'chmod -v file.txt'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'chmod -v file.txt'}, ctx);
 
         // -v is a flag, so no octal mode check, but command is still safe
         expect(askCalled, isFalse);
@@ -786,24 +806,22 @@ void main() {
         var askCalled = false;
         var capturedPermission = '';
         final ctx = _createMockContext(
-          customAsk: ({
-            required String permission,
-            required List<String> patterns,
-            Map<String, dynamic>? metadata,
-            List<String>? always,
-          }) async {
-            askCalled = true;
-            capturedPermission = permission;
-          },
+          customAsk:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCalled = true;
+                capturedPermission = permission;
+              },
         );
 
         // Use a command that would trigger deny (if any policy returns deny)
         // Since all policies return review, we test the deny branch indirectly
         // by using a command that triggers the deny path
-        await bashTool.execute(
-          {'command': 'echo foo; echo bar'},
-          ctx,
-        );
+        await bashTool.execute({'command': 'echo foo; echo bar'}, ctx);
 
         // The command triggers review, not deny, so this tests the review path
         expect(askCalled, isTrue);

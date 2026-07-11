@@ -12,8 +12,6 @@ ProviderConfig kiloProvider() => ProviderConfig.full(
   baseUrl: 'https://api.kilo.ai/api/gateway',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

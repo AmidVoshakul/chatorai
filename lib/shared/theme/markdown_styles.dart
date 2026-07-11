@@ -37,7 +37,7 @@ class ChatoraiMarkdownStyles {
         fontSize: ChatoraiFontSizes.base,
       ),
       blockquoteDecoration: BoxDecoration(
-        color: grayColor.withAlpha(isLight ? 50 : 150),
+        color: grayColor.withValues(alpha: isLight ? 50 / 255 : 150 / 255),
         border: Border(
           left: BorderSide(
             color: ChatoraiColors.orange,
@@ -49,19 +49,19 @@ class ChatoraiMarkdownStyles {
         ),
       ),
       code: baseStyle.code?.copyWith(
-        backgroundColor: grayColor.withAlpha(150),
+        backgroundColor: grayColor.withValues(alpha: 150 / 255),
         color: codeColor,
         fontFamily: ChatoraiFontSizes.monospaceFont,
         fontSize: ChatoraiFontSizes.code,
         shadows: isLight
             ? [
                 Shadow(
-                  color: grayColor.withAlpha(150),
+                  color: grayColor.withValues(alpha: 150 / 255),
                   offset: const Offset(-2, 0),
                   blurRadius: 0,
                 ),
                 Shadow(
-                  color: grayColor.withAlpha(150),
+                  color: grayColor.withValues(alpha: 150 / 255),
                   offset: const Offset(2, 0),
                   blurRadius: 0,
                 ),
@@ -74,23 +74,42 @@ class ChatoraiMarkdownStyles {
       ),
       h1: baseStyle.h1?.copyWith(
         color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,
-        height: 1.4,
+        fontWeight: FontWeight.bold,
+        height: 1.5,
         fontSize: ChatoraiFontSizes.xxxl,
       ),
       h2: baseStyle.h2?.copyWith(
         color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,
-        height: 1.35,
+        fontWeight: FontWeight.bold,
+        height: 1.4,
         fontSize: ChatoraiFontSizes.xxl,
       ),
       h3: baseStyle.h3?.copyWith(
         color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,
-        height: 1.3,
+        fontWeight: FontWeight.bold,
+        height: 1.35,
         fontSize: ChatoraiFontSizes.xl,
       ),
       h4: baseStyle.h4?.copyWith(
         color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,
-        height: 1.25,
+        fontWeight: FontWeight.bold,
+        height: 1.3,
         fontSize: ChatoraiFontSizes.lg,
+      ),
+      h5: baseStyle.h5?.copyWith(
+        color: isLight ? ChatoraiColors.dark : ChatoraiColors.light,
+        fontWeight: FontWeight.bold,
+        height: 1.25,
+        fontSize: ChatoraiFontSizes.base,
+      ),
+      h6: baseStyle.h6?.copyWith(
+        color: isLight
+            ? ChatoraiColors.secondaryTextColor
+            : ChatoraiColors.darkSecondaryTextColor,
+        fontWeight: FontWeight.bold,
+        fontStyle: FontStyle.italic,
+        height: 1.25,
+        fontSize: ChatoraiFontSizes.base,
       ),
     );
 

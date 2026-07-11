@@ -29,14 +29,22 @@ class McpClientService {
   Completer<void>? _initCompleter;
 
   /// Initialize service from config — discovers tools for all enabled servers.
+  ///
+  /// Idempotent: if already initialized or initializing, returns the existing
+  /// future. Safe to call from multiple consumers (e.g. eager start in
+  /// [main] and lazy start in [toolRegistryProvider]).
   Future<void> initialize(McpConfig config) async {
     if (_initialized) {
       return _initCompleter?.future;
+    }
+    if (_initCompleter != null) {
+      return _initCompleter!.future;
     }
 
     _initCompleter = Completer<void>();
 
     try {
+      final futures = <Future<McpServerStatus>>[];
       for (final entry in config.servers.entries) {
         final name = entry.key;
         final serverConfig = entry.value;
@@ -46,9 +54,14 @@ class McpClientService {
             : McpServerStatus.disabled();
 
         if (serverConfig.enabled) {
-          unawaited(_connectServer(name, serverConfig));
+          futures.add(_connectServer(name, serverConfig));
         }
       }
+
+      for (final future in futures) {
+        await future;
+      }
+
       _initialized = true;
       _initCompleter!.complete();
     } catch (e, st) {
@@ -296,12 +309,15 @@ class McpClientService {
     final sanitizedTool = _sanitize(mcpTool.name);
     final toolId = '${sanitizedServer}_$sanitizedTool';
 
+    LogTags.mcp.logInfo('MCP tool $toolId inputSchema: ${mcpTool.inputSchema}');
+
     return ToolDef(
       id: toolId,
       description:
           mcpTool.description ?? 'MCP tool: $serverName/${mcpTool.name}',
       inputSchema: Map<String, dynamic>.from(mcpTool.inputSchema)
         ..['type'] = 'object',
+      skipValidation: true,
       execute: (input, ctx) async {
         LogTags.mcp.logInfo('MCP tool $toolId called with input: $input');
 

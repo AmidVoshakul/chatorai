@@ -14,8 +14,6 @@ ProviderConfig nvidiaProvider() => ProviderConfig.basic(
   baseUrl: 'https://integrate.api.nvidia.com/v1',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

@@ -60,6 +60,7 @@ class Message {
   final List<Map<String, dynamic>>?
   partsJson; // Serialized MessageParts (tool calls, etc.)
   final String? agent; // Agent name who responded (for assistant messages)
+  final bool synthetic;
 
   Message({
     String? id,
@@ -78,6 +79,7 @@ class Message {
     this.contextLength,
     this.partsJson,
     this.agent,
+    this.synthetic = false,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
   // ===========================================================================
@@ -101,6 +103,7 @@ class Message {
     int? contextLength,
     List<Map<String, dynamic>>? partsJson,
     String? agent,
+    bool? synthetic,
   }) {
     return Message(
       id: id ?? this.id,
@@ -119,6 +122,7 @@ class Message {
       contextLength: contextLength ?? this.contextLength,
       partsJson: partsJson ?? this.partsJson,
       agent: agent ?? this.agent,
+      synthetic: synthetic ?? this.synthetic,
     );
   }
 
@@ -133,6 +137,9 @@ class Message {
         other.timestamp == timestamp &&
         other.isComplete == isComplete &&
         other.isError == isError &&
+        other.model == model &&
+        other.agent == agent &&
+        other.synthetic == synthetic &&
         other.tokensInput == tokensInput &&
         other.tokensOutput == tokensOutput &&
         other.tokensReasoning == tokensReasoning;
@@ -140,15 +147,20 @@ class Message {
 
   @override
   int get hashCode {
-    return id.hashCode ^
-        role.hashCode ^
-        content.hashCode ^
-        timestamp.hashCode ^
-        isComplete.hashCode ^
-        isError.hashCode ^
-        tokensInput.hashCode ^
-        tokensOutput.hashCode ^
-        tokensReasoning.hashCode;
+    return Object.hash(
+      id,
+      role,
+      content,
+      timestamp,
+      isComplete,
+      isError,
+      model,
+      agent,
+      synthetic,
+      tokensInput,
+      tokensOutput,
+      tokensReasoning,
+    );
   }
 
   // ===========================================================================
@@ -173,6 +185,7 @@ class Message {
       'contextLength': contextLength,
       'partsJson': partsJson,
       'agent': agent,
+      'synthetic': synthetic,
     };
 
     return json;
@@ -202,6 +215,7 @@ class Message {
           ? (json['partsJson'] as List<dynamic>).cast<Map<String, dynamic>>()
           : null,
       agent: json['agent'] as String?,
+      synthetic: json['synthetic'] as bool? ?? false,
     );
   }
 }

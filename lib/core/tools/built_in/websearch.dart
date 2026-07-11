@@ -3,17 +3,46 @@ import 'package:chatorai/shared/utils/logger.dart';
 import 'package:ddgs/ddgs.dart';
 
 class WebSearchTool {
-  ToolDef get definition => ToolDef(
-    id: 'websearch',
-    description:
-        'Search the web using DuckDuckGo. Returns results with title, URL, and snippet.',
+  ToolDef get definition {
+    final year = DateTime.now().year;
+    return ToolDef(
+      id: 'websearch',
+      description:
+          'Search the web using DuckDuckGo. Returns results with title, URL, and snippet.\n'
+          'The current year is $year. You MUST use this year when searching for recent information or current events\n'
+          '- Example: If the current year is $year and the user asks for "latest AI news", search for "AI news $year", NOT "AI news ${year - 1}"',
     inputSchema: {
       'type': 'object',
       'properties': {
         'query': {'type': 'string', 'description': 'Search query'},
         'numResults': {
           'type': 'integer',
-          'description': 'Max results (default 5, max 10)',
+          'description': 'Max results (default 5, max 25)',
+        },
+        'region': {
+          'type': 'string',
+          'description':
+              'Region for localized results (e.g. "us-en", "uk-en", "ru-ru", "de-de", "fr-fr", "jp-jp", "cn-zh"). Default: "us-en"',
+        },
+        'timeLimit': {
+          'type': 'string',
+          'description':
+              'Time filter: "d" (past 24h), "w" (past week), "m" (past month), "y" (past year). Omit for all time.',
+        },
+        'safeSearch': {
+          'type': 'string',
+          'description':
+              'Safe search level: "on" (strict), "moderate", "off". Default: "moderate"',
+        },
+        'contextMaxCharacters': {
+          'type': 'integer',
+          'description':
+              'Truncate each result snippet to this many characters. Omit for full snippet.',
+        },
+        'detailLevel': {
+          'type': 'string',
+          'description':
+              'Result detail level: "snippet" (default, title+URL+snippet), "title_only" (title+URL only, saves tokens).',
         },
       },
       'required': ['query'],
@@ -33,13 +62,20 @@ class WebSearchTool {
       try {
         numResults = int.parse(
           input['numResults']?.toString() ?? '5',
-        ).clamp(1, 10);
+        ).clamp(1, 25);
       } catch (_) {
         numResults = 5;
       }
 
+      final region = input['region'] as String? ?? 'us-en';
+      final timeLimit = input['timeLimit'] as String?;
+      final safeSearch = input['safeSearch'] as String? ?? 'moderate';
+      final contextMaxChars = input['contextMaxCharacters'] as int?;
+      final detailLevel = input['detailLevel'] as String? ?? 'snippet';
+
       LogTags.network.logInfo(
-        'websearch: searching for "$query" (max $numResults)',
+        'websearch: searching for "$query" (max $numResults, '
+        'region=$region, timeLimit=$timeLimit, safeSearch=$safeSearch)',
       );
       LogTags.permission.logInfo('websearch.execute: About to call ctx.ask');
       await ctx.ask(
@@ -57,12 +93,18 @@ class WebSearchTool {
           'websearch: Created DDGS client with 10s timeout',
         );
 
-        // Add comprehensive logging for debugging
         LogTags.network.logInfo(
           'websearch: Starting search for query: $query with $numResults results',
         );
         final raw = await client
-            .text(query, maxResults: numResults, backend: 'duckduckgo')
+            .text(
+              query,
+              maxResults: numResults,
+              region: region,
+              safesearch: safeSearch,
+              timelimit: timeLimit,
+              backend: 'duckduckgo',
+            )
             .timeout(
               const Duration(seconds: 15),
               onTimeout: () {
@@ -103,10 +145,15 @@ class WebSearchTool {
                   !url.startsWith('https://')) {
                 url = 'https://$url';
               }
+              var snippet =
+                  (r['body'] as String?) ?? 'No description available.';
+              if (contextMaxChars != null && snippet.length > contextMaxChars) {
+                snippet = '${snippet.substring(0, contextMaxChars)}…';
+              }
               return _SearchResult(
                 title: (r['title'] as String?) ?? '',
                 url: url,
-                snippet: (r['body'] as String?) ?? 'No description available.',
+                snippet: snippet,
               );
             })
             .where((r) => r.title.isNotEmpty && r.url.isNotEmpty)
@@ -118,6 +165,10 @@ class WebSearchTool {
             .map((e) {
               final i = e.key + 1;
               final r = e.value;
+              if (detailLevel == 'title_only') {
+                return '$i. ${r.title}\n'
+                    '   URL: ${r.url}';
+              }
               return '$i. ${r.title}\n'
                   '   URL: ${r.url}\n'
                   '   ${r.snippet}';
@@ -141,6 +192,7 @@ class WebSearchTool {
       }
     },
   );
+  }
 
   void dispose() {
     // No need to dispose since we're creating a new client for each request

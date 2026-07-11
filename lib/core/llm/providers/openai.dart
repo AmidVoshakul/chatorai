@@ -12,8 +12,6 @@ ProviderConfig openaiProvider() => ProviderConfig.full(
   baseUrl: 'https://api.openai.com/v1',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai',
   enabled: false,

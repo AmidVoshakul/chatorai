@@ -68,6 +68,7 @@ class ChatOrAIConfig {
   final FormatterConfig? formatter;
   final McpConfig? mcp;
   final AgentSectionConfig? agent;
+  final Map<String, dynamic>? tools;
 
   const ChatOrAIConfig({
     required this.version,
@@ -78,6 +79,7 @@ class ChatOrAIConfig {
     this.formatter,
     this.mcp,
     this.agent,
+    this.tools,
   });
 
   factory ChatOrAIConfig.fromJson(Map<String, dynamic> json) {
@@ -107,6 +109,9 @@ class ChatOrAIConfig {
       agent: json['agent'] != null
           ? AgentSectionConfig.fromJson(json['agent'] as Map<String, dynamic>)
           : null,
+      tools: json['tools'] is Map
+          ? Map<String, dynamic>.from(json['tools'] as Map)
+          : null,
     );
   }
 
@@ -119,6 +124,7 @@ class ChatOrAIConfig {
     if (formatter != null) 'formatter': formatter!.toJson(),
     if (mcp != null) 'mcp': mcp!.toJson(),
     if (agent != null) 'agent': agent!.toJson(),
+    if (tools != null) 'tools': tools,
   };
 }
 
@@ -201,6 +207,10 @@ class AgentConfig {
   final bool? disabled;
   final bool? hidden;
   final int? maxSteps;
+  final double? temperature;
+  final String? model;
+  final Map<String, dynamic>? permission;
+  final Map<String, dynamic>? tools;
 
   const AgentConfig({
     this.name,
@@ -209,6 +219,10 @@ class AgentConfig {
     this.disabled,
     this.hidden,
     this.maxSteps,
+    this.temperature,
+    this.model,
+    this.permission,
+    this.tools,
   });
 
   factory AgentConfig.fromJson(Map<String, dynamic> json) {
@@ -219,8 +233,18 @@ class AgentConfig {
       disabled: json['disabled'] as bool?,
       hidden: json['hidden'] as bool?,
       maxSteps: json['max_steps'] is int
-          ? json['max_steps'] as int
-          : (json['maxSteps'] is int ? json['maxSteps'] as int : null),
+          ? (json['max_steps'] as int > 0 ? json['max_steps'] as int : null)
+          : (json['maxSteps'] is int
+                ? (json['maxSteps'] as int > 0 ? json['maxSteps'] as int : null)
+                : null),
+      temperature: json['temperature'] is double
+          ? json['temperature'] as double
+          : (json['temperature'] is int
+                ? (json['temperature'] as int).toDouble()
+                : null),
+      model: json['model'] as String?,
+      permission: json['permission'] as Map<String, dynamic>?,
+      tools: json['tools'] as Map<String, dynamic>?,
     );
   }
 
@@ -231,6 +255,10 @@ class AgentConfig {
     if (disabled != null) 'disabled': disabled,
     if (hidden != null) 'hidden': hidden,
     if (maxSteps != null) 'max_steps': maxSteps,
+    if (temperature != null) 'temperature': temperature,
+    if (model != null) 'model': model,
+    if (permission != null) 'permission': permission,
+    if (tools != null) 'tools': tools,
   };
 }
 

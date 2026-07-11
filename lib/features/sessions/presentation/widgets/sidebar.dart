@@ -309,7 +309,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
       child: InkWell(
         onTap: () => widget.onChatSelect(chat.id),
         borderRadius: BorderRadius.zero,
-        hoverColor: ChatoraiColors.hoverLight,
+        hoverColor: ChatoraiColors.hover,
         child: Container(
           padding: const EdgeInsets.symmetric(
             horizontal: ChatoraiSpacing.lg,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
@@ -35,6 +37,24 @@ class TableBlock extends StatefulWidget {
 
 class _TableBlockState extends State<TableBlock> {
   bool _isCollapsed = false;
+  bool _showCopied = false;
+  Timer? _copiedTimer;
+
+  @override
+  void dispose() {
+    _copiedTimer?.cancel();
+    super.dispose();
+  }
+
+  void _onCopy() {
+    final tsvContent = _buildTsv();
+    MessageUtils.copyMessage(content: tsvContent, context: context);
+    setState(() => _showCopied = true);
+    _copiedTimer?.cancel();
+    _copiedTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _showCopied = false);
+    });
+  }
 
   // =======================================================================
   // BUILD METHOD
@@ -53,8 +73,6 @@ class _TableBlockState extends State<TableBlock> {
     final headerBgColor = isDark
         ? ChatoraiColors.darkGray
         : ChatoraiColors.lightGray;
-
-    final tsvContent = _buildTsv();
 
     // No outer decoration — the table blends with the chat bubble
     return Padding(
@@ -102,27 +120,37 @@ class _TableBlockState extends State<TableBlock> {
                   ),
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.copy_all,
-                        color: headerColor,
-                        size: ChatoraiIconSizes.lg,
-                      ),
-                      onPressed: () => MessageUtils.copyMessage(
-                        content: tsvContent,
-                        context: context,
-                      ),
-                      tooltip: localizations.copyCodeTooltip,
-                      splashRadius: ChatoraiIconSizes.md,
-                      hoverColor: isDark
-                          ? ChatoraiColors.black10
-                          : ChatoraiColors.black12,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: ChatoraiSpacing.lg,
-                        minHeight: ChatoraiSpacing.lg,
-                      ),
-                    ),
+                    child: _showCopied
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: ChatoraiSpacing.xs,
+                            ),
+                            child: Text(
+                              localizations.copiedFeedback,
+                              style: TextStyle(
+                                color: headerColor,
+                                fontSize: ChatoraiFontSizes.sm,
+                              ),
+                            ),
+                          )
+                        : IconButton(
+                            icon: Icon(
+                              Icons.copy_all,
+                              color: headerColor,
+                              size: ChatoraiIconSizes.lg,
+                            ),
+                            onPressed: _onCopy,
+                            tooltip: localizations.copyCodeTooltip,
+                            splashRadius: ChatoraiIconSizes.md,
+                            hoverColor: isDark
+                                ? ChatoraiColors.black10
+                                : ChatoraiColors.black12,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: ChatoraiSpacing.lg,
+                              minHeight: ChatoraiSpacing.lg,
+                            ),
+                          ),
                   ),
                 ],
               ),

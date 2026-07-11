@@ -1,8 +1,8 @@
 import 'dart:math';
 
-import 'package:flutter/material.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
 // ===========================================================================
 // CHAT LOADING INDICATOR — shimmer text
@@ -80,7 +80,7 @@ class _ChatLoadingIndicatorState extends State<ChatLoadingIndicator>
           child: Text(
             messages[_messageIndex],
             style: TextStyle(
-              fontSize: ChatoraiFontSizes.sm,
+              fontSize: ChatoraiFontSizes.md,
               fontWeight: FontWeight.w500,
               color: color,
               height: 1.4,

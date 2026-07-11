@@ -2,6 +2,7 @@ import 'package:test/test.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/plan.dart';
 import 'package:chatorai/core/tools/json_schema_validator.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 
 ToolDef _planTool() => createPlanExitTool();
 
@@ -19,8 +20,8 @@ ToolContext _contextForQuestion(String answer) {
     askQuestion:
         ({
           required String question,
-          List<String>? options,
-          bool? multiple,
+          List<QuestionOption> options = const [],
+          bool multiple = false,
         }) async {
           return answer;
         },
@@ -154,6 +155,99 @@ void main() {
       final tool = _planTool();
       expect(tool.formatValidationError, isNotNull);
       expect(tool.formatValidationError, isA<Function>());
+    });
+
+    group('switchAgent callback', () {
+      late bool switchAgentCalled;
+      late String? switchAgentTarget;
+      late String? switchAgentMessage;
+
+      setUp(() {
+        switchAgentCalled = false;
+        switchAgentTarget = null;
+        switchAgentMessage = null;
+      });
+
+      ToolContext _contextWithSwitchAgent({String? answer}) {
+        return ToolContext(
+          toolCallId: 'call-1',
+          sessionId: 'session-1',
+          ask:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {},
+          askQuestion:
+              ({
+                required String question,
+                List<QuestionOption> options = const [],
+                bool multiple = false,
+              }) async {
+                return answer ?? 'Yes, switch to build agent';
+              },
+          switchAgent: (String agentId, {String? messageText}) {
+            switchAgentCalled = true;
+            switchAgentTarget = agentId;
+            switchAgentMessage = messageText;
+          },
+        );
+      }
+
+      test('calls switchAgent with build on yes answer', () async {
+        final tool = _planTool();
+        final result = await tool.execute(
+          {},
+          _contextWithSwitchAgent(answer: 'Yes, switch to build agent'),
+        );
+
+        expect(switchAgentCalled, isTrue);
+        expect(switchAgentTarget, 'build');
+        expect(
+          switchAgentMessage,
+          'The plan has been approved, you can now edit files. Execute the plan',
+        );
+        expect(result.metadata?['approved'], isTrue);
+      });
+
+      test('does not call switchAgent on no answer', () async {
+        final tool = _planTool();
+        final result = await tool.execute(
+          {},
+          _contextWithSwitchAgent(answer: 'No, continue with plan agent'),
+        );
+
+        expect(switchAgentCalled, isFalse);
+        expect(result.metadata?['approved'], isFalse);
+      });
+
+      test('does not crash when switchAgent callback is null', () async {
+        final tool = _planTool();
+        final ctx = ToolContext(
+          toolCallId: 'call-1',
+          sessionId: 'session-1',
+          ask:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {},
+          askQuestion:
+              ({
+                required String question,
+                List<QuestionOption> options = const [],
+                bool multiple = false,
+              }) async {
+                return 'Yes, switch to build agent';
+              },
+          switchAgent: null,
+        );
+
+        final result = await tool.execute({}, ctx);
+        expect(result.metadata?['approved'], isTrue);
+      });
     });
   });
 }

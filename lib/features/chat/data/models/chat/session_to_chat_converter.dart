@@ -2,8 +2,7 @@
 // Bridges Session Core to Chat UI without legacy Message types.
 
 import 'package:chatorai/core/session/session_state.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
-    hide ToolState;
+import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 
 /// Converts [SessionMessage] + [AssistantContent] parts to [ChatMessage].
@@ -16,6 +15,7 @@ ChatMessage? sessionMessageToChatMessage(
 
   switch (sessionMsg.role) {
     case MessageRole.user:
+    case MessageRole.system:
       return UserMessage(
         id: id,
         content: sessionMsg.content,
@@ -50,13 +50,12 @@ MessagePart assistantContentToMessagePart(AssistantContent content) {
     );
   }
   if (content is AssistantTool) {
-    final state = ToolState.values.byName(content.state.name);
     return ToolResultPart(
       toolCallId: content.callId,
       toolName: content.tool,
       result: content.output,
-      error: state == ToolState.error ? content.output : null,
-      state: state,
+      error: content.state == ToolState.error ? content.output : null,
+      state: content.state,
       input: content.input,
     );
   }
@@ -78,11 +77,11 @@ MessagePart assistantContentToMessagePart(AssistantContent content) {
     return TaskPart(
       description: content.description,
       agent: content.agent,
-      status: content.state.name == 'completed'
-          ? TaskStatus.completed
-          : content.state.name == 'error'
-          ? TaskStatus.error
-          : TaskStatus.running,
+      status: switch (content.state) {
+        ToolState.completed => TaskStatus.completed,
+        ToolState.error => TaskStatus.error,
+        _ => TaskStatus.running,
+      },
       sessionId: content.taskSessionId,
       error: content.error,
       retryAttempt: content.retryAttempt,

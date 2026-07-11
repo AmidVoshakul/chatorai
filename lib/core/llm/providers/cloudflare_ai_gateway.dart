@@ -14,8 +14,6 @@ ProviderConfig cloudflareAiGatewayProvider() => ProviderConfig.basic(
   baseUrl: 'https://gateway.ai.cloudflare.com/v1/ACCOUNT_ID/GATEWAY_ID',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

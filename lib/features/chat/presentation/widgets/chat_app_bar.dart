@@ -80,9 +80,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const ModelsScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const ModelsScreen()),
               );
             },
         child: Text(

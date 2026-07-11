@@ -14,8 +14,7 @@ import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/tools/tool_output_persistence.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
-    hide ToolState;
+import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart'
@@ -195,9 +194,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void _openModelSelector() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ModelsScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const ModelsScreen()),
     );
   }
 
@@ -267,10 +264,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         // Scroll so the last assistant message hides behind AppBar,
         // leaving user's message + loading visible.
         final topPadding = MediaQuery.of(context).padding.top;
-        _scrollToBottom(
-          force: true,
-          offset: topPadding + kToolbarHeight + 8,
-        );
+        _scrollToBottom(force: true, offset: topPadding + kToolbarHeight + 8);
       },
       onOpenModelSettings: _openModelSettings,
     );

@@ -91,11 +91,13 @@ class ChatoraiColors {
   static const Color unselectedItemLight = Color(0xFF888888);
   static const Color unselectedItemDark = Color(0xFF666666);
 
-  // Hover/State
-  static const Color hoverLight = Color(0x1AFF7F00);
-  static const Color hoverDark = Color(0x1AFF7F00);
-  static const Color selectedLight = Color(0x33FF7F00);
-  static const Color selectedDark = Color(0x33FF7F00);
+  // Hover/State — derived from single orange base
+  static const Color hover = Color(0x1AFF7F00);
+  static const Color selected = Color(0x33FF7F00);
+
+  // Orange palette variants
+  static const Color orangeLight = Color(0xFFFFC04C);
+  static const Color orangeDark = Color(0xFFCC8400);
 
   // Input Container
   static const Color inputContainerLight = Color(0xFFFFFFFF);
@@ -154,6 +156,14 @@ class ChatoraiBorderRadius {
   static final Radius mdRadius = Radius.circular(md);
   static final Radius lgRadius = Radius.circular(lg);
   static final Radius xlRadius = Radius.circular(xl);
+
+  // Shape borders
+  static final ShapeBorder smShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(sm),
+  );
+  static final ShapeBorder mdShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(md),
+  );
 }
 
 // ===============================================================
@@ -447,22 +457,52 @@ class ChatoraiTypography {
 // MAIN THEME
 // ===============================================================
 class AppTheme {
+  static AppBarTheme _appBarTheme({
+    required Color backgroundColor,
+    required Color foregroundColor,
+  }) => AppBarTheme(
+    backgroundColor: backgroundColor,
+    foregroundColor: foregroundColor,
+    elevation: 0,
+    iconTheme: const IconThemeData(color: ChatoraiColors.orange),
+    surfaceTintColor: Colors.transparent,
+    shadowColor: Colors.transparent,
+  );
+
+  static DialogThemeData _dialogThemeData({
+    required Color backgroundColor,
+    required Color iconColor,
+    required Color titleColor,
+    required Color contentColor,
+  }) => DialogThemeData(
+    backgroundColor: backgroundColor,
+    elevation: 0,
+    surfaceTintColor: Colors.transparent,
+    iconColor: iconColor,
+    titleTextStyle: TextStyle(
+      color: titleColor,
+      fontSize: ChatoraiFontSizes.xxl,
+      fontWeight: FontWeight.bold,
+    ),
+    contentTextStyle: TextStyle(
+      color: contentColor,
+      fontSize: ChatoraiFontSizes.base,
+    ),
+    shape: ChatoraiBorderRadius.mdShape,
+  );
+
   static ThemeData get lightTheme => ThemeData(
     brightness: Brightness.light,
     primaryColor: ChatoraiColors.orange,
-    primaryColorLight: const Color(0xFFFFC04C),
-    primaryColorDark: const Color(0xFFCC8400),
+    primaryColorLight: ChatoraiColors.orangeLight,
+    primaryColorDark: ChatoraiColors.orangeDark,
     canvasColor: ChatoraiColors.light,
     scaffoldBackgroundColor: ChatoraiColors.lightSurface,
     cardColor: ChatoraiColors.lightCard,
     textTheme: ChatoraiTypography.lightTextTheme,
-    appBarTheme: const AppBarTheme(
+    appBarTheme: _appBarTheme(
       backgroundColor: ChatoraiColors.light,
       foregroundColor: ChatoraiColors.dark,
-      elevation: 0,
-      iconTheme: IconThemeData(color: ChatoraiColors.orange),
-      surfaceTintColor: Colors.transparent,
-      shadowColor: Colors.transparent,
     ),
     colorScheme: const ColorScheme.light(
       primary: ChatoraiColors.orange,
@@ -477,31 +517,17 @@ class AppTheme {
       selectedItemColor: ChatoraiColors.orange,
       unselectedItemColor: ChatoraiColors.unselectedItemLight,
     ),
-    dialogTheme: DialogThemeData(
+    dialogTheme: _dialogThemeData(
       backgroundColor: ChatoraiColors.light,
-      elevation: 0,
-      surfaceTintColor: Colors.transparent,
       iconColor: ChatoraiColors.dark,
-      titleTextStyle: const TextStyle(
-        color: ChatoraiColors.dark,
-        fontSize: ChatoraiFontSizes.xxl,
-        fontWeight: FontWeight.bold,
-      ),
-      contentTextStyle: const TextStyle(
-        color: ChatoraiColors.secondaryTextColor,
-        fontSize: ChatoraiFontSizes.base,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-      ),
+      titleColor: ChatoraiColors.dark,
+      contentColor: ChatoraiColors.secondaryTextColor,
     ),
     cardTheme: CardThemeData(
       color: ChatoraiColors.light,
       elevation: 0,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-      ),
+      shape: ChatoraiBorderRadius.smShape,
     ),
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
@@ -512,27 +538,32 @@ class AppTheme {
         borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
         borderSide: const BorderSide(color: ChatoraiColors.orange),
       ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+        borderSide: const BorderSide(
+          color: ChatoraiColors.inputBorder,
+          width: ChatoraiBorderWidth.thinBold,
+        ),
+      ),
       fillColor: ChatoraiColors.inputFill,
       filled: true,
+      labelStyle: const TextStyle(color: ChatoraiColors.secondaryTextColor),
+      hintStyle: const TextStyle(color: ChatoraiColors.secondaryTextColor),
     ),
   );
 
   static ThemeData get darkTheme => ThemeData(
     brightness: Brightness.dark,
     primaryColor: ChatoraiColors.orange,
-    primaryColorLight: const Color(0xFFFFC04C),
-    primaryColorDark: const Color(0xFFCC8400),
+    primaryColorLight: ChatoraiColors.orangeLight,
+    primaryColorDark: ChatoraiColors.orangeDark,
     canvasColor: ChatoraiColors.darkSurface,
     scaffoldBackgroundColor: ChatoraiColors.darkSurface,
     cardColor: ChatoraiColors.darkCard,
     textTheme: ChatoraiTypography.darkTextTheme,
-    appBarTheme: const AppBarTheme(
+    appBarTheme: _appBarTheme(
       backgroundColor: ChatoraiColors.darkSurface,
       foregroundColor: ChatoraiColors.light,
-      elevation: 0,
-      iconTheme: IconThemeData(color: ChatoraiColors.orange),
-      surfaceTintColor: Colors.transparent,
-      shadowColor: Colors.transparent,
     ),
     colorScheme: const ColorScheme.dark(
       primary: ChatoraiColors.orange,
@@ -547,31 +578,17 @@ class AppTheme {
       selectedItemColor: ChatoraiColors.orange,
       unselectedItemColor: ChatoraiColors.unselectedItemDark,
     ),
-    dialogTheme: DialogThemeData(
+    dialogTheme: _dialogThemeData(
       backgroundColor: ChatoraiColors.darkCard,
-      elevation: 0,
-      surfaceTintColor: Colors.transparent,
       iconColor: ChatoraiColors.darkTextColor,
-      titleTextStyle: const TextStyle(
-        color: ChatoraiColors.light,
-        fontSize: ChatoraiFontSizes.xxl,
-        fontWeight: FontWeight.bold,
-      ),
-      contentTextStyle: const TextStyle(
-        color: ChatoraiColors.darkSecondaryTextColor,
-        fontSize: ChatoraiFontSizes.base,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-      ),
+      titleColor: ChatoraiColors.light,
+      contentColor: ChatoraiColors.darkSecondaryTextColor,
     ),
     cardTheme: CardThemeData(
       color: ChatoraiColors.darkCard,
       elevation: 0,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-      ),
+      shape: ChatoraiBorderRadius.smShape,
     ),
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(

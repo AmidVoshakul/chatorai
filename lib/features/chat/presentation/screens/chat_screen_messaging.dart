@@ -188,7 +188,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
 
       // Get maxSteps from the effective agent
       final int maxSteps =
-          delegateAgent?.maxSteps ?? ref.read(currentAgentProvider).maxSteps;
+          delegateAgent?.maxSteps ??
+          ref.read(currentAgentProvider).maxSteps ??
+          unlimitedMaxSteps;
 
       await _handleStreamingResponse(
         chat: chat,

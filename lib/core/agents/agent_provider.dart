@@ -25,7 +25,6 @@ class CurrentAgentNotifier extends Notifier<AgentDefinition> {
       hidden: false,
       systemPrompt:
           'You are the build agent. Execute tasks using available tools.',
-      maxSteps: 25,
     );
   }
 }

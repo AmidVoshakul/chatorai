@@ -25,17 +25,7 @@ class ReasoningPartWidget extends StatefulWidget {
 
 class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     with TickerProviderStateMixin {
-  static final Map<String, bool> _expandState = {};
-
-  bool get _isExpanded {
-    final key = widget.partKey ?? widget.part.content.hashCode.toString();
-    return _expandState[key] ?? widget.expandByDefault;
-  }
-
-  set _isExpanded(bool value) {
-    final key = widget.partKey ?? widget.part.content.hashCode.toString();
-    _expandState[key] = value;
-  }
+  late bool _isExpanded;
 
   Duration? _thoughtDuration;
 
@@ -56,8 +46,7 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     if (widget.part.isStreaming) {
       _shimmerController.repeat();
     }
-    final key = widget.partKey ?? widget.part.content.hashCode.toString();
-    _expandState.putIfAbsent(key, () => widget.expandByDefault);
+    _isExpanded = widget.expandByDefault;
   }
 
   @override
@@ -77,11 +66,7 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     }
 
     if (oldWidget.expandByDefault != widget.expandByDefault) {
-      final key = widget.partKey ?? widget.part.content.hashCode.toString();
-      final current = _expandState[key];
-      if (current == null || current == oldWidget.expandByDefault) {
-        _expandState[key] = widget.expandByDefault;
-      }
+      setState(() => _isExpanded = widget.expandByDefault);
     }
   }
 

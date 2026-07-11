@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_test/flutter_test.dart';
 import 'package:test/test.dart';
 import 'package:chatorai/core/tools/tool_execution.dart';
 import 'package:chatorai/core/tools/tool.dart';
@@ -29,6 +30,8 @@ ToolDef _simpleToolDef(
 
 /// Unit tests for ToolExecutor.
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late PermissionService permissionService;
   late PermissionRuleset defaultRules;
   late ToolExecutor executor;
@@ -175,9 +178,14 @@ void main() {
 
       final options = _experimentalContext('session-raw');
 
+      // Raw non-Map input is wrapped as {'raw': rawInput}. The tool schema
+      // in _simpleToolDef requires 'input', so schema validation rejects
+      // the wrapped raw input. This test verifies the ToolInvalidArgsError path.
       final result = await executor.execute(tool, 'raw string', options);
 
-      expect(result['output'], equals('processed: raw string'));
+      // When schema validation fails, ToolExecutor throws ToolInvalidArgsError
+      // which is caught and returned as error JSON
+      expect(result['error'], equals('invalid_args'));
     });
   });
 

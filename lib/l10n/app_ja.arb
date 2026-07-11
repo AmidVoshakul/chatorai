@@ -343,6 +343,7 @@
   "modelDoesNotSupportFiles": "モデル {modelId} はファイルをサポートしていません。ファイルを添付することはできますが、送信は機能しません。",
   "fileAttachedButNotSupported": "ファイルが添付されましたが、現在のモデルではサポートされていません",
   "copyCodeTooltip": "コードをコピー",
+  "copiedFeedback": "コピーしました",
   "expandTooltip": "展開",
   "collapseTooltip": "折りたたむ",
   "welcomeGreeting1": "聞いて、探索して、作ろう — 一緒に考えましょう。",

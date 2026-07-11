@@ -12,8 +12,6 @@ ProviderConfig githubCopilotProvider() => ProviderConfig.basic(
   baseUrl: 'https://api.githubcopilot.com',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

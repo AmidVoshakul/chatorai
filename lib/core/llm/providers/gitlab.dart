@@ -12,8 +12,6 @@ ProviderConfig gitlabProvider() => ProviderConfig.basic(
   baseUrl: 'https://gitlab.com/api/v4/ai',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

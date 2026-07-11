@@ -11,15 +11,13 @@ void main() {
         );
       });
 
-      test('detects rate limit string (case-sensitive)', () {
+      test('detects rate limit string (case-insensitive)', () {
         expect(ChatErrorUtils.isRateLimitError('Rate limit exceeded'), isTrue);
+        expect(ChatErrorUtils.isRateLimitError('rate limit exceeded'), isTrue);
       });
 
-      test('detects "bad response" string', () {
-        expect(
-          ChatErrorUtils.isRateLimitError('DioException [bad response]'),
-          isTrue,
-        );
+      test('detects "too many requests" string', () {
+        expect(ChatErrorUtils.isRateLimitError('Too many requests'), isTrue);
       });
 
       test('returns false for non-rate-limit errors', () {
@@ -29,15 +27,15 @@ void main() {
           isFalse,
         );
         expect(ChatErrorUtils.isRateLimitError('Unknown error'), isFalse);
+        // "bad response" is not a rate limit indicator
+        expect(
+          ChatErrorUtils.isRateLimitError('DioException [bad response]'),
+          isFalse,
+        );
       });
 
       test('returns false for empty string', () {
         expect(ChatErrorUtils.isRateLimitError(''), isFalse);
-      });
-
-      test('is case-sensitive for "Rate limit"', () {
-        // The implementation checks for 'Rate limit' (capital R)
-        expect(ChatErrorUtils.isRateLimitError('rate limit exceeded'), isFalse);
       });
     });
 
@@ -46,24 +44,27 @@ void main() {
         expect(ChatErrorUtils.isBadRequestError('400 Bad Request'), isTrue);
       });
 
-      test('detects "bad response" (case-insensitive)', () {
+      test('detects "bad request" with status code', () {
         expect(
-          ChatErrorUtils.isBadRequestError('DioException [bad response]'),
+          ChatErrorUtils.isBadRequestError('HTTP 400 Bad Request'),
           isTrue,
         );
-        expect(ChatErrorUtils.isBadRequestError('BAD RESPONSE'), isTrue);
+        expect(ChatErrorUtils.isBadRequestError('400 bad request'), isTrue);
       });
 
-      test('detects "client error" (case-insensitive)', () {
+      test('detects "client error" with status code', () {
         expect(
-          ChatErrorUtils.isBadRequestError('Client error occurred'),
+          ChatErrorUtils.isBadRequestError('Client error occurred: 400'),
           isTrue,
         );
       });
 
-      test('detects "bad request" (case-insensitive)', () {
-        expect(ChatErrorUtils.isBadRequestError('Bad Request'), isTrue);
-        expect(ChatErrorUtils.isBadRequestError('bad request'), isTrue);
+      test('detects other 4xx codes', () {
+        expect(ChatErrorUtils.isBadRequestError('404 Not Found'), isTrue);
+        expect(
+          ChatErrorUtils.isBadRequestError('422 Unprocessable Entity'),
+          isTrue,
+        );
       });
 
       test('returns false for non-bad-request errors', () {
@@ -73,6 +74,11 @@ void main() {
         );
         expect(ChatErrorUtils.isBadRequestError('429 Rate limit'), isFalse);
         expect(ChatErrorUtils.isBadRequestError('Unknown error'), isFalse);
+        // "bad response" without a 4xx code is not a bad request
+        expect(
+          ChatErrorUtils.isBadRequestError('DioException [bad response]'),
+          isFalse,
+        );
       });
 
       test('returns false for empty string', () {

@@ -252,4 +252,49 @@ void main() {
       expect(json['urls'], isNotEmpty);
     });
   });
+
+  group('ChatOrAIConfig tools field', () {
+    test('parses global tools config with bool values', () {
+      final config = ChatOrAIConfig.fromJson(<String, dynamic>{
+        'version': 1,
+        'tools': {'sequential_thinking__think': false, 'task': true},
+      });
+      expect(config.tools, isNotNull);
+      expect(config.tools!['sequential_thinking__think'], equals(false));
+      expect(config.tools!['task'], equals(true));
+    });
+
+    test('parses global tools config with string actions', () {
+      final config = ChatOrAIConfig.fromJson(<String, dynamic>{
+        'version': 1,
+        'tools': {'mcp__server_tool': 'deny', 'bash': 'ask'},
+      });
+      expect(config.tools, isNotNull);
+      expect(config.tools!['mcp__server_tool'], equals('deny'));
+      expect(config.tools!['bash'], equals('ask'));
+    });
+
+    test('roundtrip preserves tools field', () {
+      final original = ChatOrAIConfig(
+        version: 1,
+        permission: const {},
+        tools: {'sequential_thinking__think': false, 'task': true},
+      );
+      final json = original.toJson();
+      expect(json['tools'], isNotNull);
+      expect(json['tools']['sequential_thinking__think'], equals(false));
+      expect(json['tools']['task'], equals(true));
+
+      final restored = ChatOrAIConfig.fromJson(json);
+      expect(restored.tools, isNotNull);
+      expect(restored.tools!['sequential_thinking__think'], equals(false));
+      expect(restored.tools!['task'], equals(true));
+    });
+
+    test('omits tools field when null', () {
+      const config = ChatOrAIConfig(version: 1, permission: {});
+      final json = config.toJson();
+      expect(json.containsKey('tools'), isFalse);
+    });
+  });
 }

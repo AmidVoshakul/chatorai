@@ -7,8 +7,9 @@ import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
         AssistantTask,
         AssistantQuestion,
         AssistantTodo,
-        AssistantFile,
-        ToolState;
+        AssistantFile;
+import 'package:chatorai/features/chat/data/models/chat/message_part.dart'
+    show ToolState;
 import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 

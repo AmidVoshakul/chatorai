@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
+import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
 import 'package:drift/drift.dart';
 
 import 'database.dart' hide ToolResult;
@@ -974,8 +975,9 @@ MessageRole _roleFromString(String role) {
   return switch (role) {
     'user' => MessageRole.user,
     'assistant' => MessageRole.assistant,
+    'system' => MessageRole.system,
     'tool' => MessageRole.tool,
-    _ => throw ArgumentError('Unknown role: $role'),
+    _ => MessageRole.user,
   };
 }
 

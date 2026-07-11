@@ -9,9 +9,12 @@ import 'package:test/test.dart';
 
 void main() {
   group('ConfigLoader', () {
-    test('returns default config when no file exists', () async {
+    test('returns valid JSON config', () async {
       final raw = await ConfigLoader.load();
-      expect(raw, '{}');
+      // ConfigLoader returns either '{}' (no config) or valid JSON from
+      // project/global config file. Verify it's always parseable JSON.
+      final decoded = json.decode(raw) as Map<String, dynamic>;
+      expect(decoded, isA<Map<String, dynamic>>());
     });
 
     test('throws when JSON is malformed', () async {

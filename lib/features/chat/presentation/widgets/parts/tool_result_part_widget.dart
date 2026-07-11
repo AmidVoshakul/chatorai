@@ -35,6 +35,15 @@ class ToolResultPartWidget extends ConsumerStatefulWidget {
 class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
   static const _noBodyTools = {'websearch', 'webfetch', 'read', 'glob', 'grep'};
 
+  /// Built-in tools with underscores/dashes that are NOT MCP.
+  static const _builtInCompoundNames = {
+    'apply_patch',
+    'external-directory',
+    'json_schema',
+    'plan_enter',
+    'plan_exit',
+  };
+
   bool _isExpanded = false;
   bool _isCopied = false;
   final Map<int, List<LspDiagnostic>> _diagnosticsByLine = {};
@@ -148,7 +157,10 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
     final isRunning = part.state == ToolState.running;
     final isCompleted = part.state == ToolState.completed;
     final toolNameLower = part.toolName.toLowerCase();
-    final isNoBodyTool = _noBodyTools.contains(toolNameLower);
+    final isNoBodyTool =
+        _noBodyTools.contains(toolNameLower) ||
+        (toolNameLower.contains('_') &&
+            !_builtInCompoundNames.contains(toolNameLower));
     final isBash = toolNameLower == 'bash';
     final canExpand = (isCompleted || isError) && !isRunning && !isNoBodyTool;
 
@@ -210,15 +222,15 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
   ) {
     // During execution we show only a spinner; after completion the icon replaces it.
     final spinner = SizedBox(
-      width: 16,
-      height: 16,
-      child: SpinKitCircle(size: 16, color: theme.colorScheme.muted),
+      width: 15,
+      height: 15,
+      child: SpinKitCircle(size: 15, color: theme.colorScheme.muted),
     );
 
     final icon = ToolIcon(
       toolName: part.toolName,
       color: theme.colorScheme.muted,
-      size: 14,
+      size: 13,
     );
 
     return Row(

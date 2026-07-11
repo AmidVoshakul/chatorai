@@ -15,6 +15,21 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   bool Function(String)? get checkModelSupportsImages;
   VoidCallback? get onOpenModelSettings;
 
+  /// Override to transform/resolve text before sending.
+  /// Return null to cancel normal send (e.g. skill with no args).
+  /// Return a [ResolvedText] to continue with modified text and optional delegate.
+  Future<ResolvedText?> resolveText(String text) async {
+    String? delegateAgentId;
+    final agentMatch = RegExp(r'^@(\S+)\s*').firstMatch(text);
+    if (agentMatch != null) {
+      final agentId = agentMatch.group(1);
+      if (AgentRegistry().get(agentId!) != null) {
+        delegateAgentId = agentId;
+      }
+    }
+    return ResolvedText(text: text, delegateAgentId: delegateAgentId);
+  }
+
   Future<void> performSend({
     required void Function(MessageData) onSendMessage,
     required void Function(bool) onToggleStreaming,
@@ -51,18 +66,20 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       await speechService?.stopListening();
     }
     var text = textController.text.trim();
-    String? delegateAgentId;
-    final agentMatch = RegExp(r'^@(\S+)\s*').firstMatch(text);
-    if (agentMatch != null) {
-      final agentId = agentMatch.group(1);
-      if (AgentRegistry().get(agentId!) != null) {
-        delegateAgentId = agentId;
-        text = text.substring(agentMatch.end);
-      }
+
+    final resolved = await resolveText(text);
+    if (resolved == null) {
+      // resolveText handled the send (e.g. skill no-args insert)
+      textController.clear();
+      onClearAttachedFile();
+      ref.read(chatInputProvider.notifier).setIsSending(false);
+      return;
     }
+
+    text = resolved.text;
     final messageData = MessageData(
       text: text,
-      delegateAgentId: delegateAgentId,
+      delegateAgentId: resolved.delegateAgentId,
       imagePath: ref.read(chatInputProvider).attachedFilePath,
       imageType: ref.read(chatInputProvider).attachedImageType,
       base64Data: ref.read(chatInputProvider).attachedBase64Data,
@@ -163,4 +180,12 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       }
     });
   }
+}
+
+/// Result of [SendMessageHandler.resolveText].
+class ResolvedText {
+  final String text;
+  final String? delegateAgentId;
+
+  const ResolvedText({required this.text, this.delegateAgentId});
 }

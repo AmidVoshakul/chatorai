@@ -308,6 +308,7 @@
   "addProvider": "Add Provider",
   "applySettings": "Apply Settings",
   "copyCodeTooltip": "Copy code",
+  "copiedFeedback": "Copied",
   "defaultSuggestion1": "What can you do?",
   "defaultSuggestion2": "Help me write code",
   "defaultSuggestion3": "Explain a concept",

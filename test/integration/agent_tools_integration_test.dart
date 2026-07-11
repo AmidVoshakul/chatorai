@@ -1,3 +1,4 @@
+import 'package:chatorai/core/agents/agent_registry.dart';
 import 'dart:io';
 
 import 'package:ai_sdk_dart/ai_sdk_dart.dart';
@@ -103,6 +104,7 @@ class _FakeChatAiService extends ChatAiService {
 /// Test harness that provides all dependencies for the task tool.
 class _TaskTestHarness {
   final AppDatabase db;
+  final String dbPath;
   final SessionRepository repository;
   final SessionRunner runner;
   final SessionRunnerHolder runnerHolder;
@@ -111,6 +113,7 @@ class _TaskTestHarness {
 
   _TaskTestHarness({
     required this.db,
+    required this.dbPath,
     required this.repository,
     required this.runner,
     required this.runnerHolder,
@@ -140,7 +143,10 @@ SharedPreferences _createMockPrefs() {
 }
 
 Future<_TaskTestHarness> _createTaskHarness(ChatAiService chatService) async {
-  final db = AppDatabase.inMemory();
+  final tempDir = Directory.systemTemp;
+  final dbPath =
+      '${tempDir.path}/chatorai_task_test_${DateTime.now().millisecondsSinceEpoch}.db';
+  final db = AppDatabase.file(dbPath);
   final repository = SessionRepository(db);
   final runner = SessionRunner(repository, null);
   final runnerHolder = SessionRunnerHolder(runner);
@@ -153,6 +159,7 @@ Future<_TaskTestHarness> _createTaskHarness(ChatAiService chatService) async {
 
   return _TaskTestHarness(
     db: db,
+    dbPath: dbPath,
     repository: repository,
     runner: runner,
     runnerHolder: runnerHolder,
@@ -222,7 +229,8 @@ void main() {
 
       setUp(() async {
         harness = await _createTaskHarness(_FakeChatAiService());
-        // Create parent session with known ID so tests can reference it
+        // Initialize AgentRegistry so built-in agents are available
+        await AgentRegistry().init();
         await harness.repository.createSession(
           id: SessionID.fromString(defaultSessionId),
           agent: 'general',
@@ -232,6 +240,10 @@ void main() {
 
       tearDown(() async {
         await harness.close();
+        final file = File(harness.dbPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
       });
 
       test('produces valid XML with required attributes', () async {
@@ -891,6 +903,8 @@ void main() {
 
       setUp(() async {
         crossHarness = await _createTaskHarness(_FakeChatAiService());
+        // Initialize AgentRegistry so built-in agents are available
+        await AgentRegistry().init();
         await crossHarness.repository.createSession(
           id: SessionID.fromString('ses_cross-session'),
           agent: 'general',
@@ -900,6 +914,10 @@ void main() {
 
       tearDown(() async {
         await crossHarness.close();
+        final file = File(crossHarness.dbPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
       });
 
       test('task tool followed by question tool in same session', () async {

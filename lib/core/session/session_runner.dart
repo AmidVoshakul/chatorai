@@ -1,3 +1,6 @@
+import 'package:chatorai/core/agents/agent_registry.dart';
+import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
@@ -91,6 +94,42 @@ class SessionRunner {
     return session;
   }
 
+  PermissionRuleset _deriveSubagentPermissions({
+    required PermissionRuleset? parentRules,
+    required AgentDefinition childAgent,
+  }) {
+    final base = <PermissionRule>[
+      ...childAgent.permissions.rules,
+      if (parentRules != null)
+        ...parentRules.rules.where(
+          (r) =>
+              r.permission == 'external_directory' ||
+              r.action == PermissionAction.deny,
+        ),
+    ];
+
+    final hasTodo = base.any((r) => r.permission == 'todowrite');
+    final hasTask = base.any((r) => r.permission == 'task');
+
+    return PermissionRuleset(
+      rules: [
+        ...base,
+        if (!hasTodo)
+          const PermissionRule(
+            permission: 'todowrite',
+            pattern: '*',
+            action: PermissionAction.deny,
+          ),
+        if (!hasTask)
+          const PermissionRule(
+            permission: 'task',
+            pattern: '*',
+            action: PermissionAction.deny,
+          ),
+      ],
+    );
+  }
+
   Future<TaskChildResult> runTaskInChild({
     required SessionID parentSessionId,
     required String taskPrompt,
@@ -101,11 +140,29 @@ class SessionRunner {
     String? taskId,
     SessionRunnerHolder? holder,
   }) async {
+    final effectiveAgent = agent ?? 'general';
+    final childAgent =
+        AgentRegistry().get(effectiveAgent) ?? AgentRegistry().get('general');
+    if (childAgent == null) {
+      throw StateError('Agent not found: $effectiveAgent');
+    }
+    final parentState =
+        await repository.getSessionMeta(parentSessionId) ??
+        await repository.loadSession(parentSessionId);
+    final effectivePermissions = _deriveSubagentPermissions(
+      parentRules: parentState?.permission,
+      childAgent: childAgent,
+    );
+
+    final effectiveModelRef =
+        childAgent.model ?? modelRef ?? parentState?.modelRef;
+
     final childState = await repository.createChildSession(
       parentSessionId,
-      agent: agent,
-      modelRef: modelRef,
+      agent: effectiveAgent,
+      modelRef: effectiveModelRef,
       title: title,
+      permission: effectivePermissions,
     );
     final childId = childState.id;
 

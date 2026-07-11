@@ -68,10 +68,7 @@ void main() {
     });
 
     test('creates TextStyle with only letterSpacing parameter', () {
-      final style = ChatoraiFontSizes.mono(
-        11.0,
-        letterSpacing: -0.25,
-      );
+      final style = ChatoraiFontSizes.mono(11.0, letterSpacing: -0.25);
 
       expect(style.fontSize, equals(11.0));
       expect(style.fontFamily, equals(ChatoraiFontSizes.monospaceFont));
@@ -133,7 +130,10 @@ void main() {
     });
 
     test('handles different FontWeight values', () {
-      final normalStyle = ChatoraiFontSizes.mono(14.0, weight: FontWeight.normal);
+      final normalStyle = ChatoraiFontSizes.mono(
+        14.0,
+        weight: FontWeight.normal,
+      );
       final boldStyle = ChatoraiFontSizes.mono(14.0, weight: FontWeight.bold);
       final w900Style = ChatoraiFontSizes.mono(14.0, weight: FontWeight.w900);
 
@@ -143,8 +143,14 @@ void main() {
     });
 
     test('handles different FontStyle values', () {
-      final normalStyle = ChatoraiFontSizes.mono(14.0, fontStyle: FontStyle.normal);
-      final italicStyle = ChatoraiFontSizes.mono(14.0, fontStyle: FontStyle.italic);
+      final normalStyle = ChatoraiFontSizes.mono(
+        14.0,
+        fontStyle: FontStyle.normal,
+      );
+      final italicStyle = ChatoraiFontSizes.mono(
+        14.0,
+        fontStyle: FontStyle.italic,
+      );
 
       expect(normalStyle.fontStyle, equals(FontStyle.normal));
       expect(italicStyle.fontStyle, equals(FontStyle.italic));
@@ -181,10 +187,7 @@ void main() {
     });
 
     test('creates style with color only', () {
-      final style = ChatoraiFontSizes.mono(
-        14.0,
-        color: ChatoraiColors.error,
-      );
+      final style = ChatoraiFontSizes.mono(14.0, color: ChatoraiColors.error);
 
       expect(style.color, equals(ChatoraiColors.error));
       expect(style.fontWeight, isNull);
@@ -194,10 +197,7 @@ void main() {
     });
 
     test('creates style with weight only', () {
-      final style = ChatoraiFontSizes.mono(
-        14.0,
-        weight: FontWeight.w300,
-      );
+      final style = ChatoraiFontSizes.mono(14.0, weight: FontWeight.w300);
 
       expect(style.fontWeight, equals(FontWeight.w300));
       expect(style.color, isNull);
@@ -207,10 +207,7 @@ void main() {
     });
 
     test('creates style with height only', () {
-      final style = ChatoraiFontSizes.mono(
-        14.0,
-        height: 1.8,
-      );
+      final style = ChatoraiFontSizes.mono(14.0, height: 1.8);
 
       expect(style.height, equals(1.8));
       expect(style.color, isNull);
@@ -220,10 +217,7 @@ void main() {
     });
 
     test('creates style with fontStyle only', () {
-      final style = ChatoraiFontSizes.mono(
-        14.0,
-        fontStyle: FontStyle.italic,
-      );
+      final style = ChatoraiFontSizes.mono(14.0, fontStyle: FontStyle.italic);
 
       expect(style.fontStyle, equals(FontStyle.italic));
       expect(style.color, isNull);
@@ -233,10 +227,7 @@ void main() {
     });
 
     test('creates style with letterSpacing only', () {
-      final style = ChatoraiFontSizes.mono(
-        14.0,
-        letterSpacing: 1.5,
-      );
+      final style = ChatoraiFontSizes.mono(14.0, letterSpacing: 1.5);
 
       expect(style.letterSpacing, equals(1.5));
       expect(style.color, isNull);

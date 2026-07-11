@@ -6,6 +6,8 @@ import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/lsp.dart';
 
+import 'package:chatorai/core/lsp/lsp_service.dart';
+
 ToolContext _mockCtx({
   List<String>? askedPermission,
   List<String>? askedPatterns,
@@ -57,15 +59,17 @@ String _tempFile(String name, String content) {
   return file.path;
 }
 
+ToolDef _createLspTool() => createLspTool(LspService());
+
 void main() {
   group('lsp tool', () {
     test('description is non-empty', () {
-      final tool = createLspTool();
+      final tool = _createLspTool();
       expect(tool.description, isNotEmpty);
     });
 
     test('inputSchema has required filePath field', () {
-      final tool = createLspTool();
+      final tool = _createLspTool();
       final schema = tool.inputSchema;
       final properties = schema['properties'] as Map<String, dynamic>;
       expect(properties.containsKey('filePath'), isTrue);
@@ -74,7 +78,7 @@ void main() {
     });
 
     test('inputSchema has optional verbose and timeout fields', () {
-      final tool = createLspTool();
+      final tool = _createLspTool();
       final schema = tool.inputSchema;
       final properties = schema['properties'] as Map<String, dynamic>;
       expect(properties.containsKey('verbose'), isTrue);
@@ -84,7 +88,7 @@ void main() {
     });
 
     test('execute with null filePath returns error', () async {
-      final tool = createLspTool();
+      final tool = _createLspTool();
       final ctx = _mockCtx();
       final output = await tool.execute({}, ctx);
       expect(output.metadata?['error'], isTrue);
@@ -92,7 +96,7 @@ void main() {
     });
 
     test('execute with empty filePath returns error', () async {
-      final tool = createLspTool();
+      final tool = _createLspTool();
       final ctx = _mockCtx();
       final output = await tool.execute({'filePath': ''}, ctx);
       expect(output.metadata?['error'], isTrue);
@@ -100,7 +104,7 @@ void main() {
     });
 
     test('execute with non-existent path returns error', () async {
-      final tool = createLspTool();
+      final tool = _createLspTool();
       final ctx = _mockCtx();
       final output = await tool.execute({
         'filePath': 'test/temp/nonexistent_file.dart',
@@ -110,7 +114,7 @@ void main() {
     });
 
     test('execute with cancelled abort signal returns aborted error', () async {
-      final tool = createLspTool();
+      final tool = _createLspTool();
       final path = _tempFile('lsp_cancel.dart', 'void main() {}\n');
       final ctx = _cancelledCtx();
       final output = await tool.execute({'filePath': path}, ctx);
@@ -121,7 +125,7 @@ void main() {
     test(
       'execute does not call ctx.ask (lsp has no permission prompt)',
       () async {
-        final tool = createLspTool();
+        final tool = _createLspTool();
         bool askCalled = false;
         final ctx = ToolContext(
           toolCallId: 'test',
@@ -152,7 +156,7 @@ void main() {
     );
 
     test('execute returns valid JSON for clean file', () async {
-      final tool = createLspTool();
+      final tool = _createLspTool();
       final ctx = _mockCtx();
       final path = _tempFile(
         'lsp_clean.dart',
@@ -168,7 +172,7 @@ void main() {
     });
 
     test('execute returns error metadata for file with issues', () async {
-      final tool = createLspTool();
+      final tool = _createLspTool();
       final ctx = _mockCtx();
       // File with intentional issue: missing semicolon (info-level in Dart)
       final path = _tempFile(
@@ -186,7 +190,7 @@ void main() {
     });
 
     test('execute with verbose flag includes info diagnostics', () async {
-      final tool = createLspTool();
+      final tool = _createLspTool();
       final ctx = _mockCtx();
       final path = _tempFile(
         'lsp_verbose.dart',
@@ -205,7 +209,7 @@ void main() {
     test(
       'execute returns error on filesystem exception',
       () async {
-        final tool = createLspTool();
+        final tool = _createLspTool();
         final ctx = _mockCtx();
         // Use a path that will cause a filesystem error (directory as file)
         final dir = Directory('test/temp/lsp_dir_test');
@@ -223,7 +227,7 @@ void main() {
     );
 
     test('execute handles timeout parameter', () async {
-      final tool = createLspTool();
+      final tool = _createLspTool();
       final ctx = _mockCtx();
       final path = _tempFile('lsp_timeout.dart', 'void main() {}\n');
       // Very short timeout — should still work for a small file
@@ -235,7 +239,7 @@ void main() {
     });
 
     test('metadata includes filePath and counts', () async {
-      final tool = createLspTool();
+      final tool = _createLspTool();
       final ctx = _mockCtx();
       final path = _tempFile('lsp_meta.dart', 'void main() {}\n');
       final output = await tool.execute({'filePath': path}, ctx);
@@ -247,7 +251,7 @@ void main() {
     });
 
     test('title is set correctly', () async {
-      final tool = createLspTool();
+      final tool = _createLspTool();
       final ctx = _mockCtx();
       final path = _tempFile('lsp_title.dart', 'void main() {}\n');
       final output = await tool.execute({'filePath': path}, ctx);

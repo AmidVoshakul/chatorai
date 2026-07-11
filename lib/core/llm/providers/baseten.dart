@@ -14,8 +14,6 @@ ProviderConfig basetenProvider() => ProviderConfig.basic(
   baseUrl: 'https://inference.baseten.co/v1',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

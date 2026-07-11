@@ -11,6 +11,11 @@ import 'package:yaml/yaml.dart';
 
 enum AgentMode { primary, subagent, all }
 
+/// Sentinel value passed to streamText when maxSteps is null.
+/// ai_sdk_dart breaks its step loop when tool results are empty,
+/// so this effectively means "unlimited".
+const int unlimitedMaxSteps = 999;
+
 class AgentDefinition {
   final String id;
   final String name;
@@ -19,7 +24,9 @@ class AgentDefinition {
   final String? systemPrompt;
   final PermissionRuleset permissions;
   final bool hidden;
-  final int maxSteps;
+  final int? maxSteps;
+  final double? temperature;
+  final String? model;
 
   const AgentDefinition({
     required this.id,
@@ -29,9 +36,16 @@ class AgentDefinition {
     this.systemPrompt,
     this.permissions = const PermissionRuleset(),
     this.hidden = false,
-    this.maxSteps = 5,
+    this.maxSteps,
+    this.temperature,
+    this.model,
   });
 
+  /// Returns a copy with the given fields replaced.
+  ///
+  /// Note: `null` for any field means "keep existing value", not "unset".
+  /// To create an unlimited-steps definition, use
+  /// `AgentDefinition(id: ..., maxSteps: null, ...)` directly.
   AgentDefinition copyWith({
     String? id,
     String? name,
@@ -41,6 +55,8 @@ class AgentDefinition {
     PermissionRuleset? permissions,
     bool? hidden,
     int? maxSteps,
+    double? temperature,
+    String? model,
   }) {
     return AgentDefinition(
       id: id ?? this.id,
@@ -51,20 +67,33 @@ class AgentDefinition {
       permissions: permissions ?? this.permissions,
       hidden: hidden ?? this.hidden,
       maxSteps: maxSteps ?? this.maxSteps,
+      temperature: temperature ?? this.temperature,
+      model: model ?? this.model,
     );
   }
 }
 
-// Built-in agent fallback definitions (always available)
-// These are hardcoded defaults that can be overridden via chatorai.json
-final Map<String, AgentDefinition> _builtInAgents = {
+extension AgentDefinitionX on AgentDefinition {
+  bool isVisibleTo(AgentMode caller) {
+    if (hidden) return false;
+    if (mode == AgentMode.subagent) return true;
+    if (caller == AgentMode.primary) {
+      return mode == AgentMode.subagent || mode == AgentMode.primary;
+    }
+    if (caller == AgentMode.subagent || caller == AgentMode.all) {
+      return mode == AgentMode.subagent;
+    }
+    return false;
+  }
+}
+
+final Map<String, AgentDefinition> builtInAgents = {
   'build': const AgentDefinition(
     id: 'build',
     name: 'build',
     description: 'Build agent. Executes tools with standard permissions.',
     mode: AgentMode.primary,
     hidden: false,
-    maxSteps: 25,
     permissions: PermissionRuleset(
       rules: [
         // Default allow for all tools, but specific overrides
@@ -83,7 +112,6 @@ final Map<String, AgentDefinition> _builtInAgents = {
         'Planning agent. No file editing — only analysis and planning.',
     mode: AgentMode.primary,
     hidden: false,
-    maxSteps: 10,
     systemPrompt: '''
 You are ChatORAI in PLAN mode. Your role is that of a system architect and strategic engineer, not a code implementer.
 
@@ -128,11 +156,25 @@ Create a clear, implementable and logical plan that can be directly transferred 
 - Highlight potential risks and bottlenecks
 - Think like an engineer who delegates a task to another developer
 - Create a plan in .chatorai/plans and ask the user, check the reliability plan. 
+
+Delegation:
+You can delegate implementation and exploration tasks to specialized subagents using the `task` tool. 
+Available subagents: explore (codebase exploration), general (general-purpose tasks), and custom subagents configured in .chatorai/agents/.
 ''',
     permissions: PermissionRuleset(
       rules: [
         PermissionRule(
-          permission: '*',
+          permission: 'edit',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+        PermissionRule(
+          permission: 'write',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+        PermissionRule(
+          permission: 'apply_patch',
           pattern: '*',
           action: PermissionAction.deny,
         ),
@@ -177,7 +219,12 @@ Create a clear, implementable and logical plan that can be directly transferred 
           action: PermissionAction.allow,
         ),
         PermissionRule(
-          permission: 'plan',
+          permission: 'plan_enter',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'plan_exit',
           pattern: '*',
           action: PermissionAction.allow,
         ),
@@ -188,6 +235,11 @@ Create a clear, implementable and logical plan that can be directly transferred 
         ),
         PermissionRule(
           permission: 'webfetch',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'task',
           pattern: '*',
           action: PermissionAction.allow,
         ),
@@ -227,37 +279,52 @@ Complete the user's search request efficiently and report your findings clearly.
         PermissionRule(
           permission: '*',
           pattern: '*',
-          action: PermissionAction.deny,
-        ),
-        PermissionRule(
-          permission: 'read',
-          pattern: '*',
-          action: PermissionAction.allow,
-        ),
-        PermissionRule(
-          permission: 'glob',
-          pattern: '*',
-          action: PermissionAction.allow,
-        ),
-        PermissionRule(
-          permission: 'grep',
-          pattern: '*',
           action: PermissionAction.allow,
         ),
         PermissionRule(
           permission: 'bash',
           pattern: '*',
-          action: PermissionAction.allow,
+          action: PermissionAction.ask,
         ),
         PermissionRule(
-          permission: 'websearch',
+          permission: 'write',
           pattern: '*',
-          action: PermissionAction.allow,
+          action: PermissionAction.deny,
         ),
         PermissionRule(
-          permission: 'webfetch',
+          permission: 'edit',
           pattern: '*',
-          action: PermissionAction.allow,
+          action: PermissionAction.deny,
+        ),
+        PermissionRule(
+          permission: 'apply_patch',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+        PermissionRule(
+          permission: 'task',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+        PermissionRule(
+          permission: 'todowrite',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+        PermissionRule(
+          permission: 'question',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+        PermissionRule(
+          permission: 'plan_enter',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+        PermissionRule(
+          permission: 'plan_exit',
+          pattern: '*',
+          action: PermissionAction.deny,
         ),
       ],
     ),
@@ -266,10 +333,9 @@ Complete the user's search request efficiently and report your findings clearly.
     id: 'general',
     name: 'general',
     description:
-        'General-purpose agent for researching complex questions and executing multi-step tasks.',
+        'General-purpose agent for researching complex questions and executing multi-step tasks. Use this agent to execute multiple units of work in parallel.',
     mode: AgentMode.subagent,
     hidden: false,
-    maxSteps: 10,
     systemPrompt:
         'You are a general-purpose agent. Complete the given task using available tools.',
     permissions: PermissionRuleset(
@@ -294,7 +360,6 @@ Complete the user's search request efficiently and report your findings clearly.
     description: 'Generates PR-style summary for conversations.',
     mode: AgentMode.primary,
     hidden: true,
-    maxSteps: 5,
     systemPrompt: '''
 Summarize what was done in this conversation. Write like a pull request description.
 
@@ -325,7 +390,7 @@ Rules:
     description: 'Generates short titles for conversations.',
     mode: AgentMode.primary,
     hidden: true,
-    maxSteps: 1,
+    temperature: 0.5,
     systemPrompt: '''
 You are a title generator. You output ONLY a thread title. Nothing else.
 
@@ -377,7 +442,6 @@ Your output must be:
         'Context compaction agent for summarizing conversation history.',
     mode: AgentMode.primary,
     hidden: true,
-    maxSteps: 5,
     systemPrompt: '''
 You are an anchored context summarization assistant for coding sessions.
 
@@ -463,10 +527,23 @@ class AgentParser {
 
     final maxSteps = yaml['max_steps'] is int
         ? yaml['max_steps'] as int
-        : (yaml['maxSteps'] is int ? yaml['maxSteps'] as int : 5);
+        : (yaml['maxSteps'] is int ? yaml['maxSteps'] as int : null);
+
+    if (maxSteps != null && maxSteps <= 0) {
+      throw FormatException(
+        'max_steps must be a positive integer or null (got $maxSteps)',
+        filePath,
+      );
+    }
 
     final hidden = yaml['hidden'] as bool? ?? false;
     final systemPrompt = body.isNotEmpty ? body : null;
+    final model = yaml['model']?.toString();
+    final temperature = yaml['temperature'] is double
+        ? yaml['temperature'] as double
+        : (yaml['temperature'] is int
+              ? (yaml['temperature'] as int).toDouble()
+              : null);
 
     PermissionRuleset permissions = const PermissionRuleset();
     if (yaml['permission'] != null) {
@@ -479,6 +556,34 @@ class AgentParser {
       }
     }
 
+    // Shorthand: top-level `task: true` → permission allow
+    if (yaml['task'] == true) {
+      final rules = List<PermissionRule>.from(permissions.rules);
+      rules.add(
+        const PermissionRule(
+          permission: 'task',
+          pattern: '*',
+          action: PermissionAction.allow,
+        ),
+      );
+      permissions = PermissionRuleset(rules: rules);
+    }
+
+    // Shorthand: `tools: { task: true, ... }` → permission allows/denies
+    if (yaml['tools'] is Map) {
+      final toolsMap = yaml['tools'] as Map;
+      final rules = List<PermissionRule>.from(permissions.rules);
+      for (final entry in toolsMap.entries) {
+        final toolName = entry.key.toString();
+        final action = resolveToolAction(entry.value);
+        if (action == null) continue;
+        rules.add(
+          PermissionRule(permission: toolName, pattern: '*', action: action),
+        );
+      }
+      permissions = PermissionRuleset(rules: rules);
+    }
+
     return AgentDefinition(
       id: agentId,
       name: name,
@@ -486,7 +591,9 @@ class AgentParser {
       mode: mode,
       systemPrompt: systemPrompt,
       hidden: hidden,
-      maxSteps: maxSteps < 0 ? 5 : maxSteps,
+      maxSteps: maxSteps,
+      temperature: temperature,
+      model: model,
       permissions: permissions,
     );
   }
@@ -509,7 +616,7 @@ class AgentRegistry {
     _initCompleter = Completer<void>();
     try {
       // 1. Built-in fallback (always available)
-      _agents.addAll(_builtInAgents);
+      _agents.addAll(builtInAgents);
 
       // 2. Load custom agents (override built-in)
       final customAgents = await _loadCustomAgents();
@@ -517,7 +624,7 @@ class AgentRegistry {
 
       // 3. Apply JSON overrides
       if (config != null) {
-        _applyOverrides(_agents, config);
+        applyOverrides(_agents, config);
       }
 
       _initialized = true;
@@ -552,6 +659,13 @@ class AgentRegistry {
   List<AgentDefinition> getVisibleAgents() {
     if (!_initialized) return [];
     return _agents.values.where((a) => !a.hidden).toList();
+  }
+
+  List<AgentDefinition> getDelegatableAgents() {
+    if (!_initialized) return [];
+    return _agents.values
+        .where((a) => a.mode == AgentMode.subagent && !a.hidden)
+        .toList();
   }
 
   List<String> getAllIds() {
@@ -603,7 +717,7 @@ class AgentRegistry {
     return agents;
   }
 
-  static void _applyOverrides(
+  static void applyOverrides(
     Map<String, AgentDefinition> agents,
     ChatOrAIConfig config,
   ) {
@@ -628,11 +742,36 @@ class AgentRegistry {
           description: override.description,
           mode: AgentMode.all,
           hidden: override.hidden ?? false,
-          maxSteps: override.maxSteps ?? 5,
+          maxSteps: override.maxSteps,
+          model: override.model,
+          temperature: override.temperature,
         );
         LogTags.agentLoader.logInfo('Created new agent from config: $agentId');
         continue;
       }
+
+      final overriddenPermissions = override.permission != null
+          ? PermissionRuleset(
+              rules: PermissionRuleset.fromConfig(override.permission!),
+            )
+          : existing.permissions;
+
+      final toolsEnabled = <PermissionRule>[];
+      if (override.tools != null) {
+        for (final entry in override.tools!.entries) {
+          final action = resolveToolAction(entry.value);
+          if (action == null) continue;
+          toolsEnabled.add(
+            PermissionRule(permission: entry.key, pattern: '*', action: action),
+          );
+        }
+      }
+
+      final finalPermissions = toolsEnabled.isNotEmpty
+          ? PermissionRuleset(
+              rules: [...overriddenPermissions.rules, ...toolsEnabled],
+            )
+          : overriddenPermissions;
 
       agents[agentId] = existing.copyWith(
         name: override.name ?? existing.name,
@@ -640,6 +779,9 @@ class AgentRegistry {
         systemPrompt: override.prompt ?? existing.systemPrompt,
         hidden: override.hidden ?? existing.hidden,
         maxSteps: override.maxSteps ?? existing.maxSteps,
+        temperature: override.temperature ?? existing.temperature,
+        model: override.model ?? existing.model,
+        permissions: finalPermissions,
       );
       LogTags.agentLoader.logInfo('Applied override to agent: $agentId');
     }

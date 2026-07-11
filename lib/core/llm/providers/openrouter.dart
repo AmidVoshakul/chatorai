@@ -14,8 +14,6 @@ ProviderConfig openrouterProvider() => ProviderConfig.basic(
   baseUrl: 'https://openrouter.ai/api/v1',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: true,

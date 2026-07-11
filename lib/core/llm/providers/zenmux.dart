@@ -12,8 +12,6 @@ ProviderConfig zenmuxProvider() => ProviderConfig.basic(
   baseUrl: 'https://zenmux.ai/api/v1',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

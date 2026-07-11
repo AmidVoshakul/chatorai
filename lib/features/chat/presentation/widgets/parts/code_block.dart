@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/github.dart';
@@ -26,6 +28,23 @@ class CodeBlock extends StatefulWidget {
 
 class _CodeBlockState extends State<CodeBlock> {
   bool _isCollapsed = false;
+  bool _showCopied = false;
+  Timer? _copiedTimer;
+
+  @override
+  void dispose() {
+    _copiedTimer?.cancel();
+    super.dispose();
+  }
+
+  void _onCopy() {
+    MessageUtils.copyMessage(content: widget.code, context: context);
+    setState(() => _showCopied = true);
+    _copiedTimer?.cancel();
+    _copiedTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _showCopied = false);
+    });
+  }
 
   // =======================================================================
   // BUILD METHOD
@@ -102,27 +121,37 @@ class _CodeBlockState extends State<CodeBlock> {
                   ),
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.copy_all,
-                        color: headerColor,
-                        size: ChatoraiIconSizes.lg,
-                      ),
-                      onPressed: () => MessageUtils.copyMessage(
-                        content: widget.code,
-                        context: context,
-                      ),
-                      tooltip: localizations.copyCodeTooltip,
-                      splashRadius: ChatoraiIconSizes.md,
-                      hoverColor: isDark
-                          ? ChatoraiColors.black10
-                          : ChatoraiColors.black12,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: ChatoraiSpacing.lg,
-                        minHeight: ChatoraiSpacing.lg,
-                      ),
-                    ),
+                    child: _showCopied
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: ChatoraiSpacing.xs,
+                            ),
+                            child: Text(
+                              localizations.copiedFeedback,
+                              style: TextStyle(
+                                color: headerColor,
+                                fontSize: ChatoraiFontSizes.sm,
+                              ),
+                            ),
+                          )
+                        : IconButton(
+                            icon: Icon(
+                              Icons.copy_all,
+                              color: headerColor,
+                              size: ChatoraiIconSizes.lg,
+                            ),
+                            onPressed: _onCopy,
+                            tooltip: localizations.copyCodeTooltip,
+                            splashRadius: ChatoraiIconSizes.md,
+                            hoverColor: isDark
+                                ? ChatoraiColors.black10
+                                : ChatoraiColors.black12,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: ChatoraiSpacing.lg,
+                              minHeight: ChatoraiSpacing.lg,
+                            ),
+                          ),
                   ),
                 ],
               ),

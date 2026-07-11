@@ -63,7 +63,12 @@ class AssistantMessageBubble extends StatelessWidget {
     List<Widget> groupedParts = [];
     for (final part in visibleParts) {
       if (part is ReasoningPart) {
-        groupedParts.add(ReasoningPartWidget(part: part));
+        groupedParts.add(
+          ReasoningPartWidget(
+            part: part,
+            expandByDefault: expandReasoningByDefault,
+          ),
+        );
       } else {
         groupedParts.add(
           _buildPart(

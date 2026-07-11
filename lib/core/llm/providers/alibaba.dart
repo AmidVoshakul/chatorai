@@ -12,8 +12,6 @@ ProviderConfig alibabaProvider() => ProviderConfig.basic(
   baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

@@ -255,7 +255,8 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
 
     final theme = Theme.of(context);
 
-    final messages = widget.chat?.messages ?? [];
+    final messages =
+        widget.chat?.messages.where((m) => !m.synthetic).toList() ?? [];
     final hasMessages = messages.isNotEmpty;
     final hasAssistantMessage =
         hasMessages && messages.last.role == MessageRole.assistant;

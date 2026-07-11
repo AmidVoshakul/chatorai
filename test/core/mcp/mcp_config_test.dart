@@ -441,6 +441,35 @@ void main() {
       expect(config.servers, isEmpty);
     });
 
+    test('fromJson accepts flat format without servers wrapper', () {
+      final json = {
+        'sequential-thinking': {
+          'type': 'local',
+          'enabled': true,
+          'command': '/home/amid/.local/bin/uvx',
+          'args': ['sequential-thinking-mcp'],
+        },
+        'time': {
+          'type': 'local',
+          'enabled': true,
+          'command': ['/home/amid/.local/bin/uvx', 'mcp-server-time'],
+        },
+        'default_timeout': 30000,
+      };
+      final config = McpConfig.fromJson(json);
+      expect(config.servers, hasLength(2));
+      expect(
+        config.servers['sequential-thinking']!.command,
+        '/home/amid/.local/bin/uvx',
+      );
+      expect(config.servers['sequential-thinking']!.args, [
+        'sequential-thinking-mcp',
+      ]);
+      expect(config.servers['time']!.command, '/home/amid/.local/bin/uvx');
+      expect(config.servers['time']!.args, ['mcp-server-time']);
+      expect(config.defaultTimeout, 30000);
+    });
+
     test('toJson includes servers when present', () {
       final config = McpConfig(
         servers: {'test': McpServerConfig.local(command: 'echo')},
@@ -504,6 +533,55 @@ void main() {
       expect(config.servers, hasLength(2));
       expect(config.servers.containsKey('good-local'), true);
       expect(config.servers.containsKey('good-remote'), true);
+    });
+
+    group('OpenCode-compatible command format', () {
+      test('fromJson accepts command as array (OpenCode format)', () {
+        final json = {
+          'type': 'local',
+          'command': ['/home/amid/.local/bin/uvx', 'sequential-thinking-mcp'],
+        };
+        final config = McpServerConfig.fromJson(json);
+        expect(config.type, McpServerType.local);
+        expect(config.command, '/home/amid/.local/bin/uvx');
+        expect(config.args, ['sequential-thinking-mcp']);
+      });
+
+      test(
+        'fromJson accepts command as string with separate args (ChatORAI format)',
+        () {
+          final json = {
+            'type': 'local',
+            'command': '/home/amid/.local/bin/uvx',
+            'args': ['sequential-thinking-mcp'],
+          };
+          final config = McpServerConfig.fromJson(json);
+          expect(config.type, McpServerType.local);
+          expect(config.command, '/home/amid/.local/bin/uvx');
+          expect(config.args, ['sequential-thinking-mcp']);
+        },
+      );
+
+      test('fromJson with command array and extra args uses array args', () {
+        final json = {
+          'type': 'local',
+          'command': ['npx', '-y', 'my-mcp'],
+          'args': ['ignored'],
+        };
+        final config = McpServerConfig.fromJson(json);
+        expect(config.command, 'npx');
+        expect(config.args, ['-y', 'my-mcp']);
+      });
+
+      test('fromJson throws on empty command array', () {
+        expect(
+          () => McpServerConfig.fromJson({
+            'type': 'local',
+            'command': <String>[],
+          }),
+          throwsA(isA<ArgumentError>()),
+        );
+      });
     });
   });
 }

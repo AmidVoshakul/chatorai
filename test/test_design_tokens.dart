@@ -109,12 +109,10 @@ void main() {
       expect(ChatoraiColors.neonBlue, isNot(equals(ChatoraiColors.orange)));
     });
 
-    test('hover colors share same base with alpha', () {
-      expect(ChatoraiColors.hoverLight.value, ChatoraiColors.hoverDark.value);
-      expect(
-        ChatoraiColors.selectedLight.value,
-        ChatoraiColors.selectedDark.value,
-      );
+    test('hover and selected are single-source derived from orange', () {
+      expect(ChatoraiColors.hover.value, 0x1AFF7F00);
+      expect(ChatoraiColors.selected.value, 0x33FF7F00);
+      expect(ChatoraiColors.hover, isNot(equals(ChatoraiColors.selected)));
     });
 
     test('input container colors differ between light and dark', () {

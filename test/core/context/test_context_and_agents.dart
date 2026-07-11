@@ -267,25 +267,25 @@ void main() {
       final registry = AgentRegistry();
       final build = registry.get('build')!;
       expect(build.mode, equals(AgentMode.primary));
-      expect(build.maxSteps, equals(25));
+      expect(build.maxSteps, isNull);
       expect(build.hidden, isFalse);
       expect(build.systemPrompt, isNotEmpty);
 
       final explore = registry.get('explore')!;
       expect(explore.mode, equals(AgentMode.subagent));
-      expect(explore.maxSteps, equals(10));
+      expect(explore.maxSteps, isNull);
       expect(explore.hidden, isFalse);
 
       final general = registry.get('general')!;
       expect(general.mode, equals(AgentMode.subagent));
-      expect(general.maxSteps, equals(10));
+      expect(general.maxSteps, isNull);
     });
 
     test('AgentDefinition defaults', () {
       const def = AgentDefinition(id: 'test', name: 'Test');
       expect(def.mode, equals(AgentMode.subagent));
       expect(def.hidden, isFalse);
-      expect(def.maxSteps, equals(5));
+      expect(def.maxSteps, isNull);
       expect(def.description, isNull);
       expect(def.modelOverride, isNull);
       expect(def.color, isNull);

@@ -58,16 +58,7 @@ const _defaultTimeoutMs = 60000;
 final _bashValidator = CommandShield(
   defaultSyntax: CommandSyntax.bash,
   policy: PolicySet([
-    // Layer 1 — raw structural defense
-    // Denies commands containing shell control characters in raw text:
-    // chains (; && ||), pipes (|), backgrounding (&), redirects (> < >>),
-    // command substitution ($() ``), and embedded newlines.
-    const DangerousCharacterPolicy(
-      onMatch: CommandDecision.review,
-      level: SecurityLevel.highRisk,
-    ),
-
-    // Layer 2 — argument-pattern defenses
+    // Layer 1 — argument-pattern defenses
     // Block numeric octal-mode chmod with special bits (SUID/SGID set) and
     // any three/four digit mode where world-writable (7) or group-writable (2/6/7)
     // bits are set. Covers chmod 4755, 755, 777, 666, 2755 etc.
@@ -83,6 +74,15 @@ final _bashValidator = CommandShield(
       description: 'redirect to system directory',
       onMatch: CommandDecision.review,
       level: SecurityLevel.critical,
+      matchWholeCommand: true,
+    ),
+    ArgumentPatternPolicy(
+      pattern: RegExp(
+        r'\b(?:cat|less|more|head|tail|vi|vim|nvim|nano|tail)\s+.*\.env\b',
+      ),
+      description: 'read sensitive env file',
+      onMatch: CommandDecision.review,
+      level: SecurityLevel.highRisk,
       matchWholeCommand: true,
     ),
 

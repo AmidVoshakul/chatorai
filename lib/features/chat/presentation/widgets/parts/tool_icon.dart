@@ -30,7 +30,7 @@ IconData toolIcon(String toolName) {
     case 'todowrite':
       return Icons.wrap_text;
     default:
-      return Icons.build;
+      return Icons.settings_suggest_sharp;
   }
 }
 

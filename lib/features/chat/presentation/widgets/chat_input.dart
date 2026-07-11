@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/agent_highlight_controller.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/agent_mention_handler.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/attachment_input_handler.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/input_layout_builder.dart';
@@ -61,7 +62,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
         SpeechInputHandler,
         AttachmentInputHandler,
         SendMessageHandler {
-  final TextEditingController _textController = TextEditingController();
+  final AgentHighlightController _textController = AgentHighlightController();
   final GlobalKey _textFieldKey = GlobalKey(); // for popup positioning
   Timer? _plusTimer;
   final GlobalKey _plusKey = GlobalKey();
@@ -122,6 +123,22 @@ class _ChatInputState extends ConsumerState<ChatInput>
     if (mounted) setState(() {});
     detectAgentMentionListener();
     detectSlashCommandListener();
+  }
+
+  @override
+  Future<ResolvedText?> resolveText(String text) async {
+    final result = await resolveSkillCommand(text);
+    if (result != null) {
+      if (result.content.startsWith('**Loaded skill:**')) {
+        // No args → insert skill content into chat without AI response
+        await insertSkillMessage(result.skill, result.content);
+        widget.onMessageAdded?.call();
+        return null;
+      }
+      // Has args → send rendered content as user message, AI responds
+      return ResolvedText(text: result.content);
+    }
+    return super.resolveText(text);
   }
 
   @override

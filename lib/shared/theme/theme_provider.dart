@@ -73,83 +73,28 @@ class ThemeState {
     );
   }
 
+  static TextStyle? _scaled(TextStyle? style, double scale) {
+    if (style?.fontSize == null) return style;
+    return style!.copyWith(fontSize: style.fontSize! * scale);
+  }
+
   static TextTheme _scaleTextTheme(TextTheme textTheme, double scale) {
     return textTheme.copyWith(
-      displayLarge: textTheme.displayLarge?.fontSize != null
-          ? textTheme.displayLarge?.copyWith(
-              fontSize: textTheme.displayLarge!.fontSize! * scale,
-            )
-          : textTheme.displayLarge,
-      displayMedium: textTheme.displayMedium?.fontSize != null
-          ? textTheme.displayMedium?.copyWith(
-              fontSize: textTheme.displayMedium!.fontSize! * scale,
-            )
-          : textTheme.displayMedium,
-      displaySmall: textTheme.displaySmall?.fontSize != null
-          ? textTheme.displaySmall?.copyWith(
-              fontSize: textTheme.displaySmall!.fontSize! * scale,
-            )
-          : textTheme.displaySmall,
-      headlineLarge: textTheme.headlineLarge?.fontSize != null
-          ? textTheme.headlineLarge?.copyWith(
-              fontSize: textTheme.headlineLarge!.fontSize! * scale,
-            )
-          : textTheme.headlineLarge,
-      headlineMedium: textTheme.headlineMedium?.fontSize != null
-          ? textTheme.headlineMedium?.copyWith(
-              fontSize: textTheme.headlineMedium!.fontSize! * scale,
-            )
-          : textTheme.headlineMedium,
-      headlineSmall: textTheme.headlineSmall?.fontSize != null
-          ? textTheme.headlineSmall?.copyWith(
-              fontSize: textTheme.headlineSmall!.fontSize! * scale,
-            )
-          : textTheme.headlineSmall,
-      titleLarge: textTheme.titleLarge?.fontSize != null
-          ? textTheme.titleLarge?.copyWith(
-              fontSize: textTheme.titleLarge!.fontSize! * scale,
-            )
-          : textTheme.titleLarge,
-      titleMedium: textTheme.titleMedium?.fontSize != null
-          ? textTheme.titleMedium?.copyWith(
-              fontSize: textTheme.titleMedium!.fontSize! * scale,
-            )
-          : textTheme.titleMedium,
-      titleSmall: textTheme.titleSmall?.fontSize != null
-          ? textTheme.titleSmall?.copyWith(
-              fontSize: textTheme.titleSmall!.fontSize! * scale,
-            )
-          : textTheme.titleSmall,
-      bodyLarge: textTheme.bodyLarge?.fontSize != null
-          ? textTheme.bodyLarge?.copyWith(
-              fontSize: textTheme.bodyLarge!.fontSize! * scale,
-            )
-          : textTheme.bodyLarge,
-      bodyMedium: textTheme.bodyMedium?.fontSize != null
-          ? textTheme.bodyMedium?.copyWith(
-              fontSize: textTheme.bodyMedium!.fontSize! * scale,
-            )
-          : textTheme.bodyMedium,
-      bodySmall: textTheme.bodySmall?.fontSize != null
-          ? textTheme.bodySmall?.copyWith(
-              fontSize: textTheme.bodySmall!.fontSize! * scale,
-            )
-          : textTheme.bodySmall,
-      labelLarge: textTheme.labelLarge?.fontSize != null
-          ? textTheme.labelLarge?.copyWith(
-              fontSize: textTheme.labelLarge!.fontSize! * scale,
-            )
-          : textTheme.labelLarge,
-      labelMedium: textTheme.labelMedium?.fontSize != null
-          ? textTheme.labelMedium?.copyWith(
-              fontSize: textTheme.labelMedium!.fontSize! * scale,
-            )
-          : textTheme.labelMedium,
-      labelSmall: textTheme.labelSmall?.fontSize != null
-          ? textTheme.labelSmall?.copyWith(
-              fontSize: textTheme.labelSmall!.fontSize! * scale,
-            )
-          : textTheme.labelSmall,
+      displayLarge: _scaled(textTheme.displayLarge, scale),
+      displayMedium: _scaled(textTheme.displayMedium, scale),
+      displaySmall: _scaled(textTheme.displaySmall, scale),
+      headlineLarge: _scaled(textTheme.headlineLarge, scale),
+      headlineMedium: _scaled(textTheme.headlineMedium, scale),
+      headlineSmall: _scaled(textTheme.headlineSmall, scale),
+      titleLarge: _scaled(textTheme.titleLarge, scale),
+      titleMedium: _scaled(textTheme.titleMedium, scale),
+      titleSmall: _scaled(textTheme.titleSmall, scale),
+      bodyLarge: _scaled(textTheme.bodyLarge, scale),
+      bodyMedium: _scaled(textTheme.bodyMedium, scale),
+      bodySmall: _scaled(textTheme.bodySmall, scale),
+      labelLarge: _scaled(textTheme.labelLarge, scale),
+      labelMedium: _scaled(textTheme.labelMedium, scale),
+      labelSmall: _scaled(textTheme.labelSmall, scale),
     );
   }
 }

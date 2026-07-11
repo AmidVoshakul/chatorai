@@ -14,8 +14,6 @@ ProviderConfig llmgatewayProvider() => ProviderConfig.basic(
   baseUrl: 'https://api.llmgateway.io/v1',
   auth: AuthConfig.apiKey(
     apiKey: '',
-    apiKeyHeader: 'Authorization',
-    bearerPrefix: 'Bearer ',
   ),
   sdk: 'openai-compatible',
   enabled: false,

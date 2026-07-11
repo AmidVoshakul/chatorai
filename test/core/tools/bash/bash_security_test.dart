@@ -100,7 +100,9 @@ void main() {
         final shield = CommandShield(
           defaultSyntax: CommandSyntax.bash,
           policy: PolicySet([
-            ExecutableBlockListPolicy({'curl'}, onMatch: CommandDecision.review),
+            ExecutableBlockListPolicy({
+              'curl',
+            }, onMatch: CommandDecision.review),
           ]),
         );
 
@@ -124,7 +126,9 @@ void main() {
         final shield = CommandShield(
           defaultSyntax: CommandSyntax.bash,
           policy: PolicySet([
-            ExecutableBlockListPolicy({'wget'}, onMatch: CommandDecision.review),
+            ExecutableBlockListPolicy({
+              'wget',
+            }, onMatch: CommandDecision.review),
           ]),
         );
 
@@ -136,7 +140,9 @@ void main() {
         final shield = CommandShield(
           defaultSyntax: CommandSyntax.bash,
           policy: PolicySet([
-            ExecutableBlockListPolicy({'curl'}, onMatch: CommandDecision.review),
+            ExecutableBlockListPolicy({
+              'curl',
+            }, onMatch: CommandDecision.review),
           ]),
         );
 
@@ -285,9 +291,7 @@ void main() {
       test('no findings + low level → no ask() call (allow)', () {
         final shield = CommandShield(
           defaultSyntax: CommandSyntax.bash,
-          policy: PolicySet([
-            _TestReviewOnlyPolicy(),
-          ]),
+          policy: PolicySet([_TestReviewOnlyPolicy()]),
         );
 
         final result = shield.validate('echo hello world');
@@ -299,9 +303,18 @@ void main() {
       test('SecurityLevel has expected values', () {
         expect(SecurityLevel.values.length, greaterThanOrEqualTo(5));
         expect(SecurityLevel.safe.index, lessThan(SecurityLevel.lowRisk.index));
-        expect(SecurityLevel.lowRisk.index, lessThan(SecurityLevel.mediumRisk.index));
-        expect(SecurityLevel.mediumRisk.index, lessThan(SecurityLevel.highRisk.index));
-        expect(SecurityLevel.highRisk.index, lessThan(SecurityLevel.critical.index));
+        expect(
+          SecurityLevel.lowRisk.index,
+          lessThan(SecurityLevel.mediumRisk.index),
+        );
+        expect(
+          SecurityLevel.mediumRisk.index,
+          lessThan(SecurityLevel.highRisk.index),
+        );
+        expect(
+          SecurityLevel.highRisk.index,
+          lessThan(SecurityLevel.critical.index),
+        );
       });
     });
 
@@ -319,7 +332,13 @@ void main() {
 
         final analysis = shield.analyze('echo foo; echo bar');
         expect(analysis.findings, isNotEmpty);
-        expect(analysis.findings.any((f) => f.message.contains('dangerous') || f.code.contains('dangerous')), isTrue);
+        expect(
+          analysis.findings.any(
+            (f) =>
+                f.message.contains('dangerous') || f.code.contains('dangerous'),
+          ),
+          isTrue,
+        );
       });
     });
   });

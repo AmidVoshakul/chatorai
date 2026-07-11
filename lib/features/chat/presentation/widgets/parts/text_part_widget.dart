@@ -1,4 +1,5 @@
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/presentation/widgets/markdown_with_headings.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/code_block.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/table_block.dart';
 import 'package:chatorai/shared/theme/markdown_styles.dart';
@@ -106,7 +107,12 @@ class TextPartWidget extends StatelessWidget {
   }
 
   Widget _buildMarkdownBlock(String data, MarkdownStyleSheet styleSheet) {
-    return MarkdownBody(data: data, styleSheet: styleSheet, selectable: true);
+    return MarkdownBody(
+      data: data,
+      styleSheet: styleSheet,
+      selectable: true,
+      builders: HeadingBuilder.headingBuilders(),
+    );
   }
 }
 

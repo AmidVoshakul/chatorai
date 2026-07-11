@@ -1,3 +1,4 @@
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/tools/tool.dart';
@@ -39,8 +40,8 @@ ToolContext _fakeContext(List<_AskRecord> asks) {
         },
     askQuestion:
         ({
-          required String question,
-          List<String>? options,
+          required question,
+          List<QuestionOption> options = const [],
           bool multiple = false,
         }) async => '',
   );
