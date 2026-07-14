@@ -10,9 +10,7 @@ ProviderConfig perplexityProvider() => ProviderConfig.full(
   name: 'Perplexity',
   description: 'Perplexity AI — online LLM with web search.',
   baseUrl: 'https://api.perplexity.ai/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
   models: [],

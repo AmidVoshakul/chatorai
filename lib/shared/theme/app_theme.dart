@@ -19,7 +19,7 @@ class ChatoraiColors {
   // Grayscale
   static const Color gray = Color(0xFF555555);
   static const Color lightGray = Color(0xFFEEEEEE);
-  static const Color darkGray = Color(0xFF2A2A2A);
+  static const Color darkGray = Color(0xFF272727);
   static const Color mediumGray = Color(0xFFB0B0B0);
 
   // Black/White
@@ -53,8 +53,8 @@ class ChatoraiColors {
   static const Color codeBackgroundLight = Color(0xFFF8F9FA);
   static const Color codeBackgroundDark = Color(0xFF1A1A1A);
   static const Color codeBorderLight = Color(0xFFE9ECEF);
-  static const Color codeBorderDark = Color(0xFF23241F);
-  static const Color codeHighlightDark = Color(0xFF23241F);
+  static const Color codeBorderDark = Color(0xFF1E1E1E);
+  static const Color codeHighlightDark = Color(0xFF1E1E1E);
   static const Color codeLight = Color(0xFF1565C0);
   static const Color codeDark = Color(0xFF64B5F6);
 
@@ -67,7 +67,7 @@ class ChatoraiColors {
   // Text
   static const Color lightTextColor = Color(0xFF333333);
   static const Color darkTextColor = Color(0xFFE0E0E0);
-  static const Color secondaryTextColor = Color(0xFF666666);
+  static const Color secondaryTextColor = Color(0xFF565656);
   static const Color darkSecondaryTextColor = Color(0xFFB0B0B0);
 
   // Borders
@@ -185,7 +185,7 @@ class ChatoraiIconSizes {
   static const double lg = 18.0;
   static const double xl = 20.0;
   static const double xxl = 24.0;
-  static const double xxxl = 32.0;
+  static const double xxxl = 30.0;
   static const double huge = 48.0;
   static const double massive = 60.0;
 
@@ -218,7 +218,7 @@ class ChatoraiFontSizes {
   static const double xl = 18.0;
   static const double xxl = 20.0;
   static const double xxxl = 24.0;
-  static const double display = 32.0;
+  static const double display = 30.0;
 
   // Specific
   static const double code = 13.0;
@@ -374,7 +374,7 @@ class ChatoraiDurations {
 class ChatoraiTypography {
   static TextTheme get lightTextTheme => TextTheme(
     headlineLarge: const TextStyle(
-      fontSize: 32,
+      fontSize: 30,
       fontWeight: FontWeight.bold,
       color: ChatoraiColors.dark,
     ),
@@ -414,7 +414,7 @@ class ChatoraiTypography {
 
   static TextTheme get darkTextTheme => TextTheme(
     headlineLarge: TextStyle(
-      fontSize: 32,
+      fontSize: 30,
       fontWeight: FontWeight.bold,
       color: ChatoraiColors.pureWhite.withValues(alpha: 0.87),
     ),

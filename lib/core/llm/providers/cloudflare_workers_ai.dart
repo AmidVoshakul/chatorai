@@ -12,9 +12,7 @@ ProviderConfig cloudflareWorkersAiProvider() => ProviderConfig.basic(
       'Cloudflare Workers AI — serverless AI inference '
       'on Cloudflare global network.',
   baseUrl: 'https://api.cloudflare.com/client/v4/accounts/ACCOUNT_ID/ai/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

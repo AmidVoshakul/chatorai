@@ -1,12 +1,13 @@
 import 'dart:async';
 
+import 'package:chatorai/l10n/app_localizations.dart';
+// import 'package:flutter_highlight/themes/monokai-sublime.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/shared/utils/message_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/github.dart';
-import 'package:flutter_highlight/themes/monokai-sublime.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
-import 'package:chatorai/shared/utils/message_utils.dart';
-import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:flutter_highlight/themes/vs2015.dart';
 
 // ===========================================================================
 // WIDGET CLASS
@@ -75,7 +76,7 @@ class _CodeBlockState extends State<CodeBlock> {
         color: codeBgColor,
         borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
         border: Border.all(
-          color: theme.dividerColor.withValues(alpha: 0.3),
+          color: theme.dividerColor.withValues(alpha: 0.8),
           width: ChatoraiBorderWidth.thinBold,
         ),
       ),
@@ -129,7 +130,7 @@ class _CodeBlockState extends State<CodeBlock> {
                             child: Text(
                               localizations.copiedFeedback,
                               style: TextStyle(
-                                color: headerColor,
+                                color: const Color(0xFF418A44),
                                 fontSize: ChatoraiFontSizes.sm,
                               ),
                             ),
@@ -173,7 +174,7 @@ class _CodeBlockState extends State<CodeBlock> {
                             child: HighlightView(
                               widget.code,
                               language: widget.language.toLowerCase(),
-                              theme: isDark ? monokaiSublimeTheme : githubTheme,
+                              theme: isDark ? vs2015Theme : githubTheme,
                               padding: EdgeInsets.zero,
                               textStyle: TextStyle(
                                 fontSize: ChatoraiFontSizes.base,

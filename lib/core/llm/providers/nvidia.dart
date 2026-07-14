@@ -12,9 +12,7 @@ ProviderConfig nvidiaProvider() => ProviderConfig.basic(
       'Nvidia NIM — optimized inference for open and '
       'Nvidia-optimized models.',
   baseUrl: 'https://integrate.api.nvidia.com/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

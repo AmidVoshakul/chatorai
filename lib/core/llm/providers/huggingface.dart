@@ -10,9 +10,7 @@ ProviderConfig huggingfaceProvider() => ProviderConfig.basic(
   name: 'Hugging Face',
   description: 'Hugging Face — community models via Inference API.',
   baseUrl: 'https://router.huggingface.co/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

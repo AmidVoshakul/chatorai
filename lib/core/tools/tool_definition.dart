@@ -21,7 +21,7 @@ class ToolTag {
 
 /// Wraps a [ToolDef] with optional lazy initialization and metadata.
 ///
-/// Mirrors OpenCode's `define()` + `init()` pattern:
+/// Mirrors `define()` + `init()` pattern:
 /// - `create()` — eager, already-initialized [ToolDef]
 /// - `lazy()` — async factory for tools that need services at build time
 class ToolDefinition {

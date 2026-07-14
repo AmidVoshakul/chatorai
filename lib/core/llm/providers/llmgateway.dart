@@ -12,9 +12,7 @@ ProviderConfig llmgatewayProvider() => ProviderConfig.basic(
       'LLM Gateway — unified API gateway for multiple '
       'LLM providers with routing and fallback.',
   baseUrl: 'https://api.llmgateway.io/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

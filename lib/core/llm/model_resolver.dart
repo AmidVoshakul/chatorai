@@ -4,7 +4,7 @@
 /// to [ModelConfig] objects and constructs the corresponding ai_sdk_dart
 /// [LanguageModelV3] instances with proper provider, API key, and base URL.
 ///
-/// Follows OpenCode catalog patterns where each provider definition includes
+///  catalog patterns where each provider definition includes
 /// a model factory and the resolver handles provider-specific SDK creation.
 library;
 
@@ -229,7 +229,6 @@ class ModelResolver {
   /// Delegates to [ProviderConfig.buildProviderHeaders] which merges headers
   /// in order (later wins): provider defaults, variant headers, overrides.
   ///
-  /// Follows OpenCode pattern where headers are resolved per-call and
   /// can be overridden at each level (provider → model → variant → call).
   Map<String, String> getHeadersForModel(
     ModelConfig model, {
@@ -249,7 +248,6 @@ class ModelResolver {
   /// fields in order (later wins): provider defaultBody, model providerOptions
   /// metadata, variant body.
   ///
-  /// Follows OpenCode pattern where per-provider options (e.g., Anthropic
   /// thinkingConfig, OpenAI reasoningEffort, Bedrock promptCacheKey) are
   /// declared at the provider/model level and merged at call time.
   Map<String, dynamic>? getBodyForModel(

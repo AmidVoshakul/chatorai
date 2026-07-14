@@ -10,9 +10,7 @@ ProviderConfig alibabaProvider() => ProviderConfig.basic(
   name: 'Alibaba',
   description: 'Alibaba DashScope — Qwen models via OpenAI-compatible API.',
   baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

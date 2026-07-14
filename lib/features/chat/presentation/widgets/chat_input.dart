@@ -15,7 +15,6 @@ import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -169,7 +168,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
     final offset = box.localToGlobal(Offset.zero);
     final size = box.size;
     final localizations = AppLocalizations.of(context)!;
-    final isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+    final isMobile = Platform.isAndroid || Platform.isIOS;
     final menuItems = <PopupMenuEntry<String>>[
       if (isMobile)
         PopupMenuItem(

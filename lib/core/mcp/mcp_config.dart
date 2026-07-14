@@ -132,7 +132,7 @@ class McpServerConfig {
       List<String> args;
       final rawCommand = json['command'];
       if (rawCommand is List) {
-        // OpenCode-compatible format: "command": ["bin", "arg1", "arg2"]
+        //  format: "command": ["bin", "arg1", "arg2"]
         final list = rawCommand.cast<String>();
         if (list.isEmpty) {
           throw ArgumentError.value(

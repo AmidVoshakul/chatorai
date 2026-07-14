@@ -84,7 +84,6 @@ extension _ChatScreenEditsExt on _ChatScreenState {
 
     final apiMessages = _buildApiMessages(
       chatWithAssistant,
-      delegateAgentName: null,
     );
     await _initiateStream(
       chat: chatWithAssistant,

@@ -3,7 +3,7 @@
 /// Top-level configuration for an AI provider (OpenAI, Anthropic, Google, etc.).
 /// Contains authentication, base URL, and the list of available models.
 ///
-/// Follows OpenCode catalog patterns: immutable, serializable, schema-driven.
+/// catalog patterns: immutable, serializable, schema-driven.
 library;
 
 import 'package:equatable/equatable.dart';
@@ -50,7 +50,6 @@ class ProviderConfig extends Equatable {
 
   /// Default body parameters to include in every request.
   ///
-  /// Follows OpenCode pattern where providers can specify default body fields
   /// (e.g., `max_tokens`, `reasoning` config for Anthropic).
   final Map<String, dynamic>? defaultBody;
 
@@ -187,7 +186,7 @@ class ProviderConfig extends Equatable {
   /// Build per-provider options for a model call.
   ///
   /// Merges provider default body, model metadata (under the `providerOptions`
-  /// key), and variant body in order (later wins). This follows the OpenCode
+  /// key), and variant body in order (later wins). This follows the 
   /// pattern where each provider contributes its specific body fields
   /// (e.g., `thinkingConfig` for Anthropic Claude, `reasoningEffort` for
   /// OpenAI, or `promptCacheKey` for Bedrock).
@@ -207,7 +206,6 @@ class ProviderConfig extends Equatable {
   /// Build per-provider headers for a model call.
   ///
   /// Merges provider default headers, variant headers, and override headers
-  /// in order (later wins). Follows OpenCode pattern where variants can
   /// inject provider-specific headers (e.g., `anthropic-beta` for thinking).
   Map<String, String> buildProviderHeaders({
     ModelVariant? variant,

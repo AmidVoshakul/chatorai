@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
@@ -32,7 +32,7 @@ class TruncationOptions {
 
 /// Centralized truncation service for tool output.
 ///
-/// Behaviour matches opencode/opencode-ai:
+/// Behaviour:
 ///  - Byte-aware line truncation with direction (head/tail).
 ///  - Disk persistence: full original text written to a data-dir file
 ///    when truncation occurs, so it can be inspected later with Read.
@@ -149,7 +149,7 @@ class TruncationService {
     return TruncationResult(content: content, truncated: true);
   }
 
-  /// Full truncation API matching OpenCode Truncate.output().
+  /// Full truncation API matching  Truncate.output().
   ///
   /// Calls [compute] for the truncation logic and writes the original text
   /// to disk when truncation occurs.

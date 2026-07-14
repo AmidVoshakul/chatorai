@@ -135,7 +135,7 @@ Configures skill discovery paths and remote sources. Skills provide specialized 
 ```json
 {
   "skills": {
-    "paths": [".opencode/skills/"],
+    "paths": [".chatorai/skills/"],
     "urls": [
       "https://example.com/skills/index.json",
       {
@@ -148,9 +148,9 @@ Configures skill discovery paths and remote sources. Skills provide specialized 
 }
 ```
 
-| Field   | Type       | Description                              |
-| ------- | ---------- | ---------------------------------------- |
-| `paths` | `string[]` | Directories to scan for `SKILL.md` files |
+| Field   | Type       | Description                                |
+| ------- | ---------- | ------------------------------------------ |
+| `paths` | `string[]` | Directories to scan for `SKILL.md` files   |
 | `urls`  | `array`    | Remote skill sources (URL to `index.json`) |
 
 ### `compaction`
@@ -168,12 +168,12 @@ Controls automatic context compaction when token budget is exceeded.
 }
 ```
 
-| Field          | Type      | Description                                     |
-| -------------- | --------- | ----------------------------------------------- |
-| `auto`         | `bool`    | Enable automatic compaction                      |
-| `prune`        | `bool`    | Prune old tool outputs                          |
-| `keep.tokens`  | `int`     | Tokens to preserve as recent context            |
-| `buffer`       | `int`     | Token buffer before triggering compaction       |
+| Field         | Type   | Description                               |
+| ------------- | ------ | ----------------------------------------- |
+| `auto`        | `bool` | Enable automatic compaction               |
+| `prune`       | `bool` | Prune old tool outputs                    |
+| `keep.tokens` | `int`  | Tokens to preserve as recent context      |
+| `buffer`      | `int`  | Token buffer before triggering compaction |
 
 ### `formatter`
 
@@ -212,13 +212,13 @@ Configures per-agent overrides and customizations. Each key is an agent name (e.
 }
 ```
 
-| Field       | Type    | Description                                        |
-| ----------- | ------- | -------------------------------------------------- |
-| `prompt`    | `string`| Override the agent system prompt                   |
-| `disabled`  | `bool`  | Remove this agent from registry                    |
-| `hidden`    | `bool`  | Hide this agent from UI                            |
-| `max_steps` | `int?`  | Override max steps for agent execution. `null` = unlimited |
-| `maxSteps`  | `int?`  | Alias for `max_steps`. `null` = unlimited                |
+| Field       | Type     | Description                                                |
+| ----------- | -------- | ---------------------------------------------------------- |
+| `prompt`    | `string` | Override the agent system prompt                           |
+| `disabled`  | `bool`   | Remove this agent from registry                            |
+| `hidden`    | `bool`   | Hide this agent from UI                                    |
+| `max_steps` | `int?`   | Override max steps for agent execution. `null` = unlimited |
+| `maxSteps`  | `int?`   | Alias for `max_steps`. `null` = unlimited                  |
 
 ### `mcp`
 
@@ -256,10 +256,10 @@ Configures external MCP (Model Context Protocol) servers. These servers provide 
 
 **Server types:**
 
-| Type   | Required fields        | Optional fields                                                |
-| ------ | ---------------------- | -------------------------------------------------------------- |
-| local  | `command`, `args`      | `cwd`, `environment`, `enabled`, `timeout`, `type: "local"`    |
-| remote | `url`                 | `headers`, `oauth`, `enabled`, `timeout`, `type: "remote"`     |
+| Type   | Required fields   | Optional fields                                             |
+| ------ | ----------------- | ----------------------------------------------------------- |
+| local  | `command`, `args` | `cwd`, `environment`, `enabled`, `timeout`, `type: "local"` |
+| remote | `url`             | `headers`, `oauth`, `enabled`, `timeout`, `type: "remote"`  |
 
 Tools discovered from MCP servers are registered into the `ToolRegistry` and participate in the tool execution pipeline alongside built-in tools.
 

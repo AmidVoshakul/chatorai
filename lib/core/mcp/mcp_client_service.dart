@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:mcp_dart/mcp_dart.dart';
 import 'package:chatorai/core/mcp/mcp_config.dart';
 import 'package:chatorai/core/mcp/mcp_types.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:mcp_dart/mcp_dart.dart';
 
 /// Singleton service managing MCP client connections and tool discovery.
 ///
-/// Mirrors OpenCode's `MCP.Service` pattern:
+/// Mirrors  `MCP.Service` pattern:
 /// - Config-driven server registry (`chatorai.json` → `mcp` section)
 /// - Per-server client lifecycle (connect, disconnect, reconnect)
 /// - Tool discovery + dynamic registration as `ToolDef`

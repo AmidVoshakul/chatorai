@@ -134,6 +134,7 @@ Each feature follows a multi-layer structure:
 ### Chat Retry & Resilience
 
 `ChatRetryService` wraps child completions and API calls with unbounded retry logic:
+
 - Infinite retries for retryable errors (network failures, rate limits).
 - Exponential backoff with jitter (base 2s, cap 30s).
 - Respects `Retry-After` headers from providers.
@@ -142,6 +143,7 @@ Each feature follows a multi-layer structure:
 ### Keyboard Shortcuts
 
 `ShortcutHandler` and `AppShortcuts` provide centralized keyboard shortcut management:
+
 - Shortcuts are currently hardcoded; `chatorai.json` `keybinding` section is parsed but not applied at runtime.
 - Future work: wire config keybindings into the shortcut system.
 
@@ -173,7 +175,6 @@ Each feature follows a multi-layer structure:
 - **Linux**: Requires `libgtk-3-0 libgdk-pixbuf-2.0-0 libpango-1.0-0 libcairo2`.
 - **Windows**: Visual C++ workload + Windows 10/11 SDK required for builds; CMake errors if missing.
 - **iOS**: Requires macOS; cannot build on Linux.
-- **Web**: Uses Flutter web renderer.
 
 ## Provider Catalog System
 
@@ -505,7 +506,7 @@ LIBGL_ALWAYS_SOFTWARE=1 flutter run -d linux  # Linux software rendering
 
 ### Provider Options
 
-`ProviderConfig.buildProviderOptions()` and `ProviderConfig.buildProviderHeaders()` follow the OpenCode pattern for merging per-provider fields:
+`ProviderConfig.buildProviderOptions()` and `ProviderConfig.buildProviderHeaders()`:
 
 - `buildProviderOptions()` merges provider `defaultBody`, model `providerOptions` metadata, and variant `body` in order (later wins). Used for provider-specific parameters like Anthropic `thinkingConfig`, OpenAI `reasoningEffort`, or Bedrock `promptCacheKey`.
 - `buildProviderHeaders()` merges provider `defaultHeaders`, variant `headers`, and call-time `overrideHeaders` in order (later wins).

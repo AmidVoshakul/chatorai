@@ -1,6 +1,6 @@
 /// Authentication configuration for AI providers.
 ///
-/// Follows OpenCode catalog patterns: schema-driven, immutable, serializable.
+/// catalog patterns: schema-driven, immutable, serializable.
 /// Supports different auth types: apiKey, oauth, aws (for Bedrock), none (for local models).
 /// API keys are stored securely via SecureStorage in production.
 library;

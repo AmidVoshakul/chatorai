@@ -1253,4 +1253,112 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get collapseTooltip => 'Collapse';
+
+  @override
+  String get addProviderTitleEdit => 'Edit Provider';
+
+  @override
+  String get addProviderTitleAdd => 'Add Provider';
+
+  @override
+  String get addProviderLabelProvider => 'Provider';
+
+  @override
+  String get addProviderCustomName => 'Custom Provider...';
+
+  @override
+  String get addProviderFieldProviderName => 'Provider Name';
+
+  @override
+  String get addProviderHintProviderName => 'e.g. My Custom AI';
+
+  @override
+  String get addProviderLabelApiKey => 'API Key';
+
+  @override
+  String get addProviderHintApiKey => 'Enter your API key';
+
+  @override
+  String get addProviderHintCustomApiKey => 'Optional for local providers';
+
+  @override
+  String get addProviderLabelBaseUrl => 'Base URL';
+
+  @override
+  String get addProviderHintBaseUrl => 'https://api.example.com/v1';
+
+  @override
+  String get addProviderActionSave => 'Save';
+
+  @override
+  String get addProviderErrorApiKeyRequired => 'API key is required';
+
+  @override
+  String get selectModels => 'Select Models';
+
+  @override
+  String get deselectAll => 'Deselect All';
+
+  @override
+  String get selectAll => 'Select All';
+
+  @override
+  String get modelsAvailable => 'No models available';
+
+  @override
+  String get modelsMatchSearch => 'No models match your search';
+
+  @override
+  String selectModelsCount(Object count, Object total) {
+    return '$count of $total selected';
+  }
+
+  @override
+  String modelsLoadError(Object error) {
+    return 'Failed to load models: $error';
+  }
+
+  @override
+  String get systemPromptHint => 'You are a helpful assistant...';
+
+  @override
+  String get temperatureHint => '0.0 - 2.0';
+
+  @override
+  String get loadingSettings => 'Loading settings...';
+
+  @override
+  String errorApplyingSettings(Object error) {
+    return 'Error applying settings: $error';
+  }
+
+  @override
+  String deleteProviderTitle(Object providerName) {
+    return 'Delete $providerName?';
+  }
+
+  @override
+  String get deleteProviderContent => 'This will remove the provider and all its settings. You will need to add it again to use its models.';
+
+  @override
+  String get errorLoadingProviders => 'Error loading providers';
+
+  @override
+  String get noProvidersConfigured => 'No providers configured';
+
+  @override
+  String get addProviderToGetStarted => 'Add a provider with an API key to get started';
+
+  @override
+  String statsError(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get total => 'Total';
+
+  @override
+  String modelsProviderCountFormat(Object count, Object providerName) {
+    return '$providerName · $count';
+  }
 }

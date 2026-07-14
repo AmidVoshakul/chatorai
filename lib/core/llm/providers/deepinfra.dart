@@ -10,9 +10,7 @@ ProviderConfig deepinfraProvider() => ProviderConfig.basic(
   name: 'DeepInfra',
   description: 'DeepInfra — serverless inference for open-source LLMs.',
   baseUrl: 'https://api.deepinfra.com/v1/openai',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

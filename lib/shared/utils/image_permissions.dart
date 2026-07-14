@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 
@@ -7,11 +6,6 @@ final _logger = LogTags.ui;
 
 Future<bool> requestCameraPermission() async {
   try {
-    if (kIsWeb) {
-      _logger.logInfo('[ImageUtils] Camera permission not needed on web');
-      return true;
-    }
-
     if (!Platform.isAndroid && !Platform.isIOS) {
       _logger.logInfo('[ImageUtils] Desktop platform, camera not available');
       return false;
@@ -41,11 +35,6 @@ Future<bool> requestCameraPermission() async {
 
 Future<bool> requestFilesPermission() async {
   try {
-    if (kIsWeb) {
-      _logger.logInfo('[ImageUtils] File permission not needed on web');
-      return true;
-    }
-
     if (!Platform.isAndroid && !Platform.isIOS) {
       _logger.logInfo('[ImageUtils] Desktop platform, no permission needed');
       return true;
@@ -96,7 +85,7 @@ Future<bool> requestFilesPermission() async {
 
 Future<int> getAndroidSdkInt() async {
   try {
-    if (kIsWeb || !Platform.isAndroid) return 0;
+    if (!Platform.isAndroid) return 0;
     final version = Platform.operatingSystemVersion;
     final match = RegExp(r'SDK (\d+)').firstMatch(version);
     if (match != null) {

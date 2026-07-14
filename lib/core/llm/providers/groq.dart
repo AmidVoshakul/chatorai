@@ -12,9 +12,7 @@ ProviderConfig groqProvider() => ProviderConfig.full(
       'Groq LPU inference engine — extremely fast inference '
       'for Llama, Mixtral and other open models.',
   baseUrl: 'https://api.groq.com/openai/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
   models: [],

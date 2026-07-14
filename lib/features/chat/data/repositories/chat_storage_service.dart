@@ -19,14 +19,9 @@ final _logger = LogTags.storage;
 class ChatStorageService {
   static const String _chatsKey = 'chats_storage';
   static const int _defaultPageSize = 50;
-  static const Duration _cacheDuration = Duration(seconds: 30);
 
   // Cache for SharedPreferences
   SharedPreferences? _prefsCache;
-
-  // In-memory cache
-  List<Chat>? _chatsCache;
-  DateTime? _chatsCacheTimestamp;
 
   // ===========================================================================
   // PRIVATE HELPERS
@@ -35,16 +30,6 @@ class ChatStorageService {
   Future<SharedPreferences> _getPrefs() async {
     _prefsCache ??= await SharedPreferences.getInstance();
     return _prefsCache!;
-  }
-
-  bool _isCacheValid() {
-    if (_chatsCache == null || _chatsCacheTimestamp == null) return false;
-    return DateTime.now().difference(_chatsCacheTimestamp!) < _cacheDuration;
-  }
-
-  void _invalidateCache() {
-    _chatsCache = null;
-    _chatsCacheTimestamp = null;
   }
 
   /// Create a new chat with default values
@@ -92,7 +77,6 @@ class ChatStorageService {
 
     chats.insert(0, chat);
     await _saveChatsToStorage(prefs, chats);
-    _invalidateCache();
   }
 
   /// Rename chat title
@@ -107,7 +91,6 @@ class ChatStorageService {
         updatedAt: DateTime.now(),
       );
       await _saveChatsToStorage(prefs, chats);
-      _invalidateCache();
     }
   }
 
@@ -120,7 +103,6 @@ class ChatStorageService {
     if (chatIndex != -1) {
       chats.removeAt(chatIndex);
       await _saveChatsToStorage(prefs, chats);
-      _invalidateCache();
     }
   }
 
@@ -160,7 +142,6 @@ class ChatStorageService {
 
         chats[chatIndex] = updatedChat;
         await _saveChatsToStorage(prefs, chats);
-        _invalidateCache();
 
         _logger.logInfo('[ChatStorageService] Message updated successfully');
       }
@@ -189,22 +170,11 @@ class ChatStorageService {
 
       chats[chatIndex] = updatedChat.copyWith(title: chatTitle);
       await _saveChatsToStorage(prefs, chats);
-      _invalidateCache();
     }
   }
 
-  /// Get chat by ID (optimized to use caching)
+  /// Get chat by ID
   Future<Chat?> getChat(String chatId) async {
-    // Try to find in cached chats first (more efficient)
-    if (_isCacheValid() && _chatsCache != null) {
-      try {
-        return _chatsCache!.firstWhere((c) => c.id == chatId);
-      } catch (e) {
-        // Not in cache, continue to fetch from storage
-      }
-    }
-
-    // Fetch from storage
     final chats = await getAllChats();
     try {
       return chats.firstWhere((c) => c.id == chatId);
@@ -232,7 +202,6 @@ class ChatStorageService {
 
       chats[chatIndex] = updatedChat;
       await _saveChatsToStorage(prefs, chats);
-      _invalidateCache();
     }
   }
 
@@ -245,7 +214,6 @@ class ChatStorageService {
     if (chatIndex != -1) {
       chats[chatIndex] = chat.copyWith(updatedAt: DateTime.now());
       await _saveChatsToStorage(prefs, chats);
-      _invalidateCache();
     }
   }
 
@@ -253,35 +221,20 @@ class ChatStorageService {
   // PRIVATE METHODS
   // ===========================================================================
 
-  /// Private method to get chats from storage (with caching)
+  /// Private method to get chats from storage
   Future<List<Chat>> _getChatsFromStorage(SharedPreferences prefs) async {
-    // Return cached data if valid
-    if (_isCacheValid() && _chatsCache != null) {
-      return _chatsCache!;
-    }
-
     final chatsJson = prefs.getString(_chatsKey);
     if (chatsJson == null) {
       _logger.logDebug('[ChatStorageService] No chats found in storage');
-      _chatsCache = [];
-      _chatsCacheTimestamp = DateTime.now();
       return [];
     }
 
     try {
       final List<dynamic> chatsData = json.decode(chatsJson);
 
-      final chats = chatsData.map((data) => Chat.fromJson(data)).toList();
-
-      // Update cache
-      _chatsCache = chats;
-      _chatsCacheTimestamp = DateTime.now();
-
-      return chats;
+      return chatsData.map((data) => Chat.fromJson(data)).toList();
     } catch (e) {
       _logger.logError('Error parsing chats from storage: $e');
-      _chatsCache = [];
-      _chatsCacheTimestamp = DateTime.now();
       return [];
     }
   }

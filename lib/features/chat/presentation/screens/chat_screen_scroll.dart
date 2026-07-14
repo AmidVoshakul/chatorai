@@ -51,9 +51,10 @@ extension _ChatScreenScrollExt on _ChatScreenState {
     }
     _lastScrollUpdate = now;
 
-    final uiState = ref.watch(chatScreenProvider);
-    if (!_messageScrollController.hasClients ||
-        uiState.navigatorHeadings.isEmpty) {
+    final navigatorHeadings = ref.watch(
+      chatScreenProvider.select((s) => s.navigatorHeadings),
+    );
+    if (!_messageScrollController.hasClients || navigatorHeadings.isEmpty) {
       return;
     }
 
@@ -62,8 +63,8 @@ extension _ChatScreenScrollExt on _ChatScreenState {
     final registry = HeadingAnchorRegistry();
     int newActiveIndex = -1;
 
-    for (int i = 0; i < uiState.navigatorHeadings.length; i++) {
-      final heading = uiState.navigatorHeadings[i];
+    for (int i = 0; i < navigatorHeadings.length; i++) {
+      final heading = navigatorHeadings[i];
       final anchorId = '${heading.messageId}_${heading.level}_${heading.text}';
       final anchor = registry.getAnchor(anchorId);
       final ctx = anchor?.context ?? heading.context;
@@ -85,13 +86,16 @@ extension _ChatScreenScrollExt on _ChatScreenState {
     if (newActiveIndex == -1) {
       final scrollMax = _messageScrollController.position.maxScrollExtent;
       if (currentOffset >= scrollMax - 100) {
-        newActiveIndex = uiState.navigatorHeadings.length - 1;
+        newActiveIndex = navigatorHeadings.length - 1;
       } else if (currentOffset < 100) {
         newActiveIndex = 0;
       }
     }
 
-    if (newActiveIndex != -1 && newActiveIndex != uiState.activeHeadingIndex) {
+    final activeHeadingIndex = ref.watch(
+      chatScreenProvider.select((s) => s.activeHeadingIndex),
+    );
+    if (newActiveIndex != -1 && newActiveIndex != activeHeadingIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && newActiveIndex != -1) {
           ref

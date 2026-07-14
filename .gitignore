@@ -15,6 +15,9 @@ package.json
 package-lock.json
 node_modules/
 
+# Web platform not supported - protected by .metadata
+web/
+
 # IntelliJ related
 *.iml
 *.ipr

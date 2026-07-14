@@ -876,75 +876,75 @@ class AppLocalizationsAr extends AppLocalizations {
   String get removeFromFavorites => 'إزالة من المفضلة';
 
   @override
-  String get loadingSkills => 'Loading skills';
+  String get loadingSkills => 'جاري تحميل المهارات';
 
   @override
-  String get noSkillsInstalled => 'No skills installed';
+  String get noSkillsInstalled => 'لا توجد مهارات مثبتة';
 
   @override
-  String get noSkillsMatchSearch => 'No skills match your search';
+  String get noSkillsMatchSearch => 'لا توجد مهارات تطابق البحث';
 
   @override
-  String get allSkillsRequirePermission => 'All skills require permission';
+  String get allSkillsRequirePermission => 'جميع المهارات تتطلب إذناً';
 
   @override
   String skillExecuted(Object name) {
-    return 'Skill executed';
+    return 'تم تنفيذ المهارة';
   }
 
   @override
-  String get configuration => 'Configuration';
+  String get configuration => 'التكوين';
 
   @override
-  String get stats => 'Stats';
+  String get stats => 'الإحصائيات';
 
   @override
-  String get usageStatistics => 'Usage Statistics';
+  String get usageStatistics => 'إحصائيات الاستخدام';
 
   @override
-  String get totalSessions => 'Sessions';
+  String get totalSessions => 'الجلسات';
 
   @override
-  String get totalMessages => 'Messages';
+  String get totalMessages => 'الرسائل';
 
   @override
-  String get days => 'Days';
+  String get days => 'الأيام';
 
   @override
-  String get totalTokens => 'Total Tokens';
+  String get totalTokens => 'إجمالي الرموز';
 
   @override
-  String get totalCost => 'Total Cost';
+  String get totalCost => 'التكلفة الإجمالية';
 
   @override
-  String get avgCostPerDay => 'Avg Cost/Day';
+  String get avgCostPerDay => 'متوسط التكلفة/يوم';
 
   @override
-  String get avgTokensPerSession => 'Avg Tokens/Session';
+  String get avgTokensPerSession => 'متوسط الرموز/جلسة';
 
   @override
-  String get medianTokensPerSession => 'Median Tokens/Session';
+  String get medianTokensPerSession => 'وسيط الرموز/جلسة';
 
   @override
-  String get cacheRead => 'Cache Read';
+  String get cacheRead => 'قراءة ذاكرة التخزين المؤقت';
 
   @override
-  String get cacheWrite => 'Cache Write';
+  String get cacheWrite => 'كتابة ذاكرة التخزين المؤقت';
 
   @override
-  String get toolUsage => 'Tool Usage';
+  String get toolUsage => 'استخدام الأدوات';
 
   @override
-  String get modelUsage => 'Model Usage';
+  String get modelUsage => 'استخدام النماذج';
 
   @override
-  String get noStatsAvailable => 'No statistics available';
+  String get noStatsAvailable => 'لا توجد إحصائيات متاحة';
 
   @override
-  String get reasoningTokens => 'Reasoning';
+  String get reasoningTokens => 'رموز الاستدلال';
 
   @override
-  String get addProvider => 'Add Provider';
+  String get addProvider => 'إضافة مزود';
 
   @override
   String get applySettings => 'تطبيق الإعدادات';
@@ -968,7 +968,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get deleteChat => 'حذف الدردشة';
 
   @override
-  String get manageProviders => 'Manage Providers';
+  String get manageProviders => 'إدارة المزودين';
 
   @override
   String get micAutoRestart => 'إعادة المحاولة...';
@@ -995,10 +995,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noModelSelected => 'لم يتم اختيار نموذج';
 
   @override
-  String get openaiCompatibleApi => 'OpenAI-Compatible API';
+  String get openaiCompatibleApi => 'واجهة برمجة تطبيقات متوافقة مع OpenAI';
 
   @override
-  String get openaiCompatibleApiDescription => 'Connect to any OpenAI-compatible API endpoint';
+  String get openaiCompatibleApiDescription => 'الاتصال بأي نقطة نهاية لواجهة برمجة تطبيقات متوافقة مع OpenAI';
 
   @override
   String get permissionAlways => 'السماح دائماً';
@@ -1016,7 +1016,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get permissionReject => 'رفض';
 
   @override
-  String get providers => 'Providers';
+  String get providers => 'مزودو الخدمة';
 
   @override
   String get refreshQuestions => 'تحديث الأسئلة';
@@ -1136,60 +1136,60 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get toggleSidebarTooltip => 'Toggle sidebar';
+  String get toggleSidebarTooltip => 'تبديل الشريط الجانبي';
 
   @override
-  String get openMenuTooltip => 'Open menu';
+  String get openMenuTooltip => 'فتح القائمة';
 
   @override
-  String get addFileTooltip => 'Add file';
+  String get addFileTooltip => 'إضافة ملف';
 
   @override
-  String get modelSettingsTooltip => 'Model settings';
+  String get modelSettingsTooltip => 'إعدادات النموذج';
 
   @override
-  String get switchAgentTooltip => 'Switch agent';
+  String get switchAgentTooltip => 'تبديل الوكيل';
 
   @override
   String get selectModelTooltip => 'اختيار النموذج';
 
   @override
-  String get removeFileTooltip => 'Remove file';
+  String get removeFileTooltip => 'إزالة الملف';
 
   @override
-  String get goToParentSessionTooltip => 'Go to parent session';
+  String get goToParentSessionTooltip => 'الانتقال إلى الجلسة الأصل';
 
   @override
-  String get previousSiblingTooltip => 'Previous sibling';
+  String get previousSiblingTooltip => 'الشقيق السابق';
 
   @override
-  String get nextSiblingTooltip => 'Next sibling';
+  String get nextSiblingTooltip => 'الشقيق التالي';
 
   @override
-  String get cancellingRetryTooltip => 'Cancelling retry...';
+  String get cancellingRetryTooltip => 'جاري إلغاء إعادة المحاولة...';
 
   @override
-  String get stopGenerationTooltip => 'Stop generation';
+  String get stopGenerationTooltip => 'إيقاف التوليد';
 
   @override
-  String get question => 'Question';
+  String get question => 'سؤال';
 
   @override
-  String get skip => 'Skip';
+  String get skip => 'تخطي';
 
   @override
-  String get answer => 'Answer';
+  String get answer => 'إجابة';
 
   @override
-  String get noAgentsAvailable => 'No agents available';
+  String get noAgentsAvailable => 'لا توجد وكلاء متاحون';
 
   @override
   String permissionAlwaysConfirmDescription(Object title) {
-    return 'This will allow \"$title\" until the app is restarted.';
+    return 'سيسمح هذا بـ \"$title\" حتى إعادة تشغيل التطبيق.';
   }
 
   @override
-  String get chatActionsMenuTooltip => 'Chat menu';
+  String get chatActionsMenuTooltip => 'قائمة الدردشة';
 
   @override
   String get startListening => 'بدء الإدخال الصوتي';
@@ -1253,4 +1253,112 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get collapseTooltip => 'طي';
+
+  @override
+  String get addProviderTitleEdit => 'تعديل المزود';
+
+  @override
+  String get addProviderTitleAdd => 'إضافة مزود';
+
+  @override
+  String get addProviderLabelProvider => 'المزود';
+
+  @override
+  String get addProviderCustomName => 'مزود مخصص...';
+
+  @override
+  String get addProviderFieldProviderName => 'اسم المزود';
+
+  @override
+  String get addProviderHintProviderName => 'مثال: مزودي المخصص';
+
+  @override
+  String get addProviderLabelApiKey => 'مفتاح API';
+
+  @override
+  String get addProviderHintApiKey => 'أدخل مفتاح API الخاص بك';
+
+  @override
+  String get addProviderHintCustomApiKey => 'اختياري للمزودين المحليين';
+
+  @override
+  String get addProviderLabelBaseUrl => 'عنوان URL الأساسي';
+
+  @override
+  String get addProviderHintBaseUrl => 'https://api.example.com/v1';
+
+  @override
+  String get addProviderActionSave => 'حفظ';
+
+  @override
+  String get addProviderErrorApiKeyRequired => 'مفتاح API مطلوب';
+
+  @override
+  String get selectModels => 'اختيار النماذج';
+
+  @override
+  String get deselectAll => 'إلغاء تحديد الكل';
+
+  @override
+  String get selectAll => 'تحديد الكل';
+
+  @override
+  String get modelsAvailable => 'لا توجد نماذج متاحة';
+
+  @override
+  String get modelsMatchSearch => 'لا توجد نماذج تطابق البحث';
+
+  @override
+  String selectModelsCount(Object count, Object total) {
+    return 'تم تحديد $count من $total';
+  }
+
+  @override
+  String modelsLoadError(Object error) {
+    return 'فشل تحميل النماذج: $error';
+  }
+
+  @override
+  String get systemPromptHint => 'أنت مساعد مفيد...';
+
+  @override
+  String get temperatureHint => '0.0 - 2.0';
+
+  @override
+  String get loadingSettings => 'جاري تحميل الإعدادات...';
+
+  @override
+  String errorApplyingSettings(Object error) {
+    return 'خطأ في تطبيق الإعدادات: $error';
+  }
+
+  @override
+  String deleteProviderTitle(Object providerName) {
+    return 'حذف $providerName?';
+  }
+
+  @override
+  String get deleteProviderContent => 'سيؤدي هذا إلى إزالة المزود وجميع إعداداته. ستحتاج إلى إضافته مرة أخرى لاستخدام نماذجه.';
+
+  @override
+  String get errorLoadingProviders => 'خطأ في تحميل المزودين';
+
+  @override
+  String get noProvidersConfigured => 'لم يتم تكوين أي مزودين';
+
+  @override
+  String get addProviderToGetStarted => 'أضف مزودًا بمفتاح API للبدء';
+
+  @override
+  String statsError(Object error) {
+    return 'خطأ: $error';
+  }
+
+  @override
+  String get total => 'المجموع';
+
+  @override
+  String modelsProviderCountFormat(Object count, Object providerName) {
+    return '$providerName · $count';
+  }
 }

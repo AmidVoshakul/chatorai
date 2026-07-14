@@ -144,11 +144,12 @@ class ActionRow extends StatelessWidget {
           ),
           Consumer(
             builder: (context, ref, _) {
-              final retryState = ref.watch(chatScreenProvider);
-              if (isLastMessage && retryState.isRetrying) {
-                return _RetryIndicator(
-                  message: retryState.retryMessage ?? 'Retrying…',
-                );
+              final isRetrying = ref.watch(
+                chatScreenProvider.select((s) => s.isRetrying),
+              );
+              if (isLastMessage && isRetrying) {
+                final retryMessage = ref.read(chatScreenProvider).retryMessage;
+                return _RetryIndicator(message: retryMessage ?? 'Retrying…');
               }
               if (cumulativeTokens != null) {
                 return Padding(

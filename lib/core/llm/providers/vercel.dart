@@ -12,9 +12,7 @@ ProviderConfig vercelProvider() => ProviderConfig.basic(
       'Vercel AI Gateway — unified edge gateway '
       'for AI providers with caching and rate limiting.',
   baseUrl: 'https://gateway.ai.vercel.com/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

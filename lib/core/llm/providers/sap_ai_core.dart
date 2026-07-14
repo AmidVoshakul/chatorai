@@ -12,9 +12,7 @@ ProviderConfig sapAiCoreProvider() => ProviderConfig.basic(
       'SAP AI Core — enterprise AI orchestration '
       'on SAP Business Technology Platform.',
   baseUrl: 'https://api.ai.prod.eu-central-1.aws.ml.hana.ondemand.com/v2',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

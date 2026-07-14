@@ -10,9 +10,7 @@ ProviderConfig novitaProvider() => ProviderConfig.basic(
   name: 'Novita AI',
   description: 'Novita AI — multi-model gateway with competitive pricing.',
   baseUrl: 'https://api.novita.ai/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

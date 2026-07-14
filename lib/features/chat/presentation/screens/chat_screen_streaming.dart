@@ -10,6 +10,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     required bool isContinuation,
     required String modelId,
     required ModelSettings modelSettings,
+    required double temperature,
     required String? activeAgent,
     int maxSteps = 5,
   }) async {
@@ -29,7 +30,6 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     DateTime lastUpdateTime = DateTime.now();
     const updateIntervalMs = 200;
 
-    final toolOutputPersistence = ToolOutputPersistence.instance;
     final toolInputs = <String, Map<String, dynamic>>{};
     final toolStartTimes = <String, DateTime>{};
     final processedToolEndCalls = <String>{};
@@ -191,7 +191,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
       await aiService.streamChatCompletion(
         messages: attemptMsgs,
         model: modelId,
-        temperature: modelSettings.temperature,
+        temperature: temperature,
         tools: toolRegistry.toSDKTools(),
         onRetry: (info) {
           flushPendingUpdates();
@@ -352,26 +352,18 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           }
 
           scrollOnContentAdd();
-          unawaited(runnerSession.onToolEnd(toolCallId, toolName, resultStr));
-
           final startTime = toolStartTimes.remove(toolCallId);
           final durationMs = startTime != null
               ? DateTime.now().difference(startTime).inMilliseconds
               : 0;
           unawaited(
-            toolOutputPersistence
-                .saveResult(
-                  toolCallId: toolCallId,
-                  toolName: toolName,
-                  input: toolInputs.remove(toolCallId),
-                  output: resultStr,
-                  sessionId: runnerSession.sessionId.value,
-                  durationMs: durationMs,
-                  status: ToolResultStatus.success,
-                )
-                .catchError((e) {
-                  LogTags.chatService.logError('saveResult failed: $e');
-                }),
+            runnerSession.onToolEnd(
+              toolCallId,
+              toolName,
+              resultStr,
+              durationMs: durationMs,
+              input: toolInputs.remove(toolCallId),
+            ),
           );
         },
         onToolError: (toolCallId, toolName, error) async {
@@ -388,26 +380,18 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           }
 
           scrollOnContentAdd();
-          unawaited(runnerSession.onToolError(toolCallId, toolName, errorStr));
-
           final startTime = toolStartTimes.remove(toolCallId);
           final durationMs = startTime != null
               ? DateTime.now().difference(startTime).inMilliseconds
               : 0;
           unawaited(
-            toolOutputPersistence
-                .saveResult(
-                  toolCallId: toolCallId,
-                  toolName: toolName,
-                  input: toolInputs.remove(toolCallId),
-                  output: errorStr,
-                  sessionId: runnerSession.sessionId.value,
-                  durationMs: durationMs,
-                  status: ToolResultStatus.error,
-                )
-                .catchError((e) {
-                  LogTags.chatService.logError('saveResult failed: $e');
-                }),
+            runnerSession.onToolError(
+              toolCallId,
+              toolName,
+              errorStr,
+              durationMs: durationMs,
+              input: toolInputs.remove(toolCallId),
+            ),
           );
         },
         onChunk: (content) async {

@@ -2,11 +2,10 @@ import 'package:chatorai/core/agents/agent_provider.dart';
 import 'package:chatorai/core/constants/chat_messages_constants.dart';
 import 'package:chatorai/core/llm/catalog_providers.dart'
     show providerCatalogServiceProvider;
+import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
 import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart';
-import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart'
-    show ChatScreenState;
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart'
@@ -233,13 +232,14 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
   Widget build(BuildContext context) {
     super.build(context);
 
-    final screenState = widget.isActiveSession
-        ? ref.watch(chatScreenProvider)
-        : const ChatScreenState();
-    final streamingParts = screenState.streamingParts;
-    final streamingIsActive = screenState.isStreaming;
+    final streamingParts = widget.isActiveSession
+        ? ref.watch(chatScreenProvider.select((s) => s.streamingParts))
+        : const <AssistantContent>[];
+    final streamingIsActive = widget.isActiveSession
+        ? ref.watch(chatScreenProvider.select((s) => s.isStreaming))
+        : false;
 
-    List<MessagePart> streamingMessageParts = streamingParts
+    final List<MessagePart> streamingMessageParts = streamingParts
         .map(assistantContentToMessagePart)
         .where((p) => !(p is TextPart && p.content.isEmpty && p.isStreaming))
         .toList();

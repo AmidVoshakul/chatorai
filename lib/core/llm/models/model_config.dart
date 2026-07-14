@@ -1,12 +1,13 @@
 /// Model configuration for AI providers.
 ///
 /// Defines a model's capabilities, pricing, context length, and available variants.
-/// Follows OpenCode catalog patterns: immutable, serializable, schema-driven.
+/// catalog patterns: immutable, serializable, schema-driven.
 library;
 
 import 'package:equatable/equatable.dart';
 
 import 'model_variant.dart';
+
 export 'model_variant.dart';
 
 /// Capabilities of an AI model.
@@ -162,6 +163,10 @@ class ModelConfig extends Equatable {
   /// Default maximum tokens for responses.
   final int? defaultMaxTokens;
 
+  /// Recommended default temperature from the provider/variant (0.0–2.0).
+  /// When null the provider does not specify a default.
+  final double? defaultTemperature;
+
   /// Pricing information.
   final ModelPricing? pricing;
 
@@ -187,6 +192,7 @@ class ModelConfig extends Equatable {
     required this.capabilities,
     required this.contextLength,
     this.defaultMaxTokens,
+    this.defaultTemperature,
     this.pricing,
     this.variants = const [],
     this.enabled = true,
@@ -203,6 +209,7 @@ class ModelConfig extends Equatable {
     ModelCapabilities? capabilities,
     required int contextLength,
     int? defaultMaxTokens,
+    double? defaultTemperature,
     ModelPricing? pricing,
     List<ModelVariant>? variants,
     bool enabled = true,
@@ -216,6 +223,7 @@ class ModelConfig extends Equatable {
       capabilities: capabilities ?? ModelCapabilities.basic(),
       contextLength: contextLength,
       defaultMaxTokens: defaultMaxTokens,
+      defaultTemperature: defaultTemperature,
       pricing: pricing,
       variants: variants ?? const [],
       enabled: enabled,
@@ -231,6 +239,7 @@ class ModelConfig extends Equatable {
     required ModelCapabilities capabilities,
     required int contextLength,
     int? defaultMaxTokens,
+    double? defaultTemperature,
     ModelPricing? pricing,
     List<ModelVariant>? variants,
     bool enabled = true,
@@ -246,6 +255,7 @@ class ModelConfig extends Equatable {
       capabilities: capabilities,
       contextLength: contextLength,
       defaultMaxTokens: defaultMaxTokens,
+      defaultTemperature: defaultTemperature,
       pricing: pricing,
       variants: variants ?? const [],
       enabled: enabled,
@@ -309,11 +319,13 @@ class ModelConfig extends Equatable {
     ModelCapabilities? capabilities,
     int? contextLength,
     int? defaultMaxTokens,
+    double? defaultTemperature,
     ModelPricing? pricing,
     List<ModelVariant>? variants,
     bool? enabled,
     DateTime? addedAt,
     Map<String, dynamic>? metadata,
+    bool clearDefaultTemperature = false,
   }) {
     final newProviderId = providerId ?? this.providerId;
     final newModelName = modelName ?? this.modelName;
@@ -326,6 +338,9 @@ class ModelConfig extends Equatable {
       capabilities: capabilities ?? this.capabilities,
       contextLength: contextLength ?? this.contextLength,
       defaultMaxTokens: defaultMaxTokens ?? this.defaultMaxTokens,
+      defaultTemperature: clearDefaultTemperature
+          ? null
+          : (defaultTemperature ?? this.defaultTemperature),
       pricing: pricing ?? this.pricing,
       variants: variants ?? this.variants,
       enabled: enabled ?? this.enabled,
@@ -344,6 +359,7 @@ class ModelConfig extends Equatable {
     capabilities,
     contextLength,
     defaultMaxTokens,
+    defaultTemperature,
     pricing,
     variants,
     enabled,
@@ -362,6 +378,7 @@ class ModelConfig extends Equatable {
       'capabilities': capabilities.toJson(),
       'contextLength': contextLength,
       if (defaultMaxTokens != null) 'defaultMaxTokens': defaultMaxTokens,
+      if (defaultTemperature != null) 'defaultTemperature': defaultTemperature,
       if (pricing != null) 'pricing': pricing!.toJson(),
       if (variants.isNotEmpty)
         'variants': variants.map((v) => v.toJson()).toList(),
@@ -387,6 +404,7 @@ class ModelConfig extends Equatable {
       ),
       contextLength: json['contextLength'] as int,
       defaultMaxTokens: json['defaultMaxTokens'] as int?,
+      defaultTemperature: (json['defaultTemperature'] as num?)?.toDouble(),
       pricing: json['pricing'] != null
           ? ModelPricing.fromJson(json['pricing'] as Map<String, dynamic>)
           : null,
@@ -411,6 +429,7 @@ class ModelConfig extends Equatable {
   String toString() {
     return 'ModelConfig(id: $id, providerId: $providerId, modelName: $modelName, '
         'displayName: $displayName, contextLength: $contextLength, '
+        'defaultTemperature: $defaultTemperature, '
         'capabilities: $capabilities, variants: ${variants.length})';
   }
 }

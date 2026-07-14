@@ -10,9 +10,7 @@ ProviderConfig mistralProvider() => ProviderConfig.full(
   name: 'Mistral AI',
   description: 'Mistral AI models (Mistral Large, Small, Nemo, Codestral).',
   baseUrl: 'https://api.mistral.ai/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
   models: [],

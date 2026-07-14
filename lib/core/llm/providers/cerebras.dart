@@ -10,9 +10,7 @@ ProviderConfig cerebrasProvider() => ProviderConfig.basic(
   name: 'Cerebras',
   description: 'Cerebras — ultra-fast inference on Wafer-Scale hardware.',
   baseUrl: 'https://api.cerebras.ai/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

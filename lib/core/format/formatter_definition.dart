@@ -11,7 +11,6 @@ class FormatContext {
   });
 }
 
-/// Definition of a built-in formatter, mirroring OpenCode's `Info`.
 class FormatterDefinition {
   final String name;
   final List<String> extensions;

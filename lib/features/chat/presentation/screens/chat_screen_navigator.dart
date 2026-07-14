@@ -14,9 +14,11 @@ extension _ChatScreenNavigatorExt on _ChatScreenState {
   }
 
   void _onHeadingTap(String headingText, String messageId, int level) {
-    final uiState = ref.watch(chatScreenProvider);
+    final navigatorHeadings = ref.watch(
+      chatScreenProvider.select((s) => s.navigatorHeadings),
+    );
     final normalizedTapText = stripMarkdownFormatting(headingText);
-    final headingIndex = uiState.navigatorHeadings.indexWhere(
+    final headingIndex = navigatorHeadings.indexWhere(
       (h) =>
           h.messageId == messageId &&
           h.level == level &&
@@ -25,7 +27,7 @@ extension _ChatScreenNavigatorExt on _ChatScreenState {
 
     if (headingIndex >= 0) {
       ref.read(chatScreenProvider.notifier).setActiveHeadingIndex(headingIndex);
-      final heading = uiState.navigatorHeadings[headingIndex];
+      final heading = navigatorHeadings[headingIndex];
       final registry = HeadingAnchorRegistry();
       final normalizedText = stripMarkdownFormatting(headingText);
       final anchorId = '${messageId}_${level}_$normalizedText';

@@ -10,9 +10,7 @@ ProviderConfig ai302Provider() => ProviderConfig.basic(
   name: '302.AI',
   description: '302.AI — multi-model API gateway.',
   baseUrl: 'https://api.302.ai/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

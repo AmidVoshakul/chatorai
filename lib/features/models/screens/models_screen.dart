@@ -184,6 +184,7 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
   }
 
   Widget _buildGroupedList(BuildContext context, ModelsScreenState state) {
+    final localizations = AppLocalizations.of(context)!;
     final grouped = <String, List<ChatModel>>{};
     for (final m in state.filteredModels) {
       (grouped[m.provider ?? ''] ??= []).add(m);
@@ -211,6 +212,7 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
             onToggleFavorite: (id) =>
                 ref.read(modelsScreenProvider.notifier).toggleFavorite(id),
             onInfo: (model) => showModelDetailsDialog(context, model),
+            localizations: localizations,
           ),
       ],
     );
@@ -250,6 +252,7 @@ class _DeferredModelTile extends StatefulWidget {
   final bool Function(String) isFavorite;
   final void Function(String) onToggleFavorite;
   final void Function(ChatModel) onInfo;
+  final AppLocalizations localizations;
 
   const _DeferredModelTile({
     required this.providerKey,
@@ -260,6 +263,7 @@ class _DeferredModelTile extends StatefulWidget {
     required this.isFavorite,
     required this.onToggleFavorite,
     required this.onInfo,
+    required this.localizations,
   });
 
   @override
@@ -275,7 +279,12 @@ class _DeferredModelTileState extends State<_DeferredModelTile> {
       key: ValueKey('grp_${widget.providerKey}'),
       initiallyExpanded: false,
       leading: ProviderIcon(providerId: widget.providerKey),
-      title: Text('${widget.providerName} · ${widget.models.length}'),
+      title: Text(
+        widget.localizations.modelsProviderCountFormat(
+          widget.models.length,
+          widget.providerName,
+        ),
+      ),
       tilePadding: const EdgeInsets.symmetric(horizontal: 8),
       childrenPadding: const EdgeInsets.only(left: 8, bottom: 4),
       onExpansionChanged: (expanded) {

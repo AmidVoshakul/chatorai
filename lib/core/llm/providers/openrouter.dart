@@ -12,9 +12,7 @@ ProviderConfig openrouterProvider() => ProviderConfig.basic(
       'Unified API gateway supporting 200+ models from OpenAI, '
       'Anthropic, Google, and more. Single API key for many providers.',
   baseUrl: 'https://openrouter.ai/api/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: true,
 );

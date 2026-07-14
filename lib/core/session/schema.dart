@@ -72,3 +72,19 @@ class ContextEpochs extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+class SessionSnapshots extends Table {
+  TextColumn get id => text()();
+  TextColumn get sessionId => text()();
+  TextColumn get stepNumber => text()();
+  TextColumn get request => text()();
+  TextColumn get response => text()();
+  TextColumn? get toolCallId => text().nullable()();
+  TextColumn? get toolName => text().nullable()();
+  IntColumn get tokensInput => integer().withDefault(const Constant(0))();
+  IntColumn get tokensOutput => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

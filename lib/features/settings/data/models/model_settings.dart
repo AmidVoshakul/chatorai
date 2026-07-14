@@ -13,10 +13,13 @@ class ModelSettings {
     this.reasoningEnabled = true,
   });
 
-  factory ModelSettings.defaultForModel(String modelId) {
+  factory ModelSettings.defaultForModel(
+    String modelId, {
+    double? defaultTemperature,
+  }) {
     return ModelSettings(
       modelId: modelId,
-      temperature: 1.0,
+      temperature: defaultTemperature ?? 1.0,
       stream: true,
       reasoningEnabled: true,
     );

@@ -40,7 +40,7 @@ class ModelSettingsSystemPrompt extends ConsumerWidget {
           controller: controller,
           maxLines: 3,
           decoration: InputDecoration(
-            hintText: 'You are a helpful assistant...',
+            hintText: localizations.systemPromptHint,
             filled: true,
             fillColor: isDark
                 ? ChatoraiColors.darkInputFill

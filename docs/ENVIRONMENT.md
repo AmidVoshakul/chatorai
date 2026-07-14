@@ -13,7 +13,7 @@ This document describes the software and hardware requirements, environment vari
 | Tool        | Version                             | Notes                                         |
 | ----------- | ----------------------------------- | --------------------------------------------- |
 | Flutter SDK | 3.44.0 (stable)                     | Download from https://flutter.dev             |
-| Dart SDK | 3.11.0 (bundled with Flutter) | pubspec.yaml requires `^3.11.0` |
+| Dart SDK    | 3.11.0 (bundled with Flutter)       | pubspec.yaml requires `^3.11.0`               |
 | Git         | 2.x                                 | For dependency management and version control |
 | IDE         | VS Code / Android Studio / IntelliJ | With Flutter & Dart plugins                   |
 
@@ -131,7 +131,7 @@ Where `<package>` is the runtime bundle ID (e.g. `com.chatorai.app`). A project-
     bindings: { session_child_next: "ctrl+right" },
   },
   skills: {
-    paths: [".opencode/skills/"],
+    paths: [".chatorai/skills/"],
   },
   compaction: {
     auto: true,
@@ -140,12 +140,12 @@ Where `<package>` is the runtime bundle ID (e.g. `com.chatorai.app`). A project-
     buffer: 2000,
   },
   agent: {
-    "general": {
-      max_steps: 10
+    general: {
+      max_steps: 10,
     },
     "my-custom-agent": {
-      hidden: true
-    }
+      hidden: true,
+    },
   },
   mcp: {
     default_timeout: 30000,

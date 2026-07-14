@@ -1,7 +1,7 @@
 /// Provider definitions barrel file.
 ///
 /// Imports all built-in provider definitions and exports a single
-/// [builtInProviders] function. Follows the OpenCode pattern where
+/// [builtInProviders] function. 
 /// each provider is defined in its own file (~20-30 lines) and the
 /// barrel file composes them into a list.
 ///

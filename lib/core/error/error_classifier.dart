@@ -6,7 +6,7 @@ import 'package:dio/dio.dart';
 /// and `isRateLimitError()` in ChatErrorUtils with a single, testable,
 /// sealed-class hierarchy.
 ///
-/// Classification rules (aligned with OpenCode patterns):
+/// Classification rules :
 /// - 429 → RateLimitError (retryable)
 /// - 401/403 → AuthenticationError (not retryable)
 /// - 5xx → ServerError (retryable)
@@ -30,7 +30,6 @@ sealed class ClassifiedError {
   /// Optional retry-after duration extracted from headers.
   Duration? get retryAfter;
 
-  /// OpenCode-compatible upsell reason (free_tier_limit, account_rate_limit).
   String? get reason;
 
   /// Raw error message from API/error body, if available.
@@ -46,7 +45,7 @@ class RateLimitError extends ClassifiedError {
   final Duration? retryAfter;
 
   @override
-  /// OpenCode-compatible reason for upsell / UI actions:
+  /// Chatorai-compatible reason for upsell / UI actions:
   /// "free_tier_limit", "account_rate_limit", or null.
   final String? reason;
 
@@ -415,7 +414,7 @@ class ErrorClassifier {
     return null;
   }
 
-  /// Detect OpenCode-style rate-limit sub-reasons from response body.
+  /// Detect Chatorai-style rate-limit sub-reasons from response body.
   ///
   /// Returns:
   /// - "free_tier_limit"       → FreeUsageLimitError found in body

@@ -12,9 +12,7 @@ ProviderConfig togetheraiProvider() => ProviderConfig.basic(
       'Together AI — cloud platform for open-source models '
       '(Llama, Mistral, DeepSeek, and more).',
   baseUrl: 'https://api.together.xyz/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

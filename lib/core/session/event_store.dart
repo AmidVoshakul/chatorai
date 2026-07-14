@@ -16,27 +16,22 @@ class EventStore {
 
   EventStore(this._db);
 
-  /// Append a single event inside a transaction to prevent
-  /// race conditions on sequence number assignment.
+  /// Append a single event.
   Future<int> append(SessionEvent event) async {
-    return await _db.transaction(() async {
-      final seq = await _nextSequence(event.sessionId);
-      final data = _serialize(event);
+    final seq = await _nextSequence(event.sessionId);
+    final data = _serialize(event);
 
-      await _db
-          .into(_db.events)
-          .insert(
-            db.EventsCompanion.insert(
-              sessionId: event.sessionId.value,
-              eventType: event.runtimeType.toString(),
-              eventData: jsonEncode(data),
-              sequence: seq,
-              createdAt: event.timestamp,
-            ),
-          );
-
-      return seq;
-    });
+    return await _db
+        .into(_db.events)
+        .insert(
+          db.EventsCompanion.insert(
+            sessionId: event.sessionId.value,
+            eventType: event.runtimeType.toString(),
+            eventData: jsonEncode(data),
+            sequence: seq,
+            createdAt: event.timestamp,
+          ),
+        );
   }
 
   /// Append multiple events atomically inside a single transaction.

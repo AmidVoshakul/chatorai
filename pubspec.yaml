@@ -90,11 +90,6 @@ flutter_launcher_icons:
   android: true
   ios: true
   remove_alpha_ios: true
-  web:
-    generate: true
-    image_path: "assets/chatorai_logo_black.png"
-    background_color: "#1a1a1a"
-    theme_color: "#1a1a1a"
   windows:
     generate: true
     image_path: "assets/chatorai_logo_black.png"

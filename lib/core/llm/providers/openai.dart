@@ -10,9 +10,7 @@ ProviderConfig openaiProvider() => ProviderConfig.full(
   name: 'OpenAI',
   description: 'OpenAI GPT-4o, GPT-4o-mini, o1, o3-mini and more.',
   baseUrl: 'https://api.openai.com/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai',
   enabled: false,
   models: [],

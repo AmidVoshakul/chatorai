@@ -28,6 +28,12 @@ class PermissionService {
   final _pending = <String, _PendingEntry>{};
   final _approved = <PermissionRule>[];
   final _defaultRules = <PermissionRule>[];
+
+  // Cache of "once" grants to handle SDK retries before result cache is populated.
+  // Key: "permission:pattern" normalized, Value: timestamp (expires with session).
+  // This allows retry calls to skip permission dialogs when "Once" was already granted.
+  final _onceGranted = <String, DateTime>{};
+
   final _controller = StreamController<PermissionRequest>.broadcast();
   bool _rulesSeeded = false;
   String? _sessionId;
@@ -90,8 +96,9 @@ class PermissionService {
     if (reqSessionId != null && reqSessionId != _sessionId) {
       _sessionId = reqSessionId;
       _approved.clear();
+      _onceGranted.clear();
       LogTags.permission.logInfo(
-        'PermissionService: session changed to $reqSessionId, cleared session-approved rules',
+        'PermissionService: session changed to $reqSessionId, cleared caches',
       );
     }
 
@@ -123,6 +130,34 @@ class PermissionService {
       LogTags.permission.logInfo(
         'PermissionService.ask: ALLOW (no ask needed) for tool=${req.toolName}',
       );
+      return;
+    }
+
+    // Check "once" cache - handles SDK retries that come after "Once" was granted
+    // but before the result is cached. Must check BEFORE creating dialog.
+    var allOnceGranted = true;
+    for (final pattern in req.patterns) {
+      final normalized = pattern.trim().isEmpty ? '*' : pattern.trim();
+      final key = '${req.permission}:$normalized';
+      if (!_onceGranted.containsKey(key)) {
+        allOnceGranted = false;
+        break;
+      }
+      LogTags.permission.logInfo(
+        'PermissionService.ask: ONCE-CACHE HIT for $key',
+      );
+    }
+    if (allOnceGranted) {
+      return; // Permission already granted once for all patterns
+    }
+
+    // Check for existing in-flight request with same ID (preliminary + final dispatch)
+    final existing = _pending[req.id];
+    if (existing != null) {
+      LogTags.permission.logInfo(
+        'PermissionService.ask: RE-USING in-flight request for tool=${req.toolName}, id=${req.id}',
+      );
+      await existing.completer.future;
       return;
     }
 
@@ -288,6 +323,18 @@ class PermissionService {
         _approved.addAll(newRules);
         _resolveSiblings(entry, newRules);
       }
+      // Cache "once" grants for patterns to handle SDK retries
+      if (reply == PermissionReply.once) {
+        final now = DateTime.now();
+        for (final pattern in entry.request.patterns) {
+          final normalized = pattern.trim().isEmpty ? '*' : pattern.trim();
+          final key = '${entry.request.permission}:$normalized';
+          _onceGranted[key] = now;
+        }
+        LogTags.permission.logInfo(
+          'PermissionService.reply: Cached once grants for patterns: ${entry.request.patterns}',
+        );
+      }
       entry.completer.complete();
       _pending.remove(requestId);
     }
@@ -333,6 +380,7 @@ class PermissionService {
       );
     }
     _pending.clear();
+    _onceGranted.clear();
     _askHistory.clear();
     for (final entry in _questionPending.values) {
       if (!entry.completer.isCompleted) {
@@ -348,6 +396,7 @@ class PermissionService {
     _askHistory.clear();
     _questionAskHistory.clear();
     _approved.clear();
+    _onceGranted.clear();
     _sessionId = null;
   }
 

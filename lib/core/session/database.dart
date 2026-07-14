@@ -7,12 +7,21 @@ import 'schema.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [Events, Sessions, Messages, ToolResults, ContextEpochs])
+@DriftDatabase(
+  tables: [
+    Events,
+    Sessions,
+    Messages,
+    ToolResults,
+    ContextEpochs,
+    SessionSnapshots,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -31,6 +40,9 @@ class AppDatabase extends _$AppDatabase {
         if (from < 2) {
           await mgr.addColumn(sessions, sessions.tokensCacheRead as dynamic);
           await mgr.addColumn(sessions, sessions.tokensCacheWrite as dynamic);
+        }
+        if (from < 4) {
+          await mgr.createTable(sessionSnapshots);
         }
       },
     );

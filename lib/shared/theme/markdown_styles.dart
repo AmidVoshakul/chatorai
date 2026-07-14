@@ -1,7 +1,6 @@
+import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-
-import 'package:chatorai/shared/theme/app_theme.dart';
 
 /// Markdown stylesheet builder with light/dark theme support and caching.
 class ChatoraiMarkdownStyles {

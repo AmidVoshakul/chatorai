@@ -40,80 +40,70 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
   List<Map<String, dynamic>> _buildApiMessages(
     Chat chat, {
     String? delegateAgentId,
-    String? delegateAgentName,
+    String? agentMention,
   }) {
-    const int maxHistoryMessages = 20;
-    final recentMessages = chat.messages.length > maxHistoryMessages
-        ? chat.messages.sublist(chat.messages.length - maxHistoryMessages)
-        : chat.messages;
+  const int maxHistoryMessages = 20;
+  final recentMessages = chat.messages.length > maxHistoryMessages
+      ? chat.messages.sublist(chat.messages.length - maxHistoryMessages)
+      : chat.messages;
 
-    final messages = recentMessages.where((m) => !m.isError).map((msg) {
-      final result = <String, dynamic>{'role': msg.role.name};
-      if (msg.imageData != null && msg.imageType != null) {
-        result['content'] = [
-          {'type': 'text', 'text': msg.content},
-          {
-            'type': 'image_url',
-            'image_url': {
-              'url': 'data:${msg.imageType};base64,${msg.imageData}',
-            },
+  final messages = recentMessages.where((m) => !m.isError).map((msg) {
+    final result = <String, dynamic>{'role': msg.role.name};
+    if (msg.imageData != null && msg.imageType != null) {
+      result['content'] = [
+        {'type': 'text', 'text': msg.content},
+        {
+          'type': 'image_url',
+          'image_url': {
+            'url': 'data:${msg.imageType};base64,${msg.imageData}',
           },
-        ];
-      } else {
-        result['content'] = msg.content;
-      }
-      return result;
-    }).toList();
-
-    // Inject system prompt chain at the beginning
-    final currentAgent = ref.read(currentAgentProvider);
-    final settings = ref.read(modelSettingsProvider).activeSettings;
-
-    String? resolvedDelegateId = delegateAgentId;
-    if (delegateAgentName != null && delegateAgentId == null) {
-      try {
-        resolvedDelegateId = AgentRegistry().getAllIds().firstWhere(
-          (id) => AgentRegistry().get(id)?.name == delegateAgentName,
-        );
-      } catch (_) {
-        resolvedDelegateId = null;
-      }
-    }
-
-    // Add agent transition reminder only if delegate agent resolved
-    if (delegateAgentName != null && resolvedDelegateId != null) {
-      final systemChain = _buildSystemChain(
-        agent: currentAgent,
-        userSystemPrompt: settings?.systemPrompt,
-        delegateAgentId: resolvedDelegateId,
-      );
-      for (final sys in systemChain) {
-        messages.insert(0, sys);
-      }
-      final reminderIndex = systemChain.length;
-      messages.insert(reminderIndex, {
-        'role': 'system',
-        'content': 'Mode switched to: $delegateAgentName',
-      });
+        },
+      ];
     } else {
-      final systemChain = _buildSystemChain(
-        agent: currentAgent,
-        userSystemPrompt: settings?.systemPrompt,
-        delegateAgentId: null,
-      );
-      for (final sys in systemChain) {
-        messages.insert(0, sys);
-      }
+      result['content'] = msg.content;
     }
+    return result;
+  }).toList();
 
-    return messages;
+  // Inject system prompt chain at the beginning
+  final currentAgent = ref.read(currentAgentProvider);
+  final settings = ref.read(modelSettingsProvider).activeSettings;
+
+  // Add agent system prompts (only for primary agents or no delegation)
+  final systemChain = _buildSystemChain(
+    agent: currentAgent,
+    userSystemPrompt: settings?.systemPrompt,
+    // For subagents, pass null (they get their prompt in child session from task tool)
+    delegateAgentId: agentMention != null ? null : delegateAgentId,
+  );
+  for (final sys in systemChain) {
+    messages.insert(0, sys);
   }
+
+  // Add agent delegation instruction for subagents 
+  if (agentMention != null) {
+    final agent = AgentRegistry().get(agentMention);
+    if (agent != null && agent.mode == AgentMode.subagent) {
+      messages.insert(
+        systemChain.length,
+        {
+          'role': 'system',
+          'content': 'Delegate to subagent $agentMention. '
+              'Use the task tool with subagent_type: "$agentMention" to process this request.',
+        },
+      );
+    }
+  }
+
+  return messages;
+}
 
   Future<void> _initiateStream({
     required Chat chat,
     required List<Map<String, dynamic>> messages,
     required bool isContinuation,
     String? delegateAgentId,
+    String? agentMention,
   }) async {
     LogTags.chatScreen.logInfo(
       '_initiateStream: enter model=$selectedModelId isContinuation=$isContinuation',
@@ -124,7 +114,8 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     LogTags.chatScreen.logInfo('_initiateStream: toolRegistry ready');
 
     String agentName = ref.read(currentAgentProvider).name;
-    if (delegateAgentId != null) {
+    // For subagent mentions, keep the current agent (LLM will call task tool)
+    if (delegateAgentId != null && agentMention == null) {
       final delegateAgent = AgentRegistry().get(delegateAgentId);
       if (delegateAgent != null) {
         agentName = delegateAgent.name;
@@ -192,12 +183,19 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
           ref.read(currentAgentProvider).maxSteps ??
           unlimitedMaxSteps;
 
+      // Resolve temperature: delegate agent > primary agent > model settings > 1.0
+      final double temperature =
+          delegateAgent?.temperature ??
+          ref.read(currentAgentProvider).temperature ??
+          settings.temperature;
+
       await _handleStreamingResponse(
         chat: chat,
         messages: messages,
         isContinuation: isContinuation,
         modelId: selectedModelId,
         modelSettings: settings,
+        temperature: temperature,
         maxSteps: maxSteps,
         activeAgent: activeAgent,
       );
@@ -243,11 +241,14 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     var streamChat = await _chatStorageService.getChat(chat.id);
     if (streamChat == null) return;
 
-    final agentName = messageData.delegateAgentId != null
-        ? AgentRegistry().get(messageData.delegateAgentId!)?.name ??
-              ref.read(currentAgentProvider).name
-        : ref.read(currentAgentProvider).name;
-    final assistantMessage = _createAssistantMessage(agent: agentName);
+final agentName =
+        AgentRegistry().get(messageData.delegateAgentId ?? '')?.name ??
+            ref.read(currentAgentProvider).name;
+    // For subagent mentions, keep the current agent (LLM will call task tool)
+    final assistantAgentName = messageData.agentMention != null
+        ? ref.read(currentAgentProvider).name
+        : agentName;
+    final assistantMessage = _createAssistantMessage(agent: assistantAgentName);
     await _chatStorageService.addMessageToChat(streamChat.id, assistantMessage);
     streamChat = await _chatStorageService.getChat(streamChat.id) ?? streamChat;
     ref.read(chatListProvider.notifier).updateChat(streamChat);
@@ -260,16 +261,17 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     final messages = _buildApiMessages(
       streamChat,
       delegateAgentId: messageData.delegateAgentId,
-      delegateAgentName: agentName,
+      agentMention: messageData.agentMention,
     );
     LogTags.chatScreen.logInfo(
-      '_handleSendMessage: sending to LLM messages=${messages.length} delegateAgentId=${messageData.delegateAgentId ?? "none"}',
+      '_handleSendMessage: sending to LLM messages=${messages.length} agentMention=${messageData.agentMention ?? "none"}',
     );
     await _initiateStream(
       chat: streamChat,
       messages: messages,
       isContinuation: false,
       delegateAgentId: messageData.delegateAgentId,
+      agentMention: messageData.agentMention,
     );
   }
 

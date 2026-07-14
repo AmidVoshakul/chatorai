@@ -71,7 +71,7 @@ class PermissionBridge {
     if (sessionId != null) reqMetadata['sessionId'] = sessionId;
     await permissions.ask(
       PermissionRequest(
-        id: 'req_${DateTime.now().microsecondsSinceEpoch}_$toolId',
+        id: 'req_$toolCallId',
         toolName: toolId,
         permission: permission,
         patterns: patterns,

@@ -10,9 +10,7 @@ ProviderConfig veniceProvider() => ProviderConfig.basic(
   name: 'Venice AI',
   description: 'Venice AI — privacy-focused AI API.',
   baseUrl: 'https://api.venice.ai/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

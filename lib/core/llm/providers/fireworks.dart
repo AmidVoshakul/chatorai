@@ -12,9 +12,7 @@ ProviderConfig fireworksProvider() => ProviderConfig.basic(
       'Fireworks AI — fast inference for open-source '
       'and custom models.',
   baseUrl: 'https://api.fireworks.ai/inference/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

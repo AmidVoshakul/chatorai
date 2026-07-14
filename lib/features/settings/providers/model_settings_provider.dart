@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/features/settings/data/models/model_settings.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 
@@ -48,16 +49,28 @@ class ModelSettingsNotifier extends Notifier<ModelSettingsState> {
       final key = '$_settingsPrefix$modelId';
       final jsonString = prefs.getString(key);
 
+      double? catalogDefaultTemp;
+      try {
+        final catalog = ref.read(providerCatalogServiceProvider);
+        catalogDefaultTemp = catalog.getModel(modelId)?.defaultTemperature;
+      } catch (_) {}
+
       ModelSettings settings;
       if (jsonString != null && jsonString.isNotEmpty) {
         try {
           final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
           settings = ModelSettings.fromJson(jsonMap);
         } catch (e) {
-          settings = ModelSettings.defaultForModel(modelId);
+          settings = ModelSettings.defaultForModel(
+            modelId,
+            defaultTemperature: catalogDefaultTemp,
+          );
         }
       } else {
-        settings = ModelSettings.defaultForModel(modelId);
+        settings = ModelSettings.defaultForModel(
+          modelId,
+          defaultTemperature: catalogDefaultTemp,
+        );
       }
 
       final newCache = Map<String, ModelSettings>.from(state.settingsCache);
@@ -70,8 +83,6 @@ class ModelSettingsNotifier extends Notifier<ModelSettingsState> {
       );
 
       _logger.logInfo('[ModelSettingsNotifier] Loaded settings for $modelId');
-
-      await saveSettings(settings);
     } catch (e) {
       _logger.logError(
         '[ModelSettingsNotifier] Error loading settings for $modelId: $e',
@@ -122,10 +133,6 @@ class ModelSettingsNotifier extends Notifier<ModelSettingsState> {
   }
 
   Future<void> setActiveModel(String modelId) async {
-    if (state.activeSettings?.modelId == modelId) {
-      return;
-    }
-
     state = state.copyWith(isLoading: true);
 
     try {
@@ -133,12 +140,21 @@ class ModelSettingsNotifier extends Notifier<ModelSettingsState> {
       final key = '$_settingsPrefix$modelId';
       final jsonString = prefs.getString(key);
 
+      double? catalogDefaultTemp;
+      try {
+        final catalog = ref.read(providerCatalogServiceProvider);
+        catalogDefaultTemp = catalog.getModel(modelId)?.defaultTemperature;
+      } catch (_) {}
+
       ModelSettings settings;
       if (jsonString != null && jsonString.isNotEmpty) {
         final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
         settings = ModelSettings.fromJson(jsonMap);
       } else {
-        settings = ModelSettings.defaultForModel(modelId);
+        settings = ModelSettings.defaultForModel(
+          modelId,
+          defaultTemperature: catalogDefaultTemp,
+        );
       }
 
       final newCache = Map<String, ModelSettings>.from(state.settingsCache);
@@ -153,8 +169,6 @@ class ModelSettingsNotifier extends Notifier<ModelSettingsState> {
       _logger.logInfo(
         '[ModelSettingsNotifier] Active model set to $modelId with settings: $settings',
       );
-
-      await saveSettings(settings);
     } catch (e) {
       _logger.logError(
         '[ModelSettingsNotifier] Error setting active model: $e',
@@ -201,8 +215,7 @@ class ModelSettingsNotifier extends Notifier<ModelSettingsState> {
       return state.settingsCache[modelId]!;
     }
     await _loadSettingsAsync(modelId);
-    return state.settingsCache[modelId] ??
-        ModelSettings.defaultForModel(modelId);
+    return state.settingsCache[modelId] ?? ModelSettings.defaultForModel(modelId);
   }
 
   Future<void> deleteSettings(String modelId) async {
@@ -231,7 +244,16 @@ class ModelSettingsNotifier extends Notifier<ModelSettingsState> {
   }
 
   Future<void> resetSettings(String modelId) async {
-    final defaultSettings = ModelSettings.defaultForModel(modelId);
+    double? catalogDefaultTemp;
+    try {
+      final catalog = ref.read(providerCatalogServiceProvider);
+      catalogDefaultTemp = catalog.getModel(modelId)?.defaultTemperature;
+    } catch (_) {}
+
+    final defaultSettings = ModelSettings.defaultForModel(
+      modelId,
+      defaultTemperature: catalogDefaultTemp,
+    );
     await saveSettings(defaultSettings);
 
     if (state.activeSettings?.modelId == modelId) {
@@ -239,7 +261,8 @@ class ModelSettingsNotifier extends Notifier<ModelSettingsState> {
     }
 
     _logger.logInfo(
-      '[ModelSettingsNotifier] Reset settings for $modelId to defaults',
+      '[ModelSettingsNotifier] Reset settings for $modelId'
+      ' to defaultTemperature=$catalogDefaultTemp',
     );
   }
 

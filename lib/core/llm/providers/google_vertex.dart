@@ -13,9 +13,7 @@ ProviderConfig googleVertexProvider() => ProviderConfig.basic(
       'Google Vertex AI — enterprise Gemini models '
       'via Google Cloud Platform.',
   baseUrl: 'https://LOCATION-aiplatform.googleapis.com',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

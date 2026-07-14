@@ -5,7 +5,6 @@ import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -30,8 +29,7 @@ class InputWidgetBuilders {
     required String hintText,
     Map<ShortcutActivator, VoidCallback>? keyboardBindings,
   }) {
-    final isSpellCheckSupported =
-        !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+    final isSpellCheckSupported = Platform.isAndroid || Platform.isIOS;
 
     return CallbackShortcuts(
       bindings: keyboardBindings ?? const {},

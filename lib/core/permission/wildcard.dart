@@ -1,4 +1,3 @@
-/// Port of OpenCode's wildcard.ts — single top-level function.
 bool match(String input, String pattern) {
   final normalized = input.replaceAll(r'\', '/');
   final escaped = pattern

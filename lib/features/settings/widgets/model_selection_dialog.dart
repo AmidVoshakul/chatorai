@@ -1,5 +1,6 @@
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter/material.dart';
@@ -115,6 +116,7 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
     final secondaryTextColor = isDark
         ? ChatoraiColors.darkSecondaryTextColor
         : ChatoraiColors.secondaryTextColor;
+    final localizations = AppLocalizations.of(context)!;
 
     final screenSize = MediaQuery.of(context).size;
     final dialogWidth = screenSize.width < 520 ? screenSize.width - 48 : 450.0;
@@ -130,7 +132,7 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
       constraints: BoxConstraints(
         maxWidth: screenSize.width < 600 ? screenSize.width - 32 : 560,
       ),
-      title: const Text('Select Models'),
+      title: Text(localizations.selectModels),
       content: SizedBox(
         width: dialogWidth,
         height: dialogHeight,
@@ -139,7 +141,7 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search models...',
+                hintText: localizations.searchModels,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -159,13 +161,13 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
               children: [
                 TextButton(
                   onPressed: () => setState(() => _selectedIds.clear()),
-                  child: const Text('Deselect All'),
+                  child: Text(localizations.deselectAll),
                 ),
                 TextButton(
                   onPressed: () => setState(
                     () => _selectedIds = _models.map((m) => m.id).toSet(),
                   ),
-                  child: const Text('Select All'),
+                  child: Text(localizations.selectAll),
                 ),
               ],
             ),
@@ -175,7 +177,10 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
             ),
             const SizedBox(height: ChatoraiSpacing.sm),
             Text(
-              '${_selectedIds.length} of ${_models.length} selected',
+              localizations.selectModelsCount(
+                _selectedIds.length,
+                _models.length,
+              ),
               style: TextStyle(color: secondaryTextColor, fontSize: 12),
             ),
           ],
@@ -184,7 +189,7 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Cancel', style: TextStyle(color: secondaryTextColor)),
+          child: Text(localizations.cancel, style: TextStyle(color: secondaryTextColor)),
         ),
         FilledButton(
           onPressed: () async {
@@ -211,13 +216,15 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
             backgroundColor: ChatoraiColors.orange,
             foregroundColor: ChatoraiColors.pureWhite,
           ),
-          child: const Text('Save'),
+          child: Text(localizations.save),
         ),
       ],
     );
   }
 
   Widget _buildContent(bool isDark, Color textColor, Color secondaryTextColor) {
+    final localizations = AppLocalizations.of(context)!;
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -240,7 +247,7 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
               FilledButton.tonalIcon(
                 onPressed: () => _fetchModels(forceRefresh: true),
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text(localizations.retry),
               ),
             ],
           ),
@@ -253,8 +260,8 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
       return Center(
         child: Text(
           _searchController.text.trim().isEmpty
-              ? 'No models available'
-              : 'No models match your search',
+              ? localizations.modelsAvailable
+              : localizations.modelsMatchSearch,
           style: TextStyle(color: secondaryTextColor),
         ),
       );

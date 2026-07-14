@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:chatorai/core/permission/rule.dart';
@@ -14,18 +15,45 @@ import 'session_state.dart';
 import 'session_tree.dart';
 
 class SessionRepository {
+  static const _stateCacheLimit = 200;
+  static const _stateCacheTtl = Duration(hours: 24);
   final AppDatabase _db;
   final EventStore _eventStore;
-  final Map<SessionID, SessionState> _stateCache = {};
+  final LinkedHashMap<SessionID, SessionState> _stateCache =
+      LinkedHashMap<SessionID, SessionState>();
+  final Map<SessionID, DateTime> _stateCacheTimestamps = {};
 
   SessionRepository(this._db) : _eventStore = EventStore(_db);
 
   EventStore get eventStore => _eventStore;
 
+  void _evictStateCacheIfNeeded() {
+    final now = DateTime.now();
+
+    final expiredKeys = _stateCacheTimestamps.entries
+        .where((e) => now.difference(e.value) > _stateCacheTtl)
+        .map((e) => e.key)
+        .toList();
+    for (final key in expiredKeys) {
+      _stateCache.remove(key);
+      _stateCacheTimestamps.remove(key);
+    }
+
+    if (_stateCache.length > _stateCacheLimit) {
+      final keysToEvict = _stateCache.keys
+          .take(_stateCache.length - _stateCacheLimit)
+          .toList();
+      for (final key in keysToEvict) {
+        _stateCache.remove(key);
+        _stateCacheTimestamps.remove(key);
+      }
+    }
+  }
+
   /// Derives a child session's [PermissionRuleset] from the parent's.
   ///
   /// Copied parent deny rules are preserved, and `task` and `todowrite`
-  /// are unconditionally denied — matching OpenCode's
+  /// are unconditionally denied — matching 
   /// [deriveSubagentSessionPermission] semantics so that subagents cannot
   /// delegate further or manage their own task metadata.
   static PermissionRuleset deriveChildPermissions(
@@ -74,8 +102,10 @@ class SessionRepository {
       timestamp: DateTime.now(),
     );
 
-    await _eventStore.append(event);
-    await projectToDb(_db, event);
+    await _db.transaction(() async {
+      await _eventStore.append(event);
+      await projectToDb(_db, event);
+    });
 
     final state = SessionState(
       id: sessionId,
@@ -88,6 +118,8 @@ class SessionRepository {
       updatedAt: event.timestamp,
     );
     _stateCache[sessionId] = state;
+    _stateCacheTimestamps[sessionId] = DateTime.now();
+    _evictStateCacheIfNeeded();
     return state;
   }
 
@@ -99,7 +131,13 @@ class SessionRepository {
 
   Future<SessionState?> getSessionMeta(SessionID sessionId) async {
     final cached = _stateCache[sessionId];
-    if (cached != null) return cached;
+    if (cached != null) {
+      _stateCache.remove(sessionId);
+      _stateCacheTimestamps.remove(sessionId);
+      _stateCache[sessionId] = cached;
+      _stateCacheTimestamps[sessionId] = DateTime.now();
+      return cached;
+    }
 
     final row = await (_db.select(
       _db.sessions,
@@ -107,6 +145,8 @@ class SessionRepository {
     if (row == null) return null;
     final state = _rowToState(row);
     _stateCache[sessionId] = state;
+    _stateCacheTimestamps[sessionId] = DateTime.now();
+    _evictStateCacheIfNeeded();
     return state;
   }
 
@@ -160,19 +200,27 @@ class SessionRepository {
   }
 
   Future<SessionState> appendEvent(SessionEvent event) async {
-    await _eventStore.append(event);
-    await projectToDb(_db, event);
+    await _db.transaction(() async {
+      await _eventStore.append(event);
+      await projectToDb(_db, event);
+    });
 
     final cached = _stateCache[event.sessionId];
     if (cached != null) {
+      _stateCache.remove(event.sessionId);
+      _stateCacheTimestamps.remove(event.sessionId);
       final newState = projectEvent(cached, event);
       _stateCache[event.sessionId] = newState;
+      _stateCacheTimestamps[event.sessionId] = DateTime.now();
+      _evictStateCacheIfNeeded();
       return newState;
     }
 
     final events = await _eventStore.getEvents(event.sessionId);
     final newState = replayEvents(events);
     _stateCache[event.sessionId] = newState;
+    _stateCacheTimestamps[event.sessionId] = DateTime.now();
+    _evictStateCacheIfNeeded();
     return newState;
   }
 
@@ -181,8 +229,10 @@ class SessionRepository {
       sessionId: sessionId,
       timestamp: DateTime.now(),
     );
-    await _eventStore.append(event);
-    await projectToDb(_db, event);
+    await _db.transaction(() async {
+      await _eventStore.append(event);
+      await projectToDb(_db, event);
+    });
   }
 
   Future<void> deleteSession(SessionID sessionId) async {
@@ -276,21 +326,23 @@ class SessionRepository {
       permission: childPermission,
       timestamp: now,
     );
-    await _eventStore.append(createdEvent);
-    await projectToDb(_db, createdEvent);
+    await _db.transaction(() async {
+      await _eventStore.append(createdEvent);
+      await projectToDb(_db, createdEvent);
 
-    // 2. Publish ChildSessionCreated on the *parent* session
-    final delegationEvent = ChildSessionCreated(
-      sessionId: parentId,
-      parentSessionId: parentId,
-      childSessionId: childId,
-      title: effectiveTitle,
-      agent: effectiveAgent,
-      modelRef: effectiveModelRef,
-      timestamp: now,
-    );
-    await _eventStore.append(delegationEvent);
-    await projectToDb(_db, delegationEvent);
+      // 2. Publish ChildSessionCreated on the *parent* session
+      final delegationEvent = ChildSessionCreated(
+        sessionId: parentId,
+        parentSessionId: parentId,
+        childSessionId: childId,
+        title: effectiveTitle,
+        agent: effectiveAgent,
+        modelRef: effectiveModelRef,
+        timestamp: now,
+      );
+      await _eventStore.append(delegationEvent);
+      await projectToDb(_db, delegationEvent);
+    });
 
     final state = SessionState(
       id: childId,
@@ -303,6 +355,8 @@ class SessionRepository {
       updatedAt: now,
     );
     _stateCache[childId] = state;
+    _stateCacheTimestamps[childId] = DateTime.now();
+    _evictStateCacheIfNeeded();
     return state;
   }
 
@@ -324,8 +378,10 @@ class SessionRepository {
       output: output,
       timestamp: DateTime.now(),
     );
-    await _eventStore.append(event);
-    await projectToDb(_db, event);
+    await _db.transaction(() async {
+      await _eventStore.append(event);
+      await projectToDb(_db, event);
+    });
   }
 
   Future<List<SessionState>> getChildSessions(SessionID parentId) async {

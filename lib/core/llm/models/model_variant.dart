@@ -4,7 +4,6 @@
 /// parameters like temperature, maxTokens, etc. Some providers expose multiple
 /// variants of the same base model (e.g., gpt-4-turbo, gpt-4o-mini).
 ///
-/// Follows OpenCode patterns: immutable, serializable, schema-driven.
 library;
 
 import 'package:equatable/equatable.dart';
@@ -63,13 +62,11 @@ class ModelVariant extends Equatable {
 
   /// Headers to override or add for this variant.
   ///
-  /// Follows OpenCode pattern where variants can specify custom headers
   /// (e.g., `anthropic-beta` for thinking, `X-DS-Search` for DeepSeek).
   final Map<String, String>? headers;
 
   /// Body parameters to override or add for this variant.
   ///
-  /// Follows OpenCode pattern where variants can specify custom body fields
   /// (e.g., `reasoning` config, `prompt_cache_key` for OpenRouter).
   final Map<String, dynamic>? body;
 

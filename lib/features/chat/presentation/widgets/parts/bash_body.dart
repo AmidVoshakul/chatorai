@@ -61,7 +61,7 @@ class _BashBodyState extends State<BashBody> {
                   r'$ ',
                   style: ChatoraiFontSizes.mono(
                     ChatoraiFontSizes.md,
-                    weight: FontWeight.w500,
+                    weight: FontWeight.w300,
                     color: w.isError ? w.theme.colorScheme.error : terminal,
                   ),
                 ),
@@ -71,7 +71,7 @@ class _BashBodyState extends State<BashBody> {
                     cmd,
                     style: ChatoraiFontSizes.mono(
                       ChatoraiFontSizes.md,
-                      weight: FontWeight.w500,
+                      weight: FontWeight.w300,
                       color: terminal,
                     ),
                     softWrap: true,

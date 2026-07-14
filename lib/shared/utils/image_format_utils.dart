@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:chatorai/shared/utils/logger.dart';
-import 'package:chatorai/shared/utils/web_file.dart';
 
 final _logger = LogTags.ui;
 
@@ -12,10 +11,7 @@ class ImageFormatUtils {
       String? path;
       Uint8List bytes;
 
-      if (file is WebFile) {
-        path = file.path;
-        bytes = file.bytes;
-      } else if (file is File) {
+      if (file is File) {
         path = file.path;
         bytes = await file.readAsBytes();
       } else {
@@ -40,8 +36,6 @@ class ImageFormatUtils {
 
     if (fileOrPath is String) {
       filePath = fileOrPath;
-    } else if (fileOrPath is WebFile) {
-      filePath = fileOrPath.path;
     } else if (fileOrPath is File) {
       filePath = fileOrPath.path;
     } else {
@@ -164,8 +158,6 @@ class ImageFormatUtils {
 
     if (fileOrPath is String) {
       filePath = fileOrPath;
-    } else if (fileOrPath is WebFile) {
-      filePath = fileOrPath.path;
     } else if (fileOrPath is File) {
       filePath = fileOrPath.path;
     } else {

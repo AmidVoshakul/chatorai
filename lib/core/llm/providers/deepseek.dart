@@ -10,9 +10,7 @@ ProviderConfig deepseekProvider() => ProviderConfig.full(
   name: 'DeepSeek',
   description: 'DeepSeek models (V3, R1) via OpenAI-compatible API.',
   baseUrl: 'https://api.deepseek.com/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
   models: [],

@@ -226,12 +226,16 @@ class ToolSuccess extends SessionEvent {
   final String toolCallId;
   final String outputText;
   final String? partId;
+  final int durationMs;
+  final Map<String, dynamic>? input;
 
   const ToolSuccess({
     required super.sessionId,
     required this.toolCallId,
     required this.outputText,
     this.partId,
+    this.durationMs = 0,
+    this.input,
     required super.timestamp,
     super.sequence,
   });
@@ -241,12 +245,16 @@ class ToolFailed extends SessionEvent {
   final String toolCallId;
   final String error;
   final String? partId;
+  final int durationMs;
+  final Map<String, dynamic>? input;
 
   const ToolFailed({
     required super.sessionId,
     required this.toolCallId,
     required this.error,
     this.partId,
+    this.durationMs = 0,
+    this.input,
     required super.timestamp,
     super.sequence,
   });

@@ -876,75 +876,75 @@ class AppLocalizationsJa extends AppLocalizations {
   String get removeFromFavorites => 'お気に入りから削除';
 
   @override
-  String get loadingSkills => 'Loading skills';
+  String get loadingSkills => 'スキルを読み込み中';
 
   @override
-  String get noSkillsInstalled => 'No skills installed';
+  String get noSkillsInstalled => 'インストールされているスキルはありません';
 
   @override
-  String get noSkillsMatchSearch => 'No skills match your search';
+  String get noSkillsMatchSearch => '検索に一致するスキルがありません';
 
   @override
-  String get allSkillsRequirePermission => 'All skills require permission';
+  String get allSkillsRequirePermission => 'すべてのスキルには権限が必要です';
 
   @override
   String skillExecuted(Object name) {
-    return 'Skill executed';
+    return 'スキルが実行されました';
   }
 
   @override
-  String get configuration => 'Configuration';
+  String get configuration => '設定';
 
   @override
-  String get stats => 'Stats';
+  String get stats => '統計';
 
   @override
-  String get usageStatistics => 'Usage Statistics';
+  String get usageStatistics => '使用統計';
 
   @override
-  String get totalSessions => 'Sessions';
+  String get totalSessions => 'セッション数';
 
   @override
-  String get totalMessages => 'Messages';
+  String get totalMessages => 'メッセージ数';
 
   @override
-  String get days => 'Days';
+  String get days => '日';
 
   @override
-  String get totalTokens => 'Total Tokens';
+  String get totalTokens => '合計トークン数';
 
   @override
-  String get totalCost => 'Total Cost';
+  String get totalCost => '合計コスト';
 
   @override
-  String get avgCostPerDay => 'Avg Cost/Day';
+  String get avgCostPerDay => '1日平均コスト';
 
   @override
-  String get avgTokensPerSession => 'Avg Tokens/Session';
+  String get avgTokensPerSession => '平均トークン数/セッション';
 
   @override
-  String get medianTokensPerSession => 'Median Tokens/Session';
+  String get medianTokensPerSession => '中央値トークン数/セッション';
 
   @override
-  String get cacheRead => 'Cache Read';
+  String get cacheRead => 'キャッシュ読み取り';
 
   @override
-  String get cacheWrite => 'Cache Write';
+  String get cacheWrite => 'キャッシュ書き込み';
 
   @override
-  String get toolUsage => 'Tool Usage';
+  String get toolUsage => 'ツール使用状況';
 
   @override
-  String get modelUsage => 'Model Usage';
+  String get modelUsage => 'モデル使用状況';
 
   @override
-  String get noStatsAvailable => 'No statistics available';
+  String get noStatsAvailable => '統計情報がありません';
 
   @override
-  String get reasoningTokens => 'Reasoning';
+  String get reasoningTokens => '推論トークン';
 
   @override
-  String get addProvider => 'Add Provider';
+  String get addProvider => 'プロバイダーを追加';
 
   @override
   String get applySettings => '設定を適用';
@@ -968,7 +968,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deleteChat => 'チャットを削除';
 
   @override
-  String get manageProviders => 'Manage Providers';
+  String get manageProviders => 'プロバイダーを管理';
 
   @override
   String get micAutoRestart => '再試行中...';
@@ -995,10 +995,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get noModelSelected => 'モデルが選択されていません';
 
   @override
-  String get openaiCompatibleApi => 'OpenAI-Compatible API';
+  String get openaiCompatibleApi => 'OpenAI 互換 API';
 
   @override
-  String get openaiCompatibleApiDescription => 'Connect to any OpenAI-compatible API endpoint';
+  String get openaiCompatibleApiDescription => '任意の OpenAI 互換 API エンドポイントに接続';
 
   @override
   String get permissionAlways => '常に許可';
@@ -1016,7 +1016,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get permissionReject => '拒否';
 
   @override
-  String get providers => 'Providers';
+  String get providers => 'プロバイダー';
 
   @override
   String get refreshQuestions => '質問を更新';
@@ -1136,60 +1136,60 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get toggleSidebarTooltip => 'Toggle sidebar';
+  String get toggleSidebarTooltip => 'サイドバーを切り替え';
 
   @override
-  String get openMenuTooltip => 'Open menu';
+  String get openMenuTooltip => 'メニューを開く';
 
   @override
-  String get addFileTooltip => 'Add file';
+  String get addFileTooltip => 'ファイルを追加';
 
   @override
-  String get modelSettingsTooltip => 'Model settings';
+  String get modelSettingsTooltip => 'モデル設定';
 
   @override
-  String get switchAgentTooltip => 'Switch agent';
+  String get switchAgentTooltip => 'エージェントを切り替え';
 
   @override
   String get selectModelTooltip => 'モデルを選択';
 
   @override
-  String get removeFileTooltip => 'Remove file';
+  String get removeFileTooltip => 'ファイルを削除';
 
   @override
-  String get goToParentSessionTooltip => 'Go to parent session';
+  String get goToParentSessionTooltip => '親セッションに移動';
 
   @override
-  String get previousSiblingTooltip => 'Previous sibling';
+  String get previousSiblingTooltip => '前の兄弟';
 
   @override
-  String get nextSiblingTooltip => 'Next sibling';
+  String get nextSiblingTooltip => '次の兄弟';
 
   @override
-  String get cancellingRetryTooltip => 'Cancelling retry...';
+  String get cancellingRetryTooltip => '再試行をキャンセル中...';
 
   @override
-  String get stopGenerationTooltip => 'Stop generation';
+  String get stopGenerationTooltip => '生成を停止';
 
   @override
-  String get question => 'Question';
+  String get question => '質問';
 
   @override
-  String get skip => 'Skip';
+  String get skip => 'スキップ';
 
   @override
-  String get answer => 'Answer';
+  String get answer => '回答';
 
   @override
-  String get noAgentsAvailable => 'No agents available';
+  String get noAgentsAvailable => '利用可能なエージェントがありません';
 
   @override
   String permissionAlwaysConfirmDescription(Object title) {
-    return 'This will allow \"$title\" until the app is restarted.';
+    return 'これによりアプリが再起動するまで \"$title\" が許可されます。';
   }
 
   @override
-  String get chatActionsMenuTooltip => 'Chat menu';
+  String get chatActionsMenuTooltip => 'チャットメニュー';
 
   @override
   String get startListening => '音声入力を開始';
@@ -1253,4 +1253,112 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get collapseTooltip => '折りたたむ';
+
+  @override
+  String get addProviderTitleEdit => 'プロバイダーを編集';
+
+  @override
+  String get addProviderTitleAdd => 'プロバイダーを追加';
+
+  @override
+  String get addProviderLabelProvider => 'プロバイダー';
+
+  @override
+  String get addProviderCustomName => 'カスタムプロバイダー...';
+
+  @override
+  String get addProviderFieldProviderName => 'プロバイダー名';
+
+  @override
+  String get addProviderHintProviderName => '例: マイカスタムAI';
+
+  @override
+  String get addProviderLabelApiKey => 'API キー';
+
+  @override
+  String get addProviderHintApiKey => 'API キーを入力してください';
+
+  @override
+  String get addProviderHintCustomApiKey => 'ローカルプロバイダーは任意';
+
+  @override
+  String get addProviderLabelBaseUrl => 'ベース URL';
+
+  @override
+  String get addProviderHintBaseUrl => 'https://api.example.com/v1';
+
+  @override
+  String get addProviderActionSave => '保存';
+
+  @override
+  String get addProviderErrorApiKeyRequired => 'API キーが必要です';
+
+  @override
+  String get selectModels => 'モデルを選択';
+
+  @override
+  String get deselectAll => '全選択解除';
+
+  @override
+  String get selectAll => '全選択';
+
+  @override
+  String get modelsAvailable => '利用可能なモデルがありません';
+
+  @override
+  String get modelsMatchSearch => '検索に一致するモデルがありません';
+
+  @override
+  String selectModelsCount(Object count, Object total) {
+    return '$total 中 $count 選択';
+  }
+
+  @override
+  String modelsLoadError(Object error) {
+    return 'モデルの読み込みに失敗しました: $error';
+  }
+
+  @override
+  String get systemPromptHint => 'あなたは有用なアシスタントです...';
+
+  @override
+  String get temperatureHint => '0.0 - 2.0';
+
+  @override
+  String get loadingSettings => '設定を読み込み中...';
+
+  @override
+  String errorApplyingSettings(Object error) {
+    return '設定の適用中にエラーが発生しました: $error';
+  }
+
+  @override
+  String deleteProviderTitle(Object providerName) {
+    return '$providerName を削除しますか?';
+  }
+
+  @override
+  String get deleteProviderContent => 'これによりプロバイダーとすべての設定が削除されます。モデルを使用するには再度追加する必要があります。';
+
+  @override
+  String get errorLoadingProviders => 'プロバイダーの読み込みに失敗しました';
+
+  @override
+  String get noProvidersConfigured => 'プロバイダーが設定されていません';
+
+  @override
+  String get addProviderToGetStarted => '開始するには API キーを持つプロバイダーを追加してください';
+
+  @override
+  String statsError(Object error) {
+    return 'エラー: $error';
+  }
+
+  @override
+  String get total => '合計';
+
+  @override
+  String modelsProviderCountFormat(Object count, Object providerName) {
+    return '$providerName · $count';
+  }
 }

@@ -1,8 +1,8 @@
 import 'package:chatorai/core/context/completion_provider.dart';
 
-/// Hidden compaction agent — matches OpenCode's `compaction` agent contract.
+/// Hidden compaction agent —  `compaction` agent contract.
 ///
-/// OpenCode defines this agent as:
+/// defines this agent as:
 /// - `mode: "primary"`, `native: true`, `hidden: true`
 /// - `permission: Permission.merge(defaults, Permission.fromConfig({"*": "deny"}))`
 /// — i.e. ALL tools are denied.
@@ -19,7 +19,7 @@ import 'package:chatorai/core/context/completion_provider.dart';
 class CompactionAgent {
   /// System prompt injected by [summarize].
   ///
-  /// Mirrors OpenCode's `agent/prompt/compaction.txt` with the anchored
+  /// Mirrors `agent/prompt/compaction.txt` with the anchored
   /// summary update instruction.
   static const String systemPrompt =
       'You are an anchored context summarization assistant for coding sessions.\n'
@@ -54,7 +54,6 @@ class CompactionAgent {
 
   /// Summarize [head] messages, optionally merging [previousSummary].
   ///
-  /// The call is made WITHOUT tools — matching OpenCode's all-denied
   /// permission contract.
   Future<String> summarize({
     required List<Map<String, dynamic>> head,

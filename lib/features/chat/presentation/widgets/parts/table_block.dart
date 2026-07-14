@@ -128,7 +128,7 @@ class _TableBlockState extends State<TableBlock> {
                             child: Text(
                               localizations.copiedFeedback,
                               style: TextStyle(
-                                color: headerColor,
+                                color: const Color(0xFF418A44),
                                 fontSize: ChatoraiFontSizes.sm,
                               ),
                             ),

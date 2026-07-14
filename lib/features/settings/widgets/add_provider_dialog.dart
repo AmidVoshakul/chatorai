@@ -2,6 +2,7 @@ import 'package:chatorai/core/llm/models/auth_config.dart';
 import 'package:chatorai/core/llm/models/provider_config.dart';
 import 'package:chatorai/core/llm/providers/built_in_providers.dart';
 import 'package:chatorai/features/models/widgets/provider_icon.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
@@ -79,6 +80,7 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final localizations = AppLocalizations.of(context)!;
 
     if (_providers.isEmpty) {
       _providers.addAll(
@@ -87,9 +89,9 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
         ),
       );
       _providers.add(
-        const _ProviderOption(
+        _ProviderOption(
           id: '__custom__',
-          name: 'Custom Provider...',
+          name: localizations.addProviderCustomName,
           baseUrl: '',
         ),
       );
@@ -122,7 +124,7 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
       constraints: BoxConstraints(
         maxWidth: screenSize.width < 600 ? screenSize.width - 32 : 560,
       ),
-      title: Text(_isEditing ? 'Edit Provider' : 'Add Provider'),
+      title: Text(_isEditing ? localizations.addProviderTitleEdit : localizations.addProviderTitleAdd),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -131,9 +133,9 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
             // Provider dropdown
             DropdownButtonFormField<String>(
               initialValue: _selectedOption?.id,
-              decoration: const InputDecoration(
-                labelText: 'Provider',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: localizations.addProviderLabelProvider,
+                border: const OutlineInputBorder(),
               ),
               items: _providers.map((p) {
                 return DropdownMenuItem(
@@ -170,10 +172,10 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
             if (_isCustom) ...[
               TextField(
                 controller: _customNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Provider Name',
-                  hintText: 'e.g. My Custom AI',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: localizations.addProviderFieldProviderName,
+                  hintText: localizations.addProviderHintProviderName,
+                  border: const OutlineInputBorder(),
                 ),
                 maxLines: 1,
                 onChanged: (_) => setState(() {}),
@@ -188,10 +190,10 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
                     AuthType.none) ...[
               TextField(
                 controller: _apiKeyController,
-                decoration: const InputDecoration(
-                  labelText: 'API Key',
-                  hintText: 'Enter your API key',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: localizations.addProviderLabelApiKey,
+                  hintText: localizations.addProviderHintApiKey,
+                  border: const OutlineInputBorder(),
                 ),
                 obscureText: true,
                 maxLines: 1,
@@ -201,10 +203,10 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
             if (_isCustom) ...[
               TextField(
                 controller: _apiKeyController,
-                decoration: const InputDecoration(
-                  labelText: 'API Key',
-                  hintText: 'Optional for local providers',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: localizations.addProviderLabelApiKey,
+                  hintText: localizations.addProviderHintCustomApiKey,
+                  border: const OutlineInputBorder(),
                 ),
                 obscureText: true,
                 maxLines: 1,
@@ -215,10 +217,10 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
             // Base URL
             TextField(
               controller: _baseUrlController,
-              decoration: const InputDecoration(
-                labelText: 'Base URL',
-                hintText: 'https://api.example.com/v1',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: localizations.addProviderLabelBaseUrl,
+                hintText: localizations.addProviderHintBaseUrl,
+                border: const OutlineInputBorder(),
               ),
               maxLines: 1,
             ),
@@ -229,7 +231,7 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(
-            'Cancel',
+            localizations.cancel,
             style: TextStyle(
               color: isDark
                   ? ChatoraiColors.darkSecondaryTextColor
@@ -283,7 +285,7 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
                       apiKey.isEmpty) {
                     SnackbarUtils.showErrorSnackBar(
                       context: context,
-                      message: 'API key is required',
+                      message: localizations.addProviderErrorApiKeyRequired,
                       duration: const Duration(seconds: 2),
                     );
                     return;
@@ -296,7 +298,7 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
                   );
                 }
               : null,
-          child: const Text('Save'),
+          child: Text(localizations.addProviderActionSave),
         ),
       ],
     );

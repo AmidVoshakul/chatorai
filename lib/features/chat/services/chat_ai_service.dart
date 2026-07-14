@@ -52,9 +52,9 @@ class ChatCompletionResponse {
 /// Core AI service for streaming and non‑streaming chat completions.
 ///
 /// Uses [ModelResolver] from the catalog for model resolution and
-/// LanguageModel creation (OpenCode‑style). No legacy factory fallback.
+/// LanguageModel creation. No legacy factory fallback.
 ///
-/// **Cancellation semantics (OpenCode‑inspired):**
+/// **Cancellation semantics:**
 /// - Every call to [streamChatCompletion] increments a generation counter.
 /// - [cancelAllRequests] increments the counter, invalidating old generations.
 /// - The retry loop checks `isStillValid` against the captured generation,
@@ -396,6 +396,13 @@ class ChatAiService implements CompletionProvider {
                     'streamChatCompletion: StreamTextErrorEvent',
                     error,
                   );
+                  if (error is AiNoSuchToolError) {
+                    final toolName = _extractToolName(error.message);
+                    final syntheticCallId =
+                        'hallucinated_${DateTime.now().microsecondsSinceEpoch}';
+                    onToolStart?.call(syntheticCallId, toolName, {});
+                    onToolError?.call(syntheticCallId, toolName, error.message);
+                  }
                   throw error;
                 case StreamTextFinishEvent(:final text, :final usage):
                   _tokenCounter.recordUsage(
@@ -652,6 +659,14 @@ class ChatAiService implements CompletionProvider {
       if (content is List) return content.isNotEmpty;
       return false;
     }).toList();
+  }
+
+  /// Extract hallucinated tool name from AiNoSuchToolError message.
+  ///
+  /// Format: `"Step 0 called unknown tool \"folder_read\""` → `folder_read`
+  static String _extractToolName(String message) {
+    final match = RegExp(r'"([^"]+)"').firstMatch(message);
+    return match?.group(1) ?? 'unknown';
   }
 
   /// Cancels all in‑flight requests and increments the generation counter.

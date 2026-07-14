@@ -1253,4 +1253,112 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get collapseTooltip => 'Згорнути';
+
+  @override
+  String get addProviderTitleEdit => 'Редагувати провайдера';
+
+  @override
+  String get addProviderTitleAdd => 'Додати провайдера';
+
+  @override
+  String get addProviderLabelProvider => 'Провайдер';
+
+  @override
+  String get addProviderCustomName => 'Власний провайдер...';
+
+  @override
+  String get addProviderFieldProviderName => 'Назва провайдера';
+
+  @override
+  String get addProviderHintProviderName => 'наприклад, Мій власний AI';
+
+  @override
+  String get addProviderLabelApiKey => 'API ключ';
+
+  @override
+  String get addProviderHintApiKey => 'Введіть ваш API ключ';
+
+  @override
+  String get addProviderHintCustomApiKey => 'Необов\'язково для локальних провайдерів';
+
+  @override
+  String get addProviderLabelBaseUrl => 'Базовий URL';
+
+  @override
+  String get addProviderHintBaseUrl => 'https://api.example.com/v1';
+
+  @override
+  String get addProviderActionSave => 'Зберегти';
+
+  @override
+  String get addProviderErrorApiKeyRequired => 'Потрібен API ключ';
+
+  @override
+  String get selectModels => 'Вибір моделей';
+
+  @override
+  String get deselectAll => 'Зняти вибір';
+
+  @override
+  String get selectAll => 'Вибрати все';
+
+  @override
+  String get modelsAvailable => 'Немає доступних моделей';
+
+  @override
+  String get modelsMatchSearch => 'Немає моделей, що відповідають пошуку';
+
+  @override
+  String selectModelsCount(Object count, Object total) {
+    return 'Вибрано $count з $total';
+  }
+
+  @override
+  String modelsLoadError(Object error) {
+    return 'Помилка завантаження моделей: $error';
+  }
+
+  @override
+  String get systemPromptHint => 'Ви корисний асистент...';
+
+  @override
+  String get temperatureHint => '0.0 - 2.0';
+
+  @override
+  String get loadingSettings => 'Завантаження налаштувань...';
+
+  @override
+  String errorApplyingSettings(Object error) {
+    return 'Помилка застосування налаштувань: $error';
+  }
+
+  @override
+  String deleteProviderTitle(Object providerName) {
+    return 'Видалити $providerName?';
+  }
+
+  @override
+  String get deleteProviderContent => 'Це видалить провайдера та всі його налаштування. Вам потрібно буде додати його знову, щоб використовувати його моделі.';
+
+  @override
+  String get errorLoadingProviders => 'Помилка завантаження провайдерів';
+
+  @override
+  String get noProvidersConfigured => 'Немає налаштованих провайдерів';
+
+  @override
+  String get addProviderToGetStarted => 'Додайте провайдера з API ключем, щоб почати';
+
+  @override
+  String statsError(Object error) {
+    return 'Помилка: $error';
+  }
+
+  @override
+  String get total => 'Всього';
+
+  @override
+  String modelsProviderCountFormat(Object count, Object providerName) {
+    return '$providerName · $count';
+  }
 }

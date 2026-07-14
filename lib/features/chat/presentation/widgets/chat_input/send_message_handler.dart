@@ -1,12 +1,12 @@
 import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/message_data.dart';
 import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
+import 'package:chatorai/features/settings/widgets/model_settings_sheet.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:chatorai/features/settings/widgets/model_settings_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
@@ -19,15 +19,23 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   /// Return null to cancel normal send (e.g. skill with no args).
   /// Return a [ResolvedText] to continue with modified text and optional delegate.
   Future<ResolvedText?> resolveText(String text) async {
-    String? delegateAgentId;
+    String? agentMention;
     final agentMatch = RegExp(r'^@(\S+)\s*').firstMatch(text);
     if (agentMatch != null) {
       final agentId = agentMatch.group(1);
-      if (AgentRegistry().get(agentId!) != null) {
-        delegateAgentId = agentId;
+      if (agentId != null) {
+        final agent = AgentRegistry().get(agentId);
+        if (agent != null) {
+          // For subagents: mark for task tool delegation (keep text as-is for chat display)
+          if (agent.mode == AgentMode.subagent) {
+            agentMention = agentId;
+            // Do NOT remove @mention - it stays in the message 
+          }
+          // For primary agents: ignore @mention (they are set via agent switcher)
+        }
       }
     }
-    return ResolvedText(text: text, delegateAgentId: delegateAgentId);
+    return ResolvedText(text: text, agentMention: agentMention);
   }
 
   Future<void> performSend({
@@ -79,7 +87,7 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     text = resolved.text;
     final messageData = MessageData(
       text: text,
-      delegateAgentId: resolved.delegateAgentId,
+      agentMention: resolved.agentMention,
       imagePath: ref.read(chatInputProvider).attachedFilePath,
       imageType: ref.read(chatInputProvider).attachedImageType,
       base64Data: ref.read(chatInputProvider).attachedBase64Data,
@@ -185,7 +193,7 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 /// Result of [SendMessageHandler.resolveText].
 class ResolvedText {
   final String text;
-  final String? delegateAgentId;
+  final String? agentMention;
 
-  const ResolvedText({required this.text, this.delegateAgentId});
+  const ResolvedText({required this.text, this.agentMention});
 }

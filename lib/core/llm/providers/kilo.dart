@@ -10,9 +10,7 @@ ProviderConfig kiloProvider() => ProviderConfig.full(
   name: 'Kilo AI',
   description: 'Kilo AI — multi-provider API gateway.',
   baseUrl: 'https://api.kilo.ai/api/gateway',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
   models: [],

@@ -329,32 +329,32 @@ All tools implement the `Tool` interface from `ai_sdk_dart`. The `ToolRegistry` 
 
 **Always registered (16):**
 
-| Tool          | Description                        | Input Schema                                                            | Default Permission |
-| ------------- | ---------------------------------- | ----------------------------------------------------------------------- | ------------------ |
-| `bash`        | Execute shell command              | `{ "command": string, "timeoutMs": number }`                            | ask                |
-| `read`        | Read file contents                 | `{ "path": string, "offset": number, "limit": number }`                 | allow              |
-| `edit`        | Replace text in file               | `{ "path": string, "oldString": string, "newString": string }`          | ask                |
-| `write`       | Create/overwrite file              | `{ "path": string, "content": string }`                                 | ask                |
-| `glob`        | Find files by pattern              | `{ "pattern": string, "path": string }`                                 | allow              |
-| `grep`        | Search file contents               | `{ "pattern": string, "path": string, "filePattern": string }`          | allow              |
-| `webfetch`    | Fetch URL content                  | `{ "url": string, "format": "text" \| "markdown" \| "html" }`           | allow              |
-| `websearch`   | Search web via SearXNG             | `{ "query": string, "engines": string[], "categories": string[] }`      | allow              |
-| `task` | Spawn subagent via `SessionRunner` | `{ "prompt": string, "context": object, "subagentType": string }` | allow |
-| `todowrite` | Update todo list | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }` | allow |
-| `question` | Ask user question (with dedup) | `{ "question": string, "options": string[], "multiple": bool }` | allow |
-| `apply_patch` | Apply unified diff | `{ "patch": string, "dryRun": bool }` | no default (fallback `ask`) |
-| `invalid` | Invalid tool placeholder | `{}` | no default (fallback `ask`) |
-| `external_directory` | Directory operations (builtin) | — | ask |
-| `plan_exit` | Exit plan mode, switch to build agent | — | no default (fallback `ask`) |
-| `json_schema` | JSON schema validation | — | no default (fallback `ask`) |
+| Tool                 | Description                           | Input Schema                                                            | Default Permission          |
+| -------------------- | ------------------------------------- | ----------------------------------------------------------------------- | --------------------------- |
+| `bash`               | Execute shell command                 | `{ "command": string, "timeoutMs": number }`                            | ask                         |
+| `read`               | Read file contents                    | `{ "path": string, "offset": number, "limit": number }`                 | allow                       |
+| `edit`               | Replace text in file                  | `{ "path": string, "oldString": string, "newString": string }`          | ask                         |
+| `write`              | Create/overwrite file                 | `{ "path": string, "content": string }`                                 | ask                         |
+| `glob`               | Find files by pattern                 | `{ "pattern": string, "path": string }`                                 | allow                       |
+| `grep`               | Search file contents                  | `{ "pattern": string, "path": string, "filePattern": string }`          | allow                       |
+| `webfetch`           | Fetch URL content                     | `{ "url": string, "format": "text" \| "markdown" \| "html" }`           | allow                       |
+| `websearch`          | Search web via SearXNG                | `{ "query": string, "engines": string[], "categories": string[] }`      | allow                       |
+| `task`               | Spawn subagent via `SessionRunner`    | `{ "prompt": string, "context": object, "subagentType": string }`       | allow                       |
+| `todowrite`          | Update todo list                      | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }` | allow                       |
+| `question`           | Ask user question (with dedup)        | `{ "question": string, "options": string[], "multiple": bool }`         | allow                       |
+| `apply_patch`        | Apply unified diff                    | `{ "patch": string, "dryRun": bool }`                                   | no default (fallback `ask`) |
+| `invalid`            | Invalid tool placeholder              | `{}`                                                                    | no default (fallback `ask`) |
+| `external_directory` | Directory operations (builtin)        | —                                                                       | ask                         |
+| `plan_exit`          | Exit plan mode, switch to build agent | —                                                                       | no default (fallback `ask`) |
+| `json_schema`        | JSON schema validation                | —                                                                       | no default (fallback `ask`) |
 
 **Conditionally registered (up to 3):** All three checks are independent `if` statements — all three can be active simultaneously.
 
-| Tool | Condition | Default Permission |
-| ------------------------- | -------------------------------- | ------------------ |
-| `lsp` | When `LspService` is provided | allow |
+| Tool     | Condition                        | Default Permission          |
+| -------- | -------------------------------- | --------------------------- |
+| `lsp`    | When `LspService` is provided    | allow                       |
 | `format` | When `FormatService` is provided | no default (fallback `ask`) |
-| `skill` | When `SkillService` is provided | allow |
+| `skill`  | When `SkillService` is provided  | allow                       |
 
 The actual registration in `registerBuiltInTools()` (see `lib/core/tools/built_in/built_in_tools.dart`) registers exactly **16 tools unconditionally**, plus up to 3 conditional tools (`lsp`, `format`, `skill`). Total: 16–19 built-in tools depending on available services. `skill` is **never** unconditionally registered — it requires `skillService != null`.
 
@@ -437,7 +437,7 @@ Validated against JSON Schema in `lib/core/config/chatorai_schema.dart`.
     bindings: { session_child_next: "ctrl+right" },
   },
   skills: {
-    paths: [".opencode/skills/"],
+    paths: [".chatorai/skills/"],
     urls: [],
   },
   compaction: { auto: true, prune: true },

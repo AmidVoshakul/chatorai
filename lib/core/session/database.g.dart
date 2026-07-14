@@ -2832,6 +2832,629 @@ class ContextEpochsCompanion extends UpdateCompanion<ContextEpoch> {
   }
 }
 
+class $SessionSnapshotsTable extends SessionSnapshots
+    with TableInfo<$SessionSnapshotsTable, SessionSnapshot> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SessionSnapshotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stepNumberMeta = const VerificationMeta(
+    'stepNumber',
+  );
+  @override
+  late final GeneratedColumn<String> stepNumber = GeneratedColumn<String>(
+    'step_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _requestMeta = const VerificationMeta(
+    'request',
+  );
+  @override
+  late final GeneratedColumn<String> request = GeneratedColumn<String>(
+    'request',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _responseMeta = const VerificationMeta(
+    'response',
+  );
+  @override
+  late final GeneratedColumn<String> response = GeneratedColumn<String>(
+    'response',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _toolCallIdMeta = const VerificationMeta(
+    'toolCallId',
+  );
+  @override
+  late final GeneratedColumn<String> toolCallId = GeneratedColumn<String>(
+    'tool_call_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _toolNameMeta = const VerificationMeta(
+    'toolName',
+  );
+  @override
+  late final GeneratedColumn<String> toolName = GeneratedColumn<String>(
+    'tool_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tokensInputMeta = const VerificationMeta(
+    'tokensInput',
+  );
+  @override
+  late final GeneratedColumn<int> tokensInput = GeneratedColumn<int>(
+    'tokens_input',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _tokensOutputMeta = const VerificationMeta(
+    'tokensOutput',
+  );
+  @override
+  late final GeneratedColumn<int> tokensOutput = GeneratedColumn<int>(
+    'tokens_output',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    sessionId,
+    stepNumber,
+    request,
+    response,
+    toolCallId,
+    toolName,
+    tokensInput,
+    tokensOutput,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'session_snapshots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SessionSnapshot> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('step_number')) {
+      context.handle(
+        _stepNumberMeta,
+        stepNumber.isAcceptableOrUnknown(data['step_number']!, _stepNumberMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stepNumberMeta);
+    }
+    if (data.containsKey('request')) {
+      context.handle(
+        _requestMeta,
+        request.isAcceptableOrUnknown(data['request']!, _requestMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_requestMeta);
+    }
+    if (data.containsKey('response')) {
+      context.handle(
+        _responseMeta,
+        response.isAcceptableOrUnknown(data['response']!, _responseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_responseMeta);
+    }
+    if (data.containsKey('tool_call_id')) {
+      context.handle(
+        _toolCallIdMeta,
+        toolCallId.isAcceptableOrUnknown(
+          data['tool_call_id']!,
+          _toolCallIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tool_name')) {
+      context.handle(
+        _toolNameMeta,
+        toolName.isAcceptableOrUnknown(data['tool_name']!, _toolNameMeta),
+      );
+    }
+    if (data.containsKey('tokens_input')) {
+      context.handle(
+        _tokensInputMeta,
+        tokensInput.isAcceptableOrUnknown(
+          data['tokens_input']!,
+          _tokensInputMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tokens_output')) {
+      context.handle(
+        _tokensOutputMeta,
+        tokensOutput.isAcceptableOrUnknown(
+          data['tokens_output']!,
+          _tokensOutputMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SessionSnapshot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SessionSnapshot(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      stepNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}step_number'],
+      )!,
+      request: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}request'],
+      )!,
+      response: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}response'],
+      )!,
+      toolCallId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_call_id'],
+      ),
+      toolName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_name'],
+      ),
+      tokensInput: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_input'],
+      )!,
+      tokensOutput: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_output'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $SessionSnapshotsTable createAlias(String alias) {
+    return $SessionSnapshotsTable(attachedDatabase, alias);
+  }
+}
+
+class SessionSnapshot extends DataClass implements Insertable<SessionSnapshot> {
+  final String id;
+  final String sessionId;
+  final String stepNumber;
+  final String request;
+  final String response;
+  final String? toolCallId;
+  final String? toolName;
+  final int tokensInput;
+  final int tokensOutput;
+  final DateTime createdAt;
+  const SessionSnapshot({
+    required this.id,
+    required this.sessionId,
+    required this.stepNumber,
+    required this.request,
+    required this.response,
+    this.toolCallId,
+    this.toolName,
+    required this.tokensInput,
+    required this.tokensOutput,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['session_id'] = Variable<String>(sessionId);
+    map['step_number'] = Variable<String>(stepNumber);
+    map['request'] = Variable<String>(request);
+    map['response'] = Variable<String>(response);
+    if (!nullToAbsent || toolCallId != null) {
+      map['tool_call_id'] = Variable<String>(toolCallId);
+    }
+    if (!nullToAbsent || toolName != null) {
+      map['tool_name'] = Variable<String>(toolName);
+    }
+    map['tokens_input'] = Variable<int>(tokensInput);
+    map['tokens_output'] = Variable<int>(tokensOutput);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  SessionSnapshotsCompanion toCompanion(bool nullToAbsent) {
+    return SessionSnapshotsCompanion(
+      id: Value(id),
+      sessionId: Value(sessionId),
+      stepNumber: Value(stepNumber),
+      request: Value(request),
+      response: Value(response),
+      toolCallId: toolCallId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toolCallId),
+      toolName: toolName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toolName),
+      tokensInput: Value(tokensInput),
+      tokensOutput: Value(tokensOutput),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory SessionSnapshot.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SessionSnapshot(
+      id: serializer.fromJson<String>(json['id']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      stepNumber: serializer.fromJson<String>(json['stepNumber']),
+      request: serializer.fromJson<String>(json['request']),
+      response: serializer.fromJson<String>(json['response']),
+      toolCallId: serializer.fromJson<String?>(json['toolCallId']),
+      toolName: serializer.fromJson<String?>(json['toolName']),
+      tokensInput: serializer.fromJson<int>(json['tokensInput']),
+      tokensOutput: serializer.fromJson<int>(json['tokensOutput']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'stepNumber': serializer.toJson<String>(stepNumber),
+      'request': serializer.toJson<String>(request),
+      'response': serializer.toJson<String>(response),
+      'toolCallId': serializer.toJson<String?>(toolCallId),
+      'toolName': serializer.toJson<String?>(toolName),
+      'tokensInput': serializer.toJson<int>(tokensInput),
+      'tokensOutput': serializer.toJson<int>(tokensOutput),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  SessionSnapshot copyWith({
+    String? id,
+    String? sessionId,
+    String? stepNumber,
+    String? request,
+    String? response,
+    Value<String?> toolCallId = const Value.absent(),
+    Value<String?> toolName = const Value.absent(),
+    int? tokensInput,
+    int? tokensOutput,
+    DateTime? createdAt,
+  }) => SessionSnapshot(
+    id: id ?? this.id,
+    sessionId: sessionId ?? this.sessionId,
+    stepNumber: stepNumber ?? this.stepNumber,
+    request: request ?? this.request,
+    response: response ?? this.response,
+    toolCallId: toolCallId.present ? toolCallId.value : this.toolCallId,
+    toolName: toolName.present ? toolName.value : this.toolName,
+    tokensInput: tokensInput ?? this.tokensInput,
+    tokensOutput: tokensOutput ?? this.tokensOutput,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  SessionSnapshot copyWithCompanion(SessionSnapshotsCompanion data) {
+    return SessionSnapshot(
+      id: data.id.present ? data.id.value : this.id,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      stepNumber: data.stepNumber.present
+          ? data.stepNumber.value
+          : this.stepNumber,
+      request: data.request.present ? data.request.value : this.request,
+      response: data.response.present ? data.response.value : this.response,
+      toolCallId: data.toolCallId.present
+          ? data.toolCallId.value
+          : this.toolCallId,
+      toolName: data.toolName.present ? data.toolName.value : this.toolName,
+      tokensInput: data.tokensInput.present
+          ? data.tokensInput.value
+          : this.tokensInput,
+      tokensOutput: data.tokensOutput.present
+          ? data.tokensOutput.value
+          : this.tokensOutput,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionSnapshot(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('stepNumber: $stepNumber, ')
+          ..write('request: $request, ')
+          ..write('response: $response, ')
+          ..write('toolCallId: $toolCallId, ')
+          ..write('toolName: $toolName, ')
+          ..write('tokensInput: $tokensInput, ')
+          ..write('tokensOutput: $tokensOutput, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    sessionId,
+    stepNumber,
+    request,
+    response,
+    toolCallId,
+    toolName,
+    tokensInput,
+    tokensOutput,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SessionSnapshot &&
+          other.id == this.id &&
+          other.sessionId == this.sessionId &&
+          other.stepNumber == this.stepNumber &&
+          other.request == this.request &&
+          other.response == this.response &&
+          other.toolCallId == this.toolCallId &&
+          other.toolName == this.toolName &&
+          other.tokensInput == this.tokensInput &&
+          other.tokensOutput == this.tokensOutput &&
+          other.createdAt == this.createdAt);
+}
+
+class SessionSnapshotsCompanion extends UpdateCompanion<SessionSnapshot> {
+  final Value<String> id;
+  final Value<String> sessionId;
+  final Value<String> stepNumber;
+  final Value<String> request;
+  final Value<String> response;
+  final Value<String?> toolCallId;
+  final Value<String?> toolName;
+  final Value<int> tokensInput;
+  final Value<int> tokensOutput;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const SessionSnapshotsCompanion({
+    this.id = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.stepNumber = const Value.absent(),
+    this.request = const Value.absent(),
+    this.response = const Value.absent(),
+    this.toolCallId = const Value.absent(),
+    this.toolName = const Value.absent(),
+    this.tokensInput = const Value.absent(),
+    this.tokensOutput = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SessionSnapshotsCompanion.insert({
+    required String id,
+    required String sessionId,
+    required String stepNumber,
+    required String request,
+    required String response,
+    this.toolCallId = const Value.absent(),
+    this.toolName = const Value.absent(),
+    this.tokensInput = const Value.absent(),
+    this.tokensOutput = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sessionId = Value(sessionId),
+       stepNumber = Value(stepNumber),
+       request = Value(request),
+       response = Value(response),
+       createdAt = Value(createdAt);
+  static Insertable<SessionSnapshot> custom({
+    Expression<String>? id,
+    Expression<String>? sessionId,
+    Expression<String>? stepNumber,
+    Expression<String>? request,
+    Expression<String>? response,
+    Expression<String>? toolCallId,
+    Expression<String>? toolName,
+    Expression<int>? tokensInput,
+    Expression<int>? tokensOutput,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sessionId != null) 'session_id': sessionId,
+      if (stepNumber != null) 'step_number': stepNumber,
+      if (request != null) 'request': request,
+      if (response != null) 'response': response,
+      if (toolCallId != null) 'tool_call_id': toolCallId,
+      if (toolName != null) 'tool_name': toolName,
+      if (tokensInput != null) 'tokens_input': tokensInput,
+      if (tokensOutput != null) 'tokens_output': tokensOutput,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SessionSnapshotsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? sessionId,
+    Value<String>? stepNumber,
+    Value<String>? request,
+    Value<String>? response,
+    Value<String?>? toolCallId,
+    Value<String?>? toolName,
+    Value<int>? tokensInput,
+    Value<int>? tokensOutput,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return SessionSnapshotsCompanion(
+      id: id ?? this.id,
+      sessionId: sessionId ?? this.sessionId,
+      stepNumber: stepNumber ?? this.stepNumber,
+      request: request ?? this.request,
+      response: response ?? this.response,
+      toolCallId: toolCallId ?? this.toolCallId,
+      toolName: toolName ?? this.toolName,
+      tokensInput: tokensInput ?? this.tokensInput,
+      tokensOutput: tokensOutput ?? this.tokensOutput,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (stepNumber.present) {
+      map['step_number'] = Variable<String>(stepNumber.value);
+    }
+    if (request.present) {
+      map['request'] = Variable<String>(request.value);
+    }
+    if (response.present) {
+      map['response'] = Variable<String>(response.value);
+    }
+    if (toolCallId.present) {
+      map['tool_call_id'] = Variable<String>(toolCallId.value);
+    }
+    if (toolName.present) {
+      map['tool_name'] = Variable<String>(toolName.value);
+    }
+    if (tokensInput.present) {
+      map['tokens_input'] = Variable<int>(tokensInput.value);
+    }
+    if (tokensOutput.present) {
+      map['tokens_output'] = Variable<int>(tokensOutput.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionSnapshotsCompanion(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('stepNumber: $stepNumber, ')
+          ..write('request: $request, ')
+          ..write('response: $response, ')
+          ..write('toolCallId: $toolCallId, ')
+          ..write('toolName: $toolName, ')
+          ..write('tokensInput: $tokensInput, ')
+          ..write('tokensOutput: $tokensOutput, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2840,6 +3463,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MessagesTable messages = $MessagesTable(this);
   late final $ToolResultsTable toolResults = $ToolResultsTable(this);
   late final $ContextEpochsTable contextEpochs = $ContextEpochsTable(this);
+  late final $SessionSnapshotsTable sessionSnapshots = $SessionSnapshotsTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2850,6 +3476,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     messages,
     toolResults,
     contextEpochs,
+    sessionSnapshots,
   ];
 }
 
@@ -4248,6 +4875,315 @@ typedef $$ContextEpochsTableProcessedTableManager =
       ContextEpoch,
       PrefetchHooks Function()
     >;
+typedef $$SessionSnapshotsTableCreateCompanionBuilder =
+    SessionSnapshotsCompanion Function({
+      required String id,
+      required String sessionId,
+      required String stepNumber,
+      required String request,
+      required String response,
+      Value<String?> toolCallId,
+      Value<String?> toolName,
+      Value<int> tokensInput,
+      Value<int> tokensOutput,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$SessionSnapshotsTableUpdateCompanionBuilder =
+    SessionSnapshotsCompanion Function({
+      Value<String> id,
+      Value<String> sessionId,
+      Value<String> stepNumber,
+      Value<String> request,
+      Value<String> response,
+      Value<String?> toolCallId,
+      Value<String?> toolName,
+      Value<int> tokensInput,
+      Value<int> tokensOutput,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$SessionSnapshotsTableFilterComposer
+    extends Composer<_$AppDatabase, $SessionSnapshotsTable> {
+  $$SessionSnapshotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stepNumber => $composableBuilder(
+    column: $table.stepNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get request => $composableBuilder(
+    column: $table.request,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get response => $composableBuilder(
+    column: $table.response,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolName => $composableBuilder(
+    column: $table.toolName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensInput => $composableBuilder(
+    column: $table.tokensInput,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensOutput => $composableBuilder(
+    column: $table.tokensOutput,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SessionSnapshotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SessionSnapshotsTable> {
+  $$SessionSnapshotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stepNumber => $composableBuilder(
+    column: $table.stepNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get request => $composableBuilder(
+    column: $table.request,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get response => $composableBuilder(
+    column: $table.response,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toolName => $composableBuilder(
+    column: $table.toolName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokensInput => $composableBuilder(
+    column: $table.tokensInput,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokensOutput => $composableBuilder(
+    column: $table.tokensOutput,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SessionSnapshotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SessionSnapshotsTable> {
+  $$SessionSnapshotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<String> get stepNumber => $composableBuilder(
+    column: $table.stepNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get request =>
+      $composableBuilder(column: $table.request, builder: (column) => column);
+
+  GeneratedColumn<String> get response =>
+      $composableBuilder(column: $table.response, builder: (column) => column);
+
+  GeneratedColumn<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get toolName =>
+      $composableBuilder(column: $table.toolName, builder: (column) => column);
+
+  GeneratedColumn<int> get tokensInput => $composableBuilder(
+    column: $table.tokensInput,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tokensOutput => $composableBuilder(
+    column: $table.tokensOutput,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$SessionSnapshotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SessionSnapshotsTable,
+          SessionSnapshot,
+          $$SessionSnapshotsTableFilterComposer,
+          $$SessionSnapshotsTableOrderingComposer,
+          $$SessionSnapshotsTableAnnotationComposer,
+          $$SessionSnapshotsTableCreateCompanionBuilder,
+          $$SessionSnapshotsTableUpdateCompanionBuilder,
+          (
+            SessionSnapshot,
+            BaseReferences<
+              _$AppDatabase,
+              $SessionSnapshotsTable,
+              SessionSnapshot
+            >,
+          ),
+          SessionSnapshot,
+          PrefetchHooks Function()
+        > {
+  $$SessionSnapshotsTableTableManager(
+    _$AppDatabase db,
+    $SessionSnapshotsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SessionSnapshotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SessionSnapshotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SessionSnapshotsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> sessionId = const Value.absent(),
+                Value<String> stepNumber = const Value.absent(),
+                Value<String> request = const Value.absent(),
+                Value<String> response = const Value.absent(),
+                Value<String?> toolCallId = const Value.absent(),
+                Value<String?> toolName = const Value.absent(),
+                Value<int> tokensInput = const Value.absent(),
+                Value<int> tokensOutput = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SessionSnapshotsCompanion(
+                id: id,
+                sessionId: sessionId,
+                stepNumber: stepNumber,
+                request: request,
+                response: response,
+                toolCallId: toolCallId,
+                toolName: toolName,
+                tokensInput: tokensInput,
+                tokensOutput: tokensOutput,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String sessionId,
+                required String stepNumber,
+                required String request,
+                required String response,
+                Value<String?> toolCallId = const Value.absent(),
+                Value<String?> toolName = const Value.absent(),
+                Value<int> tokensInput = const Value.absent(),
+                Value<int> tokensOutput = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => SessionSnapshotsCompanion.insert(
+                id: id,
+                sessionId: sessionId,
+                stepNumber: stepNumber,
+                request: request,
+                response: response,
+                toolCallId: toolCallId,
+                toolName: toolName,
+                tokensInput: tokensInput,
+                tokensOutput: tokensOutput,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SessionSnapshotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SessionSnapshotsTable,
+      SessionSnapshot,
+      $$SessionSnapshotsTableFilterComposer,
+      $$SessionSnapshotsTableOrderingComposer,
+      $$SessionSnapshotsTableAnnotationComposer,
+      $$SessionSnapshotsTableCreateCompanionBuilder,
+      $$SessionSnapshotsTableUpdateCompanionBuilder,
+      (
+        SessionSnapshot,
+        BaseReferences<_$AppDatabase, $SessionSnapshotsTable, SessionSnapshot>,
+      ),
+      SessionSnapshot,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4262,4 +5198,6 @@ class $AppDatabaseManager {
       $$ToolResultsTableTableManager(_db, _db.toolResults);
   $$ContextEpochsTableTableManager get contextEpochs =>
       $$ContextEpochsTableTableManager(_db, _db.contextEpochs);
+  $$SessionSnapshotsTableTableManager get sessionSnapshots =>
+      $$SessionSnapshotsTableTableManager(_db, _db.sessionSnapshots);
 }

@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final _logger = LogTags.network;
@@ -101,16 +100,6 @@ class NetworkNotifier extends Notifier<NetworkState> {
   }
 
   Future<bool> _canReachHost(String host) async {
-    if (kIsWeb) {
-      try {
-        final result = await Connectivity().checkConnectivity();
-        return result.isNotEmpty &&
-            !result.every((r) => r == ConnectivityResult.none);
-      } catch (e) {
-        _logger.logDebug('Connectivity check failed on web: $e');
-        return false;
-      }
-    }
     try {
       final result = await InternetAddress.lookup(
         host,

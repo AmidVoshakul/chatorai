@@ -283,7 +283,13 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
         updatedAt: event.timestamp,
       ),
 
-    ToolSuccess(:final toolCallId, :final outputText, :final partId) =>
+    ToolSuccess(
+      :final toolCallId,
+      :final outputText,
+      :final partId,
+      :final durationMs,
+      :final input,
+    ) =>
       state.copyWith(
         messages: state.messages.map((m) {
           if (m.id == toolCallId) {
@@ -297,18 +303,18 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
           (tr) => ToolResult(
             id: tr.id,
             toolName: tr.toolName,
-            input: tr.input,
+            input: input ?? tr.input,
             outputText: outputText,
-            durationMs: 0,
+            durationMs: durationMs,
             status: 'success',
             createdAt: event.timestamp,
           ),
           () => ToolResult(
             id: toolCallId,
             toolName: '',
-            input: {},
+            input: input ?? const {},
             outputText: outputText,
-            durationMs: 0,
+            durationMs: durationMs,
             status: 'success',
             createdAt: event.timestamp,
           ),
@@ -317,15 +323,11 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
             ? _updatePartById<AssistantTool>(
                 state.parts,
                 partId,
-                (current) => AssistantTool(
-                  id: current.id!,
-                  sessionId: current.sessionId!,
-                  messageId: current.messageId!,
-                  callId: current.callId,
-                  tool: current.tool,
+                (current) => current.copyWith(
                   state: ToolState.completed,
-                  input: current.input,
+                  input: input ?? current.input,
                   output: outputText,
+                  durationMs: durationMs,
                 ),
               )
             : _updateToolPart(
@@ -333,11 +335,18 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
                 toolCallId,
                 ToolState.completed,
                 outputText: outputText,
+                durationMs: durationMs,
               ),
         updatedAt: event.timestamp,
       ),
 
-    ToolFailed(:final toolCallId, :final error, :final partId) =>
+    ToolFailed(
+      :final toolCallId,
+      :final error,
+      :final partId,
+      :final durationMs,
+      :final input,
+    ) =>
       state.copyWith(
         messages: state.messages.map((m) {
           if (m.id == toolCallId) {
@@ -351,9 +360,9 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
           (tr) => ToolResult(
             id: tr.id,
             toolName: tr.toolName,
-            input: tr.input,
+            input: input ?? tr.input,
             outputText: error,
-            durationMs: 0,
+            durationMs: durationMs,
             status: 'error',
             createdAt: event.timestamp,
           ),
@@ -722,10 +731,17 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
             mode: InsertMode.insertOrReplace,
           );
 
-    case ToolSuccess(:final toolCallId, :final outputText):
+    case ToolSuccess(
+      :final toolCallId,
+      :final outputText,
+      :final durationMs,
+      :final input,
+    ):
       final toolName = await _lookupToolName(db, toolCallId);
       await (db.update(db.messages)..where((t) => t.id.equals(toolCallId)))
           .write(MessagesCompanion(content: Value(outputText)));
+      final existingInput = await _lookupInputJson(db, toolCallId);
+      final inputJson = input != null ? jsonEncode(input) : existingInput;
       await (db
           .into(db.toolResults)
           .insert(
@@ -734,19 +750,28 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
               sessionId: event.sessionId.value,
               messageId: toolCallId,
               toolName: toolName,
-              inputJson: const Value('{}'),
+              inputJson: inputJson != null
+                  ? Value(inputJson)
+                  : const Value.absent(),
               outputText: Value(outputText),
-              durationMs: const Value(0),
+              durationMs: Value(durationMs),
               status: const Value('success'),
               createdAt: event.timestamp,
             ),
             mode: InsertMode.insertOrReplace,
           ));
 
-    case ToolFailed(:final toolCallId, :final error):
+    case ToolFailed(
+      :final toolCallId,
+      :final error,
+      :final durationMs,
+      :final input,
+    ):
       final toolName = await _lookupToolName(db, toolCallId);
       await (db.update(db.messages)..where((t) => t.id.equals(toolCallId)))
           .write(MessagesCompanion(error: Value<String?>(error)));
+      final existingInput = await _lookupInputJson(db, toolCallId);
+      final inputJson = input != null ? jsonEncode(input) : existingInput;
       await (db
           .into(db.toolResults)
           .insert(
@@ -755,9 +780,11 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
               sessionId: event.sessionId.value,
               messageId: toolCallId,
               toolName: toolName,
-              inputJson: const Value('{}'),
+              inputJson: inputJson != null
+                  ? Value(inputJson)
+                  : const Value.absent(),
               outputText: Value(error),
-              durationMs: const Value(0),
+              durationMs: Value(durationMs),
               status: const Value('error'),
               createdAt: event.timestamp,
             ),
@@ -958,10 +985,15 @@ List<AssistantContent> _updateToolPart(
   String toolCallId,
   ToolState newState, {
   String? outputText,
+  int? durationMs,
 }) {
   return parts.map((p) {
     if (p is AssistantTool && p.callId == toolCallId) {
-      return p.copyWith(state: newState, output: outputText);
+      return p.copyWith(
+        state: newState,
+        output: outputText,
+        durationMs: durationMs ?? p.durationMs,
+      );
     }
     return p;
   }).toList();
@@ -1024,6 +1056,18 @@ Future<String> _lookupToolName(AppDatabase db, String toolCallId) async {
   if (row == null) return '';
   final name = row.read(db.toolResults.toolName);
   return name ?? '';
+}
+
+/// Fetches the existing input JSON from the tool_results table for the given
+/// [toolCallId]. Returns null if no row exists.
+Future<String?> _lookupInputJson(AppDatabase db, String toolCallId) async {
+  if (toolCallId.isEmpty) return null;
+  final row =
+      await (db.selectOnly(db.toolResults)
+            ..where(db.toolResults.id.equals(toolCallId))
+            ..addColumns([db.toolResults.inputJson]))
+          .getSingleOrNull();
+  return row?.read(db.toolResults.inputJson);
 }
 
 Map<String, dynamic>? _serializePermission(PermissionRuleset? pr) {

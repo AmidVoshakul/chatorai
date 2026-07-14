@@ -1,14 +1,14 @@
 import 'dart:async';
-import 'package:path/path.dart' as p;
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:chatorai/core/permission/permission_service.dart';
+import 'package:chatorai/core/tools/filesystem_boundary.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/truncation_service.dart';
-import 'package:chatorai/core/tools/filesystem_boundary.dart';
-import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:command_shield/command_shield.dart';
+import 'package:path/path.dart' as p;
 
 const _blockedExecutables = <String>{
   // Downloaders / network clients — can exfiltrate data
@@ -238,7 +238,7 @@ class _ReviewOnlyPolicy extends CommandPolicy {
 /// honour the 50KB truncation policy regardless of total process output size.
 ///
 /// On every chunk, calls [ctx.onMetadata] with the current preview so the UI
-/// can update live — matching OpenCode's streaming terminal behaviour.
+/// can update live —  streaming terminal behaviour.
 class _StreamingAccumulator {
   static const _diskThreshold = 52428800; // 50MB before disk spool
 

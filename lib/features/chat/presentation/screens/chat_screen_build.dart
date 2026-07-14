@@ -37,8 +37,22 @@ extension _ChatScreenBuildExt on _ChatScreenState {
   }
 
   Widget _buildChatMessages({bool wrapWithGesture = false}) {
-    final chatState = ref.watch(chatScreenProvider);
     final chat = currentChat;
+    final continuationSuggestions = ref.watch(
+      chatScreenProvider.select((s) => s.continuationSuggestions),
+    );
+    final showSuggestions = ref.watch(
+      chatScreenProvider.select((s) => s.showSuggestions),
+    );
+    final isSuggestionsLoading = ref.watch(
+      chatScreenProvider.select((s) => s.isSuggestionsLoading),
+    );
+    final welcomeSuggestions = ref.watch(
+      chatScreenProvider.select((s) => s.welcomeSuggestions),
+    );
+    final showWelcomeSuggestions = ref.watch(
+      chatScreenProvider.select((s) => s.showWelcomeSuggestions),
+    );
     final chatMessages = ChatMessages(
       key: _chatMessagesKey,
       chatStorageService: _chatStorageService,
@@ -52,9 +66,9 @@ extension _ChatScreenBuildExt on _ChatScreenState {
       onContinueResponse: _continueAIResponse,
       onRegenerateResponse: _regenerateResponse,
       scrollController: _messageScrollController,
-      continuationSuggestions: chatState.continuationSuggestions,
-      showSuggestions: chatState.showSuggestions,
-      isSuggestionsLoading: chatState.isSuggestionsLoading,
+      continuationSuggestions: continuationSuggestions,
+      showSuggestions: showSuggestions,
+      isSuggestionsLoading: isSuggestionsLoading,
       onSuggestionsClose: () =>
           ref.read(chatScreenProvider.notifier).hideSuggestions(),
       onSuggestionsRefresh: () {
@@ -62,8 +76,8 @@ extension _ChatScreenBuildExt on _ChatScreenState {
           _showContinuationSuggestions(chat.messages.last);
         }
       },
-      welcomeSuggestions: chatState.welcomeSuggestions,
-      showWelcomeSuggestions: chatState.showWelcomeSuggestions,
+      welcomeSuggestions: welcomeSuggestions,
+      showWelcomeSuggestions: showWelcomeSuggestions,
       onWelcomeSuggestionsClose: () =>
           ref.read(chatScreenProvider.notifier).hideWelcomeSuggestions(),
       onHeadingsUpdated: _onHeadingsUpdated,

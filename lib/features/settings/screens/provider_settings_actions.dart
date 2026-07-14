@@ -1,6 +1,7 @@
 import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/features/models/providers/models_provider.dart';
 import 'package:chatorai/features/models/providers/model_provider.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -60,24 +61,24 @@ Future<bool> deleteProvider({
   required String providerId,
   required String providerName,
 }) async {
+  final localizations = AppLocalizations.of(context)!;
+
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) {
       return AlertDialog(
-        title: Text('Delete $providerName?'),
-        content: const Text(
-          'This will remove the provider and all its settings. '
-          'You will need to add it again to use its models.',
-        ),
+        title: Text(
+            localizations.deleteProviderTitle(providerName)),
+        content: Text(localizations.deleteProviderContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text(localizations.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(localizations.delete),
           ),
         ],
       );

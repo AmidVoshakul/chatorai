@@ -1,4 +1,5 @@
 import 'package:chatorai/core/mcp/mcp_config.dart';
+
 import 'permission_section.dart';
 
 class FormatterEntryConfig {
@@ -130,7 +131,7 @@ class ChatOrAIConfig {
 
 /// Configuration for context compaction behaviour.
 ///
-/// Mirrors OpenCode's `ConfigV1.Compaction` fields:
+/// Mirrors fields:
 /// - `auto` — enable automatic pre-send overflow compaction
 /// - `prune` — enable post-compaction tool-output pruning
 /// - `keep.tokens` — minimum recent tokens to preserve verbatim

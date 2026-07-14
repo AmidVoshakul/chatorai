@@ -1,10 +1,10 @@
 // ── AssistantContent: Typed parts for assistant messages ───────────────
-// Based on OpenCode's Part union type structure.
 // Each part has id, sessionId, messageId for proper identity tracking.
 
-import 'package:equatable/equatable.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:equatable/equatable.dart';
+
 import 'todo_part.dart' show TodoItem;
 
 /// Base sealed class for assistant message content parts.

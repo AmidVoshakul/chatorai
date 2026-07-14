@@ -9,7 +9,7 @@ import 'package:chatorai/core/tools/tool_execution.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 
 // ---------------------------------------------------------------------------
-// ToolRegistry — OpenCode-inspired registry with lazy init, tagging, and
+// ToolRegistry —  registry with lazy init, tagging, and
 // named access. Thin facade; execution logic delegated to ToolExecutor.
 // ---------------------------------------------------------------------------
 class ToolRegistry {
@@ -99,7 +99,7 @@ class ToolRegistry {
         .toList();
   }
 
-  // ---- Named access (OpenCode pattern) ----
+  // ---- Named access  ----
 
   ToolDef? get task {
     try {

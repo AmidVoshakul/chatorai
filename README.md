@@ -44,7 +44,7 @@ flutter pub get
 flutter gen-l10n   # only after editing lib/l10n/*.arb
 flutter analyze
 flutter test
-flutter run -d linux   # or windows, chrome, android, ios (macOS required)
+flutter run -d linux   # or windows, android, ios (macOS required for iOS)
 ```
 
 That's it! The app will launch and you can start chatting.

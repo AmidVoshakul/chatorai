@@ -1,6 +1,6 @@
 /// Centralized provider and model catalog service.
 ///
-/// Follows OpenCode catalog patterns: centralized registry, immutable data,
+/// catalog patterns: centralized registry, immutable data,
 /// schema-driven, with persistence via SecureStorage (API keys) and
 /// SharedPreferences (settings). Built-in providers are passed in from
 /// [builtInProviders()] in [providers/providers.dart]; custom/user-defined
@@ -283,6 +283,12 @@ class ProviderCatalogService {
               )
             : null;
 
+        final defaultParams =
+            source['default_parameters'] as Map<String, dynamic>?;
+        final apiDefaultTemperature = defaultParams != null
+            ? toDouble(defaultParams['temperature'])
+            : null;
+
         return ModelConfig.basic(
           providerId: providerId,
           modelName: modelName,
@@ -302,6 +308,7 @@ class ProviderCatalogService {
               ? (m['context_length'] as int)
               : 0,
           pricing: modelPricing,
+          defaultTemperature: apiDefaultTemperature,
           enabled: true,
         );
       }).toList();
@@ -370,7 +377,6 @@ class ProviderCatalogService {
 
   /// Get a model by its full ID (format: 'providerId/modelName').
   ///
-  /// According to OpenCode patterns, model identifiers must always include
   /// the provider prefix to avoid ambiguity.
   ///
   /// Returns null if provider not found or model not in that provider.
@@ -616,15 +622,15 @@ class ProviderCatalogService {
     // which set only tools=true. Clear all cached models so
     // discoverModels() re-populates with proper capabilities.
     final cacheVersion = _prefs.getInt(_PrefKeys.cacheVersionKey) ?? 0;
-    if (cacheVersion < 4) {
+    if (cacheVersion < 5) {
       LogTags.network.logInfo(
-        '[Catalog] Cache invalidated (v$cacheVersion→4), re-discovery required',
+        '[Catalog] Cache invalidated (v$cacheVersion→5), re-discovery required',
       );
       for (final prov in _builtInProviders) {
         _prefs.remove('${_PrefKeys.models}${prov.id}');
         _prefs.remove('${_PrefKeys.discoveryAt}${prov.id}');
       }
-      _prefs.setInt(_PrefKeys.cacheVersionKey, 4);
+      _prefs.setInt(_PrefKeys.cacheVersionKey, 5);
     }
 
     _providers = _builtInProviders.map((provider) {

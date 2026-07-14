@@ -1,10 +1,10 @@
 import 'package:chatorai/core/session/session_state.dart' show SessionState;
-import 'package:chatorai/features/chat/data/models/chat_models.dart'
-    show Chat, Message, MessageRole;
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
     show AssistantContent, AssistantText;
 import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart'
     show assistantContentToPartMaps;
+import 'package:chatorai/features/chat/data/models/chat_models.dart'
+    show Chat, Message, MessageRole;
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
@@ -61,6 +61,7 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
 
   void _scrollToBottom() {
     if (!_scrollController.hasClients) return;
+    if (!ref.read(themeProvider).autoScrollDuringStreaming) return;
     if (!_autoScrollEnabled) return;
     final position = _scrollController.position;
     if (!position.hasContentDimensions) return;
@@ -121,7 +122,7 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
     }
 
     // All assistant parts (reasoning + text + tools) go into ONE message
-    // This matches OpenCode's architecture where an assistant message contains
+    // This matches architecture where an assistant message contains
     // an array of parts, and matches ChatMessages expectation
     final assistantMessage = _buildAssistantMessageFromParts(
       state.parts,

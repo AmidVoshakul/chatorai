@@ -10,9 +10,7 @@ ProviderConfig cohereProvider() => ProviderConfig.full(
   name: 'Cohere',
   description: 'Cohere Command R/R+ models.',
   baseUrl: 'https://api.cohere.com/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
   models: [],

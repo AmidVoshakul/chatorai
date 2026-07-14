@@ -57,7 +57,7 @@ class McpCallResult {
     if (structuredContent != null) 'structuredContent': structuredContent,
   };
 
-  /// Extracts text content joined by newlines (mirrors OpenCode pattern).
+  /// Extracts text content joined by newlines.
   String get textContent => content
       .where((c) => c.type == 'text')
       .map((c) => c.text ?? '')

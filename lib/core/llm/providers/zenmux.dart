@@ -10,9 +10,7 @@ ProviderConfig zenmuxProvider() => ProviderConfig.basic(
   name: 'ZenMux',
   description: 'ZenMux — multi-provider AI API gateway.',
   baseUrl: 'https://zenmux.ai/api/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

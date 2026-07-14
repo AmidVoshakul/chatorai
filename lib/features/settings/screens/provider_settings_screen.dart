@@ -30,7 +30,7 @@ class ProviderSettingsScreen extends ConsumerWidget {
       body: configuredProvidersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) =>
-            const Center(child: Text('Error loading providers')),
+            Center(child: Text(l10n.errorLoadingProviders)),
         data: (configuredProviders) {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(ChatoraiSpacing.lg),
@@ -161,7 +161,7 @@ class ProviderSettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: ChatoraiSpacing.md),
             Text(
-              'No providers configured',
+              l10n.noProvidersConfigured,
               style: TextStyle(
                 fontSize: ChatoraiFontSizes.lg,
                 fontWeight: FontWeight.w500,
@@ -172,7 +172,7 @@ class ProviderSettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: ChatoraiSpacing.xs),
             Text(
-              'Add a provider with an API key to get started',
+              l10n.addProviderToGetStarted,
               style: TextStyle(
                 fontSize: ChatoraiFontSizes.base,
                 color: isDark

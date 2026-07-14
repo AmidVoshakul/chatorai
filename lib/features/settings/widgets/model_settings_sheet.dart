@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/features/settings/data/models/model_settings.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
@@ -20,52 +21,18 @@ class ModelSettingsSheet extends ConsumerStatefulWidget {
 class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
   final TextEditingController _temperatureController = TextEditingController();
   final TextEditingController _systemPromptController = TextEditingController();
-  bool _isInitialized = false;
+  bool _populated = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeControllers();
+      final modelState = ref.read(modelProvider);
+      if (modelState.selectedModelId.isNotEmpty) {
+        ref.read(modelSettingsProvider.notifier)
+            .setActiveModel(modelState.selectedModelId);
+      }
     });
-  }
-
-  void _initializeControllers() {
-    final settingsState = ref.read(modelSettingsProvider);
-    final modelState = ref.read(modelProvider);
-    final settingsNotifier = ref.read(modelSettingsProvider.notifier);
-
-    if (settingsState.activeSettings == null &&
-        modelState.selectedModelId.isNotEmpty) {
-      settingsNotifier.setActiveModel(modelState.selectedModelId);
-    }
-
-    if (settingsState.activeSettings != null) {
-      final settings = settingsState.activeSettings!;
-      _temperatureController.text = settings.temperature.toString();
-      _systemPromptController.text = settings.systemPrompt ?? '';
-      _isInitialized = true;
-    } else if (modelState.selectedModelObject != null) {
-      final defaultSettings = ModelSettings.defaultForModel(
-        modelState.selectedModelObject!.id,
-      );
-      _temperatureController.text = defaultSettings.temperature.toString();
-      _systemPromptController.text = defaultSettings.systemPrompt ?? '';
-      _isInitialized = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          settingsNotifier.updateActiveSettings(defaultSettings);
-        }
-      });
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_isInitialized) {
-      _initializeControllers();
-    }
   }
 
   @override
@@ -114,7 +81,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
     } catch (e) {
       SnackbarUtils.showErrorSnackBar(
         context: context,
-        message: 'Error applying settings: $e',
+        message: localizations.errorApplyingSettings(e.toString()),
         icon: Icons.error,
       );
     }
@@ -127,11 +94,23 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
 
     if (settingsState.activeSettings == null) return;
 
-    final defaultSettings = ModelSettings.defaultForModel(
-      settingsState.activeSettings!.modelId,
+    final modelId = settingsState.activeSettings!.modelId;
+
+    double? catalogDefault;
+    try {
+      final catalog = ref.read(providerCatalogServiceProvider);
+      catalogDefault = catalog.getModel(modelId)?.defaultTemperature;
+    } catch (_) {}
+
+    final agent = ref.read(currentAgentProvider);
+    final effectiveDefault = agent.temperature ?? catalogDefault ?? 1.0;
+
+    final defaultSettings = ModelSettings(
+      modelId: modelId,
+      temperature: effectiveDefault,
     );
-    _temperatureController.text = defaultSettings.temperature.toString();
-    _systemPromptController.text = defaultSettings.systemPrompt ?? '';
+    _temperatureController.text = effectiveDefault.toStringAsFixed(1);
+    _systemPromptController.text = '';
     settingsNotifier.updateActiveSettings(defaultSettings);
     SnackbarUtils.showInfoSnackBar(
       context: context,
@@ -147,6 +126,15 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
     final localizations = AppLocalizations.of(context)!;
     final modelState = ref.watch(modelProvider);
     final settingsState = ref.watch(modelSettingsProvider);
+
+    if (!_populated && settingsState.activeSettings != null && !settingsState.isLoading) {
+      _populated = true;
+      final agent = ref.read(currentAgentProvider);
+      final displayTemp =
+          agent.temperature ?? settingsState.activeSettings!.temperature;
+      _temperatureController.text = displayTemp.toStringAsFixed(1);
+      _systemPromptController.text = settingsState.activeSettings!.systemPrompt ?? '';
+    }
 
     String modelName = localizations.noModelSelected;
     if (modelState.selectedModelObject != null) {
@@ -184,7 +172,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                           ),
                           const SizedBox(height: ChatoraiSpacing.lg),
                           Text(
-                            'Loading settings...',
+                            localizations.loadingSettings,
                             style: TextStyle(
                               fontSize: ChatoraiFontSizes.lg,
                               color: isDark
@@ -238,7 +226,7 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
                           label: localizations.temperature,
                           description: localizations.temperatureDescription,
                           controller: _temperatureController,
-                          hintText: '0.0 - 2.0',
+                          hintText: localizations.temperatureHint,
                           isDecimal: true,
                           min: 0.0,
                           max: 2.0,

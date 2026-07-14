@@ -2526,6 +2526,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Collapse'**
   String get collapseTooltip;
+
+  /// No description provided for @addProviderTitleEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Provider'**
+  String get addProviderTitleEdit;
+
+  /// No description provided for @addProviderTitleAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Provider'**
+  String get addProviderTitleAdd;
+
+  /// No description provided for @addProviderLabelProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get addProviderLabelProvider;
+
+  /// No description provided for @addProviderCustomName.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Provider...'**
+  String get addProviderCustomName;
+
+  /// No description provided for @addProviderFieldProviderName.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider Name'**
+  String get addProviderFieldProviderName;
+
+  /// No description provided for @addProviderHintProviderName.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. My Custom AI'**
+  String get addProviderHintProviderName;
+
+  /// No description provided for @addProviderLabelApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API Key'**
+  String get addProviderLabelApiKey;
+
+  /// No description provided for @addProviderHintApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your API key'**
+  String get addProviderHintApiKey;
+
+  /// No description provided for @addProviderHintCustomApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional for local providers'**
+  String get addProviderHintCustomApiKey;
+
+  /// No description provided for @addProviderLabelBaseUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Base URL'**
+  String get addProviderLabelBaseUrl;
+
+  /// No description provided for @addProviderHintBaseUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'https://api.example.com/v1'**
+  String get addProviderHintBaseUrl;
+
+  /// No description provided for @addProviderActionSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get addProviderActionSave;
+
+  /// No description provided for @addProviderErrorApiKeyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'API key is required'**
+  String get addProviderErrorApiKeyRequired;
+
+  /// No description provided for @selectModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Models'**
+  String get selectModels;
+
+  /// No description provided for @deselectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect All'**
+  String get deselectAll;
+
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get selectAll;
+
+  /// No description provided for @modelsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No models available'**
+  String get modelsAvailable;
+
+  /// No description provided for @modelsMatchSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'No models match your search'**
+  String get modelsMatchSearch;
+
+  /// No description provided for @selectModelsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total} selected'**
+  String selectModelsCount(Object count, Object total);
+
+  /// No description provided for @modelsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load models: {error}'**
+  String modelsLoadError(Object error);
+
+  /// No description provided for @systemPromptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You are a helpful assistant...'**
+  String get systemPromptHint;
+
+  /// No description provided for @temperatureHint.
+  ///
+  /// In en, this message translates to:
+  /// **'0.0 - 2.0'**
+  String get temperatureHint;
+
+  /// No description provided for @loadingSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading settings...'**
+  String get loadingSettings;
+
+  /// No description provided for @errorApplyingSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Error applying settings: {error}'**
+  String errorApplyingSettings(Object error);
+
+  /// No description provided for @deleteProviderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {providerName}?'**
+  String deleteProviderTitle(Object providerName);
+
+  /// No description provided for @deleteProviderContent.
+  ///
+  /// In en, this message translates to:
+  /// **'This will remove the provider and all its settings. You will need to add it again to use its models.'**
+  String get deleteProviderContent;
+
+  /// No description provided for @errorLoadingProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading providers'**
+  String get errorLoadingProviders;
+
+  /// No description provided for @noProvidersConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'No providers configured'**
+  String get noProvidersConfigured;
+
+  /// No description provided for @addProviderToGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a provider with an API key to get started'**
+  String get addProviderToGetStarted;
+
+  /// No description provided for @statsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String statsError(Object error);
+
+  /// No description provided for @total.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get total;
+
+  /// No description provided for @modelsProviderCountFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'{providerName} · {count}'**
+  String modelsProviderCountFormat(Object count, Object providerName);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

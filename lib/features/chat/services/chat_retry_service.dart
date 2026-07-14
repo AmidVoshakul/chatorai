@@ -21,7 +21,6 @@ class RichRetryInfo {
   });
 }
 
-/// Retry policy — OpenCode-compatible defaults.
 class RetryPolicy {
   final Duration baseDelay;
   final Duration maxDelay;
@@ -42,7 +41,7 @@ class RetryPolicy {
   static const RetryPolicy defaults = RetryPolicy();
 }
 
-/// OpenCode-compatible bounded exponential backoff retry engine.
+///  bounded exponential backoff retry engine.
 ///
 /// Infinite retries for retryable errors; stop only when
 /// `ClassifiedError.isRetryable == false`.

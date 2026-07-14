@@ -3,7 +3,6 @@ import 'package:chatorai/core/context/compaction_agent.dart';
 import 'package:chatorai/core/context/completion_provider.dart';
 import 'package:chatorai/core/context/token_counter.dart';
 
-/// OpenCode-style context compaction.
 ///
 /// Splits messages into head (old) + tail (recent), summarizes the head
 /// via an LLM call, and returns [summary, ...tail] passed through [prune].

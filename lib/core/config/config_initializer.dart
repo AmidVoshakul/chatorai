@@ -4,8 +4,7 @@ import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:path/path.dart' as p;
 
-/// Ensures `chatorai.json` exists at first launch (like OpenCode auto-creates
-/// `opencode.json`).
+/// Ensures `chatorai.json` exists at first launch.
 class ConfigInitializer {
   ConfigInitializer._();
 

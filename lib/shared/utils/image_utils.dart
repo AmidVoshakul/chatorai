@@ -2,19 +2,18 @@ import 'dart:io';
 import 'package:chatorai/shared/utils/image_picker_utils.dart';
 import 'package:chatorai/shared/utils/image_format_utils.dart';
 
-export 'package:chatorai/shared/utils/web_file.dart';
 export 'package:chatorai/shared/utils/image_permissions.dart';
 export 'package:chatorai/shared/utils/image_picker_utils.dart';
 export 'package:chatorai/shared/utils/image_format_utils.dart';
 
 class ImageUtils {
-  static Future<dynamic> pickImageFromGallery() =>
+  static Future<File?> pickImageFromGallery() =>
       ImagePickerUtils.pickImageFromGallery();
 
   static Future<File?> takePhotoWithCamera() =>
       ImagePickerUtils.takePhotoWithCamera();
 
-  static Future<dynamic> pickFile() => ImagePickerUtils.pickFile();
+  static Future<File?> pickFile() => ImagePickerUtils.pickFile();
 
   static Future<String?> fileToBase64(dynamic file) =>
       ImageFormatUtils.fileToBase64(file);

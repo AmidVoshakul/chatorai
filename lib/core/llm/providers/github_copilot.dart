@@ -10,9 +10,7 @@ ProviderConfig githubCopilotProvider() => ProviderConfig.basic(
   name: 'GitHub Copilot',
   description: 'GitHub Copilot — AI assistant via GitHub API.',
   baseUrl: 'https://api.githubcopilot.com',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

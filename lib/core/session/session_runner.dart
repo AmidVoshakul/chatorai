@@ -341,8 +341,10 @@ class SessionRunnerSession {
   Future<void> onToolEnd(
     String toolCallId,
     String toolName,
-    String result,
-  ) async {
+    String result, {
+    int durationMs = 0,
+    Map<String, dynamic>? input,
+  }) async {
     if (!initialized) return;
     final partId = _toolPartIds[toolCallId];
     if (partId == null) return;
@@ -352,6 +354,8 @@ class SessionRunnerSession {
         toolCallId: toolCallId,
         outputText: result,
         partId: partId,
+        durationMs: durationMs,
+        input: input,
         timestamp: DateTime.now(),
       ),
     );
@@ -360,8 +364,10 @@ class SessionRunnerSession {
   Future<void> onToolError(
     String toolCallId,
     String toolName,
-    String error,
-  ) async {
+    String error, {
+    int durationMs = 0,
+    Map<String, dynamic>? input,
+  }) async {
     if (!initialized) return;
     final partId = _toolPartIds[toolCallId];
     if (partId == null) return;
@@ -371,6 +377,8 @@ class SessionRunnerSession {
         toolCallId: toolCallId,
         error: error,
         partId: partId,
+        durationMs: durationMs,
+        input: input,
         timestamp: DateTime.now(),
       ),
     );

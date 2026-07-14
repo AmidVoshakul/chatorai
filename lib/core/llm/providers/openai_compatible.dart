@@ -15,9 +15,7 @@ ProviderConfig openaiCompatibleProvider() => ProviderConfig.basic(
       'Generic OpenAI-compatible API provider. '
       'Configure your own base URL and API key.',
   baseUrl: 'http://localhost:8080/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

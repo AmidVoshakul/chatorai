@@ -1,8 +1,8 @@
+import 'package:chatorai/shared/theme/markdown_styles.dart';
+import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
-import 'package:chatorai/shared/utils/markdown_parser.dart';
-import 'package:chatorai/shared/theme/markdown_styles.dart';
 
 // ===========================================================================
 // PUBLIC WIDGET
@@ -77,8 +77,8 @@ class HeadingBuilder extends MarkdownElementBuilder {
 
   static EdgeInsets paddingForLevel(int level) {
     return switch (level) {
-      1 => EdgeInsets.fromLTRB(0, 24, 0, 12),
-      2 => EdgeInsets.fromLTRB(0, 20, 0, 10),
+      1 => EdgeInsets.fromLTRB(0, 10, 0, 12),
+      2 => EdgeInsets.fromLTRB(0, 10, 0, 10),
       3 => EdgeInsets.fromLTRB(0, 16, 0, 8),
       4 => EdgeInsets.fromLTRB(0, 12, 0, 8),
       5 => EdgeInsets.fromLTRB(0, 10, 0, 6),

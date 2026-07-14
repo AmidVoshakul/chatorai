@@ -1,15 +1,16 @@
+import 'dart:async';
+
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
-import 'package:chatorai/core/tools/truncation_service.dart';
 import 'package:chatorai/core/permission/evaluator.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/json_schema_validator.dart';
+import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/tool_error.dart';
+import 'package:chatorai/core/tools/truncation_service.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/shared/utils/logger.dart';
-import 'dart:async';
 
 // ---------------------------------------------------------------------------
 // ToolExecutor — single-responsibility: execute tool calls with cache,
@@ -22,6 +23,9 @@ class ToolExecutor {
   // Session-scoped caches (pruned on session close)
   final Map<String, Map<String, dynamic>> _resultCache = {};
   final Map<String, Future<Map<String, dynamic>>> _pendingCache = {};
+
+  // In-flight deduplication by toolCallId - prevents SDK retry from re-executing
+  final Map<String, Future<Map<String, dynamic>>> _inFlightCache = {};
 
   // Doom-loop tracker: bounded per-session LRU
   static final _doomHistory = <String?, Map<String, List<String>>>{};
@@ -96,6 +100,19 @@ class ToolExecutor {
         'invocation_${DateTime.now().microsecondsSinceEpoch}';
     final cacheKey = '${def.id}:$cacheKeySuffix:${_normalizeInput(inputMap)}';
 
+    // Deduplicate in-flight requests by toolCallId (preliminary + final dispatch)
+    // This works for ALL tools including side-effecting (bash/write)
+    // Register immediately to prevent race condition with concurrent calls
+    if (toolCallId != null) {
+      final inFlight = _inFlightCache[toolCallId];
+      if (inFlight != null) {
+        LogTags.permission.logInfo(
+          'ToolExecutor: Reusing in-flight ${def.id} by toolCallId',
+        );
+        return inFlight;
+      }
+    }
+
     // Side-effecting tools bypass cache — always re-execute
     if (!_sideEffectingTools.contains(def.id)) {
       final cached = _resultCache[cacheKey];
@@ -116,6 +133,10 @@ class ToolExecutor {
 
     final completer = Completer<Map<String, dynamic>>();
     _pendingCache[cacheKey] = completer.future;
+    // Register in-flight by toolCallId for SDK retry deduplication
+    if (toolCallId != null) {
+      _inFlightCache[toolCallId] = completer.future;
+    }
 
     try {
       LogTags.permission.logInfo(
@@ -171,6 +192,7 @@ class ToolExecutor {
         inputMap: inputMap,
         sessionId: sessionId,
         agentId: agentId,
+        toolCallId: toolCallId,
         permissions: _permissions,
         defaultRules: _defaultRules,
         agentRules: agentRules,
@@ -183,7 +205,7 @@ class ToolExecutor {
         'ToolExecutor: DONE ${def.id} outputLen=${result.output.length}',
       );
 
-      // Handle overflow and truncation (OpenCode-compatible)
+      // Handle overflow and truncation 
       final truncResult = await TruncationService.instance.output(
         result.output,
         hasTaskTool: true,
@@ -210,9 +232,13 @@ class ToolExecutor {
       _resultCache[cacheKey] = json;
       completer.complete(json);
       _pendingCache.remove(cacheKey);
+      if (toolCallId != null) {
+        _inFlightCache.remove(toolCallId);
+      }
       return json;
     } on ToolInvalidArgsError catch (e) {
       _pendingCache.remove(cacheKey);
+      if (toolCallId != null) _inFlightCache.remove(toolCallId);
       LogTags.permission.logWarning(
         'ToolExecutor: invalid args ${def.id}: ${e.message}',
       );
@@ -225,6 +251,7 @@ class ToolExecutor {
       return errorJson;
     } on ToolOverflowError catch (e) {
       _pendingCache.remove(cacheKey);
+      if (toolCallId != null) _inFlightCache.remove(toolCallId);
       LogTags.permission.logWarning(
         'ToolExecutor: overflow ${def.id}: ${e.message}',
       );
@@ -237,6 +264,7 @@ class ToolExecutor {
       return errorJson;
     } catch (e, st) {
       _pendingCache.remove(cacheKey);
+      if (toolCallId != null) _inFlightCache.remove(toolCallId);
       LogTags.permission.logError(
         'ToolExecutor: EXEC ERROR ${def.id}: $e',
         e,
@@ -336,6 +364,7 @@ class _AskContext {
   final Map<String, dynamic> inputMap;
   final String? sessionId;
   final String? agentId;
+  final String? toolCallId;
   final PermissionService permissions;
   final PermissionRuleset defaultRules;
   final PermissionRuleset? agentRules;
@@ -352,6 +381,7 @@ class _AskContext {
     this.agentRules,
     this.abortSignal,
     this.switchAgent,
+    this.toolCallId,
   });
 
   PermissionRuleset get _combinedRules {
@@ -368,7 +398,7 @@ class _AskContext {
   ToolContext toToolContext() {
     return ToolContext(
       agentId: agentId,
-      toolCallId: '',
+      toolCallId: toolCallId ?? '',
       sessionId: sessionId,
       permissionRuleset: _combinedRules,
       abortSignal: abortSignal,
@@ -452,9 +482,11 @@ class _AskContext {
       return;
     }
 
+    final requestId =
+        toolCallId ?? 'req_${DateTime.now().microsecondsSinceEpoch}_${def.id}';
     await permissions.ask(
       PermissionRequest(
-        id: 'req_${DateTime.now().microsecondsSinceEpoch}_${def.id}',
+        id: requestId,
         toolName: def.id,
         permission: permission,
         patterns: patterns,

@@ -12,9 +12,7 @@ ProviderConfig cloudflareAiGatewayProvider() => ProviderConfig.basic(
       'Cloudflare AI Gateway — unified gateway for '
       'multiple AI providers with caching and logging.',
   baseUrl: 'https://gateway.ai.cloudflare.com/v1/ACCOUNT_ID/GATEWAY_ID',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

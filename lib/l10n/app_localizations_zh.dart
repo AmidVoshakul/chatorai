@@ -876,75 +876,75 @@ class AppLocalizationsZh extends AppLocalizations {
   String get removeFromFavorites => '从收藏中移除';
 
   @override
-  String get loadingSkills => 'Loading skills';
+  String get loadingSkills => '正在加载技能';
 
   @override
-  String get noSkillsInstalled => 'No skills installed';
+  String get noSkillsInstalled => '未安装任何技能';
 
   @override
-  String get noSkillsMatchSearch => 'No skills match your search';
+  String get noSkillsMatchSearch => '没有匹配搜索的技能';
 
   @override
-  String get allSkillsRequirePermission => 'All skills require permission';
+  String get allSkillsRequirePermission => '所有技能都需要权限';
 
   @override
   String skillExecuted(Object name) {
-    return 'Skill executed';
+    return '技能已执行';
   }
 
   @override
-  String get configuration => 'Configuration';
+  String get configuration => '配置';
 
   @override
-  String get stats => 'Stats';
+  String get stats => '统计';
 
   @override
-  String get usageStatistics => 'Usage Statistics';
+  String get usageStatistics => '使用统计';
 
   @override
-  String get totalSessions => 'Sessions';
+  String get totalSessions => '会话数';
 
   @override
-  String get totalMessages => 'Messages';
+  String get totalMessages => '消息数';
 
   @override
-  String get days => 'Days';
+  String get days => '天';
 
   @override
-  String get totalTokens => 'Total Tokens';
+  String get totalTokens => '总令牌数';
 
   @override
-  String get totalCost => 'Total Cost';
+  String get totalCost => '总费用';
 
   @override
-  String get avgCostPerDay => 'Avg Cost/Day';
+  String get avgCostPerDay => '日均费用';
 
   @override
-  String get avgTokensPerSession => 'Avg Tokens/Session';
+  String get avgTokensPerSession => '平均令牌数/会话';
 
   @override
-  String get medianTokensPerSession => 'Median Tokens/Session';
+  String get medianTokensPerSession => '中位数令牌数/会话';
 
   @override
-  String get cacheRead => 'Cache Read';
+  String get cacheRead => '缓存读取';
 
   @override
-  String get cacheWrite => 'Cache Write';
+  String get cacheWrite => '缓存写入';
 
   @override
-  String get toolUsage => 'Tool Usage';
+  String get toolUsage => '工具使用';
 
   @override
-  String get modelUsage => 'Model Usage';
+  String get modelUsage => '模型使用';
 
   @override
-  String get noStatsAvailable => 'No statistics available';
+  String get noStatsAvailable => '暂无统计数据';
 
   @override
-  String get reasoningTokens => 'Reasoning';
+  String get reasoningTokens => '推理令牌';
 
   @override
-  String get addProvider => 'Add Provider';
+  String get addProvider => '添加提供商';
 
   @override
   String get applySettings => '应用设置';
@@ -968,7 +968,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deleteChat => '删除聊天';
 
   @override
-  String get manageProviders => 'Manage Providers';
+  String get manageProviders => '管理提供商';
 
   @override
   String get micAutoRestart => '重试中...';
@@ -995,10 +995,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noModelSelected => '未选择模型';
 
   @override
-  String get openaiCompatibleApi => 'OpenAI-Compatible API';
+  String get openaiCompatibleApi => 'OpenAI 兼容 API';
 
   @override
-  String get openaiCompatibleApiDescription => 'Connect to any OpenAI-compatible API endpoint';
+  String get openaiCompatibleApiDescription => '连接到任何 OpenAI 兼容的 API 端点';
 
   @override
   String get permissionAlways => '始终允许';
@@ -1016,7 +1016,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get permissionReject => '拒绝';
 
   @override
-  String get providers => 'Providers';
+  String get providers => '提供商';
 
   @override
   String get refreshQuestions => '刷新问题';
@@ -1136,60 +1136,60 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get toggleSidebarTooltip => 'Toggle sidebar';
+  String get toggleSidebarTooltip => '切换侧边栏';
 
   @override
-  String get openMenuTooltip => 'Open menu';
+  String get openMenuTooltip => '打开菜单';
 
   @override
-  String get addFileTooltip => 'Add file';
+  String get addFileTooltip => '添加文件';
 
   @override
-  String get modelSettingsTooltip => 'Model settings';
+  String get modelSettingsTooltip => '模型设置';
 
   @override
-  String get switchAgentTooltip => 'Switch agent';
+  String get switchAgentTooltip => '切换代理';
 
   @override
   String get selectModelTooltip => '选择模型';
 
   @override
-  String get removeFileTooltip => 'Remove file';
+  String get removeFileTooltip => '移除文件';
 
   @override
-  String get goToParentSessionTooltip => 'Go to parent session';
+  String get goToParentSessionTooltip => '转到父会话';
 
   @override
-  String get previousSiblingTooltip => 'Previous sibling';
+  String get previousSiblingTooltip => '上一个同级';
 
   @override
-  String get nextSiblingTooltip => 'Next sibling';
+  String get nextSiblingTooltip => '下一个同级';
 
   @override
-  String get cancellingRetryTooltip => 'Cancelling retry...';
+  String get cancellingRetryTooltip => '正在取消重试...';
 
   @override
-  String get stopGenerationTooltip => 'Stop generation';
+  String get stopGenerationTooltip => '停止生成';
 
   @override
-  String get question => 'Question';
+  String get question => '问题';
 
   @override
-  String get skip => 'Skip';
+  String get skip => '跳过';
 
   @override
-  String get answer => 'Answer';
+  String get answer => '答案';
 
   @override
-  String get noAgentsAvailable => 'No agents available';
+  String get noAgentsAvailable => '没有可用的代理';
 
   @override
   String permissionAlwaysConfirmDescription(Object title) {
-    return 'This will allow \"$title\" until the app is restarted.';
+    return '这将允许 \"$title\" 直到应用重启。';
   }
 
   @override
-  String get chatActionsMenuTooltip => 'Chat menu';
+  String get chatActionsMenuTooltip => '聊天菜单';
 
   @override
   String get startListening => '开始语音输入';
@@ -1253,4 +1253,112 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get collapseTooltip => '折叠';
+
+  @override
+  String get addProviderTitleEdit => '编辑提供商';
+
+  @override
+  String get addProviderTitleAdd => '添加提供商';
+
+  @override
+  String get addProviderLabelProvider => '提供商';
+
+  @override
+  String get addProviderCustomName => '自定义提供商...';
+
+  @override
+  String get addProviderFieldProviderName => '提供商名称';
+
+  @override
+  String get addProviderHintProviderName => '例如，我的自定义 AI';
+
+  @override
+  String get addProviderLabelApiKey => 'API 密钥';
+
+  @override
+  String get addProviderHintApiKey => '输入您的 API 密钥';
+
+  @override
+  String get addProviderHintCustomApiKey => '本地提供商可选';
+
+  @override
+  String get addProviderLabelBaseUrl => '基础 URL';
+
+  @override
+  String get addProviderHintBaseUrl => 'https://api.example.com/v1';
+
+  @override
+  String get addProviderActionSave => '保存';
+
+  @override
+  String get addProviderErrorApiKeyRequired => '需要 API 密钥';
+
+  @override
+  String get selectModels => '选择模型';
+
+  @override
+  String get deselectAll => '取消全选';
+
+  @override
+  String get selectAll => '全选';
+
+  @override
+  String get modelsAvailable => '无可用模型';
+
+  @override
+  String get modelsMatchSearch => '没有匹配搜索的模型';
+
+  @override
+  String selectModelsCount(Object count, Object total) {
+    return '已选择 $count / $total';
+  }
+
+  @override
+  String modelsLoadError(Object error) {
+    return '加载模型失败: $error';
+  }
+
+  @override
+  String get systemPromptHint => '你是一个有用的助手...';
+
+  @override
+  String get temperatureHint => '0.0 - 2.0';
+
+  @override
+  String get loadingSettings => '正在加载设置...';
+
+  @override
+  String errorApplyingSettings(Object error) {
+    return '应用设置时出错: $error';
+  }
+
+  @override
+  String deleteProviderTitle(Object providerName) {
+    return '删除 $providerName?';
+  }
+
+  @override
+  String get deleteProviderContent => '这将删除提供商及其所有设置。您需要重新添加它才能使用其模型。';
+
+  @override
+  String get errorLoadingProviders => '加载提供商时出错';
+
+  @override
+  String get noProvidersConfigured => '未配置提供商';
+
+  @override
+  String get addProviderToGetStarted => '添加带有 API 密钥的提供商以开始使用';
+
+  @override
+  String statsError(Object error) {
+    return '错误: $error';
+  }
+
+  @override
+  String get total => '总计';
+
+  @override
+  String modelsProviderCountFormat(Object count, Object providerName) {
+    return '$providerName · $count';
+  }
 }

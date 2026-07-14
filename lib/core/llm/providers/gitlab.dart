@@ -10,9 +10,7 @@ ProviderConfig gitlabProvider() => ProviderConfig.basic(
   name: 'GitLab AI',
   description: 'GitLab AI — AI-assisted features via GitLab API.',
   baseUrl: 'https://gitlab.com/api/v4/ai',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

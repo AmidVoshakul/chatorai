@@ -10,9 +10,7 @@ ProviderConfig xaiProvider() => ProviderConfig.full(
   name: 'xAI',
   description: 'xAI Grok models.',
   baseUrl: 'https://api.x.ai/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
   models: [],

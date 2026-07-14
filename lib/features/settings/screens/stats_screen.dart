@@ -30,7 +30,11 @@ class StatsScreen extends ConsumerWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Text(
+                localizations.statsError(snapshot.error.toString()),
+              ),
+            );
           }
           final stats = snapshot.data;
           if (stats == null) {
@@ -136,7 +140,7 @@ class StatsScreen extends ConsumerWidget {
             const Divider(),
             _statRow(
               context,
-              'Total',
+              l10n.total,
               _formatNumber(stats.totalTokens.total),
               bold: true,
             ),

@@ -13,7 +13,6 @@ import 'package:chatorai/core/keyboard/shortcuts.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
-import 'package:chatorai/core/tools/tool_output_persistence.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
@@ -273,15 +272,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         ? _buildMobileLayout(chatInput)
         : _buildDesktopLayout(chatInput);
 
-    final uiState = ref.watch(chatScreenProvider);
-    final screenContent = uiState.navigatorHeadings.isNotEmpty
+    final navigatorHeadings = ref.watch(
+      chatScreenProvider.select((s) => s.navigatorHeadings),
+    );
+    final isNavigatorVisible = ref.watch(
+      chatScreenProvider.select((s) => s.isNavigatorVisible),
+    );
+    final screenContent = navigatorHeadings.isNotEmpty
         ? Stack(
             children: [
               baseLayout,
               MarkdownNavigatorSidebar(
-                headings: uiState.navigatorHeadings,
-                activeHeadingIndex: uiState.activeHeadingIndex,
-                isOpen: uiState.isNavigatorVisible,
+                headings: navigatorHeadings,
+                activeHeadingIndex: ref.watch(
+                  chatScreenProvider.select((s) => s.activeHeadingIndex),
+                ),
+                isOpen: isNavigatorVisible,
                 onClose: _toggleNavigator,
                 onHeadingTap: _onHeadingTap,
               ),

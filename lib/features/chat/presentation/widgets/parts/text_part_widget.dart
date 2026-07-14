@@ -6,13 +6,44 @@ import 'package:chatorai/shared/theme/markdown_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
-class TextPartWidget extends StatelessWidget {
+class TextPartWidget extends StatefulWidget {
   final TextPart part;
 
   const TextPartWidget({super.key, required this.part});
 
   @override
+  State<TextPartWidget> createState() => _TextPartWidgetState();
+}
+
+class _TextPartWidgetState extends State<TextPartWidget> {
+  String? _lastContent;
+  List<Widget>? _cachedContentWidgets;
+  String? _lastThemeKey;
+
+  @override
+  void didUpdateWidget(covariant TextPartWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.part.content != widget.part.content) {
+      _lastContent = null;
+      _cachedContentWidgets = null;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final themeKey = Theme.of(context).brightness.toString();
+    if (_lastThemeKey != themeKey) {
+      _lastThemeKey = themeKey;
+      _lastContent = null;
+      _cachedContentWidgets = null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final part = widget.part;
+
     if (part.content.isEmpty && part.isStreaming) {
       return const _StreamingCursor();
     }
@@ -21,11 +52,45 @@ class TextPartWidget extends StatelessWidget {
       return const SizedBox(height: 16);
     }
 
-    return _buildCustomMarkdownContent(context);
+    if (_lastContent != part.content) {
+      final previousContent = _lastContent;
+      _lastContent = part.content;
+      if (previousContent != null &&
+          part.content.startsWith(previousContent) &&
+          part.content.length > previousContent.length) {
+        final tail = part.content.substring(previousContent.length);
+        if (_isSimpleTextTail(tail)) {
+          final fullText = part.content;
+          final appended = _buildMarkdownBlock(
+            fullText,
+            ChatoraiMarkdownStyles.getMarkdownStyles(context),
+          );
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [appended],
+          );
+        }
+      }
+      _cachedContentWidgets = _buildCustomMarkdownContent(context);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: _cachedContentWidgets!,
+    );
   }
 
-  Widget _buildCustomMarkdownContent(BuildContext context) {
-    final lines = part.content.split('\n');
+  bool _isSimpleTextTail(String tail) {
+    for (final char in tail.characters) {
+      if (char == '\n' || char == '`' || char == '#' || char == '|') {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  List<Widget> _buildCustomMarkdownContent(BuildContext context) {
+    final lines = widget.part.content.split('\n');
     final styleSheet = ChatoraiMarkdownStyles.getMarkdownStyles(context);
 
     final List<Widget> contentWidgets = [];
@@ -67,7 +132,6 @@ class TextPartWidget extends StatelessWidget {
       } else if (inCodeBlock) {
         currentCodeBlock += '$line\n';
       } else {
-        // Check for table at current position
         final tableResult = TableParser.extractTableAt(lines, i);
         if (tableResult != null) {
           if (currentTextBlock.isNotEmpty) {
@@ -100,18 +164,17 @@ class TextPartWidget extends StatelessWidget {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: contentWidgets,
-    );
+    return contentWidgets;
   }
 
   Widget _buildMarkdownBlock(String data, MarkdownStyleSheet styleSheet) {
-    return MarkdownBody(
-      data: data,
-      styleSheet: styleSheet,
-      selectable: true,
-      builders: HeadingBuilder.headingBuilders(),
+    return RepaintBoundary(
+      child: MarkdownBody(
+        data: data,
+        styleSheet: styleSheet,
+        selectable: true,
+        builders: HeadingBuilder.headingBuilders(),
+      ),
     );
   }
 }

@@ -10,9 +10,7 @@ ProviderConfig opencodeProvider() => ProviderConfig.basic(
   name: 'OpenCode Zen',
   description: 'OpenCode Zen — unified API from the OpenCode project.',
   baseUrl: 'https://opencode.ai/zen/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );

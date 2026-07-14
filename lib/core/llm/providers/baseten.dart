@@ -12,9 +12,7 @@ ProviderConfig basetenProvider() => ProviderConfig.basic(
       'Baseten — serverless inference for open-source '
       'and custom models.',
   baseUrl: 'https://inference.baseten.co/v1',
-  auth: AuthConfig.apiKey(
-    apiKey: '',
-  ),
+  auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: false,
 );
