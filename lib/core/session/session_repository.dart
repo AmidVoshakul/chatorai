@@ -160,18 +160,6 @@ class SessionRepository {
     return getSessionMeta(SessionID.fromString(stripped));
   }
 
-  Stream<SessionState?> streamSessionFromId(String sessionId) {
-    final stripped = _stripSesPrefix(sessionId);
-    return streamSession(SessionID.fromString(stripped));
-  }
-
-  Stream<SessionState?> streamSession(SessionID sessionId) {
-    return _eventStore.streamEvents(sessionId).map((events) {
-      if (events.isEmpty) return null;
-      return replayEvents(events);
-    });
-  }
-
   /// Returns all active (non-archived) sessions sorted by [updatedAt] descending.
   Future<List<SessionState>> findAll() async {
     final rows =
@@ -220,6 +208,44 @@ class SessionRepository {
     final newState = replayEvents(events);
     _stateCache[event.sessionId] = newState;
     _stateCacheTimestamps[event.sessionId] = DateTime.now();
+    _evictStateCacheIfNeeded();
+    return newState;
+  }
+
+  /// Append multiple events inside a single transaction. Used to batch
+  /// streaming deltas so that a long token stream does not produce one
+  /// database transaction (and one `streamEvents` notification) per token.
+  Future<SessionState> appendEvents(List<SessionEvent> events) async {
+    if (events.isEmpty) {
+      throw ArgumentError('appendEvents requires a non-empty list of events');
+    }
+
+    await _db.transaction(() async {
+      await _eventStore.appendAll(events);
+      for (final event in events) {
+        await projectToDb(_db, event);
+      }
+    });
+
+    final sessionId = events.first.sessionId;
+    final cached = _stateCache[sessionId];
+    if (cached != null) {
+      _stateCache.remove(sessionId);
+      _stateCacheTimestamps.remove(sessionId);
+      var newState = cached;
+      for (final event in events) {
+        newState = projectEvent(newState, event);
+      }
+      _stateCache[sessionId] = newState;
+      _stateCacheTimestamps[sessionId] = DateTime.now();
+      _evictStateCacheIfNeeded();
+      return newState;
+    }
+
+    final all = await _eventStore.getEvents(sessionId);
+    final newState = replayEvents(all);
+    _stateCache[sessionId] = newState;
+    _stateCacheTimestamps[sessionId] = DateTime.now();
     _evictStateCacheIfNeeded();
     return newState;
   }
@@ -388,10 +414,20 @@ class SessionRepository {
     final rows = await (_db.select(
       _db.sessions,
     )..where((s) => s.parentId.equals(parentId.value))).get();
+    if (rows.isEmpty) return const [];
+
+    final childIds = rows.map((r) => SessionID.fromString(r.id)).toList();
+    final allEvents = await _eventStore.getEventsForSessions(childIds);
+
+    final eventsBySession = <String, List<SessionEvent>>{};
+    for (final event in allEvents) {
+      eventsBySession.putIfAbsent(event.sessionId.value, () => []).add(event);
+    }
+
     final result = <SessionState>[];
     for (final row in rows) {
-      final events = await _eventStore.getEvents(SessionID.fromString(row.id));
-      if (events.isNotEmpty) {
+      final events = eventsBySession[row.id];
+      if (events != null && events.isNotEmpty) {
         result.add(replayEvents(events));
       }
     }
@@ -405,28 +441,21 @@ class SessionRepository {
 
   Future<Map<String, int>> getAggregateUsage(SessionID sessionId) async {
     final tree = await buildTree();
-    final descendants = tree.getDescendants(sessionId);
-    final allIds = [sessionId, ...descendants];
+    final allIds = [sessionId, ...tree.getDescendants(sessionId)];
 
-    int totalInput = 0;
-    int totalOutput = 0;
-    int totalReasoning = 0;
+    final inputSum = _db.sessions.tokensInput.sum();
+    final outputSum = _db.sessions.tokensOutput.sum();
+    final reasoningSum = _db.sessions.tokensReasoning.sum();
 
-    for (final id in allIds) {
-      final row = await (_db.select(
-        _db.sessions,
-      )..where((s) => s.id.equals(id.value))).getSingleOrNull();
-      if (row != null) {
-        totalInput += row.tokensInput;
-        totalOutput += row.tokensOutput;
-        totalReasoning += row.tokensReasoning;
-      }
-    }
+    final query = _db.selectOnly(_db.sessions)
+      ..where(_db.sessions.id.isIn(allIds.map((e) => e.value)))
+      ..addColumns([inputSum, outputSum, reasoningSum]);
+    final row = await query.getSingle();
 
     return {
-      'tokensInput': totalInput,
-      'tokensOutput': totalOutput,
-      'tokensReasoning': totalReasoning,
+      'tokensInput': row.read(inputSum) ?? 0,
+      'tokensOutput': row.read(outputSum) ?? 0,
+      'tokensReasoning': row.read(reasoningSum) ?? 0,
     };
   }
 

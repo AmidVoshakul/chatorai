@@ -272,40 +272,6 @@ void main() {
     });
   });
 
-  group('SessionRepository.streamSession', () {
-    late AppDatabase db;
-    late SessionRepository repository;
-
-    setUp(() {
-      db = AppDatabase.inMemory();
-      repository = SessionRepository(db);
-    });
-
-    tearDown(() async {
-      await db.close();
-    });
-
-    test('emits null for session with no events', () async {
-      final id = SessionID.create();
-      final stream = repository.streamSession(id);
-
-      // Should emit null (or empty) for a session with no events
-      final first = await stream.first;
-      expect(first, isNull);
-    });
-
-    test('emits state after events are appended', () async {
-      final created = await repository.createSession(title: 'Stream Test');
-
-      final stream = repository.streamSession(created.id);
-
-      // The stream should eventually emit a non-null state
-      final state = await stream.first;
-      expect(state, isNotNull);
-      expect(state!.id, created.id);
-    });
-  });
-
   group('SessionRepository.getAggregateUsage', () {
     late AppDatabase db;
     late SessionRepository repository;

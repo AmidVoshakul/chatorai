@@ -1,4 +1,5 @@
 import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart'
     show QuestionOption;
@@ -48,6 +49,20 @@ class IntegrationTestContext implements ToolContext {
   final void Function({String? title, Map<String, dynamic>? metadata})?
   onMetadata;
 
+  @override
+  final String? agentId;
+
+  @override
+  final PermissionRuleset? permissionRuleset;
+
+  @override
+  final void Function(String agentId, {String? messageText})? switchAgent;
+
+  @override
+  bool hasPermission(String permission, String pattern) {
+    return permissionRuleset?.isAllowed(permission, pattern) ?? false;
+  }
+
   const IntegrationTestContext({
     this.toolCallId = 'integration-test',
     this.sessionId,
@@ -55,6 +70,9 @@ class IntegrationTestContext implements ToolContext {
     this.ask = _defaultAsk,
     this.askQuestion = _defaultAskQuestion,
     this.onMetadata,
+    this.agentId,
+    this.permissionRuleset,
+    this.switchAgent,
   });
 
   /// Auto-approves all permission requests.

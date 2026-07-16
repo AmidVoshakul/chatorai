@@ -136,19 +136,38 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   void showAgentSwitcher(BuildContext context, GlobalKey agentKey) {
     final currentAgent = ref.read(currentAgentProvider);
     final primaryAgents = AgentRegistry().getPrimaryAgents();
+    if (primaryAgents.isEmpty) return;
+
+    // Позиционируем меню относительно кнопки агента, если она доступна,
+    // иначе — относительно переданного context (всегда валиден).
+    RelativeRect position;
     final RenderBox? box =
         agentKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null) return;
-    final offset = box.localToGlobal(Offset.zero);
-    final size = box.size;
-    showMenu<String>(
-      context: context,
-      position: RelativeRect.fromLTRB(
+    if (box != null) {
+      final offset = box.localToGlobal(Offset.zero);
+      final size = box.size;
+      position = RelativeRect.fromLTRB(
         offset.dx,
         offset.dy - 120,
         offset.dx + size.width,
         offset.dy,
-      ),
+      );
+    } else {
+      final render = context.findRenderObject();
+      if (render is! RenderBox) return;
+      final offset = render.localToGlobal(Offset.zero);
+      final size = render.size;
+      position = RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy - 120,
+        offset.dx + size.width,
+        offset.dy,
+      );
+    }
+
+    showMenu<String>(
+      context: context,
+      position: position,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
       ),
@@ -180,7 +199,7 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
         );
       }).toList(),
     ).then((agentId) {
-      if (agentId != null && mounted) {
+      if (agentId != null) {
         final agent = AgentRegistry().get(agentId);
         if (agent != null) {
           ref.read(currentAgentProvider.notifier).setAgent(agent);

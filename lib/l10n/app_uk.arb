@@ -112,6 +112,14 @@
   "loadingMsg5": "Завантажую відповідь (майже)…",
   "failedToSendMessage": "Не вдалося надіслати повідомлення",
   "retry": "Повторити",
+  "bootstrapErrorTitle": "Не вдалося запустити застосунок",
+  "bootstrapErrorBody": "Перевірте конфігурацію і спробуйте ще раз.",
+  "@bootstrapErrorTitle": {
+    "description": "Title shown on the bootstrap error screen when app initialization fails"
+  },
+  "@bootstrapErrorBody": {
+    "description": "Body text shown on the bootstrap error screen"
+  },
   "enterYourMessage": "Введіть ваше повідомлення...",
   "saveAndSend": "Зберегти та надіслати",
   "messageEditedSuccessfully": "Повідомлення успішно відредаговано",

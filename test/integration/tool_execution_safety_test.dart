@@ -16,7 +16,7 @@ import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_part.dart'
     show ToolState;
 import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart'
-    show ChatScreenState, StreamingState;
+    show ChatScreenState;
 import 'package:chatorai/features/chat/services/chat_ai_service.dart';
 import 'package:chatorai/features/chat/services/chat_retry_service.dart'
     show RichRetryInfo;
@@ -41,20 +41,20 @@ class _TestNotifier {
 
   void startStreaming(String sessionId) {
     _state = _state.copyWith(
-      streaming: StreamingState(isStreaming: true, streamingSessionId: sessionId),
+      streamingSessionId: sessionId,
     );
   }
 
   void finalizeStreaming() {
-    final completed = _state.streaming.streamingParts
+    final completed = _state.streamingParts
         .where((p) => p is! AssistantTool || p.state != ToolState.running)
         .toList();
     _closedParts.addAll(completed);
-    _state = _state.copyWith(streaming: const StreamingState());
+    _state = _state.copyWith(clearStreamingSessionId: true, streamingParts: const []);
   }
 
   void onChunk(String partId, String messageId, String sessionId, String delta) {
-    final currentParts = _state.streaming.streamingParts;
+    final currentParts = _state.streamingParts;
     final parts = List<AssistantContent>.from(currentParts);
     final lastIsText = parts.isNotEmpty && parts.last is AssistantText;
     if (lastIsText) {
@@ -71,11 +71,11 @@ class _TestNotifier {
     } else {
       parts.add(AssistantText(id: partId, sessionId: sessionId, messageId: messageId, text: delta));
     }
-    _state = _state.copyWith(streaming: _state.streaming.copyWith(streamingParts: parts));
+    _state = _state.copyWith(streamingParts: parts);
   }
 
   void onReasoning(String partId, String messageId, String sessionId, String delta) {
-    final currentParts = _state.streaming.streamingParts;
+    final currentParts = _state.streamingParts;
     final parts = List<AssistantContent>.from(currentParts);
     final openIdx = parts.lastIndexWhere((p) => p is AssistantReasoning && p.ended == null);
     if (openIdx >= 0) {
@@ -94,22 +94,22 @@ class _TestNotifier {
         started: DateTime.now(), ended: null,
       ));
     }
-    _state = _state.copyWith(streaming: _state.streaming.copyWith(streamingParts: parts));
+    _state = _state.copyWith(streamingParts: parts);
   }
 
   void onToolCall(String partId, String callId, String messageId, String sessionId, String toolName, Map<String, dynamic> input) {
-    final currentParts = _state.streaming.streamingParts;
+    final currentParts = _state.streamingParts;
     final parts = List<AssistantContent>.from(currentParts);
     if (parts.any((p) => p is AssistantTool && p.callId == callId)) return;
     parts.add(AssistantTool(
       id: partId, sessionId: sessionId, messageId: messageId,
       callId: callId, tool: toolName, state: ToolState.running, input: input,
     ));
-    _state = _state.copyWith(streaming: _state.streaming.copyWith(streamingParts: parts));
+    _state = _state.copyWith(streamingParts: parts);
   }
 
   void onToolEnd(String callId, String toolName, String result) {
-    final currentParts = _state.streaming.streamingParts;
+    final currentParts = _state.streamingParts;
     final parts = List<AssistantContent>.from(currentParts);
     final toolIdx = parts.indexWhere((p) => p is AssistantTool && p.callId == callId);
     if (toolIdx < 0) return;
@@ -121,11 +121,11 @@ class _TestNotifier {
       callId: callId, tool: toolName, state: ToolState.completed,
       input: prev.input, output: result,
     );
-    _state = _state.copyWith(streaming: _state.streaming.copyWith(streamingParts: parts));
+    _state = _state.copyWith(streamingParts: parts);
   }
 
   void onToolError(String callId, String toolName, String error) {
-    final currentParts = _state.streaming.streamingParts;
+    final currentParts = _state.streamingParts;
     final parts = List<AssistantContent>.from(currentParts);
     final toolIdx = parts.indexWhere((p) => p is AssistantTool && p.callId == callId);
     if (toolIdx < 0) return;
@@ -137,15 +137,15 @@ class _TestNotifier {
       callId: callId, tool: toolName, state: ToolState.error,
       input: prev.input, output: error,
     );
-    _state = _state.copyWith(streaming: _state.streaming.copyWith(streamingParts: parts));
+    _state = _state.copyWith(streamingParts: parts);
   }
 
   List<AssistantContent> snapshotClosedStreamingParts() {
-    return List.unmodifiable([..._closedParts, ..._state.streaming.streamingParts]);
+    return List.unmodifiable([..._closedParts, ..._state.streamingParts]);
   }
 
   List<AssistantContent> snapshotCurrentStreamingParts() {
-    return List.unmodifiable(_state.streaming.streamingParts);
+    return List.unmodifiable(_state.streamingParts);
   }
 
   List<AssistantContent> snapshotClosedParts() {

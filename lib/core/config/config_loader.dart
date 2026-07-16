@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:chatorai/shared/utils/xdg_paths.dart';
@@ -31,36 +32,83 @@ class ConfigValidationError extends ConfigError {
   String toString() => 'ConfigValidationError(message: $message)';
 }
 
-/// Responsible for finding and reading `chatorai.json`.
+/// Responsible for finding and merging `chatorai.json`.
 ///
-/// Search order (first found wins):
-/// 1. `./.chatorai/chatorai.json` (project-specific, highest priority)
-/// 2. `<xdg-config>/chatorai.json` (global user config, fallback)
-/// 3. Fallback: empty config object `{}`
+/// Precedence (project overrides global, both are merged):
+/// 1. `<xdg-config>/chatorai.json` — global user config (base layer)
+/// 2. `./.chatorai/chatorai.json` — project-specific config (overlay, wins)
+///
+/// The two layers are deep-merged: keys present in the project config
+/// override the global ones, while keys absent in the project config are
+/// inherited from the global config. This mirrors the convention used by
+/// tools like opencode (global base + project overlay with deep merge).
+///
+/// If neither file exists, an empty config object `{}` is returned.
 class ConfigLoader {
   static Future<String> load() async {
-    // 1. Project-specific config (highest priority)
-    final projectConfig = File('.chatorai/chatorai.json');
-    if (await projectConfig.exists()) {
-      try {
-        return await projectConfig.readAsString();
-      } on IOException catch (e) {
-        throw ConfigReadError(path: projectConfig.path, original: e.toString());
-      }
-    }
+    final global = await _loadLayer(await _globalConfigPath());
+    final project = await _loadLayer(_projectConfigPath());
 
-    // 2. Global user config (fallback via XDG_CONFIG_HOME)
+    // Project config is the overlay: its keys win over the global base.
+    final merged = _deepMerge(global, project);
+    return jsonEncode(merged);
+  }
+
+  static Future<String> _globalConfigPath() async {
     final configDir = await XdgPaths.configHomeAsync;
-    final userConfig = File(p.join(configDir, 'chatorai.json'));
-    if (await userConfig.exists()) {
-      try {
-        return await userConfig.readAsString();
-      } on IOException catch (e) {
-        throw ConfigReadError(path: userConfig.path, original: e.toString());
-      }
+    return p.join(configDir, 'chatorai.json');
+  }
+
+  static String _projectConfigPath() => p.join('.chatorai', 'chatorai.json');
+
+  /// Reads and decodes a single config file into a map.
+  ///
+  /// Returns an empty map when the file does not exist. Throws
+  /// [ConfigReadError] on I/O failure and [ConfigValidationError] on
+  /// malformed JSON so that broken configs surface loudly.
+  static Future<Map<String, dynamic>> _loadLayer(String path) async {
+    final file = File(path);
+    if (!await file.exists()) return {};
+
+    String raw;
+    try {
+      raw = await file.readAsString();
+    } on IOException catch (e) {
+      throw ConfigReadError(path: path, original: e.toString());
     }
 
-    // 3. Fallback: empty config
-    return '{}';
+    try {
+      final decoded = json.decode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      throw const FormatException('top-level JSON must be an object');
+    } on FormatException catch (e) {
+      throw ConfigValidationError('Malformed JSON in $path: ${e.message}');
+    }
+  }
+
+  /// Recursively merges [overlay] into [base].
+  ///
+  /// Nested maps are merged key-by-key; every other value (scalars, lists)
+  /// is taken from [overlay] when present, otherwise from [base]. Thus the
+  /// overlay layer (project config) has precedence without discarding the
+  /// base layer's (global config) unrelated keys.
+  static Map<String, dynamic> _deepMerge(
+    Map<String, dynamic> base,
+    Map<String, dynamic> overlay,
+  ) {
+    final result = <String, dynamic>{};
+    for (final entry in base.entries) {
+      result[entry.key] = entry.value;
+    }
+    for (final entry in overlay.entries) {
+      final baseValue = result[entry.key];
+      if (baseValue is Map<String, dynamic> && entry.value is Map<String, dynamic>) {
+        result[entry.key] = _deepMerge(baseValue, entry.value as Map<String, dynamic>);
+      } else {
+        result[entry.key] = entry.value;
+      }
+    }
+    return result;
   }
 }

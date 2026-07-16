@@ -20,7 +20,7 @@ class ChatMessagesWelcomeSuggestions extends StatelessWidget {
   Widget build(BuildContext context) {
     return WelcomeSuggestions(
       suggestions: suggestions,
-      context: parentContext,
+      parentContext: parentContext,
       onSuggestionTap: onSuggestionTap,
       onClose: onClose,
     );

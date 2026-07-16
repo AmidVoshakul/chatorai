@@ -74,9 +74,11 @@ class _FakeChatAiService extends ChatAiService {
     void Function(RichRetryInfo info)? onRetry,
     void Function(List<Map<String, dynamic>> messages)? onOverflow,
   }) async {
-    // Simulate immediate response
-    onChunk('Fake subagent output');
-    onCompletion('Fake completion');
+    // Simulate immediate response. Await the callbacks because they perform
+    // database writes (event flush) and must complete before this method
+    // resolves — mirroring the async contract of a real ChatAiService.
+    await onChunk('Fake subagent output');
+    await onCompletion('Fake subagent output');
   }
 
   @override
@@ -94,10 +96,12 @@ class _FakeChatAiService extends ChatAiService {
     UsageCallback? onUsage,
     int maxSteps = 5,
   }) async {
-    // Simulate immediate response (same as streamChatCompletion fake)
-    onChunk('Fake subagent output');
+    // Simulate immediate response (same as streamChatCompletion fake).
+    // Await the callbacks: onCompletion performs database writes (event flush)
+    // that must finish before this method resolves.
+    await onChunk('Fake subagent output');
     onUsage?.call(10, 20, 5, 3);
-    onCompletion('Fake completion');
+    await onCompletion('Fake subagent output');
   }
 }
 
@@ -268,12 +272,12 @@ void main() {
           final output = await taskTool.execute({
             'description': 'Analyze dependencies',
             'prompt': 'List all dependencies',
-            'subagent_type': 'plan',
+            'subagent_type': 'general',
             'task_id': 'custom-task-123',
           }, recording.ctx);
 
           expect(output.metadata?['session_id'], equals(defaultSessionId));
-          expect(output.metadata?['subagent_type'], equals('plan'));
+          expect(output.metadata?['subagent_type'], equals('general'));
           expect(
             output.metadata?['description'],
             equals('Analyze dependencies'),
@@ -339,7 +343,7 @@ void main() {
 
         expect(output.metadata?['error'], isNull);
         expect(output.output, contains('Fake subagent output'));
-        expect(output.metadata?['agent_name'], equals('General'));
+        expect(output.metadata?['agent_name'], equals('general'));
       });
     });
 

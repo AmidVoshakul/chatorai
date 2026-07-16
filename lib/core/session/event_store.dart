@@ -35,12 +35,24 @@ class EventStore {
   }
 
   /// Append multiple events atomically inside a single transaction.
+  /// Sequence numbers are assigned contiguously from a single base read,
+  /// avoiding one `SELECT max` round-trip per event.
   /// Returns the list of assigned sequence numbers in the same order.
+  ///
+  /// All [events] must belong to the same session: a single base sequence is
+  /// read and each event is assigned `base + i`, so mixed sessions would
+  /// receive incorrect, non-monotonic sequence numbers.
   Future<List<int>> appendAll(List<SessionEvent> events) async {
+    if (events.isEmpty) return const [];
+    assert(
+      events.every((e) => e.sessionId == events.first.sessionId),
+      'appendAll requires all events to belong to the same session',
+    );
     return await _db.transaction(() async {
+      final base = await _nextSequence(events.first.sessionId);
       final seqs = <int>[];
-      for (final event in events) {
-        final seq = await _nextSequence(event.sessionId);
+      for (int i = 0; i < events.length; i++) {
+        final event = events[i];
         final data = _serialize(event);
         await _db
             .into(_db.events)
@@ -49,11 +61,11 @@ class EventStore {
                 sessionId: event.sessionId.value,
                 eventType: event.runtimeType.toString(),
                 eventData: jsonEncode(data),
-                sequence: seq,
+                sequence: base + i,
                 createdAt: event.timestamp,
               ),
             );
-        seqs.add(seq);
+        seqs.add(base + i);
       }
       return seqs;
     });
@@ -67,6 +79,20 @@ class EventStore {
               ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
             .get();
 
+    return rows.map<SessionEvent>(_deserialize).toList();
+  }
+
+  /// Returns all events for the given [sessionIds] in a single query, ordered
+  /// by [sequence]. Use to batch-replay several sessions without one query per
+  /// session.
+  Future<List<SessionEvent>> getEventsForSessions(
+    List<SessionID> sessionIds,
+  ) async {
+    if (sessionIds.isEmpty) return const [];
+    final rows = await (_db.select(_db.events)
+          ..where((e) => e.sessionId.isIn(sessionIds.map((s) => s.value)))
+          ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
+        .get();
     return rows.map<SessionEvent>(_deserialize).toList();
   }
 
@@ -87,6 +113,27 @@ class EventStore {
     return streamEvents(
       sessionId,
     ).map((events) => events.where((e) => !isDeltaEvent(e)).toList());
+  }
+
+  /// Stream only events with [sequence] greater than [afterSeq] for a session.
+  ///
+  /// Unlike [streamEvents], the watched result set is bounded by the
+  /// post-[afterSeq] tail rather than the full session history, so the
+  /// deserialization cost per emit scales with the streaming tail instead of
+  /// total history length. Note: Drift's [watch] re-emits the full tail on
+  /// every insert, so the caller should still filter for `sequence > lastSeq`
+  /// to process only newly-appended events. This keeps ephemeral delta events
+  /// (needed for live streaming display).
+  Stream<List<SessionEvent>> streamEventsSince(
+    SessionID sessionId,
+    int afterSeq,
+  ) {
+    return (_db.select(_db.events)
+          ..where((e) => e.sessionId.equals(sessionId.value))
+          ..where((e) => e.sequence.isBiggerThanValue(afterSeq))
+          ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
+        .watch()
+        .map((rows) => rows.map<SessionEvent>(_deserialize).toList());
   }
 
   /// Returns all durable (non-delta) events for a session ordered by sequence.

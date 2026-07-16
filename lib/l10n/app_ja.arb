@@ -112,6 +112,14 @@
   "loadingMsg5": "回答を読み込み中（もうすぐ）…",
   "failedToSendMessage": "メッセージの送信に失敗しました",
   "retry": "再試行",
+  "bootstrapErrorTitle": "アプリの起動に失敗しました",
+  "bootstrapErrorBody": "設定を確認してもう一度お試しください。",
+  "@bootstrapErrorTitle": {
+    "description": "Title shown on the bootstrap error screen when app initialization fails"
+  },
+  "@bootstrapErrorBody": {
+    "description": "Body text shown on the bootstrap error screen"
+  },
   "enterYourMessage": "あなたのメッセージを入力してください...",
   "saveAndSend": "保存して送信",
   "messageEditedSuccessfully": "メッセージが正常に編集されました",

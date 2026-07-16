@@ -355,6 +355,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
+  String get bootstrapErrorTitle => 'Failed to start the app';
+
+  @override
+  String get bootstrapErrorBody => 'Check your configuration and try again.';
+
+  @override
   String get enterYourMessage => 'Enter your message';
 
   @override
@@ -1087,7 +1093,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get userPromptSuggestion => 'How can I help you today?';
 
   @override
-  String get versionLabel => 'Version';
+  String get versionLabel => 'Version:';
 
   @override
   String get welcomeGreeting1 => 'Welcome!';

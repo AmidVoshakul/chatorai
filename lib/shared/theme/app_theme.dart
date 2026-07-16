@@ -491,6 +491,18 @@ class AppTheme {
     shape: ChatoraiBorderRadius.mdShape,
   );
 
+  static TooltipThemeData _tooltipThemeData({
+    required Color backgroundColor,
+    required Color textColor,
+  }) => TooltipThemeData(
+    decoration: BoxDecoration(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+    ),
+    textStyle: TextStyle(color: textColor, fontSize: 12),
+    padding: const EdgeInsets.all(ChatoraiSpacing.md),
+  );
+
   static ThemeData get lightTheme => ThemeData(
     brightness: Brightness.light,
     primaryColor: ChatoraiColors.orange,
@@ -549,6 +561,10 @@ class AppTheme {
       filled: true,
       labelStyle: const TextStyle(color: ChatoraiColors.secondaryTextColor),
       hintStyle: const TextStyle(color: ChatoraiColors.secondaryTextColor),
+    ),
+    tooltipTheme: _tooltipThemeData(
+      backgroundColor: ChatoraiColors.dark,
+      textColor: ChatoraiColors.light,
     ),
   );
 
@@ -616,6 +632,10 @@ class AppTheme {
       filled: true,
       labelStyle: const TextStyle(color: ChatoraiColors.darkSecondaryTextColor),
       hintStyle: const TextStyle(color: ChatoraiColors.secondaryTextColor),
+    ),
+    tooltipTheme: _tooltipThemeData(
+      backgroundColor: ChatoraiColors.darkCard,
+      textColor: ChatoraiColors.darkTextColor,
     ),
   );
 

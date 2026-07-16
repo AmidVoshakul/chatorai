@@ -355,6 +355,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get retry => '重试';
 
   @override
+  String get bootstrapErrorTitle => '启动应用失败';
+
+  @override
+  String get bootstrapErrorBody => '请检查配置后重试。';
+
+  @override
   String get enterYourMessage => '输入您的消息...';
 
   @override

@@ -11,18 +11,26 @@ const _questionCooldown = Duration(minutes: 5);
 /// Normalizes question text for deduplication (lowercase, trimmed).
 String _normalizeQuestion(String q) => q.trim().toLowerCase();
 
-/// Checks if a similar question was asked recently; if so, logs and returns true.
-bool _wasAskedRecently(String question) {
-  final key = _normalizeQuestion(question);
+/// Checks if a similar question was asked recently in the same session; if so,
+/// logs and returns true.
+///
+/// The cooldown is scoped to [sessionId] so that a question asked in one
+/// session does not suppress the same question in a different session.
+bool _wasAskedRecently(String question, String? sessionId) {
+  final key = '${sessionId ?? ''}::${_normalizeQuestion(question)}';
+  final now = DateTime.now();
+  // Evict expired entries so the map stays bounded across long sessions.
+  _recentlyAsked.removeWhere(
+    (_, lastAsked) => now.difference(lastAsked) >= _questionCooldown,
+  );
   final lastAsked = _recentlyAsked[key];
-  if (lastAsked != null &&
-      DateTime.now().difference(lastAsked) < _questionCooldown) {
+  if (lastAsked != null) {
     LogTags.permission.logInfo(
       'QuestionTool: skipping repeat question within cooldown: "$question"',
     );
     return true;
   }
-  _recentlyAsked[key] = DateTime.now();
+  _recentlyAsked[key] = now;
   return false;
 }
 
@@ -105,7 +113,7 @@ ToolDef createQuestionTool() {
       }
 
       // Skip if a similar question was asked within the cooldown window.
-      if (_wasAskedRecently(question)) {
+      if (_wasAskedRecently(question, ctx.sessionId)) {
         return ToolOutput(
           'Skipped: similar question was asked recently. '
           'Consider proceeding with one of the previous options or clarifying your intent.',

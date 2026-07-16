@@ -8,6 +8,7 @@ import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
     show AssistantText;
 import 'package:chatorai/core/tools/tool_registry.dart';
+import 'package:synchronized/synchronized.dart';
 
 class SessionRunnerHolder {
   SessionRunner? runner;
@@ -201,12 +202,34 @@ class SessionRunnerSession {
   final SessionID? _parentId;
 
   bool initialized = false;
+  bool _finalized = false;
   String? messageId;
   String? _openTextPartId;
   String? _openReasoningPartId;
-  String _pendingReasoningText = '';
+
+  /// Streaming deltas are buffered in memory and flushed to the event store
+  /// in batches (like opencode's `fragments`), so a long token stream does
+  /// not open one database transaction — and emit one `streamEvents`
+  /// notification — per token.
+  static const int _flushThreshold = 1024;
+  final StringBuffer _pendingText = StringBuffer();
+  final StringBuffer _pendingReasoning = StringBuffer();
+  final StringBuffer _fullText = StringBuffer();
+  final StringBuffer _fullReasoning = StringBuffer();
+
   final Map<String, String> _toolPartIds = {};
   final Set<String> _startedToolCalls = {};
+
+  /// Serializes all per-session streaming mutations. The hot path
+  /// (`onChunk`/`onReasoning`) is invoked `unawaited` per token, so without a
+  /// lock two concurrent invocations could both pass the `_openTextPartId ==
+  /// null` check and emit duplicate `TextStarted`/`ReasoningStarted` events, or
+  /// run overlapping `appendEvents`/`appendAll` calls that read the same
+  /// `max(sequence)` and produce duplicate (non-unique) sequence numbers.
+  /// Internal helpers (`_flushTextDeltas`, `_flushReasoningDeltas`,
+  /// `_closeReasoningIfOpen`) never re-acquire the lock, so a [BasicLock] is
+  /// sufficient (no reentrant zone bookkeeping on the hot path).
+  final Lock _lock = Lock();
 
   SessionRunnerSession({
     required this.repository,
@@ -247,96 +270,130 @@ class SessionRunnerSession {
     String? agent,
     String? modelRef,
     String? title,
-  }) async {
-    if (initialized) return;
-    final now = DateTime.now();
-    await repository.appendEvent(
-      SessionCreated(
-        sessionId: sessionId,
-        parentId: _parentId,
-        agent: agent ?? _agent ?? 'general',
-        modelRef: modelRef ?? _modelRef,
-        title: title ?? _title ?? '',
-        timestamp: now,
-      ),
-    );
-    initialized = true;
-  }
+  }) =>
+      _lock.synchronized(() async {
+        if (initialized) return;
+        final now = DateTime.now();
+        await repository.appendEvent(
+          SessionCreated(
+            sessionId: sessionId,
+            parentId: _parentId,
+            agent: agent ?? _agent ?? 'general',
+            modelRef: modelRef ?? _modelRef,
+            title: title ?? _title ?? '',
+            timestamp: now,
+          ),
+        );
+        initialized = true;
+      });
 
-  Future<void> onChunk(String content) async {
-    if (!initialized || content.isEmpty) return;
-    if (_openTextPartId == null) {
-      messageId ??= _genMessageId();
-      await _closeReasoningIfOpen();
-      _openTextPartId = _genPartId('text');
-      await repository.appendEvent(
-        TextStarted(
-          sessionId: sessionId,
-          messageId: messageId!,
-          partId: _openTextPartId,
-          timestamp: DateTime.now(),
-        ),
-      );
+  Future<void> onChunk(String content) => _lock.synchronized(() async {
+        if (!initialized || _finalized || content.isEmpty) return;
+        if (_openTextPartId == null) {
+          messageId ??= _genMessageId();
+          await _closeReasoningIfOpen();
+          _openTextPartId = _genPartId('text');
+          await repository.appendEvent(
+            TextStarted(
+              sessionId: sessionId,
+              messageId: messageId!,
+              partId: _openTextPartId,
+              timestamp: DateTime.now(),
+            ),
+          );
+        }
+        _pendingText.write(content);
+        _fullText.write(content);
+        if (_pendingText.length >= _flushThreshold) {
+          await _flushTextDeltas();
+        }
+      });
+
+  Future<void> onReasoning(String content) => _lock.synchronized(() async {
+        if (!initialized || _finalized || content.isEmpty) return;
+        _pendingReasoning.write(content);
+        _fullReasoning.write(content);
+        if (_openReasoningPartId == null) {
+          messageId ??= _genMessageId();
+          _openReasoningPartId = _genPartId('reasoning');
+          await repository.appendEvent(
+            ReasoningStarted(
+              sessionId: sessionId,
+              messageId: messageId!,
+              partId: _openReasoningPartId!,
+              timestamp: DateTime.now(),
+            ),
+          );
+        }
+        if (_pendingReasoning.length >= _flushThreshold) {
+          await _flushReasoningDeltas();
+        }
+      });
+
+  /// Flush buffered text deltas to the event store as a single batched event.
+  /// Must only be called from within a [_lock.synchronized] section.
+  Future<void> _flushTextDeltas() async {
+    if (_pendingText.isEmpty || _openTextPartId == null || messageId == null) {
+      return;
     }
-    await repository.appendEvent(
+    final delta = _pendingText.toString();
+    _pendingText.clear();
+    await repository.appendEvents([
       TextDelta(
         sessionId: sessionId,
         messageId: messageId!,
         partId: _openTextPartId!,
-        delta: content,
+        delta: delta,
         timestamp: DateTime.now(),
       ),
-    );
+    ]);
   }
 
-  Future<void> onReasoning(String content) async {
-    if (!initialized || content.isEmpty) return;
-    _pendingReasoningText += content;
-    if (_openReasoningPartId == null) {
-      messageId ??= _genMessageId();
-      _openReasoningPartId = _genPartId('reasoning');
-      await repository.appendEvent(
-        ReasoningStarted(
-          sessionId: sessionId,
-          messageId: messageId!,
-          partId: _openReasoningPartId!,
-          timestamp: DateTime.now(),
-        ),
-      );
+  /// Flush buffered reasoning deltas to the event store as a single batched
+  /// event. Must only be called from within a [_lock.synchronized] section.
+  Future<void> _flushReasoningDeltas() async {
+    if (_pendingReasoning.isEmpty ||
+        _openReasoningPartId == null ||
+        messageId == null) {
+      return;
     }
-    await repository.appendEvent(
+    final delta = _pendingReasoning.toString();
+    _pendingReasoning.clear();
+    await repository.appendEvents([
       ReasoningDelta(
         sessionId: sessionId,
         messageId: messageId!,
         partId: _openReasoningPartId!,
-        delta: content,
+        delta: delta,
         timestamp: DateTime.now(),
       ),
-    );
+    ]);
   }
 
   Future<void> onToolStart(
     String toolCallId,
     String toolName,
     Map<String, dynamic> input,
-  ) async {
-    if (!initialized) return;
-    if (!_startedToolCalls.add(toolCallId)) return;
-    final partId = _genPartId(toolCallId);
-    _toolPartIds[toolCallId] = partId;
-    await _closeReasoningIfOpen();
-    _openTextPartId = null;
-    await repository.appendEvent(
-      ToolCalled(
-        sessionId: sessionId,
-        toolCallId: toolCallId,
-        toolName: toolName,
-        input: input,
-        partId: partId,
-        timestamp: DateTime.now(),
-      ),
-    );
-  }
+  ) =>
+      _lock.synchronized(() async {
+        if (!initialized) return;
+        if (!_startedToolCalls.add(toolCallId)) return;
+        final partId = _genPartId(toolCallId);
+        _toolPartIds[toolCallId] = partId;
+        await _closeReasoningIfOpen();
+        await _flushTextDeltas();
+        _openTextPartId = null;
+        await repository.appendEvent(
+          ToolCalled(
+            sessionId: sessionId,
+            toolCallId: toolCallId,
+            toolName: toolName,
+            input: input,
+            partId: partId,
+            timestamp: DateTime.now(),
+          ),
+        );
+      });
 
   Future<void> onToolEnd(
     String toolCallId,
@@ -344,22 +401,23 @@ class SessionRunnerSession {
     String result, {
     int durationMs = 0,
     Map<String, dynamic>? input,
-  }) async {
-    if (!initialized) return;
-    final partId = _toolPartIds[toolCallId];
-    if (partId == null) return;
-    await repository.appendEvent(
-      ToolSuccess(
-        sessionId: sessionId,
-        toolCallId: toolCallId,
-        outputText: result,
-        partId: partId,
-        durationMs: durationMs,
-        input: input,
-        timestamp: DateTime.now(),
-      ),
-    );
-  }
+  }) =>
+      _lock.synchronized(() async {
+        if (!initialized) return;
+        final partId = _toolPartIds[toolCallId];
+        if (partId == null) return;
+        await repository.appendEvent(
+          ToolSuccess(
+            sessionId: sessionId,
+            toolCallId: toolCallId,
+            outputText: result,
+            partId: partId,
+            durationMs: durationMs,
+            input: input,
+            timestamp: DateTime.now(),
+          ),
+        );
+      });
 
   Future<void> onToolError(
     String toolCallId,
@@ -367,36 +425,41 @@ class SessionRunnerSession {
     String error, {
     int durationMs = 0,
     Map<String, dynamic>? input,
-  }) async {
-    if (!initialized) return;
-    final partId = _toolPartIds[toolCallId];
-    if (partId == null) return;
-    await repository.appendEvent(
-      ToolFailed(
-        sessionId: sessionId,
-        toolCallId: toolCallId,
-        error: error,
-        partId: partId,
-        durationMs: durationMs,
-        input: input,
-        timestamp: DateTime.now(),
-      ),
-    );
-  }
+  }) =>
+      _lock.synchronized(() async {
+        if (!initialized) return;
+        final partId = _toolPartIds[toolCallId];
+        if (partId == null) return;
+        await repository.appendEvent(
+          ToolFailed(
+            sessionId: sessionId,
+            toolCallId: toolCallId,
+            error: error,
+            partId: partId,
+            durationMs: durationMs,
+            input: input,
+            timestamp: DateTime.now(),
+          ),
+        );
+      });
 
+  /// Closes an open reasoning part. Must only be called from within a
+  /// [_lock.synchronized] section.
   Future<void> _closeReasoningIfOpen() async {
     if (_openReasoningPartId == null || messageId == null) return;
+    await _flushReasoningDeltas();
     await repository.appendEvent(
       ReasoningEnded(
         sessionId: sessionId,
         messageId: messageId!,
-        fullReasoning: _pendingReasoningText,
+        fullReasoning: _fullReasoning.toString(),
         partId: _openReasoningPartId!,
         timestamp: DateTime.now(),
       ),
     );
     _openReasoningPartId = null;
-    _pendingReasoningText = '';
+    _pendingReasoning.clear();
+    _fullReasoning.clear();
   }
 
   Future<SessionState> onCompletion({
@@ -408,127 +471,179 @@ class SessionRunnerSession {
     int tokensReasoning = 0,
     int tokensCacheRead = 0,
     int tokensCacheWrite = 0,
-  }) async {
-    final now = DateTime.now();
+  }) =>
+      _lock.synchronized(() async {
+        if (_finalized) {
+          final loaded = await repository.loadSession(sessionId);
+          final now = DateTime.now();
+          return loaded ??
+              SessionState(id: sessionId, createdAt: now, updatedAt: now);
+        }
+        _finalized = true;
+        final now = DateTime.now();
 
-    // Close any open text
-    if (_openTextPartId != null && messageId != null) {
-      await repository.appendEvent(
-        TextEnded(
-          sessionId: sessionId,
-          messageId: messageId!,
-          partId: _openTextPartId!,
-          fullText: content,
-          model: model,
-          timestamp: now,
-        ),
-      );
-      _openTextPartId = null;
-    }
+        // Flush any buffered streaming deltas before finalizing.
+        await _flushTextDeltas();
+        await _flushReasoningDeltas();
 
-    // Close any open reasoning if there is reasoning content to close
-    if (_openReasoningPartId != null && messageId != null) {
-      final reasonText = reasoning ?? _pendingReasoningText;
-      await repository.appendEvent(
-        ReasoningEnded(
-          sessionId: sessionId,
-          messageId: messageId!,
-          partId: _openReasoningPartId!,
-          fullReasoning: reasonText,
-          timestamp: now,
-        ),
-      );
-      _openReasoningPartId = null;
-      _pendingReasoningText = '';
-    }
+        // Close any open text
+        if (_openTextPartId != null && messageId != null) {
+          final fullText = content.isNotEmpty ? content : _fullText.toString();
+          await repository.appendEvent(
+            TextEnded(
+              sessionId: sessionId,
+              messageId: messageId!,
+              partId: _openTextPartId!,
+              fullText: fullText,
+              model: model,
+              timestamp: now,
+            ),
+          );
+          _openTextPartId = null;
+          _fullText.clear();
+        }
 
-    await repository.appendEvent(
-      StepEnded(
-        sessionId: sessionId,
-        stepNumber: 1,
-        tokensInput: tokensInput,
-        tokensOutput: tokensOutput,
-        tokensReasoning: tokensReasoning,
-        tokensCacheRead: tokensCacheRead,
-        tokensCacheWrite: tokensCacheWrite,
-        timestamp: now,
-      ),
-    );
+        // Close any open reasoning if there is reasoning content to close
+        if (_openReasoningPartId != null && messageId != null) {
+          final reasonText = reasoning ??
+              (_fullReasoning.isEmpty ? '' : _fullReasoning.toString());
+          await repository.appendEvent(
+            ReasoningEnded(
+              sessionId: sessionId,
+              messageId: messageId!,
+              partId: _openReasoningPartId!,
+              fullReasoning: reasonText,
+              timestamp: now,
+            ),
+          );
+          _openReasoningPartId = null;
+          _fullReasoning.clear();
+        }
 
-    final loaded = await repository.loadSession(sessionId);
-    return loaded ??
-        SessionState(id: sessionId, createdAt: now, updatedAt: now);
-  }
+        await repository.appendEvent(
+          StepEnded(
+            sessionId: sessionId,
+            stepNumber: 1,
+            tokensInput: tokensInput,
+            tokensOutput: tokensOutput,
+            tokensReasoning: tokensReasoning,
+            tokensCacheRead: tokensCacheRead,
+            tokensCacheWrite: tokensCacheWrite,
+            timestamp: now,
+          ),
+        );
 
-  Future<void> onError(Object error) async {
-    await repository.appendEvent(
-      StepFailed(
-        sessionId: sessionId,
-        stepNumber: 1,
-        error: error.toString(),
-        timestamp: DateTime.now(),
-      ),
-    );
-  }
+        final loaded = await repository.loadSession(sessionId);
+        return loaded ??
+            SessionState(id: sessionId, createdAt: now, updatedAt: now);
+      });
+
+  /// Flush any buffered deltas and close open parts before recording the
+  /// failure, so the event store never contains a part left open (no
+  /// corresponding `*Ended` event) on the error path.
+  Future<void> onError(Object error) => _lock.synchronized(() async {
+        if (_finalized) return;
+        _finalized = true;
+        final now = DateTime.now();
+        await _flushTextDeltas();
+        if (_openTextPartId != null && messageId != null) {
+          await repository.appendEvent(
+            TextEnded(
+              sessionId: sessionId,
+              messageId: messageId!,
+              partId: _openTextPartId!,
+              fullText: _fullText.toString(),
+              timestamp: now,
+            ),
+          );
+          _openTextPartId = null;
+          _fullText.clear();
+        }
+        await _flushReasoningDeltas();
+        if (_openReasoningPartId != null && messageId != null) {
+          await repository.appendEvent(
+            ReasoningEnded(
+              sessionId: sessionId,
+              messageId: messageId!,
+              partId: _openReasoningPartId!,
+              fullReasoning: _fullReasoning.toString(),
+              timestamp: now,
+            ),
+          );
+          _openReasoningPartId = null;
+          _fullReasoning.clear();
+        }
+        await repository.appendEvent(
+          StepFailed(
+            sessionId: sessionId,
+            stepNumber: 1,
+            error: error.toString(),
+            timestamp: now,
+          ),
+        );
+      });
 
   Future<void> publishUserMessage({
     required String content,
     String? messageId,
-  }) async {
-    if (!initialized) return;
-    final id = messageId ?? _genMessageId();
-    await repository.appendEvent(
-      MessageAdded(
-        sessionId: sessionId,
-        messageId: id,
-        role: 'user',
-        content: content,
-        timestamp: DateTime.now(),
-      ),
-    );
-  }
+  }) =>
+      _lock.synchronized(() async {
+        if (!initialized) return;
+        final id = messageId ?? _genMessageId();
+        await repository.appendEvent(
+          MessageAdded(
+            sessionId: sessionId,
+            messageId: id,
+            role: 'user',
+            content: content,
+            timestamp: DateTime.now(),
+          ),
+        );
+      });
 
   Future<void> onTaskStart({
     required String partId,
     required String description,
     required String agent,
     String? sessionId,
-  }) async {
-    if (!initialized) return;
-    await repository.appendEvent(
-      TaskPartStarted(
-        sessionId: this.sessionId,
-        partId: partId,
-        description: description,
-        agent: agent,
-        taskSessionId: sessionId,
-        timestamp: DateTime.now(),
-      ),
-    );
-  }
+  }) =>
+      _lock.synchronized(() async {
+        if (!initialized) return;
+        await repository.appendEvent(
+          TaskPartStarted(
+            sessionId: this.sessionId,
+            partId: partId,
+            description: description,
+            agent: agent,
+            taskSessionId: sessionId,
+            timestamp: DateTime.now(),
+          ),
+        );
+      });
 
-  Future<void> onTaskEnd(String partId) async {
-    if (!initialized) return;
-    await repository.appendEvent(
-      TaskPartCompleted(
-        sessionId: sessionId,
-        partId: partId,
-        timestamp: DateTime.now(),
-      ),
-    );
-  }
+  Future<void> onTaskEnd(String partId) => _lock.synchronized(() async {
+        if (!initialized) return;
+        await repository.appendEvent(
+          TaskPartCompleted(
+            sessionId: sessionId,
+            partId: partId,
+            timestamp: DateTime.now(),
+          ),
+        );
+      });
 
-  Future<void> onTaskError(String partId, String error) async {
-    if (!initialized) return;
-    await repository.appendEvent(
-      TaskPartError(
-        sessionId: sessionId,
-        partId: partId,
-        error: error,
-        timestamp: DateTime.now(),
-      ),
-    );
-  }
+  Future<void> onTaskError(String partId, String error) =>
+      _lock.synchronized(() async {
+        if (!initialized) return;
+        await repository.appendEvent(
+          TaskPartError(
+            sessionId: sessionId,
+            partId: partId,
+            error: error,
+            timestamp: DateTime.now(),
+          ),
+        );
+      });
 
   void dispose() {
     _startedToolCalls.clear();

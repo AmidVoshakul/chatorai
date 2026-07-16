@@ -136,16 +136,19 @@ class ProviderCatalogService {
   /// Without this, [configuredProvidersProvider] cannot detect providers that
   /// have API keys stored from previous sessions.
   Future<void> preloadApiKeys() async {
-    for (final p in _providers) {
-      if (!_apiKeyCache.containsKey(p.id)) {
+    // Read every provider's secure key concurrently instead of sequentially,
+    // so startup is bounded by the single slowest read rather than the sum.
+    await Future.wait(
+      _providers.map((p) async {
+        if (_apiKeyCache.containsKey(p.id)) return;
         final key = await _secureStorage.read(
           key: '${_PrefKeys.apiKey}${p.id}',
         );
         if (key != null && key.isNotEmpty) {
           _apiKeyCache[p.id] = key;
         }
-      }
-    }
+      }),
+    );
     await _migrateProviderEnabled();
   }
 
@@ -608,11 +611,15 @@ class ProviderCatalogService {
   // INTERNAL
   // ===========================================================================
 
+  /// Matches trailing truncation markers (e.g. "..." from OpenRouter-style
+  /// 512-char description caps). Compiled once, not per call.
+  static final RegExp _truncationPattern = RegExp(r'\.\.\..*$');
+
   /// Remove provider-side truncation markers (e.g. trailing "..." from
   /// OpenRouter-style 512-char description caps).
   static String _stripTruncation(String desc) {
     final trimmed = desc.trimRight();
-    final cleaned = trimmed.replaceAll(RegExp(r'\.\.\..*$'), '').trimRight();
+    final cleaned = trimmed.replaceAll(_truncationPattern, '').trimRight();
     return cleaned;
   }
 

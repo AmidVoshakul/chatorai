@@ -27,6 +27,9 @@ class KeyActivator {
 
   const KeyActivator.arrowUp() : this._(key: LogicalKeyboardKey.arrowUp);
 
+  const KeyActivator.ctrlTab()
+    : this._(key: LogicalKeyboardKey.tab, ctrl: true);
+
   bool matches(KeyEvent event) {
     if (event is! KeyDownEvent) return false;
     if (event.logicalKey != key) return false;

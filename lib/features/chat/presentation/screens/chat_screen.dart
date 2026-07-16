@@ -301,6 +301,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         isActive: (r) => r.read(chatScreenProvider).isStreaming,
       ),
       AppShortcuts.openLatestChildSession(_navigateToLastChildSession),
+      AppShortcuts.cyclePrimaryAgent(_cycleAgent),
     ];
 
     return ShortcutHandler(shortcuts: shortcuts, child: screenContent);
@@ -355,5 +356,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         ),
       );
     }
+  }
+
+  void _cycleAgent() {
+    final primaryAgents = AgentRegistry().getPrimaryAgents();
+    if (primaryAgents.length <= 1) return;
+    final currentAgent = ref.read(currentAgentProvider);
+    final currentIndex =
+        primaryAgents.indexWhere((a) => a.id == currentAgent.id);
+    final nextIndex = (currentIndex + 1) % primaryAgents.length;
+    ref
+        .read(currentAgentProvider.notifier)
+        .setAgent(primaryAgents[nextIndex]);
   }
 }

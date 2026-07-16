@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/models/provider_config.dart';
@@ -34,7 +35,7 @@ void main() {
       final now = DateTime.now().millisecondsSinceEpoch;
       SharedPreferences.setMockInitialValues({
         'catalog_discovered_at_openrouter': now,
-        'catalog_cache_version': 4,
+        'catalog_cache_version': 5,
       });
       final prefs = await SharedPreferences.getInstance();
       final mockStorage = MockSecureStorageService();
@@ -68,6 +69,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ModelSelectionDialog(
               providerId: 'openrouter',
@@ -102,7 +105,7 @@ void main() {
       final now = DateTime.now().millisecondsSinceEpoch;
       SharedPreferences.setMockInitialValues({
         'catalog_discovered_at_openrouter': now,
-        'catalog_cache_version': 4,
+        'catalog_cache_version': 5,
       });
       final prefs = await SharedPreferences.getInstance();
       final mockStorage = MockSecureStorageService();
@@ -132,6 +135,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ModelSelectionDialog(
               providerId: 'openrouter',
@@ -168,7 +173,7 @@ void main() {
       final now = DateTime.now().millisecondsSinceEpoch;
       SharedPreferences.setMockInitialValues({
         'catalog_discovered_at_openrouter': now,
-        'catalog_cache_version': 4,
+        'catalog_cache_version': 5,
       });
       final prefs = await SharedPreferences.getInstance();
       final mockStorage = MockSecureStorageService();
@@ -204,6 +209,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ModelSelectionDialog(
               providerId: 'openrouter',
@@ -237,7 +244,7 @@ void main() {
       final now = DateTime.now().millisecondsSinceEpoch;
       SharedPreferences.setMockInitialValues({
         'catalog_discovered_at_openrouter': now,
-        'catalog_cache_version': 4,
+        'catalog_cache_version': 5,
       });
       final prefs = await SharedPreferences.getInstance();
       final mockStorage = MockSecureStorageService();
@@ -271,6 +278,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ModelSelectionDialog(
               providerId: 'openrouter',
@@ -319,7 +328,7 @@ void main() {
       final now = DateTime.now().millisecondsSinceEpoch;
       SharedPreferences.setMockInitialValues({
         'catalog_discovered_at_openrouter': now,
-        'catalog_cache_version': 4,
+        'catalog_cache_version': 5,
       });
       final prefs = await SharedPreferences.getInstance();
       final mockStorage = MockSecureStorageService();
@@ -349,6 +358,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ModelSelectionDialog(
               providerId: 'openrouter',
@@ -392,7 +403,7 @@ void main() {
       final now = DateTime.now().millisecondsSinceEpoch;
       SharedPreferences.setMockInitialValues({
         'catalog_discovered_at_openrouter': now,
-        'catalog_cache_version': 4,
+        'catalog_cache_version': 5,
       });
       final prefs = await SharedPreferences.getInstance();
       final mockStorage = MockSecureStorageService();
@@ -422,6 +433,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ModelSelectionDialog(
               providerId: 'openrouter',
@@ -453,7 +466,7 @@ void main() {
       final now = DateTime.now().millisecondsSinceEpoch;
       SharedPreferences.setMockInitialValues({
         'catalog_discovered_at_openrouter': now,
-        'catalog_cache_version': 4,
+        'catalog_cache_version': 5,
       });
       final prefs = await SharedPreferences.getInstance();
       final mockStorage = MockSecureStorageService();
@@ -481,6 +494,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ModelSelectionDialog(
               providerId: 'openrouter',
@@ -515,7 +530,7 @@ void main() {
       final now = DateTime.now().millisecondsSinceEpoch;
       SharedPreferences.setMockInitialValues({
         'catalog_discovered_at_openrouter': now,
-        'catalog_cache_version': 4,
+        'catalog_cache_version': 5,
       });
       final prefs = await SharedPreferences.getInstance();
       final mockStorage = MockSecureStorageService();
@@ -543,6 +558,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ModelSelectionDialog(
               providerId: 'openrouter',
@@ -577,7 +594,7 @@ void main() {
       final now = DateTime.now().millisecondsSinceEpoch;
       SharedPreferences.setMockInitialValues({
         'catalog_discovered_at_openrouter': now,
-        'catalog_cache_version': 4,
+        'catalog_cache_version': 5,
       });
       final prefs = await SharedPreferences.getInstance();
       final mockStorage = MockSecureStorageService();
@@ -606,6 +623,8 @@ void main() {
       // Use invalid initialSelectedIds — the dialog should fall back to empty
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ModelSelectionDialog(
               providerId: 'openrouter',
@@ -637,7 +656,7 @@ void main() {
       final now = DateTime.now().millisecondsSinceEpoch;
       SharedPreferences.setMockInitialValues({
         'catalog_discovered_at_openrouter': now,
-        'catalog_cache_version': 4,
+        'catalog_cache_version': 5,
       });
       final prefs = await SharedPreferences.getInstance();
       final mockStorage = MockSecureStorageService();
@@ -667,6 +686,8 @@ void main() {
       // Use a valid initialSelectedId
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ModelSelectionDialog(
               providerId: 'openrouter',
@@ -696,7 +717,7 @@ void main() {
       final now = DateTime.now().millisecondsSinceEpoch;
       SharedPreferences.setMockInitialValues({
         'catalog_discovered_at_openrouter': now,
-        'catalog_cache_version': 4,
+        'catalog_cache_version': 5,
       });
       final prefs = await SharedPreferences.getInstance();
       final mockStorage = MockSecureStorageService();
@@ -717,6 +738,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ModelSelectionDialog(
               providerId: 'openrouter',
@@ -744,7 +767,7 @@ void main() {
       final now = DateTime.now().millisecondsSinceEpoch;
       SharedPreferences.setMockInitialValues({
         'catalog_discovered_at_openrouter': now,
-        'catalog_cache_version': 4,
+        'catalog_cache_version': 5,
       });
       final prefs = await SharedPreferences.getInstance();
       final mockStorage = MockSecureStorageService();
@@ -778,6 +801,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ModelSelectionDialog(
               providerId: 'openrouter',

@@ -1,13 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ui' show PlatformDispatcher;
 
-import 'package:chatorai/core/agents/agent_registry.dart';
-import 'package:chatorai/core/config/config_initializer.dart';
-import 'package:chatorai/core/config/config_loader.dart';
-import 'package:chatorai/core/config/models/chatorai_config.dart';
-import 'package:chatorai/core/mcp/mcp_client_service.dart';
-import 'package:chatorai/core/tools/tool_output_persistence.dart';
+import 'package:chatorai/features/bootstrap/bootstrap_error_screen.dart';
+import 'package:chatorai/features/bootstrap/splash_screen.dart';
 import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/permission_overlay.dart';
 import 'package:chatorai/features/settings/screens/settings_screen.dart';
@@ -15,7 +10,6 @@ import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/logger.dart';
-import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:chatorai/shared/widgets/network_aware_widget.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -29,8 +23,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await XdgPaths.init();
-  await ConfigInitializer.ensureGlobalConfig();
 
   LogConfig.enabled = true;
   LogConfig.minimumLevel = LogLevel.debug;
@@ -57,25 +49,9 @@ void main() async {
     return platformHandler?.call(error, estack) ?? false;
   };
 
-  ToolOutputPersistence.instance.initialize();
-
-  // Initialize agent registry with config
-  ChatOrAIConfig? config;
-  try {
-    final rawJson = await ConfigLoader.load();
-    final data = json.decode(rawJson) as Map<String, dynamic>;
-    config = ChatOrAIConfig.fromJson(data);
-  } catch (e, st) {
-    LogTags.config.logError('Failed to load config', e, st);
-  }
-  await AgentRegistry().init(config);
-
-  // Eager MCP start: begin connecting servers in background so toolRegistry
-  // is ready by the time the user sends their first message.
-  if (config?.mcp != null && config!.mcp!.servers.isNotEmpty) {
-    unawaited(McpClientService.instance.initialize(config.mcp!));
-  }
-
+  // Вся тяжёлая инициализация (XdgPaths, конфиг, AgentRegistry, catalog/
+  // preloadApiKeys, MCP) вынесена в appBootstrapProvider и выполняется за
+  // первым кадром. Splash-экран показывается сразу после runApp().
   runApp(const ProviderScope(child: ChatoraiApp()));
 }
 
@@ -90,6 +66,7 @@ class ChatoraiApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final languageState = ref.watch(languageProvider);
     final themeState = ref.watch(themeProvider);
+    final bootstrap = ref.watch(appBootstrapProvider);
     final theme = themeState.getTheme();
     final locale = Locale(languageState.selectedLanguage);
 
@@ -118,8 +95,12 @@ class ChatoraiApp extends ConsumerWidget {
       locale: locale,
       theme: theme,
       debugShowCheckedModeBanner: false,
-      home: const PermissionOverlay(
-        child: NetworkAwareWidget(child: ChatScreen()),
+      home: bootstrap.when(
+        loading: () => const SplashScreen(),
+        error: (e, _) => const BootstrapErrorScreen(),
+        data: (_) => const PermissionOverlay(
+          child: NetworkAwareWidget(child: ChatScreen()),
+        ),
       ),
       routes: {'/settings': (context) => const SettingsScreen()},
       builder: (context, child) {

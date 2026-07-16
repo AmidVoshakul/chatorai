@@ -112,6 +112,14 @@
   "loadingMsg5": "تحميل الإجابة (تقريبًا)…",
   "failedToSendMessage": "فشل في إرسال الرسالة",
   "retry": "إعادة المحاولة",
+  "bootstrapErrorTitle": "تعذر تشغيل التطبيق",
+  "bootstrapErrorBody": "تحقق من الإعدادات وحاول مرة أخرى.",
+  "@bootstrapErrorTitle": {
+    "description": "Title shown on the bootstrap error screen when app initialization fails"
+  },
+  "@bootstrapErrorBody": {
+    "description": "Body text shown on the bootstrap error screen"
+  },
   "enterYourMessage": "أدخل رسالتك...",
   "saveAndSend": "حفظ وإرسال",
   "messageEditedSuccessfully": "تم تعديل الرسالة بنجاح",

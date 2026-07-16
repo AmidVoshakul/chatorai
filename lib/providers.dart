@@ -27,3 +27,5 @@ export 'package:chatorai/features/models/providers/models_provider.dart'
 export 'package:chatorai/features/settings/providers/model_settings_provider.dart';
 // Core: Theme
 export 'package:chatorai/shared/theme/theme_provider.dart';
+// Feature: Bootstrap (startup initialization)
+export 'package:chatorai/features/bootstrap/bootstrap_provider.dart';

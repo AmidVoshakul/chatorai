@@ -56,4 +56,13 @@ class AppShortcuts {
       onExecute: (_, _) => onExecute(),
     );
   }
+
+  static KeyboardShortcut cyclePrimaryAgent(void Function() onExecute) {
+    return KeyboardShortcut(
+      id: 'cycle_primary_agent',
+      description: 'Cycle primary agent (Ctrl+Tab)',
+      activator: const KeyActivator.ctrlTab(),
+      onExecute: (_, _) => onExecute(),
+    );
+  }
 }

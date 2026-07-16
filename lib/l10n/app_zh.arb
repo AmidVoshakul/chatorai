@@ -112,6 +112,14 @@
   "loadingMsg5": "加载答案（即将完成）…",
   "failedToSendMessage": "无法发送消息",
   "retry": "重试",
+  "bootstrapErrorTitle": "启动应用失败",
+  "bootstrapErrorBody": "请检查配置后重试。",
+  "@bootstrapErrorTitle": {
+    "description": "Title shown on the bootstrap error screen when app initialization fails"
+  },
+  "@bootstrapErrorBody": {
+    "description": "Body text shown on the bootstrap error screen"
+  },
   "enterYourMessage": "输入您的消息...",
   "saveAndSend": "保存并发送",
   "messageEditedSuccessfully": "消息编辑成功",

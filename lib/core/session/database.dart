@@ -21,7 +21,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -43,6 +43,30 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 4) {
           await mgr.createTable(sessionSnapshots);
+        }
+        if (from < 5) {
+          // Secondary indexes added in v5 to avoid full scans on the
+          // per-session queries (event load/stream, message load, etc.).
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_events_session_seq '
+            'ON events(session_id, sequence)',
+          );
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_messages_session_seq '
+            'ON messages(session_id, seq)',
+          );
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_tool_results_session '
+            'ON tool_results(session_id)',
+          );
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_context_epochs_session '
+            'ON context_epochs(session_id)',
+          );
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_session_snapshots_session '
+            'ON session_snapshots(session_id)',
+          );
         }
       },
     );

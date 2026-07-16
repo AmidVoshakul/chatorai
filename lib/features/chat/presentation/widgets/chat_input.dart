@@ -11,6 +11,7 @@ import 'package:chatorai/features/chat/presentation/widgets/chat_input/popup_con
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/send_message_handler.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/slash_command_handler.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/speech_input_handler.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input_status_bar.dart';
 import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
@@ -64,6 +65,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
   final AgentHighlightController _textController = AgentHighlightController();
   final GlobalKey _textFieldKey = GlobalKey(); // for popup positioning
   Timer? _plusTimer;
+  bool _hasText = false;
   final GlobalKey _plusKey = GlobalKey();
   final GlobalKey _settingsKey = GlobalKey();
   final GlobalKey _agentKey = GlobalKey();
@@ -118,8 +120,14 @@ class _ChatInputState extends ConsumerState<ChatInput>
     _textController.addListener(_onTextChanged);
   }
 
+  bool get _hasNonEmptyText => _textController.text.trim().isNotEmpty;
+
   void _onTextChanged() {
-    if (mounted) setState(() {});
+    final hasText = _hasNonEmptyText;
+    if (hasText != _hasText) {
+      _hasText = hasText;
+      if (mounted) setState(() {});
+    }
     detectAgentMentionListener();
     detectSlashCommandListener();
   }
@@ -236,7 +244,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
     const double buttonSize = 44.0;
     const double iconSize = ChatoraiIconSizes.buttonIcon;
     const double sidePadding = ChatoraiSpacing.lg;
-    const double bottomPadding = ChatoraiSpacing.md;
+    const double bottomPadding = ChatoraiSpacing.xs;
 
     final keyboardBindings = <ShortcutActivator, VoidCallback>{
       // Tab: navigate agent, command, or skills popup
@@ -329,7 +337,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
       ),
     );
 
-    final hasText = _textController.text.trim().isNotEmpty;
+    final hasText = _hasNonEmptyText;
     final hasAttachment = chatInputState.attachedFilePath != null;
     final currentAgent = ref.watch(currentAgentProvider);
 
@@ -412,10 +420,22 @@ class _ChatInputState extends ConsumerState<ChatInput>
             InputLayoutBuilder.buildContainer(
               isMobile: isMobile,
               theme: theme,
-              child: layoutChild,
+              // На мобильном layout статус-бар живёт внутри того же
+              // контейнера, что и поле ввода — единый фон, без видимого шва.
+              child: isMobile
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        layoutChild,
+                        const ChatInputStatusBar(),
+                      ],
+                    )
+                  : layoutChild,
             ),
           ],
         ),
+        // На desktop — статус-бар снаружи (фон прозрачный, как и контейнер).
+        if (!isMobile) const ChatInputStatusBar(),
       ],
     );
   }

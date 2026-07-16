@@ -355,6 +355,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get retry => 'إعادة المحاولة';
 
   @override
+  String get bootstrapErrorTitle => 'تعذر تشغيل التطبيق';
+
+  @override
+  String get bootstrapErrorBody => 'تحقق من الإعدادات وحاول مرة أخرى.';
+
+  @override
   String get enterYourMessage => 'أدخل رسالتك...';
 
   @override

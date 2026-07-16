@@ -112,6 +112,14 @@
   "loadingMsg5": "Загружаю ответ (почти)…",
   "failedToSendMessage": "Не удалось отправить сообщение",
   "retry": "Повторить",
+  "bootstrapErrorTitle": "Не удалось запустить приложение",
+  "bootstrapErrorBody": "Проверьте конфигурацию и повторите попытку.",
+  "@bootstrapErrorTitle": {
+    "description": "Title shown on the bootstrap error screen when app initialization fails"
+  },
+  "@bootstrapErrorBody": {
+    "description": "Body text shown on the bootstrap error screen"
+  },
   "enterYourMessage": "Введите ваше сообщение...",
   "saveAndSend": "Сохранить и отправить",
   "messageEditedSuccessfully": "Сообщение успешно отредактировано",
@@ -334,7 +342,7 @@
   "temperatureDescription": "Более высокие значения делают вывод более случайным",
   "toggleNavigatorTooltip": "Переключить навигацию",
   "userPromptSuggestion": "Чем могу помочь сегодня?",
-  "versionLabel": "Версия",
+  "versionLabel": "Версия:",
   "welcomeGreeting1": "Добро пожаловать!",
   "welcomeGreeting2": "Чем я могу помочь?",
   "welcomeGreeting3": "Спросите меня о чем угодно",

@@ -355,6 +355,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get retry => '再試行';
 
   @override
+  String get bootstrapErrorTitle => 'アプリの起動に失敗しました';
+
+  @override
+  String get bootstrapErrorBody => '設定を確認してもう一度お試しください。';
+
+  @override
   String get enterYourMessage => 'あなたのメッセージを入力してください...';
 
   @override

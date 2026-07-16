@@ -355,6 +355,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get retry => 'Повторить';
 
   @override
+  String get bootstrapErrorTitle => 'Не удалось запустить приложение';
+
+  @override
+  String get bootstrapErrorBody => 'Проверьте конфигурацию и повторите попытку.';
+
+  @override
   String get enterYourMessage => 'Введите ваше сообщение...';
 
   @override
@@ -1087,7 +1093,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get userPromptSuggestion => 'Чем могу помочь сегодня?';
 
   @override
-  String get versionLabel => 'Версия';
+  String get versionLabel => 'Версия:';
 
   @override
   String get welcomeGreeting1 => 'Добро пожаловать!';

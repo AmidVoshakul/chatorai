@@ -32,7 +32,9 @@ final sessionPartsProvider = StreamProvider.family<SessionState, String>((
   }
   yield state;
 
-  await for (final batch in repo.eventStore.streamEvents(sid)) {
+  // Cursor-based tail: only events appended after the initial snapshot are
+  // re-fetched/deserialized per emit, not the whole event history.
+  await for (final batch in repo.eventStore.streamEventsSince(sid, lastSeq)) {
     final newEvents = batch.where((e) => e.sequence > lastSeq).toList();
     if (newEvents.isEmpty) continue;
 

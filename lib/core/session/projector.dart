@@ -798,19 +798,22 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
       :final tokensCacheRead,
       :final tokensCacheWrite,
     ):
-      final current = await (db.select(
-        db.sessions,
-      )..where((s) => s.id.equals(event.sessionId.value))).getSingle();
       await (db.update(
         db.sessions,
       )..where((s) => s.id.equals(event.sessionId.value))).write(
-        SessionsCompanion(
-          tokensInput: Value(current.tokensInput + tokensInput),
-          tokensOutput: Value(current.tokensOutput + tokensOutput),
-          tokensReasoning: Value(current.tokensReasoning + tokensReasoning),
-          tokensCacheRead: Value(current.tokensCacheRead + tokensCacheRead),
-          tokensCacheWrite: Value(current.tokensCacheWrite + tokensCacheWrite),
-          updatedAt: Value(event.timestamp),
+        SessionsCompanion.custom(
+          tokensInput: CustomExpression<int>('tokens_input + $tokensInput'),
+          tokensOutput: CustomExpression<int>('tokens_output + $tokensOutput'),
+          tokensReasoning: CustomExpression<int>(
+            'tokens_reasoning + $tokensReasoning',
+          ),
+          tokensCacheRead: CustomExpression<int>(
+            'tokens_cache_read + $tokensCacheRead',
+          ),
+          tokensCacheWrite: CustomExpression<int>(
+            'tokens_cache_write + $tokensCacheWrite',
+          ),
+          updatedAt: Constant(event.timestamp),
         ),
       );
 

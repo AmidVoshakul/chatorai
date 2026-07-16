@@ -125,15 +125,19 @@ echo "Step 5: Creating launcher..."
 
 cat > /usr/local/bin/chatorai << 'EOF'
 #!/bin/bash
-cd /usr/local/lib/chatorai
+INSTALL_DIR="/usr/local/lib/chatorai"
 
-# Auto-switch to software rendering if needed
-if [ -f ".force_soft_gl" ]; then
+# Auto-switch to software rendering if needed.
+# Reference the flag file by absolute path so we don't need to cd into the
+# install directory — that would otherwise override the user's launch cwd,
+# breaking Directory.current-based tooling (bash/glob/grep/read/write).
+if [ -f "$INSTALL_DIR/.force_soft_gl" ]; then
     export LIBGL_ALWAYS_SOFTWARE=1
     export GALLIUM_DRIVER=llvmpipe
 fi
 
-exec ./chatorai "$@"
+# Launch the binary by absolute path, preserving the caller's working directory.
+exec "$INSTALL_DIR/chatorai" "$@"
 EOF
 
 chmod +x /usr/local/bin/chatorai

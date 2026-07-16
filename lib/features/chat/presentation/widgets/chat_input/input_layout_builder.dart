@@ -73,7 +73,12 @@ class InputLayoutBuilder {
     return Container(
       padding: isMobile
           ? const EdgeInsets.only(top: ChatoraiSpacing.lg)
-          : const EdgeInsets.all(ChatoraiSpacing.lg),
+          : const EdgeInsets.fromLTRB(
+              ChatoraiSpacing.lg,
+              ChatoraiSpacing.lg,
+              ChatoraiSpacing.lg,
+              ChatoraiSpacing.xs,
+            ),
       decoration: BoxDecoration(
         color: isMobile
             ? (theme.brightness == Brightness.dark
@@ -231,7 +236,7 @@ class InputLayoutBuilder {
           onTap: config.onModelSettings,
           tooltip: localizations.modelSettingsTooltip,
           child: Icon(
-            Icons.settings_input_component_outlined,
+            Icons.tune,
             color: theme.iconTheme.color,
           ),
         ),
@@ -372,7 +377,7 @@ class InputLayoutBuilder {
           onTap: onModelSettings,
           tooltip: localizations.modelSettingsTooltip,
           child: Icon(
-            Icons.settings_input_component_outlined,
+            Icons.tune,
             size: iconSize,
             color: theme.iconTheme.color,
           ),
@@ -433,8 +438,16 @@ class InputLayoutBuilder {
     final isIdle = chatInputState.speechUiState == SpeechUiState.idle;
     final showGradient = (hasText || hasAttachment) || !isIdle;
 
+    final localizations = AppLocalizations.of(context)!;
+    final actionTooltip = isListening
+        ? localizations.stopListening
+        : (hasText || hasAttachment)
+            ? localizations.sendMessage
+            : localizations.startListening;
+
     return InputWidgetBuilders.buildActionButton(
       buttonSize: buttonSize,
+      tooltip: actionTooltip,
       gradient: showGradient
           ? LinearGradient(
               colors: [

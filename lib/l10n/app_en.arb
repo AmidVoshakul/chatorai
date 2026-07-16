@@ -112,6 +112,14 @@
   "loadingMsg5": "Loading response (almost)…",
   "failedToSendMessage": "Failed to send message",
   "retry": "Retry",
+  "bootstrapErrorTitle": "Failed to start the app",
+  "bootstrapErrorBody": "Check your configuration and try again.",
+  "@bootstrapErrorTitle": {
+    "description": "Title shown on the bootstrap error screen when app initialization fails"
+  },
+  "@bootstrapErrorBody": {
+    "description": "Body text shown on the bootstrap error screen"
+  },
   "enterYourMessage": "Enter your message",
   "saveAndSend": "Save and send",
   "messageEditedSuccessfully": "Message edited successfully",
@@ -352,7 +360,7 @@
   "temperatureDescription": "Higher values make output more random",
   "toggleNavigatorTooltip": "Toggle navigation",
   "userPromptSuggestion": "How can I help you today?",
-  "versionLabel": "Version",
+  "versionLabel": "Version:",
   "welcomeGreeting1": "Welcome!",
   "welcomeGreeting2": "How can I help you?",
   "welcomeGreeting3": "Ask me anything",

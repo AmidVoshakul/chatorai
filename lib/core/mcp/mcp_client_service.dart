@@ -66,7 +66,8 @@ class McpClientService {
       _initCompleter!.complete();
     } catch (e, st) {
       LogTags.mcp.logError('McpClientService.initialize failed', e, st);
-      _initCompleter!.completeError(e, st);
+      _initialized = false;
+      _initCompleter = null;
       rethrow;
     }
 

@@ -100,6 +100,24 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
 
   List<MarkdownHeadingInfoWithKey> _headings = [];
 
+  /// Cache of non-synthetic messages, keyed on the source messages list
+  /// reference. The list reference changes exactly when messages are added or
+  /// removed, so this avoids re-allocating + re-filtering the full list on
+  /// every build (e.g. while streaming parts update via chatScreenProvider).
+  List<Message>? _cachedVisibleMessages;
+  List<Message>? _cachedSourceList;
+
+  List<Message> get _visibleMessages {
+    final source = widget.chat?.messages;
+    if (_cachedSourceList == source && _cachedVisibleMessages != null) {
+      return _cachedVisibleMessages!;
+    }
+    _cachedSourceList = source;
+    _cachedVisibleMessages =
+        source?.where((m) => !m.synthetic).toList() ?? const [];
+    return _cachedVisibleMessages!;
+  }
+
   @override
   bool get wantKeepAlive => true;
 
@@ -255,8 +273,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
 
     final theme = Theme.of(context);
 
-    final messages =
-        widget.chat?.messages.where((m) => !m.synthetic).toList() ?? [];
+    final messages = _visibleMessages;
     final hasMessages = messages.isNotEmpty;
     final hasAssistantMessage =
         hasMessages && messages.last.role == MessageRole.assistant;

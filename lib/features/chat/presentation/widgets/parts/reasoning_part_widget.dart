@@ -1,4 +1,5 @@
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_shimmer_text.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/theme/markdown_styles.dart';
@@ -23,46 +24,29 @@ class ReasoningPartWidget extends StatefulWidget {
   State<ReasoningPartWidget> createState() => _ReasoningPartWidgetState();
 }
 
-class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
-    with TickerProviderStateMixin {
+class _ReasoningPartWidgetState extends State<ReasoningPartWidget> {
   late bool _isExpanded;
 
   Duration? _thoughtDuration;
 
-  late final AnimationController _shimmerController;
-  late final Animation<double> _shimmerAnimation;
+  String? _lastContent;
+  Widget? _cachedContent;
+  String? _lastThemeKey;
 
   @override
   void initState() {
     super.initState();
-    _shimmerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    );
-    _shimmerAnimation = Tween<double>(begin: -1, end: 1).animate(
-      CurvedAnimation(parent: _shimmerController, curve: Curves.linear),
-    );
-
-    if (widget.part.isStreaming) {
-      _shimmerController.repeat();
-    }
     _isExpanded = widget.expandByDefault;
   }
 
   @override
   void didUpdateWidget(ReasoningPartWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.part.isStreaming) {
-      if (!_shimmerController.isAnimating) _shimmerController.repeat();
-    } else {
-      _shimmerController.stop();
-      _shimmerController.value = 0;
-
-      if (oldWidget.part.isStreaming &&
-          widget.part.startedAt != null &&
-          _thoughtDuration == null) {
-        _thoughtDuration = DateTime.now().difference(widget.part.startedAt!);
-      }
+    if (!widget.part.isStreaming &&
+        oldWidget.part.isStreaming &&
+        widget.part.startedAt != null &&
+        _thoughtDuration == null) {
+      _thoughtDuration = DateTime.now().difference(widget.part.startedAt!);
     }
 
     if (oldWidget.expandByDefault != widget.expandByDefault) {
@@ -71,9 +55,16 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
   }
 
   @override
-  void dispose() {
-    _shimmerController.dispose();
-    super.dispose();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Markdown styling is derived from the theme; invalidate the memoized
+    // content when the brightness changes so it re-parses with fresh styles.
+    final themeKey = Theme.of(context).brightness.toString();
+    if (_lastThemeKey != themeKey) {
+      _lastThemeKey = themeKey;
+      _cachedContent = null;
+      _lastContent = null;
+    }
   }
 
   @override
@@ -81,42 +72,59 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context);
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(ChatoraiSpacing.sm),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-        ),
-        child: Opacity(
-          opacity: ChatoraiOpacity.low,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildHeader(localizations, theme),
-              AnimatedCrossFade(
-                firstChild: const SizedBox.shrink(),
-                secondChild: Padding(
-                  padding: const EdgeInsets.only(top: ChatoraiSpacing.sm),
-                  child: _buildContent(),
-                ),
-                crossFadeState: _isExpanded
-                    ? CrossFadeState.showSecond
-                    : CrossFadeState.showFirst,
-                duration: const Duration(milliseconds: 200),
-              ),
-            ],
+    final isStreaming = widget.part.isStreaming;
+    final card = isStreaming
+        ? Container(
+            padding: const EdgeInsets.all(ChatoraiSpacing.sm),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+            ),
+            child: _cardContent(theme, localizations),
+          )
+        : AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(ChatoraiSpacing.sm),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+            ),
+            child: _cardContent(theme, localizations),
+          );
+    return Align(alignment: Alignment.centerLeft, child: card);
+  }
+
+  Widget _cardContent(ThemeData theme, AppLocalizations? localizations) {
+    return Opacity(
+      opacity: ChatoraiOpacity.low,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHeader(localizations, theme),
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.only(top: ChatoraiSpacing.sm),
+              child: _buildContent(),
+            ),
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildContent() {
+    // Memoize the parsed markdown so unrelated rebuilds (scroll, theme,
+    // parent state changes) don't re-parse the full reasoning text. Only a
+    // content change rebuilds it.
+    if (_lastContent == widget.part.content && _cachedContent != null) {
+      return _cachedContent!;
+    }
     final theme = Theme.of(context);
-    return DefaultTextStyle(
+    final content = DefaultTextStyle(
       style: theme.textTheme.bodySmall ?? const TextStyle(fontSize: 12),
       child: MarkdownBody(
         data: widget.part.content,
@@ -124,6 +132,9 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
         selectable: true,
       ),
     );
+    _lastContent = widget.part.content;
+    _cachedContent = content;
+    return content;
   }
 
   String? get _displayDuration {
@@ -142,40 +153,17 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget>
       return GestureDetector(
         onTap: () => setState(() => _isExpanded = !_isExpanded),
         behavior: HitTestBehavior.opaque,
-        child: AnimatedBuilder(
-          animation: _shimmerAnimation,
-          builder: (context, child) {
-            return Row(
-              children: [
-                SpinKitCircle(color: orange, size: 16),
-                const SizedBox(width: 8),
-                ShaderMask(
-                  shaderCallback: (bounds) {
-                    return LinearGradient(
-                      begin: Alignment(-1 + _shimmerAnimation.value, 0),
-                      end: Alignment(1 + _shimmerAnimation.value, 0),
-                      colors: [
-                        orange.withValues(alpha: 0.35),
-                        orange,
-                        orange.withValues(alpha: 0.35),
-                      ],
-                      stops: const [0.25, 0.5, 0.75],
-                    ).createShader(bounds);
-                  },
-                  blendMode: BlendMode.srcIn,
-                  child: Text(
-                    'Thinking',
-                    style: TextStyle(
-                      fontSize: ChatoraiFontSizes.sm,
-                      fontWeight: FontWeight.w600,
-                      height: 1.4,
-                      color: orange,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
+        child: Row(
+          children: [
+            SpinKitCircle(color: orange, size: 16),
+            const SizedBox(width: 8),
+            ChatShimmerText(
+              text: 'Thinking',
+              color: orange,
+              textSize: ChatoraiFontSizes.sm,
+              fontWeight: FontWeight.w600,
+            ),
+          ],
         ),
       );
     }

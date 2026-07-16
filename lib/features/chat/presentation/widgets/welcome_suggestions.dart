@@ -13,14 +13,14 @@ class WelcomeSuggestions extends ConsumerStatefulWidget {
   final List<String> suggestions;
   final Function(String) onSuggestionTap;
   final VoidCallback? onClose;
-  final BuildContext? context;
+  final BuildContext? parentContext;
 
   const WelcomeSuggestions({
     super.key,
     required this.suggestions,
     required this.onSuggestionTap,
     this.onClose,
-    this.context,
+    this.parentContext,
   });
 
   @override
@@ -33,7 +33,147 @@ class WelcomeSuggestions extends ConsumerStatefulWidget {
 
 class _WelcomeSuggestionsState extends ConsumerState<WelcomeSuggestions>
     with TickerProviderStateMixin {
+  late String _randomGreeting;
   late AnimationController _animationController;
+  final _animatorKey = GlobalKey<_SuggestionsAnimatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+
+    _randomGreeting = WelcomeGreetingsData.getRandomGreeting(
+      widget.parentContext ?? context,
+    );
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _animationController.forward().then((_) {
+        _animatorKey.currentState?._beginCycle();
+      });
+    });
+
+    // Listen to language changes
+    ref.listenManual(languageProvider, (previous, next) {
+      if (!mounted) return;
+      if (previous?.selectedLanguage != next.selectedLanguage) {
+        setState(() {
+          _randomGreeting = WelcomeGreetingsData.getRandomGreeting(
+            widget.parentContext ?? context,
+          );
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: _animationController,
+          child: SlideTransition(
+            position:
+                Tween<Offset>(
+                  begin: const Offset(0.0, 0.2),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: _animationController,
+                    curve: Curves.easeOut,
+                  ),
+                ),
+            child: Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Welcome text
+                    Text(
+                      _randomGreeting,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.primary,
+                        height: 1.3,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Suggestions list (owns its own animation state so pulse
+                    // ticks do not rebuild the greeting/container above).
+                    _SuggestionsAnimator(
+                      key: _animatorKey,
+                      parentContext: widget.parentContext,
+                      suggestions: widget.suggestions,
+                      onSuggestionTap: widget.onSuggestionTap,
+                    ),
+
+                    // Navigation arrows + trailing spacing live inside the
+                    // animator subtree so pulse ticks never rebuild this column.
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ===========================================================================
+// SUGGESTIONS ANIMATOR
+// Owns pulse + rotation + group navigation state.
+// ===========================================================================
+
+class _SuggestionsAnimator extends StatefulWidget {
+  final BuildContext? parentContext;
+  final List<String> suggestions;
+  final Function(String) onSuggestionTap;
+
+  const _SuggestionsAnimator({
+    super.key,
+    required this.parentContext,
+    required this.suggestions,
+    required this.onSuggestionTap,
+  });
+
+  @override
+  State<_SuggestionsAnimator> createState() => _SuggestionsAnimatorState();
+}
+
+class _SuggestionsAnimatorState extends State<_SuggestionsAnimator>
+    with TickerProviderStateMixin {
   late AnimationController _rotationController;
   late Animation<double> _rotationFadeAnimation;
   late Animation<Offset> _rotationSlideAnimation;
@@ -42,7 +182,6 @@ class _WelcomeSuggestionsState extends ConsumerState<WelcomeSuggestions>
   Timer? _cycleTimer;
   bool _isCycleActive = false;
   List<String> _currentSuggestions = [];
-  late String _randomGreeting;
 
   // Navigation groups
   int _currentGroup = 0;
@@ -53,29 +192,8 @@ class _WelcomeSuggestionsState extends ConsumerState<WelcomeSuggestions>
   void initState() {
     super.initState();
 
-    _randomGreeting = WelcomeGreetingsData.getRandomGreeting(
-      widget.context ?? context,
-    );
-
     _currentSuggestions = widget.suggestions;
     _initQuestionGroups();
-
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-
-    // Listen to language changes
-    ref.listenManual(languageProvider, (previous, next) {
-      if (!mounted) return;
-      if (previous?.selectedLanguage != next.selectedLanguage) {
-        setState(() {
-          _randomGreeting = WelcomeGreetingsData.getRandomGreeting(
-            widget.context ?? context,
-          );
-        });
-      }
-    });
 
     // Rotation animation for smooth question transitions
     _rotationController = AnimationController(
@@ -105,18 +223,23 @@ class _WelcomeSuggestionsState extends ConsumerState<WelcomeSuggestions>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _rotationController.value = 1.0;
+    });
+  }
 
-      _animationController.forward().then((_) {
-        if (_currentSuggestions.isNotEmpty) {
-          _startCycle();
-        }
-      });
+  // Called by the parent once the entrance transition completes, so the pulse
+  // cycle starts with the same timing as before the refactor.
+  void _beginCycle() {
+    if (!mounted || _currentSuggestions.isEmpty) return;
+    _rotationController.forward().then((_) {
+      if (_currentSuggestions.isNotEmpty) {
+        _startCycle();
+      }
     });
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
     _rotationController.dispose();
     for (var c in _pulseControllers) {
       c.dispose();
@@ -173,7 +296,7 @@ class _WelcomeSuggestionsState extends ConsumerState<WelcomeSuggestions>
 
       // Update groups with all questions
       List<String> newQuestions;
-      if (widget.context != null) {
+      if (widget.parentContext != null) {
         _initQuestionGroups();
         // Get next group for rotation
         _currentGroup = (_currentGroup + 1) % _questionGroups.length;
@@ -181,7 +304,7 @@ class _WelcomeSuggestionsState extends ConsumerState<WelcomeSuggestions>
       } else {
         // Fallback to random questions
         newQuestions = WelcomeQuestionsData.getRandomQuestions(
-          widget.context ?? context,
+          widget.parentContext ?? context,
           count: 4,
         );
       }
@@ -211,7 +334,7 @@ class _WelcomeSuggestionsState extends ConsumerState<WelcomeSuggestions>
       // Fade in new questions
       _rotationController.forward();
 
-      // ДОБАВЛЯЕМ ЗАДЕРЖКУ 2 СЕКУНДЫ ПЕРЕД НАЧАЛОМ АНИМАЦИИ ВОПРОСОВ
+      // ДОБАВЛЯЕМ ЗАДЕРЖКУ 2 СЕКУНД ПЕРЕД НАЧАЛОМ АНИМАЦИИ ВОПРОСОВ
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_isCycleActive) return;
 
@@ -240,7 +363,7 @@ class _WelcomeSuggestionsState extends ConsumerState<WelcomeSuggestions>
   }
 
   void _initQuestionGroups() {
-    final ctx = widget.context ?? context;
+    final ctx = widget.parentContext ?? context;
 
     final allQuestions = WelcomeQuestionsData.getAllQuestions(ctx);
     _questionGroups = [];
@@ -330,92 +453,36 @@ class _WelcomeSuggestionsState extends ConsumerState<WelcomeSuggestions>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return FadeTransition(
-          opacity: _animationController,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Suggestions list
+        FadeTransition(
+          opacity: _rotationFadeAnimation,
           child: SlideTransition(
-            position:
-                Tween<Offset>(
-                  begin: const Offset(0.0, 0.2),
-                  end: Offset.zero,
-                ).animate(
-                  CurvedAnimation(
-                    parent: _animationController,
-                    curve: Curves.easeOut,
+            position: _rotationSlideAnimation,
+            child: Column(
+              children: _currentSuggestions.asMap().entries.map((entry) {
+                final index = entry.key;
+                final suggestion = entry.value;
+                final isActive = index == _currentIndex;
+
+                return RepaintBoundary(
+                  child: Container(
+                    margin: EdgeInsets.only(top: index == 0 ? 0 : 8.0),
+                    child: _buildSuggestionItem(suggestion, isActive, theme),
                   ),
-                ),
-            child: Center(
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Welcome text
-                    Text(
-                      _randomGreeting,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.primary,
-                        height: 1.3,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Suggestions list
-                    _buildSuggestions(),
-
-                    const SizedBox(height: 12),
-
-                    // Navigation arrows
-                    _buildNavigationArrows(),
-                  ],
-                ),
-              ),
+                );
+              }).toList(),
             ),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSuggestions() {
-    final theme = Theme.of(context);
-
-    return FadeTransition(
-      opacity: _rotationFadeAnimation,
-      child: SlideTransition(
-        position: _rotationSlideAnimation,
-        child: Column(
-          children: _currentSuggestions.asMap().entries.map((entry) {
-            final index = entry.key;
-            final suggestion = entry.value;
-            final isActive = index == _currentIndex;
-
-            return Container(
-              margin: EdgeInsets.only(top: index == 0 ? 0 : 8.0),
-              child: _buildSuggestionItem(suggestion, isActive, theme),
-            );
-          }).toList(),
         ),
-      ),
+
+        const SizedBox(height: 12),
+
+        // Navigation arrows
+        _buildNavigationArrows(),
+      ],
     );
   }
 

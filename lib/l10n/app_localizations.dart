@@ -775,6 +775,18 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get retry;
 
+  /// Title shown on the bootstrap error screen when app initialization fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start the app'**
+  String get bootstrapErrorTitle;
+
+  /// Body text shown on the bootstrap error screen
+  ///
+  /// In en, this message translates to:
+  /// **'Check your configuration and try again.'**
+  String get bootstrapErrorBody;
+
   /// No description provided for @enterYourMessage.
   ///
   /// In en, this message translates to:
@@ -2218,7 +2230,7 @@ abstract class AppLocalizations {
   /// No description provided for @versionLabel.
   ///
   /// In en, this message translates to:
-  /// **'Version'**
+  /// **'Version:'**
   String get versionLabel;
 
   /// No description provided for @welcomeGreeting1.

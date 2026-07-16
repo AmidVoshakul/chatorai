@@ -3466,6 +3466,26 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SessionSnapshotsTable sessionSnapshots = $SessionSnapshotsTable(
     this,
   );
+  late final Index idxEventsSessionSeq = Index(
+    'idx_events_session_seq',
+    'CREATE INDEX idx_events_session_seq ON events (session_id, sequence)',
+  );
+  late final Index idxMessagesSessionSeq = Index(
+    'idx_messages_session_seq',
+    'CREATE INDEX idx_messages_session_seq ON messages (session_id, seq)',
+  );
+  late final Index idxToolResultsSession = Index(
+    'idx_tool_results_session',
+    'CREATE INDEX idx_tool_results_session ON tool_results (session_id)',
+  );
+  late final Index idxContextEpochsSession = Index(
+    'idx_context_epochs_session',
+    'CREATE INDEX idx_context_epochs_session ON context_epochs (session_id)',
+  );
+  late final Index idxSessionSnapshotsSession = Index(
+    'idx_session_snapshots_session',
+    'CREATE INDEX idx_session_snapshots_session ON session_snapshots (session_id)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3477,6 +3497,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     toolResults,
     contextEpochs,
     sessionSnapshots,
+    idxEventsSessionSeq,
+    idxMessagesSessionSeq,
+    idxToolResultsSession,
+    idxContextEpochsSession,
+    idxSessionSnapshotsSession,
   ];
 }
 

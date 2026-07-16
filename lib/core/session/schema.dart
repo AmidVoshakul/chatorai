@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+@TableIndex(name: 'idx_events_session_seq', columns: {#sessionId, #sequence})
 class Events extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get sessionId => text()();
@@ -30,6 +31,7 @@ class Sessions extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@TableIndex(name: 'idx_messages_session_seq', columns: {#sessionId, #seq})
 class Messages extends Table {
   TextColumn get id => text()();
   TextColumn get sessionId => text()();
@@ -45,6 +47,7 @@ class Messages extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@TableIndex(name: 'idx_tool_results_session', columns: {#sessionId})
 class ToolResults extends Table {
   TextColumn get id => text()();
   TextColumn get sessionId => text()();
@@ -60,6 +63,7 @@ class ToolResults extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@TableIndex(name: 'idx_context_epochs_session', columns: {#sessionId})
 class ContextEpochs extends Table {
   TextColumn get id => text()();
   TextColumn get sessionId => text()();
@@ -73,6 +77,7 @@ class ContextEpochs extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@TableIndex(name: 'idx_session_snapshots_session', columns: {#sessionId})
 class SessionSnapshots extends Table {
   TextColumn get id => text()();
   TextColumn get sessionId => text()();

@@ -355,6 +355,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get retry => 'Повторити';
 
   @override
+  String get bootstrapErrorTitle => 'Не вдалося запустити застосунок';
+
+  @override
+  String get bootstrapErrorBody => 'Перевірте конфігурацію і спробуйте ще раз.';
+
+  @override
   String get enterYourMessage => 'Введіть ваше повідомлення...';
 
   @override
