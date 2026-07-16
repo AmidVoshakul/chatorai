@@ -48,7 +48,8 @@ class _TextPartWidgetState extends State<TextPartWidget> {
     // Only a pure append keeps the incremental prefix cache valid. If the
     // content shrank, changed mid-string (edit/regeneration), or is a fresh
     // part for a different message, the cache must be rebuilt from scratch.
-    final isAppend = oldContent.isNotEmpty &&
+    final isAppend =
+        oldContent.isNotEmpty &&
         newContent.length > oldContent.length &&
         newContent.startsWith(oldContent);
     if (!isAppend) {
@@ -104,9 +105,7 @@ class _TextPartWidgetState extends State<TextPartWidget> {
         _prefixChildren != null) {
       final tail = part.content.substring(prev.length);
       if (_isPlainTextTail(tail)) {
-        _prefixChildren!.add(
-          RepaintBoundary(child: SelectableText(tail)),
-        );
+        _prefixChildren!.add(RepaintBoundary(child: SelectableText(tail)));
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: _prefixChildren!,
@@ -141,15 +140,7 @@ class _TextPartWidgetState extends State<TextPartWidget> {
       if (char == '`' || char == '#' || char == '|') return false;
     }
     final first = tail.characters.first;
-    const markdownStarters = {
-      '*',
-      '_',
-      '-',
-      '+',
-      '>',
-      '[',
-      '!',
-    };
+    const markdownStarters = {'*', '_', '-', '+', '>', '[', '!'};
     if (markdownStarters.contains(first)) return false;
     // Ordered list "1. "
     if (tail.length >= 2 &&
@@ -179,7 +170,11 @@ class _TextPartWidgetState extends State<TextPartWidget> {
           }
           if (currentCodeBlock.isNotEmpty) {
             blocks.add(
-              _Block(_BlockKind.code, currentCodeBlock, language: currentLanguage),
+              _Block(
+                _BlockKind.code,
+                currentCodeBlock,
+                language: currentLanguage,
+              ),
             );
             currentCodeBlock = '';
           }
@@ -214,10 +209,16 @@ class _TextPartWidgetState extends State<TextPartWidget> {
       i++;
     }
 
-    if (currentText.isNotEmpty) blocks.add(_Block(_BlockKind.text, currentText));
+    if (currentText.isNotEmpty) {
+      blocks.add(_Block(_BlockKind.text, currentText));
+    }
     if (currentCodeBlock.isNotEmpty) {
       blocks.add(
-        _Block(_BlockKind.code, currentCodeBlock.trim(), language: currentLanguage),
+        _Block(
+          _BlockKind.code,
+          currentCodeBlock.trim(),
+          language: currentLanguage,
+        ),
       );
     }
 

@@ -7,8 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///
 /// Depends on [toolRegistryProvider] — the sole owner of MCP initialization —
 /// so statuses are populated only after the tool registry has finished loading.
-final mcpStatusesProvider =
-    FutureProvider<Map<String, McpServerStatus>>((ref) async {
+final mcpStatusesProvider = FutureProvider<Map<String, McpServerStatus>>((
+  ref,
+) async {
   await ref.watch(toolRegistryProvider.future);
   return McpClientService.instance.getAllStatuses();
 });

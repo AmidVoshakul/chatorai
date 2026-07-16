@@ -88,15 +88,9 @@ void main() {
 
       // Simulate an old v4 database: drop the v5 indexes and lower the
       // user_version so the next open triggers onUpgrade(4 -> 5).
-      await db.customStatement(
-        'DROP INDEX IF EXISTS idx_events_session_seq',
-      );
-      await db.customStatement(
-        'DROP INDEX IF EXISTS idx_messages_session_seq',
-      );
-      await db.customStatement(
-        'DROP INDEX IF EXISTS idx_tool_results_session',
-      );
+      await db.customStatement('DROP INDEX IF EXISTS idx_events_session_seq');
+      await db.customStatement('DROP INDEX IF EXISTS idx_messages_session_seq');
+      await db.customStatement('DROP INDEX IF EXISTS idx_tool_results_session');
       await db.customStatement(
         'DROP INDEX IF EXISTS idx_context_epochs_session',
       );

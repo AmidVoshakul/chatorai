@@ -38,7 +38,10 @@ class _ChatShimmerTextState extends State<ChatShimmerText>
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.duration)
       ..repeat();
-    _shimmerPosition = Tween<double>(begin: -1.0, end: 2.0).animate(_controller);
+    _shimmerPosition = Tween<double>(
+      begin: -1.0,
+      end: 2.0,
+    ).animate(_controller);
   }
 
   @override

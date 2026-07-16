@@ -215,7 +215,8 @@ class ModelSettingsNotifier extends Notifier<ModelSettingsState> {
       return state.settingsCache[modelId]!;
     }
     await _loadSettingsAsync(modelId);
-    return state.settingsCache[modelId] ?? ModelSettings.defaultForModel(modelId);
+    return state.settingsCache[modelId] ??
+        ModelSettings.defaultForModel(modelId);
   }
 
   Future<void> deleteSettings(String modelId) async {

@@ -362,11 +362,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final primaryAgents = AgentRegistry().getPrimaryAgents();
     if (primaryAgents.length <= 1) return;
     final currentAgent = ref.read(currentAgentProvider);
-    final currentIndex =
-        primaryAgents.indexWhere((a) => a.id == currentAgent.id);
+    final currentIndex = primaryAgents.indexWhere(
+      (a) => a.id == currentAgent.id,
+    );
     final nextIndex = (currentIndex + 1) % primaryAgents.length;
-    ref
-        .read(currentAgentProvider.notifier)
-        .setAgent(primaryAgents[nextIndex]);
+    ref.read(currentAgentProvider.notifier).setAgent(primaryAgents[nextIndex]);
   }
 }

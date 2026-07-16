@@ -83,7 +83,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get highContrast => 'Висока контрастність';
 
   @override
-  String get increaseContrast => 'Збільшити контрастність для кращої читабельності';
+  String get increaseContrast =>
+      'Збільшити контрастність для кращої читабельності';
 
   @override
   String get wideScreenMode => 'Режим широкого екрану';
@@ -95,19 +96,23 @@ class AppLocalizationsUk extends AppLocalizations {
   String get autoScrollDuringStreaming => 'Автоскрол під час стрімінгу';
 
   @override
-  String get autoScrollDuringStreamingDesc => 'Автоматично прокручувати список вниз при появи нового контенту';
+  String get autoScrollDuringStreamingDesc =>
+      'Автоматично прокручувати список вниз при появи нового контенту';
 
   @override
   String get showContinuationSuggestions => 'Показувати продовження діалогу';
 
   @override
-  String get showContinuationSuggestionsDesc => 'Відображати пропозиції для продовження після відповіді AI';
+  String get showContinuationSuggestionsDesc =>
+      'Відображати пропозиції для продовження після відповіді AI';
 
   @override
-  String get expandReasoningByDefault => 'Розгортати reasoning за замовчуванням';
+  String get expandReasoningByDefault =>
+      'Розгортати reasoning за замовчуванням';
 
   @override
-  String get expandReasoningByDefaultDesc => 'Показувати блоки розмірковування розгорнутими при відповіді AI';
+  String get expandReasoningByDefaultDesc =>
+      'Показувати блоки розмірковування розгорнутими при відповіді AI';
 
   @override
   String get language => 'Мова';
@@ -134,7 +139,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get resetSettings => 'Скинути налаштування';
 
   @override
-  String get resetAllSettings => 'Скинути всі налаштування до значень за замовчуванням';
+  String get resetAllSettings =>
+      'Скинути всі налаштування до значень за замовчуванням';
 
   @override
   String get save => 'Зберегти';
@@ -158,13 +164,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settingsSaved => 'Налаштування збережено!';
 
   @override
-  String get settingsReset => 'Налаштування скинуто до значень за замовчуванням';
+  String get settingsReset =>
+      'Налаштування скинуто до значень за замовчуванням';
 
   @override
   String get appInfo => 'Інформація';
 
   @override
-  String get appDescription => 'Додаток для спілкування з AI моделями через OpenRouter API.\n\nМожливості:\n• Спілкування з різними AI моделями\n• Збереження історії чатів\n• Темна та світла теми\n• Адаптивний інтерфейс\n\nРозроблено з ❤️ з використанням Flutter';
+  String get appDescription =>
+      'Додаток для спілкування з AI моделями через OpenRouter API.\n\nМожливості:\n• Спілкування з різними AI моделями\n• Збереження історії чатів\n• Темна та світла теми\n• Адаптивний інтерфейс\n\nРозроблено з ❤️ з використанням Flutter';
 
   @override
   String get shareChat => 'Поділитися чатом';
@@ -185,7 +193,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get failedToCopyChat => 'Не вдалося скопіювати чат';
 
   @override
-  String get chatSharingNotImplemented => 'Спільний доступ до чату ще не реалізовано';
+  String get chatSharingNotImplemented =>
+      'Спільний доступ до чату ще не реалізовано';
 
   @override
   String get newChat => 'Новий чат';
@@ -316,7 +325,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get features => 'Можливості';
 
   @override
-  String get featuresDisplayedBasedOnActualModelCapabilities => 'Можливості відображаються на основі реальних можливостей моделі';
+  String get featuresDisplayedBasedOnActualModelCapabilities =>
+      'Можливості відображаються на основі реальних можливостей моделі';
 
   @override
   String get noModelsFound => 'Моделі не знайдено';
@@ -328,7 +338,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get tryADifferentSearchQuery => 'Спробуйте інший пошуковий запит';
 
   @override
-  String get tryRefreshingOrCheckYourInternetConnection => 'Спробуйте оновити або перевірте інтернет-з\'єднання';
+  String get tryRefreshingOrCheckYourInternetConnection =>
+      'Спробуйте оновити або перевірте інтернет-з\'єднання';
 
   @override
   String get aiIsTyping => 'AI друкує';
@@ -373,13 +384,16 @@ class AppLocalizationsUk extends AppLocalizations {
   String get failedToEditMessage => 'Не вдалося відредагувати повідомлення';
 
   @override
-  String get messageEditedAndResponseRegenerated => 'Повідомлення відредаговано та відповідь перегенеровано';
+  String get messageEditedAndResponseRegenerated =>
+      'Повідомлення відредаговано та відповідь перегенеровано';
 
   @override
-  String get failedToEditAndSendMessage => 'Не вдалося відредагувати та надіслати повідомлення';
+  String get failedToEditAndSendMessage =>
+      'Не вдалося відредагувати та надіслати повідомлення';
 
   @override
-  String get areYouSureYouWantToDeleteThisMessage => 'Ви впевнені, що хочете видалити це повідомлення?';
+  String get areYouSureYouWantToDeleteThisMessage =>
+      'Ви впевнені, що хочете видалити це повідомлення?';
 
   @override
   String confirmDeleteMessage(Object chatTitle) {
@@ -387,7 +401,8 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get areYouSureYouWantToRegenerateThisMessage => 'Ви впевнені, що хочете перегенерувати це повідомлення?';
+  String get areYouSureYouWantToRegenerateThisMessage =>
+      'Ви впевнені, що хочете перегенерувати це повідомлення?';
 
   @override
   String modelDoesNotSupportImages(Object modelId) {
@@ -409,7 +424,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get regenerationStarted => 'Перегенерація розпочата';
 
   @override
-  String get failedToRegenerateMessage => 'Не вдалося перегенерувати повідомлення';
+  String get failedToRegenerateMessage =>
+      'Не вдалося перегенерувати повідомлення';
 
   @override
   String get messageCopied => 'Повідомлення скопійовано';
@@ -466,37 +482,46 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeMessage => 'Вітаю! Чим я можу вам допомогти сьогодні?';
 
   @override
-  String get welcomeQuestion1 => 'Поясніть квантові обчислення простими словами';
+  String get welcomeQuestion1 =>
+      'Поясніть квантові обчислення простими словами';
 
   @override
   String get welcomeQuestion2 => 'Які останні тенденції в штучному інтелекті?';
 
   @override
-  String get welcomeQuestion3 => 'Допоможіть мені написати професійний email до моєї команди';
+  String get welcomeQuestion3 =>
+      'Допоможіть мені написати професійний email до моєї команди';
 
   @override
-  String get welcomeQuestion4 => 'Що мені вчити, щоб стати кращим програмістом?';
+  String get welcomeQuestion4 =>
+      'Що мені вчити, щоб стати кращим програмістом?';
 
   @override
-  String get welcomeQuestion5 => 'Дайте мені 5 креативних ідей для вихідного проекту';
+  String get welcomeQuestion5 =>
+      'Дайте мені 5 креативних ідей для вихідного проекту';
 
   @override
-  String get welcomeQuestion6 => 'Які є хороші книги для особистісного розвитку?';
+  String get welcomeQuestion6 =>
+      'Які є хороші книги для особистісного розвитку?';
 
   @override
-  String get welcomeQuestion7 => 'Допоможіть мені придумати назви для мого стартапу';
+  String get welcomeQuestion7 =>
+      'Допоможіть мені придумати назви для мого стартапу';
 
   @override
   String get welcomeQuestion8 => 'Створіть план харчування на здоровий тиждень';
 
   @override
-  String get welcomeQuestion9 => 'Які найкращі практики для розробки на Flutter?';
+  String get welcomeQuestion9 =>
+      'Які найкращі практики для розробки на Flutter?';
 
   @override
-  String get welcomeQuestion10 => 'Поясніть різницю між асинхронним та синхронним програмуванням';
+  String get welcomeQuestion10 =>
+      'Поясніть різницю між асинхронним та синхронним програмуванням';
 
   @override
-  String get welcomeQuestion11 => 'Як оптимізувати код для кращої продуктивності?';
+  String get welcomeQuestion11 =>
+      'Як оптимізувати код для кращої продуктивності?';
 
   @override
   String get welcomeQuestion12 => 'Які найкорисніші шаблони проектування?';
@@ -520,13 +545,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion18 => 'Як покращити концентрацію уваги?';
 
   @override
-  String get welcomeQuestion19 => 'Дайте мені щоденну рутину для максимальної продуктивності';
+  String get welcomeQuestion19 =>
+      'Дайте мені щоденну рутину для максимальної продуктивності';
 
   @override
   String get welcomeQuestion20 => 'Які є хороші звички для успіху?';
 
   @override
-  String get welcomeQuestion21 => 'Як підготуватися до співбесіди з програмної інженерії?';
+  String get welcomeQuestion21 =>
+      'Як підготуватися до співбесіди з програмної інженерії?';
 
   @override
   String get welcomeQuestion22 => 'Які навички найцінніші в IT-індустрії?';
@@ -538,13 +565,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion24 => 'Які провідні IT-компанії варто обирати?';
 
   @override
-  String get welcomeQuestion25 => 'Які останні прориви в космічних дослідженнях?';
+  String get welcomeQuestion25 =>
+      'Які останні прориви в космічних дослідженнях?';
 
   @override
   String get welcomeQuestion26 => 'Як ШІ змінює охорону здоров\'я?';
 
   @override
-  String get welcomeQuestion27 => 'Які найбільш захопливі технології 2025 року?';
+  String get welcomeQuestion27 =>
+      'Які найбільш захопливі технології 2025 року?';
 
   @override
   String get welcomeQuestion28 => 'Поясніть майбутнє відновлюваної енергетики';
@@ -559,16 +588,20 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion31 => 'Які найкращі способи вивчати нові навички?';
 
   @override
-  String get welcomeQuestion32 => 'Як зберігати мотивацію при вивченні чогось складного?';
+  String get welcomeQuestion32 =>
+      'Як зберігати мотивацію при вивченні чогось складного?';
 
   @override
-  String get welcomeQuestion33 => 'Які найкращі мови програмування варто вчити у 2025 році?';
+  String get welcomeQuestion33 =>
+      'Які найкращі мови програмування варто вчити у 2025 році?';
 
   @override
-  String get welcomeQuestion34 => 'Як побудувати сильне портфоліо для IT-вакансій?';
+  String get welcomeQuestion34 =>
+      'Як побудувати сильне портфоліо для IT-вакансій?';
 
   @override
-  String get welcomeQuestion35 => 'Які провідні інструменти ШІ для продуктивності?';
+  String get welcomeQuestion35 =>
+      'Які провідні інструменти ШІ для продуктивності?';
 
   @override
   String get welcomeQuestion36 => 'Як насправді працює машинне навчання?';
@@ -580,7 +613,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion38 => 'Як писати чистий та підтримуваний код?';
 
   @override
-  String get welcomeQuestion39 => 'Що таке мікросервіси і коли їх використовувати?';
+  String get welcomeQuestion39 =>
+      'Що таке мікросервіси і коли їх використовувати?';
 
   @override
   String get welcomeQuestion40 => 'Поясніть REST API vs GraphQL';
@@ -592,19 +626,22 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion42 => 'Як підготуватися до технічних співбесід?';
 
   @override
-  String get welcomeQuestion43 => 'Які м\'які навички потрібні кожному розробнику?';
+  String get welcomeQuestion43 =>
+      'Які м\'які навички потрібні кожному розробнику?';
 
   @override
   String get welcomeQuestion44 => 'Як домовлятися про зарплату як розробник?';
 
   @override
-  String get welcomeQuestion45 => 'Які найкращі інструменти для віддаленої роботи?';
+  String get welcomeQuestion45 =>
+      'Які найкращі інструменти для віддаленої роботи?';
 
   @override
   String get welcomeQuestion46 => 'Як залишатися продуктивним працюючи з дому?';
 
   @override
-  String get welcomeQuestion47 => 'Які найкращі методології управління проектами?';
+  String get welcomeQuestion47 =>
+      'Які найкращі методології управління проектами?';
 
   @override
   String get welcomeQuestion48 => 'Як поводитися з важкими колегами?';
@@ -643,16 +680,19 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion59 => 'Які найкращі практики кібербезпеки?';
 
   @override
-  String get welcomeQuestion60 => 'Як захистити свою конфіденційність в інтернеті?';
+  String get welcomeQuestion60 =>
+      'Як захистити свою конфіденційність в інтернеті?';
 
   @override
-  String get welcomeQuestion61 => 'Які найкращі інструменти для науки про дані?';
+  String get welcomeQuestion61 =>
+      'Які найкращі інструменти для науки про дані?';
 
   @override
   String get welcomeQuestion62 => 'Як ефективно візуалізувати дані?';
 
   @override
-  String get welcomeQuestion63 => 'Які найкращі фреймворки для мобільних додатків?';
+  String get welcomeQuestion63 =>
+      'Які найкращі фреймворки для мобільних додатків?';
 
   @override
   String get welcomeQuestion64 => 'Як створювати крос-платформні додатки?';
@@ -670,7 +710,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion68 => 'Як створювати цікавий контент?';
 
   @override
-  String get welcomeQuestion69 => 'Які найкращі стратегії для соціальних мереж?';
+  String get welcomeQuestion69 =>
+      'Які найкращі стратегії для соціальних мереж?';
 
   @override
   String get welcomeQuestion70 => 'Як побудувати особистий бренд?';
@@ -706,19 +747,22 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion80 => 'Як швидко вивчити нову мову?';
 
   @override
-  String get welcomeQuestion81 => 'Які найкращі практики для віддаленої командної роботи?';
+  String get welcomeQuestion81 =>
+      'Які найкращі практики для віддаленої командної роботи?';
 
   @override
   String get welcomeQuestion82 => 'Як проводити ефективні код-рев\'ю?';
 
   @override
-  String get welcomeQuestion83 => 'Які провідні навички для архітекторів програмного забезпечення?';
+  String get welcomeQuestion83 =>
+      'Які провідні навички для архітекторів програмного забезпечення?';
 
   @override
   String get welcomeQuestion84 => 'Як проектувати масштабовані бази даних?';
 
   @override
-  String get welcomeQuestion85 => 'Які найкращі DevOps-інструменти для вивчення?';
+  String get welcomeQuestion85 =>
+      'Які найкращі DevOps-інструменти для вивчення?';
 
   @override
   String get welcomeQuestion86 => 'Як реалізувати CI/CD конвеєри?';
@@ -733,7 +777,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion89 => 'Які найкращі практики для безпеки API?';
 
   @override
-  String get welcomeQuestion90 => 'Як оптимізувати продуктивність мобільних додатків?';
+  String get welcomeQuestion90 =>
+      'Як оптимізувати продуктивність мобільних додатків?';
 
   @override
   String get welcomeQuestion91 => 'Що таке прогресивні веб-додатки?';
@@ -745,7 +790,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion93 => 'Які найкращі принципи UI/UX-дизайну?';
 
   @override
-  String get welcomeQuestion94 => 'Як ефективно проводити дослідження користувачів?';
+  String get welcomeQuestion94 =>
+      'Як ефективно проводити дослідження користувачів?';
 
   @override
   String get welcomeQuestion95 => 'Які найкращі стратегії A/B-тестування?';
@@ -757,49 +803,60 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion97 => 'Які найкращі техніки гачкінгу?';
 
   @override
-  String get welcomeQuestion98 => 'Як побудувати спільноту навколо вашого продукту?';
+  String get welcomeQuestion98 =>
+      'Як побудувати спільноту навколо вашого продукту?';
 
   @override
-  String get welcomeQuestion99 => 'Які найкращі інструменти для підтримки клієнтів?';
+  String get welcomeQuestion99 =>
+      'Які найкращі інструменти для підтримки клієнтів?';
 
   @override
-  String get welcomeQuestion100 => 'Як ефективно обробляти зворотний зв\'язок від клієнтів?';
+  String get welcomeQuestion100 =>
+      'Як ефективно обробляти зворотний зв\'язок від клієнтів?';
 
   @override
   String get welcomeQuestion101 => 'Які відмінності між React та Vue?';
 
   @override
-  String get welcomeQuestion102 => 'Як TypeScript покращує розробку на JavaScript?';
+  String get welcomeQuestion102 =>
+      'Як TypeScript покращує розробку на JavaScript?';
 
   @override
-  String get welcomeQuestion103 => 'Які найкращі практики для проектування REST API?';
+  String get welcomeQuestion103 =>
+      'Які найкращі практики для проектування REST API?';
 
   @override
-  String get welcomeQuestion104 => 'Як реалізувати автентифікацію у веб-додатках?';
+  String get welcomeQuestion104 =>
+      'Як реалізувати автентифікацію у веб-додатках?';
 
   @override
   String get welcomeQuestion105 => 'Які переваги GraphQL над REST?';
 
   @override
-  String get welcomeQuestion106 => 'Як оптимізувати запити до бази даних для продуктивності?';
+  String get welcomeQuestion106 =>
+      'Як оптимізувати запити до бази даних для продуктивності?';
 
   @override
-  String get welcomeQuestion107 => 'Що таке архітектурні шаблони мікросервісів?';
+  String get welcomeQuestion107 =>
+      'Що таке архітектурні шаблони мікросервісів?';
 
   @override
   String get welcomeQuestion108 => 'Як реалізувати стратегії кешування?';
 
   @override
-  String get welcomeQuestion109 => 'Які найкращі фреймворки для тестування JavaScript?';
+  String get welcomeQuestion109 =>
+      'Які найкращі фреймворки для тестування JavaScript?';
 
   @override
-  String get welcomeQuestion110 => 'Як писати unit-тести для React-компонентів?';
+  String get welcomeQuestion110 =>
+      'Як писати unit-тести для React-компонентів?';
 
   @override
   String get welcomeQuestion111 => 'Що таке принципи SOLID в ООП?';
 
   @override
-  String get welcomeQuestion112 => 'Як реалізувати шаблони проектування в Python?';
+  String get welcomeQuestion112 =>
+      'Як реалізувати шаблони проектування в Python?';
 
   @override
   String get welcomeQuestion113 => 'Які найкращі практики для Git-воркфлоу?';
@@ -814,7 +871,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion116 => 'Як захистити Docker-контейнери?';
 
   @override
-  String get welcomeQuestion117 => 'Що таке стратегії розгортання в Kubernetes?';
+  String get welcomeQuestion117 =>
+      'Що таке стратегії розгортання в Kubernetes?';
 
   @override
   String get welcomeQuestion118 => 'Як моніторити продуктивність додатків?';
@@ -823,7 +881,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion119 => 'Які найкращі практики логування?';
 
   @override
-  String get welcomeQuestion120 => 'Як реалізувати обробку помилок у розподілених системах?';
+  String get welcomeQuestion120 =>
+      'Як реалізувати обробку помилок у розподілених системах?';
 
   @override
   String get continueConversation => 'Продовжити діалог';
@@ -873,7 +932,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get noFavoriteModels => 'Немає вибраних моделей';
 
   @override
-  String get tapHeartToAddFavorites => 'Натисніть на сердечко біля моделей, щоб додати їх до вибраних';
+  String get tapHeartToAddFavorites =>
+      'Натисніть на сердечко біля моделей, щоб додати їх до вибраних';
 
   @override
   String get addToFavorites => 'Додати в обране';
@@ -885,7 +945,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get loadingSkills => 'Завантаження навичок...';
 
   @override
-  String get noSkillsInstalled => 'Немає встановлених навичок. Додайте в .chatorai/skills/';
+  String get noSkillsInstalled =>
+      'Немає встановлених навичок. Додайте в .chatorai/skills/';
 
   @override
   String get noSkillsMatchSearch => 'Немає навичок, що відповідають пошуку';
@@ -1004,7 +1065,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get openaiCompatibleApi => 'OpenAI-сумісний API';
 
   @override
-  String get openaiCompatibleApiDescription => 'Підключення до будь-якого OpenAI-сумісного API';
+  String get openaiCompatibleApiDescription =>
+      'Підключення до будь-якого OpenAI-сумісного API';
 
   @override
   String get permissionAlways => 'Завжди дозволяти';
@@ -1034,22 +1096,28 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settingsApplied => 'Налаштування успішно застосовано';
 
   @override
-  String get speechErrorNetwork => 'Помилка мережі. Перевірте підключення до інтернету.';
+  String get speechErrorNetwork =>
+      'Помилка мережі. Перевірте підключення до інтернету.';
 
   @override
-  String get speechErrorNoMatch => 'Не вдалося розпізнати мову. Спробуйте ще раз.';
+  String get speechErrorNoMatch =>
+      'Не вдалося розпізнати мову. Спробуйте ще раз.';
 
   @override
-  String get speechErrorNotAuthorized => 'Немає доступу до мікрофона. Перевірте дозволи в налаштуваннях.';
+  String get speechErrorNotAuthorized =>
+      'Немає доступу до мікрофона. Перевірте дозволи в налаштуваннях.';
 
   @override
-  String get speechErrorServer => 'Помилка сервера розпізнавання. Спробуйте пізніше.';
+  String get speechErrorServer =>
+      'Помилка сервера розпізнавання. Спробуйте пізніше.';
 
   @override
-  String get speechErrorTimeout => 'Час очікування вичерпано. Нічого не почуто.';
+  String get speechErrorTimeout =>
+      'Час очікування вичерпано. Нічого не почуто.';
 
   @override
-  String get speechErrorTooManyRequests => 'Занадто багато запитів. Спробуйте пізніше.';
+  String get speechErrorTooManyRequests =>
+      'Занадто багато запитів. Спробуйте пізніше.';
 
   @override
   String get speechErrorUnknown => 'Помилка розпізнавання мови';
@@ -1078,34 +1146,40 @@ class AppLocalizationsUk extends AppLocalizations {
   String get systemPromptDescription => 'Інструкції для AI-асистента';
 
   @override
-  String get systemPromptSuggestion => 'Ви — корисний асистент. Продовжте діалог, запропонувавши 3 конкретні та логічні продовження останнього повідомлення. Відповідайте українською мовою.';
+  String get systemPromptSuggestion =>
+      'Ви — корисний асистент. Продовжте діалог, запропонувавши 3 конкретні та логічні продовження останнього повідомлення. Відповідайте українською мовою.';
 
   @override
   String get temperature => 'Температура';
 
   @override
-  String get temperatureDescription => 'Контролює випадковість: нижче = більш зосереджено, вище = більш креативно';
+  String get temperatureDescription =>
+      'Контролює випадковість: нижче = більш зосереджено, вище = більш креативно';
 
   @override
   String get toggleNavigatorTooltip => 'Перемкнути навігатор';
 
   @override
-  String get userPromptSuggestion => 'Запропонуйте 3 конкретні та логічні продовження для цього повідомлення. Відповідайте тільки списком, без додаткового тексту.';
+  String get userPromptSuggestion =>
+      'Запропонуйте 3 конкретні та логічні продовження для цього повідомлення. Відповідайте тільки списком, без додаткового тексту.';
 
   @override
   String get versionLabel => 'Версія:';
 
   @override
-  String get welcomeGreeting1 => 'Питай, досліджуй, створюй — давай розберемося разом.';
+  String get welcomeGreeting1 =>
+      'Питай, досліджуй, створюй — давай розберемося разом.';
 
   @override
-  String get welcomeGreeting2 => 'Постав питання, опиши завдання або просто почни розмову.';
+  String get welcomeGreeting2 =>
+      'Постав питання, опиши завдання або просто почни розмову.';
 
   @override
   String get welcomeGreeting3 => 'Постав питання або почни дослідження.';
 
   @override
-  String get welcomeGreeting4 => 'Постав будь-яке питання, поділися ідеєю або попроси допомоги — я тут, щоб допомогти.';
+  String get welcomeGreeting4 =>
+      'Постав будь-яке питання, поділися ідеєю або попроси допомоги — я тут, щоб допомогти.';
 
   @override
   String get welcomeGreeting5 => 'Є ідея? Давай розберемося.';
@@ -1213,7 +1287,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get maxTokens => 'Макс. токенів';
 
   @override
-  String get maxTokensDescription => 'Максимальна довжина згенерованої відповіді';
+  String get maxTokensDescription =>
+      'Максимальна довжина згенерованої відповіді';
 
   @override
   String get activeModel => 'Активна модель';
@@ -1232,7 +1307,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get micStopFailed => 'Не вдалося зупинити мікрофон';
 
   @override
-  String get errorProcessingRequest => 'Вибачте, сталася помилка при обробці вашого запиту. Будь ласка, спробуйте ще раз.';
+  String get errorProcessingRequest =>
+      'Вибачте, сталася помилка при обробці вашого запиту. Будь ласка, спробуйте ще раз.';
 
   @override
   String rateLimitRetryMessage(Object seconds) {
@@ -1246,13 +1322,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get errorEditingMessage => 'Помилка редагування повідомлення';
 
   @override
-  String get errorEditAndSendMessage => 'Помилка редагування та відправлення повідомлення';
+  String get errorEditAndSendMessage =>
+      'Помилка редагування та відправлення повідомлення';
 
   @override
   String get defaultSuggestion4 => 'Як це застосовується на практиці?';
 
   @override
-  String get fileAttachedButNotSupported => 'Файл прикріплено, але не підтримується поточною моделлю';
+  String get fileAttachedButNotSupported =>
+      'Файл прикріплено, але не підтримується поточною моделлю';
 
   @override
   String get expandTooltip => 'Розгорнути';
@@ -1285,7 +1363,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get addProviderHintApiKey => 'Введіть ваш API ключ';
 
   @override
-  String get addProviderHintCustomApiKey => 'Необов\'язково для локальних провайдерів';
+  String get addProviderHintCustomApiKey =>
+      'Необов\'язково для локальних провайдерів';
 
   @override
   String get addProviderLabelBaseUrl => 'Базовий URL';
@@ -1344,7 +1423,8 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get deleteProviderContent => 'Це видалить провайдера та всі його налаштування. Вам потрібно буде додати його знову, щоб використовувати його моделі.';
+  String get deleteProviderContent =>
+      'Це видалить провайдера та всі його налаштування. Вам потрібно буде додати його знову, щоб використовувати його моделі.';
 
   @override
   String get errorLoadingProviders => 'Помилка завантаження провайдерів';
@@ -1353,7 +1433,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get noProvidersConfigured => 'Немає налаштованих провайдерів';
 
   @override
-  String get addProviderToGetStarted => 'Додайте провайдера з API ключем, щоб почати';
+  String get addProviderToGetStarted =>
+      'Додайте провайдера з API ключем, щоб почати';
 
   @override
   String statsError(Object error) {

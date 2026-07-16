@@ -12,7 +12,7 @@ graph TD
     app_start["App startup\n(session_providers.dart)"]
     reg_call["registerBuiltInTools()"]
 
-    subgraph unconditional["16 unconditional (always registered)"]
+    subgraph unconditional["17 unconditional (always registered)"]
         bash["bash\n(execute shell)"]
         read["read\n(file contents)"]
         edit["edit\n(text replace)"]
@@ -27,6 +27,7 @@ graph TD
         apply_patch_["apply_patch\n(diff apply)"]
         invalid_["invalid\n(placeholder)"]
         external_dir["external_directory\n(dir ops)"]
+        plan_enter_["plan_enter\n(switch to plan agent)"]
         plan_exit_["plan_exit\n(exit plan mode)"]
         json_schema_["json_schema\n(schema validate)"]
     end
@@ -48,7 +49,7 @@ graph TD
     fmt_cond -->|"no"| skill_cond
     skill_cond -->|"yes"| skill_
 
-    unconditional --> tool_registry["ToolRegistry\n(16 unconditional\n+ 0–3 conditional\n= 16–19 total)"]
+    unconditional --> tool_registry["ToolRegistry\n(17 unconditional\n+ 0–3 conditional\n= 17–20 total)"]
     lsp_ --> tool_registry
     format_ --> tool_registry
     skill_ --> tool_registry

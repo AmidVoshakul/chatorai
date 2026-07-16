@@ -235,10 +235,7 @@ class InputLayoutBuilder {
               : ChatoraiColors.inputContainerLight,
           onTap: config.onModelSettings,
           tooltip: localizations.modelSettingsTooltip,
-          child: Icon(
-            Icons.tune,
-            color: theme.iconTheme.color,
-          ),
+          child: Icon(Icons.tune, color: theme.iconTheme.color),
         ),
         const SizedBox(width: ChatoraiSpacing.sm),
         InputWidgetBuilders.buildAgentButton(
@@ -376,11 +373,7 @@ class InputLayoutBuilder {
               : ChatoraiColors.inputContainerLight,
           onTap: onModelSettings,
           tooltip: localizations.modelSettingsTooltip,
-          child: Icon(
-            Icons.tune,
-            size: iconSize,
-            color: theme.iconTheme.color,
-          ),
+          child: Icon(Icons.tune, size: iconSize, color: theme.iconTheme.color),
         ),
         const SizedBox(width: ChatoraiSpacing.sm),
         InputWidgetBuilders.buildAgentButton(
@@ -442,8 +435,8 @@ class InputLayoutBuilder {
     final actionTooltip = isListening
         ? localizations.stopListening
         : (hasText || hasAttachment)
-            ? localizations.sendMessage
-            : localizations.startListening;
+        ? localizations.sendMessage
+        : localizations.startListening;
 
     return InputWidgetBuilders.buildActionButton(
       buttonSize: buttonSize,

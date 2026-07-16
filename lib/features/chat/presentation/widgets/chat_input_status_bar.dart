@@ -47,8 +47,7 @@ class ChatInputStatusBar extends ConsumerWidget {
       McpConnectionStatus.disabled => ChatoraiColors.gray,
       McpConnectionStatus.failed ||
       McpConnectionStatus.needsAuth ||
-      McpConnectionStatus.needsClientRegistration =>
-        ChatoraiColors.error,
+      McpConnectionStatus.needsClientRegistration => ChatoraiColors.error,
     };
   }
 
@@ -84,8 +83,7 @@ class ChatInputStatusBar extends ConsumerWidget {
       final tooltipMessage = TextSpan(
         children: [
           for (final entry in statuses.entries) ...[
-            if (statuses.keys.first != entry.key)
-              const TextSpan(text: '\n'),
+            if (statuses.keys.first != entry.key) const TextSpan(text: '\n'),
             WidgetSpan(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 2.0),
@@ -145,10 +143,7 @@ class ChatInputStatusBar extends ConsumerWidget {
                 SizedBox(
                   width: 12,
                   height: 12,
-                  child: SpinKitCircle(
-                    size: 12,
-                    color: ChatoraiColors.gray,
-                  ),
+                  child: SpinKitCircle(size: 12, color: ChatoraiColors.gray),
                 ),
                 const SizedBox(width: ChatoraiSpacing.xs),
                 const Text(

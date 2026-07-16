@@ -55,7 +55,10 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     if (WidgetsBinding
-        .instance.platformDispatcher.accessibilityFeatures.reduceMotion) {
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
+        .reduceMotion) {
       // Уважение настройки «уменьшить движение» — показываем статичный вид.
       _entranceController.value = 1.0;
     } else {

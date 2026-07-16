@@ -124,7 +124,11 @@ class _AddProviderDialogState extends State<AddProviderDialog> {
       constraints: BoxConstraints(
         maxWidth: screenSize.width < 600 ? screenSize.width - 32 : 560,
       ),
-      title: Text(_isEditing ? localizations.addProviderTitleEdit : localizations.addProviderTitleAdd),
+      title: Text(
+        _isEditing
+            ? localizations.addProviderTitleEdit
+            : localizations.addProviderTitleAdd,
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,

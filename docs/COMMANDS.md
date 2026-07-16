@@ -55,6 +55,76 @@ flutter build web --release
 
 ---
 
+## Application CLI Commands
+
+ChatORAI ships as a **single binary** that serves both the GUI and the CLI. The
+entry point checks for CLI arguments first (`runCliIfRequested` in
+`lib/core/cli/cli_commands.dart`); if a command matches, it runs and exits
+**without starting the Flutter engine**. Run `chatorai` with no arguments to
+launch the GUI.
+
+### `chatorai` (no arguments)
+
+Launches the ChatORAI GUI.
+
+### `chatorai --help` / `-h`
+
+Prints the main help text listing available commands.
+
+### `chatorai --version` / `-v`
+
+Prints the installed version, e.g.:
+
+```
+chatorai 0.1.0
+```
+
+### `chatorai stats [options]`
+
+Aggregates and prints token usage, cost, and tool usage from the local session
+database.
+
+```
+Usage: chatorai stats [options]
+
+Options:
+  --days <number>   Show stats for the last N days (0 = all time)
+  --tools <number>  Show top N tools by usage (default: all)
+  --help            Show this help
+```
+
+### `chatorai models`
+
+Lists all available models grouped by provider (from the local catalog cache
+or built-in providers).
+
+### `chatorai upgrade [target]`
+
+Upgrade to the latest released build (or a specific `target` version) from GitHub
+Releases and install it to `/usr/local/lib/chatorai/`. Requires `sudo` for the
+copy step. No Flutter SDK needed. This is the one-command way to install or
+update ChatORAI.
+
+```
+Usage: chatorai upgrade [target]
+
+upgrade chatorai to the latest or a specific version
+
+Positionals:
+  target  version to upgrade to, e.g. '0.1.0' or 'v0.1.0'  [string]
+
+Options:
+  -h, --help  show help
+```
+
+Equivalent to re-running the installer:
+
+```
+curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | sudo bash
+```
+
+---
+
 ## @-Commands (Agent Calls)
 
 Type `@` followed by agent name to quickly invoke a subagent with additional context.
@@ -166,3 +236,4 @@ For architecture, see `ARCHITECTURE.md`.
 
 - [Subagent @-mention Routing](../diagrams/architecture-overview.md#high-level-data-flow)
 - [Tool Execution Lifecycle](../diagrams/architecture-overview.md#tool-execution-lifecycle)
+- [Install / Upgrade Flow](../diagrams/architecture-overview.md#install--upgrade-flow-linux)

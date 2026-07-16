@@ -82,9 +82,7 @@ extension _ChatScreenEditsExt on _ChatScreenState {
       _scrollToBottom(force: true);
     });
 
-    final apiMessages = _buildApiMessages(
-      chatWithAssistant,
-    );
+    final apiMessages = _buildApiMessages(chatWithAssistant);
     await _initiateStream(
       chat: chatWithAssistant,
       messages: apiMessages,

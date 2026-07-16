@@ -282,7 +282,7 @@ class McpClientService {
     );
 
     final client = McpClient(
-      Implementation(name: 'chatorai', version: '1.0.0'),
+      Implementation(name: 'chatorai', version: '0.1.0'),
     );
 
     await client.connect(transport);
@@ -298,7 +298,7 @@ class McpClientService {
     );
 
     final client = McpClient(
-      Implementation(name: 'chatorai', version: '1.0.0'),
+      Implementation(name: 'chatorai', version: '0.1.0'),
     );
 
     await client.connect(transport);

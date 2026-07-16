@@ -188,6 +188,64 @@ graph TD
 
 **Note:** First-found-wins — no CLI/env overrides, no merging of multiple configs.
 ---
+## Install / Upgrade Flow (Linux)
+
+```mermaid
+graph TD
+    start_["User runs installer"]
+    sudo_check{"Running\nas root?"}
+    arch_detect["Detect architecture\n(x64 / arm64)"]
+    version_resolve{"Version\nspecified?"}
+    resolve_latest["Resolve latest release\nvia GitHub API"]
+    use_specified["Use specified version\n(e.g. 0.1.0 or v0.1.0)"]
+    download["Download tarball\nchatorai-linux-{arch}.tar.gz"]
+    extract["Extract bundle"]
+    install_files["Copy to /usr/local/lib/chatorai"]
+    gl_check{"OpenGL\n>= 3.0?"}
+    soft_gl_flag["Create .force_soft_gl flag\n(/usr/local/lib/chatorai/.force_soft_gl)"]
+    create_launcher["Create /usr/local/bin/chatorai\nwith GL self-healing logic"]
+    desktop_entry["Create .desktop entry\n/usr/share/applications"]
+    finish["Installation complete"]
+
+    start_ --> sudo_check
+    sudo_check -->|"no"| error_sudo["Error: please run with sudo"]
+    sudo_check -->|"yes"| arch_detect
+    arch_detect --> version_resolve
+    version_resolve -->|"no"| resolve_latest
+    version_resolve -->|"yes"| use_specified
+    resolve_latest --> download
+    use_specified --> download
+    download --> extract
+    extract --> install_files
+    install_files --> gl_check
+    gl_check -->|"no / llvmpipe"| soft_gl_flag
+    gl_check -->|"yes"| create_launcher
+    soft_gl_flag --> create_launcher
+    create_launcher --> desktop_entry
+    desktop_entry --> finish
+
+    %% Upgrade path (in-app)
+    upgrade_cmd["chatorai upgrade [target]"]
+    upgrade_download["Download tarball"]
+    upgrade_extract["Extract to staging"]
+    upgrade_rm["rm -rf /usr/local/lib/chatorai"]
+    upgrade_cp["cp -r new bundle"]
+    upgrade_done["Upgrade complete\n(launcher handles GL)"]
+
+    upgrade_cmd --> upgrade_download
+    upgrade_download --> upgrade_extract
+    upgrade_extract --> upgrade_rm
+    upgrade_rm --> upgrade_cp
+    upgrade_cp --> upgrade_done
+```
+
+**Notes:**
+- Installer script: `install_chatorai.sh`
+- Upgrade command: `chatorai upgrade [target]` (positional version arg, e.g. `0.1.0` or `v0.1.0`; `--help` supported)
+- Launcher auto-detects OpenGL < 3.0 via `glxinfo`, switches to `LIBGL_ALWAYS_SOFTWARE=1` + `GALLIUM_DRIVER=llvmpipe`
+- Override with `CHATORAI_FORCE_SOFT_GL=0/1`; persistence flag `.force_soft_gl`
+- On SIGSEGV=139 / SIGABRT=134, launcher transparently retries with software rendering
+---
 ## Reference
 
 | Diagram | Described in | Source files |
@@ -197,3 +255,4 @@ graph TD
 | Tool Execution Lifecycle | `docs/API.md` → Tools | `lib/core/tools/tool_registry.dart`, `tool_execution.dart` |
 | MCP Connection Architecture | `docs/API.md` → McpClientService | `lib/core/mcp/mcp_client_service.dart` |
 | Config Resolution Chain | `docs/configuration.md` | `lib/core/config/config_loader.dart`, `docs/xdg-paths.md` |
+| Install / Upgrade Flow | `README.md`, `docs/COMMANDS.md` | `install_chatorai.sh`, `lib/core/cli/cli_commands.dart` |

@@ -67,8 +67,7 @@ Future<bool> deleteProvider({
     context: context,
     builder: (dialogContext) {
       return AlertDialog(
-        title: Text(
-            localizations.deleteProviderTitle(providerName)),
+        title: Text(localizations.deleteProviderTitle(providerName)),
         content: Text(localizations.deleteProviderContent),
         actions: [
           TextButton(

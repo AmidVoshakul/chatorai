@@ -118,7 +118,9 @@ void main() {
       // Drift's watch() emits the current (empty) snapshot immediately on
       // subscription, so wait for the first non-empty emission — the one
       // produced by the append below.
-      final futureEvents = store.streamEvents(sid).firstWhere((e) => e.isNotEmpty);
+      final futureEvents = store
+          .streamEvents(sid)
+          .firstWhere((e) => e.isNotEmpty);
       await store.append(
         SessionCreated(sessionId: sid, timestamp: DateTime.now()),
       );

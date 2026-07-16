@@ -89,10 +89,11 @@ class EventStore {
     List<SessionID> sessionIds,
   ) async {
     if (sessionIds.isEmpty) return const [];
-    final rows = await (_db.select(_db.events)
-          ..where((e) => e.sessionId.isIn(sessionIds.map((s) => s.value)))
-          ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
-        .get();
+    final rows =
+        await (_db.select(_db.events)
+              ..where((e) => e.sessionId.isIn(sessionIds.map((s) => s.value)))
+              ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
+            .get();
     return rows.map<SessionEvent>(_deserialize).toList();
   }
 

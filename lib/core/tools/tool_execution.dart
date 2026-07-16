@@ -205,7 +205,7 @@ class ToolExecutor {
         'ToolExecutor: DONE ${def.id} outputLen=${result.output.length}',
       );
 
-      // Handle overflow and truncation 
+      // Handle overflow and truncation
       final truncResult = await TruncationService.instance.output(
         result.output,
         hasTaskTool: true,

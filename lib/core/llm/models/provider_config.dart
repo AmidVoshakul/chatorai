@@ -186,7 +186,7 @@ class ProviderConfig extends Equatable {
   /// Build per-provider options for a model call.
   ///
   /// Merges provider default body, model metadata (under the `providerOptions`
-  /// key), and variant body in order (later wins). This follows the 
+  /// key), and variant body in order (later wins). This follows the
   /// pattern where each provider contributes its specific body fields
   /// (e.g., `thinkingConfig` for Anthropic Claude, `reasoningEffort` for
   /// OpenAI, or `promptCacheKey` for Bedrock).

@@ -43,9 +43,7 @@ extension _ChatScreenAiExt on _ChatScreenState {
       _scrollToBottom(force: true);
     });
 
-    final messages = _buildApiMessages(
-      chatWithPlaceholder,
-    );
+    final messages = _buildApiMessages(chatWithPlaceholder);
     await _initiateStream(
       chat: chatWithPlaceholder,
       messages: messages,
@@ -78,9 +76,7 @@ extension _ChatScreenAiExt on _ChatScreenState {
       _scrollToBottom(force: true);
     });
 
-    final continuationPrompt = _buildApiMessages(
-      chatFromStorage,
-    );
+    final continuationPrompt = _buildApiMessages(chatFromStorage);
     // Replace last assistant content with continue instruction
     if (continuationPrompt.isNotEmpty) {
       continuationPrompt[continuationPrompt.length - 1] = {

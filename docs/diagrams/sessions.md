@@ -96,20 +96,15 @@ stateDiagram-v2
         ReasoningStarted --> ReasoningDelta : stream
         ReasoningDelta --> ReasoningDelta : stream
         ReasoningDelta --> ReasoningEnded : done
-
-        [*] --> ToolInputStarted
-        ToolInputStarted --> ToolInputDelta : stream
-        ToolInputDelta --> ToolInputDelta : stream
-        ToolInputDelta --> ToolInputEnded : done
     }
 
     StepStarted --> StepEnded : no tool calls
-    ToolInputEnded --> ToolSuccess : tool completed
+    StepStarted --> ToolCalled : tool call begins
+    ToolCalled --> ToolSuccess : tool completed
+    ToolCalled --> ToolFailed : tool error
     ToolSuccess --> StepEnded : next step
-    StepEnded --> ToolSuccess : tool call in next step
-    StepEnded --> StepFailed : non-retryable error
-    StepFailed --> StepEnded : recover
-    StepFailed --> CompactionStarted : fallback compaction
+    ToolFailed --> StepEnded : recover
+    ToolFailed --> CompactionStarted : fallback compaction
 
     StepEnded --> CompactionStarted : token overflow
     CompactionStarted --> CompactionEnded : summary written
@@ -163,8 +158,8 @@ sequenceDiagram
     SR->>Repo: appendEvent(MessageAdded)
     Repo->>ES: insert into events + messages
     SR->>CAS: streamChatCompletion(messages, tools)
-    CAS->>SR: onToolStart(ToolStartEvent)
-    SR->>Repo: appendEvent(ToolInputStarted)
+    CAS->>SR: onToolStart(toolCallId, toolName, input)
+    SR->>Repo: appendEvent(ToolCalled)
     Repo->>ES: insert event
     SR->>Tool: execute(toolDef, input)
     Tool->>Tool: permission check + cache + doom-loop (max 3)

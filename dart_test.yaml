@@ -1,0 +1,7 @@
+tags:
+  network:
+    description: >-
+      Tests that reach external network services (e.g. httpbin.org). These are
+      flaky in CI due to third-party availability and are excluded from the
+      release pipeline via `--exclude-tags network`. Run them locally with
+      `flutter test --tags network`.

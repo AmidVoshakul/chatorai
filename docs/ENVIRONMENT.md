@@ -54,11 +54,40 @@ If you encounter "CMake not found" errors, install CMake from https://cmake.org/
 
 ## Runtime Dependencies
 
-When running from source or after installation:
+### End-User (Prebuilt Install)
 
-- **Internet access** — for API calls to OpenRouter or custom endpoints.
-- **Microphone** — for voice input (optional, requires `permission_handler` on mobile).
-- **Camera** — for image capture (mobile only, requires permissions).
+When installing a prebuilt release via `install_chatorai.sh` / `install_chatorai.ps1`
+/ `install_chatorai.bat` (or the AppImage / `.deb`), **no Flutter SDK or build
+toolchain is required**. The only requirements are:
+
+- **Linux system libraries** — `libgtk-3-0 libgdk-pixbuf-2.0-0 libpango-1.0-0 libcairo2`
+- **Windows** — Visual C++ Redistributable (x64)
+- **Internet access** — for API calls to OpenRouter or custom endpoints
+- **Microphone / Camera** — optional, for voice and image features
+
+If hardware OpenGL is unavailable, the app automatically falls back to software
+rendering (`LIBGL_ALWAYS_SOFTWARE=1` and `GALLIUM_DRIVER=llvmpipe`).
+
+On GPUs exposing OpenGL < 3.0 (e.g. Intel HD Ironlake), the launcher
+auto-detects the limitation and enables software rendering before the first
+launch. Users can override this behavior with the `CHATORAI_FORCE_SOFT_GL`
+environment variable:
+
+- `CHATORAI_FORCE_SOFT_GL=1` — force software rendering
+- `CHATORAI_FORCE_SOFT_GL=0` — force hardware OpenGL
+
+The launcher also persists the software-rendering decision in a `.force_soft_gl`
+flag file. For the tarball installer, the flag is stored under the install tree
+(`/usr/local/lib/chatorai/.force_soft_gl`). For the `.deb` package (where the
+install tree is read-only for normal users), the flag is stored in the user cache
+directory (`${XDG_CACHE_HOME:-$HOME/.cache}/chatorai/.force_soft_gl`). If a
+hardware OpenGL crash occurs (SIGSEGV=139 or SIGABRT=134), the launcher
+transparently retries with software rendering and creates the flag file.
+
+### Development (Building from Source)
+
+When running from source, you also need the Flutter SDK and Dart SDK as
+described in the [Development Environment](#development-environment) section.
 
 ---
 
@@ -233,7 +262,7 @@ dev_dependencies:
   ```bash
   LIBGL_ALWAYS_SOFTWARE=1 flutter run -d linux
   ```
-- **Installation script**: `install_app.sh` copies bundle to `/usr/local/lib/chatorai/` and creates `chatorai` CLI command.
+- **Installation script**: `install_chatorai.sh` downloads the prebuilt bundle and copies it to `/usr/local/lib/chatorai/`, creating the `chatorai` CLI command. No Flutter needed.
 
 ### Windows
 
@@ -241,7 +270,7 @@ dev_dependencies:
   ```powershell
   flutter build windows --release
   ```
-- **Installer**: `install_app.ps1` (PowerShell) or `install_app.bat` (CMD). Run as Administrator.
+- **Installer**: `install_chatorai.ps1` (PowerShell) or `install_chatorai.bat` (CMD). Downloads the prebuilt bundle; run as Administrator. No Flutter needed.
 - **Runtime DLLs**: If you see missing DLL errors, install [Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe).
 
 ### Android
@@ -326,5 +355,4 @@ sudo xcodebuild -runFirstLaunch
 
 For command reference, see `docs/COMMANDS.md`.  
 For API details, see `docs/API.md`.  
-For architecture, see `ARCHITECTURE.md`.  
-For known issues and workarounds, see `README.md` "Known Gotchas" section.
+For architecture, see `ARCHITECTURE.md`.

@@ -29,7 +29,8 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final modelState = ref.read(modelProvider);
       if (modelState.selectedModelId.isNotEmpty) {
-        ref.read(modelSettingsProvider.notifier)
+        ref
+            .read(modelSettingsProvider.notifier)
             .setActiveModel(modelState.selectedModelId);
       }
     });
@@ -127,13 +128,16 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
     final modelState = ref.watch(modelProvider);
     final settingsState = ref.watch(modelSettingsProvider);
 
-    if (!_populated && settingsState.activeSettings != null && !settingsState.isLoading) {
+    if (!_populated &&
+        settingsState.activeSettings != null &&
+        !settingsState.isLoading) {
       _populated = true;
       final agent = ref.read(currentAgentProvider);
       final displayTemp =
           agent.temperature ?? settingsState.activeSettings!.temperature;
       _temperatureController.text = displayTemp.toStringAsFixed(1);
-      _systemPromptController.text = settingsState.activeSettings!.systemPrompt ?? '';
+      _systemPromptController.text =
+          settingsState.activeSettings!.systemPrompt ?? '';
     }
 
     String modelName = localizations.noModelSelected;

@@ -19,25 +19,49 @@ A modern AI chat application built with Flutter and Riverpod. Connect to any Ope
 
 ## 🚀 Quick Start
 
-### 1. Prerequisites
+### End Users (no Flutter required)
+
+Install ChatORAI with a single command — prebuilt binaries are published to
+[GitHub Releases](https://github.com/AmidVoshakul/chatorai/releases/latest):
+
+**Linux (one-line installer):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | sudo bash
+```
+
+Alternative Linux formats from the release page: `chatorai-*.AppImage` (portable, just `chmod +x` and run) and `chatorai-*.deb` (`sudo apt install ./chatorai-*.deb`).
+
+**Windows:** download `install_chatorai.ps1` (run as Administrator) or `install_chatorai.bat` from the release, or use the `chatorai-*.zip` directly.
+
+**macOS:** download `chatorai-*.dmg` from the release and drag to Applications.
+
+After install, update anytime with `chatorai upgrade`.
+
+### Developers (build from source)
+
+Prerequisites:
 
 - Flutter 3.44.0 (stable)
 - Dart SDK 3.11.0+
 - Linux users: install system libs (`libgtk-3-0 libgdk-pixbuf-2.0-0 libpango-1.0-0 libcairo2`)
 
-### 2. Configure API
+Configure API key:
 
 **For development** — copy `.env.example` to `.env` and add your API key:
 
 ```env
-OPENROUTER_API_KEY=your_key_here
+OPENROUTER_API_KEY=sk-...
+NVIDIA_API_KEY=nvapi-...
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 `.env` is gitignored and **not included in release builds**.
 
 **For end users** — the app provides a settings screen to enter API key and base URL. Values are stored securely in `SharedPreferences`.
 
-### 3. Install & Run
+Build & run:
 
 ```bash
 flutter pub get
@@ -45,6 +69,7 @@ flutter gen-l10n   # only after editing lib/l10n/*.arb
 flutter analyze
 flutter test
 flutter run -d linux   # or windows, android, ios (macOS required for iOS)
+LIBGL_ALWAYS_SOFTWARE=1 flutter run -d linux  # Linux software rendering
 ```
 
 That's it! The app will launch and you can start chatting.
@@ -64,10 +89,11 @@ That's it! The app will launch and you can start chatting.
 
 ### Diagrams
 
-- [Architecture Overview](docs/diagrams/architecture-overview.md) — Data flow, session pipeline, MCP topology, config resolution
+- [Architecture Overview](docs/diagrams/architecture-overview.md) — Data flow, session pipeline, MCP topology, config resolution, install/upgrade flow
 - [Session Core](docs/diagrams/sessions.md) — Drift ER diagram and SessionEvent state machine
 - [Tool System](docs/diagrams/tools.md) — Tool registry, conditional registration, execution lifecycle
 - [MCP Integration](docs/diagrams/mcp.md) — Transport topology, connection lifecycle, config models
+- [CI / Release Pipeline](docs/diagrams/ci-release.md) — GitHub Actions workflow, artifact packaging, GitHub Release publication
 
 ### Platform Guides
 
@@ -79,27 +105,44 @@ That's it! The app will launch and you can start chatting.
 - [Contributing](CONTRIBUTING.md) — Git workflow, code style, and testing requirements
 - [Code of Conduct](CODE_OF_CONDUCT.md) — Community standards and enforcement
 
-## 🖥️ Installation Packages
+## 🖥️ Installation
 
-### Linux
+Prebuilt binaries are published to [GitHub Releases](https://github.com/AmidVoshakul/chatorai/releases/latest) on every tagged version. **No Flutter SDK required** for end users.
+
+### Linux (one command)
 
 ```bash
-sudo ./install_app.sh
+curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | sudo bash
 ```
 
-Installs to `/usr/local/lib/chatorai/` with desktop entry and `chatorai` command.
+Downloads the latest prebuilt bundle, installs to `/usr/local/lib/chatorai/` with a desktop entry and `chatorai` command. Or grab `chatorai-*.AppImage` (run directly) / `chatorai-*.deb` from the release page.
 
 ### Windows
 
-```powershell
-# Build first
-flutter build windows --release
+Download `install_chatorai.ps1` (run as Administrator) or `install_chatorai.bat` from the release, or extract `chatorai-*.zip` to `C:\Program Files\ChatORAI\`. Adds Start Menu shortcut and PATH entry.
 
-# Then run installer as Administrator
-PowerShell -ExecutionPolicy Bypass -File ".\install_app.ps1"
+### macOS
+
+Download `chatorai-*.dmg` from the release and drag ChatORAI to Applications.
+
+### Update
+
+```bash
+chatorai upgrade
 ```
 
-Installs to `C:\Program Files\ChatORAI\` with Start Menu shortcut.
+### Uninstall
+
+```bash
+sudo rm -rf /usr/local/lib/chatorai \
+           /usr/local/bin/chatorai \
+           /usr/share/applications/chatorai.desktop \
+           /usr/share/icons/hicolor/256x256/apps/chatorai.png
+```
+
+### CLI
+
+ChatORAI is a single binary. `chatorai --help` lists commands (`stats`, `models`, `upgrade`, `--version`); `chatorai` with no args launches the GUI.
 
 ## 🔧 Development Commands
 

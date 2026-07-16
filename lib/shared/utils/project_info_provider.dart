@@ -28,11 +28,11 @@ final workingDirProvider = Provider<String>((ref) {
 /// git repository or git is unavailable.
 final gitBranchProvider = FutureProvider<String?>((ref) async {
   try {
-    final result = await Process.run(
-      'git',
-      ['rev-parse', '--abbrev-ref', 'HEAD'],
-      runInShell: true,
-    );
+    final result = await Process.run('git', [
+      'rev-parse',
+      '--abbrev-ref',
+      'HEAD',
+    ], runInShell: true);
     if (result.exitCode == 0) {
       final branch = (result.stdout as String? ?? '').trim();
       return branch.isNotEmpty ? branch : null;

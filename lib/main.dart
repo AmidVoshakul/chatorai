@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:chatorai/features/bootstrap/bootstrap_error_screen.dart';
@@ -7,6 +8,7 @@ import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/permission_overlay.dart';
 import 'package:chatorai/features/settings/screens/settings_screen.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/core/cli/cli_commands.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/logger.dart';
@@ -21,7 +23,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // MAIN ENTRY POINT
 // ===========================================================================
 
-void main() async {
+void main(List<String> args) async {
+  // CLI mode (--help / stats / models / upgrade / --version) must be handled
+  // before any Flutter initialization so the engine never starts for non-GUI
+  // use. The compiled GUI binary embeds the same CLI logic. exit() ensures
+  // background workers (drift/sqlite isolate) don't keep the process alive.
+  if (await runCliIfRequested(args)) exit(0);
+
   WidgetsFlutterBinding.ensureInitialized();
 
   LogConfig.enabled = true;

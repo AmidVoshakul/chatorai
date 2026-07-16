@@ -45,12 +45,11 @@ void main() {
         ProviderScope(
           overrides: [
             gitBranchProvider.overrideWith((_) async => 'main'),
-            mcpStatusesProvider
-                .overrideWith((_) async => {'s1': McpServerStatus.connected()}),
+            mcpStatusesProvider.overrideWith(
+              (_) async => {'s1': McpServerStatus.connected()},
+            ),
           ],
-          child: const MaterialApp(
-            home: Scaffold(body: ChatInputStatusBar()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
         ),
       );
       await tester.pumpAndSettle();
@@ -68,9 +67,7 @@ void main() {
             gitBranchProvider.overrideWith((_) async => 'main'),
             mcpStatusesProvider.overrideWith((_) async => {}),
           ],
-          child: const MaterialApp(
-            home: Scaffold(body: ChatInputStatusBar()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
         ),
       );
       await tester.pumpAndSettle();
@@ -83,12 +80,11 @@ void main() {
         ProviderScope(
           overrides: [
             gitBranchProvider.overrideWith((_) async => null),
-            mcpStatusesProvider
-                .overrideWith((_) async => {'s1': McpServerStatus.connected()}),
+            mcpStatusesProvider.overrideWith(
+              (_) async => {'s1': McpServerStatus.connected()},
+            ),
           ],
-          child: const MaterialApp(
-            home: Scaffold(body: ChatInputStatusBar()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
         ),
       );
       await tester.pumpAndSettle();
@@ -108,9 +104,7 @@ void main() {
               },
             ),
           ],
-          child: const MaterialApp(
-            home: Scaffold(body: ChatInputStatusBar()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
         ),
       );
       await tester.pumpAndSettle();
@@ -129,9 +123,7 @@ void main() {
               (_) async => {'s1': McpServerStatus.needsAuth()},
             ),
           ],
-          child: const MaterialApp(
-            home: Scaffold(body: ChatInputStatusBar()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
         ),
       );
       await tester.pumpAndSettle();
@@ -146,12 +138,11 @@ void main() {
         ProviderScope(
           overrides: [
             gitBranchProvider.overrideWith((_) async => null),
-            mcpStatusesProvider
-                .overrideWith((_) async => {'s1': McpServerStatus.connected()}),
+            mcpStatusesProvider.overrideWith(
+              (_) async => {'s1': McpServerStatus.connected()},
+            ),
           ],
-          child: const MaterialApp(
-            home: Scaffold(body: ChatInputStatusBar()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
         ),
       );
       await tester.pumpAndSettle();
@@ -168,12 +159,11 @@ void main() {
         ProviderScope(
           overrides: [
             gitBranchProvider.overrideWith((_) async => null),
-            mcpStatusesProvider
-                .overrideWith((_) async => {'s1': McpServerStatus.disabled()}),
+            mcpStatusesProvider.overrideWith(
+              (_) async => {'s1': McpServerStatus.disabled()},
+            ),
           ],
-          child: const MaterialApp(
-            home: Scaffold(body: ChatInputStatusBar()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
         ),
       );
       await tester.pumpAndSettle();
@@ -222,9 +212,7 @@ void main() {
               },
             ),
           ],
-          child: const MaterialApp(
-            home: Scaffold(body: ChatInputStatusBar()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
         ),
       );
       await tester.pumpAndSettle();
@@ -248,12 +236,11 @@ void main() {
         ProviderScope(
           overrides: [
             gitBranchProvider.overrideWith((_) async => null),
-            mcpStatusesProvider
-                .overrideWith((_) async => {'alpha': McpServerStatus.connected()}),
+            mcpStatusesProvider.overrideWith(
+              (_) async => {'alpha': McpServerStatus.connected()},
+            ),
           ],
-          child: const MaterialApp(
-            home: Scaffold(body: ChatInputStatusBar()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
         ),
       );
       await tester.pumpAndSettle();
@@ -266,9 +253,7 @@ void main() {
       expect(parts.$3, ChatoraiColors.gray);
     });
 
-    testWidgets('shows spinner while mcp statuses are loading', (
-      tester,
-    ) async {
+    testWidgets('shows spinner while mcp statuses are loading', (tester) async {
       final completer = Completer<Map<String, McpServerStatus>>();
       await tester.pumpWidget(
         ProviderScope(
@@ -276,9 +261,7 @@ void main() {
             gitBranchProvider.overrideWith((_) async => null),
             mcpStatusesProvider.overrideWith((_) => completer.future),
           ],
-          child: const MaterialApp(
-            home: Scaffold(body: ChatInputStatusBar()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
         ),
       );
       await tester.pump();

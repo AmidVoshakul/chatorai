@@ -31,9 +31,7 @@ class StatsScreen extends ConsumerWidget {
           }
           if (snapshot.hasError) {
             return Center(
-              child: Text(
-                localizations.statsError(snapshot.error.toString()),
-              ),
+              child: Text(localizations.statsError(snapshot.error.toString())),
             );
           }
           final stats = snapshot.data;

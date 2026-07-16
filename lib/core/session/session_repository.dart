@@ -53,7 +53,7 @@ class SessionRepository {
   /// Derives a child session's [PermissionRuleset] from the parent's.
   ///
   /// Copied parent deny rules are preserved, and `task` and `todowrite`
-  /// are unconditionally denied — matching 
+  /// are unconditionally denied — matching
   /// [deriveSubagentSessionPermission] semantics so that subagents cannot
   /// delegate further or manage their own task metadata.
   static PermissionRuleset deriveChildPermissions(

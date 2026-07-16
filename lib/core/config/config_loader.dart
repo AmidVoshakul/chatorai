@@ -103,8 +103,12 @@ class ConfigLoader {
     }
     for (final entry in overlay.entries) {
       final baseValue = result[entry.key];
-      if (baseValue is Map<String, dynamic> && entry.value is Map<String, dynamic>) {
-        result[entry.key] = _deepMerge(baseValue, entry.value as Map<String, dynamic>);
+      if (baseValue is Map<String, dynamic> &&
+          entry.value is Map<String, dynamic>) {
+        result[entry.key] = _deepMerge(
+          baseValue,
+          entry.value as Map<String, dynamic>,
+        );
       } else {
         result[entry.key] = entry.value;
       }

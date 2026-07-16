@@ -2,9 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.1.0]
+
+First public release.
 
 ### Added
+
+- One-command prebuilt install for Linux (`install_chatorai.sh`), Windows (`install_chatorai.ps1`/`.bat`), and macOS (`.dmg`). No Flutter SDK required for end users.
+- `chatorai upgrade [target]` command for in-app updates (downloads latest release from GitHub and installs to `/usr/local/lib/chatorai`).
 
 - **Session Parts Provider**: New `sessionPartsProvider` for reactive streaming of both parent and child sessions, replacing the legacy `streamingMessageProvider` with a granular part-based approach.
 
@@ -117,7 +122,7 @@ All notable changes to this project will be documented in this file.
 
 - **Android database hang**: `createFileDatabase()` in `lib/core/session/database.dart` no longer imports `xdg_paths_cli.dart`. The function now requires an explicit `dataDir` parameter and creates the directory inline with `Directory(dataDir).create(recursive: true)`. `session_db_provider.dart` imports the Flutter-aware `xdg_paths.dart` and passes `await XdgPaths.dataHomeAsync`, which resolves to the app's sandboxed support directory on Android. `bin/chatorai.dart` passes `XdgPaths.dataHome` from `xdg_paths_cli.dart`. Removed temporary `.timeout(10s)` debug wrapper from `chat_screen_messaging.dart`; removed unused `import 'dart:async'` from `chat_screen.dart`.
 
-## [0.1.1]
+## Earlier development
 
 ### Added
 
@@ -142,30 +147,3 @@ All notable changes to this project will be documented in this file.
 - **lib/features/chat/presentation/widgets/parts/tool_result_part_widget.dart [COMPLETED]** — Complete terminal-style bash output redesign: uniform background (`Colors.black26` / `Colors.white38`), monospaced `$` prompt with command on the same row, `SingleChildScrollView` with `SelectableText` for output, and copy button with "✅ Copied" timer feedback. Bash body is always visible (not hidden behind `AnimatedCrossFade`); collapsed state renders `_bashPreview` (max 10 lines / 500 chars), expanded state renders full output. Standardized all tool header opacity to `0.5`. Unified terminal color across prompt, command, and result using `onSurface` at `alpha: 0.7`.
 - **lib/core/tools/tool_registry.dart [COMPLETED]** — Fixed JSON wrapping in tool result streaming. `executeDynamic` now extracts the plain text output key from `Map<String, dynamic>` results (`'output'`, then `'message'`, then `toString()` fallback) before returning to the SDK. Eliminates the nested `{"output":"...","metadata":{...}}` JSON wrapping previously produced for all tool results (bash, read, grep, write, edit, etc.).
 
-## [0.1.0] - 2026-06-28
-
-### Added
-
-- Multiple AI models support via OpenRouter
-- Voice input with speech-to-text
-- Camera and image attachment support
-- Advanced Markdown rendering with syntax highlighting
-- Dark/Light theme support with Ubuntu design
-- Multi-language support (English, Russian, Ukrainian, Chinese, Japanese, Arabic)
-- RTL language support
-- Local chat history storage
-- Code block rendering with syntax highlighting
-- Streaming responses from AI
-- Welcome suggestions for new chats
-- Chat navigation with markdown headings
-- Adaptive token management for long conversations
-
-### Changed
-
-- Migrated to Riverpod 3.x for state management
-- Optimized performance for weak devices
-- Improved UI responsiveness
-
-### Fixed
-
-- Various bug fixes and improvements

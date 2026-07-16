@@ -1,4 +1,3 @@
-
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' show ToolSet;
 import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/llm/model_resolver.dart';
@@ -40,9 +39,7 @@ class _TestNotifier {
   ChatScreenState get state => _state;
 
   void startStreaming(String sessionId) {
-    _state = _state.copyWith(
-      streamingSessionId: sessionId,
-    );
+    _state = _state.copyWith(streamingSessionId: sessionId);
   }
 
   void finalizeStreaming() {
@@ -50,10 +47,18 @@ class _TestNotifier {
         .where((p) => p is! AssistantTool || p.state != ToolState.running)
         .toList();
     _closedParts.addAll(completed);
-    _state = _state.copyWith(clearStreamingSessionId: true, streamingParts: const []);
+    _state = _state.copyWith(
+      clearStreamingSessionId: true,
+      streamingParts: const [],
+    );
   }
 
-  void onChunk(String partId, String messageId, String sessionId, String delta) {
+  void onChunk(
+    String partId,
+    String messageId,
+    String sessionId,
+    String delta,
+  ) {
     final currentParts = _state.streamingParts;
     final parts = List<AssistantContent>.from(currentParts);
     final lastIsText = parts.isNotEmpty && parts.last is AssistantText;
@@ -69,15 +74,29 @@ class _TestNotifier {
         title: prev.title,
       );
     } else {
-      parts.add(AssistantText(id: partId, sessionId: sessionId, messageId: messageId, text: delta));
+      parts.add(
+        AssistantText(
+          id: partId,
+          sessionId: sessionId,
+          messageId: messageId,
+          text: delta,
+        ),
+      );
     }
     _state = _state.copyWith(streamingParts: parts);
   }
 
-  void onReasoning(String partId, String messageId, String sessionId, String delta) {
+  void onReasoning(
+    String partId,
+    String messageId,
+    String sessionId,
+    String delta,
+  ) {
     final currentParts = _state.streamingParts;
     final parts = List<AssistantContent>.from(currentParts);
-    final openIdx = parts.lastIndexWhere((p) => p is AssistantReasoning && p.ended == null);
+    final openIdx = parts.lastIndexWhere(
+      (p) => p is AssistantReasoning && p.ended == null,
+    );
     if (openIdx >= 0) {
       final prev = parts[openIdx] as AssistantReasoning;
       parts[openIdx] = AssistantReasoning(
@@ -89,37 +108,62 @@ class _TestNotifier {
         ended: null,
       );
     } else {
-      parts.add(AssistantReasoning(
-        id: partId, sessionId: sessionId, messageId: messageId, text: delta,
-        started: DateTime.now(), ended: null,
-      ));
+      parts.add(
+        AssistantReasoning(
+          id: partId,
+          sessionId: sessionId,
+          messageId: messageId,
+          text: delta,
+          started: DateTime.now(),
+          ended: null,
+        ),
+      );
     }
     _state = _state.copyWith(streamingParts: parts);
   }
 
-  void onToolCall(String partId, String callId, String messageId, String sessionId, String toolName, Map<String, dynamic> input) {
+  void onToolCall(
+    String partId,
+    String callId,
+    String messageId,
+    String sessionId,
+    String toolName,
+    Map<String, dynamic> input,
+  ) {
     final currentParts = _state.streamingParts;
     final parts = List<AssistantContent>.from(currentParts);
     if (parts.any((p) => p is AssistantTool && p.callId == callId)) return;
-    parts.add(AssistantTool(
-      id: partId, sessionId: sessionId, messageId: messageId,
-      callId: callId, tool: toolName, state: ToolState.running, input: input,
-    ));
+    parts.add(
+      AssistantTool(
+        id: partId,
+        sessionId: sessionId,
+        messageId: messageId,
+        callId: callId,
+        tool: toolName,
+        state: ToolState.running,
+        input: input,
+      ),
+    );
     _state = _state.copyWith(streamingParts: parts);
   }
 
   void onToolEnd(String callId, String toolName, String result) {
     final currentParts = _state.streamingParts;
     final parts = List<AssistantContent>.from(currentParts);
-    final toolIdx = parts.indexWhere((p) => p is AssistantTool && p.callId == callId);
+    final toolIdx = parts.indexWhere(
+      (p) => p is AssistantTool && p.callId == callId,
+    );
     if (toolIdx < 0) return;
     final prev = parts[toolIdx] as AssistantTool;
     parts[toolIdx] = AssistantTool(
       id: prev.id ?? callId,
       sessionId: prev.sessionId ?? '',
       messageId: prev.messageId ?? '',
-      callId: callId, tool: toolName, state: ToolState.completed,
-      input: prev.input, output: result,
+      callId: callId,
+      tool: toolName,
+      state: ToolState.completed,
+      input: prev.input,
+      output: result,
     );
     _state = _state.copyWith(streamingParts: parts);
   }
@@ -127,15 +171,20 @@ class _TestNotifier {
   void onToolError(String callId, String toolName, String error) {
     final currentParts = _state.streamingParts;
     final parts = List<AssistantContent>.from(currentParts);
-    final toolIdx = parts.indexWhere((p) => p is AssistantTool && p.callId == callId);
+    final toolIdx = parts.indexWhere(
+      (p) => p is AssistantTool && p.callId == callId,
+    );
     if (toolIdx < 0) return;
     final prev = parts[toolIdx] as AssistantTool;
     parts[toolIdx] = AssistantTool(
       id: prev.id ?? callId,
       sessionId: prev.sessionId ?? '',
       messageId: prev.messageId ?? '',
-      callId: callId, tool: toolName, state: ToolState.error,
-      input: prev.input, output: error,
+      callId: callId,
+      tool: toolName,
+      state: ToolState.error,
+      input: prev.input,
+      output: error,
     );
     _state = _state.copyWith(streamingParts: parts);
   }
@@ -165,8 +214,11 @@ class _DbHarness {
   final ToolRegistry toolRegistry;
 
   _DbHarness({
-    required this.db, required this.repository,
-    required this.runner, required this.runnerHolder, required this.toolRegistry,
+    required this.db,
+    required this.repository,
+    required this.runner,
+    required this.runnerHolder,
+    required this.toolRegistry,
   });
 
   ToolDef createTaskToolWithDeps() => createTaskTool(
@@ -197,7 +249,9 @@ class _FakeChatAiService extends ChatAiService {
     when(() => mockPrefs.getInt(any())).thenReturn(null);
     when(() => mockPrefs.getStringList(any())).thenReturn(null);
     final catalog = ProviderCatalogService(
-      secureStorage: mockSecureStorage, prefs: mockPrefs, builtInProviders: [],
+      secureStorage: mockSecureStorage,
+      prefs: mockPrefs,
+      builtInProviders: [],
     );
     return ModelResolver(catalog);
   }
@@ -266,8 +320,11 @@ Future<_DbHarness> _createDbHarness() async {
   ps.attachPreferences(_createMockPrefs());
   final toolRegistry = ToolRegistry(ps, PermissionRuleset(rules: []));
   return _DbHarness(
-    db: db, repository: repository, runner: runner,
-    runnerHolder: runnerHolder, toolRegistry: toolRegistry,
+    db: db,
+    repository: repository,
+    runner: runner,
+    runnerHolder: runnerHolder,
+    toolRegistry: toolRegistry,
   );
 }
 
@@ -289,15 +346,27 @@ void main() {
     test('streaming preserves text before and after tool execution', () {
       notifier.startStreaming('ses_test_1');
       notifier.onChunk('p1', 'm1', 'ses_test_1', 'Before tool. ');
-      notifier.onToolCall('pt1', 'c1', 'm1', 'ses_test_1', 'todowrite',
-        {'todos': [{'content': 'A', 'status': 'pending'}]});
+      notifier.onToolCall('pt1', 'c1', 'm1', 'ses_test_1', 'todowrite', {
+        'todos': [
+          {'content': 'A', 'status': 'pending'},
+        ],
+      });
       notifier.onToolEnd('c1', 'todowrite', '{"ok":true}');
       notifier.onChunk('p2', 'm1', 'ses_test_1', 'After tool.');
 
       final parts = notifier.snapshotClosedStreamingParts();
-      expect(parts.any((p) => p is AssistantText && p.text.contains('Before tool')), isTrue);
-      expect(parts.any((p) => p is AssistantText && p.text.contains('After tool')), isTrue);
-      expect(parts.any((p) => p is AssistantTool && p.state == ToolState.completed), isTrue);
+      expect(
+        parts.any((p) => p is AssistantText && p.text.contains('Before tool')),
+        isTrue,
+      );
+      expect(
+        parts.any((p) => p is AssistantText && p.text.contains('After tool')),
+        isTrue,
+      );
+      expect(
+        parts.any((p) => p is AssistantTool && p.state == ToolState.completed),
+        isTrue,
+      );
     });
 
     // -----------------------------------------------------------------------
@@ -306,24 +375,47 @@ void main() {
     test('tool result survives finalize (crash simulation)', () {
       notifier.startStreaming('ses_test_2');
       notifier.onChunk('p1', 'm1', 'ses_test_2', 'Thinking...');
-      notifier.onToolCall('pt1', 'c1', 'm1', 'ses_test_2', 'todowrite',
-        {'todos': [{'content': 'A', 'status': 'pending'}]});
+      notifier.onToolCall('pt1', 'c1', 'm1', 'ses_test_2', 'todowrite', {
+        'todos': [
+          {'content': 'A', 'status': 'pending'},
+        ],
+      });
       notifier.onToolEnd('c1', 'todowrite', 'Done');
 
       // Simulate crash — finalize without completing pending tools
-      notifier.onToolCall('pt2', 'c2', 'm1', 'ses_test_2', 'todowrite',
-        {'todos': [{'content': 'B', 'status': 'pending'}]});
+      notifier.onToolCall('pt2', 'c2', 'm1', 'ses_test_2', 'todowrite', {
+        'todos': [
+          {'content': 'B', 'status': 'pending'},
+        ],
+      });
       notifier.finalizeStreaming();
 
       final closed = notifier.snapshotClosedParts();
-      expect(closed.any((p) => p is AssistantTool && p.callId == 'c1' && p.state == ToolState.completed), isTrue,
-        reason: 'completed tool survives crash');
-      expect(closed.any((p) => p is AssistantText && p.text.contains('Thinking')), isTrue,
-        reason: 'text survives crash');
-      expect(closed.any((p) => p is AssistantTool && p.callId == 'c2'), isFalse,
-        reason: 'incomplete tool is cleared by finalize');
-      expect(notifier.snapshotCurrentStreamingParts(), isEmpty,
-        reason: 'streaming state is empty after finalize');
+      expect(
+        closed.any(
+          (p) =>
+              p is AssistantTool &&
+              p.callId == 'c1' &&
+              p.state == ToolState.completed,
+        ),
+        isTrue,
+        reason: 'completed tool survives crash',
+      );
+      expect(
+        closed.any((p) => p is AssistantText && p.text.contains('Thinking')),
+        isTrue,
+        reason: 'text survives crash',
+      );
+      expect(
+        closed.any((p) => p is AssistantTool && p.callId == 'c2'),
+        isFalse,
+        reason: 'incomplete tool is cleared by finalize',
+      );
+      expect(
+        notifier.snapshotCurrentStreamingParts(),
+        isEmpty,
+        reason: 'streaming state is empty after finalize',
+      );
     });
 
     // -----------------------------------------------------------------------
@@ -331,12 +423,21 @@ void main() {
     // -----------------------------------------------------------------------
     test('parallel tool calls all appear in parts', () {
       notifier.startStreaming('ses_test_3');
-      notifier.onToolCall('pa', 'ca', 'm1', 'ses_test_3', 'todowrite',
-        {'todos': [{'content': 'A', 'status': 'pending'}]});
-      notifier.onToolCall('pb', 'cb', 'm1', 'ses_test_3', 'todowrite',
-        {'todos': [{'content': 'B', 'status': 'pending'}]});
-      notifier.onToolCall('pc', 'cc', 'm1', 'ses_test_3', 'todowrite',
-        {'todos': [{'content': 'C', 'status': 'pending'}]});
+      notifier.onToolCall('pa', 'ca', 'm1', 'ses_test_3', 'todowrite', {
+        'todos': [
+          {'content': 'A', 'status': 'pending'},
+        ],
+      });
+      notifier.onToolCall('pb', 'cb', 'm1', 'ses_test_3', 'todowrite', {
+        'todos': [
+          {'content': 'B', 'status': 'pending'},
+        ],
+      });
+      notifier.onToolCall('pc', 'cc', 'm1', 'ses_test_3', 'todowrite', {
+        'todos': [
+          {'content': 'C', 'status': 'pending'},
+        ],
+      });
 
       var parts = notifier.snapshotClosedStreamingParts();
       expect(parts.whereType<AssistantTool>().length, equals(3));
@@ -346,7 +447,12 @@ void main() {
       notifier.onToolEnd('cc', 'todowrite', 'C');
 
       parts = notifier.snapshotClosedStreamingParts();
-      expect(parts.whereType<AssistantTool>().every((t) => t.state == ToolState.completed), isTrue);
+      expect(
+        parts.whereType<AssistantTool>().every(
+          (t) => t.state == ToolState.completed,
+        ),
+        isTrue,
+      );
     });
 
     // -----------------------------------------------------------------------
@@ -363,7 +469,10 @@ void main() {
       notifier.onToolEnd('cb', 'todowrite', 'B');
       notifier.onToolEnd('ca', 'todowrite', 'A');
 
-      final tools = notifier.snapshotClosedStreamingParts().whereType<AssistantTool>().toList();
+      final tools = notifier
+          .snapshotClosedStreamingParts()
+          .whereType<AssistantTool>()
+          .toList();
       expect(tools[0].callId, 'ca');
       expect(tools[1].callId, 'cb');
       expect(tools[2].callId, 'cc');
@@ -381,9 +490,16 @@ void main() {
       notifier.finalizeStreaming();
 
       final s1closed = notifier.snapshotClosedParts();
-      expect(s1closed.length, greaterThan(0), reason: 'closed parts from ses_a survive');
-      expect(notifier.snapshotCurrentStreamingParts(), isEmpty,
-        reason: 'streaming state is cleared');
+      expect(
+        s1closed.length,
+        greaterThan(0),
+        reason: 'closed parts from ses_a survive',
+      );
+      expect(
+        notifier.snapshotCurrentStreamingParts(),
+        isEmpty,
+        reason: 'streaming state is cleared',
+      );
 
       // Session 2
       notifier.startStreaming('ses_b');
@@ -392,10 +508,20 @@ void main() {
       notifier.onToolEnd('c2', 'todowrite', 'OK');
 
       final s2streaming = notifier.snapshotCurrentStreamingParts();
-      expect(s2streaming.any((p) => p is AssistantText && p.text.contains('Message 2')), isTrue,
-        reason: 'new session has its own text');
-      expect(s2streaming.whereType<AssistantTool>().every((t) => t.sessionId == 'ses_b'), isTrue,
-        reason: 'all tools belong to new session');
+      expect(
+        s2streaming.any(
+          (p) => p is AssistantText && p.text.contains('Message 2'),
+        ),
+        isTrue,
+        reason: 'new session has its own text',
+      );
+      expect(
+        s2streaming.whereType<AssistantTool>().every(
+          (t) => t.sessionId == 'ses_b',
+        ),
+        isTrue,
+        reason: 'all tools belong to new session',
+      );
     });
 
     // -----------------------------------------------------------------------
@@ -429,7 +555,10 @@ void main() {
       notifier.onToolEnd('c1', 'todowrite', '');
       final parts = notifier.snapshotClosedStreamingParts();
       expect(parts.any((p) => p is AssistantTool && p.callId == 'c1'), isTrue);
-      expect(parts.any((p) => p is AssistantTool && p.state == ToolState.completed), isTrue);
+      expect(
+        parts.any((p) => p is AssistantTool && p.state == ToolState.completed),
+        isTrue,
+      );
     });
 
     // -----------------------------------------------------------------------
@@ -439,7 +568,10 @@ void main() {
       notifier.startStreaming('ses_test_8');
       notifier.onToolCall('pt1', 'c1', 'm1', 'ses_test_8', 'todowrite', {});
       notifier.onToolCall('pt1', 'c1', 'm1', 'ses_test_8', 'todowrite', {});
-      final tools = notifier.snapshotClosedStreamingParts().whereType<AssistantTool>().toList();
+      final tools = notifier
+          .snapshotClosedStreamingParts()
+          .whereType<AssistantTool>()
+          .toList();
       expect(tools.length, equals(1));
     });
 
@@ -456,12 +588,31 @@ void main() {
       notifier.onChunk('p2', 'm1', 'ses_test_9', 'Done.');
 
       final parts = notifier.snapshotClosedStreamingParts();
-      expect(parts.any((p) => p is AssistantText && p.text.contains('Working')), isTrue,
-        reason: 'text before error survives');
-      expect(parts.any((p) => p is AssistantTool && p.callId == 'c1' && p.state == ToolState.completed), isTrue,
-        reason: 'completed tool survives');
-      expect(parts.any((p) => p is AssistantTool && p.callId == 'c2' && p.state == ToolState.error), isTrue,
-        reason: 'failed tool is marked error');
+      expect(
+        parts.any((p) => p is AssistantText && p.text.contains('Working')),
+        isTrue,
+        reason: 'text before error survives',
+      );
+      expect(
+        parts.any(
+          (p) =>
+              p is AssistantTool &&
+              p.callId == 'c1' &&
+              p.state == ToolState.completed,
+        ),
+        isTrue,
+        reason: 'completed tool survives',
+      );
+      expect(
+        parts.any(
+          (p) =>
+              p is AssistantTool &&
+              p.callId == 'c2' &&
+              p.state == ToolState.error,
+        ),
+        isTrue,
+        reason: 'failed tool is marked error',
+      );
     });
 
     // -----------------------------------------------------------------------
@@ -470,13 +621,19 @@ void main() {
     test('10 sequential tools all appear with correct state', () {
       notifier.startStreaming('ses_test_10');
       for (int i = 0; i < 10; i++) {
-        notifier.onToolCall('p$i', 'c$i', 'm1', 'ses_test_10', 'todowrite',
-          {'todos': [{'content': '$i', 'status': 'pending'}]});
+        notifier.onToolCall('p$i', 'c$i', 'm1', 'ses_test_10', 'todowrite', {
+          'todos': [
+            {'content': '$i', 'status': 'pending'},
+          ],
+        });
       }
       for (int i = 0; i < 10; i++) {
         notifier.onToolEnd('c$i', 'todowrite', 'R$i');
       }
-      final tools = notifier.snapshotClosedStreamingParts().whereType<AssistantTool>().toList();
+      final tools = notifier
+          .snapshotClosedStreamingParts()
+          .whereType<AssistantTool>()
+          .toList();
       expect(tools.length, equals(10));
       expect(tools.every((t) => t.state == ToolState.completed), isTrue);
     });
@@ -493,10 +650,16 @@ void main() {
       notifier.onChunk('ptx', 'm1', 'ses_test_11', 'Final answer.');
 
       final parts = notifier.snapshotClosedStreamingParts();
-      expect(parts.any((p) => p is AssistantReasoning), isTrue,
-        reason: 'reasoning parts exist');
-      expect(parts.any((p) => p is AssistantText && p.text.contains('Final answer')), isTrue,
-        reason: 'final text exists');
+      expect(
+        parts.any((p) => p is AssistantReasoning),
+        isTrue,
+        reason: 'reasoning parts exist',
+      );
+      expect(
+        parts.any((p) => p is AssistantText && p.text.contains('Final answer')),
+        isTrue,
+        reason: 'final text exists',
+      );
     });
 
     // -----------------------------------------------------------------------
@@ -519,19 +682,43 @@ void main() {
         },
       );
 
-      final output = await taskTool.execute({}, ToolContext(
-        toolCallId: 'test-12', sessionId: 'ses_test_12',
-        abortSignal: null,
-        ask: ({required permission, required patterns, metadata, always}) async {},
-        askQuestion: ({required question, options = const [], multiple = false}) async => '',
-      ));
+      final output = await taskTool.execute(
+        {},
+        ToolContext(
+          toolCallId: 'test-12',
+          sessionId: 'ses_test_12',
+          abortSignal: null,
+          ask:
+              ({
+                required permission,
+                required patterns,
+                metadata,
+                always,
+              }) async {},
+          askQuestion:
+              ({
+                required question,
+                options = const [],
+                multiple = false,
+              }) async => '',
+        ),
+      );
 
-      expect(output.metadata?['error'], isNull,
-        reason: 'task tool should succeed');
-      expect(output.output, contains('session_id='),
-        reason: 'task output has session reference');
-      expect(output.output, contains('state="completed"'),
-        reason: 'task completed successfully');
+      expect(
+        output.metadata?['error'],
+        isNull,
+        reason: 'task tool should succeed',
+      );
+      expect(
+        output.output,
+        contains('session_id='),
+        reason: 'task output has session reference',
+      );
+      expect(
+        output.output,
+        contains('state="completed"'),
+        reason: 'task completed successfully',
+      );
 
       await harness.close();
     });

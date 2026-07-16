@@ -83,10 +83,7 @@ class SplashVisual extends StatelessWidget {
                       gradient: RadialGradient(
                         center: Alignment.center,
                         radius: 0.52,
-                        colors: [
-                          glowColor,
-                          glowColor.withValues(alpha: 0.0),
-                        ],
+                        colors: [glowColor, glowColor.withValues(alpha: 0.0)],
                       ),
                     ),
                   ),
@@ -98,10 +95,7 @@ class SplashVisual extends StatelessWidget {
 
         // Grain: статичный, чтобы не жечь CPU и не ломать reduceMotion.
         Positioned.fill(
-          child: _GrainOverlay(
-            opacity: grainOpacity,
-            seed: grainSeed,
-          ),
+          child: _GrainOverlay(opacity: grainOpacity, seed: grainSeed),
         ),
 
         // Тайтл (принимается снаружи).
@@ -117,10 +111,7 @@ class SplashVisual extends StatelessWidget {
 }
 
 class _GrainOverlay extends StatelessWidget {
-  const _GrainOverlay({
-    required this.opacity,
-    required this.seed,
-  });
+  const _GrainOverlay({required this.opacity, required this.seed});
 
   final double opacity;
   final int seed;
@@ -156,8 +147,9 @@ class _GrainPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rand = Random(seed);
 
-    final count =
-        (size.width * size.height / densityDivisor).clamp(450, 1400).toInt();
+    final count = (size.width * size.height / densityDivisor)
+        .clamp(450, 1400)
+        .toInt();
 
     final paint = Paint()
       ..style = PaintingStyle.fill

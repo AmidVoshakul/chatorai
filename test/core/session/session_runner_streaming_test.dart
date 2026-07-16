@@ -119,31 +119,35 @@ void main() {
     });
 
     test(
-        'subsequent chunks do not fire additional TextStarted; deltas are batched',
-        () async {
-      final session = await runner.startInitializedSession(agent: 'general');
+      'subsequent chunks do not fire additional TextStarted; deltas are batched',
+      () async {
+        final session = await runner.startInitializedSession(agent: 'general');
 
-      const part = 'abcdefghij'; // 10 chars
-      for (var i = 0; i < 50; i++) {
-        await session.onChunk(part); // total 500 < threshold -> stays buffered
-      }
+        const part = 'abcdefghij'; // 10 chars
+        for (var i = 0; i < 50; i++) {
+          await session.onChunk(
+            part,
+          ); // total 500 < threshold -> stays buffered
+        }
 
-      final eventsBefore =
-          await repository.eventStore.getEvents(session.sessionId);
-      // Still buffered: only the single TextStarted, no delta yet.
-      expect(eventsBefore.whereType<TextStarted>().length, 1);
-      expect(eventsBefore.whereType<TextDelta>().length, 0);
+        final eventsBefore = await repository.eventStore.getEvents(
+          session.sessionId,
+        );
+        // Still buffered: only the single TextStarted, no delta yet.
+        expect(eventsBefore.whereType<TextStarted>().length, 1);
+        expect(eventsBefore.whereType<TextDelta>().length, 0);
 
-      // Completing flushes all buffered chunks as a single aggregated delta.
-      await session.onCompletion(content: part * 50, model: 'gpt-4');
+        // Completing flushes all buffered chunks as a single aggregated delta.
+        await session.onCompletion(content: part * 50, model: 'gpt-4');
 
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.whereType<TextStarted>().length, 1);
-      final deltas = events.whereType<TextDelta>();
-      expect(deltas.length, 1); // 50 tokens -> 1 batched delta
-      expect(deltas.first.delta, part * 50);
-      expect(events.whereType<TextEnded>().single.fullText, part * 50);
-    });
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        expect(events.whereType<TextStarted>().length, 1);
+        final deltas = events.whereType<TextDelta>();
+        expect(deltas.length, 1); // 50 tokens -> 1 batched delta
+        expect(deltas.first.delta, part * 50);
+        expect(events.whereType<TextEnded>().single.fullText, part * 50);
+      },
+    );
 
     test('empty chunk is a no-op', () async {
       final session = await runner.startInitializedSession(agent: 'general');
@@ -386,51 +390,56 @@ void main() {
       expect(stepFailed.error, contains('Network error'));
     });
 
-    test('onError flushes and closes an open text part (no dangling part)',
-        () async {
-      final session = await runner.startInitializedSession(agent: 'general');
+    test(
+      'onError flushes and closes an open text part (no dangling part)',
+      () async {
+        final session = await runner.startInitializedSession(agent: 'general');
 
-      // Buffered text that has NOT been flushed yet (below threshold).
-      await session.onChunk('Partial answer');
-      await session.onError(Exception('boom'));
+        // Buffered text that has NOT been flushed yet (below threshold).
+        await session.onChunk('Partial answer');
+        await session.onError(Exception('boom'));
 
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      // The open part must be closed with TextEnded so replay is consistent.
-      final textEnded = events.whereType<TextEnded>();
-      expect(textEnded.length, 1);
-      expect(textEnded.single.fullText, 'Partial answer');
-      expect(events.whereType<StepFailed>().single.error, contains('boom'));
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        // The open part must be closed with TextEnded so replay is consistent.
+        final textEnded = events.whereType<TextEnded>();
+        expect(textEnded.length, 1);
+        expect(textEnded.single.fullText, 'Partial answer');
+        expect(events.whereType<StepFailed>().single.error, contains('boom'));
 
-      // Replaying the events yields exactly one complete text part.
-      final state = repository.eventStore;
-      final all = await state.getEvents(session.sessionId);
-      final loaded = await repository.loadSession(session.sessionId);
-      expect(loaded, isNotNull);
-      final texts = loaded!.parts.whereType<AssistantText>().toList();
-      expect(texts.length, 1);
-      expect(texts.single.text, 'Partial answer');
-    });
+        // Replaying the events yields exactly one complete text part.
+        final state = repository.eventStore;
+        final all = await state.getEvents(session.sessionId);
+        final loaded = await repository.loadSession(session.sessionId);
+        expect(loaded, isNotNull);
+        final texts = loaded!.parts.whereType<AssistantText>().toList();
+        expect(texts.length, 1);
+        expect(texts.single.text, 'Partial answer');
+      },
+    );
 
-    test('onError flushes and closes an open reasoning part (no dangling part)',
-        () async {
-      final session = await runner.startInitializedSession(agent: 'general');
+    test(
+      'onError flushes and closes an open reasoning part (no dangling part)',
+      () async {
+        final session = await runner.startInitializedSession(agent: 'general');
 
-      await session.onReasoning('Partial thought');
-      await session.onError(Exception('boom'));
+        await session.onReasoning('Partial thought');
+        await session.onError(Exception('boom'));
 
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      final reasoningEnded = events.whereType<ReasoningEnded>();
-      expect(reasoningEnded.length, 1);
-      expect(reasoningEnded.single.fullReasoning, 'Partial thought');
-      expect(events.whereType<StepFailed>().single.error, contains('boom'));
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        final reasoningEnded = events.whereType<ReasoningEnded>();
+        expect(reasoningEnded.length, 1);
+        expect(reasoningEnded.single.fullReasoning, 'Partial thought');
+        expect(events.whereType<StepFailed>().single.error, contains('boom'));
 
-      final loaded = await repository.loadSession(session.sessionId);
-      expect(loaded, isNotNull);
-      final reasonings =
-          loaded!.parts.whereType<AssistantReasoning>().toList();
-      expect(reasonings.length, 1);
-      expect(reasonings.single.text, 'Partial thought');
-    });
+        final loaded = await repository.loadSession(session.sessionId);
+        expect(loaded, isNotNull);
+        final reasonings = loaded!.parts
+            .whereType<AssistantReasoning>()
+            .toList();
+        expect(reasonings.length, 1);
+        expect(reasonings.single.text, 'Partial thought');
+      },
+    );
   });
 
   group('SessionRunnerSession serialization (concurrent hot path)', () {
@@ -448,44 +457,54 @@ void main() {
       await db.close();
     });
 
-    test('concurrent unawaited onChunk emits exactly one TextStarted',
-        () async {
-      final session = await runner.startInitializedSession(agent: 'general');
+    test(
+      'concurrent unawaited onChunk emits exactly one TextStarted',
+      () async {
+        final session = await runner.startInitializedSession(agent: 'general');
 
-      final futures = <Future<void>>[];
-      for (var i = 0; i < 100; i++) {
-        // Small chunks stay buffered until completion (no threshold flush).
-        futures.add(Future(() => session.onChunk('tok$i ')));
-      }
-      await Future.wait(futures);
-      await session.onCompletion(content: 'final');
+        final futures = <Future<void>>[];
+        for (var i = 0; i < 100; i++) {
+          // Small chunks stay buffered until completion (no threshold flush).
+          futures.add(Future(() => session.onChunk('tok$i ')));
+        }
+        await Future.wait(futures);
+        await session.onCompletion(content: 'final');
 
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.whereType<TextStarted>().length, 1,
-          reason: 'no duplicate TextStarted under concurrency');
-      expect(events.whereType<TextEnded>().length, 1);
-      // All 100 tokens aggregated into a single flushed delta.
-      final deltas = events.whereType<TextDelta>();
-      expect(deltas.length, 1);
-      expect(deltas.single.delta, contains('tok99'));
-    });
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        expect(
+          events.whereType<TextStarted>().length,
+          1,
+          reason: 'no duplicate TextStarted under concurrency',
+        );
+        expect(events.whereType<TextEnded>().length, 1);
+        // All 100 tokens aggregated into a single flushed delta.
+        final deltas = events.whereType<TextDelta>();
+        expect(deltas.length, 1);
+        expect(deltas.single.delta, contains('tok99'));
+      },
+    );
 
-    test('concurrent unawaited onReasoning emits exactly one ReasoningStarted',
-        () async {
-      final session = await runner.startInitializedSession(agent: 'general');
+    test(
+      'concurrent unawaited onReasoning emits exactly one ReasoningStarted',
+      () async {
+        final session = await runner.startInitializedSession(agent: 'general');
 
-      final futures = <Future<void>>[];
-      for (var i = 0; i < 100; i++) {
-        futures.add(Future(() => session.onReasoning('think$i ')));
-      }
-      await Future.wait(futures);
-      await session.onCompletion(content: 'final', reasoning: 'finalreason');
+        final futures = <Future<void>>[];
+        for (var i = 0; i < 100; i++) {
+          futures.add(Future(() => session.onReasoning('think$i ')));
+        }
+        await Future.wait(futures);
+        await session.onCompletion(content: 'final', reasoning: 'finalreason');
 
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.whereType<ReasoningStarted>().length, 1,
-          reason: 'no duplicate ReasoningStarted under concurrency');
-      expect(events.whereType<ReasoningEnded>().length, 1);
-    });
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        expect(
+          events.whereType<ReasoningStarted>().length,
+          1,
+          reason: 'no duplicate ReasoningStarted under concurrency',
+        );
+        expect(events.whereType<ReasoningEnded>().length, 1);
+      },
+    );
 
     test('overlapping flushes produce contiguous, unique sequences', () async {
       final session = await runner.startInitializedSession(agent: 'general');
@@ -502,10 +521,14 @@ void main() {
       final events = await repository.eventStore.getEvents(session.sessionId);
       final sequences = events.map((e) => e.sequence).toList();
       // Unique and strictly increasing: 1..N (no duplicate/missing sequence).
-      expect(sequences.toSet().length, sequences.length,
-          reason: 'sequence numbers must be unique');
-      expect(sequences, [for (var i = 1; i <= sequences.length; i++) i],
-          reason: 'sequence numbers must be contiguous');
+      expect(
+        sequences.toSet().length,
+        sequences.length,
+        reason: 'sequence numbers must be unique',
+      );
+      expect(sequences, [
+        for (var i = 1; i <= sequences.length; i++) i,
+      ], reason: 'sequence numbers must be contiguous');
     });
   });
 

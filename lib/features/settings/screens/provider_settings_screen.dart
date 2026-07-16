@@ -29,8 +29,7 @@ class ProviderSettingsScreen extends ConsumerWidget {
       ),
       body: configuredProvidersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) =>
-            Center(child: Text(l10n.errorLoadingProviders)),
+        error: (error, _) => Center(child: Text(l10n.errorLoadingProviders)),
         data: (configuredProviders) {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(ChatoraiSpacing.lg),

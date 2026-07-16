@@ -189,7 +189,10 @@ class _ModelSelectionDialogState extends State<ModelSelectionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(localizations.cancel, style: TextStyle(color: secondaryTextColor)),
+          child: Text(
+            localizations.cancel,
+            style: TextStyle(color: secondaryTextColor),
+          ),
         ),
         FilledButton(
           onPressed: () async {

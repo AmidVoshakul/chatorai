@@ -15,25 +15,49 @@
 
 ## 🚀 Быстрый старт
 
-### 1. Требования
+### Пользователи (Flutter не требуется)
+
+Установите ChatORAI одной командой — готовые бинарники публикуются в
+[GitHub Releases](https://github.com/AmidVoshakul/chatorai/releases/latest):
+
+**Linux (одна команда):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | sudo bash
+```
+
+Альтернативные форматы на странице релиза: `chatorai-*.AppImage` (переносимый, просто `chmod +x` и запуск) и `chatorai-*.deb` (`sudo apt install ./chatorai-*.deb`).
+
+**Windows:** скачайте `install_chatorai.ps1` (запустите от администратора) или `install_chatorai.bat` из релиза, либо используйте `chatorai-*.zip`.
+
+**macOS:** скачайте `chatorai-*.dmg` из релиза и перетащите в Applications.
+
+Обновление в любой момент: `chatorai upgrade`.
+
+### Разработчики (сборка из исходников)
+
+Требования:
 
 - Flutter 3.44.0 (stable)
 - Dart SDK 3.11.0+
 - Linux: установите системные библиотеки (`libgtk-3-0 libgdk-pixbuf-2.0-0 libpango-1.0-0 libcairo2`)
 
-### 2. Настройка API
+Настройка API:
 
 **Для разработки** — скопируйте `.env.example` в `.env` и добавьте ключ:
 
 ```env
-OPENROUTER_API_KEY=ваш_ключ
+OPENROUTER_API_KEY=sk-...
+NVIDIA_API_KEY=nvapi-...
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 `.env` не входит в release-сборки.
 
 **Для пользователей** — ключ вводится в настройках приложения, хранится в `SharedPreferences`.
 
-### 3. Запуск
+Сборка и запуск:
 
 ```bash
 flutter pub get
@@ -41,6 +65,7 @@ flutter gen-l10n   # только после правки lib/l10n/*.arb
 flutter analyze
 flutter test
 flutter run -d linux   # или windows, chrome, android, ios
+LIBGL_ALWAYS_SOFTWARE=1 flutter run -d linux  # Linux software rendering
 ```
 
 ## 📚 Документация
@@ -58,10 +83,11 @@ flutter run -d linux   # или windows, chrome, android, ios
 
 ### Диаграммы
 
-- [Architecture Overview](docs/diagrams/architecture-overview.md) — Data flow, session pipeline, MCP topology
+- [Architecture Overview](docs/diagrams/architecture-overview.md) — Data flow, session pipeline, MCP topology, config resolution, install/upgrade flow
 - [Session Core](docs/diagrams/sessions.md) — ER-диаграмма Drift и стейт-машина SessionEvent
 - [Tool System](docs/diagrams/tools.md) — Реестр инструментов, условная регистрация, жизненный цикл
 - [MCP Integration](docs/diagrams/mcp.md) — Транспорт, lifecycle подключения, модели конфигурации
+- [CI / Release Pipeline](docs/diagrams/ci-release.md) — GitHub Actions workflow, сборка артефактов, публикация релизов
 
 ### Платформенные руководства
 
@@ -75,22 +101,42 @@ flutter run -d linux   # или windows, chrome, android, ios
 
 ## 📦 Установка
 
-### Linux
+Готовые бинарники публикуются в [GitHub Releases](https://github.com/AmidVoshakul/chatorai/releases/latest) для каждой версии. **Flutter SDK не нужен**.
+
+### Linux (одна команда)
 
 ```bash
-sudo ./install_app.sh
+curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | sudo bash
 ```
 
-Запуск: из меню или `chatorai` в терминале.
+Скачивает пребилд, устанавливает в `/usr/local/lib/chatorai/` с ярлыком в меню и командой `chatorai`. Или возьмите `chatorai-*.AppImage` (запуск напрямую) / `chatorai-*.deb` со страницы релиза.
 
 ### Windows
 
-```powershell
-flutter build windows --release
-PowerShell -ExecutionPolicy Bypass -File ".\install_app.ps1"
+Скачайте `install_chatorai.ps1` (от администратора) или `install_chatorai.bat` из релиза, либо распакуйте `chatorai-*.zip` в `C:\Program Files\ChatORAI\`. Добавляются ярлык в меню Пуск и PATH.
+
+### macOS
+
+Скачайте `chatorai-*.dmg` из релиза и перетащите в Applications.
+
+### Обновление
+
+```bash
+chatorai upgrade
 ```
 
-Запуск: из меню Пуск или рабочего стола.
+### Удаление
+
+```bash
+sudo rm -rf /usr/local/lib/chatorai \
+           /usr/local/bin/chatorai \
+           /usr/share/applications/chatorai.desktop \
+           /usr/share/icons/hicolor/256x256/apps/chatorai.png
+```
+
+### CLI
+
+ChatORAI — единый бинарник. `chatorai --help` выводит команды (`stats`, `models`, `upgrade`, `--version`); `chatorai` без аргументов запускает GUI.
 
 ## 🔧 Разработка
 

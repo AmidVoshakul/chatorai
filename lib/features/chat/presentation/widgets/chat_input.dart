@@ -425,10 +425,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
               child: isMobile
                   ? Column(
                       mainAxisSize: MainAxisSize.min,
-                      children: [
-                        layoutChild,
-                        const ChatInputStatusBar(),
-                      ],
+                      children: [layoutChild, const ChatInputStatusBar()],
                     )
                   : layoutChild,
             ),

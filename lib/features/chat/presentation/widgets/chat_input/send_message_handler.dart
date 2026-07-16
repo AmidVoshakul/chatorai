@@ -29,7 +29,7 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
           // For subagents: mark for task tool delegation (keep text as-is for chat display)
           if (agent.mode == AgentMode.subagent) {
             agentMention = agentId;
-            // Do NOT remove @mention - it stays in the message 
+            // Do NOT remove @mention - it stays in the message
           }
           // For primary agents: ignore @mention (they are set via agent switcher)
         }
