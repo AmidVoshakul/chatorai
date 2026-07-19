@@ -400,6 +400,11 @@ ToolDef createBashTool() {
             'Command rejected by user',
             metadata: {'error': true, 'rejected': true},
           );
+        } on PermissionDeniedError catch (_) {
+          return ToolOutput(
+            'Command denied by permission policy',
+            metadata: {'error': true, 'denied': true},
+          );
         }
       }
       if (decision == CommandDecision.review) {
@@ -413,6 +418,11 @@ ToolDef createBashTool() {
           return ToolOutput(
             'Command rejected by user',
             metadata: {'error': true, 'rejected': true},
+          );
+        } on PermissionDeniedError catch (_) {
+          return ToolOutput(
+            'Command denied by permission policy',
+            metadata: {'error': true, 'denied': true},
           );
         }
       }

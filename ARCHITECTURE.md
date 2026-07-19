@@ -100,7 +100,7 @@ lib/
 
 ### MVVM with Riverpod 3.x
 
-- **Providers**: All state is exposed via Riverpod providers (`StateProvider`, `StateNotifierProvider`, `FutureProvider`).
+- **Providers**: All state is exposed via Riverpod `Notifier` subclasses (`NotifierProvider`, `AsyncNotifierProvider`) and `Provider`/`FutureProvider` for derived/async values. `StateNotifier`/`ChangeNotifier` are not used.
 - **ViewModels**: Notifier classes manage business logic and state transitions.
 - **Views**: Stateless widgets that `ref.watch` providers for reactive updates.
 
@@ -433,9 +433,9 @@ The `lsp` tool provides hover information and code intelligence via LSP. It is c
 ```
 lib/features/models/
 ├── providers/
-│   └── model_provider.dart    # Riverpod provider for model state
+│   └── model_provider.dart    # Riverpod Notifier for model state
 ├── screens/
-│   └── models_screen.dart     # Model selection screen
+│   └── models_screen.dart     # Model selection screen (incl. Recent strip)
 └── widgets/
     ├── provider_icon.dart     # SVG icon widget with theme-aware ColorFiltered
     ├── model_card_widget.dart
@@ -457,6 +457,8 @@ lib/features/settings/
     ├── provider_card.dart
     └── ... (other settings widgets)
 ```
+
+`ModelState` (`model_provider.dart`) tracks `favoriteModelIds`, `usageCounts` (per-model `int`), and `lastUsed` (per-model timestamp), all persisted in `SharedPreferences` alongside the selected model. `setSelectedModel` increments the usage count and refreshes `lastUsed`. The `recentModels` getter returns the top-6 models merged by usage count (desc) then last-used timestamp (desc), limited to currently available models. `ModelsScreen` renders these in a horizontal "stories"-style `_RecentModelsSection` above the grouped provider list, with a localized "Recent" header (6 languages).
 
 ## State Management
 

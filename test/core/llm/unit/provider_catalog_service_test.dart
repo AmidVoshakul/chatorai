@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/core/llm/models/provider_config.dart';
+import 'package:chatorai/core/llm/models/auth_config.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
@@ -24,6 +27,16 @@ class MockSecureStorageService extends SecureStorageService {
   Future<void> delete({required String key}) async {
     _store.remove(key);
   }
+
+  @override
+  Future<bool> containsKey({required String key}) async =>
+      _store.containsKey(key);
+
+  @override
+  Future<Map<String, String>> readAll() async => Map.unmodifiable(_store);
+
+  @override
+  Future<void> deleteAll() async => _store.clear();
 
   void clear() => _store.clear();
 }
@@ -237,6 +250,98 @@ void main() {
           'https://custom.api.com',
         );
       });
+
+      test('applyConfigProviders adds and overrides by id', () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        catalog = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [testProvider],
+        );
+
+        final configProvider = ProviderConfig.basic(
+          id: 'new-provider',
+          name: 'New Provider',
+          baseUrl: 'https://new.api/v1',
+          source: ProviderSource.config,
+          models: [
+            ModelConfig.basic(
+              providerId: 'new-provider',
+              modelName: 'm1',
+              displayName: 'M1',
+              contextLength: 1000,
+            ),
+          ],
+        );
+
+        catalog.applyConfigProviders([configProvider]);
+        final added = catalog.getProvider('new-provider');
+        expect(added, isNotNull);
+        expect(added!.baseUrl, equals('https://new.api/v1'));
+        expect(added.isConfig, isTrue);
+        expect(added.models, hasLength(1));
+
+        // Override existing built-in by id
+        final override = ProviderConfig.basic(
+          id: 'test-provider',
+          name: 'Overridden',
+          baseUrl: 'https://override/v1',
+          source: ProviderSource.config,
+        );
+        catalog.applyConfigProviders([override]);
+        final ov = catalog.getProvider('test-provider');
+        expect(ov!.name, equals('Overridden'));
+        expect(ov.baseUrl, equals('https://override/v1'));
+        expect(ov.isConfig, isTrue);
+        // Only one entry per id
+        expect(
+          catalog.getAllProvidersRaw().where((p) => p.id == 'test-provider'),
+          hasLength(1),
+        );
+      });
+
+      test(
+        'config providers are read-only (not persisted, mutations no-op)',
+        () async {
+          SharedPreferences.setMockInitialValues({});
+          final prefs = await SharedPreferences.getInstance();
+          catalog = ProviderCatalogService(
+            secureStorage: mockStorage,
+            prefs: prefs,
+            builtInProviders: [testProvider],
+          );
+
+          final configProvider = ProviderConfig.basic(
+            id: 'cfg',
+            name: 'Cfg',
+            baseUrl: 'https://cfg/v1',
+            auth: AuthConfig.apiKey(apiKey: 'secret'),
+            source: ProviderSource.config,
+          );
+          catalog.applyConfigProviders([configProvider]);
+
+          // Mutation methods must be no-ops for config providers.
+          await catalog.setApiKey('cfg', 'leaked');
+          await catalog.setProviderEnabled('cfg', false);
+          await catalog.setCustomBaseUrl('cfg', 'https://evil/v1');
+          catalog.removeCustomProvider('cfg');
+
+          // Provider still present, unchanged, not persisted.
+          final p = catalog.getProvider('cfg');
+          expect(p, isNotNull);
+          expect(p!.auth.apiKey, equals('secret'));
+          expect(
+            catalog.isProviderEnabled('cfg'),
+            isFalse,
+          ); // prefs flag untouched
+
+          // Nothing written to secure storage / prefs custom list.
+          expect(prefs.getString('catalog_custom_providers'), isNull);
+          final stored = await mockStorage.read(key: 'catalog_apiKey_cfg');
+          expect(stored, isNull);
+        },
+      );
     });
 
     group('_loadFromPrefs', () {
@@ -271,6 +376,45 @@ void main() {
 
         expect(catalog.isProviderEnabled('test-provider'), false);
       });
+
+      test(
+        'legacy custom providers are tagged as custom source on load',
+        () async {
+          // Simulate a custom provider persisted BEFORE the `source` field
+          // existed (no `source` key in JSON).
+          final legacyJson = jsonEncode([
+            {
+              'id': 'legacy-custom',
+              'name': 'Legacy Custom',
+              'baseUrl': 'https://legacy/v1',
+              'models': [],
+              'enabled': true,
+            },
+          ]);
+          SharedPreferences.setMockInitialValues({
+            'catalog_custom_providers': legacyJson,
+          });
+          final prefs = await SharedPreferences.getInstance();
+          catalog = ProviderCatalogService(
+            secureStorage: mockStorage,
+            prefs: prefs,
+            builtInProviders: [testProvider],
+          );
+
+          final loaded = catalog.getProvider('legacy-custom');
+          expect(loaded, isNotNull);
+          expect(loaded!.source, equals(ProviderSource.custom));
+          // Legacy custom providers must remain editable (not treated as config).
+          expect(loaded.isConfig, isFalse);
+          await catalog.setApiKey('legacy-custom', 'updated');
+          expect(
+            await mockStorage.read(
+              key: 'catalog_provider_api_key_legacy-custom',
+            ),
+            equals('updated'),
+          );
+        },
+      );
 
       test('provider is enabled by default when no pref is set', () async {
         SharedPreferences.setMockInitialValues({});

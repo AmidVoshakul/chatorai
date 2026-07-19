@@ -1,49 +1,110 @@
+import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/presentation/widgets/parts/tool_title.dart';
+import 'package:chatorai/features/sessions/providers/session_providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/format_utils.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-class TaskPartWidget extends StatefulWidget {
+/// Hover state per task part, kept in a provider so it survives widget rebuilds
+/// (e.g. when the child session streams new tool results) without flicker.
+class _TaskHoverState extends Notifier<Map<String, bool>> {
+  @override
+  Map<String, bool> build() => const {};
+
+  void set(String id, bool value) => state = {...state, id: value};
+}
+
+final _taskHoverProvider =
+    NotifierProvider<_TaskHoverState, Map<String, bool>>(_TaskHoverState.new);
+
+class TaskPartWidget extends ConsumerWidget {
   final TaskPart part;
   final VoidCallback? onTap;
 
   const TaskPartWidget({super.key, required this.part, this.onTap});
 
   @override
-  State<TaskPartWidget> createState() => _TaskPartWidgetState();
-}
-
-class _TaskPartWidgetState extends State<TaskPartWidget> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final part = widget.part;
+    final part = this.part;
     final isRunning = part.status == TaskStatus.running;
     final isCompleted = part.status == TaskStatus.completed;
     final hasError = part.error != null && part.error!.isNotEmpty;
+    final hoverKey = part.sessionId ?? '${part.agent}:${part.description}';
+    final isHovered = ref.watch(_taskHoverProvider)[hoverKey] ?? false;
+
+    // Live current tool: source it from the child session (like opencode,
+    // which reads tool parts directly from the delegated session) so the
+    // header updates in place as the subagent runs different tools.
+    String? liveCurrentTool;
+    String? liveCurrentTitle;
+    // `part.sessionId` is resolved to the delegated child session id (see
+    // session_to_chat_converter), so we can read the sub-agent's live tool
+    // results directly from that session — like opencode, which sources tool
+    // parts from the delegated session. The header then updates in place with
+    // the sub-agent's current tool, e.g.
+    // "Read test/test_task_abort.dart [offset=148, limit=45]", rendered
+    // through the same toolTitle() formatter used for ordinary tool calls.
+    if (part.sessionId != null) {
+      // [TaskTrace] Widget reads live child tools. WHAT=render live header
+      // WHERE=task_part_widget WHEN=${DateTime.now()} WHY=part.sessionId resolved
+      // to child session → read its tool results.
+      LogTags.chatScreen.logInfo(
+        '[TaskTrace] build READ LIVE sessionId=${part.sessionId} '
+        'agent=${part.agent} desc=${part.description}',
+      );
+      final results = ref.watch(
+        childSessionToolResultsProvider(part.sessionId!),
+      );
+      final list = results.value ?? const <dynamic>[];
+      if (list.isNotEmpty) {
+        ToolResult? active;
+        for (final r in list.reversed) {
+          final t = r as ToolResult;
+          if (t.status == 'running' || t.status == 'success') {
+            active = t;
+            break;
+          }
+        }
+        active ??= list.last as ToolResult;
+        liveCurrentTool = active.toolName;
+        liveCurrentTitle = toolTitle(active.toolName, active.input);
+      }
+    }
+    if (part.sessionId == null) {
+      LogTags.chatScreen.logInfo(
+        '[TaskTrace] build NO LIVE agent=${part.agent} desc=${part.description} '
+        'currentTool=${part.currentTool} WHY=part.sessionId == null → widget uses fallback currentTool',
+      );
+    }
+    final currentTool = liveCurrentTool ?? part.currentTool;
+    final currentToolTitle = liveCurrentTitle ?? part.currentToolTitle;
 
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
+      onEnter: (_) =>
+          ref.read(_taskHoverProvider.notifier).set(hoverKey, true),
+      onExit: (_) =>
+          ref.read(_taskHoverProvider.notifier).set(hoverKey, false),
       cursor: SystemMouseCursors.click,
       child: InkWell(
-        onTap: widget.onTap,
+        onTap: onTap,
         borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 2),
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(
-              alpha: 0.4,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.4,
+              ),
+              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
             ),
-            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-          ),
-          child: Opacity(
-            opacity: _isHovered ? 1.0 : ChatoraiOpacity.low,
-            child: Column(
+            child: Opacity(
+              opacity: isHovered ? 1.0 : ChatoraiOpacity.low,
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -65,21 +126,21 @@ class _TaskPartWidgetState extends State<TaskPartWidget> {
                   ],
                 ),
                 if (isRunning &&
-                    part.currentTool != null &&
-                    part.currentTool!.isNotEmpty)
+                    currentTool != null &&
+                    currentTool.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(left: 24, top: 2),
                     child: Text(
-                      '  ↳ ${_capitalize(part.currentTool!)} ${part.currentToolTitle ?? ""}'
+                      '  ↳ ${currentToolTitle ?? _capitalize(currentTool)}'
                           .trim(),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontSize: ChatoraiFontSizes.xs,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: ChatoraiFontSizes.xs,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                if (isRunning && hasError)
+                  if (isRunning && hasError)
                   Padding(
                     padding: const EdgeInsets.only(left: 24, top: 2),
                     child: Text(
@@ -135,7 +196,7 @@ class _TaskPartWidgetState extends State<TaskPartWidget> {
       );
     }
 
-    switch (widget.part.status) {
+    switch (part.status) {
       case TaskStatus.completed:
         return Text(
           '│',

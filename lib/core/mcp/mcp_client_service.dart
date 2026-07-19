@@ -74,6 +74,55 @@ class McpClientService {
     return _initCompleter!.future;
   }
 
+  /// Reconcile live connections with the latest [config] without a full
+  /// re-initialization.
+  ///
+  /// Safe to call after a runtime config change (e.g. the GUI adds/removes an
+  /// MCP server). Unlike [initialize], this does NOT early-return when already
+  /// initialized — it diffs the desired [config] against current connections:
+  ///
+  /// - New or enabled servers with no active client are connected.
+  /// - Disabled servers with an active client are disconnected.
+  /// - Servers absent from [config] but still connected are disconnected.
+  ///
+  /// Callers should pair this with invalidating `mcpStatusesProvider` (and
+  /// `toolRegistryProvider` if MCP tools must refresh in the active chat).
+  Future<void> reload(McpConfig config) async {
+    // Adopt the new config so that connect() can resolve server definitions
+    // for servers that did not exist during the initial initialize().
+    for (final entry in config.servers.entries) {
+      _configs[entry.key] = entry.value;
+    }
+
+    // Drop servers removed from the config entirely (not just disabled).
+    final removed = _configs.keys
+        .where((n) => !config.servers.containsKey(n))
+        .toList();
+    for (final name in removed) {
+      await disconnect(name);
+      _statuses.remove(name);
+      _configs.remove(name);
+    }
+
+    // Connect newly enabled servers, disconnect newly disabled ones.
+    for (final entry in config.servers.entries) {
+      final name = entry.key;
+      final serverConfig = entry.value;
+      final hasClient = _clients.containsKey(name);
+
+      if (serverConfig.enabled && !hasClient) {
+        await connect(name);
+      } else if (!serverConfig.enabled && hasClient) {
+        await disconnect(name);
+      } else {
+        // Keep status in sync even when no connection change is needed.
+        _statuses[name] = serverConfig.enabled
+            ? (_statuses[name] ?? McpServerStatus.connected())
+            : McpServerStatus.disabled();
+      }
+    }
+  }
+
   /// Connect to a single MCP server by name.
   Future<McpServerStatus> connect(String name) async {
     final config = _configs[name];
@@ -108,6 +157,11 @@ class McpClientService {
 
   /// Get all server statuses.
   Map<String, McpServerStatus> getAllStatuses() => Map.unmodifiable(_statuses);
+
+  /// Get the list of tool names discovered from [name], or an empty list if
+  /// the server is not connected or discovery has not run yet.
+  List<String> getDiscoveredTools(String name) =>
+      _discoveredTools[name]?.map((t) => t.name).toList() ?? const [];
 
   /// Discover tools from a connected server.
   ///
@@ -263,8 +317,15 @@ class McpClientService {
       );
 
       return McpServerStatus.connected();
-    } catch (e, st) {
-      LogTags.mcp.logError('McpClientService: failed to connect $name', e, st);
+    } catch (e) {
+      // A misconfigured or unavailable MCP server (e.g. missing binary,
+      // crashed on startup) must not abort app startup. Downgrade to a warning
+      // so a single bad server in the user's chatorai.json doesn't read as a
+      // hard application failure.
+      LogTags.mcp.logWarning(
+        'McpClientService: server "$name" failed to start — skipped. '
+        'Check the command/args in chatorai.json. ($e)',
+      );
       final errorMsg = e.toString();
       _statuses[name] = McpServerStatus.failed(errorMsg);
       return McpServerStatus.failed(errorMsg);
@@ -278,6 +339,10 @@ class McpClientService {
         args: config.args,
         environment: {...Platform.environment, ...config.environment},
         workingDirectory: config.cwd,
+        // Don't inherit the server's stderr: MCP servers often print startup
+        // banners (FastMCP ASCII art, etc.) that would pollute the CLI/TUI
+        // output. The MCP protocol travels over stdout, which is untouched.
+        stderrMode: ProcessStartMode.normal,
       ),
     );
 

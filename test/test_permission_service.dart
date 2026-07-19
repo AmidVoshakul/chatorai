@@ -47,6 +47,35 @@ void main() {
       await future;
     });
 
+    test('once grant is not blocked by rate-limit on a different pattern',
+        () async {
+      // Regression: after replying "once", a follow-up ask for the same
+      // permission but a DIFFERENT pattern (e.g. two distinct bash commands)
+      // must not be rate-limited into a PermissionDeniedError, and must not
+      // require a second reply. See logs: "RATE-LIMITED for bash:bash".
+      final req1 = PermissionRequest(
+        id: 'req-once-1',
+        toolName: 'bash',
+        permission: 'bash',
+        patterns: ['git status'],
+        metadata: {'sessionId': 's1'},
+      );
+      final f1 = service.ask(req1, ruleset);
+      await Future.delayed(Duration.zero);
+      service.reply('req-once-1', PermissionReply.once);
+      await f1;
+
+      final req2 = PermissionRequest(
+        id: 'req-once-2',
+        toolName: 'bash',
+        permission: 'bash',
+        patterns: ['ls -la'],
+        metadata: {'sessionId': 's1'},
+      );
+      // Must complete without throwing and without requiring another reply.
+      await service.ask(req2, ruleset);
+    });
+
     test('deny throws immediately', () async {
       final denyRuleset = PermissionRuleset(
         rules: [
@@ -238,6 +267,57 @@ void main() {
 
       expect(future1, throwsA(isA<PermissionRejectedError>()));
       expect(future2, throwsA(isA<PermissionRejectedError>()));
+    });
+
+    test('session gate blocks execute until reply', () async {
+      // No gate open initially → returns immediately.
+      await expectLater(service.waitWhilePaused('gate-session'), completes);
+
+      final req = PermissionRequest(
+        id: 'gate-req',
+        toolName: 'custom_tool',
+        permission: 'custom_tool',
+        patterns: ['cmd-gate'],
+        metadata: {'sessionId': 'gate-session'},
+      );
+
+      final askFuture = service.ask(req, ruleset);
+      // Let the dialog be emitted and the session paused.
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      // A concurrent execute for the same session must be blocked by the gate.
+      var gateReleased = false;
+      final blocked = service.waitWhilePaused('gate-session').then((_) {
+        gateReleased = true;
+      });
+
+      // Gate is still held (dialog open) — not yet released.
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(gateReleased, isFalse);
+
+      // User answers → gate resumes, blocked execute proceeds, ask resolves.
+      service.reply('gate-req', PermissionReply.once);
+      await expectLater(blocked, completes);
+      await expectLater(askFuture, completes);
+      expect(gateReleased, isTrue);
+    });
+
+    test('session gate is isolated per session', () async {
+      final req = PermissionRequest(
+        id: 'gate-req-2',
+        toolName: 'custom_tool',
+        permission: 'custom_tool',
+        patterns: ['cmd-gate-2'],
+        metadata: {'sessionId': 'session-A'},
+      );
+      final askFuture = service.ask(req, ruleset);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      // A different session is NOT blocked while session-A dialog is open.
+      await expectLater(service.waitWhilePaused('session-B'), completes);
+
+      service.reply('gate-req-2', PermissionReply.once);
+      await expectLater(askFuture, completes);
     });
   });
 }

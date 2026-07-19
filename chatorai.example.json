@@ -1,0 +1,117 @@
+{
+  "version": 1,
+
+  "permission": {
+    "Read": "allow",
+    "Write": "ask",
+    "Bash": {
+      "ls": "allow",
+      "rm": "deny"
+    }
+  },
+
+  "compaction": {
+    "auto": true,
+    "prune": false,
+    "keep": { "tokens": 8000 },
+    "buffer": 20000
+  },
+
+  "skills": {
+    "paths": [".chatorai/skills", "~/.local/share/chatorai/skills"],
+    "urls": [
+      "https://example.com/skills/index.json",
+      { "url": "https://example.com/skills/index.json", "cache_ttl": 3600, "api_key": "REPLACE_ME_DO_NOT_COMMIT" }
+    ]
+  },
+
+  "mcp": {
+    "filesystem": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "."]
+    },
+    "my-remote": {
+      "type": "remote",
+      "url": "https://mcp.example.com/sse",
+      "headers": { "Authorization": "Bearer <token>" }
+    }
+  },
+
+  "agent": {
+    "researcher": {
+      "name": "Deep Researcher",
+      "description": "Thorough web research agent",
+      "prompt": "You are a meticulous researcher. Cite sources.",
+      "model": "anthropic/claude-opus-4",
+      "temperature": 0.2,
+      "max_steps": 25
+    }
+  },
+
+  "formatter": {
+    "formatters": {
+      "dart": {
+        "command": ["dart", "format"],
+        "extensions": ["dart"]
+      },
+      "prettier": {
+        "disabled": false,
+        "command": ["npx", "-y", "prettier", "--write"],
+        "extensions": ["js", "ts", "json", "md"]
+      }
+    }
+  },
+
+  "tools": {
+    "bash": "ask",
+    "websearch": "allow"
+  },
+
+  "instructions": [
+    ".chatorai/instructions/*.md",
+    "AGENTS.md",
+    "https://example.com/company-rules.md"
+  ],
+
+  "provider": {
+    "custom-openrouter": {
+      "name": "OpenRouter (custom)",
+      "options": {
+        "baseURL": "https://openrouter.ai/api/v1",
+        "apiKey": "{env:OPENROUTER_API_KEY}",
+        "temperature": 0.1
+      },
+      "models": {
+        "openrouter/owl-alpha": {
+          "name": "Owl Alpha",
+          "limit": { "context": 1048576, "output": 262144 }
+        },
+        "stepfun/step-3.7-flash:free": {
+          "name": "Step 3.7 Flash Free",
+          "limit": { "context": 262144, "output": 32144 }
+        }
+      }
+    },
+    "nvidia": {
+      "name": "NVIDIA NIM",
+      "options": {
+        "baseURL": "https://integrate.api.nvidia.com/v1",
+        "apiKey": "{env:NVIDIA_API_KEY}",
+        "temperature": 0.1
+      },
+      "models": {
+        "stepfun-ai/step-3.7-flash": { "name": "Step 3.7 Flash" },
+        "qwen/qwen3.5-397b-a17b": { "name": "Qwen3.5 400B VLM" }
+      }
+    },
+    "groq": {
+      "options": {
+        "apiKey": "{env:GROQ_API_KEY}"
+      },
+      "models": {
+        "openai/gpt-oss-20b": { "name": "GPT OSS 20B" },
+        "llama-3.1-8b-instant": { "name": "Llama 3.1 8B" }
+      }
+    }
+  }
+}

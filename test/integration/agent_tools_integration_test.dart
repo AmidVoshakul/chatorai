@@ -73,6 +73,7 @@ class _FakeChatAiService extends ChatAiService {
     int maxSteps = 5,
     void Function(RichRetryInfo info)? onRetry,
     void Function(List<Map<String, dynamic>> messages)? onOverflow,
+    String? sessionId,
   }) async {
     // Simulate immediate response. Await the callbacks because they perform
     // database writes (event flush) and must complete before this method
@@ -95,6 +96,8 @@ class _FakeChatAiService extends ChatAiService {
     ToolErrorCallback? onToolError,
     UsageCallback? onUsage,
     int maxSteps = 5,
+    String? sessionId,
+    CancellationToken? abortSignal,
   }) async {
     // Simulate immediate response (same as streamChatCompletion fake).
     // Await the callbacks: onCompletion performs database writes (event flush)

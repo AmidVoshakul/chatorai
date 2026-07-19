@@ -4,15 +4,17 @@ set -euo pipefail
 # -----------------------------------------------------------------------------
 # ChatORAI one-command installer (end users, no Flutter required)
 #
-# Downloads a prebuilt Linux bundle from GitHub Releases and installs it to
-# /usr/local/lib/chatorai with a desktop entry and a `chatorai` launcher that
-# transparently falls back to software OpenGL on old GPUs.
+# Downloads a prebuilt Linux bundle from GitHub Releases and installs it to the
+# current user's home (no sudo / no root needed):
+#   - app:   ~/.local/share/chatorai
+#   - launcher: ~/.local/bin/chatorai   (added to PATH if missing)
+#   - desktop entry + icon under ~/.local/share
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | sudo bash
-#   sudo ./install_chatorai.sh                 # latest stable release
-#   sudo ./install_chatorai.sh --version 0.1.0 # specific version
-#   sudo ./install_chatorai.sh --help
+#   curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | bash
+#   ./install_chatorai.sh                 # latest stable release
+#   ./install_chatorai.sh --version 0.1.0 # specific version
+#   ./install_chatorai.sh --help
 # -----------------------------------------------------------------------------
 
 REPO="AmidVoshakul/chatorai"
@@ -58,13 +60,15 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo "Installing ChatORAI..."
+# ---------------------------------------------------------
+# User-local install directories (no sudo)
+# ---------------------------------------------------------
+INSTALL_DIR="$HOME/.local/share/chatorai"
+BIN_DIR="$HOME/.local/bin"
+APP_DIR="$HOME/.local/share/applications"
+ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"
 
-# Require sudo
-if [ "$EUID" -ne 0 ]; then
-    echo -e "${RED}Please run with sudo${NC}"
-    exit 1
-fi
+echo "Installing ChatORAI to $INSTALL_DIR ..."
 
 # ---------------------------------------------------------
 # 1. Detect architecture
@@ -87,7 +91,7 @@ fi
 
 if [ -z "$VERSION" ]; then
     echo -e "${RED}Could not determine latest version.${NC}"
-    echo "   Try: sudo ./install_chatorai.sh --version v0.1.0"
+    echo "   Try: ./install_chatorai.sh --version v0.1.0"
     echo "   Releases: https://github.com/$REPO/releases"
     exit 1
 fi
@@ -120,7 +124,6 @@ echo "Extracting..."
 mkdir -p bundle
 tar -xzf bundle.tar.gz -C bundle
 
-# The tarball may contain the bundle contents directly or under a subdir.
 # Find the directory that holds the `chatorai` executable (expect exactly one).
 mapfile -t BIN_MATCHES < <(find bundle -type f -name chatorai 2>/dev/null)
 if [ "${#BIN_MATCHES[@]}" -ne 1 ]; then
@@ -137,88 +140,18 @@ fi
 # 4. Install files
 # ---------------------------------------------------------
 echo "Installing files..."
-install -d /usr/local/lib/chatorai
-install -d /usr/local/bin
-rm -rf /usr/local/lib/chatorai/*
-cp -r "$BUNDLE_ROOT"/* /usr/local/lib/chatorai/
+install -d "$INSTALL_DIR"
+install -d "$BIN_DIR"
+rm -rf "$INSTALL_DIR"/*
+cp -r "$BUNDLE_ROOT"/* "$INSTALL_DIR"/
 
 # ---------------------------------------------------------
-# 5. Install icon
-# ---------------------------------------------------------
-echo "Installing icon..."
-ICON_DST="/usr/share/icons/hicolor/256x256/apps/chatorai.png"
-mkdir -p "$(dirname "$ICON_DST")"
-
-# The real icon ships inside the Flutter asset bundle.
-ICON_SRC=$(find /usr/local/lib/chatorai/data/flutter_assets/assets \
-    -maxdepth 1 -type f -name 'chatorai_logo*.png' 2>/dev/null | head -1 || true)
-if [ -z "$ICON_SRC" ]; then
-    ICON_SRC=$(find /usr/local/lib/chatorai -maxdepth 2 -type f -name '*.png' 2>/dev/null | head -1 || true)
-fi
-
-if [ -n "$ICON_SRC" ] && [ -f "$ICON_SRC" ]; then
-    if command -v convert >/dev/null 2>&1; then
-        convert "$ICON_SRC" -resize 256x256 "$ICON_DST" || cp "$ICON_SRC" "$ICON_DST"
-    else
-        cp "$ICON_SRC" "$ICON_DST"
-    fi
-else
-    echo "⚠️ Icon not found, creating placeholder"
-    printf '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82' > "$ICON_DST"
-fi
-
-# ---------------------------------------------------------
-# 6. OpenGL compatibility (install-time hint)
-# ---------------------------------------------------------
-# Flutter/GTK on Linux needs OpenGL >= 3.0. Some old GPUs (e.g. Intel HD
-# "ILK"/Ironlake) only expose OpenGL 2.1 and segfault under hardware GL, so we
-# must run under software rendering (llvmpipe) instead.
-#
-# We do NOT launch the GUI here (no reliable display session under sudo, and it
-# is the source of subtle failures). Instead we read the reported GL version
-# via glxinfo as a safe, non-crashing hint, and drop a flag file. The runtime
-# launcher additionally self-heals if this guess is wrong.
-echo "Checking OpenGL compatibility..."
-USE_SOFT_GL=0
-if command -v glxinfo >/dev/null 2>&1; then
-    # Run glxinfo as the invoking user so it sees their GPU/driver, not root's.
-    RUN_USER="${SUDO_USER:-$USER}"
-    if [ -n "${SUDO_USER:-}" ]; then
-        GLX_OUT="$(sudo -u "$RUN_USER" glxinfo 2>/dev/null || true)"
-    else
-        GLX_OUT="$(glxinfo 2>/dev/null || true)"
-    fi
-
-    GL_VERSION_LINE="$(echo "$GLX_OUT" | grep -m1 -i 'OpenGL version string' || true)"
-    # Extract the leading "major.minor" number, e.g. "2.1", "4.6".
-    GL_MAJOR="$(echo "$GL_VERSION_LINE" | sed -n 's/^[^:]*: *\([0-9]\+\)\..*/\1/p')"
-
-    if [ -z "$GLX_OUT" ] \
-       || echo "$GLX_OUT" | grep -qiE 'renderer string:.*(llvmpipe|softpipe|swrast)'; then
-        USE_SOFT_GL=1
-    elif [ -n "$GL_MAJOR" ] && [ "$GL_MAJOR" -lt 3 ]; then
-        echo "   Detected OpenGL < 3.0 (${GL_MAJOR}.x) — enabling software rendering"
-        USE_SOFT_GL=1
-    fi
-else
-    echo "   glxinfo not available; the launcher will auto-detect at runtime"
-fi
-
-if [ "$USE_SOFT_GL" -eq 1 ]; then
-    touch /usr/local/lib/chatorai/.force_soft_gl
-    echo "   Software rendering enabled. To force hardware GL later:"
-    echo "     sudo rm /usr/local/lib/chatorai/.force_soft_gl"
-else
-    rm -f /usr/local/lib/chatorai/.force_soft_gl
-fi
-
-# ---------------------------------------------------------
-# 7. Create launcher (self-healing OpenGL)
+# 5. Create launcher + desktop entry
 # ---------------------------------------------------------
 echo "Creating launcher..."
-cat > /usr/local/bin/chatorai << 'EOF'
+cat > "$BIN_DIR/chatorai" << 'EOF'
 #!/bin/bash
-INSTALL_DIR="/usr/local/lib/chatorai"
+INSTALL_DIR="$HOME/.local/share/chatorai"
 
 # Explicit override always wins.
 if [ "$CHATORAI_FORCE_SOFT_GL" = "1" ] || [ -f "$INSTALL_DIR/.force_soft_gl" ]; then
@@ -230,9 +163,7 @@ if [ "$CHATORAI_FORCE_SOFT_GL" = "0" ]; then
     exec "$INSTALL_DIR/chatorai" "$@"
 fi
 
-# Proactively check the OpenGL version once and cache the decision: GPUs
-# exposing OpenGL < 3.0 will crash under hardware GL, so switch to software
-# rendering before the first launch (no crash needed).
+# Proactively check the OpenGL version once and cache the decision.
 if command -v glxinfo >/dev/null 2>&1; then
     GLV="$(glxinfo 2>/dev/null | grep -m1 -i 'OpenGL version string' \
         | sed -n 's/^[^:]*: *\([0-9]\+\)\..*/\1/p')"
@@ -244,9 +175,8 @@ if command -v glxinfo >/dev/null 2>&1; then
     fi
 fi
 
-# Otherwise try hardware GL. If the GUI dies from a GL-related crash
-# (SIGSEGV=139 / SIGABRT=134), transparently retry with software rendering and
-# remember it. Only auto-retry the GUI (no CLI args) so CLI exit codes survive.
+# Otherwise try hardware GL. If the GUI dies from a GL-related crash, retry with
+# software rendering and remember it. Only auto-retry the GUI (no CLI args).
 "$INSTALL_DIR/chatorai" "$@"
 RC=$?
 if { [ "$RC" = "139" ] || [ "$RC" = "134" ]; } && [ "$#" -eq 0 ]; then
@@ -258,40 +188,105 @@ if { [ "$RC" = "139" ] || [ "$RC" = "134" ]; } && [ "$#" -eq 0 ]; then
 fi
 exit $RC
 EOF
-chmod +x /usr/local/bin/chatorai
+chmod +x "$BIN_DIR/chatorai"
 
-# ---------------------------------------------------------
-# 8. Desktop entry
-# ---------------------------------------------------------
 echo "Creating desktop entry..."
-cat > /usr/share/applications/chatorai.desktop << 'EOF'
+install -d "$APP_DIR"
+cat > "$APP_DIR/chatorai.desktop" << 'EOF'
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=ChatORAI
 Comment=AI Chat Application
-Exec=/usr/local/bin/chatorai
+Exec=$HOME/.local/bin/chatorai
 Icon=chatorai
 Terminal=false
 Categories=Utility;Network;Chat;
-Keywords=AI;Chat;Assistant;OpenRouter;
+Keywords=AI;Chat;Assistant;Multimodal;Multiagent;
 StartupNotify=true
 EOF
+
+# ---------------------------------------------------------
+# 6. Install icon (best-effort — never block the launcher)
+# ---------------------------------------------------------
+(
+set +e
+echo "Installing icon..."
+ICON_DST="$ICON_DIR/chatorai.png"
+mkdir -p "$ICON_DIR" 2>/dev/null || true
+
+ICON_SRC=$(find "$INSTALL_DIR/data/flutter_assets/assets" \
+    -maxdepth 1 -type f -name 'chatorai_logo*.png' 2>/dev/null | head -1 || true)
+if [ -z "$ICON_SRC" ]; then
+    ICON_SRC=$(find "$INSTALL_DIR" -maxdepth 2 -type f -name '*.png' 2>/dev/null | head -1 || true)
+fi
+
+if [ -n "$ICON_SRC" ] && [ -f "$ICON_SRC" ]; then
+    if command -v convert >/dev/null 2>&1; then
+        convert "$ICON_SRC" -resize 256x256 "$ICON_DST" 2>/dev/null || cp "$ICON_SRC" "$ICON_DST" 2>/dev/null || true
+    else
+        cp "$ICON_SRC" "$ICON_DST" 2>/dev/null || true
+    fi
+else
+    echo "⚠️ Icon not found, creating placeholder"
+    printf '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82' > "$ICON_DST" 2>/dev/null || true
+fi
+)
+
+# ---------------------------------------------------------
+# 7. OpenGL compatibility (install-time hint, best-effort)
+# ---------------------------------------------------------
+echo "Checking OpenGL compatibility..."
+USE_SOFT_GL=0
+if command -v glxinfo >/dev/null 2>&1; then
+    GLX_OUT="$(glxinfo 2>/dev/null || true)"
+    GL_VERSION_LINE="$(echo "$GLX_OUT" | grep -m1 -i 'OpenGL version string' || true)"
+    GL_MAJOR="$(echo "$GL_VERSION_LINE" | sed -n 's/^[^:]*: *\([0-9]\+\)\..*/\1/p')"
+
+    if [ -z "$GLX_OUT" ] \
+       || echo "$GLX_OUT" | grep -qiE 'renderer string:.*(llvmpipe|softpipe|swrast)'; then
+        USE_SOFT_GL=1
+    elif [ -n "$GL_MAJOR" ] && [ "$GL_MAJOR" -lt 3 ]; then
+        echo "   Detected OpenGL < 3.0 (${GL_MAJOR}.x) — enabling software rendering"
+        USE_SOFT_GL=1
+    else
+        echo "   OpenGL >= 3.0 detected"
+    fi
+else
+    echo "   glxinfo not available; the launcher will auto-detect at runtime"
+fi
+
+if [ "$USE_SOFT_GL" -eq 1 ]; then
+    touch "$INSTALL_DIR/.force_soft_gl" 2>/dev/null || true
+    echo "   Software rendering enabled. To force hardware GL later:"
+    echo "     rm $INSTALL_DIR/.force_soft_gl"
+else
+    rm -f "$INSTALL_DIR/.force_soft_gl" 2>/dev/null || true
+fi
+
+# ---------------------------------------------------------
+# 8. Ensure ~/.local/bin is on PATH
+# ---------------------------------------------------------
+case ":$PATH:" in
+    *":$BIN_DIR:"*) ;;
+    *)
+        echo "Note: $BIN_DIR is not on your PATH. Add it to your shell profile:"
+        echo "    export PATH=\"\$HOME/.local/bin:\$PATH\""
+        ;;
+esac
 
 # ---------------------------------------------------------
 # 9. Update caches
 # ---------------------------------------------------------
 echo "Updating caches..."
-update-desktop-database /usr/share/applications 2>/dev/null || true
-gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true
+update-desktop-database "$APP_DIR" 2>/dev/null || true
+gtk-update-icon-cache -f "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
 
 echo ""
 echo "✅ Installation complete!"
 echo ""
 echo "Run:            chatorai"
 echo "Update later:   chatorai upgrade"
-echo "Uninstall:      sudo rm -rf /usr/local/lib/chatorai \\"
-echo "                  /usr/local/bin/chatorai \\"
-echo "                  /usr/share/applications/chatorai.desktop \\"
-echo "                  /usr/share/icons/hicolor/256x256/apps/chatorai.png"
+echo "Uninstall:      chatorai uninstall          (removes app only)"
+echo "                chatorai uninstall --keep-data   (removes app, keeps data)"
 echo ""

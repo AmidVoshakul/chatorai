@@ -84,7 +84,8 @@ The "Always allow" choice is confirmed with a secondary dialog to prevent accide
 ## Secret Handling
 
 - **API keys** are never stored in the repository. The `.env` file is for development only and is gitignored.
-- In release builds, users enter their API key and base URL through the app's settings UI. Values are stored in `SharedPreferences` (or platform-equivalent secure storage).
+- In release builds, users enter their API key and base URL through the app's settings UI. Values are stored in platform-specific secure storage (Keychain/Android Keystore/Windows DPAPI/Linux LibSecret) or, if unavailable, in `SharedPreferences` with **AES-256-GCM encryption**.
+- On Linux systems without a running keyring daemon (e.g., antiX, server Linux, TTY sessions), the app transparently falls back to encrypted SharedPreferences so it remains fully functional without requiring `gnome-keyring` or other system packages.
 - API keys are transmitted only over HTTPS (TLS) to the respective provider endpoints.
 - The codebase avoids logging any secrets. Log statements do not include raw API keys, tokens, or authentication headers.
 

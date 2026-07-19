@@ -90,6 +90,7 @@ class _FakeChatAiService extends ChatAiService {
     int maxSteps = 5,
     void Function(RichRetryInfo info)? onRetry,
     void Function(List<Map<String, dynamic>> messages)? onOverflow,
+    String? sessionId,
   }) async {
     onChunk(completionResult);
     onReasoning('mock reasoning');

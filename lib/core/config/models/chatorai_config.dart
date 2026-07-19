@@ -70,6 +70,8 @@ class ChatOrAIConfig {
   final McpConfig? mcp;
   final AgentSectionConfig? agent;
   final Map<String, dynamic>? tools;
+  final List<String> instructions;
+  final ProviderSectionConfig? provider;
 
   const ChatOrAIConfig({
     required this.version,
@@ -81,10 +83,13 @@ class ChatOrAIConfig {
     this.mcp,
     this.agent,
     this.tools,
+    this.instructions = const [],
+    this.provider,
   });
 
   factory ChatOrAIConfig.fromJson(Map<String, dynamic> json) {
-    final permissionJson = json['permission'] as Map<String, dynamic>? ?? {};
+    final permissionJson =
+        (json['permission'] as Map?)?.cast<String, dynamic>() ?? {};
     final permission = <String, PermissionRuleConfig>{};
     for (final entry in permissionJson.entries) {
       permission[entry.key] = PermissionRuleConfig.fromJson(entry.value);
@@ -113,6 +118,14 @@ class ChatOrAIConfig {
       tools: json['tools'] is Map
           ? Map<String, dynamic>.from(json['tools'] as Map)
           : null,
+      instructions: json['instructions'] is List
+          ? List<String>.from(json['instructions'] as List)
+          : const [],
+      provider: json['provider'] is Map<String, dynamic>
+          ? ProviderSectionConfig.fromJson(
+              json['provider'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 
@@ -126,6 +139,8 @@ class ChatOrAIConfig {
     if (mcp != null) 'mcp': mcp!.toJson(),
     if (agent != null) 'agent': agent!.toJson(),
     if (tools != null) 'tools': tools,
+    if (instructions.isNotEmpty) 'instructions': instructions,
+    if (provider != null) 'provider': provider!.toJson(),
   };
 }
 
@@ -288,4 +303,166 @@ class AgentSectionConfig {
     }
     return map;
   }
+}
+
+/// Provider section in chatorai.json.
+///
+/// Each entry key is a provider ID (e.g. "openrouter", "nvidia"). chatorai
+/// treats every config provider as OpenAI-compatible. `apiKey` supports the
+/// `{env:VAR}` substitution syntax.
+class ProviderSectionConfig {
+  final Map<String, ProviderEntryConfig> providers;
+
+  const ProviderSectionConfig({this.providers = const {}});
+
+  factory ProviderSectionConfig.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const ProviderSectionConfig();
+    final providers = <String, ProviderEntryConfig>{};
+    for (final entry in json.entries) {
+      if (entry.value is Map<String, dynamic>) {
+        providers[entry.key] = ProviderEntryConfig.fromJson(
+          entry.value as Map<String, dynamic>,
+        );
+      }
+    }
+    return ProviderSectionConfig(providers: providers);
+  }
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    for (final entry in providers.entries) {
+      map[entry.key] = entry.value.toJson();
+    }
+    return map;
+  }
+}
+
+/// A single provider entry in the `provider` section.
+class ProviderEntryConfig {
+  final String? name;
+  final ProviderOptionsConfig? options;
+  final Map<String, ProviderModelConfig> models;
+
+  const ProviderEntryConfig({this.name, this.options, this.models = const {}});
+
+  factory ProviderEntryConfig.fromJson(Map<String, dynamic> json) {
+    final models = <String, ProviderModelConfig>{};
+    final modelsJson = json['models'] as Map<String, dynamic>?;
+    if (modelsJson != null) {
+      for (final entry in modelsJson.entries) {
+        if (entry.value is Map<String, dynamic>) {
+          models[entry.key] = ProviderModelConfig.fromJson(
+            entry.value as Map<String, dynamic>,
+          );
+        }
+      }
+    }
+    return ProviderEntryConfig(
+      name: json['name'] as String?,
+      options: json['options'] is Map<String, dynamic>
+          ? ProviderOptionsConfig.fromJson(
+              json['options'] as Map<String, dynamic>,
+            )
+          : null,
+      models: models,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    if (name != null) 'name': name,
+    if (options != null) 'options': options!.toJson(),
+    if (models.isNotEmpty)
+      'models': {
+        for (final entry in models.entries) entry.key: entry.value.toJson(),
+      },
+  };
+}
+
+/// Provider-level options (baseURL, apiKey, temperature, plus extras).
+class ProviderOptionsConfig {
+  final String? baseURL;
+  final String? apiKey;
+  final double? temperature;
+  final Map<String, dynamic> extra;
+
+  const ProviderOptionsConfig({
+    this.baseURL,
+    this.apiKey,
+    this.temperature,
+    this.extra = const {},
+  });
+
+  factory ProviderOptionsConfig.fromJson(Map<String, dynamic> json) {
+    final known = {'baseURL', 'apiKey', 'temperature'};
+    final extra = <String, dynamic>{};
+    for (final entry in json.entries) {
+      if (!known.contains(entry.key)) extra[entry.key] = entry.value;
+    }
+    final apiKey = json['apiKey'];
+    if (apiKey != null && apiKey is! String) {
+      throw const FormatException('Provider apiKey must be a string');
+    }
+    final temp = json['temperature'];
+    if (temp != null && temp is! num) {
+      throw const FormatException('Provider temperature must be a number');
+    }
+    return ProviderOptionsConfig(
+      baseURL: json['baseURL'] as String?,
+      apiKey: apiKey as String?,
+      temperature: temp is num ? temp.toDouble() : null,
+      extra: extra,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    if (baseURL != null) 'baseURL': baseURL,
+    if (apiKey != null) 'apiKey': apiKey,
+    if (temperature != null) 'temperature': temperature,
+    for (final entry in extra.entries)
+      if (!_knownKeys.contains(entry.key)) entry.key: entry.value,
+  };
+
+  static const _knownKeys = {'baseURL', 'apiKey', 'temperature'};
+}
+
+/// A model declaration within a provider entry.
+class ProviderModelConfig {
+  final String? name;
+  final ProviderLimitConfig? limit;
+
+  const ProviderModelConfig({this.name, this.limit});
+
+  factory ProviderModelConfig.fromJson(Map<String, dynamic> json) {
+    return ProviderModelConfig(
+      name: json['name'] as String?,
+      limit: json['limit'] is Map<String, dynamic>
+          ? ProviderLimitConfig.fromJson(json['limit'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    if (name != null) 'name': name,
+    if (limit != null) 'limit': limit!.toJson(),
+  };
+}
+
+/// Context/output token limits for a model.
+class ProviderLimitConfig {
+  final int? context;
+  final int? output;
+
+  const ProviderLimitConfig({this.context, this.output});
+
+  factory ProviderLimitConfig.fromJson(Map<String, dynamic> json) {
+    return ProviderLimitConfig(
+      context: json['context'] as int?,
+      output: json['output'] as int?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    if (context != null) 'context': context,
+    if (output != null) 'output': output,
+  };
 }

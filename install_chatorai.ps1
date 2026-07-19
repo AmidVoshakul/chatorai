@@ -1,14 +1,12 @@
 # ChatORAI Windows Installation Script (end users, no Flutter required)
-# Run as Administrator: Right-click -> "Run with PowerShell"
+# No Administrator needed — installs to the current user's %LOCALAPPDATA%.
 #
 # Downloads the latest prebuilt Windows bundle from GitHub Releases and
-# installs it to C:\Program Files\ChatORAI with a Start Menu shortcut.
+# installs it to %LOCALAPPDATA%\ChatORAI with Start Menu + Desktop shortcuts.
 #
 # Usage:
 #   .\install_chatorai.ps1                 # latest stable release
 #   .\install_chatorai.ps1 -Version 1.2.3  # specific version
-
-#Requires -RunAsAdministrator
 
 param(
     [string]$Version = ""
@@ -49,7 +47,7 @@ try {
     Write-Host "Extracting..." -ForegroundColor Yellow
     Expand-Archive -Path $zipPath -DestinationPath $tmpDir -Force
 
-    $installDir = "C:\Program Files\ChatORAI"
+    $installDir = Join-Path $env:LOCALAPPDATA "ChatORAI"
     Write-Host "Installing to $installDir ..." -ForegroundColor Yellow
     New-Item -ItemType Directory -Path $installDir -Force | Out-Null
     Copy-Item -Path (Join-Path $tmpDir "*") -Destination $installDir -Recurse -Force
@@ -70,35 +68,19 @@ try {
     $Shortcut.WorkingDirectory = $installDir
     $Shortcut.Save()
 
-    # PATH
-    $currentPath = [Environment]::GetEnvironmentVariable('Path', 'Machine')
+    # User PATH (no elevation needed)
+    $currentPath = [Environment]::GetEnvironmentVariable('Path', 'User')
     if (-not $currentPath.Contains($installDir)) {
-        [Environment]::SetEnvironmentVariable('Path', "$currentPath;$installDir", 'Machine')
+        [Environment]::SetEnvironmentVariable('Path', "$currentPath;$installDir", 'User')
         Write-Host "Added to PATH. Restart terminal to use 'chatorai'." -ForegroundColor Green
     }
-
-    # Uninstaller
-    $uninstallScript = @"
-`$installDir = "$installDir"
-Write-Host "Uninstalling ChatORAI..."
-Remove-Item -Path "$startMenuPath" -Force -ErrorAction SilentlyContinue
-Remove-Item -Path "$desktopPath" -Force -ErrorAction SilentlyContinue
-`$currentPath = [Environment]::GetEnvironmentVariable('Path', 'Machine')
-`$newPath = `$currentPath -replace [regex]::Escape(";`$installDir"), ""
-`$newPath = `$newPath -replace [regex]::Escape("`$installDir;"), ""
-`$newPath = `$newPath -replace [regex]::Escape("`$installDir"), ""
-[Environment]::SetEnvironmentVariable('Path', `$newPath, 'Machine')
-Remove-Item -Path `$installDir -Recurse -Force
-Write-Host "ChatORAI has been uninstalled."
-"@
-    $uninstallScript | Out-File -FilePath "$installDir\Uninstall-ChatORAI.ps1" -Encoding UTF8
 
     Write-Host ""
     Write-Host "==============================" -ForegroundColor Green
     Write-Host "Installation complete!" -ForegroundColor Green
     Write-Host ""
     Write-Host "Run from Start Menu or: chatorai" -ForegroundColor White
-    Write-Host "To uninstall: PowerShell -ExecutionPolicy Bypass -File '$installDir\Uninstall-ChatORAI.ps1'" -ForegroundColor Yellow
+    Write-Host "To uninstall: chatorai uninstall" -ForegroundColor Yellow
 } finally {
     Remove-Item -Path $tmpDir -Recurse -Force -ErrorAction SilentlyContinue
 }

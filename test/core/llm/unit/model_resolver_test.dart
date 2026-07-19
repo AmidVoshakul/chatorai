@@ -460,5 +460,37 @@ void main() {
         expect(error.toString(), 'ModelResolutionError: test message');
       });
     });
+
+    group('provider defaults (temperature / extra body)', () {
+      late ProviderCatalogService catalogWithDefaults;
+      late ModelResolver resolverWithDefaults;
+
+      setUp(() async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        final provider = ProviderConfig.full(
+          id: 'cfg',
+          name: 'Cfg',
+          baseUrl: 'https://cfg/v1',
+          auth: AuthConfig.apiKey(apiKey: 'k'),
+          sdk: 'openai-compatible',
+          defaultBody: {'temperature': 0.3, 'top_p': 0.9},
+          models: [
+            ModelConfig.basic(
+              providerId: 'cfg',
+              modelName: 'm1',
+              displayName: 'M1',
+              contextLength: 1000,
+            ),
+          ],
+        );
+        catalogWithDefaults = ProviderCatalogService(
+          secureStorage: mockStorage,
+          prefs: prefs,
+          builtInProviders: [provider],
+        );
+        resolverWithDefaults = ModelResolver(catalogWithDefaults);
+      });
+    });
   });
 }

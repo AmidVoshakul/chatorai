@@ -272,6 +272,7 @@ class _FakeChatAiService extends ChatAiService {
     int maxSteps = 5,
     void Function(RichRetryInfo info)? onRetry,
     void Function(List<Map<String, dynamic>> messages)? onOverflow,
+    String? sessionId,
   }) async {
     onChunk('Fake subagent output');
     onCompletion('Fake completion');
@@ -291,6 +292,8 @@ class _FakeChatAiService extends ChatAiService {
     ToolErrorCallback? onToolError,
     UsageCallback? onUsage,
     int maxSteps = 5,
+    String? sessionId,
+    CancellationToken? abortSignal,
   }) async {
     onChunk('Fake subagent output');
     onUsage?.call(10, 20, 5, 3);

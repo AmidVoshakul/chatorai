@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'config_manager.dart';
+import 'instructions_resolver.dart';
 import 'models/chatorai_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,4 +15,17 @@ final configProvider = FutureProvider<ChatOrAIConfig>((ref) async {
 final compactionConfigProvider = Provider<CompactionConfig>((ref) {
   final config = ref.watch(configProvider).value;
   return config?.compaction ?? const CompactionConfig();
+});
+
+/// Resolves `instructions` entries from the loaded config into system-prompt
+/// blocks (`Instructions from: <path>\n<content>`). Resolution is memoized in
+/// [InstructionsCache] so the (potentially I/O-heavy) work happens once and is
+/// shared with non-UI consumers (e.g. the task tool).
+final resolvedInstructionsProvider = FutureProvider<List<String>>((ref) async {
+  final config = await ref.watch(configProvider.future);
+  InstructionsCache.instance.setRaw(
+    config.instructions,
+    cwd: Directory.current,
+  );
+  return InstructionsCache.instance.resolved;
 });

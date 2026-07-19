@@ -1,3 +1,4 @@
+import 'package:ai_sdk_dart/ai_sdk_dart.dart';
 import 'package:dio/dio.dart';
 
 /// Centralized error classification for ChatORAI.
@@ -225,8 +226,60 @@ class ErrorClassifier {
       return _classifyDioException(error);
     }
 
+    // 2b. ai_sdk_dart wraps transport failures (incl. DioException) as
+    // AiApiCallError before they escape the SDK streams (since ai_sdk_dart
+    // 1.2.0). Map it onto the same typed classification.
+    if (error is AiApiCallError) {
+      return _classifyAiApiCallError(error);
+    }
+
     // 3. String-based heuristic matching
     return _classifyByString(error.toString());
+  }
+
+  ClassifiedError _classifyAiApiCallError(AiApiCallError e) {
+    final statusCode = e.statusCode;
+    final rawMessage = e.responseBody?.isNotEmpty == true
+        ? e.responseBody
+        : (e.message.isNotEmpty ? e.message : null);
+
+    if (statusCode != null) {
+      final retryAfter = _extractRetryAfterFromHeaders(e.responseHeaders);
+
+      if (statusCode == 429) {
+        return RateLimitError(
+          statusCode: statusCode,
+          retryAfter: retryAfter,
+          reason: e.type,
+          rawMessage: rawMessage,
+        );
+      }
+
+      if (statusCode == 401 || statusCode == 403) {
+        return AuthenticationError(
+          statusCode: statusCode,
+          rawMessage: rawMessage,
+        );
+      }
+
+      if (statusCode == 400 && _isOverflowString(rawMessage ?? '')) {
+        return OverflowError(
+          statusCode: statusCode,
+          detail: rawMessage,
+          rawMessage: rawMessage,
+        );
+      }
+
+      if (statusCode >= 400) {
+        return ServerError(statusCode: statusCode, rawMessage: rawMessage);
+      }
+    }
+
+    if (e.isRetryable) {
+      return NetworkError(detail: e.type, rawMessage: rawMessage);
+    }
+
+    return UnknownError(original: e, rawMessage: rawMessage);
   }
 
   ClassifiedError _classifyDioException(DioException e) {
@@ -403,6 +456,37 @@ class ErrorClassifier {
       if (seconds != null) return Duration(seconds: seconds);
 
       // Try parsing as HTTP-date (RFC 7231)
+      final parsedDate = DateTime.tryParse(retryAfter);
+      if (parsedDate != null) {
+        final delta = parsedDate.difference(DateTime.now());
+        if (delta.isNegative) return Duration.zero;
+        return delta;
+      }
+    }
+
+    return null;
+  }
+
+  Duration? _extractRetryAfterFromHeaders(Map<String, String>? headers) {
+    if (headers == null) return null;
+    String? headerValue(String name) {
+      for (final entry in headers.entries) {
+        if (entry.key.toLowerCase() == name.toLowerCase()) return entry.value;
+      }
+      return null;
+    }
+
+    final retryAfterMs = headerValue('retry-after-ms');
+    if (retryAfterMs != null) {
+      final ms = int.tryParse(retryAfterMs);
+      if (ms != null) return Duration(milliseconds: ms);
+    }
+
+    final retryAfter = headerValue('retry-after');
+    if (retryAfter != null) {
+      final seconds = int.tryParse(retryAfter);
+      if (seconds != null) return Duration(seconds: seconds);
+
       final parsedDate = DateTime.tryParse(retryAfter);
       if (parsedDate != null) {
         final delta = parsedDate.difference(DateTime.now());

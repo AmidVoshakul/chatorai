@@ -34,13 +34,14 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     final toolStartTimes = <String, DateTime>{};
     final processedToolEndCalls = <String>{};
     final resolvedChildSessions = <String, String>{};
-    String? activeTaskSessionId;
+    final Set<String> activeTaskSessionIds = {};
+    final Map<String, String> taskToolToPart = {};
 
     void resolveTaskChildSession(String taskPartId) {
       if (resolvedChildSessions.containsKey(taskPartId)) return;
       final childSessionId = ref
           .read(currentSessionRunnerProvider.notifier)
-          .activeChildSessionId;
+          .taskPartToChild[taskPartId];
       if (childSessionId != null) {
         notifier.onTaskSessionIdResolved(taskPartId, childSessionId);
         resolvedChildSessions[taskPartId] = childSessionId;
@@ -129,9 +130,47 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     }
 
     final holder = ref.read(currentSessionRunnerProvider.notifier);
-    holder.onChildToolEvent = (toolName, title) {
-      if (activeTaskSessionId != null) {
-        notifier.onTaskToolExecuted(activeTaskSessionId!, toolName, title);
+    // Resolve the TaskPart's child session id as soon as the delegated child
+    // session is created, so the widget can read the sub-agent's live tool
+    // results and render its current tool title dynamically. Route by child
+    // session id (not the single activeTaskSessionId) so concurrent tasks each
+    // get their own live header.
+    holder.onChildSessionResolved = (childSessionId) {
+      final taskPartId = holder.childToTaskPart[childSessionId];
+      LogTags.chatScreen.logInfo(
+        '[TaskTrace] onChildSessionResolved WHAT=resolve child→part WHERE=streaming '
+        'WHEN=${DateTime.now()} WHY=map child session to TaskPart.taskSessionId '
+        'child=$childSessionId taskPartId=$taskPartId '
+        'mapSize=${holder.childToTaskPart.length}',
+      );
+      if (taskPartId != null) {
+        notifier.onTaskSessionIdResolved(taskPartId, childSessionId);
+      } else {
+        LogTags.chatScreen.logWarning(
+          '[TaskTrace] onChildSessionResolved MISSING MAP ENTRY child=$childSessionId '
+          'WHY=child not registered before event → TaskPart.taskSessionId will NOT be set',
+        );
+      }
+    };
+    holder.onChildToolEvent = (childSessionId, toolName, title) {
+      final taskPartId = holder.childToTaskPart[childSessionId];
+      LogTags.chatScreen.logInfo(
+        '[TaskTrace] onChildToolEvent WHAT=child tool→update part WHERE=streaming '
+        'WHEN=${DateTime.now()} WHY=route live tool title to TaskPart '
+        'child=$childSessionId tool=$toolName title=${title ?? ''} taskPartId=$taskPartId',
+      );
+      if (taskPartId != null) {
+        // Resolve the child session id as soon as the first tool event
+        // arrives so the TaskPart can read live tool calls from the child
+        // session (mirrors opencode, which sources the tool list from the
+        // child session rather than from the parent task tool).
+        notifier.onTaskSessionIdResolved(taskPartId, childSessionId);
+        notifier.onTaskToolExecuted(taskPartId, toolName, title);
+      } else {
+        LogTags.chatScreen.logWarning(
+          '[TaskTrace] onChildToolEvent MISSING MAP ENTRY child=$childSessionId '
+          'WHY=child not registered → header will not update for this part',
+        );
       }
     };
 
@@ -200,11 +239,10 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             retryMessage: info.message,
             retryAttempt: info.attempt,
           );
-          if (activeTaskSessionId != null) {
-            notifier.onTaskError(activeTaskSessionId!, info.message);
-            unawaited(
-              runnerSession.onTaskError(activeTaskSessionId!, info.message),
-            );
+          if (activeTaskSessionIds.isNotEmpty) {
+            final id = activeTaskSessionIds.last;
+            notifier.onTaskError(id, info.message);
+            unawaited(runnerSession.onTaskError(id, info.message));
           }
           final partialText = fullContent.toString();
           if (partialText.isNotEmpty) {
@@ -262,7 +300,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             }
           } else {
             final partId = _genPartId(toolCallId);
-            if (toolName != 'task' && activeTaskSessionId == null) {
+            if (toolName != 'task' && activeTaskSessionIds.isEmpty) {
               notifier.onToolCall(
                 partId,
                 toolCallId,
@@ -280,27 +318,31 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               final agent = AgentRegistry().get(subagentType);
               final agentName = agent?.name ?? subagentType;
               final taskId = input['task_id'] as String?;
-              final sessionIdFromInput =
-                  (taskId != null && taskId.startsWith('ses_')) ? taskId : null;
               final taskPartId = taskId ?? toolCallId;
 
+              LogTags.chatScreen.logInfo(
+                '[TaskTrace] onTaskStart(task) WHAT=create TaskPart WHERE=streaming.onToolStart '
+                'WHEN=${DateTime.now()} WHY=parent received task tool-call → build UI part '
+                'taskId=$taskId toolCallId=$toolCallId taskPartId=$taskPartId '
+                'agent=$agentName desc=$description sessionId=$sessionId',
+              );
               notifier.onTaskStart(
                 taskPartId,
                 currentMessageId!,
                 sessionId,
                 description,
                 agentName,
-                taskSessionId: sessionIdFromInput,
               );
-              activeTaskSessionId = taskPartId;
-            } else if (activeTaskSessionId != null) {
+              activeTaskSessionIds.add(taskPartId);
+              taskToolToPart[toolCallId] = taskPartId;
+            } else if (activeTaskSessionIds.isNotEmpty) {
               final toolTitle =
                   input['command'] as String? ??
                   input['query'] as String? ??
                   input['filePath'] as String? ??
                   input['path'] as String?;
               notifier.onTaskToolExecuted(
-                activeTaskSessionId!,
+                activeTaskSessionIds.last,
                 toolName,
                 toolTitle,
               );
@@ -318,15 +360,21 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             notifier.onToolEnd(toolCallId, toolName, resultStr);
           }
 
-          if (toolName == 'task' && activeTaskSessionId != null) {
-            resolveTaskChildSession(activeTaskSessionId!);
-            notifier.onTaskEnd(activeTaskSessionId!);
-            activeTaskSessionId = null;
-            ref
-                    .read(currentSessionRunnerProvider.notifier)
-                    .activeChildSessionId =
-                null;
-          } else if (activeTaskSessionId != null) {
+          if (toolName == 'task') {
+            final id = taskToolToPart.remove(toolCallId) ??
+                activeTaskSessionIds.firstOrNull;
+            LogTags.chatScreen.logInfo(
+              '[TaskTrace] onToolEnd(task) WHAT=finish TaskPart WHERE=streaming.onToolEnd '
+              'WHEN=${DateTime.now()} WHY=parent task tool-call completed → mark part done '
+              'toolCallId=$toolCallId resolvedId=$id '
+              'remainingActive=${activeTaskSessionIds.length}',
+            );
+            if (id != null) {
+              activeTaskSessionIds.remove(id);
+              resolveTaskChildSession(id);
+              notifier.onTaskEnd(id);
+            }
+          } else if (activeTaskSessionIds.isNotEmpty) {
             final toolInput = toolInputs[toolCallId];
             final title = toolInput != null
                 ? (toolInput['command'] as String? ??
@@ -334,7 +382,11 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                       toolInput['filePath'] as String? ??
                       toolInput['path'] as String?)
                 : null;
-            notifier.onTaskToolExecuted(activeTaskSessionId!, toolName, title);
+            notifier.onTaskToolExecuted(
+              activeTaskSessionIds.last,
+              toolName,
+              title,
+            );
           }
 
           if (toolName == 'question') {
@@ -371,12 +423,11 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
 
           notifier.onToolError(toolCallId, errorStr);
 
-          if (activeTaskSessionId != null) {
-            resolveTaskChildSession(activeTaskSessionId!);
-            notifier.onTaskError(activeTaskSessionId!, errorStr);
-            unawaited(
-              runnerSession.onTaskError(activeTaskSessionId!, errorStr),
-            );
+          if (activeTaskSessionIds.isNotEmpty) {
+            final id = activeTaskSessionIds.last;
+            resolveTaskChildSession(id);
+            notifier.onTaskError(id, errorStr);
+            unawaited(runnerSession.onTaskError(id, errorStr));
           }
 
           scrollOnContentAdd();
@@ -412,11 +463,14 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         onCompletion: (sdkText) async {
           flushPendingUpdates();
           if (!mounted || _streamCancelled) return;
-          if (activeTaskSessionId != null) {
-            resolveTaskChildSession(activeTaskSessionId!);
-            notifier.onTaskEnd(activeTaskSessionId!);
-            unawaited(runnerSession.onTaskEnd(activeTaskSessionId!));
-            activeTaskSessionId = null;
+          if (activeTaskSessionIds.isNotEmpty) {
+            final ids = List<String>.from(activeTaskSessionIds);
+            activeTaskSessionIds.clear();
+            for (final id in ids) {
+              resolveTaskChildSession(id);
+              notifier.onTaskEnd(id);
+              unawaited(runnerSession.onTaskEnd(id));
+            }
           }
           notifier.setRetryInfo(
             isRetrying: false,
@@ -536,7 +590,11 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         },
       );
     } catch (e) {
-      if (_streamCancelled) return;
+      // Close any still-running task parts BEFORE finalizing the stream, so
+      // their spinners do not persist in the saved message (root cause of the
+      // "spinner never disappears on cancel" bug).
+      notifier.closeAllRunningTasks();
+      activeTaskSessionIds.clear();
       notifier.finalizeStreaming();
       notifier.setRetryInfo(
         isRetrying: false,
@@ -544,6 +602,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         retryAttempt: 0,
       );
       holder.onChildToolEvent = null;
+      if (_streamCancelled) return;
       unawaited(runnerSession.onError(e));
       await _handleStreamingError(e);
     } finally {

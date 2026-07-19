@@ -7,20 +7,71 @@ import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
     show AssistantText;
+import 'package:ai_sdk_dart/ai_sdk_dart.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:synchronized/synchronized.dart';
 
 class SessionRunnerHolder {
   SessionRunner? runner;
   String? parentSessionId;
 
-  /// Real child session ID set by task tool when child session is created.
-  /// Only one task runs at a time per parent, so a single slot suffices.
+  /// Maps a child session ID to the parent task part ID so that concurrent
+  /// tasks can be routed independently in the UI. Replaces the previous single
+  /// [activeChildSessionId] slot, which broke parallel task tool display.
+  final Map<String, String> childToTaskPart = {};
+
+  /// Back-reference from task part ID to child session ID.
+  final Map<String, String> taskPartToChild = {};
+
+  /// Best-effort "most recent" child session ID, retained for callers that
+  /// need a single active child (e.g. opening a task session). Does not gate
+  /// routing — that uses [childToTaskPart].
   String? activeChildSessionId;
 
+  /// Abort signal bound to the parent task tool call, propagated to the
+  /// delegated child stream so cancelling the parent also stops the sub-agent.
+  CancellationToken? childAbortSignal;
+
   /// Callback fired when a child tool starts executing during task delegation.
-  /// Used to forward child tool events to the parent TaskPart UI.
-  void Function(String toolName, String? title)? onChildToolEvent;
+  /// Receives the child session ID so the parent can route the event to the
+  /// correct TaskPart even when several tasks run concurrently.
+  void Function(String childSessionId, String toolName, String? title)?
+      onChildToolEvent;
+
+  /// Callback fired as soon as the child session for a delegated task is
+  /// created, carrying its session ID. The parent wires this to resolve the
+  /// TaskPart's `taskSessionId` so the widget can read the child's live tool
+  /// results (and render the sub-agent's current tool title dynamically).
+  void Function(String childSessionId)? onChildSessionResolved;
+
+  /// Registers the link between a child session and its parent task part.
+  void registerChild(String childSessionId, String taskPartId) {
+    childToTaskPart[childSessionId] = taskPartId;
+    taskPartToChild[taskPartId] = childSessionId;
+    activeChildSessionId = childSessionId;
+    LogTags.chatService.logInfo(
+      '[TaskTrace] registerChild WHAT=link child↔part WHERE=session_runner '
+      'WHEN=${DateTime.now()} WHY=child session created & needs routing to its TaskPart '
+      'child=$childSessionId part=$taskPartId mapSize=${childToTaskPart.length} '
+      'activeChildSessionId=$activeChildSessionId',
+    );
+  }
+
+  /// Returns the parent task part ID for a child session, if registered.
+  String? taskPartForChild(String childSessionId) =>
+      childToTaskPart[childSessionId];
+
+  /// Removes the link for a finished child session.
+  void unregisterChild(String childSessionId) {
+    final taskPartId = childToTaskPart.remove(childSessionId);
+    if (taskPartId != null) taskPartToChild.remove(taskPartId);
+    LogTags.chatService.logInfo(
+      '[TaskTrace] unregisterChild WHAT=unlink child WHERE=session_runner '
+      'WHEN=${DateTime.now()} WHY=child session finished/aborted '
+      'child=$childSessionId part=$taskPartId mapSize=${childToTaskPart.length}',
+    );
+  }
 
   SessionRunnerHolder(this.runner, {this.parentSessionId});
 }
@@ -139,7 +190,9 @@ class SessionRunner {
     String? modelRef,
     String? title,
     String? taskId,
+    String? taskPartId,
     SessionRunnerHolder? holder,
+    CancellationToken? abortSignal,
   }) async {
     final effectiveAgent = agent ?? 'general';
     final childAgent =
@@ -173,7 +226,14 @@ class SessionRunner {
       immediate: true,
     );
 
-    holder?.activeChildSessionId = childId.value;
+    holder?.registerChild(childId.value, taskPartId ?? taskId ?? childId.value);
+    holder?.childAbortSignal = abortSignal;
+    LogTags.chatService.logInfo(
+      '[TaskTrace] onChildSessionResolved WHAT=fire callback WHERE=session_runner '
+      'WHEN=${DateTime.now()} WHY=child session id ready to resolve TaskPart.taskSessionId '
+      'child=${childId.value} taskPartId=$taskPartId taskId=$taskId',
+    );
+    holder?.onChildSessionResolved?.call(childId.value);
 
     // Persist user prompt as first message in child session (mirrors parent UX)
     await childSession.publishUserMessage(content: taskPrompt);
@@ -186,6 +246,7 @@ class SessionRunner {
           : state.parts.whereType<AssistantText>().map((p) => p.text).join();
       return TaskChildResult(fullText, sessionId: childId);
     } finally {
+      holder?.unregisterChild(childId.value);
       childSession.dispose();
     }
   }

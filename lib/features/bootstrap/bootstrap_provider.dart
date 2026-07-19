@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/config/config_initializer.dart';
 import 'package:chatorai/core/config/config_provider.dart';
+import 'package:chatorai/core/config/instructions_resolver.dart';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/core/tools/tool_output_persistence.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/shared/utils/secure_storage_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Выполняет всю тяжёлую инициализацию за первым кадром.
@@ -28,6 +32,18 @@ final appBootstrapProvider = FutureProvider<void>((ref) async {
   } catch (e, st) {
     LogTags.config.logError('Failed to load chatorai.json config', e, st);
   }
+
+  // Seed the instruction resolver cache so both the GUI and non-UI consumers
+  // (task tool, CLI) share a single resolution.
+  InstructionsCache.instance.setRaw(
+    config?.instructions ?? const [],
+    cwd: Directory.current,
+  );
+
+  // Resolve the secret-storage backend (keyring vs encrypted SharedPreferences fallback)
+  // before any API key is read, so a missing/locked keyring degrades quietly
+  // instead of spamming KeyringLocked warnings.
+  await SecureStorageService.init();
 
   await AgentRegistry().init(config);
 

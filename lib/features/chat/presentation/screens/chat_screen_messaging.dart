@@ -7,6 +7,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     required AgentDefinition agent,
     String? userSystemPrompt,
     String? delegateAgentId,
+    List<String> instructionBlocks = const [],
   }) {
     final prompts = <String>[];
 
@@ -28,6 +29,11 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     // 2. User's system prompt (always added if present)
     if (userSystemPrompt != null && userSystemPrompt.isNotEmpty) {
       prompts.add(userSystemPrompt);
+    }
+
+    // 3. Project/global instructions (resolved from chatorai.json)
+    for (final block in instructionBlocks) {
+      if (block.isNotEmpty) prompts.add(block);
     }
 
     // Return single combined system message or empty
@@ -68,6 +74,8 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     // Inject system prompt chain at the beginning
     final currentAgent = ref.read(currentAgentProvider);
     final settings = ref.read(modelSettingsProvider).activeSettings;
+    final instructionBlocks =
+        ref.read(resolvedInstructionsProvider).value ?? const [];
 
     // Add agent system prompts (only for primary agents or no delegation)
     final systemChain = _buildSystemChain(
@@ -75,6 +83,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       userSystemPrompt: settings?.systemPrompt,
       // For subagents, pass null (they get their prompt in child session from task tool)
       delegateAgentId: agentMention != null ? null : delegateAgentId,
+      instructionBlocks: instructionBlocks,
     );
     for (final sys in systemChain) {
       messages.insert(0, sys);
@@ -404,6 +413,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     }
 
     final notifier = ref.read(chatScreenProvider.notifier);
+    notifier.closeAllRunningTasks();
     final closedParts = notifier.snapshotClosedStreamingParts();
 
     final content = closedParts

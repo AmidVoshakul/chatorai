@@ -126,6 +126,40 @@ class XdgPaths {
     return p.join(home, '.local', 'state', _dirName);
   }
 
+  /// Directory used by the `shared_preferences` package for `shared_preferences.json`.
+  ///
+  /// Mirrors `path_provider.getApplicationSupportPath()`, which resolves to
+  /// `<base>/<APPLICATION_ID>`. On Linux `APPLICATION_ID` is `com.chatorai.app`
+  /// (from `linux/CMakeLists.txt`), so this matches the real location
+  /// `<XDG_DATA_HOME>/com.chatorai.app`. Note this is a SIBLING of [dataHome]
+  /// (which uses the pubspec `name`), not a child of it.
+  ///
+  /// On macOS/Windows the OS bundle identifier differs (e.g. macOS uses
+  /// `com.ChatORAI.chat.ChatORAIChatAi`), so this constant is Linux-accurate.
+  /// The CLI `uninstall` is Linux-first (per-user install), so this is the
+  /// primary target; macOS/Windows preferences are best removed by the OS
+  /// uninstaller. Keep this in sync with the Linux `APPLICATION_ID`.
+  static const String prefsAppId = 'com.chatorai.app';
+
+  static String get prefsHome {
+    if (_isLinux) {
+      final base =
+          Platform.environment['XDG_DATA_HOME'] ??
+          p.join(home, '.local', 'share');
+      return p.join(base, prefsAppId);
+    }
+    if (_isMacOS) {
+      return p.join(home, 'Library', 'Application Support', prefsAppId);
+    }
+    if (_isWindows) {
+      final localAppData =
+          Platform.environment['LOCALAPPDATA'] ??
+          p.join(home, 'AppData', 'Local');
+      return p.join(localAppData, prefsAppId);
+    }
+    return p.join(home, '.local', 'share', prefsAppId);
+  }
+
   // ---------------------------------------------------------------------------
   // Async wrappers (desktop — synchronous under the hood)
   // ---------------------------------------------------------------------------

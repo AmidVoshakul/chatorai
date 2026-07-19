@@ -436,4 +436,75 @@ void main() {
       );
     });
   });
+
+  group('ChatScreenNotifier task routing (concurrent tasks)', () {
+    late ProviderContainer container;
+
+    setUp(() => container = ProviderContainer());
+    tearDown(() => container.dispose());
+
+    test('onTaskSessionIdResolved fills taskSessionId for two concurrent tasks',
+        () {
+      final n = container.read(chatScreenProvider.notifier);
+      n.startStreaming('ses_parent');
+      n.onTaskStart('part_a', 'm1', 'ses_parent', 'task A', 'General');
+      n.onTaskStart('part_b', 'm1', 'ses_parent', 'task B', 'General');
+
+      // Child sessions resolve independently (map-routed, not single var).
+      n.onTaskSessionIdResolved('part_a', 'child_a');
+      n.onTaskSessionIdResolved('part_b', 'child_b');
+
+      final parts =
+          container.read(chatScreenProvider).streamingParts.whereType<AssistantTask>();
+      final a = parts.firstWhere((p) => p.id == 'part_a');
+      final b = parts.firstWhere((p) => p.id == 'part_b');
+      expect(a.taskSessionId, 'child_a');
+      expect(b.taskSessionId, 'child_b');
+    });
+
+    test('onTaskSessionIdResolved is idempotent and overwrites stale id', () {
+      final n = container.read(chatScreenProvider.notifier);
+      n.startStreaming('ses_parent');
+      n.onTaskStart('part_a', 'm1', 'ses_parent', 'task A', 'General');
+      n.onTaskSessionIdResolved('part_a', 'stale_child');
+      n.onTaskSessionIdResolved('part_a', 'real_child');
+
+      final a = container
+          .read(chatScreenProvider)
+          .streamingParts
+          .whereType<AssistantTask>()
+          .firstWhere((p) => p.id == 'part_a');
+      expect(a.taskSessionId, 'real_child');
+    });
+
+    test('closeAllRunningTasks marks running task parts completed', () {
+      final n = container.read(chatScreenProvider.notifier);
+      n.startStreaming('ses_parent');
+      n.onTaskStart('part_a', 'm1', 'ses_parent', 'task A', 'General');
+      n.onTaskStart('part_b', 'm1', 'ses_parent', 'task B', 'General');
+
+      n.closeAllRunningTasks();
+
+      final parts =
+          container.read(chatScreenProvider).streamingParts.whereType<AssistantTask>();
+      expect(parts.every((p) => p.state == ToolState.completed), isTrue);
+    });
+
+    test('closeAllRunningTasks leaves non-running parts untouched', () {
+      final n = container.read(chatScreenProvider.notifier);
+      n.startStreaming('ses_parent');
+      n.onTaskStart('part_a', 'm1', 'ses_parent', 'task A', 'General');
+      n.onTaskEnd('part_a');
+
+      n.closeAllRunningTasks();
+
+      final a = container
+          .read(chatScreenProvider)
+          .streamingParts
+          .whereType<AssistantTask>()
+          .firstWhere((p) => p.id == 'part_a');
+      expect(a.state, ToolState.completed);
+      expect(a.endedAt, isNotNull);
+    });
+  });
 }

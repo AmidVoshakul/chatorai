@@ -11,6 +11,18 @@ import 'package:equatable/equatable.dart';
 import 'auth_config.dart';
 import 'model_config.dart';
 
+/// Origin of a [ProviderConfig] in the catalog.
+enum ProviderSource {
+  /// Compiled into the app (built-in providers).
+  builtIn,
+
+  /// Added by the user through the settings UI and persisted to prefs.
+  custom,
+
+  /// Injected from `chatorai.json` `provider` section (read-only, in-memory).
+  config,
+}
+
 /// Provider configuration - the root of the catalog.
 ///
 /// Each provider (OpenAI, Anthropic, Google, etc.) has a ProviderConfig that
@@ -69,6 +81,11 @@ class ProviderConfig extends Equatable {
   /// Examples: 'openai', 'anthropic', 'google', 'openai-compatible'
   final String sdk;
 
+  /// Where this provider came from. [ProviderSource.config] providers are
+  /// injected read-only from `chatorai.json` and must never be persisted or
+  /// mutated through the settings UI.
+  final ProviderSource source;
+
   const ProviderConfig._({
     required this.id,
     required this.name,
@@ -85,6 +102,7 @@ class ProviderConfig extends Equatable {
     this.maxRetries,
     this.supportsStreaming = true,
     this.metadata = const {},
+    this.source = ProviderSource.builtIn,
   });
 
   /// Create a basic provider configuration.
@@ -100,6 +118,7 @@ class ProviderConfig extends Equatable {
     String? description,
     List<ModelConfig>? models,
     bool enabled = true,
+    ProviderSource source = ProviderSource.builtIn,
   }) {
     return ProviderConfig._(
       id: id,
@@ -110,6 +129,7 @@ class ProviderConfig extends Equatable {
       sdk: sdk ?? 'openai-compatible',
       models: models ?? const [],
       enabled: enabled,
+      source: source,
     );
   }
 
@@ -130,6 +150,7 @@ class ProviderConfig extends Equatable {
     bool? supportsStreaming,
     Map<String, dynamic>? metadata,
     DateTime? addedAt,
+    ProviderSource source = ProviderSource.builtIn,
   }) {
     return ProviderConfig._(
       id: id,
@@ -147,6 +168,7 @@ class ProviderConfig extends Equatable {
       maxRetries: maxRetries,
       supportsStreaming: supportsStreaming ?? true,
       metadata: metadata ?? const {},
+      source: source,
     );
   }
 
@@ -256,6 +278,7 @@ class ProviderConfig extends Equatable {
     int? maxRetries,
     bool? supportsStreaming,
     Map<String, dynamic>? metadata,
+    ProviderSource? source,
     bool clearDefaultBody = false,
   }) {
     return ProviderConfig._(
@@ -276,8 +299,12 @@ class ProviderConfig extends Equatable {
       supportsStreaming: supportsStreaming ?? this.supportsStreaming,
       metadata: metadata ?? this.metadata,
       description: description ?? this.description,
+      source: source ?? this.source,
     );
   }
+
+  /// True when this provider is injected read-only from `chatorai.json`.
+  bool get isConfig => source == ProviderSource.config;
 
   @override
   List<Object?> get props => [
@@ -296,6 +323,7 @@ class ProviderConfig extends Equatable {
     maxRetries,
     supportsStreaming,
     metadata,
+    source,
   ];
 
   /// Serialize to JSON.
@@ -317,12 +345,20 @@ class ProviderConfig extends Equatable {
       if (maxRetries != null) 'maxRetries': maxRetries,
       'supportsStreaming': supportsStreaming,
       if (metadata.isNotEmpty) 'metadata': metadata,
+      'source': source.name,
     };
   }
 
   /// Deserialize from JSON.
   factory ProviderConfig.fromJson(Map<String, dynamic> json) {
     final modelsList = json['models'] as List<dynamic>?;
+    final sourceName = json['source'] as String?;
+    final source = sourceName != null
+        ? ProviderSource.values.firstWhere(
+            (s) => s.name == sourceName,
+            orElse: () => ProviderSource.builtIn,
+          )
+        : ProviderSource.builtIn;
     return ProviderConfig._(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -349,6 +385,7 @@ class ProviderConfig extends Equatable {
       maxRetries: json['maxRetries'] as int?,
       supportsStreaming: json['supportsStreaming'] as bool? ?? true,
       metadata: (json['metadata'] as Map<String, dynamic>?) ?? const {},
+      source: source,
     );
   }
 

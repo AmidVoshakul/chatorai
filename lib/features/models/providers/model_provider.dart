@@ -1,5 +1,6 @@
 // ignore_for_file: unused_import
 import 'dart:async';
+import 'dart:convert';
 import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
@@ -15,6 +16,8 @@ class ModelState {
   final String selectedModelId;
   final ChatModel? selectedModelObject;
   final List<String> favoriteModelIds;
+  final Map<String, int> usageCounts;
+  final Map<String, int> lastUsed;
   final bool modelsLoaded;
   final bool isLoadingModels;
   final bool isLoading;
@@ -24,6 +27,8 @@ class ModelState {
     this.selectedModelId = '',
     this.selectedModelObject,
     this.favoriteModelIds = const [],
+    this.usageCounts = const {},
+    this.lastUsed = const {},
     this.modelsLoaded = false,
     this.isLoadingModels = false,
     this.isLoading = true,
@@ -33,11 +38,34 @@ class ModelState {
       .where((model) => favoriteModelIds.contains(model.id))
       .toList();
 
+  /// Top-6 recently/frequently used models, merged by usage count (desc),
+  /// then by last-used timestamp (desc). Only models still available are kept.
+  List<ChatModel> get recentModels {
+    final scored = availableModels.where((m) {
+      final count = usageCounts[m.id] ?? 0;
+      final used = lastUsed[m.id] ?? 0;
+      return count > 0 || used > 0;
+    }).toList();
+
+    scored.sort((a, b) {
+      final countA = usageCounts[a.id] ?? 0;
+      final countB = usageCounts[b.id] ?? 0;
+      if (countA != countB) return countB.compareTo(countA);
+      final usedA = lastUsed[a.id] ?? 0;
+      final usedB = lastUsed[b.id] ?? 0;
+      return usedB.compareTo(usedA);
+    });
+
+    return scored.take(6).toList();
+  }
+
   ModelState copyWith({
     List<ChatModel>? availableModels,
     String? selectedModelId,
     ChatModel? selectedModelObject,
     List<String>? favoriteModelIds,
+    Map<String, int>? usageCounts,
+    Map<String, int>? lastUsed,
     bool? modelsLoaded,
     bool? isLoadingModels,
     bool? isLoading,
@@ -47,6 +75,8 @@ class ModelState {
       selectedModelId: selectedModelId ?? this.selectedModelId,
       selectedModelObject: selectedModelObject ?? this.selectedModelObject,
       favoriteModelIds: favoriteModelIds ?? this.favoriteModelIds,
+      usageCounts: usageCounts ?? this.usageCounts,
+      lastUsed: lastUsed ?? this.lastUsed,
       modelsLoaded: modelsLoaded ?? this.modelsLoaded,
       isLoadingModels: isLoadingModels ?? this.isLoadingModels,
       isLoading: isLoading ?? this.isLoading,
@@ -57,6 +87,8 @@ class ModelState {
 class ModelNotifier extends Notifier<ModelState> {
   static const String _selectedModelKey = 'selected_model_id';
   static const String _favoriteModelsKey = 'favorite_models';
+  static const String _usageCountsKey = 'model_usage_counts';
+  static const String _lastUsedKey = 'model_last_used';
   final Completer<void> _settingsLoaded = Completer<void>();
   bool _loadingModels = false;
 
@@ -77,15 +109,42 @@ class ModelNotifier extends Notifier<ModelState> {
     return const ModelState();
   }
 
+  static Map<String, int> _readIntMap(SharedPreferences prefs, String key) {
+    final raw = prefs.getString(key);
+    if (raw == null || raw.isEmpty) return const {};
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return decoded.map((k, v) => MapEntry(k, (v as num).toInt()));
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  static void _writeIntMap(
+    SharedPreferences prefs,
+    String key,
+    Map<String, int> map,
+  ) {
+    if (map.isEmpty) {
+      prefs.remove(key);
+      return;
+    }
+    prefs.setString(key, jsonEncode(map));
+  }
+
   Future<void> _loadSettingsAsync() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final selectedModelId = prefs.getString(_selectedModelKey) ?? '';
       final favoriteModelIds = prefs.getStringList(_favoriteModelsKey) ?? [];
+      final usageCounts = _readIntMap(prefs, _usageCountsKey);
+      final lastUsed = _readIntMap(prefs, _lastUsedKey);
 
       state = state.copyWith(
         selectedModelId: selectedModelId,
         favoriteModelIds: favoriteModelIds,
+        usageCounts: usageCounts,
+        lastUsed: lastUsed,
         isLoading: false,
       );
       _logger.logInfo('[ModelNotifier] Settings loaded');
@@ -104,6 +163,8 @@ class ModelNotifier extends Notifier<ModelState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_selectedModelKey, state.selectedModelId);
       await prefs.setStringList(_favoriteModelsKey, state.favoriteModelIds);
+      _writeIntMap(prefs, _usageCountsKey, state.usageCounts);
+      _writeIntMap(prefs, _lastUsedKey, state.lastUsed);
       _logger.logVerbose('[ModelNotifier] Settings saved');
     } catch (e) {
       _logger.logError('[ModelNotifier] Error saving settings: $e');
@@ -244,9 +305,16 @@ class ModelNotifier extends Notifier<ModelState> {
       }
     }
 
+    final usageCounts = Map<String, int>.from(state.usageCounts);
+    usageCounts[selectedId] = (usageCounts[selectedId] ?? 0) + 1;
+    final lastUsed = Map<String, int>.from(state.lastUsed);
+    lastUsed[selectedId] = DateTime.now().millisecondsSinceEpoch;
+
     state = state.copyWith(
       selectedModelId: selectedId,
       selectedModelObject: modelObject,
+      usageCounts: usageCounts,
+      lastUsed: lastUsed,
     );
     await _saveSettings();
   }

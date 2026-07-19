@@ -88,6 +88,11 @@ class ModelResolver {
     return provider;
   }
 
+  /// Convenience wrapper that resolves the owning [ProviderConfig] from a
+  /// [ModelConfig] (whose [ModelConfig.id] is `providerId/modelName`).
+  ProviderConfig getProviderForModelConfig(ModelConfig model) =>
+      getProviderForModel(model.id);
+
   // ===========================================================================
   // LanguageModel BUILDING
   // ===========================================================================
@@ -113,7 +118,10 @@ class ModelResolver {
     Map<String, String>? overrideHeaders,
   }) async {
     final provider = getProviderForModel(model.id);
-    final apiKey = overrideApiKey ?? await _catalog.getApiKey(provider.id);
+    // For config-driven providers the key lives in the JSON (auth.apiKey),
+    // not in SecureStorage. Fall back to it when no stored key is present.
+    final storedKey = await _catalog.getApiKey(provider.id);
+    final apiKey = overrideApiKey ?? storedKey ?? provider.auth.apiKey;
     final baseUrl =
         overrideBaseUrl ??
         _catalog.getCustomBaseUrl(provider.id) ??

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/config/models/permission_section.dart';
@@ -77,6 +76,48 @@ void main() {
         'permission': null,
       });
       expect(config.permission, isEmpty);
+    });
+
+    test('parses provider section', () {
+      final json = {
+        'version': 1,
+        'permission': {},
+        'provider': {
+          'custom-openrouter': {
+            'name': 'OpenRouter (custom)',
+            'options': {
+              'baseURL': 'https://openrouter.ai/api/v1',
+              'apiKey': '{env:OPENROUTER_API_KEY}',
+              'temperature': 0.1,
+            },
+            'models': {
+              'openrouter/owl-alpha': {
+                'name': 'Owl Alpha',
+                'limit': {'context': 1048576, 'output': 262144},
+              },
+            },
+          },
+        },
+      };
+
+      final config = ChatOrAIConfig.fromJson(json);
+      expect(config.provider, isNotNull);
+      final entry = config.provider!.providers['custom-openrouter'];
+      expect(entry, isNotNull);
+      expect(entry!.name, equals('OpenRouter (custom)'));
+      expect(entry.options!.baseURL, equals('https://openrouter.ai/api/v1'));
+      expect(entry.options!.apiKey, equals('{env:OPENROUTER_API_KEY}'));
+      expect(entry.options!.temperature, equals(0.1));
+      final model = entry.models['openrouter/owl-alpha'];
+      expect(model, isNotNull);
+      expect(model!.name, equals('Owl Alpha'));
+      expect(model.limit!.context, equals(1048576));
+      expect(model.limit!.output, equals(262144));
+    });
+
+    test('provider section absent yields null provider', () {
+      final config = ChatOrAIConfig.fromJson({'version': 1, 'permission': {}});
+      expect(config.provider, isNull);
     });
   });
 

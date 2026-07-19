@@ -197,7 +197,8 @@ class ProviderCatalogService {
     }
 
     final baseUrl = getCustomBaseUrl(providerId) ?? provider.baseUrl;
-    final apiKey = await getApiKey(providerId);
+    final storedKey = await getApiKey(providerId);
+    final apiKey = storedKey ?? provider.auth.apiKey;
 
     final headers = <String, dynamic>{'Content-Type': 'application/json'};
     if (apiKey != null && apiKey.isNotEmpty) {
@@ -460,7 +461,11 @@ class ProviderCatalogService {
   String? getApiKeySync(String providerId) => _apiKeyCache[providerId];
 
   /// Set API key for a provider in secure storage.
+  ///
+  /// Config providers are read-only — their key is resolved in memory from
+  /// `chatorai.json` (`{env:VAR}`) and must never be written to secure storage.
   Future<void> setApiKey(String providerId, String apiKey) async {
+    if (getProvider(providerId)?.isConfig ?? false) return;
     await _secureStorage.write(
       key: '${_PrefKeys.apiKey}$providerId',
       value: apiKey,
@@ -470,6 +475,7 @@ class ProviderCatalogService {
 
   /// Delete API key for a provider.
   Future<void> deleteApiKey(String providerId) async {
+    if (getProvider(providerId)?.isConfig ?? false) return;
     await _secureStorage.delete(key: '${_PrefKeys.apiKey}$providerId');
     _apiKeyCache.remove(providerId);
   }
@@ -480,7 +486,11 @@ class ProviderCatalogService {
   }
 
   /// Set whether a provider is enabled.
+  ///
+  /// Config providers are read-only; their enabled flag is controlled solely
+  /// by `chatorai.json`, so this is a no-op for them.
   Future<void> setProviderEnabled(String providerId, bool enabled) async {
+    if (getProvider(providerId)?.isConfig ?? false) return;
     await _prefs.setBool('${_PrefKeys.enabled}$providerId', enabled);
     _updateProviderInCache(providerId, (p) => p.copyWith(enabled: enabled));
   }
@@ -491,12 +501,20 @@ class ProviderCatalogService {
   }
 
   /// Set custom base URL for a provider.
+  ///
+  /// Config providers are read-only; base URL comes from `chatorai.json`.
   Future<void> setCustomBaseUrl(String providerId, String baseUrl) async {
+    if (getProvider(providerId)?.isConfig ?? false) return;
     await _prefs.setString('${_PrefKeys.baseUrl}$providerId', baseUrl);
   }
 
   /// Add a custom (user-defined) provider.
+  ///
+  /// Config providers (injected from `chatorai.json`) are read-only and must
+  /// never be re-added here — ignore the call to preserve the read-only
+  /// guarantee.
   void addCustomProvider(ProviderConfig provider) {
+    if (provider.isConfig) return;
     // Remove existing with same ID if present
     _providers.removeWhere((p) => p.id == provider.id);
     _providers.add(provider);
@@ -504,9 +522,31 @@ class ProviderCatalogService {
   }
 
   /// Remove a custom provider.
+  ///
+  /// Config providers are read-only and must not be removed through this path.
   void removeCustomProvider(String providerId) {
+    final provider = _providers.cast<ProviderConfig?>().firstWhere(
+      (p) => p?.id == providerId,
+      orElse: () => null,
+    );
+    if (provider?.isConfig ?? false) return;
     _providers.removeWhere((p) => p.id == providerId);
     _saveCustomProviders();
+  }
+
+  /// Apply providers declared in `chatorai.json` on top of the current catalog.
+  ///
+  /// Config providers are read-only: they are not persisted to
+  /// SharedPreferences/SecureStorage. A config provider with the same ID as an
+  /// existing provider (built-in or custom) overrides it, so the user config
+  /// always wins.
+  ///
+  /// [providers] is the parsed list from [ConfigProviderParser.parse].
+  void applyConfigProviders(List<ProviderConfig> providers) {
+    for (final provider in providers) {
+      _providers.removeWhere((p) => p.id == provider.id);
+      _providers.add(provider);
+    }
   }
 
   /// Get the default model (first enabled model, or null).
@@ -652,7 +692,15 @@ class ProviderCatalogService {
         final decoded = jsonDecode(customJson) as List<dynamic>;
         for (final item in decoded) {
           if (item is Map<String, dynamic>) {
-            _providers.add(ProviderConfig.fromJson(item));
+            // Backward-compat: providers persisted before the `source` field
+            // existed deserialize as builtIn; tag them as custom so they stay
+            // editable and are never confused with config-injected providers.
+            final parsed = ProviderConfig.fromJson(item);
+            _providers.add(
+              parsed.source == ProviderSource.custom
+                  ? parsed
+                  : parsed.copyWith(source: ProviderSource.custom),
+            );
           }
         }
       } catch (_) {
@@ -713,9 +761,17 @@ class ProviderCatalogService {
   }
 
   /// Save custom providers to SharedPreferences as JSON.
+  ///
+  /// Config providers (source == [ProviderSource.config]) are never persisted —
+  /// they live read-only in memory and are re-injected from `chatorai.json`
+  /// on each startup.
   void _saveCustomProviders() {
     final customProviders = _providers
-        .where((p) => !_builtInProviders.any((b) => b.id == p.id))
+        .where(
+          (p) =>
+              p.source != ProviderSource.config &&
+              !_builtInProviders.any((b) => b.id == p.id),
+        )
         .toList();
     final jsonList = customProviders.map((p) => p.toJson()).toList();
     _prefs.setString('catalog_custom_providers', jsonEncode(jsonList));

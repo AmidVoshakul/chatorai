@@ -24,25 +24,24 @@ All providers are defined using Riverpod 3.x and can be accessed via `ref.watch(
 | Provider                   | Type                                                                     | Description                                                                      |
 | -------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
 | `chatListProvider`         | `NotifierProvider<ChatListNotifier, AsyncValue<List<Chat>>>`             | List of all chats with CRUD operations.                                          |
-| `chatScreenProvider`       | `StateNotifierProvider<ChatScreenNotifier, ChatScreenState>`             | UI state for chat screen (streaming, suggestions, sidebar, headings).            |
-| `streamingMessageProvider` | `StateNotifierProvider<StreamingMessageNotifier, StreamingMessageState>` | State for the currently streaming assistant message (parts accumulation).        |
+| `chatScreenProvider`       | `NotifierProvider<ChatScreenNotifier, ChatScreenState>`                  | UI state for chat screen (streaming, suggestions, sidebar, headings).            |
+| `sessionPartsProvider`     | `StreamProvider.family<SessionState, String>`                            | Live session state (parts accumulation) for a given session ID.                  |
 | `currentChatIdProvider`    | `NotifierProvider<CurrentChatIdNotifier, String?>`                       | Currently active chat ID (router-level).                                         |
 | `currentChatProvider`      | `Provider<Chat?>`                                                        | Computed chat by ID (derived from `currentChatIdProvider` + `chatListProvider`). |
 
 ### Model Providers
 
-| Provider        | Type                                               | Description                                                  |
-| --------------- | -------------------------------------------------- | ------------------------------------------------------------ |
-| `modelProvider` | `StateNotifierProvider<ModelNotifier, ModelState>` | Model selection, favorites, available models from providers. |
-| `themeProvider` | `StateNotifierProvider<ThemeNotifier, ThemeState>` | Theme, language, font size, wide screen mode.                |
+| Provider        | Type                                          | Description                                                                                                  |
+| --------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `modelProvider` | `NotifierProvider<ModelNotifier, ModelState>` | Model selection, favorites, usage tracking (`usageCounts`/`lastUsed`), available models, and `recentModels`. |
+| `themeProvider` | `NotifierProvider<ThemeNotifier, ThemeState>` | Theme, language, font size, wide screen mode.                                                               |
 
 ### Configuration Providers
 
-| Provider                   | Type                                                                     | Description                                                          |
-| -------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| `configProvider`           | `Provider<ChatOrAIConfig>`                                               | Validated `chatorai.json` configuration.                             |
-| `permissionProvider`       | `Provider<PermissionService>`                                            | Permission service instance (singleton).                             |
-| `providerSettingsProvider` | `StateNotifierProvider<ProviderSettingsNotifier, ProviderSettingsState>` | Multi-provider configuration (API keys, base URLs, selected models). |
+| Provider            | Type                          | Description                                       |
+| ------------------- | ----------------------------- | ------------------------------------------------- |
+| `configProvider`    | `Provider<ChatOrAIConfig>`    | Validated `chatorai.json` configuration.          |
+| `permissionProvider`| `Provider<PermissionService>` | Permission service instance (singleton).          |
 
 ### Core Services
 
@@ -315,7 +314,7 @@ The message system uses a concrete `Message` class (not abstract) with `MessageR
 | `durationMs`  | `int?`      | Computed duration in ms (set when streaming ends, persisted) |
 | `isExpanded`  | `bool?`     | UI expand/collapse state                                     |
 
-`durationMs` is computed in `StreamingMessageNotifier._markReasoningAsDone()` and `stopStreaming()` when reasoning streaming ends. It is persisted via `toJson()`/`fromJson()` and survives chat switches and app reloads. The `ReasoningPartWidget._displayDuration` getter prefers `widget.part.durationMs` over a locally computed `_thoughtDuration`.
+`durationMs` is computed when reasoning streaming ends (from `startedAt` to completion). It is persisted via `toJson()`/`fromJson()` and survives chat switches and app reloads. The `ReasoningPartWidget._displayDuration` getter prefers `widget.part.durationMs` over a locally computed `_thoughtDuration`.
 
 **Note:** `ApplyPatchPart` and `SkillPart` are not implemented message part types. The `apply_patch` tool outputs via `ToolResultPartWidget` like any other tool.
 
@@ -479,12 +478,12 @@ CHATORAI_DEBUG=true
 - `SessionTree`: Parent-child navigation in the session hierarchy.
 - `EventStore`: `append()`, `read()`, `stream()` on the Drift event store.
 - `McpClientService`: `initialize(config)`, `connect(serverName)`, `callTool(...)`, `listAllTools()`, `getToolDefs()`, `disconnect()`, `dispose()`.
-- `ModelNotifier`: Manages model selection, favorites, and available models.
+- `ModelNotifier`: Manages model selection, favorites, usage tracking (`usageCounts`/`lastUsed`), available models, and the `recentModels` (top-6) getter.
 - `PermissionRuleset`: `fromConfig(map)`, `defaults()`, merge via `PermissionEvaluator`.
 - `ToolExecutor`: `execute(def, input, options)` — cache, doom-loop guard, permission check, truncation.
 - `TruncationService`: Singleton, `output(content)` → truncated content + outputPath.
-- `SessionState`: Freezed immutable model for session state reconstruction from events.
-- `SessionMessage`: Freezed model with JSON serialization, `SessionIDConverter`, `MessageRole`, Equatable mixin.
+- `SessionState`: `Equatable` immutable model for session state reconstruction from events.
+- `SessionMessage`: `Equatable` model with JSON serialization, `SessionIDConverter`, `MessageRole`.
 
 ---
 

@@ -12,6 +12,9 @@ Future<void> toggleProvider({
 }) async {
   final catalog = ref.read(providerCatalogServiceProvider);
 
+  // Config providers (from chatorai.json) are read-only.
+  if (catalog.getProvider(providerId)?.isConfig ?? false) return;
+
   if (!enabled) {
     final currentModel = ref.read(modelProvider).selectedModelId;
     final isFromThisProvider = _isModelFromProvider(
@@ -86,10 +89,13 @@ Future<bool> deleteProvider({
 
   if (confirmed != true) return false;
 
+  final catalog = ref.read(providerCatalogServiceProvider);
+  // Config providers (from chatorai.json) are read-only; never delete them.
+  if (catalog.getProvider(providerId)?.isConfig ?? false) return false;
+
   final currentModel = ref.read(modelProvider).selectedModelId;
   final wasFromThisProvider = currentModel.startsWith('$providerId/');
 
-  final catalog = ref.read(providerCatalogServiceProvider);
   await catalog.deleteApiKey(providerId);
   await catalog.clearSelectedModelIds(providerId);
   await catalog.setProviderEnabled(providerId, false);
@@ -116,6 +122,10 @@ Future<void> saveProviderConfig({
   required String apiKey,
 }) async {
   final catalog = ref.read(providerCatalogServiceProvider);
+
+  // Config providers (from chatorai.json) are read-only; ignore edits.
+  if (catalog.getProvider(providerId)?.isConfig ?? false) return;
+
   await catalog.setProviderEnabled(providerId, true);
   if (apiKey.isNotEmpty) await catalog.setApiKey(providerId, apiKey);
   if (baseUrl.isNotEmpty) await catalog.setCustomBaseUrl(providerId, baseUrl);

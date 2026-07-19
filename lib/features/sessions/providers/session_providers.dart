@@ -52,10 +52,25 @@ class _CurrentRunnerNotifier
   }
 
   /// Set child tool event callback on the holder.
-  void Function(String, String?)? get onChildToolEvent =>
+  void Function(String, String, String?)? get onChildToolEvent =>
       _holder?.onChildToolEvent;
-  set onChildToolEvent(void Function(String, String?)? callback) {
+  set onChildToolEvent(void Function(String, String, String?)? callback) {
     _holder?.onChildToolEvent = callback;
+  }
+
+  /// Maps a child session ID to its parent task part ID (concurrent routing).
+  Map<String, String> get childToTaskPart =>
+      _holder?.childToTaskPart ?? const {};
+
+  /// Maps a parent task part ID to its child session ID.
+  Map<String, String> get taskPartToChild =>
+      _holder?.taskPartToChild ?? const {};
+
+  /// Set child session resolved callback on the holder.
+  void Function(String)? get onChildSessionResolved =>
+      _holder?.onChildSessionResolved;
+  set onChildSessionResolved(void Function(String)? callback) {
+    _holder?.onChildSessionResolved = callback;
   }
 
   void clear() {

@@ -2,11 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
@@ -23,12 +23,15 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.0'
-          channel: 'stable'
+          flutter-version: "3.44.0"
+          channel: "stable"
           cache: true
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Sync version from pubspec.yaml
+        run: dart run tool/update_version.dart
 
       - name: Analyze code
         run: flutter analyze --no-fatal-infos
@@ -52,8 +55,8 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.0'
-          channel: 'stable'
+          flutter-version: "3.44.0"
+          channel: "stable"
           cache: true
 
       - name: Get dependencies
@@ -90,8 +93,8 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.0'
-          channel: 'stable'
+          flutter-version: "3.44.0"
+          channel: "stable"
           cache: true
 
       - name: Install Linux build dependencies
@@ -155,7 +158,7 @@ jobs:
           Icon=chatorai
           Terminal=false
           Categories=Network;
-          Keywords=AI;Chat;Assistant;OpenRouter;
+          Keywords=AI;Chat;Assistant;Multimodal;Multiagent;
           StartupNotify=true
           EOF
 
@@ -283,7 +286,7 @@ jobs:
           Icon=chatorai
           Terminal=false
           Categories=Network;
-          Keywords=AI;Chat;Assistant;OpenRouter;
+          Keywords=AI;Chat;Assistant;Multimodal;Multiagent;
           StartupNotify=true
           EOF
 
@@ -369,8 +372,8 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.0'
-          channel: 'stable'
+          flutter-version: "3.44.0"
+          channel: "stable"
           cache: true
 
       - name: Enable Windows desktop
@@ -415,8 +418,8 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.0'
-          channel: 'stable'
+          flutter-version: "3.44.0"
+          channel: "stable"
           cache: true
 
       - name: Enable macOS desktop

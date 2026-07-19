@@ -1,4 +1,5 @@
 import 'package:chatorai/features/models/data/models/model_card_model.dart';
+import 'package:chatorai/features/models/providers/model_provider.dart';
 import 'package:chatorai/features/models/providers/models_provider.dart';
 import 'package:chatorai/features/models/widgets/model_card_widget.dart';
 import 'package:chatorai/features/models/widgets/model_details_dialog_widget.dart';
@@ -94,7 +95,33 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
       );
     }
 
-    return _buildGroupedList(context, state);
+    final modelState = ref.watch(modelProvider);
+    final recent = modelState.recentModels;
+
+    return Column(
+      children: [
+        if (recent.isNotEmpty &&
+            !state.showFavoritesOnly &&
+            state.searchQuery.isEmpty)
+          _RecentModelsSection(
+            models: recent,
+            currentModel: widget.currentModel,
+            onSelect: (model) async {
+              await ref
+                  .read(modelsScreenProvider.notifier)
+                  .selectModel(model.id);
+              if (context.mounted) Navigator.of(context).pop(model);
+            },
+            isFavorite: (id) =>
+                ref.read(modelsScreenProvider.notifier).isFavorite(id),
+            onToggleFavorite: (id) =>
+                ref.read(modelsScreenProvider.notifier).toggleFavorite(id),
+            onInfo: (model) => showModelDetailsDialog(context, model),
+            localizations: localizations,
+          ),
+        Expanded(child: _buildGroupedList(context, state)),
+      ],
+    );
   }
 
   Widget _buildSearchBar(
@@ -377,6 +404,134 @@ class _ModelGrid extends StatelessWidget {
               .toList(),
         );
       },
+    );
+  }
+}
+
+// ===========================================================================
+// RECENT MODELS — horizontal "stories" strip (top-6 recently/frequently used)
+// ===========================================================================
+
+class _RecentModelsSection extends StatelessWidget {
+  final List<ChatModel> models;
+  final String? currentModel;
+  final Future<void> Function(ChatModel) onSelect;
+  final bool Function(String) isFavorite;
+  final void Function(String) onToggleFavorite;
+  final void Function(ChatModel) onInfo;
+  final AppLocalizations localizations;
+
+  const _RecentModelsSection({
+    required this.models,
+    required this.currentModel,
+    required this.onSelect,
+    required this.isFavorite,
+    required this.onToggleFavorite,
+    required this.onInfo,
+    required this.localizations,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 4),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              localizations.recentModels,
+              textAlign: TextAlign.left,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.grey[200] : Colors.grey[800],
+              ),
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 96,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              children: [
+                for (final m in models)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: SizedBox(
+                      width: 200,
+                      child: Material(
+                        color: currentModel == m.id
+                            ? theme.primaryColor.withAlpha(28)
+                            : (isDark ? Colors.grey[850] : Colors.grey[100]),
+                        borderRadius: BorderRadius.circular(14),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () => onSelect(m),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            child: Row(
+                              children: [
+                                ProviderIcon(
+                                  providerId: m.provider ?? '',
+                                  size: 32,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        m.name,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? Colors.grey[100]
+                                              : Colors.grey[900],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        m.provider ?? '',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
     );
   }
 }

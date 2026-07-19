@@ -1,18 +1,19 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/providers.dart';
-import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
-import 'package:chatorai/features/settings/widgets/settings_section_header.dart';
-import 'package:chatorai/features/settings/widgets/settings_selection_card.dart';
-import 'package:chatorai/features/settings/widgets/settings_toggle_tile.dart';
-import 'package:chatorai/features/settings/widgets/settings_slider_card.dart';
-import 'package:chatorai/features/settings/widgets/theme_selection_dialog.dart';
-import 'package:chatorai/features/settings/widgets/language_selection_dialog.dart';
-import 'package:chatorai/features/settings/widgets/about_dialog.dart';
+import 'package:chatorai/features/settings/screens/config_screen.dart';
+import 'package:chatorai/features/settings/screens/mcp_servers_screen.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_screen.dart';
 import 'package:chatorai/features/settings/screens/stats_screen.dart';
-import 'package:chatorai/features/settings/screens/config_screen.dart';
+import 'package:chatorai/features/settings/widgets/about_dialog.dart';
+import 'package:chatorai/features/settings/widgets/language_selection_dialog.dart';
+import 'package:chatorai/features/settings/widgets/settings_section_header.dart';
+import 'package:chatorai/features/settings/widgets/settings_selection_card.dart';
+import 'package:chatorai/features/settings/widgets/settings_slider_card.dart';
+import 'package:chatorai/features/settings/widgets/settings_toggle_tile.dart';
+import 'package:chatorai/features/settings/widgets/theme_selection_dialog.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/providers.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ===========================================================================
 // SETTINGS SCREEN
@@ -79,6 +80,17 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const ConfigScreen()),
+              ),
+            ),
+            const SizedBox(height: ChatoraiSpacing.xl),
+            SettingsSelectionCard(
+              context: context,
+              icon: Icons.extension,
+              title: 'MCP servers',
+              subtitle: 'Manage Model Context Protocol tool servers',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const McpServersScreen()),
               ),
             ),
             const SizedBox(height: ChatoraiSpacing.xl),

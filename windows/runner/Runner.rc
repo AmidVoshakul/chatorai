@@ -93,7 +93,7 @@ BEGIN
             VALUE "FileDescription", "ChatORAI" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "chatorai" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2025 com.chatorai. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.chatorai. All rights reserved." "\0"
             VALUE "OriginalFilename", "chatorai.exe" "\0"
             VALUE "ProductName", "ChatORAI" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"

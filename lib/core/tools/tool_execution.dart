@@ -82,6 +82,12 @@ class ToolExecutor {
     final sessionId = (rawSessionId == null || rawSessionId.isEmpty)
         ? null
         : rawSessionId;
+    // Block this execution while a permission dialog is open for the session.
+    // Ensures the user's decision on one action applies atomically to the
+    // whole session (no other tool races ahead).
+    if (sessionId != null) {
+      await _permissions.waitWhilePaused(sessionId);
+    }
     final requestId = ctx != null ? ctx['requestId'] as String? : null;
     final agentId = ctx != null ? ctx['agentId'] as String? : null;
     // Use toolCallId from SDK's ToolExecutionOptions as additional cache key source.

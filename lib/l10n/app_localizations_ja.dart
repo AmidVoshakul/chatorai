@@ -164,8 +164,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get appInfo => 'アプリ情報';
 
   @override
-  String get appDescription =>
-      'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nDeveloped with ❤️ using Flutter';
+  String get appDescription => 'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nDeveloped with ❤️ using Flutter';
 
   @override
   String get shareChat => 'チャットを共有';
@@ -317,8 +316,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get features => '特徴';
 
   @override
-  String get featuresDisplayedBasedOnActualModelCapabilities =>
-      '実際のモデルの機能に基づいて特徴が表示されます';
+  String get featuresDisplayedBasedOnActualModelCapabilities => '実際のモデルの機能に基づいて特徴が表示されます';
 
   @override
   String get noModelsFound => 'モデルが見つかりません';
@@ -330,8 +328,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tryADifferentSearchQuery => '異なる検索クエリを試してください';
 
   @override
-  String get tryRefreshingOrCheckYourInternetConnection =>
-      '更新またはインターネット接続を確認してください';
+  String get tryRefreshingOrCheckYourInternetConnection => '更新またはインターネット接続を確認してください';
 
   @override
   String get aiIsTyping => 'AI が入力中です';
@@ -390,8 +387,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get areYouSureYouWantToRegenerateThisMessage =>
-      'このメッセージを再生成してもよろしいですか？';
+  String get areYouSureYouWantToRegenerateThisMessage => 'このメッセージを再生成してもよろしいですか？';
 
   @override
   String modelDoesNotSupportImages(Object modelId) {
@@ -542,13 +538,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get welcomeQuestion24 => '働きたいトップテック企業は？';
 
   @override
-  String get welcomeQuestion25 => '2025年の宇宙探査の最新ブレイクスルーは？';
+  String get welcomeQuestion25 => '2026年の宇宙探査の最新ブレイクスルーは？';
 
   @override
   String get welcomeQuestion26 => 'AIが医療をどのように変えているか？';
 
   @override
-  String get welcomeQuestion27 => '2025年の最もエキサイティングなテクノロジーは？';
+  String get welcomeQuestion27 => '2026年の最もエキサイティングなテクノロジーは？';
 
   @override
   String get welcomeQuestion28 => '再生可能エネルギーの未来は？';
@@ -566,7 +562,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get welcomeQuestion32 => '難しいものを学ぶ際にモチベーションを維持する方法は？';
 
   @override
-  String get welcomeQuestion33 => '2025年に学ぶべき最良のプログラミング言語は？';
+  String get welcomeQuestion33 => '2026年に学ぶべき最良のプログラミング言語は？';
 
   @override
   String get welcomeQuestion34 => '強力なポートフォリオを作成する方法は？';
@@ -886,6 +882,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get removeFromFavorites => 'お気に入りから削除';
 
   @override
+  String get recentModels => '最近使用したモデル';
+
+  @override
   String get loadingSkills => 'スキルを読み込み中';
 
   @override
@@ -1082,8 +1081,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get systemPromptDescription => 'AIアシスタントへの指示';
 
   @override
-  String get systemPromptSuggestion =>
-      'あなたは有用なアシスタントです。会話を続け、最後のメッセージに対して3つの具体的で論理的な続きを提案してください。ユーザーと同じ言語で回答してください。';
+  String get systemPromptSuggestion => 'あなたは有用なアシスタントです。会話を続け、最後のメッセージに対して3つの具体的で論理的な続きを提案してください。ユーザーと同じ言語で回答してください。';
 
   @override
   String get temperature => '温度';
@@ -1095,8 +1093,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get toggleNavigatorTooltip => 'ナビゲーターを切り替え';
 
   @override
-  String get userPromptSuggestion =>
-      'このメッセージに対して3つの具体的で論理的な続きを提案してください。リストのみで回答し、追加テキストは含めないでください。';
+  String get userPromptSuggestion => 'このメッセージに対して3つの具体的で論理的な続きを提案してください。リストのみで回答し、追加テキストは含めないでください。';
 
   @override
   String get versionLabel => 'バージョン:';
@@ -1111,8 +1108,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get welcomeGreeting3 => '質問するか、探索を始めましょう。';
 
   @override
-  String get welcomeGreeting4 =>
-      'どんな質問でも、アイデアを共有しても、助けてと言っても — ここにいるので助けになります。';
+  String get welcomeGreeting4 => 'どんな質問でも、アイデアを共有しても、助けてと言っても — ここにいるので助けになります。';
 
   @override
   String get welcomeGreeting5 => 'アイデアがありますか？一緒に考えましょう。';
@@ -1239,8 +1235,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get micStopFailed => 'マイクの停止に失敗しました';
 
   @override
-  String get errorProcessingRequest =>
-      '申し訳ありません。リクエストの処理中にエラーが発生しました。もう一度お試しください。';
+  String get errorProcessingRequest => '申し訳ありません。リクエストの処理中にエラーが発生しました。もう一度お試しください。';
 
   @override
   String rateLimitRetryMessage(Object seconds) {
@@ -1352,8 +1347,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get deleteProviderContent =>
-      'これによりプロバイダーとすべての設定が削除されます。モデルを使用するには再度追加する必要があります。';
+  String get deleteProviderContent => 'これによりプロバイダーとすべての設定が削除されます。モデルを使用するには再度追加する必要があります。';
 
   @override
   String get errorLoadingProviders => 'プロバイダーの読み込みに失敗しました';
@@ -1376,4 +1370,239 @@ class AppLocalizationsJa extends AppLocalizations {
   String modelsProviderCountFormat(Object count, Object providerName) {
     return '$providerName · $count';
   }
+
+  @override
+  String get mcpServers => 'MCP サーバー';
+
+  @override
+  String get mcpAddServer => 'MCP サーバーを追加';
+
+  @override
+  String get mcpAddServerTitle => 'MCP サーバーを追加';
+
+  @override
+  String get mcpNameLabel => '名前';
+
+  @override
+  String get mcpNameHint => '例: filesystem';
+
+  @override
+  String get mcpNameHelper => 'chatorai.json で使用する一意の識別子';
+
+  @override
+  String get mcpTypeLocal => 'ローカル';
+
+  @override
+  String get mcpTypeRemote => 'リモート';
+
+  @override
+  String get mcpTypeLocalTooltip => 'お使いのマシンで実行';
+
+  @override
+  String get mcpTypeRemoteTooltip => 'HTTP/SSE エンドポイント';
+
+  @override
+  String get mcpCommandLabel => 'コマンド';
+
+  @override
+  String get mcpCommandHint => 'uvx mcp-server-filesystem ~/docs';
+
+  @override
+  String get mcpCommandHelper => '引数を空白で区切った完全なコマンド';
+
+  @override
+  String get mcpUrlLabel => 'URL';
+
+  @override
+  String get mcpUrlHint => 'https://example.com/mcp';
+
+  @override
+  String get mcpUrlHelper => '完全な MCP エンドポイント URL';
+
+  @override
+  String get mcpEnvLabel => '環境変数 (JSON)';
+
+  @override
+  String get mcpEnvHint => 'GITHUB_TOKEN=ghp_xxx';
+
+  @override
+  String get mcpEnvHelper => '任意。文字列キーの JSON オブジェクトを貼り付けます（例: 単一の TOKEN エントリ）。';
+
+  @override
+  String get mcpTokenLabel => 'アクセストークン';
+
+  @override
+  String get mcpTokenHint => 'トークンだけを貼り付け（Bearer / 引用符は不要）';
+
+  @override
+  String get mcpTokenHelper => '任意。公開サーバーは空のままで可。トークンのみ貼り付ければヘッダーは自動で追加されます。';
+
+  @override
+  String get mcpAuthTypeLabel => 'トークン種別';
+
+  @override
+  String get mcpAuthTypeHelper => 'トークンの送信方法: Bearer (Authorization)、ApiKey (X-Api-Key)、またはそのままの Token。';
+
+  @override
+  String get mcpHeadersLabel => 'ヘッダー (JSON)';
+
+  @override
+  String get mcpHeadersHint => 'Authorization=Bearer token';
+
+  @override
+  String get mcpHeadersHelper => '任意。ヘッダーの JSON オブジェクトを貼り付けます。';
+
+  @override
+  String get mcpFormTab => 'フォーム';
+
+  @override
+  String get mcpRawTab => '生 JSON';
+
+  @override
+  String get mcpRawLabel => 'サーバーオブジェクト (JSON)';
+
+  @override
+  String get mcpRawHelper => 'ドキュメント通りにサーバーオブジェクトを貼り付けます。サーバー名は外側のキーです（例: searxng）。mcpServers で囲まれた全体のブロックもそのまま貼り付けできます。';
+
+  @override
+  String mcpParseError(Object field, Object message) {
+    return '$field の JSON が無効です: $message';
+  }
+
+  @override
+  String get mcpAddAction => '追加';
+
+  @override
+  String get mcpCancelAction => 'キャンセル';
+
+  @override
+  String get mcpRemoveTitle => 'MCP サーバーを削除しますか？';
+
+  @override
+  String mcpRemoveContent(Object name) {
+    return 'chatorai.json から \"$name\" を削除しますか？';
+  }
+
+  @override
+  String get mcpRemoveAction => '削除';
+
+  @override
+  String get mcpEditAction => '編集';
+
+  @override
+  String get mcpEditServerTitle => 'MCP サーバーを編集';
+
+  @override
+  String get mcpSaveAction => '保存';
+
+  @override
+  String get mcpNoServers => 'MCP サーバーが設定されていません';
+
+  @override
+  String get mcpNoServersHint => 'ツールを拡張するために MCP サーバーを追加してください';
+
+  @override
+  String get mcpTooltipAdd => 'サーバーを追加';
+
+  @override
+  String get mcpTooltipRefresh => '更新';
+
+  @override
+  String get mcpMarketplaceTab => 'マーケットプレイス';
+
+  @override
+  String get mcpInstalledTab => 'インストール済み';
+
+  @override
+  String get mcpInstall => 'インストール';
+
+  @override
+  String get mcpInstalled => 'インストール済み';
+
+  @override
+  String get mcpMarketplaceSearchHint => 'サーバーを検索…';
+
+  @override
+  String get mcpMarketplaceEmpty => '検索条件に一致するサーバーがありません';
+
+  @override
+  String get mcpMarketCategoryAll => 'すべて';
+
+  @override
+  String get mcpMarketCategorySearch => '検索';
+
+  @override
+  String get mcpMarketCategoryDocs => 'ドキュメント';
+
+  @override
+  String get mcpMarketCategoryDesign => 'デザイン';
+
+  @override
+  String get mcpMarketCategoryDev => '開発';
+
+  @override
+  String get mcpMarketCategoryFinance => '金融';
+
+  @override
+  String get mcpMarketCategoryTravel => '旅行';
+
+  @override
+  String get mcpMarketCategoryJobs => '求人';
+
+  @override
+  String get mcpMarketCategoryProductivity => '生産性';
+
+  @override
+  String get mcpMarketCategorySocial => 'ソーシャル';
+
+  @override
+  String get mcpMarketCategoryOther => 'その他';
+
+  @override
+  String get mcpMarketNeedsToken => '鍵が必要';
+
+  @override
+  String get mcpMarketDescExa => 'Exa は AI ワークフロー向けにウェブ検索とコードドキュメント検索を提供します。そのコネクターは、回答に根拠となる外部情報が必要な場合に、関連するウェブページや技術文書、ソース資料をリアルタイムで見つけるためのコンテキストをアシスタントに供給します。';
+
+  @override
+  String get mcpMarketDescContext7 => 'Context7 は AI 搭載のプログラマーやコードエディター向けに最新のコード例とドキュメントを提供します。その MCP コネクターは現在のライブラリコンテキストをアシスタントのワークフローに統合し、タブ切り替えを減らし、生成されるコードが古い API、存在しないメソッド、古い実装パターンを避けるよう支援します。';
+
+  @override
+  String get mcpMarketDescHuggingFace => 'Hugging Face は音声アシスタントを Hugging Face Hub や数千の Gradio アプリに接続します。そのコネクターはモデル、データセット、スペース、アプリのコンテキストを AI ワークフローに統合し、発見、実験、機械学習研究に活用できます。';
+
+  @override
+  String get mcpMarketDescParallel => 'Parallel Search は検索主体の AI ワークフロー向けにリアルタイムのウェブ検索とコンテンツ抽出を提供します。そのリモート MCP サーバーは、最新のウェブページコンテキストの取得やページの検証、そして新しい情報を要する質問やトピック調査時の抽出コンテンツ活用をアシスタントに支援します。';
+
+  @override
+  String get mcpMarketDescTavily => 'Tavily は検索・取得・調査の API を通じて AI エージェントにリアルタイムのウェブリソースアクセスを提供します。そのコネクターはアシスタントがライブデータに基づいて回答し、関連コンテンツを抽出し、安全制御を伴う本番エージェントワークフローを支援します。';
+
+  @override
+  String get mcpMarketDescGithub => 'GitHub はコード、課題、プルリクエスト、プロジェクト履歴の共同作業のためのプラットフォームです。その公式リモート MCP サーバーは、ソースの変更、レビュー、開発フロー、GitHub プロジェクトの状態を理解するための構造化されたリポジトリコンテキストをアシスタントに提供します。';
+
+  @override
+  String get mcpMarketDescPostman => 'Postman はコーディングエージェントや開発者ワークフローに API コンテキストを提供します。そのコネクターは API 定義、ドキュメント、コラボレーションのコンテキストをアシスタントの作業に統合し、エージェントが統合や実装の詳細を分析できるようにします。';
+
+  @override
+  String get mcpMarketDescSlack => 'Slack はチームメッセージ、チャンネル、ユーザー、共有ワークスペースを束ねるコラボレーションのハブです。そのリモート MCP サーバーはワークスペースの会話コンテキストをアシスタントのワークフローに統合し、ユーザーが回答を見つけ、議論を要約し、チャンネル間の活動を把握することを支援します。';
+
+  @override
+  String get mcpMarketDescFigma => 'Figma は UI 設計、プロトタイピング、開発者への引き継ぎのためのプロダクトデザインプラットフォームです。そのリモート MCP サーバーはファイル、プロジェクト、開発モードのコンテキストをアシスタントのワークフローに取り込み、エージェントが視覚的な作業を理解し、実装タスクに対応付けることを可能にします。';
+
+  @override
+  String get mcpMarketDescCanva => 'Canva はプレゼン、SNS 用グラフィック、ドキュメント、ブランド素材を制作するためのビジュアルコミュニケーションプラットフォームです。そのリモート MCP サーバーは Canva のプロジェクト、アセット、書き出しファイル、コメントへのアシスタントのアクセスを提供し、収集した情報をもとにクリエイティブ作品の検討・編集・準備を行えるようにします。';
+
+  @override
+  String get mcpMarketDescStripe => 'Stripe は決済処理、請求、顧客、開発者向けドキュメントを担う決済・金融インフラのプラットフォームです。そのリモート MCP サーバーは Stripe が裏付けるアカウントと実装のコンテキストをアシスタントに提供し、顧客フロー、請求の問い合わせ、決済タスクを理解することを支援します。';
+
+  @override
+  String get mcpMarketDescTrivago => 'Trivago は座標、都市、国、日付、旅行コンテキストに基づいてホテルや宿泊施設を検索することを支援します。そのコネクターは宿泊検索のコンテキストをアシスタントに提供し、目的地や名所の近くで適した宿泊先を見つけることを支援します。';
+
+  @override
+  String get mcpMarketDescSend => 'Send は共有可能なドキュメント、1 ページのドキュメント、プレゼン、スライドの作成を支援します。そのコネクターはアシスタントが求められた素材を公開リンク、インタラクティブなページ、追跡可能な配信物に変換できるようにします。';
+
+  @override
+  String get mcpMarketDescZiprecruiter => 'ZipRecruiter は職名、企業、場所、給与、距離、働き方、雇用形態、投稿日でリアルタイムの求人を検索することを支援します。そのコネクターは申し込みを ZipRecruiter に戻す前に、求職コンテキストをアシスタントのワークフローに統合します。';
+
+  @override
+  String get mcpMarketDescAdobeCreativity => 'Adobe for Creativity は Photoshop、Lightroom、Illustrator、Firefly、Premiere、Express、InDesign、Stock の能力を AI 主導のクリエイティブ作業と結びつけます。ユーザーは自然言語を用いて写真、デザイン素材、映像プロジェクトを生成・編集・強化でき、作業は Adobe アカウントに紐付いたままです。';
 }

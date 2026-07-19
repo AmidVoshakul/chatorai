@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:chatorai/core/agents/agent_registry.dart';
+import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/constants/chat_constants.dart';
 import 'package:chatorai/core/context/compaction_orchestrator.dart';
 import 'package:chatorai/core/context/compaction_service.dart';
@@ -55,6 +56,7 @@ import 'package:chatorai/providers.dart'
         permissionServiceProvider;
 import 'package:chatorai/shared/utils/chat_error_utils.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/core/tools/built_in/task.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:chatorai/shared/utils/message_utils.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';

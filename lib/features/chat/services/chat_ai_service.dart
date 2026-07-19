@@ -230,6 +230,7 @@ class ChatAiService implements CompletionProvider {
     int maxSteps = 5,
     void Function(RichRetryInfo info)? onRetry,
     void Function(List<Map<String, dynamic>> messages)? onOverflow,
+    String? sessionId,
   }) async {
     // ── Running‑request guard ──────────────────────────────────────────
     if (_isRunning) {
@@ -269,6 +270,11 @@ class ChatAiService implements CompletionProvider {
       rethrow;
     }
 
+    // Provider-declared defaults from chatorai.json (temperature / extra body).
+    final providerParams = _providerCallParams(resolvedConfig);
+    final providerTemp = providerParams.temperature;
+    final providerOptions = providerParams.providerOptions;
+
     try {
       await _retryService.execute(
         ({void Function()? onChunkReceived}) async {
@@ -279,12 +285,16 @@ class ChatAiService implements CompletionProvider {
           final result = await streamText(
             model: lm,
             messages: _toModelMessages(messages),
-            temperature: temperature,
+            temperature: providerTemp ?? temperature,
             maxRetries: 0, // We handle retries ourselves
             headers: activeHeaders,
-            abortSignal: _cancellation.token,
+            providerOptions: providerOptions,
+          abortSignal: _cancellation.token,
             tools: tools,
             maxSteps: maxSteps,
+            experimentalContext: sessionId == null
+                ? null
+                : {'sessionId': sessionId, 'agentId': 'main'},
             onInputAvailable: (event) async {
               final rawInput = event.input;
               final inputMap = rawInput is Map<String, dynamic>
@@ -306,13 +316,14 @@ class ChatAiService implements CompletionProvider {
               Object error,
               StackTrace stack,
             ) {
-              // DioException escapes ai_sdk_dart's internal streams before
-              // reaching our await-for.  Swallow here so it never reaches
-              // the zone handler.  The corresponding StreamTextErrorEvent
-              // data event carries the same error and drives the retry.
-              if (error is DioException) {
+              // ai_sdk_dart wraps transport failures (incl. DioException)
+              // as AiApiCallError before they escape the internal streams, so
+              // they reach our await-for. Swallow here so they never reach the
+              // zone handler. The corresponding StreamTextErrorEvent data event
+              // carries the same error and drives the retry.
+              if (error is DioException || error is AiApiCallError) {
                 LogTags.chatService.logDebug(
-                  'stream handleError swallowed DioException',
+                  'stream handleError swallowed transport error',
                 );
                 return;
               }
@@ -483,7 +494,13 @@ class ChatAiService implements CompletionProvider {
     ToolErrorCallback? onToolError,
     UsageCallback? onUsage,
     int maxSteps = 5,
+    String? sessionId,
+    CancellationToken? abortSignal,
   }) async {
+    // Bind the child to the parent task's abort signal when provided, so
+    // cancelling the parent request also stops the delegated sub-agent.
+    // Falls back to the shared service token otherwise.
+    final effectiveAbort = abortSignal ?? _cancellation.token;
     ModelConfig? resolvedConfig;
     late LanguageModelV3 lm;
     Map<String, String> activeHeaders = _headers;
@@ -499,6 +516,10 @@ class ChatAiService implements CompletionProvider {
       rethrow;
     }
 
+    final providerParams = _providerCallParams(resolvedConfig);
+    final providerTemp = providerParams.temperature;
+    final providerOptions = providerParams.providerOptions;
+
     try {
       await _retryService.execute(({void Function()? onChunkReceived}) async {
         final seenToolResults = <String>{};
@@ -508,12 +529,16 @@ class ChatAiService implements CompletionProvider {
         final result = await streamText(
           model: lm,
           messages: _toModelMessages(messages),
-          temperature: temperature,
+          temperature: providerTemp ?? temperature,
           maxRetries: 0, // We handle retries ourselves
           headers: activeHeaders,
-          abortSignal: _cancellation.token,
+          providerOptions: providerOptions,
+          abortSignal: effectiveAbort,
           tools: tools,
           maxSteps: maxSteps,
+          experimentalContext: sessionId == null
+              ? null
+              : {'sessionId': sessionId, 'agentId': 'subagent'},
           onInputAvailable: (event) {
             final rawInput = event.input;
             final inputMap = rawInput is Map<String, dynamic>
@@ -531,7 +556,7 @@ class ChatAiService implements CompletionProvider {
             Object error,
             StackTrace stack,
           ) {
-            if (error is DioException) return;
+            if (error is DioException || error is AiApiCallError) return;
             throw error;
           })) {
             switch (event) {
@@ -627,6 +652,10 @@ class ChatAiService implements CompletionProvider {
       rethrow;
     }
 
+    final providerParams = _providerCallParams(resolvedConfig);
+    final providerTemp = providerParams.temperature;
+    final providerOptions = providerParams.providerOptions;
+
     try {
       final gen = _generation;
       final result = await _retryService.execute(({
@@ -636,9 +665,10 @@ class ChatAiService implements CompletionProvider {
         return generateText(
           model: lm,
           messages: _toModelMessages(messages),
-          temperature: temperature,
+          temperature: providerTemp ?? temperature,
           maxRetries: 0,
           headers: activeHeaders,
+          providerOptions: providerOptions,
         );
       }, isStillValid: () => gen == _generation);
       return result.text;
@@ -684,5 +714,27 @@ class ChatAiService implements CompletionProvider {
   void dispose() {
     _cancellation.cancel();
     _retryService.dispose();
+  }
+
+  /// Resolves provider-declared defaults from `chatorai.json` for a model call.
+  ///
+  /// Returns the effective sampling temperature (from the provider's
+  /// `defaultBody['temperature']`) and the extra body fields (everything in
+  /// `defaultBody` except `temperature`) wrapped under the provider's SDK key
+  /// for forwarding as `providerOptions`. Either component may be `null`.
+  ({double? temperature, Map<String, Map<String, dynamic>>? providerOptions})
+  _providerCallParams(ModelConfig model) {
+    final provider = _resolver.getProviderForModelConfig(model);
+    final body = provider.defaultBody;
+    if (body == null || body.isEmpty) {
+      return (temperature: null, providerOptions: null);
+    }
+    final temperature = body['temperature'] is num
+        ? (body['temperature'] as num).toDouble()
+        : null;
+    final extra = Map<String, dynamic>.from(body)
+      ..removeWhere((k, _) => k == 'temperature');
+    final providerOptions = extra.isNotEmpty ? {provider.sdk: extra} : null;
+    return (temperature: temperature, providerOptions: providerOptions);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
@@ -291,7 +292,18 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
     String? taskSessionId,
   }) {
     var parts = List<AssistantContent>.from(state.streamingParts);
-    if (parts.any((p) => p is AssistantTask && p.id == partId)) return;
+    if (parts.any((p) => p is AssistantTask && p.id == partId)) {
+      LogTags.chatScreen.logInfo(
+        '[TaskTrace] onTaskStart SKIP WHERE=notifier WHY=part already exists '
+        'partId=$partId',
+      );
+      return;
+    }
+    LogTags.chatScreen.logInfo(
+      '[TaskTrace] onTaskStart CREATE WHERE=notifier WHAT=add AssistantTask to streamingParts '
+      'WHEN=${DateTime.now()} WHY=build task UI part partId=$partId sessionId=$sessionId '
+      'desc=$desc agent=$agent partsBefore=${parts.length}',
+    );
     parts = _interruptStreaming(parts);
     parts.add(
       AssistantTask(
@@ -313,13 +325,33 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
     final idx = parts.indexWhere((p) => p is AssistantTask && p.id == partId);
     if (idx >= 0) {
       final task = parts[idx] as AssistantTask;
+      // The delegated `task` tool call itself must not overwrite the live
+      // sub-agent tool title that the widget reads from the child session —
+      // otherwise the part would show a frozen "task" label. Only count it.
+      final isDelegatedTask = toolName == 'task';
       parts[idx] = task.copyWith(
-        currentTool: toolName,
-        currentToolTitle: toolTitle,
+        currentTool: isDelegatedTask ? task.currentTool : toolName,
+        currentToolTitle: isDelegatedTask ? task.currentToolTitle : toolTitle,
         toolCallsCount: task.toolCallsCount + 1,
       );
       state = state.copyWith(streamingParts: parts);
     }
+  }
+
+  /// Single source of truth for finishing a task part: sets the terminal
+  /// state, error (if any), timestamps and duration. Reused by [onTaskEnd],
+  /// [onTaskError] and [closeAllRunningTasks].
+  AssistantTask _finalizeTask(AssistantTask task, ToolState state,
+      {String? error}) {
+    final now = DateTime.now();
+    return task.copyWith(
+      state: state,
+      error: error,
+      endedAt: now,
+      durationMs: task.startedAt != null
+          ? now.difference(task.startedAt!).inMilliseconds
+          : null,
+    );
   }
 
   void onTaskEnd(String partId) {
@@ -327,14 +359,7 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
     final idx = parts.indexWhere((p) => p is AssistantTask && p.id == partId);
     if (idx >= 0) {
       final task = parts[idx] as AssistantTask;
-      final now = DateTime.now();
-      parts[idx] = task.copyWith(
-        state: ToolState.completed,
-        endedAt: now,
-        durationMs: task.startedAt != null
-            ? now.difference(task.startedAt!).inMilliseconds
-            : null,
-      );
+      parts[idx] = _finalizeTask(task, ToolState.completed);
       state = state.copyWith(streamingParts: parts);
     }
   }
@@ -344,11 +369,38 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
     final idx = parts.indexWhere((p) => p is AssistantTask && p.id == partId);
     if (idx >= 0) {
       final task = parts[idx] as AssistantTask;
-      if (task.taskSessionId == null || task.taskSessionId!.isEmpty) {
+      LogTags.chatScreen.logInfo(
+        '[TaskTrace] onTaskSessionIdResolved SET WHERE=notifier WHAT=write taskSessionId '
+        'WHEN=${DateTime.now()} WHY=link TaskPart to child session so widget reads live tools '
+        'partId=$partId child=$taskSessionId prevSessionId=${task.taskSessionId} '
+        'changed=${task.taskSessionId != taskSessionId}',
+      );
+      if (task.taskSessionId != taskSessionId) {
         parts[idx] = task.copyWith(taskSessionId: taskSessionId);
         state = state.copyWith(streamingParts: parts);
       }
+    } else {
+      LogTags.chatScreen.logWarning(
+        '[TaskTrace] onTaskSessionIdResolved NOT FOUND WHERE=notifier '
+        'WHY=no AssistantTask with id=$partId in streamingParts → taskSessionId NOT set '
+        'partsCount=${parts.length} partIds=${parts.whereType<AssistantTask>().map((t) => t.id).toList()}',
+      );
     }
+  }
+
+  /// Marks every still-running task part as completed. Used when a stream is
+  /// cancelled or finalized so no TaskPart widget is left showing a spinner.
+  void closeAllRunningTasks() {
+    var parts = List<AssistantContent>.from(state.streamingParts);
+    var changed = false;
+    for (var i = 0; i < parts.length; i++) {
+      final p = parts[i];
+      if (p is AssistantTask && p.state == ToolState.running) {
+        parts[i] = _finalizeTask(p, ToolState.completed);
+        changed = true;
+      }
+    }
+    if (changed) state = state.copyWith(streamingParts: parts);
   }
 
   void onTaskError(String partId, String error) {
@@ -356,15 +408,7 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
     final idx = parts.indexWhere((p) => p is AssistantTask && p.id == partId);
     if (idx >= 0) {
       final task = parts[idx] as AssistantTask;
-      final now = DateTime.now();
-      parts[idx] = task.copyWith(
-        state: ToolState.error,
-        error: error,
-        endedAt: now,
-        durationMs: task.startedAt != null
-            ? now.difference(task.startedAt!).inMilliseconds
-            : null,
-      );
+      parts[idx] = _finalizeTask(task, ToolState.error, error: error);
       state = state.copyWith(streamingParts: parts);
     }
   }

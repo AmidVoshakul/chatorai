@@ -4,17 +4,6 @@ setlocal enabledelayedexpansion
 echo ChatORAI Windows Installation
 echo ==============================
 
-:: Check if running as administrator
-net session >nul 2>&1
-if %errorLevel% neq 0 (
-    echo.
-    echo ERROR: This script requires administrator privileges.
-    echo Right-click and select "Run as administrator"
-    echo.
-    pause
-    exit /b 1
-)
-
 set REPO=AmidVoshakul/chatorai
 set VERSION=
 set ARCH=x64
@@ -49,7 +38,7 @@ powershell -NoProfile -Command "Invoke-WebRequest -Uri '%URL%' -OutFile '%ZIP%' 
 echo Extracting...
 powershell -NoProfile -Command "Expand-Archive -Path '%ZIP%' -DestinationPath '%TMPDIR%' -Force"
 
-set INSTALL_DIR=C:\Program Files\ChatORAI
+set INSTALL_DIR=%LOCALAPPDATA%\ChatORAI
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
 echo Copying application files...
@@ -76,8 +65,8 @@ cscript //nologo %SCRIPT%
 del %SCRIPT%
 echo Desktop shortcut created.
 
-:: Add to PATH
-powershell -Command "[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';%INSTALL_DIR%', 'Machine')"
+:: Add to User PATH (no administrator needed)
+powershell -Command "[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + ';%INSTALL_DIR%', 'User')"
 echo Added to PATH. You may need to restart terminal.
 
 echo.
@@ -90,6 +79,6 @@ echo - Command Line: chatorai
 echo - Or from: "%INSTALL_DIR%\chatorai.exe"
 echo.
 echo To uninstall, run:
-echo rmdir /s "%INSTALL_DIR%"
+echo chatorai uninstall
 echo.
 pause

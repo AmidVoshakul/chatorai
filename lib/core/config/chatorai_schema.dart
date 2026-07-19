@@ -8,6 +8,16 @@ const Map<String, dynamic> chatoraiSchema = {
   'required': ['version', 'permission'],
   'properties': {
     'version': {'type': 'integer'},
+    'instructions': {
+      'type': 'array',
+      'items': {'type': 'string'},
+      'description':
+          'List of instruction globs or URLs merged into the system prompt. '
+          'Supports relative globs resolved from the project root (e.g. '
+          '".chatorai/instructions/*.md"), filenames searched upward '
+          '(e.g. "AGENTS.md"), "~/" home expansion, absolute paths, and '
+          'http(s) URLs.',
+    },
     'permission': {
       'type': 'object',
       'additionalProperties': {
@@ -99,6 +109,9 @@ const Map<String, dynamic> chatoraiSchema = {
     },
     'mcp': {
       'type': 'object',
+      'description':
+          'MCP server declarations. Servers may be listed directly under '
+          '"mcp" (opencode-style flat layout) or nested under "mcp.servers".',
       'properties': {
         'default_timeout': {'type': 'integer'},
         'defaultTimeout': {'type': 'integer'},
@@ -113,7 +126,6 @@ const Map<String, dynamic> chatoraiSchema = {
               },
               'enabled': {'type': 'boolean'},
               'timeout': {'type': 'integer'},
-              // local
               'command': {
                 'oneOf': [
                   {'type': 'string'},
@@ -132,7 +144,6 @@ const Map<String, dynamic> chatoraiSchema = {
                 'type': 'object',
                 'additionalProperties': {'type': 'string'},
               },
-              // remote
               'url': {'type': 'string'},
               'headers': {
                 'type': 'object',
@@ -152,6 +163,7 @@ const Map<String, dynamic> chatoraiSchema = {
           },
         },
       },
+      // Flat layout: each key under "mcp" is a server name.
       'additionalProperties': {
         'type': 'object',
         'properties': {
@@ -292,6 +304,51 @@ const Map<String, dynamic> chatoraiSchema = {
             'enum': ['allow', 'ask', 'deny'],
           },
         ],
+      },
+    },
+    'provider': {
+      'type': 'object',
+      'description':
+          'Custom LLM providers. Each key is a provider ID. '
+          'All config providers are treated as OpenAI-compatible. The `apiKey` '
+          'field supports a literal key, the "{env:VAR}" reference (resolved '
+          'from the process environment, falling back to shell rc files on '
+          'desktop), or the literal "public" for key-less providers.',
+      'additionalProperties': {
+        'type': 'object',
+        'properties': {
+          'name': {'type': 'string'},
+          'description': 'Provider display name.',
+          'options': {
+            'type': 'object',
+            'properties': {
+              'baseURL': {'type': 'string'},
+              'apiKey': {
+                'type': 'string',
+                'description':
+                    'Literal key or "{env:VAR}" reference resolved at runtime.',
+              },
+              'temperature': {'type': 'number'},
+            },
+            'additionalProperties': true,
+          },
+          'models': {
+            'type': 'object',
+            'additionalProperties': {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+                'limit': {
+                  'type': 'object',
+                  'properties': {
+                    'context': {'type': 'integer', 'minimum': 0},
+                    'output': {'type': 'integer', 'minimum': 0},
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     },
   },

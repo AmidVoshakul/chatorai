@@ -19,6 +19,27 @@ void main() {
       expect(McpServerType.fromValue('remote'), McpServerType.remote);
     });
 
+    test('fromValue aliases "http" to remote', () {
+      expect(McpServerType.fromValue('http'), McpServerType.remote);
+    });
+
+    test('fromValue aliases "https" to remote', () {
+      expect(McpServerType.fromValue('https'), McpServerType.remote);
+    });
+
+    test('fromValue aliases "sse" to remote', () {
+      expect(McpServerType.fromValue('sse'), McpServerType.remote);
+    });
+
+    test('fromValue aliases "stdio" to local', () {
+      expect(McpServerType.fromValue('stdio'), McpServerType.local);
+    });
+
+    test('fromValue is case-insensitive', () {
+      expect(McpServerType.fromValue('HTTP'), McpServerType.remote);
+      expect(McpServerType.fromValue('Local'), McpServerType.local);
+    });
+
     test('fromValue throws ArgumentError for unknown value', () {
       expect(
         () => McpServerType.fromValue('unknown'),
@@ -331,6 +352,25 @@ void main() {
       expect(config.timeout, 5000);
     });
 
+    test('fromJson accepts spec "http" type as remote', () {
+      final config = McpServerConfig.fromJson({
+        'type': 'http',
+        'url': 'https://mcp.context7.com/mcp',
+      });
+      expect(config.type, McpServerType.remote);
+      expect(config.isRemote, isTrue);
+      expect(config.url, 'https://mcp.context7.com/mcp');
+    });
+
+    test('fromJson accepts "sse" type as remote', () {
+      final config = McpServerConfig.fromJson({
+        'type': 'sse',
+        'url': 'https://example.com/sse',
+      });
+      expect(config.type, McpServerType.remote);
+      expect(config.url, 'https://example.com/sse');
+    });
+
     test('fromJson with oauth sub-object', () {
       final json = {
         'type': 'remote',
@@ -468,17 +508,6 @@ void main() {
       expect(config.servers['time']!.command, '/home/amid/.local/bin/uvx');
       expect(config.servers['time']!.args, ['mcp-server-time']);
       expect(config.defaultTimeout, 30000);
-    });
-
-    test('toJson includes servers when present', () {
-      final config = McpConfig(
-        servers: {'test': McpServerConfig.local(command: 'echo')},
-        defaultTimeout: 30000,
-      );
-      final json = config.toJson();
-      expect(json['servers'], isNotNull);
-      expect(json['servers']['test'], isNotNull);
-      expect(json['default_timeout'], 30000);
     });
 
     test('toJson omits empty servers', () {

@@ -1,44 +1,51 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Secure storage service for sensitive data (API keys, tokens).
-///
-/// Uses platform-specific secure storage:
-/// - Android: Keystore with encrypted SharedPreferences
-/// - iOS: Keychain (first_unlock accessibility)
-/// - macOS: Keychain
-/// - Windows: DPAPI
-/// - Linux: LibSecret
-/// - Web: IndexedDB (consider additional encryption for production)
+import 'secret_storage.dart';
+
 class SecureStorageService {
   static const _storage = FlutterSecureStorage();
 
-  /// Write a value to secure storage
-  Future<void> write({required String key, required String value}) async {
-    await _storage.write(key: key, value: value);
+  static SecretStorageFactory? _factory;
+  static bool _initializing = false;
+
+  static Future<void> init({bool forcePrefs = false}) async {
+    if (_factory != null || _initializing) return;
+    _initializing = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _factory = await SecretStorageFactory.create(
+        keyring: _storage,
+        prefs: prefs,
+        forcePrefs: forcePrefs,
+      );
+    } finally {
+      _initializing = false;
+    }
   }
 
-  /// Read a value from secure storage
-  Future<String?> read({required String key}) async {
-    return await _storage.read(key: key);
+  static Future<SecretStorageFactory> get _resolved async {
+    if (_factory != null) return _factory!;
+    await init();
+    return _factory!;
   }
 
-  /// Delete a value from secure storage
-  Future<void> delete({required String key}) async {
-    await _storage.delete(key: key);
-  }
+  static Future<bool> get usingFallback async =>
+      (await _resolved).usingFallback;
 
-  /// Check if a key exists
-  Future<bool> containsKey({required String key}) async {
-    return await _storage.containsKey(key: key);
-  }
+  Future<void> write({required String key, required String value}) async =>
+      (await _resolved).write(key: key, value: value);
 
-  /// Read all values
-  Future<Map<String, String>> readAll() async {
-    return await _storage.readAll();
-  }
+  Future<String?> read({required String key}) async =>
+      (await _resolved).read(key: key);
 
-  /// Delete all values
-  Future<void> deleteAll() async {
-    await _storage.deleteAll();
-  }
+  Future<void> delete({required String key}) async =>
+      (await _resolved).delete(key: key);
+
+  Future<bool> containsKey({required String key}) async =>
+      (await _resolved).containsKey(key: key);
+
+  Future<Map<String, String>> readAll() async => (await _resolved).readAll();
+
+  Future<void> deleteAll() async => (await _resolved).deleteAll();
 }

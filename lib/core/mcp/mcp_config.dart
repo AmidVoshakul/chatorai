@@ -7,9 +7,9 @@ enum McpServerType {
   const McpServerType(this.value);
 
   static McpServerType fromValue(String value) {
-    return switch (value) {
-      'local' => McpServerType.local,
-      'remote' => McpServerType.remote,
+    return switch (value.toLowerCase()) {
+      'local' || 'stdio' => McpServerType.local,
+      'remote' || 'http' || 'https' || 'sse' => McpServerType.remote,
       _ => throw ArgumentError('Unknown MCP server type: $value'),
     };
   }
@@ -121,6 +121,33 @@ class McpServerConfig {
   bool get isLocal => type == McpServerType.local;
   bool get isRemote => type == McpServerType.remote;
 
+  McpServerConfig copyWith({
+    bool? enabled,
+    int? timeout,
+    String? command,
+    List<String>? args,
+    String? cwd,
+    Map<String, String>? environment,
+    String? url,
+    Map<String, String>? headers,
+    McpOAuthConfig? oauth,
+  }) => isLocal
+      ? McpServerConfig.local(
+          command: command ?? this.command,
+          args: args ?? this.args,
+          cwd: cwd ?? this.cwd,
+          environment: environment ?? this.environment,
+          enabled: enabled ?? this.enabled,
+          timeout: timeout ?? this.timeout,
+        )
+      : McpServerConfig.remote(
+          url: url ?? this.url!,
+          enabled: enabled ?? this.enabled,
+          headers: headers ?? this.headers ?? const {},
+          oauth: oauth ?? this.oauth,
+          timeout: timeout ?? this.timeout,
+        );
+
   factory McpServerConfig.fromJson(Map<String, dynamic> json) {
     final typeValue = json['type'] as String? ?? 'local';
     final type = McpServerType.fromValue(typeValue);
@@ -143,10 +170,16 @@ class McpServerConfig {
         }
         command = list.first;
         args = list.sublist(1);
-      } else {
+      } else if (rawCommand is String) {
         // ChatORAI format: "command": "bin", "args": ["arg1", "arg2"]
-        command = rawCommand as String;
+        command = rawCommand;
         args = (json['args'] as List<dynamic>?)?.cast<String>() ?? const [];
+      } else {
+        throw ArgumentError.value(
+          rawCommand,
+          'command',
+          'Local MCP server requires a non-empty "command"',
+        );
       }
       return McpServerConfig.local(
         command: command,
@@ -158,8 +191,17 @@ class McpServerConfig {
       );
     }
 
+    final rawUrl = json['url'];
+    if (rawUrl is! String || rawUrl.trim().isEmpty) {
+      throw ArgumentError.value(
+        rawUrl,
+        'url',
+        'Remote MCP server requires a non-empty "url"',
+      );
+    }
+
     return McpServerConfig.remote(
-      url: json['url'] as String,
+      url: rawUrl,
       enabled: enabled,
       headers: Map<String, String>.from(json['headers'] ?? const {}),
       oauth: json['oauth'] != null
@@ -225,13 +267,11 @@ class McpConfig {
   }
 
   Map<String, dynamic> toJson() {
+    // Flat layout: each server is keyed directly under "mcp", with no
+    // intermediate "servers" wrapper, keeping the file compact and editable.
     final map = <String, dynamic>{};
-    if (servers.isNotEmpty) {
-      final serversJson = <String, dynamic>{};
-      for (final entry in servers.entries) {
-        serversJson[entry.key] = entry.value.toJson();
-      }
-      map['servers'] = serversJson;
+    for (final entry in servers.entries) {
+      map[entry.key] = entry.value.toJson();
     }
     if (defaultTimeout != null) map['default_timeout'] = defaultTimeout;
     return map;

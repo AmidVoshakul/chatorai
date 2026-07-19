@@ -50,6 +50,7 @@ completed milestones and future plans based on the current codebase state.
 - 22 SVG provider icons with theme-aware rendering
 - `AddProviderDialog` and `ModelSelectionDialog` for in-app configuration
 - `ModelResolver` merges provider defaults, model metadata, and variant fields
+- **Recent models**: horizontal "stories"-style strip of the top-6 recently/frequently used models on the model-selection screen, backed by `usageCounts`/`lastUsed` in `SharedPreferences` and the `recentModels` getter (shipped in 0.1.1)
 
 ### Chat Input & Display
 

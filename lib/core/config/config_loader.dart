@@ -45,7 +45,11 @@ class ConfigValidationError extends ConfigError {
 ///
 /// If neither file exists, an empty config object `{}` is returned.
 class ConfigLoader {
-  static Future<String> load() async {
+  static Future<String> load({String? path}) async {
+    if (path != null) {
+      final layer = await _loadLayer(path);
+      return jsonEncode(layer);
+    }
     final global = await _loadLayer(await _globalConfigPath());
     final project = await _loadLayer(_projectConfigPath());
 
@@ -89,10 +93,12 @@ class ConfigLoader {
 
   /// Recursively merges [overlay] into [base].
   ///
-  /// Nested maps are merged key-by-key; every other value (scalars, lists)
-  /// is taken from [overlay] when present, otherwise from [base]. Thus the
-  /// overlay layer (project config) has precedence without discarding the
-  /// base layer's (global config) unrelated keys.
+  /// Nested maps are merged key-by-key; lists are concatenated with duplicates
+  /// removed (so a project config *adds* to the global config's arrays — e.g.
+  /// `instructions` and `skills.paths` accumulate like opencode); every other
+  /// value (scalars) is taken from [overlay] when present, otherwise from
+  /// [base]. Thus the overlay layer (project config) has precedence without
+  /// discarding the base layer's (global config) unrelated keys.
   static Map<String, dynamic> _deepMerge(
     Map<String, dynamic> base,
     Map<String, dynamic> overlay,
@@ -109,10 +115,40 @@ class ConfigLoader {
           baseValue,
           entry.value as Map<String, dynamic>,
         );
+      } else if (baseValue is List && entry.value is List) {
+        // Concatenate and dedupe (preserve order, base entries first).
+        // Uses deep equality so duplicate maps/lists with identical content
+        // (but different object identity) are collapsed.
+        final merged = <dynamic>[...baseValue];
+        for (final item in entry.value as List) {
+          final exists = merged.any((existing) => _deepEquals(existing, item));
+          if (!exists) merged.add(item);
+        }
+        result[entry.key] = merged;
       } else {
         result[entry.key] = entry.value;
       }
     }
     return result;
+  }
+
+  /// Structural (deep) equality helper used when deduplicating merged lists,
+  /// so entries that are equal in content but not by object identity collapse.
+  static bool _deepEquals(dynamic a, dynamic b) {
+    if (a is Map && b is Map) {
+      if (a.length != b.length) return false;
+      for (final key in a.keys) {
+        if (!b.containsKey(key) || !_deepEquals(a[key], b[key])) return false;
+      }
+      return true;
+    }
+    if (a is List && b is List) {
+      if (a.length != b.length) return false;
+      for (var i = 0; i < a.length; i++) {
+        if (!_deepEquals(a[i], b[i])) return false;
+      }
+      return true;
+    }
+    return a == b;
   }
 }

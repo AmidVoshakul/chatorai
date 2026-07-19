@@ -21,10 +21,10 @@ packages:
     dependency: "direct main"
     description:
       name: ai_sdk_dart
-      sha256: "6d3e683fc9ee0609cb32cb21be62544881181bd31b176cf8ec298e0df3c4b012"
+      sha256: e8c3930c8fc38bbe8d35c26d4426d01c423db4f12c28059cfaf2eb0826bdeb43
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.2.0"
   ai_sdk_google:
     dependency: "direct main"
     description:
@@ -45,10 +45,10 @@ packages:
     dependency: "direct main"
     description:
       name: ai_sdk_provider
-      sha256: ebd6301a8edc18897f573a800a6b30c798e7fb72ab3ff0d61c77f73ada471fa5
+      sha256: "5ba291d5de3028c8449892243d7fcf6796fed69840522d2768e31131f6b63c2b"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.2.0"
   analyzer:
     dependency: transitive
     description:
@@ -57,6 +57,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "12.1.0"
+  ansi_escape_codes:
+    dependency: transitive
+    description:
+      name: ansi_escape_codes
+      sha256: "68dfa36c8858bfdd5d6d9a64e09a88c9cf93d2c8e35c9df0cc0e75bccda9ee23"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.1"
   archive:
     dependency: transitive
     description:
@@ -257,6 +265,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.7"
+  cryptography:
+    dependency: "direct main"
+    description:
+      name: cryptography
+      sha256: "3eda3029d34ec9095a27a198ac9785630fe525c0eb6a49f3d575272f8e792ef0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.9.0"
+  cryptography_flutter:
+    dependency: "direct main"
+    description:
+      name: cryptography_flutter
+      sha256: d1c7e7a31a072d63b27ce0537b89868f9bda9188f2b1651ae728a295762921d4
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.4"
   csslib:
     dependency: transitive
     description:
@@ -597,6 +621,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.2"
+  hotreloader:
+    dependency: transitive
+    description:
+      name: hotreloader
+      sha256: "66871df468fc24eee81f1a0a7cb98acc104716f9b7376d355437b48d633c4ebf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.4.0"
   html:
     dependency: "direct main"
     description:
@@ -853,6 +885,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.0"
+  nocterm:
+    dependency: "direct main"
+    description:
+      name: nocterm
+      sha256: "240efc18c483f1d727bb7cdf8712f703e1fc8f8ae59fe9547b5b63b08ec0c0dc"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.8.0"
   node_preamble:
     dependency: transitive
     description:
@@ -1554,6 +1594,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.3"
+  zmodem:
+    dependency: transitive
+    description:
+      name: zmodem
+      sha256: "3b7e5b29f3a7d8aee472029b05165a68438eff2f3f7766edf13daba1e297adbf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.6"
 sdks:
   dart: ">=3.12.0 <4.0.0"
   flutter: ">=3.38.4"

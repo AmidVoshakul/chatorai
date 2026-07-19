@@ -6,8 +6,8 @@ ChatORAI can be configured via a JSON file (`chatorai.json`) to customize permis
 
 The configuration file location is resolved via `XdgPaths.configHome` (see `lib/shared/utils/xdg_paths.dart`). The search order is:
 
-1. `<configHome>/chatorai.json` — user-global config (highest priority)
-2. `./.chatorai/chatorai.json` — project-specific config (used as fallback)
+1. `<configHome>/chatorai.json` — user-global config (base layer)
+2. `./.chatorai/chatorai.json` — project-specific config (overlay, **wins** on conflict)
 
 **Typical paths by platform:**
 
@@ -20,11 +20,15 @@ The configuration file location is resolved via `XdgPaths.configHome` (see `lib/
 
 The directory name is derived from the package bundle ID at runtime via `package_info_plus`.
 
-If both locations exist, they are merged with the user-global file taking precedence.
+If both locations exist, they are deep-merged: the project config overrides the
+global config's keys, while keys absent in the project config are inherited from
+the global config. **List-valued keys** (`instructions`, `skills.paths`,
+`skills.urls`) are **concatenated with duplicates removed** — so a project
+config *adds* to the global config's arrays rather than replacing them.
 
 ## JSON Schema
 
-The file is validated against the JSON Schema defined in `lib/config/chatorai_schema.dart`. The `$schema` URL is:
+The file is validated against the JSON Schema defined in `lib/core/config/chatorai_schema.dart`. The `$schema` URL is:
 
 ```
 http://json-schema.org/draft/2020-12/schema#
@@ -43,9 +47,17 @@ IDE autocomplete may use this schema if the `$schema` field is added to the file
   "compaction": { ... },
   "formatter": { ... },
   "agent": { ... },
-  "mcp": { ... }
+  "mcp": { ... },
+  "tools": { ... },
+  "instructions": [ ... ]
 }
 ```
+
+A complete, annotated example with every section populated is available at
+[`chatorai.example.json`](../../chatorai.example.json) in the repository root.
+It is **not** written automatically — copy the relevant sections into your own
+`chatorai.json`. A freshly created config (written on first launch) contains
+all sections as empty placeholders so you can see what is available.
 
 ### `version`
 
@@ -262,6 +274,116 @@ Configures external MCP (Model Context Protocol) servers. These servers provide 
 | remote | `url`             | `headers`, `oauth`, `enabled`, `timeout`, `type: "remote"`  |
 
 Tools discovered from MCP servers are registered into the `ToolRegistry` and participate in the tool execution pipeline alongside built-in tools.
+
+Servers may also be declared in the **flat layout** — each key directly under
+`"mcp"` is a server name (no `"servers"` wrapper):
+
+```json
+{
+  "mcp": {
+    "filesystem": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "."]
+    }
+  }
+}
+```
+
+Both layouts are equivalent and may be mixed.
+
+### `tools`
+
+Global tool visibility overrides. Glob patterns map to `true` (allow),
+`false` (deny), or the strings `"allow"`, `"ask"`, `"deny"`.
+
+```json
+{
+  "tools": {
+    "bash": "ask",
+    "websearch": "allow",
+    "read": true
+  }
+}
+```
+
+### `instructions`
+
+A list of instruction files or URLs merged into the system prompt (like
+opencode). Each entry is one of:
+
+- A **relative glob** resolved from the project root, e.g. `.chatorai/instructions/*.md`
+- A **filename** searched upward from the project root, e.g. `AGENTS.md`
+- A **`~/`** path expanded to the user's home directory
+- An **absolute path** (globbed by its basename inside its directory)
+- An **http(s) URL** (fetched and inlined)
+
+Project-level `instructions` are concatenated with global `instructions`
+(duplicates removed). The resolved text is inserted into the system prompt as
+`Instructions from: <path>\n<content>` blocks.
+
+```json
+{
+  "instructions": [
+    ".chatorai/instructions/*.md",
+    "AGENTS.md",
+    "https://example.com/company-rules.md"
+  ]
+}
+```
+
+### `provider`
+
+Declares custom LLM providers. Each key is a provider ID; the
+declared provider overrides any built-in provider with the same ID. All config
+providers are treated as **OpenAI-compatible** — chatorai always uses the
+OpenAI-compatible adapter based on `baseURL`, so no `npm` field is needed.
+
+```json
+{
+  "provider": {
+    "custom-openrouter": {
+      "name": "OpenRouter (custom)",
+      "options": {
+        "baseURL": "https://openrouter.ai/api/v1",
+        "apiKey": "{env:OPENROUTER_API_KEY}",
+        "temperature": 0.1
+      },
+      "models": {
+        "openrouter/owl-alpha": {
+          "name": "Owl Alpha",
+          "limit": { "context": 1048576, "output": 262144 }
+        }
+      }
+    },
+    "groq": {
+      "options": { "apiKey": "{env:GROQ_API_KEY}" },
+      "models": {
+        "openai/gpt-oss-20b": { "name": "GPT OSS 20B" }
+      }
+    }
+  }
+}
+```
+
+Notes:
+
+- **`apiKey`** supports `{env:VAR}` substitution — the value is resolved from the
+  `VAR` environment variable at startup. If the variable is not set in the
+  process environment, chatorai additionally reads it from your shell rc files
+  (`~/.bashrc`, `~/.zshrc`, `~/.profile` on desktop) so the key is found even
+  when the app is launched from a GUI launcher. If still unset, the provider
+  becomes key-less (`AuthConfig.none`). The literal `"public"` also yields a
+  key-less provider. A literal key string also works.
+- **`options.baseURL`** points at the OpenAI-compatible `/v1` endpoint.
+- **`options.temperature`** sets the default sampling temperature for the provider.
+- **`models`** lists models by ID. Each may set `name` (display name) and
+  `limit` (`context` = max context tokens, `output` = max output tokens).
+  Config providers do **not** support automatic model discovery — every model
+  you want to use must be listed explicitly under `models`. If a model is
+  omitted, it will not be available.
+- Config providers are **read-only**: they are applied on top of the built-in
+  catalog at startup and are not written back to app storage. They are only
+  available on desktop/CLI builds where `chatorai.json` is read from disk.
 
 ## Validation
 

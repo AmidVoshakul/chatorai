@@ -4,6 +4,7 @@
 /// plus convenience providers for available models, selected model, etc.
 library;
 
+import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/llm/model_resolver.dart';
 import 'package:chatorai/core/llm/models/auth_config.dart';
 import 'package:chatorai/core/llm/models/configured_provider.dart';
@@ -11,6 +12,7 @@ import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/models/provider_config.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/core/llm/providers/built_in_providers.dart';
+import 'package:chatorai/core/llm/providers/config_provider_parser.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,6 +39,14 @@ final catalogInitializationProvider = FutureProvider<ProviderCatalogService>((
   );
   await service.migrateFromLegacySettings();
   await service.preloadApiKeys();
+
+  // Apply providers declared in chatorai.json (read-only, overrides built-ins).
+  final config = await ref.watch(configProvider.future);
+  if (config.provider != null) {
+    final parser = const ConfigProviderParser();
+    service.applyConfigProviders(parser.parse(config.provider));
+  }
+
   return service;
 });
 
@@ -95,19 +105,31 @@ final configuredProvidersProvider =
             final apiKey = catalog.getApiKeySync(p.id);
             final customBaseUrl = catalog.getCustomBaseUrl(p.id);
             final selectedModelIds = catalog.getSelectedModelIds(p.id);
-            final hasApiKey = apiKey != null && apiKey.isNotEmpty;
+            // For API-key providers, a key from secure storage OR from the
+            // in-memory config (chatorai.json `{env:VAR}`) both count.
+            final effectiveApiKey = (apiKey != null && apiKey.isNotEmpty)
+                ? apiKey
+                : (p.auth.type == AuthType.apiKey ? p.auth.apiKey : null);
+            final hasApiKey =
+                effectiveApiKey != null && effectiveApiKey.isNotEmpty;
             final isConfigured =
                 hasApiKey ||
                 (p.auth.type == AuthType.none &&
-                    catalog.isProviderEnabled(p.id)) ||
+                    (catalog.isProviderEnabled(p.id) || p.isConfig)) ||
                 selectedModelIds.isNotEmpty;
             if (isConfigured) {
+              // Config providers are read-only and applied from chatorai.json,
+              // so their enabled state comes from the config (defaults true),
+              // not from a persisted pref (which is always false for them).
+              final enabled = p.isConfig
+                  ? p.enabled
+                  : catalog.isProviderEnabled(p.id);
               providers.add(
                 ConfiguredProvider(
                   id: p.id,
                   name: p.name,
                   baseUrl: customBaseUrl ?? p.baseUrl,
-                  enabled: catalog.isProviderEnabled(p.id),
+                  enabled: enabled,
                   iconPath: p.metadata['iconPath'] as String?,
                 ),
               );

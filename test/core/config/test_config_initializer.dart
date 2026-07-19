@@ -16,10 +16,12 @@ void main() {
       final projectExisted = await projectConfig.exists();
       final globalExisted = await globalConfig.exists();
 
-      if (projectExisted)
+      if (projectExisted) {
         originalProjectContent = await projectConfig.readAsString();
-      if (globalExisted)
+      }
+      if (globalExisted) {
         originalGlobalContent = await globalConfig.readAsString();
+      }
 
       try {
         if (projectExisted) await projectConfig.delete();
@@ -30,6 +32,26 @@ void main() {
         expect(await globalConfig.exists(), true);
         final content = await globalConfig.readAsString();
         expect(content, contains('"version": 1'));
+        // Scaffold must expose every schema section as an empty placeholder
+        // so users can see what is configurable.
+        for (final section in [
+          '"permission"',
+          '"compaction"',
+          '"skills"',
+          '"mcp"',
+          '"agent"',
+          '"formatter"',
+          '"tools"',
+          '"instructions"',
+        ]) {
+          expect(
+            content,
+            contains(section),
+            reason: 'scaffold should include $section',
+          );
+        }
+        // mcp must use the flat layout (no "servers" wrapper).
+        expect(content, isNot(contains('"servers"')));
       } finally {
         if (originalProjectContent != null) {
           await projectConfig.writeAsString(originalProjectContent);
@@ -52,8 +74,9 @@ void main() {
 
       String? originalProjectContent;
       final projectExisted = await projectConfig.exists();
-      if (projectExisted)
+      if (projectExisted) {
         originalProjectContent = await projectConfig.readAsString();
+      }
 
       try {
         if (projectExisted) await projectConfig.delete();

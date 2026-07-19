@@ -66,8 +66,7 @@ import 'app_localizations_zh.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -75,8 +74,7 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate =
-      _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -88,13 +86,12 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
-      <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
@@ -103,7 +100,7 @@ abstract class AppLocalizations {
     Locale('ja'),
     Locale('ru'),
     Locale('uk'),
-    Locale('zh'),
+    Locale('zh')
   ];
 
   /// No description provided for @appName.
@@ -1147,7 +1144,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion27.
   ///
   /// In en, this message translates to:
-  /// **'What are the most exciting technologies of 2025?'**
+  /// **'What are the most exciting technologies of 2026?'**
   String get welcomeQuestion27;
 
   /// No description provided for @welcomeQuestion28.
@@ -1183,7 +1180,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeQuestion33.
   ///
   /// In en, this message translates to:
-  /// **'Which programming languages are best to learn in 2025?'**
+  /// **'Which programming languages are best to learn in 2026?'**
   String get welcomeQuestion33;
 
   /// No description provided for @welcomeQuestion34.
@@ -1815,6 +1812,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove from favorites'**
   String get removeFromFavorites;
+
+  /// No description provided for @recentModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get recentModels;
 
   /// No description provided for @loadingSkills.
   ///
@@ -2733,10 +2736,471 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{providerName} · {count}'**
   String modelsProviderCountFormat(Object count, Object providerName);
+
+  /// No description provided for @mcpServers.
+  ///
+  /// In en, this message translates to:
+  /// **'MCP servers'**
+  String get mcpServers;
+
+  /// No description provided for @mcpAddServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Add MCP server'**
+  String get mcpAddServer;
+
+  /// No description provided for @mcpAddServerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add MCP server'**
+  String get mcpAddServerTitle;
+
+  /// No description provided for @mcpNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get mcpNameLabel;
+
+  /// No description provided for @mcpNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. filesystem'**
+  String get mcpNameHint;
+
+  /// No description provided for @mcpNameHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Unique identifier used in chatorai.json'**
+  String get mcpNameHelper;
+
+  /// No description provided for @mcpTypeLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get mcpTypeLocal;
+
+  /// No description provided for @mcpTypeRemote.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote'**
+  String get mcpTypeRemote;
+
+  /// No description provided for @mcpTypeLocalTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs on your machine'**
+  String get mcpTypeLocalTooltip;
+
+  /// No description provided for @mcpTypeRemoteTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTP/SSE endpoint'**
+  String get mcpTypeRemoteTooltip;
+
+  /// No description provided for @mcpCommandLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Command'**
+  String get mcpCommandLabel;
+
+  /// No description provided for @mcpCommandHint.
+  ///
+  /// In en, this message translates to:
+  /// **'uvx mcp-server-filesystem ~/docs'**
+  String get mcpCommandHint;
+
+  /// No description provided for @mcpCommandHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Full command with arguments, space-separated'**
+  String get mcpCommandHelper;
+
+  /// No description provided for @mcpUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'URL'**
+  String get mcpUrlLabel;
+
+  /// No description provided for @mcpUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://example.com/mcp'**
+  String get mcpUrlHint;
+
+  /// No description provided for @mcpUrlHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Full MCP endpoint URL'**
+  String get mcpUrlHelper;
+
+  /// No description provided for @mcpEnvLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment variables (JSON)'**
+  String get mcpEnvLabel;
+
+  /// No description provided for @mcpEnvHint.
+  ///
+  /// In en, this message translates to:
+  /// **'GITHUB_TOKEN=ghp_xxx'**
+  String get mcpEnvHint;
+
+  /// No description provided for @mcpEnvHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. Paste a JSON object of string keys, e.g. a single TOKEN entry.'**
+  String get mcpEnvHelper;
+
+  /// No description provided for @mcpTokenLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Access token'**
+  String get mcpTokenLabel;
+
+  /// No description provided for @mcpTokenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste your token only (no Bearer / quotes)'**
+  String get mcpTokenHint;
+
+  /// No description provided for @mcpTokenHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. Leave empty for public servers; paste just the token and the header is added automatically.'**
+  String get mcpTokenHelper;
+
+  /// No description provided for @mcpAuthTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Token type'**
+  String get mcpAuthTypeLabel;
+
+  /// No description provided for @mcpAuthTypeHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'How the token is sent: Bearer (Authorization), ApiKey (X-Api-Key), or plain Token.'**
+  String get mcpAuthTypeHelper;
+
+  /// No description provided for @mcpHeadersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Headers (JSON)'**
+  String get mcpHeadersLabel;
+
+  /// No description provided for @mcpHeadersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorization=Bearer token'**
+  String get mcpHeadersHint;
+
+  /// No description provided for @mcpHeadersHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. Paste a JSON object of string header keys.'**
+  String get mcpHeadersHelper;
+
+  /// No description provided for @mcpFormTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Form'**
+  String get mcpFormTab;
+
+  /// No description provided for @mcpRawTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw JSON'**
+  String get mcpRawTab;
+
+  /// No description provided for @mcpRawLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Server object (JSON)'**
+  String get mcpRawLabel;
+
+  /// No description provided for @mcpRawHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the server object as in the docs — the server name is the outer key (e.g. searxng). You can paste the full block including the mcpServers wrapper.'**
+  String get mcpRawHelper;
+
+  /// No description provided for @mcpParseError.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid JSON in {field}: {message}'**
+  String mcpParseError(Object field, Object message);
+
+  /// No description provided for @mcpAddAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get mcpAddAction;
+
+  /// No description provided for @mcpCancelAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get mcpCancelAction;
+
+  /// No description provided for @mcpRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove MCP server?'**
+  String get mcpRemoveTitle;
+
+  /// No description provided for @mcpRemoveContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{name}\" from chatorai.json?'**
+  String mcpRemoveContent(Object name);
+
+  /// No description provided for @mcpRemoveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get mcpRemoveAction;
+
+  /// No description provided for @mcpEditAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get mcpEditAction;
+
+  /// No description provided for @mcpEditServerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit MCP server'**
+  String get mcpEditServerTitle;
+
+  /// No description provided for @mcpSaveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get mcpSaveAction;
+
+  /// No description provided for @mcpNoServers.
+  ///
+  /// In en, this message translates to:
+  /// **'No MCP servers configured'**
+  String get mcpNoServers;
+
+  /// No description provided for @mcpNoServersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a Model Context Protocol server to extend tooling'**
+  String get mcpNoServersHint;
+
+  /// No description provided for @mcpTooltipAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add server'**
+  String get mcpTooltipAdd;
+
+  /// No description provided for @mcpTooltipRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get mcpTooltipRefresh;
+
+  /// No description provided for @mcpMarketplaceTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Marketplace'**
+  String get mcpMarketplaceTab;
+
+  /// No description provided for @mcpInstalledTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed'**
+  String get mcpInstalledTab;
+
+  /// No description provided for @mcpInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Install'**
+  String get mcpInstall;
+
+  /// No description provided for @mcpInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed'**
+  String get mcpInstalled;
+
+  /// No description provided for @mcpMarketplaceSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search servers…'**
+  String get mcpMarketplaceSearchHint;
+
+  /// No description provided for @mcpMarketplaceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No servers match your search'**
+  String get mcpMarketplaceEmpty;
+
+  /// No description provided for @mcpMarketCategoryAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get mcpMarketCategoryAll;
+
+  /// No description provided for @mcpMarketCategorySearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get mcpMarketCategorySearch;
+
+  /// No description provided for @mcpMarketCategoryDocs.
+  ///
+  /// In en, this message translates to:
+  /// **'Docs'**
+  String get mcpMarketCategoryDocs;
+
+  /// No description provided for @mcpMarketCategoryDesign.
+  ///
+  /// In en, this message translates to:
+  /// **'Design'**
+  String get mcpMarketCategoryDesign;
+
+  /// No description provided for @mcpMarketCategoryDev.
+  ///
+  /// In en, this message translates to:
+  /// **'Dev'**
+  String get mcpMarketCategoryDev;
+
+  /// No description provided for @mcpMarketCategoryFinance.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance'**
+  String get mcpMarketCategoryFinance;
+
+  /// No description provided for @mcpMarketCategoryTravel.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel'**
+  String get mcpMarketCategoryTravel;
+
+  /// No description provided for @mcpMarketCategoryJobs.
+  ///
+  /// In en, this message translates to:
+  /// **'Jobs'**
+  String get mcpMarketCategoryJobs;
+
+  /// No description provided for @mcpMarketCategoryProductivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Productivity'**
+  String get mcpMarketCategoryProductivity;
+
+  /// No description provided for @mcpMarketCategorySocial.
+  ///
+  /// In en, this message translates to:
+  /// **'Social'**
+  String get mcpMarketCategorySocial;
+
+  /// No description provided for @mcpMarketCategoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get mcpMarketCategoryOther;
+
+  /// No description provided for @mcpMarketNeedsToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs key'**
+  String get mcpMarketNeedsToken;
+
+  /// No description provided for @mcpMarketDescExa.
+  ///
+  /// In en, this message translates to:
+  /// **'Exa provides web search and code documentation lookup for AI workflows. Its connector feeds assistants real-time context to find relevant web pages, technical docs, and source material when grounded external information is needed for an answer.'**
+  String get mcpMarketDescExa;
+
+  /// No description provided for @mcpMarketDescContext7.
+  ///
+  /// In en, this message translates to:
+  /// **'Context7 delivers up-to-date code examples and documentation for AI-powered programmers and code editors. Its MCP connector integrates current library context into assistant workflows, reducing tab-switching and helping generated code avoid outdated APIs, nonexistent methods, and stale implementation patterns.'**
+  String get mcpMarketDescContext7;
+
+  /// No description provided for @mcpMarketDescHuggingFace.
+  ///
+  /// In en, this message translates to:
+  /// **'Hugging Face connects voice assistants to the Hugging Face Hub and thousands of Gradio apps. Its connector integrates model, dataset, space, and app context into AI workflows for discovery, experimentation, and machine learning research.'**
+  String get mcpMarketDescHuggingFace;
+
+  /// No description provided for @mcpMarketDescParallel.
+  ///
+  /// In en, this message translates to:
+  /// **'Parallel Search provides real-time web search and content extraction for search-driven AI workflows. Its remote MCP server helps assistants fetch current web-page context, verify pages, and use extracted content when answering questions or researching topics that need fresh information.'**
+  String get mcpMarketDescParallel;
+
+  /// No description provided for @mcpMarketDescTavily.
+  ///
+  /// In en, this message translates to:
+  /// **'Tavily gives AI agents real-time access to web resources via APIs for search, retrieval, and research. Its connector helps assistants ground answers in live data, extract relevant content, and support production agent workflows with safety controls.'**
+  String get mcpMarketDescTavily;
+
+  /// No description provided for @mcpMarketDescGithub.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub is a platform for collaborating on code, issues, pull requests, and project history. Its official remote MCP server gives assistants structured repository context to understand source changes, reviews, development workflows, and GitHub project status.'**
+  String get mcpMarketDescGithub;
+
+  /// No description provided for @mcpMarketDescPostman.
+  ///
+  /// In en, this message translates to:
+  /// **'Postman provides API context for coding agents and developer workflows. Its connector integrates API definitions, documentation, and collaboration context into assistant work, letting agents analyze integrations and implementation details.'**
+  String get mcpMarketDescPostman;
+
+  /// No description provided for @mcpMarketDescSlack.
+  ///
+  /// In en, this message translates to:
+  /// **'Slack is a collaboration hub uniting team messages, channels, users, and shared workspaces. Its remote MCP server integrates workspace conversation context into assistant workflows, helping users find answers, summarize discussions, and understand activity across channels.'**
+  String get mcpMarketDescSlack;
+
+  /// No description provided for @mcpMarketDescFigma.
+  ///
+  /// In en, this message translates to:
+  /// **'Figma is a product design platform for UI design, prototyping, and developer handoff. Its remote MCP server brings files, projects, and dev-mode context into assistant workflows, letting agents understand visual work and map it to implementation tasks.'**
+  String get mcpMarketDescFigma;
+
+  /// No description provided for @mcpMarketDescCanva.
+  ///
+  /// In en, this message translates to:
+  /// **'Canva is a visual communication platform for presentations, social graphics, documents, and brand materials. Its remote MCP server gives assistants access to Canva projects, assets, exported files, and comments, letting them discuss, edit, and prepare creative work from gathered info.'**
+  String get mcpMarketDescCanva;
+
+  /// No description provided for @mcpMarketDescStripe.
+  ///
+  /// In en, this message translates to:
+  /// **'Stripe is a payments and financial infrastructure platform for processing payments, billing, customers, and developer documentation. Its remote MCP server gives assistants account and implementation context backed by Stripe to understand customer workflows, billing questions, and payment tasks.'**
+  String get mcpMarketDescStripe;
+
+  /// No description provided for @mcpMarketDescTrivago.
+  ///
+  /// In en, this message translates to:
+  /// **'Trivago helps users search for hotels and lodging by coordinates, city, country, dates, and travel context. Its connector gives assistants lodging-search context to find suitable stays near destinations or points of interest.'**
+  String get mcpMarketDescTrivago;
+
+  /// No description provided for @mcpMarketDescSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send helps users create shareable documents, one-page docs, presentations, and slides. Its connector lets assistants turn requested materials into published links, interactive pages, and trackable deliverables for recipients.'**
+  String get mcpMarketDescSend;
+
+  /// No description provided for @mcpMarketDescZiprecruiter.
+  ///
+  /// In en, this message translates to:
+  /// **'ZipRecruiter helps users search live jobs by title, company, location, salary, distance, work style, employment type, and posting date. Its connector integrates job-search context into assistant workflows before handing applications back to ZipRecruiter.'**
+  String get mcpMarketDescZiprecruiter;
+
+  /// No description provided for @mcpMarketDescAdobeCreativity.
+  ///
+  /// In en, this message translates to:
+  /// **'Adobe for Creativity unites Photoshop, Lightroom, Illustrator, Firefly, Premiere, Express, InDesign, and Stock with AI-driven creative work. Users can generate, edit, and enhance photos, design assets, and video projects using natural language while work stays tied to their Adobe account.'**
+  String get mcpMarketDescAdobeCreativity;
 }
 
-class _AppLocalizationsDelegate
-    extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -2745,40 +3209,29 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) => <String>[
-    'ar',
-    'en',
-    'ja',
-    'ru',
-    'uk',
-    'zh',
-  ].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['ar', 'en', 'ja', 'ru', 'uk', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'ar':
-      return AppLocalizationsAr();
-    case 'en':
-      return AppLocalizationsEn();
-    case 'ja':
-      return AppLocalizationsJa();
-    case 'ru':
-      return AppLocalizationsRu();
-    case 'uk':
-      return AppLocalizationsUk();
-    case 'zh':
-      return AppLocalizationsZh();
+    case 'ar': return AppLocalizationsAr();
+    case 'en': return AppLocalizationsEn();
+    case 'ja': return AppLocalizationsJa();
+    case 'ru': return AppLocalizationsRu();
+    case 'uk': return AppLocalizationsUk();
+    case 'zh': return AppLocalizationsZh();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
+    'that was used.'
   );
 }

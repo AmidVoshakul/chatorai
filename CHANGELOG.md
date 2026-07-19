@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1]
+
+### Added
+
+- **Recent models** on the model-selection screen: a horizontal "stories"-style strip of the top-6 most recently and frequently used models, with a localized "Recent" header (English, Russian, Ukrainian, Chinese, Japanese, Arabic).
+- `ModelState` now tracks per-model `usageCounts` and `lastUsed` timestamps, persisted in `SharedPreferences` (`model_usage_counts`, `model_last_used`) alongside favorites. `setSelectedModel` increments the usage count and refreshes `lastUsed`.
+- `ModelState.recentModels` getter: top-6 models merged by usage count (desc) then last-used timestamp (desc), limited to currently available models.
+- Unit tests for the `recentModels` ranking logic in `test/features/models/providers/model_provider_recent_test.dart`.
+
+- **MCP server dialog: environment, headers and Raw JSON** — the "Add MCP server" dialog now supports optional `environment` (local) and `headers` (remote) JSON fields so token-authenticated servers (e.g. GitHub) can be added from the GUI. A "Raw JSON" tab lets users paste a single server object exactly as shown in server docs. Invalid JSON is rejected with an inline error and the server is not saved. Parsing/validation lives in `lib/features/settings/screens/mcp_add_server_helpers.dart`; added widget and unit tests in `test/features/settings/screens/mcp_add_server_helpers_test.dart` and `test/features/settings/screens/mcp_servers_screen_test.dart`.
+- `McpServerConfig.fromJson` now throws `ArgumentError` (instead of a raw cast error) when a local server has no `command` or a remote server has no `url`, giving clear validation messages for malformed server declarations.
+- **MCP spec-compliant server types**: `McpServerType.fromValue` now accepts `http`, `https`, and `sse` as aliases of `remote` (and `stdio` of `local`), case-insensitively. Spec-style configs such as `{"type": "http", "url": "https://mcp.context7.com/mcp"}` now parse correctly instead of failing with `Unknown MCP server type: http`. Remote servers connect via `StreamableHttpClientTransport`.
+- **MCP Marketplace**: the MCP servers screen now has two tabs — **Marketplace** and **Installed**. Marketplace lists 15 preconfigured, cross-platform remote servers (Exa, Context7, Hugging Face, Parallel, Tavily, GitHub, Postman, Slack, Figma, Canva, Stripe, Trivago, Send, ZipRecruiter, Adobe) with a search field, category filter chips (Search/Docs/Design/Dev/Finance/Travel/Jobs/Productivity/Social), and premium cards that expand to a full description on tap. One-tap **Install** adds the server to Installed exactly like a manual add (without a token); installed servers show an **Installed** badge and stay on the Marketplace tab. Catalog lives in `lib/core/mcp/mcp_marketplace_catalog.dart`; descriptions localized in all 6 languages.
+
+- **MCP add dialog simplified for end users**:
+  - **Raw JSON tab**: paste a whole server object exactly as in the docs — the server `name` is the OUTER key (e.g. `"searxng": { ... }`); no need to retype the name. Legacy form with `name` inside is still accepted.
+  - **Remote form**: replaced the free-form `headers` JSON field with a single **Access token** field plus a **Token type** selector (`Bearer` → `Authorization: Bearer …`, `ApiKey` → `X-Api-Key: …`, `Token` → `Authorization: …`). The token is wrapped into the correct header automatically — no JSON or quotes to type.
+  - Local form (name / type / command / environment) is unchanged.
+  - **Raw JSON now accepts the docs format verbatim**: the `mcpServers` wrapper (and `servers` / `mcp`) is unwrapped transparently, so users can paste the whole block from the MCP docs (`{"mcpServers": {"sequential-thinking": {...}}}`). The short form (`{"sequential-thinking": {...}}`), the legacy `name`-inside form, and one-server-per-paste rule are all preserved. Saved servers still use the existing flat `mcp` layout in `chatorai.json`.
+
 ## [0.1.0]
 
 First public release.

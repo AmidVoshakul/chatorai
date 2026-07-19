@@ -1,14 +1,15 @@
 import 'dart:convert';
 
+import 'package:json_schema/json_schema.dart';
+
 import 'chatorai_schema.dart';
 import 'config_loader.dart';
 import 'models/chatorai_config.dart';
-import 'package:json_schema/json_schema.dart';
 
 /// Validates and parses `chatorai.json` into [ChatOrAIConfig].
 class ConfigManager {
-  static Future<ChatOrAIConfig> loadConfig() async {
-    final rawJson = await ConfigLoader.load();
+  static Future<ChatOrAIConfig> loadConfig({String? path}) async {
+    final rawJson = await ConfigLoader.load(path: path);
 
     Map<String, dynamic> data;
     try {

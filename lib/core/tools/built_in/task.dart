@@ -193,6 +193,7 @@ ToolDef createTaskTool({
 
       final temperatureToUse = effectiveChatAiService.currentTemperature ?? 0.7;
 
+      final taskPartId = taskId ?? ctx.toolCallId;
       final childResult = await runner.runTaskInChild(
         parentSessionId: SessionID.fromString(normalizedSessionId),
         taskPrompt: prompt,
@@ -200,7 +201,9 @@ ToolDef createTaskTool({
         modelRef: childModel,
         title: titleInput ?? description,
         taskId: taskId,
+        taskPartId: taskPartId,
         holder: currentSessionRunner,
+        abortSignal: ctx.abortSignal,
         streamFn: (child) async {
           LogTags.chatService.logInfo(
             'TaskTool: child stream starting agent=$subagentType parent=$normalizedSessionId child=${child.sessionId.value}',
@@ -215,6 +218,7 @@ ToolDef createTaskTool({
             temperature: temperatureToUse,
             tools: subagentTools,
             maxSteps: agent.maxSteps ?? unlimitedMaxSteps,
+            abortSignal: ctx.abortSignal,
             onUsage: (input, output, cacheRead, cacheWrite) {
               lastTokensInput = input;
               lastTokensOutput = output;
@@ -230,7 +234,14 @@ ToolDef createTaskTool({
                   input['query'] as String? ??
                   input['filePath'] as String? ??
                   input['path'] as String?;
-              currentSessionRunner?.onChildToolEvent?.call(toolName, title);
+              LogTags.chatService.logInfo(
+                '[TaskTrace] onChildToolEvent WHAT=child tool started WHERE=task.dart '
+                'WHEN=${DateTime.now()} WHY=notify parent to resolve/update TaskPart header '
+                'child=${child.sessionId.value} tool=$toolName title=${title ?? ''} '
+                'partIdFromMap=${currentSessionRunner?.taskPartForChild(child.sessionId.value)}',
+              );
+              currentSessionRunner?.onChildToolEvent
+                  ?.call(child.sessionId.value, toolName, title);
               return;
             },
             onToolEnd: (toolCallId, toolName, result) async {

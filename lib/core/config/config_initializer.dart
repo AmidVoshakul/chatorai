@@ -39,14 +39,30 @@ class ConfigInitializer {
     }
   }
 
+  // Empty scaffold written on first launch so users can see every
+  // configurable section. NOTE: `mcp` uses the FLAT layout — servers go
+  // directly under "mcp" (e.g. "mcp": {"filesystem": {...}}), NOT under a
+  // "mcp.servers" wrapper, which the schema rejects.
   static const String _defaultConfig = '''{
   "version": 1,
+  "instructions": [],
   "permission": {},
   "compaction": {
     "auto": true,
     "prune": false,
     "keep": {"tokens": 8000},
     "buffer": 20000
-  }
+  },
+  "skills": {
+    "paths": [],
+    "urls": []
+  },
+  "mcp": {},
+  "agent": {},
+  "formatter": {
+    "formatters": {}
+  },
+  "tools": {},
+  "provider": {}
 }''';
 }

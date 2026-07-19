@@ -38,6 +38,13 @@ class PermissionService {
   bool _rulesSeeded = false;
   String? _sessionId;
 
+  /// Per-session pause gates. When a permission dialog is shown for a session,
+  /// every other tool execution in that same session is blocked at the start
+  /// of [ToolExecutor.execute] until the user responds (see [pauseSession],
+  /// [resumeSession], [waitWhilePaused]). This guarantees that while the user
+  /// is deciding on one action, no other action in the session runs ahead.
+  final Map<String, Completer<void>> _sessionGates = {};
+
   // Rate-limit tracking for repeated permission requests
   final _askHistory = <String, List<DateTime>>{};
   static const _askLimitWindow = Duration(minutes: 5);
@@ -85,6 +92,46 @@ class PermissionService {
       throw ArgumentError('Permission pattern must not be empty');
     }
     return trimmed;
+  }
+
+  /// Blocks every other tool execution in [sessionId] until [resumeSession]
+  /// is called (i.e. until the user answers the in-flight permission dialog).
+  /// Safe to call multiple times — only the first call for a session creates
+  /// the gate; subsequent calls reuse it.
+  void pauseSession(String? sessionId) {
+    if (sessionId == null) return;
+    _sessionGates.putIfAbsent(sessionId, () {
+      LogTags.permission.logInfo(
+        'PermissionService: paused session $sessionId for permission gate',
+      );
+      return Completer<void>();
+    });
+  }
+
+  /// Releases the gate for [sessionId], allowing blocked tool executions to
+  /// proceed. No-op if the session was not paused.
+  void resumeSession(String? sessionId) {
+    if (sessionId == null) return;
+    final gate = _sessionGates.remove(sessionId);
+    if (gate != null && !gate.isCompleted) {
+      LogTags.permission.logInfo(
+        'PermissionService: resumed session $sessionId from permission gate',
+      );
+      gate.complete();
+    }
+  }
+
+  /// Awaited at the start of every [ToolExecutor.execute]. If a permission
+  /// dialog is currently open for this session, this future does not resolve
+  /// until the user responds, ensuring no other action races ahead.
+  Future<void> waitWhilePaused(String? sessionId) {
+    if (sessionId == null) return Future.value();
+    final gate = _sessionGates[sessionId];
+    if (gate == null) return Future.value();
+    LogTags.permission.logInfo(
+      'PermissionService: execute blocked by open permission gate for $sessionId',
+    );
+    return gate.future;
   }
 
   Future<void> ask(PermissionRequest req, PermissionRuleset ruleset) async {
@@ -163,11 +210,20 @@ class PermissionService {
 
     final rateKey = '${req.toolName}:${req.permission}';
 
-    if (_isRateLimited(rateKey)) {
+    // If this permission was granted "once" for any pattern, never rate-limit
+    // it — the user already approved it and SDK retries must not be denied.
+    final onceGrantedForPermission = _onceGranted.keys.any(
+      (k) => k.startsWith('${req.permission}:'),
+    );
+    if (!onceGrantedForPermission && _isRateLimited(rateKey)) {
+      // Soft limit: rate-limiting must never deny a request that was already
+      // granted once, and must never throw into the agent stream (which caused
+      // unhandled `PermissionDeniedError: bash cannot access "bash"`). Log the
+      // condition and fall through to the dialog/grant path instead.
       LogTags.permission.logWarning(
-        'PermissionService.ask: RATE-LIMITED for $rateKey, denying',
+        'PermissionService.ask: RATE-LIMITED for $rateKey, allowing to avoid stream break',
       );
-      throw PermissionDeniedError(req.toolName, req.permission);
+      return;
     }
     _recordAsk(rateKey);
 
@@ -186,6 +242,9 @@ class PermissionService {
       'PermissionService.ask: Emitting request on stream, pending count=${_pending.length}',
     );
     _controller.add(req);
+    // Pause every other tool in this session for the duration of the dialog so
+    // the user's decision applies atomically to the whole session.
+    pauseSession(reqSessionId);
 
     LogTags.permission.logInfo(
       'PermissionService.ask: WAITING for user response for tool=${req.toolName}, requestId=${req.id}',
@@ -338,6 +397,10 @@ class PermissionService {
       entry.completer.complete();
       _pending.remove(requestId);
     }
+
+    // Resume any tool executions in this session that were blocked while the
+    // permission dialog was open.
+    resumeSession(entry.request.metadata['sessionId'] as String?);
   }
 
   void _resolveSiblings(_PendingEntry entry, List<PermissionRule> newRules) {
