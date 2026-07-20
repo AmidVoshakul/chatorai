@@ -9,12 +9,85 @@ import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
     show AssistantText;
 import 'package:ai_sdk_dart/ai_sdk_dart.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
-import 'package:chatorai/shared/utils/logger.dart';
 import 'package:synchronized/synchronized.dart';
+
+/// Collects the results of concurrent delegated tasks ("the box") for a single
+/// parent step. Each parallel `task` tool call starts an independent child
+/// session; when a child finishes it drops its `agent` + `output` here. The
+/// parent sees completions as they happen and only proceeds once every task in
+/// the box has reported (allDone).
+class TaskBatch {
+  /// Number of tasks expected to run in this batch (incremented as each task
+  /// starts). Known incrementally because the SDK invokes `execute` per call
+  /// and does not announce the total up front.
+  int started = 0;
+
+  /// task part ID -> agent name, for labelling results.
+  final Map<String, String> agentByPart = {};
+
+  /// task part ID -> child output, filled as each child completes.
+  final Map<String, String> resultsByPart = {};
+
+  /// task part IDs that failed, so [allDone] still flips when a child errors
+  /// instead of hanging forever waiting for a result that will never come.
+  final Set<String> failed = {};
+
+  /// Registers a task as started so [allDone] accounts for it.
+  void add(String taskPartId, String agent) {
+    started++;
+    agentByPart[taskPartId] = agent;
+  }
+
+  /// Records a finished child's output. Returns true when every started task
+  /// has now reported (succeeded or failed).
+  bool complete(String taskPartId, String output) {
+    resultsByPart[taskPartId] = output;
+    failed.remove(taskPartId);
+    return allDone;
+  }
+
+  /// Records a failed child. Returns true when every started task has now
+  /// reported (succeeded or failed), so the batch never deadlocks.
+  bool fail(String taskPartId) {
+    failed.add(taskPartId);
+    return allDone;
+  }
+
+  /// True once every started task has reported its result or failure.
+  bool get allDone =>
+      started > 0 && (resultsByPart.length + failed.length) == started;
+
+  /// Aggregated, ordered result text (agent: output per task).
+  String get aggregated {
+    final buffer = StringBuffer();
+    for (final entry in agentByPart.entries) {
+      final agent = entry.value;
+      final output = failed.contains(entry.key)
+          ? '(task failed)'
+          : (resultsByPart[entry.key] ?? '');
+      buffer.writeln('<task agent="$agent">');
+      buffer.writeln(output);
+      buffer.writeln('</task>');
+    }
+    return buffer.toString();
+  }
+
+  void clear() {
+    started = 0;
+    agentByPart.clear();
+    resultsByPart.clear();
+    failed.clear();
+  }
+}
 
 class SessionRunnerHolder {
   SessionRunner? runner;
   String? parentSessionId;
+
+  /// Shared result collector ("the box") for tasks delegated within the
+  /// current parent step. Lets concurrent child sessions aggregate their
+  /// outputs before the parent proceeds.
+  final TaskBatch batch = TaskBatch();
 
   /// Maps a child session ID to the parent task part ID so that concurrent
   /// tasks can be routed independently in the UI. Replaces the previous single
@@ -29,15 +102,11 @@ class SessionRunnerHolder {
   /// routing — that uses [childToTaskPart].
   String? activeChildSessionId;
 
-  /// Abort signal bound to the parent task tool call, propagated to the
-  /// delegated child stream so cancelling the parent also stops the sub-agent.
-  CancellationToken? childAbortSignal;
-
   /// Callback fired when a child tool starts executing during task delegation.
   /// Receives the child session ID so the parent can route the event to the
   /// correct TaskPart even when several tasks run concurrently.
   void Function(String childSessionId, String toolName, String? title)?
-      onChildToolEvent;
+  onChildToolEvent;
 
   /// Callback fired as soon as the child session for a delegated task is
   /// created, carrying its session ID. The parent wires this to resolve the
@@ -45,17 +114,24 @@ class SessionRunnerHolder {
   /// results (and render the sub-agent's current tool title dynamically).
   void Function(String childSessionId)? onChildSessionResolved;
 
+  /// Callback that creates the visible TaskPart card for a delegated task
+  /// (used by both the single `task` tool and the `task_container`). Fired
+  /// from [runTaskInChild] once the child session is registered, so the chat
+  /// shows the task card with its live tool title instead of a raw tool
+  /// header.
+  void Function(String taskPartId, String description, String agent)?
+  onTaskStart;
+
+  /// Callback that finalizes the visible TaskPart card for a delegated task
+  /// (mirrors [onTaskStart]). Fired from [runTaskInChild] when the child
+  /// session completes or errors, so the card stops showing a spinner.
+  void Function(String taskPartId)? onTaskEnd;
+
   /// Registers the link between a child session and its parent task part.
   void registerChild(String childSessionId, String taskPartId) {
     childToTaskPart[childSessionId] = taskPartId;
     taskPartToChild[taskPartId] = childSessionId;
     activeChildSessionId = childSessionId;
-    LogTags.chatService.logInfo(
-      '[TaskTrace] registerChild WHAT=link child↔part WHERE=session_runner '
-      'WHEN=${DateTime.now()} WHY=child session created & needs routing to its TaskPart '
-      'child=$childSessionId part=$taskPartId mapSize=${childToTaskPart.length} '
-      'activeChildSessionId=$activeChildSessionId',
-    );
   }
 
   /// Returns the parent task part ID for a child session, if registered.
@@ -66,11 +142,6 @@ class SessionRunnerHolder {
   void unregisterChild(String childSessionId) {
     final taskPartId = childToTaskPart.remove(childSessionId);
     if (taskPartId != null) taskPartToChild.remove(taskPartId);
-    LogTags.chatService.logInfo(
-      '[TaskTrace] unregisterChild WHAT=unlink child WHERE=session_runner '
-      'WHEN=${DateTime.now()} WHY=child session finished/aborted '
-      'child=$childSessionId part=$taskPartId mapSize=${childToTaskPart.length}',
-    );
   }
 
   SessionRunnerHolder(this.runner, {this.parentSessionId});
@@ -226,14 +297,15 @@ class SessionRunner {
       immediate: true,
     );
 
-    holder?.registerChild(childId.value, taskPartId ?? taskId ?? childId.value);
-    holder?.childAbortSignal = abortSignal;
-    LogTags.chatService.logInfo(
-      '[TaskTrace] onChildSessionResolved WHAT=fire callback WHERE=session_runner '
-      'WHEN=${DateTime.now()} WHY=child session id ready to resolve TaskPart.taskSessionId '
-      'child=${childId.value} taskPartId=$taskPartId taskId=$taskId',
-    );
+    final effectivePartId = taskPartId ?? taskId ?? childId.value;
+    holder?.registerChild(childId.value, effectivePartId);
+    holder?.batch.add(effectivePartId, effectiveAgent);
     holder?.onChildSessionResolved?.call(childId.value);
+    holder?.onTaskStart?.call(
+      effectivePartId,
+      title ?? taskPrompt,
+      effectiveAgent,
+    );
 
     // Persist user prompt as first message in child session (mirrors parent UX)
     await childSession.publishUserMessage(content: taskPrompt);
@@ -244,9 +316,32 @@ class SessionRunner {
       final fullText = state == null
           ? ''
           : state.parts.whereType<AssistantText>().map((p) => p.text).join();
+
+      // Drop the child's output into the shared batch ("the box") and publish
+      // it on the parent session so the parent sees completion as it happens.
+      holder?.batch.complete(effectivePartId, fullText);
+      await repository.propagateChildOutput(
+        parentSessionId: parentSessionId,
+        childSessionId: childId,
+        output: fullText,
+        taskId: taskId,
+      );
       return TaskChildResult(fullText, sessionId: childId);
+    } catch (e) {
+      // A failed child must still be accounted for so the batch can finish
+      // (allDone flips) and the parent session learns of the failure instead
+      // of showing a phantom success.
+      holder?.batch.fail(effectivePartId);
+      await repository.propagateChildOutput(
+        parentSessionId: parentSessionId,
+        childSessionId: childId,
+        output: '',
+        taskId: taskId,
+      );
+      rethrow;
     } finally {
       holder?.unregisterChild(childId.value);
+      holder?.onTaskEnd?.call(effectivePartId);
       childSession.dispose();
     }
   }

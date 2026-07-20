@@ -73,6 +73,19 @@ class _CurrentRunnerNotifier
     _holder?.onChildSessionResolved = callback;
   }
 
+  /// Set task-start callback on the holder (creates the visible TaskPart card).
+  void Function(String, String, String)? get onTaskStart =>
+      _holder?.onTaskStart;
+  set onTaskStart(void Function(String, String, String)? callback) {
+    _holder?.onTaskStart = callback;
+  }
+
+  /// Set task-end callback on the holder (finalizes the visible TaskPart card).
+  void Function(String)? get onTaskEnd => _holder?.onTaskEnd;
+  set onTaskEnd(void Function(String)? callback) {
+    _holder?.onTaskEnd = callback;
+  }
+
   void clear() {
     state = null;
     _holder?.runner = null;

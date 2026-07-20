@@ -9,4 +9,5 @@ export 'skill_parser.dart';
 export 'skill_plugin.dart';
 export 'skill_service.dart';
 export 'skill_source.dart';
+export 'skill_writer.dart';
 export 'url_source.dart';

@@ -20,6 +20,7 @@ import 'plan.dart';
 import 'question.dart';
 import 'read.dart';
 import 'skill.dart';
+import 'task_container.dart';
 import 'task.dart';
 import 'todowrite.dart';
 import 'webfetch.dart';
@@ -52,6 +53,16 @@ Future<void> registerBuiltInTools(
   // Task tool needs multiple services
   registry.register(
     createTaskTool(
+      chatAiService: chatAiService,
+      toolRegistry: toolRegistry,
+      currentSessionRunner: currentSessionRunner,
+    ),
+  );
+  // Container tool runs multiple subagent tasks in parallel and returns one
+  // aggregated result. Its chat header is suppressed in chat_screen_streaming.
+  // Same service dependencies as the task tool.
+  registry.register(
+    createTaskContainerTool(
       chatAiService: chatAiService,
       toolRegistry: toolRegistry,
       currentSessionRunner: currentSessionRunner,

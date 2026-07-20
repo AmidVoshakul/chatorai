@@ -193,18 +193,10 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
               part,
               canExpand,
             ),
-            if (!isNoBodyTool)
-              AnimatedCrossFade(
-                firstChild: const SizedBox.shrink(),
-                secondChild: Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: _buildBody(theme, isError, part),
-                ),
-                crossFadeState: _isExpanded
-                    ? CrossFadeState.showSecond
-                    : CrossFadeState.showFirst,
-                duration: const Duration(milliseconds: 200),
-                sizeCurve: Curves.easeInOut,
+            if (!isNoBodyTool && _isExpanded)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: _buildBody(theme, isError, part),
               ),
           ],
         ),
@@ -253,14 +245,12 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
         if (canExpand)
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: AnimatedRotation(
-              turns: _isExpanded ? 0.5 : 0,
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                Icons.keyboard_arrow_down,
-                size: 14,
-                color: theme.colorScheme.muted,
-              ),
+            child: Icon(
+              _isExpanded
+                  ? Icons.keyboard_arrow_up
+                  : Icons.keyboard_arrow_down,
+              size: 14,
+              color: theme.colorScheme.muted,
             ),
           ),
       ],

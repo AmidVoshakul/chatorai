@@ -4,6 +4,7 @@ import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/task.dart';
+import 'package:chatorai/core/tools/built_in/task_shared.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';

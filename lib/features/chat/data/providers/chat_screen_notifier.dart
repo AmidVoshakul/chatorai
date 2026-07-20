@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
@@ -293,17 +292,8 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
   }) {
     var parts = List<AssistantContent>.from(state.streamingParts);
     if (parts.any((p) => p is AssistantTask && p.id == partId)) {
-      LogTags.chatScreen.logInfo(
-        '[TaskTrace] onTaskStart SKIP WHERE=notifier WHY=part already exists '
-        'partId=$partId',
-      );
       return;
     }
-    LogTags.chatScreen.logInfo(
-      '[TaskTrace] onTaskStart CREATE WHERE=notifier WHAT=add AssistantTask to streamingParts '
-      'WHEN=${DateTime.now()} WHY=build task UI part partId=$partId sessionId=$sessionId '
-      'desc=$desc agent=$agent partsBefore=${parts.length}',
-    );
     parts = _interruptStreaming(parts);
     parts.add(
       AssistantTask(
@@ -341,8 +331,11 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
   /// Single source of truth for finishing a task part: sets the terminal
   /// state, error (if any), timestamps and duration. Reused by [onTaskEnd],
   /// [onTaskError] and [closeAllRunningTasks].
-  AssistantTask _finalizeTask(AssistantTask task, ToolState state,
-      {String? error}) {
+  AssistantTask _finalizeTask(
+    AssistantTask task,
+    ToolState state, {
+    String? error,
+  }) {
     final now = DateTime.now();
     return task.copyWith(
       state: state,
@@ -369,22 +362,10 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
     final idx = parts.indexWhere((p) => p is AssistantTask && p.id == partId);
     if (idx >= 0) {
       final task = parts[idx] as AssistantTask;
-      LogTags.chatScreen.logInfo(
-        '[TaskTrace] onTaskSessionIdResolved SET WHERE=notifier WHAT=write taskSessionId '
-        'WHEN=${DateTime.now()} WHY=link TaskPart to child session so widget reads live tools '
-        'partId=$partId child=$taskSessionId prevSessionId=${task.taskSessionId} '
-        'changed=${task.taskSessionId != taskSessionId}',
-      );
       if (task.taskSessionId != taskSessionId) {
         parts[idx] = task.copyWith(taskSessionId: taskSessionId);
         state = state.copyWith(streamingParts: parts);
       }
-    } else {
-      LogTags.chatScreen.logWarning(
-        '[TaskTrace] onTaskSessionIdResolved NOT FOUND WHERE=notifier '
-        'WHY=no AssistantTask with id=$partId in streamingParts → taskSessionId NOT set '
-        'partsCount=${parts.length} partIds=${parts.whereType<AssistantTask>().map((t) => t.id).toList()}',
-      );
     }
   }
 

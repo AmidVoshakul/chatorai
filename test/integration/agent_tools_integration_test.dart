@@ -261,11 +261,16 @@ void main() {
           'subagent_type': 'explore',
         }, recording.ctx);
 
+        // The task tool delegates the child session asynchronously and returns
+        // a `<task ... state="delegated">` placeholder immediately. The real
+        // result is delivered to the parent session later via
+        // propagateChildOutput, so the session id lives in metadata, not the
+        // returned XML.
         expect(output.metadata?['error'], isNull);
-        expect(output.output, contains('session_id="$defaultSessionId"'));
-        expect(output.output, contains('state="completed"'));
-        expect(output.output, contains('<summary>'));
-        expect(output.output, contains('<task_result>'));
+        expect(output.metadata?['session_id'], equals(defaultSessionId));
+        expect(output.output, contains('agent="explore"'));
+        expect(output.output, contains('state="delegated"'));
+        expect(output.output, contains('<task '));
       });
 
       test(
@@ -336,7 +341,7 @@ void main() {
         expect(output.output, contains('Missing required fields'));
       });
 
-      test('executes subagent successfully', () async {
+      test('delegates subagent successfully', () async {
         final recording = createRecordingContext(sessionId: defaultSessionId);
         final output = await taskTool.execute({
           'description': 'Subagent test',
@@ -344,9 +349,12 @@ void main() {
           'subagent_type': 'general',
         }, recording.ctx);
 
+        // The child runs fire-and-forget; execute() returns the delegated
+        // placeholder rather than the subagent's actual output.
         expect(output.metadata?['error'], isNull);
-        expect(output.output, contains('Fake subagent output'));
+        expect(output.metadata?['delegated'], isTrue);
         expect(output.metadata?['agent_name'], equals('general'));
+        expect(output.output, contains('state="delegated"'));
       });
     });
 

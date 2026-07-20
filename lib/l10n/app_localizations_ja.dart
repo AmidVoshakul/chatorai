@@ -164,7 +164,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get appInfo => 'アプリ情報';
 
   @override
-  String get appDescription => 'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nDeveloped with ❤️ using Flutter';
+  String get appDescription =>
+      'AI モデルとの会話アプリケーションです。\n\n特徴:\n• さまざまな AI モデルとの会話\n• チャット履歴の保存\n• ダークとライト テーマ\n• 適応型インターフェース\n\nDeveloped with ❤️ using Flutter';
 
   @override
   String get shareChat => 'チャットを共有';
@@ -316,7 +317,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get features => '特徴';
 
   @override
-  String get featuresDisplayedBasedOnActualModelCapabilities => '実際のモデルの機能に基づいて特徴が表示されます';
+  String get featuresDisplayedBasedOnActualModelCapabilities =>
+      '実際のモデルの機能に基づいて特徴が表示されます';
 
   @override
   String get noModelsFound => 'モデルが見つかりません';
@@ -328,7 +330,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tryADifferentSearchQuery => '異なる検索クエリを試してください';
 
   @override
-  String get tryRefreshingOrCheckYourInternetConnection => '更新またはインターネット接続を確認してください';
+  String get tryRefreshingOrCheckYourInternetConnection =>
+      '更新またはインターネット接続を確認してください';
 
   @override
   String get aiIsTyping => 'AI が入力中です';
@@ -387,7 +390,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get areYouSureYouWantToRegenerateThisMessage => 'このメッセージを再生成してもよろしいですか？';
+  String get areYouSureYouWantToRegenerateThisMessage =>
+      'このメッセージを再生成してもよろしいですか？';
 
   @override
   String modelDoesNotSupportImages(Object modelId) {
@@ -1081,7 +1085,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get systemPromptDescription => 'AIアシスタントへの指示';
 
   @override
-  String get systemPromptSuggestion => 'あなたは有用なアシスタントです。会話を続け、最後のメッセージに対して3つの具体的で論理的な続きを提案してください。ユーザーと同じ言語で回答してください。';
+  String get systemPromptSuggestion =>
+      'あなたは有用なアシスタントです。会話を続け、最後のメッセージに対して3つの具体的で論理的な続きを提案してください。ユーザーと同じ言語で回答してください。';
 
   @override
   String get temperature => '温度';
@@ -1093,7 +1098,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get toggleNavigatorTooltip => 'ナビゲーターを切り替え';
 
   @override
-  String get userPromptSuggestion => 'このメッセージに対して3つの具体的で論理的な続きを提案してください。リストのみで回答し、追加テキストは含めないでください。';
+  String get userPromptSuggestion =>
+      'このメッセージに対して3つの具体的で論理的な続きを提案してください。リストのみで回答し、追加テキストは含めないでください。';
 
   @override
   String get versionLabel => 'バージョン:';
@@ -1108,7 +1114,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get welcomeGreeting3 => '質問するか、探索を始めましょう。';
 
   @override
-  String get welcomeGreeting4 => 'どんな質問でも、アイデアを共有しても、助けてと言っても — ここにいるので助けになります。';
+  String get welcomeGreeting4 =>
+      'どんな質問でも、アイデアを共有しても、助けてと言っても — ここにいるので助けになります。';
 
   @override
   String get welcomeGreeting5 => 'アイデアがありますか？一緒に考えましょう。';
@@ -1235,7 +1242,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get micStopFailed => 'マイクの停止に失敗しました';
 
   @override
-  String get errorProcessingRequest => '申し訳ありません。リクエストの処理中にエラーが発生しました。もう一度お試しください。';
+  String get errorProcessingRequest =>
+      '申し訳ありません。リクエストの処理中にエラーが発生しました。もう一度お試しください。';
 
   @override
   String rateLimitRetryMessage(Object seconds) {
@@ -1347,7 +1355,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get deleteProviderContent => 'これによりプロバイダーとすべての設定が削除されます。モデルを使用するには再度追加する必要があります。';
+  String get deleteProviderContent =>
+      'これによりプロバイダーとすべての設定が削除されます。モデルを使用するには再度追加する必要があります。';
 
   @override
   String get errorLoadingProviders => 'プロバイダーの読み込みに失敗しました';
@@ -1441,7 +1450,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mcpAuthTypeLabel => 'トークン種別';
 
   @override
-  String get mcpAuthTypeHelper => 'トークンの送信方法: Bearer (Authorization)、ApiKey (X-Api-Key)、またはそのままの Token。';
+  String get mcpAuthTypeHelper =>
+      'トークンの送信方法: Bearer (Authorization)、ApiKey (X-Api-Key)、またはそのままの Token。';
 
   @override
   String get mcpHeadersLabel => 'ヘッダー (JSON)';
@@ -1462,7 +1472,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mcpRawLabel => 'サーバーオブジェクト (JSON)';
 
   @override
-  String get mcpRawHelper => 'ドキュメント通りにサーバーオブジェクトを貼り付けます。サーバー名は外側のキーです（例: searxng）。mcpServers で囲まれた全体のブロックもそのまま貼り付けできます。';
+  String get mcpRawHelper =>
+      'ドキュメント通りにサーバーオブジェクトを貼り付けます。サーバー名は外側のキーです（例: searxng）。mcpServers で囲まれた全体のブロックもそのまま貼り付けできます。';
 
   @override
   String mcpParseError(Object field, Object message) {
@@ -1562,47 +1573,429 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mcpMarketNeedsToken => '鍵が必要';
 
   @override
-  String get mcpMarketDescExa => 'Exa は AI ワークフロー向けにウェブ検索とコードドキュメント検索を提供します。そのコネクターは、回答に根拠となる外部情報が必要な場合に、関連するウェブページや技術文書、ソース資料をリアルタイムで見つけるためのコンテキストをアシスタントに供給します。';
+  String get mcpMarketDescExa =>
+      'Exa は AI ワークフロー向けにウェブ検索とコードドキュメント検索を提供します。そのコネクターは、回答に根拠となる外部情報が必要な場合に、関連するウェブページや技術文書、ソース資料をリアルタイムで見つけるためのコンテキストをアシスタントに供給します。';
 
   @override
-  String get mcpMarketDescContext7 => 'Context7 は AI 搭載のプログラマーやコードエディター向けに最新のコード例とドキュメントを提供します。その MCP コネクターは現在のライブラリコンテキストをアシスタントのワークフローに統合し、タブ切り替えを減らし、生成されるコードが古い API、存在しないメソッド、古い実装パターンを避けるよう支援します。';
+  String get mcpMarketDescContext7 =>
+      'Context7 は AI 搭載のプログラマーやコードエディター向けに最新のコード例とドキュメントを提供します。その MCP コネクターは現在のライブラリコンテキストをアシスタントのワークフローに統合し、タブ切り替えを減らし、生成されるコードが古い API、存在しないメソッド、古い実装パターンを避けるよう支援します。';
 
   @override
-  String get mcpMarketDescHuggingFace => 'Hugging Face は音声アシスタントを Hugging Face Hub や数千の Gradio アプリに接続します。そのコネクターはモデル、データセット、スペース、アプリのコンテキストを AI ワークフローに統合し、発見、実験、機械学習研究に活用できます。';
+  String get mcpMarketDescHuggingFace =>
+      'Hugging Face は音声アシスタントを Hugging Face Hub や数千の Gradio アプリに接続します。そのコネクターはモデル、データセット、スペース、アプリのコンテキストを AI ワークフローに統合し、発見、実験、機械学習研究に活用できます。';
 
   @override
-  String get mcpMarketDescParallel => 'Parallel Search は検索主体の AI ワークフロー向けにリアルタイムのウェブ検索とコンテンツ抽出を提供します。そのリモート MCP サーバーは、最新のウェブページコンテキストの取得やページの検証、そして新しい情報を要する質問やトピック調査時の抽出コンテンツ活用をアシスタントに支援します。';
+  String get mcpMarketDescParallel =>
+      'Parallel Search は検索主体の AI ワークフロー向けにリアルタイムのウェブ検索とコンテンツ抽出を提供します。そのリモート MCP サーバーは、最新のウェブページコンテキストの取得やページの検証、そして新しい情報を要する質問やトピック調査時の抽出コンテンツ活用をアシスタントに支援します。';
 
   @override
-  String get mcpMarketDescTavily => 'Tavily は検索・取得・調査の API を通じて AI エージェントにリアルタイムのウェブリソースアクセスを提供します。そのコネクターはアシスタントがライブデータに基づいて回答し、関連コンテンツを抽出し、安全制御を伴う本番エージェントワークフローを支援します。';
+  String get mcpMarketDescTavily =>
+      'Tavily は検索・取得・調査の API を通じて AI エージェントにリアルタイムのウェブリソースアクセスを提供します。そのコネクターはアシスタントがライブデータに基づいて回答し、関連コンテンツを抽出し、安全制御を伴う本番エージェントワークフローを支援します。';
 
   @override
-  String get mcpMarketDescGithub => 'GitHub はコード、課題、プルリクエスト、プロジェクト履歴の共同作業のためのプラットフォームです。その公式リモート MCP サーバーは、ソースの変更、レビュー、開発フロー、GitHub プロジェクトの状態を理解するための構造化されたリポジトリコンテキストをアシスタントに提供します。';
+  String get mcpMarketDescGithub =>
+      'GitHub はコード、課題、プルリクエスト、プロジェクト履歴の共同作業のためのプラットフォームです。その公式リモート MCP サーバーは、ソースの変更、レビュー、開発フロー、GitHub プロジェクトの状態を理解するための構造化されたリポジトリコンテキストをアシスタントに提供します。';
 
   @override
-  String get mcpMarketDescPostman => 'Postman はコーディングエージェントや開発者ワークフローに API コンテキストを提供します。そのコネクターは API 定義、ドキュメント、コラボレーションのコンテキストをアシスタントの作業に統合し、エージェントが統合や実装の詳細を分析できるようにします。';
+  String get mcpMarketDescPostman =>
+      'Postman はコーディングエージェントや開発者ワークフローに API コンテキストを提供します。そのコネクターは API 定義、ドキュメント、コラボレーションのコンテキストをアシスタントの作業に統合し、エージェントが統合や実装の詳細を分析できるようにします。';
 
   @override
-  String get mcpMarketDescSlack => 'Slack はチームメッセージ、チャンネル、ユーザー、共有ワークスペースを束ねるコラボレーションのハブです。そのリモート MCP サーバーはワークスペースの会話コンテキストをアシスタントのワークフローに統合し、ユーザーが回答を見つけ、議論を要約し、チャンネル間の活動を把握することを支援します。';
+  String get mcpMarketDescSlack =>
+      'Slack はチームメッセージ、チャンネル、ユーザー、共有ワークスペースを束ねるコラボレーションのハブです。そのリモート MCP サーバーはワークスペースの会話コンテキストをアシスタントのワークフローに統合し、ユーザーが回答を見つけ、議論を要約し、チャンネル間の活動を把握することを支援します。';
 
   @override
-  String get mcpMarketDescFigma => 'Figma は UI 設計、プロトタイピング、開発者への引き継ぎのためのプロダクトデザインプラットフォームです。そのリモート MCP サーバーはファイル、プロジェクト、開発モードのコンテキストをアシスタントのワークフローに取り込み、エージェントが視覚的な作業を理解し、実装タスクに対応付けることを可能にします。';
+  String get mcpMarketDescFigma =>
+      'Figma は UI 設計、プロトタイピング、開発者への引き継ぎのためのプロダクトデザインプラットフォームです。そのリモート MCP サーバーはファイル、プロジェクト、開発モードのコンテキストをアシスタントのワークフローに取り込み、エージェントが視覚的な作業を理解し、実装タスクに対応付けることを可能にします。';
 
   @override
-  String get mcpMarketDescCanva => 'Canva はプレゼン、SNS 用グラフィック、ドキュメント、ブランド素材を制作するためのビジュアルコミュニケーションプラットフォームです。そのリモート MCP サーバーは Canva のプロジェクト、アセット、書き出しファイル、コメントへのアシスタントのアクセスを提供し、収集した情報をもとにクリエイティブ作品の検討・編集・準備を行えるようにします。';
+  String get mcpMarketDescCanva =>
+      'Canva はプレゼン、SNS 用グラフィック、ドキュメント、ブランド素材を制作するためのビジュアルコミュニケーションプラットフォームです。そのリモート MCP サーバーは Canva のプロジェクト、アセット、書き出しファイル、コメントへのアシスタントのアクセスを提供し、収集した情報をもとにクリエイティブ作品の検討・編集・準備を行えるようにします。';
 
   @override
-  String get mcpMarketDescStripe => 'Stripe は決済処理、請求、顧客、開発者向けドキュメントを担う決済・金融インフラのプラットフォームです。そのリモート MCP サーバーは Stripe が裏付けるアカウントと実装のコンテキストをアシスタントに提供し、顧客フロー、請求の問い合わせ、決済タスクを理解することを支援します。';
+  String get mcpMarketDescStripe =>
+      'Stripe は決済処理、請求、顧客、開発者向けドキュメントを担う決済・金融インフラのプラットフォームです。そのリモート MCP サーバーは Stripe が裏付けるアカウントと実装のコンテキストをアシスタントに提供し、顧客フロー、請求の問い合わせ、決済タスクを理解することを支援します。';
 
   @override
-  String get mcpMarketDescTrivago => 'Trivago は座標、都市、国、日付、旅行コンテキストに基づいてホテルや宿泊施設を検索することを支援します。そのコネクターは宿泊検索のコンテキストをアシスタントに提供し、目的地や名所の近くで適した宿泊先を見つけることを支援します。';
+  String get mcpMarketDescTrivago =>
+      'Trivago は座標、都市、国、日付、旅行コンテキストに基づいてホテルや宿泊施設を検索することを支援します。そのコネクターは宿泊検索のコンテキストをアシスタントに提供し、目的地や名所の近くで適した宿泊先を見つけることを支援します。';
 
   @override
-  String get mcpMarketDescSend => 'Send は共有可能なドキュメント、1 ページのドキュメント、プレゼン、スライドの作成を支援します。そのコネクターはアシスタントが求められた素材を公開リンク、インタラクティブなページ、追跡可能な配信物に変換できるようにします。';
+  String get mcpMarketDescSend =>
+      'Send は共有可能なドキュメント、1 ページのドキュメント、プレゼン、スライドの作成を支援します。そのコネクターはアシスタントが求められた素材を公開リンク、インタラクティブなページ、追跡可能な配信物に変換できるようにします。';
 
   @override
-  String get mcpMarketDescZiprecruiter => 'ZipRecruiter は職名、企業、場所、給与、距離、働き方、雇用形態、投稿日でリアルタイムの求人を検索することを支援します。そのコネクターは申し込みを ZipRecruiter に戻す前に、求職コンテキストをアシスタントのワークフローに統合します。';
+  String get mcpMarketDescZiprecruiter =>
+      'ZipRecruiter は職名、企業、場所、給与、距離、働き方、雇用形態、投稿日でリアルタイムの求人を検索することを支援します。そのコネクターは申し込みを ZipRecruiter に戻す前に、求職コンテキストをアシスタントのワークフローに統合します。';
 
   @override
-  String get mcpMarketDescAdobeCreativity => 'Adobe for Creativity は Photoshop、Lightroom、Illustrator、Firefly、Premiere、Express、InDesign、Stock の能力を AI 主導のクリエイティブ作業と結びつけます。ユーザーは自然言語を用いて写真、デザイン素材、映像プロジェクトを生成・編集・強化でき、作業は Adobe アカウントに紐付いたままです。';
+  String get mcpMarketDescAdobeCreativity =>
+      'Adobe for Creativity は Photoshop、Lightroom、Illustrator、Firefly、Premiere、Express、InDesign、Stock の能力を AI 主導のクリエイティブ作業と結びつけます。ユーザーは自然言語を用いて写真、デザイン素材、映像プロジェクトを生成・編集・強化でき、作業は Adobe アカウントに紐付いたままです。';
+
+  @override
+  String get agentsInstructions => 'エージェント指示';
+
+  @override
+  String get agentsInstructionsSubtitle => 'AGENTS.md とカスタム指示ファイルを管理';
+
+  @override
+  String get agentsMdHint => '# プロジェクトのルール\n- 簡潔に\n- 先にテストを書く';
+
+  @override
+  String get agentsMdSaved => 'AGENTS.md を保存しました';
+
+  @override
+  String get instructionsAutoDetectedTitle => '検出されたファイル';
+
+  @override
+  String get instructionsAutoDetectedHelper =>
+      'このスコープで見つかった AGENTS.md と CLAUDE.md。タップして表示または編集します。';
+
+  @override
+  String get instructionsFileNotCreated => '未作成';
+
+  @override
+  String get instructionsFileReadOnly => '読み取り専用';
+
+  @override
+  String get instructionsBadgeGlobal => 'グローバル';
+
+  @override
+  String get instructionsBadgeProject => 'プロジェクト';
+
+  @override
+  String get instructionsViewFile => '表示';
+
+  @override
+  String get instructionsEditFile => '編集';
+
+  @override
+  String get instructionsSectionTitle => '指示ファイル';
+
+  @override
+  String get instructionsSectionHelper =>
+      'AGENTS.md の後に順番に追加される追加の Markdown ファイル。';
+
+  @override
+  String get instructionsAdd => '指示を追加';
+
+  @override
+  String get instructionsAddInline => '手動で記述';
+
+  @override
+  String get instructionsUploadFile => '.md ファイルをアップロード';
+
+  @override
+  String get instructionsEmpty => '指示ファイルはまだありません';
+
+  @override
+  String get instructionsEmptyHint => '手動で指示を追加するか、Markdown ファイルをアップロードしてください。';
+
+  @override
+  String get instructionsNameLabel => '名前';
+
+  @override
+  String get instructionsNameHint => 'coding-style';
+
+  @override
+  String get instructionsContentLabel => '内容';
+
+  @override
+  String get instructionsContentHint => 'Markdown で指示を記述してください…';
+
+  @override
+  String get instructionsAddedInline => '指示を追加しました';
+
+  @override
+  String instructionsAddedFile(Object name) {
+    return 'ファイルを追加しました: $name';
+  }
+
+  @override
+  String get instructionsRemoveTitle => '指示を削除';
+
+  @override
+  String instructionsRemoveContent(Object name) {
+    return '「$name」を指示から削除しますか？';
+  }
+
+  @override
+  String get instructionsRemoved => '指示を削除しました';
+
+  @override
+  String get instructionsEditTitle => '指示パスを編集';
+
+  @override
+  String get instructionsPathLabel => 'パス';
+
+  @override
+  String get instructionsUpdated => '指示を更新しました';
+
+  @override
+  String get instructionsScopeGlobal => 'グローバル';
+
+  @override
+  String get instructionsScopeProject => 'プロジェクト';
+
+  @override
+  String get instructionsScopeGlobalHint => 'どこでも適用されます。ユーザー設定に保存されます。';
+
+  @override
+  String get instructionsScopeProjectHint => '現在のプロジェクトフォルダに適用されます。';
+
+  @override
+  String get instructionsCreateAgents => 'AGENTS.md を作成';
+
+  @override
+  String instructionsSaveError(Object error) {
+    return '保存できませんでした: $error';
+  }
+
+  @override
+  String get configScopeGlobal => 'グローバル';
+
+  @override
+  String get configScopeProject => 'プロジェクト';
+
+  @override
+  String get configProjectOverrides => 'プロジェクト設定はグローバル設定を上書きします。';
+
+  @override
+  String get configPathLabel => 'パス';
+
+  @override
+  String get configStatusLabel => 'ステータス';
+
+  @override
+  String get configContentsTitle => 'ファイルの内容';
+
+  @override
+  String get configExists => 'あり';
+
+  @override
+  String get configNotFound => '見つかりません';
+
+  @override
+  String get configWillBeCreated => '保存時に作成されます。';
+
+  @override
+  String get skillsTitle => 'スキル';
+
+  @override
+  String get skillsSubtitle => 'アシスタントが必要に応じて読み込める再利用可能な機能パック。';
+
+  @override
+  String get skillsSectionTitle => 'インストール済みスキル';
+
+  @override
+  String get skillsSectionHelper =>
+      '各スキルは SKILL.md を含むフォルダです。自作するか URL からインストールできます。';
+
+  @override
+  String get skillsNewSkill => '新しいスキル';
+
+  @override
+  String get skillsInstallFromUrl => 'URL からインストール';
+
+  @override
+  String get skillsNameLabel => '名前';
+
+  @override
+  String get skillsNameHint => '例：コードレビュアー';
+
+  @override
+  String get skillsDescriptionLabel => '説明';
+
+  @override
+  String get skillsDescriptionHint => 'このスキルの機能の概要';
+
+  @override
+  String get skillsContentLabel => 'SKILL.md の内容';
+
+  @override
+  String get skillsContentHint => '# 見出し\nアシスタントへの指示…';
+
+  @override
+  String get skillsUrlLabel => 'index.json の URL';
+
+  @override
+  String get skillsUrlHint => 'https://example.com/skills';
+
+  @override
+  String get skillsApiKeyLabel => 'API キー（任意）';
+
+  @override
+  String get skillsReadOnly => '読み取り専用';
+
+  @override
+  String skillsFilesCount(int count) {
+    return '$count ファイル';
+  }
+
+  @override
+  String get skillsCreated => 'スキルを作成しました';
+
+  @override
+  String get skillsSaved => 'スキルを保存しました';
+
+  @override
+  String get skillsRemoved => 'スキルを削除しました';
+
+  @override
+  String skillsInstalled(int count) {
+    return '$count 個のスキルをインストールしました';
+  }
+
+  @override
+  String get skillsInstallNone => 'その URL にスキルが見つかりません';
+
+  @override
+  String get skillsRemoveTitle => 'スキルを削除';
+
+  @override
+  String skillsRemoveContent(String name) {
+    return '「$name」を削除しますか？ディスクからフォルダが削除されます。';
+  }
+
+  @override
+  String skillsSaveError(String error) {
+    return '完了できませんでした：$error';
+  }
+
+  @override
+  String get skillsEmpty => 'スキルがまだありません';
+
+  @override
+  String get skillsEmptyHint => 'スキルを作成するか URL からインストールして始めましょう。';
+
+  @override
+  String get skillsMarketplaceTab => 'マーケットプレイス';
+
+  @override
+  String get skillsMarketplaceSearchHint => 'スキルを検索';
+
+  @override
+  String get skillsMarketplaceEmpty => '検索に一致するスキルがありません。';
+
+  @override
+  String get skillsInstalledBadge => 'インストール済み';
+
+  @override
+  String get skillsInstallAction => 'インストール';
+
+  @override
+  String get skillsInstallToGlobal => 'Global にインストール';
+
+  @override
+  String get skillsInstallToProject => 'Project にインストール';
+
+  @override
+  String skillsInstalledToast(String name) {
+    return '$name · インストール済み';
+  }
+
+  @override
+  String get skillsTabGlobalTooltip => 'すべてのプロジェクトで使えるスキル';
+
+  @override
+  String get skillsTabProjectTooltip => 'このプロジェクト限定のスキル';
+
+  @override
+  String get skillsTabMarketplaceTooltip => '既製スキルの閲覧とインストール';
+
+  @override
+  String get skillsPreviewClose => '閉じる';
+
+  @override
+  String get skillsCategoryAll => 'すべて';
+
+  @override
+  String get skillsCategoryCoding => 'コーディング';
+
+  @override
+  String get skillsCategoryWriting => 'ライティング';
+
+  @override
+  String get skillsCategoryResearch => 'リサーチ';
+
+  @override
+  String get skillsCategoryDesign => 'デザイン';
+
+  @override
+  String get skillsCategoryProductivity => '生産性';
+
+  @override
+  String get skillsCategoryData => 'データ';
+
+  @override
+  String get skillsCategoryOther => 'その他';
+
+  @override
+  String get skillsMarketDescCodeReviewer => 'バグ・セキュリティ・保守性の一流コードレビュー。';
+
+  @override
+  String get skillsMarketDescCleanCode => '動くコードを読みやすいクリーンコードへ（Uncle Bob）。';
+
+  @override
+  String get skillsMarketDescDry => '知識とビジネスロジックの重複を排除。';
+
+  @override
+  String get skillsMarketDescArchitectReview => 'クリーンな分散システム原則でアーキテクチャをレビュー。';
+
+  @override
+  String get skillsMarketDescBackendArchitect => 'スケーラブルな API・サービス・データ層を設計。';
+
+  @override
+  String get skillsMarketDescFlutterExpert => 'Dart 3・高度なウィジェット・マルチプラットフォーム対応。';
+
+  @override
+  String get skillsMarketDescAgentsMd => '簡潔で情報密度の高いエージェントドキュメントを作成・維持。';
+
+  @override
+  String get skillsMarketDescUxCopy => '明確で人間味のある UX マイクロコピーを執筆。';
+
+  @override
+  String get skillsMarketDescDeepResearch => '調査レポートの計画・検索・読解・統合。';
+
+  @override
+  String get skillsMarketDescUiUxDesigner => 'アクセシブルでモダンかつ高性能な UI を設計。';
+
+  @override
+  String get skillsMarketDescUxuiPrinciples => 'あらゆる UI に核心的な UX/UI 原則を適用。';
+
+  @override
+  String get skillsMarketDescCommit => '課題参照付きの Conventional コミットを作成。';
+
+  @override
+  String get skillsMarketDescToolDesign => 'エージェントが使いやすいツールを構築。';
+
+  @override
+  String get skillsMarketDescProductManager => '要件・ロードマップ・プロダクト判断を形成。';
+
+  @override
+  String get skillsMarketDescDataScientist => '高度な分析・機械学習・統計モデリング。';
+
+  @override
+  String get skillsMarketDescDatabaseOptimizer => 'クエリ最適化とスケーラブルな DB スキーマ設計。';
+
+  @override
+  String get skillsMarketDescDebugger => 'エラーとテスト失敗の体系的なデバッグ。';
+
+  @override
+  String get skillsMarketDescSecurityAuditor => '脆弱性を監査し安全でないコードを修正。';
+
+  @override
+  String get commonSave => '保存';
+
+  @override
+  String get commonCancel => 'キャンセル';
+
+  @override
+  String get commonAdd => '追加';
+
+  @override
+  String get commonRemove => '削除';
+
+  @override
+  String get commonEdit => '編集';
 }

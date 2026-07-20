@@ -164,7 +164,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appInfo => '应用信息';
 
   @override
-  String get appDescription => '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n使用 Flutter 开发';
+  String get appDescription =>
+      '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n使用 Flutter 开发';
 
   @override
   String get shareChat => '分享聊天';
@@ -1081,7 +1082,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get systemPromptDescription => 'AI助手的指令';
 
   @override
-  String get systemPromptSuggestion => '你是一个有用的助手。继续对话，为最后一条消息提供3个具体且合乎逻辑的延续。用中文回答。';
+  String get systemPromptSuggestion =>
+      '你是一个有用的助手。继续对话，为最后一条消息提供3个具体且合乎逻辑的延续。用中文回答。';
 
   @override
   String get temperature => '温度';
@@ -1441,7 +1443,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpAuthTypeLabel => '令牌类型';
 
   @override
-  String get mcpAuthTypeHelper => '令牌的发送方式：Bearer（Authorization）、ApiKey（X-Api-Key）或纯 Token。';
+  String get mcpAuthTypeHelper =>
+      '令牌的发送方式：Bearer（Authorization）、ApiKey（X-Api-Key）或纯 Token。';
 
   @override
   String get mcpHeadersLabel => '请求头 (JSON)';
@@ -1462,7 +1465,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpRawLabel => '服务器对象 (JSON)';
 
   @override
-  String get mcpRawHelper => '按文档粘贴服务器对象——服务器名称是外层键（例如 searxng）。也可以直接粘贴包含 mcpServers 外层包裹的完整块。';
+  String get mcpRawHelper =>
+      '按文档粘贴服务器对象——服务器名称是外层键（例如 searxng）。也可以直接粘贴包含 mcpServers 外层包裹的完整块。';
 
   @override
   String mcpParseError(Object field, Object message) {
@@ -1562,47 +1566,427 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpMarketNeedsToken => '需要密钥';
 
   @override
-  String get mcpMarketDescExa => 'Exa 为 AI 工作流提供网页搜索和代码文档查询能力。其连接器为助手提供实时上下文，以便在需要依据外部信息作答时查找相关网页、技术文档和原始资料。';
+  String get mcpMarketDescExa =>
+      'Exa 为 AI 工作流提供网页搜索和代码文档查询能力。其连接器为助手提供实时上下文，以便在需要依据外部信息作答时查找相关网页、技术文档和原始资料。';
 
   @override
-  String get mcpMarketDescContext7 => 'Context7 为基于 AI 的程序员和代码编辑器提供最新的代码示例与文档。其 MCP 连接器将当前的库上下文集成到助手工作流中，减少切换标签页，并帮助生成的代码避免过时的 API、不存在的方法和陈旧的实现模式。';
+  String get mcpMarketDescContext7 =>
+      'Context7 为基于 AI 的程序员和代码编辑器提供最新的代码示例与文档。其 MCP 连接器将当前的库上下文集成到助手工作流中，减少切换标签页，并帮助生成的代码避免过时的 API、不存在的方法和陈旧的实现模式。';
 
   @override
-  String get mcpMarketDescHuggingFace => 'Hugging Face 将语音助手连接到 Hugging Face Hub 和数千个 Gradio 应用。其连接器将模型、数据集、空间和应用的上下文集成到 AI 工作流中，用于发现、实验和机器学习研究。';
+  String get mcpMarketDescHuggingFace =>
+      'Hugging Face 将语音助手连接到 Hugging Face Hub 和数千个 Gradio 应用。其连接器将模型、数据集、空间和应用的上下文集成到 AI 工作流中，用于发现、实验和机器学习研究。';
 
   @override
-  String get mcpMarketDescParallel => 'Parallel Search 为以搜索为核心的 AI 工作流提供实时网页搜索与内容提取。其远程 MCP 服务器帮助助手获取最新的网页上下文、核验页面，并在回答需要新鲜信息的问题或研究主题时使用提取的内容。';
+  String get mcpMarketDescParallel =>
+      'Parallel Search 为以搜索为核心的 AI 工作流提供实时网页搜索与内容提取。其远程 MCP 服务器帮助助手获取最新的网页上下文、核验页面，并在回答需要新鲜信息的问题或研究主题时使用提取的内容。';
 
   @override
-  String get mcpMarketDescTavily => 'Tavily 通过搜索、检索和研究 API 为 AI 智能体提供实时网络资源访问。其连接器帮助助手以实时数据为依据作答、提取相关内容，并通过安全控制在生产环境中支撑智能体工作流。';
+  String get mcpMarketDescTavily =>
+      'Tavily 通过搜索、检索和研究 API 为 AI 智能体提供实时网络资源访问。其连接器帮助助手以实时数据为依据作答、提取相关内容，并通过安全控制在生产环境中支撑智能体工作流。';
 
   @override
-  String get mcpMarketDescGithub => 'GitHub 是用于协作处理代码、议题、拉取请求和项目历史的平台。其官方远程 MCP 服务器为助手提供结构化的仓库上下文，以理解源码变更、评审、开发流程以及 GitHub 项目状态。';
+  String get mcpMarketDescGithub =>
+      'GitHub 是用于协作处理代码、议题、拉取请求和项目历史的平台。其官方远程 MCP 服务器为助手提供结构化的仓库上下文，以理解源码变更、评审、开发流程以及 GitHub 项目状态。';
 
   @override
-  String get mcpMarketDescPostman => 'Postman 为编码智能体和开发者工作流提供 API 上下文。其连接器将 API 定义、文档与协作上下文集成到助手工作中，使智能体能够分析集成与实现细节。';
+  String get mcpMarketDescPostman =>
+      'Postman 为编码智能体和开发者工作流提供 API 上下文。其连接器将 API 定义、文档与协作上下文集成到助手工作中，使智能体能够分析集成与实现细节。';
 
   @override
-  String get mcpMarketDescSlack => 'Slack 是汇聚团队消息、频道、用户和共享工作区的协作中心。其远程 MCP 服务器将工作区对话上下文集成到助手工作流中，帮助用户查找答案、总结讨论并了解各频道的动态。';
+  String get mcpMarketDescSlack =>
+      'Slack 是汇聚团队消息、频道、用户和共享工作区的协作中心。其远程 MCP 服务器将工作区对话上下文集成到助手工作流中，帮助用户查找答案、总结讨论并了解各频道的动态。';
 
   @override
-  String get mcpMarketDescFigma => 'Figma 是用于界面设计、原型制作和开发者交接的产品设计平台。其远程 MCP 服务器将文件、项目和开发模式上下文带入助手工作流，使智能体理解视觉工作并将其映射到实现任务。';
+  String get mcpMarketDescFigma =>
+      'Figma 是用于界面设计、原型制作和开发者交接的产品设计平台。其远程 MCP 服务器将文件、项目和开发模式上下文带入助手工作流，使智能体理解视觉工作并将其映射到实现任务。';
 
   @override
-  String get mcpMarketDescCanva => 'Canva 是用于演示文稿、社媒图形、文档和品牌素材的视觉传播平台。其远程 MCP 服务器让助手可访问 Canva 项目、资源、导出文件和评论，从而基于所获信息讨论、编辑并准备创意作品。';
+  String get mcpMarketDescCanva =>
+      'Canva 是用于演示文稿、社媒图形、文档和品牌素材的视觉传播平台。其远程 MCP 服务器让助手可访问 Canva 项目、资源、导出文件和评论，从而基于所获信息讨论、编辑并准备创意作品。';
 
   @override
-  String get mcpMarketDescStripe => 'Stripe 是面向支付处理的支付与金融基础设施平台，涵盖账单、客户和开发者文档。其远程 MCP 服务器在 Stripe 支持下为助手提供账户与实现上下文，以理解客户流程、账单问题与支付任务。';
+  String get mcpMarketDescStripe =>
+      'Stripe 是面向支付处理的支付与金融基础设施平台，涵盖账单、客户和开发者文档。其远程 MCP 服务器在 Stripe 支持下为助手提供账户与实现上下文，以理解客户流程、账单问题与支付任务。';
 
   @override
-  String get mcpMarketDescTrivago => 'Trivago 帮助用户按坐标、城市、国家、日期和旅行上下文搜索酒店与住宿。其连接器为助手提供住宿搜索上下文，以便在目的地或景点附近找到合适的住宿。';
+  String get mcpMarketDescTrivago =>
+      'Trivago 帮助用户按坐标、城市、国家、日期和旅行上下文搜索酒店与住宿。其连接器为助手提供住宿搜索上下文，以便在目的地或景点附近找到合适的住宿。';
 
   @override
-  String get mcpMarketDescSend => 'Send 帮助用户创建可共享文档、单页文档、演示文稿和幻灯片。其连接器让助手将所需材料转化为发布链接、交互式页面以及可追踪的交付物。';
+  String get mcpMarketDescSend =>
+      'Send 帮助用户创建可共享文档、单页文档、演示文稿和幻灯片。其连接器让助手将所需材料转化为发布链接、交互式页面以及可追踪的交付物。';
 
   @override
-  String get mcpMarketDescZiprecruiter => 'ZipRecruiter 帮助用户按职位名称、公司、地点、薪资、距离、工作风格、雇佣类型和发布日期搜索实时职位。其连接器在将申请交回 ZipRecruiter 之前，将求职上下文集成到助手工作流中。';
+  String get mcpMarketDescZiprecruiter =>
+      'ZipRecruiter 帮助用户按职位名称、公司、地点、薪资、距离、工作风格、雇佣类型和发布日期搜索实时职位。其连接器在将申请交回 ZipRecruiter 之前，将求职上下文集成到助手工作流中。';
 
   @override
-  String get mcpMarketDescAdobeCreativity => 'Adobe for Creativity 将 Photoshop、Lightroom、Illustrator、Firefly、Premiere、Express、InDesign 和 Stock 与 AI 驱动创意工作相结合。用户可使用自然语言生成、编辑并增强照片、设计素材和视频项目，同时作品始终关联到其 Adobe 账户。';
+  String get mcpMarketDescAdobeCreativity =>
+      'Adobe for Creativity 将 Photoshop、Lightroom、Illustrator、Firefly、Premiere、Express、InDesign 和 Stock 与 AI 驱动创意工作相结合。用户可使用自然语言生成、编辑并增强照片、设计素材和视频项目，同时作品始终关联到其 Adobe 账户。';
+
+  @override
+  String get agentsInstructions => '智能体指令';
+
+  @override
+  String get agentsInstructionsSubtitle => '管理 AGENTS.md 和自定义指令文件';
+
+  @override
+  String get agentsMdHint => '# 项目规则\n- 简洁\n- 先写测试';
+
+  @override
+  String get agentsMdSaved => 'AGENTS.md 已保存';
+
+  @override
+  String get instructionsAutoDetectedTitle => '检测到的文件';
+
+  @override
+  String get instructionsAutoDetectedHelper =>
+      '为此范围找到的 AGENTS.md 和 CLAUDE.md。点按可查看或编辑。';
+
+  @override
+  String get instructionsFileNotCreated => '尚未创建';
+
+  @override
+  String get instructionsFileReadOnly => '只读';
+
+  @override
+  String get instructionsBadgeGlobal => '全局';
+
+  @override
+  String get instructionsBadgeProject => '项目';
+
+  @override
+  String get instructionsViewFile => '查看';
+
+  @override
+  String get instructionsEditFile => '编辑';
+
+  @override
+  String get instructionsSectionTitle => '指令文件';
+
+  @override
+  String get instructionsSectionHelper => '在 AGENTS.md 之后按顺序追加的额外 Markdown 文件。';
+
+  @override
+  String get instructionsAdd => '添加指令';
+
+  @override
+  String get instructionsAddInline => '手动编写';
+
+  @override
+  String get instructionsUploadFile => '上传 .md 文件';
+
+  @override
+  String get instructionsEmpty => '尚无指令文件';
+
+  @override
+  String get instructionsEmptyHint => '手动添加指令或上传 Markdown 文件。';
+
+  @override
+  String get instructionsNameLabel => '名称';
+
+  @override
+  String get instructionsNameHint => 'coding-style';
+
+  @override
+  String get instructionsContentLabel => '内容';
+
+  @override
+  String get instructionsContentHint => '使用 Markdown 编写你的指令……';
+
+  @override
+  String get instructionsAddedInline => '指令已添加';
+
+  @override
+  String instructionsAddedFile(Object name) {
+    return '文件已添加：$name';
+  }
+
+  @override
+  String get instructionsRemoveTitle => '移除指令';
+
+  @override
+  String instructionsRemoveContent(Object name) {
+    return '要从指令中移除“$name”吗？';
+  }
+
+  @override
+  String get instructionsRemoved => '指令已移除';
+
+  @override
+  String get instructionsEditTitle => '编辑指令路径';
+
+  @override
+  String get instructionsPathLabel => '路径';
+
+  @override
+  String get instructionsUpdated => '指令已更新';
+
+  @override
+  String get instructionsScopeGlobal => '全局';
+
+  @override
+  String get instructionsScopeProject => '项目';
+
+  @override
+  String get instructionsScopeGlobalHint => '适用于所有场景。存储在你的用户配置中。';
+
+  @override
+  String get instructionsScopeProjectHint => '适用于当前项目文件夹。';
+
+  @override
+  String get instructionsCreateAgents => '创建 AGENTS.md';
+
+  @override
+  String instructionsSaveError(Object error) {
+    return '无法保存：$error';
+  }
+
+  @override
+  String get configScopeGlobal => '全局';
+
+  @override
+  String get configScopeProject => '项目';
+
+  @override
+  String get configProjectOverrides => '项目设置会覆盖全局设置。';
+
+  @override
+  String get configPathLabel => '路径';
+
+  @override
+  String get configStatusLabel => '状态';
+
+  @override
+  String get configContentsTitle => '文件内容';
+
+  @override
+  String get configExists => '存在';
+
+  @override
+  String get configNotFound => '未找到';
+
+  @override
+  String get configWillBeCreated => '保存时将创建。';
+
+  @override
+  String get skillsTitle => '技能';
+
+  @override
+  String get skillsSubtitle => '助手可按需加载的可复用能力包。';
+
+  @override
+  String get skillsSectionTitle => '已安装的技能';
+
+  @override
+  String get skillsSectionHelper => '每个技能都是包含 SKILL.md 的文件夹。可自行添加或从网址安装。';
+
+  @override
+  String get skillsNewSkill => '新建技能';
+
+  @override
+  String get skillsInstallFromUrl => '从网址安装';
+
+  @override
+  String get skillsNameLabel => '名称';
+
+  @override
+  String get skillsNameHint => '例如：代码审查员';
+
+  @override
+  String get skillsDescriptionLabel => '描述';
+
+  @override
+  String get skillsDescriptionHint => '简要说明该技能的作用';
+
+  @override
+  String get skillsContentLabel => 'SKILL.md 内容';
+
+  @override
+  String get skillsContentHint => '# 标题\n给助手的说明…';
+
+  @override
+  String get skillsUrlLabel => 'index.json 网址';
+
+  @override
+  String get skillsUrlHint => 'https://example.com/skills';
+
+  @override
+  String get skillsApiKeyLabel => 'API 密钥（可选）';
+
+  @override
+  String get skillsReadOnly => '只读';
+
+  @override
+  String skillsFilesCount(int count) {
+    return '$count 个文件';
+  }
+
+  @override
+  String get skillsCreated => '技能已创建';
+
+  @override
+  String get skillsSaved => '技能已保存';
+
+  @override
+  String get skillsRemoved => '技能已移除';
+
+  @override
+  String skillsInstalled(int count) {
+    return '已安装 $count 个技能';
+  }
+
+  @override
+  String get skillsInstallNone => '该网址未找到技能';
+
+  @override
+  String get skillsRemoveTitle => '移除技能';
+
+  @override
+  String skillsRemoveContent(String name) {
+    return '移除“$name”？这将从磁盘删除其文件夹。';
+  }
+
+  @override
+  String skillsSaveError(String error) {
+    return '无法完成：$error';
+  }
+
+  @override
+  String get skillsEmpty => '暂无技能';
+
+  @override
+  String get skillsEmptyHint => '创建一个技能或从网址安装以开始使用。';
+
+  @override
+  String get skillsMarketplaceTab => '市场';
+
+  @override
+  String get skillsMarketplaceSearchHint => '搜索技能';
+
+  @override
+  String get skillsMarketplaceEmpty => '没有符合搜索的技能。';
+
+  @override
+  String get skillsInstalledBadge => '已安装';
+
+  @override
+  String get skillsInstallAction => '安装';
+
+  @override
+  String get skillsInstallToGlobal => '安装到 Global';
+
+  @override
+  String get skillsInstallToProject => '安装到 Project';
+
+  @override
+  String skillsInstalledToast(String name) {
+    return '$name · 已安装';
+  }
+
+  @override
+  String get skillsTabGlobalTooltip => '在所有项目中可用的技能';
+
+  @override
+  String get skillsTabProjectTooltip => '仅限本项目的技能';
+
+  @override
+  String get skillsTabMarketplaceTooltip => '浏览并安装现成技能';
+
+  @override
+  String get skillsPreviewClose => '关闭';
+
+  @override
+  String get skillsCategoryAll => '全部';
+
+  @override
+  String get skillsCategoryCoding => '编码';
+
+  @override
+  String get skillsCategoryWriting => '写作';
+
+  @override
+  String get skillsCategoryResearch => '研究';
+
+  @override
+  String get skillsCategoryDesign => '设计';
+
+  @override
+  String get skillsCategoryProductivity => '效率';
+
+  @override
+  String get skillsCategoryData => '数据';
+
+  @override
+  String get skillsCategoryOther => '其他';
+
+  @override
+  String get skillsMarketDescCodeReviewer => '顶级代码审查：漏洞、安全与可维护性。';
+
+  @override
+  String get skillsMarketDescCleanCode => '把可运行的代码变成整洁易读的代码（Uncle Bob）。';
+
+  @override
+  String get skillsMarketDescDry => '消除重复的知识与业务逻辑。';
+
+  @override
+  String get skillsMarketDescArchitectReview => '以整洁的分布式系统原则审查架构。';
+
+  @override
+  String get skillsMarketDescBackendArchitect => '设计可扩展的 API、服务与数据层。';
+
+  @override
+  String get skillsMarketDescFlutterExpert => '精通 Dart 3、高级组件与多平台交付。';
+
+  @override
+  String get skillsMarketDescAgentsMd => '创建并维护简洁、高信息量的智能体文档。';
+
+  @override
+  String get skillsMarketDescUxCopy => '撰写清晰、人性化的 UX 文案。';
+
+  @override
+  String get skillsMarketDescDeepResearch => '规划、搜索、阅读并综合研究报告。';
+
+  @override
+  String get skillsMarketDescUiUxDesigner => '设计无障碍、现代且高性能的界面。';
+
+  @override
+  String get skillsMarketDescUxuiPrinciples => '将核心 UX/UI 原则应用于任何界面。';
+
+  @override
+  String get skillsMarketDescCommit => '编写规范化提交并正确引用问题。';
+
+  @override
+  String get skillsMarketDescToolDesign => '构建智能体易用的工具。';
+
+  @override
+  String get skillsMarketDescProductManager => '梳理需求、路线图与产品决策。';
+
+  @override
+  String get skillsMarketDescDataScientist => '高级分析、机器学习与统计建模。';
+
+  @override
+  String get skillsMarketDescDatabaseOptimizer => '优化查询并设计可扩展的数据库架构。';
+
+  @override
+  String get skillsMarketDescDebugger => '系统化调试错误与测试失败。';
+
+  @override
+  String get skillsMarketDescSecurityAuditor => '审计漏洞并修复不安全的代码。';
+
+  @override
+  String get commonSave => '保存';
+
+  @override
+  String get commonCancel => '取消';
+
+  @override
+  String get commonAdd => '添加';
+
+  @override
+  String get commonRemove => '移除';
+
+  @override
+  String get commonEdit => '编辑';
 }

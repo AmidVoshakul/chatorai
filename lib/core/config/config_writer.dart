@@ -288,6 +288,92 @@ class ConfigWriter {
     await writeRawConfig(path, config);
   }
 
+  // ---------------------------------------------------------------------------
+  // Instructions
+  // ---------------------------------------------------------------------------
+
+  /// Reads the `instructions` array from [config] as a `List<String>`,
+  /// tolerating a missing or malformed value (returns an empty list).
+  static List<String> _readInstructions(Map<String, dynamic> config) {
+    final raw = config['instructions'];
+    if (raw is List) return List<String>.of(raw.whereType<String>());
+    return <String>[];
+  }
+
+  /// Writes [entries] back to [config] under `instructions`, dropping the key
+  /// entirely when the list is empty so the file stays minimal.
+  static void _writeInstructions(
+    Map<String, dynamic> config,
+    List<String> entries,
+  ) {
+    if (entries.isEmpty) {
+      config.remove('instructions');
+    } else {
+      config['instructions'] = entries;
+    }
+  }
+
+  /// Appends [entry] to the `instructions` array (idempotent — a duplicate is
+  /// ignored, preserving insertion order). Creates the array when absent.
+  static Future<void> addInstruction(
+    String entry, {
+    bool global = true,
+    String? configPath,
+  }) async {
+    final path = await _targetPath(global: global, configPath: configPath);
+    final config = await readRawConfig(path);
+    final entries = _readInstructions(config);
+    if (entries.contains(entry)) return;
+    entries.add(entry);
+    _writeInstructions(config, entries);
+    await writeRawConfig(path, config);
+  }
+
+  /// Removes [entry] from the `instructions` array. No-op when absent. Drops
+  /// the `instructions` key when the array becomes empty.
+  static Future<void> removeInstruction(
+    String entry, {
+    bool global = true,
+    String? configPath,
+  }) async {
+    final path = await _targetPath(global: global, configPath: configPath);
+    final config = await readRawConfig(path);
+    final entries = _readInstructions(config);
+    if (!entries.contains(entry)) return;
+    entries.removeWhere((e) => e == entry);
+    _writeInstructions(config, entries);
+    await writeRawConfig(path, config);
+  }
+
+  /// Replaces [oldEntry] with [newEntry] in place, preserving its position.
+  ///
+  /// If [oldEntry] is absent this behaves like [addInstruction]. If [newEntry]
+  /// already exists elsewhere, the [oldEntry] slot is removed (dedupe) so the
+  /// array never holds duplicates.
+  static Future<void> updateInstruction(
+    String oldEntry,
+    String newEntry, {
+    bool global = true,
+    String? configPath,
+  }) async {
+    final path = await _targetPath(global: global, configPath: configPath);
+    final config = await readRawConfig(path);
+    final entries = _readInstructions(config);
+
+    final index = entries.indexOf(oldEntry);
+    if (index < 0) {
+      if (!entries.contains(newEntry)) entries.add(newEntry);
+    } else if (entries.contains(newEntry) &&
+        entries.indexOf(newEntry) != index) {
+      entries.removeAt(index);
+    } else {
+      entries[index] = newEntry;
+    }
+
+    _writeInstructions(config, entries);
+    await writeRawConfig(path, config);
+  }
+
   /// Toggles `enabled` on `mcp.servers[name]`. Throws if the server is absent.
   static Future<void> setMcpEnabled(
     String name,

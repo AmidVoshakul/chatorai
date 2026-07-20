@@ -289,7 +289,7 @@ class ChatAiService implements CompletionProvider {
             maxRetries: 0, // We handle retries ourselves
             headers: activeHeaders,
             providerOptions: providerOptions,
-          abortSignal: _cancellation.token,
+            abortSignal: _cancellation.token,
             tools: tools,
             maxSteps: maxSteps,
             experimentalContext: sessionId == null

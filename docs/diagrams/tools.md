@@ -12,7 +12,7 @@ graph TD
     app_start["App startup\n(session_providers.dart)"]
     reg_call["registerBuiltInTools()"]
 
-    subgraph unconditional["17 unconditional (always registered)"]
+    subgraph unconditional["18 unconditional (always registered)"]
         bash["bash\n(execute shell)"]
         read["read\n(file contents)"]
         edit["edit\n(text replace)"]
@@ -22,6 +22,7 @@ graph TD
         webfetch_["webfetch\n(url fetch)"]
         websearch_["websearch\n(SearXNG)"]
         task_["task\n(subagent spawn)"]
+        task_container_["task_container\n(parallel subagents)"]
         question_["question\n(user prompt)"]
         todowrite_["todowrite\n(todo list)"]
         apply_patch_["apply_patch\n(diff apply)"]
@@ -49,7 +50,7 @@ graph TD
     fmt_cond -->|"no"| skill_cond
     skill_cond -->|"yes"| skill_
 
-    unconditional --> tool_registry["ToolRegistry\n(17 unconditional\n+ 0–3 conditional\n= 17–20 total)"]
+    unconditional --> tool_registry["ToolRegistry\n(18 unconditional\n+ 0–3 conditional\n= 18–21 total)"]
     lsp_ --> tool_registry
     format_ --> tool_registry
     skill_ --> tool_registry

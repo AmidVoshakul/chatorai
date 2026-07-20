@@ -95,19 +95,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoScrollDuringStreaming => 'Auto-scroll during streaming';
 
   @override
-  String get autoScrollDuringStreamingDesc => 'Automatically scroll down when new content appears';
+  String get autoScrollDuringStreamingDesc =>
+      'Automatically scroll down when new content appears';
 
   @override
   String get showContinuationSuggestions => 'Show continuation suggestions';
 
   @override
-  String get showContinuationSuggestionsDesc => 'Display suggested follow-up messages after AI responses';
+  String get showContinuationSuggestionsDesc =>
+      'Display suggested follow-up messages after AI responses';
 
   @override
   String get expandReasoningByDefault => 'Expand reasoning by default';
 
   @override
-  String get expandReasoningByDefaultDesc => 'Show reasoning/thought blocks expanded when AI responds';
+  String get expandReasoningByDefaultDesc =>
+      'Show reasoning/thought blocks expanded when AI responds';
 
   @override
   String get language => 'Language';
@@ -164,7 +167,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appInfo => 'App Info';
 
   @override
-  String get appDescription => 'AI Chat Application powered by multiple LLM providers';
+  String get appDescription =>
+      'AI Chat Application powered by multiple LLM providers';
 
   @override
   String get shareChat => 'Share Chat';
@@ -316,7 +320,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get features => 'Features';
 
   @override
-  String get featuresDisplayedBasedOnActualModelCapabilities => 'Features displayed based on actual model capabilities';
+  String get featuresDisplayedBasedOnActualModelCapabilities =>
+      'Features displayed based on actual model capabilities';
 
   @override
   String get noModelsFound => 'No models found';
@@ -328,7 +333,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tryADifferentSearchQuery => 'Try a different search query';
 
   @override
-  String get tryRefreshingOrCheckYourInternetConnection => 'Try refreshing or check your internet connection';
+  String get tryRefreshingOrCheckYourInternetConnection =>
+      'Try refreshing or check your internet connection';
 
   @override
   String get aiIsTyping => 'AI is typing';
@@ -373,13 +379,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failedToEditMessage => 'Failed to edit message';
 
   @override
-  String get messageEditedAndResponseRegenerated => 'Message edited and response regenerated';
+  String get messageEditedAndResponseRegenerated =>
+      'Message edited and response regenerated';
 
   @override
   String get failedToEditAndSendMessage => 'Failed to edit and send message';
 
   @override
-  String get areYouSureYouWantToDeleteThisMessage => 'Are you sure you want to delete this message?';
+  String get areYouSureYouWantToDeleteThisMessage =>
+      'Are you sure you want to delete this message?';
 
   @override
   String confirmDeleteMessage(Object chatTitle) {
@@ -387,7 +395,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get areYouSureYouWantToRegenerateThisMessage => 'Are you sure you want to regenerate this message?';
+  String get areYouSureYouWantToRegenerateThisMessage =>
+      'Are you sure you want to regenerate this message?';
 
   @override
   String modelDoesNotSupportImages(Object modelId) {
@@ -469,16 +478,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion1 => 'Explain quantum computing in simple terms';
 
   @override
-  String get welcomeQuestion2 => 'What are the latest trends in artificial intelligence?';
+  String get welcomeQuestion2 =>
+      'What are the latest trends in artificial intelligence?';
 
   @override
-  String get welcomeQuestion3 => 'Help me write a professional email to my team';
+  String get welcomeQuestion3 =>
+      'Help me write a professional email to my team';
 
   @override
-  String get welcomeQuestion4 => 'What should I learn to become a better programmer?';
+  String get welcomeQuestion4 =>
+      'What should I learn to become a better programmer?';
 
   @override
-  String get welcomeQuestion5 => 'Give me 5 creative ideas for a weekend project';
+  String get welcomeQuestion5 =>
+      'Give me 5 creative ideas for a weekend project';
 
   @override
   String get welcomeQuestion6 => 'What are some good books on personal growth?';
@@ -490,13 +503,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion8 => 'Create a meal plan for a healthy week';
 
   @override
-  String get welcomeQuestion9 => 'What are the best practices for Flutter development?';
+  String get welcomeQuestion9 =>
+      'What are the best practices for Flutter development?';
 
   @override
-  String get welcomeQuestion10 => 'Explain the difference between asynchronous and synchronous programming';
+  String get welcomeQuestion10 =>
+      'Explain the difference between asynchronous and synchronous programming';
 
   @override
-  String get welcomeQuestion11 => 'How to optimize code for better performance?';
+  String get welcomeQuestion11 =>
+      'How to optimize code for better performance?';
 
   @override
   String get welcomeQuestion12 => 'What are the most useful design patterns?';
@@ -505,13 +521,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion13 => 'Teach me the basics of machine learning';
 
   @override
-  String get welcomeQuestion14 => 'What are the key concepts of cloud computing?';
+  String get welcomeQuestion14 =>
+      'What are the key concepts of cloud computing?';
 
   @override
-  String get welcomeQuestion15 => 'Explain blockchain technology for a beginner';
+  String get welcomeQuestion15 =>
+      'Explain blockchain technology for a beginner';
 
   @override
-  String get welcomeQuestion16 => 'How does the internet work from a technical perspective?';
+  String get welcomeQuestion16 =>
+      'How does the internet work from a technical perspective?';
 
   @override
   String get welcomeQuestion17 => 'What are the best productivity techniques?';
@@ -520,7 +539,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion18 => 'How to improve concentration and focus?';
 
   @override
-  String get welcomeQuestion19 => 'Give me a daily schedule for maximum productivity';
+  String get welcomeQuestion19 =>
+      'Give me a daily schedule for maximum productivity';
 
   @override
   String get welcomeQuestion20 => 'What are some good habits for success?';
@@ -529,28 +549,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion21 => 'How to prepare for an IT interview?';
 
   @override
-  String get welcomeQuestion22 => 'What skills are needed in the tech industry?';
+  String get welcomeQuestion22 =>
+      'What skills are needed in the tech industry?';
 
   @override
   String get welcomeQuestion23 => 'How to negotiate a salary increase?';
 
   @override
-  String get welcomeQuestion24 => 'What are the top tech companies to work for?';
+  String get welcomeQuestion24 =>
+      'What are the top tech companies to work for?';
 
   @override
-  String get welcomeQuestion25 => 'What are the latest breakthroughs in space research?';
+  String get welcomeQuestion25 =>
+      'What are the latest breakthroughs in space research?';
 
   @override
   String get welcomeQuestion26 => 'How is AI changing healthcare?';
 
   @override
-  String get welcomeQuestion27 => 'What are the most exciting technologies of 2026?';
+  String get welcomeQuestion27 =>
+      'What are the most exciting technologies of 2026?';
 
   @override
   String get welcomeQuestion28 => 'Explain the future of renewable energy';
 
   @override
-  String get welcomeQuestion29 => 'What are the most important philosophical questions?';
+  String get welcomeQuestion29 =>
+      'What are the most important philosophical questions?';
 
   @override
   String get welcomeQuestion30 => 'How to learn to think more critically?';
@@ -559,13 +584,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion31 => 'What are the best ways to learn new skills?';
 
   @override
-  String get welcomeQuestion32 => 'How to stay motivated when learning complex material?';
+  String get welcomeQuestion32 =>
+      'How to stay motivated when learning complex material?';
 
   @override
-  String get welcomeQuestion33 => 'Which programming languages are best to learn in 2026?';
+  String get welcomeQuestion33 =>
+      'Which programming languages are best to learn in 2026?';
 
   @override
-  String get welcomeQuestion34 => 'How to create a strong portfolio for IT jobs?';
+  String get welcomeQuestion34 =>
+      'How to create a strong portfolio for IT jobs?';
 
   @override
   String get welcomeQuestion35 => 'What are the top AI tools for productivity?';
@@ -574,16 +602,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion36 => 'How does machine learning actually work?';
 
   @override
-  String get welcomeQuestion37 => 'What are the best practices for code review?';
+  String get welcomeQuestion37 =>
+      'What are the best practices for code review?';
 
   @override
   String get welcomeQuestion38 => 'How to write clean and maintainable code?';
 
   @override
-  String get welcomeQuestion39 => 'What are microservices and when to use them?';
+  String get welcomeQuestion39 =>
+      'What are microservices and when to use them?';
 
   @override
-  String get welcomeQuestion40 => 'Explain the difference between REST API and GraphQL';
+  String get welcomeQuestion40 =>
+      'Explain the difference between REST API and GraphQL';
 
   @override
   String get welcomeQuestion41 => 'Which cloud platforms are best to learn?';
@@ -601,10 +632,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion45 => 'What are the best tools for remote work?';
 
   @override
-  String get welcomeQuestion46 => 'How to stay productive while working remotely?';
+  String get welcomeQuestion46 =>
+      'How to stay productive while working remotely?';
 
   @override
-  String get welcomeQuestion47 => 'What are the best project management methodologies?';
+  String get welcomeQuestion47 =>
+      'What are the best project management methodologies?';
 
   @override
   String get welcomeQuestion48 => 'How to work with difficult colleagues?';
@@ -616,25 +649,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion50 => 'How to launch a successful tech startup?';
 
   @override
-  String get welcomeQuestion51 => 'What are the latest trends in web development?';
+  String get welcomeQuestion51 =>
+      'What are the latest trends in web development?';
 
   @override
   String get welcomeQuestion52 => 'How does blockchain technology work?';
 
   @override
-  String get welcomeQuestion53 => 'What are NFTs and are they worth paying attention to?';
+  String get welcomeQuestion53 =>
+      'What are NFTs and are they worth paying attention to?';
 
   @override
   String get welcomeQuestion54 => 'Explain the concept of the metaverse';
 
   @override
-  String get welcomeQuestion55 => 'What are the best AI models for programming?';
+  String get welcomeQuestion55 =>
+      'What are the best AI models for programming?';
 
   @override
   String get welcomeQuestion56 => 'How to use ChatGPT effectively?';
 
   @override
-  String get welcomeQuestion57 => 'What are the ethical aspects of AI to consider?';
+  String get welcomeQuestion57 =>
+      'What are the ethical aspects of AI to consider?';
 
   @override
   String get welcomeQuestion58 => 'How will AI change work in the future?';
@@ -652,7 +689,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion62 => 'How to visualize data effectively?';
 
   @override
-  String get welcomeQuestion63 => 'What are the best frameworks for mobile apps?';
+  String get welcomeQuestion63 =>
+      'What are the best frameworks for mobile apps?';
 
   @override
   String get welcomeQuestion64 => 'How to build cross-platform applications?';
@@ -682,7 +720,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion72 => 'How to make a great presentation?';
 
   @override
-  String get welcomeQuestion73 => 'What are the best time management techniques?';
+  String get welcomeQuestion73 =>
+      'What are the best time management techniques?';
 
   @override
   String get welcomeQuestion74 => 'How to avoid burnout?';
@@ -700,19 +739,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion78 => 'How to eat healthy on a limited budget?';
 
   @override
-  String get welcomeQuestion79 => 'What are the best travel destinations for tech specialists?';
+  String get welcomeQuestion79 =>
+      'What are the best travel destinations for tech specialists?';
 
   @override
   String get welcomeQuestion80 => 'How to learn a new language quickly?';
 
   @override
-  String get welcomeQuestion81 => 'What are the best practices for remote team collaboration?';
+  String get welcomeQuestion81 =>
+      'What are the best practices for remote team collaboration?';
 
   @override
   String get welcomeQuestion82 => 'How to conduct effective code reviews?';
 
   @override
-  String get welcomeQuestion83 => 'What are the top skills for software architects?';
+  String get welcomeQuestion83 =>
+      'What are the top skills for software architects?';
 
   @override
   String get welcomeQuestion84 => 'How to design scalable databases?';
@@ -727,7 +769,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion87 => 'What is container orchestration?';
 
   @override
-  String get welcomeQuestion88 => 'Explain the benefits of serverless computing';
+  String get welcomeQuestion88 =>
+      'Explain the benefits of serverless computing';
 
   @override
   String get welcomeQuestion89 => 'What are the best API security practices?';
@@ -754,7 +797,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion96 => 'How to analyze user behavior?';
 
   @override
-  String get welcomeQuestion97 => 'What are the best growth hacking techniques?';
+  String get welcomeQuestion97 =>
+      'What are the best growth hacking techniques?';
 
   @override
   String get welcomeQuestion98 => 'How to build a community around a product?';
@@ -763,52 +807,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion99 => 'What are the best customer support tools?';
 
   @override
-  String get welcomeQuestion100 => 'How to effectively handle customer feedback?';
+  String get welcomeQuestion100 =>
+      'How to effectively handle customer feedback?';
 
   @override
-  String get welcomeQuestion101 => 'What is the difference between React and Vue?';
+  String get welcomeQuestion101 =>
+      'What is the difference between React and Vue?';
 
   @override
-  String get welcomeQuestion102 => 'How does TypeScript improve JavaScript development?';
+  String get welcomeQuestion102 =>
+      'How does TypeScript improve JavaScript development?';
 
   @override
-  String get welcomeQuestion103 => 'What are the best practices for REST API design?';
+  String get welcomeQuestion103 =>
+      'What are the best practices for REST API design?';
 
   @override
-  String get welcomeQuestion104 => 'How to implement authentication in web apps?';
+  String get welcomeQuestion104 =>
+      'How to implement authentication in web apps?';
 
   @override
-  String get welcomeQuestion105 => 'What are the advantages of GraphQL over REST?';
+  String get welcomeQuestion105 =>
+      'What are the advantages of GraphQL over REST?';
 
   @override
-  String get welcomeQuestion106 => 'How to optimize database queries for performance?';
+  String get welcomeQuestion106 =>
+      'How to optimize database queries for performance?';
 
   @override
-  String get welcomeQuestion107 => 'What are microservices architecture patterns?';
+  String get welcomeQuestion107 =>
+      'What are microservices architecture patterns?';
 
   @override
   String get welcomeQuestion108 => 'How to implement caching strategies?';
 
   @override
-  String get welcomeQuestion109 => 'What are the best JavaScript testing frameworks?';
+  String get welcomeQuestion109 =>
+      'What are the best JavaScript testing frameworks?';
 
   @override
-  String get welcomeQuestion110 => 'How to write unit tests for React components?';
+  String get welcomeQuestion110 =>
+      'How to write unit tests for React components?';
 
   @override
   String get welcomeQuestion111 => 'What are the SOLID principles in OOP?';
 
   @override
-  String get welcomeQuestion112 => 'How to implement design patterns in Python?';
+  String get welcomeQuestion112 =>
+      'How to implement design patterns in Python?';
 
   @override
-  String get welcomeQuestion113 => 'What are the best practices for Git workflow?';
+  String get welcomeQuestion113 =>
+      'What are the best practices for Git workflow?';
 
   @override
-  String get welcomeQuestion114 => 'How to effectively resolve merge conflicts?';
+  String get welcomeQuestion114 =>
+      'How to effectively resolve merge conflicts?';
 
   @override
-  String get welcomeQuestion115 => 'What are the best practices for containerization?';
+  String get welcomeQuestion115 =>
+      'What are the best practices for containerization?';
 
   @override
   String get welcomeQuestion116 => 'How to secure Docker containers?';
@@ -823,7 +881,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeQuestion119 => 'What are the best practices for logging?';
 
   @override
-  String get welcomeQuestion120 => 'How to implement error handling in distributed systems?';
+  String get welcomeQuestion120 =>
+      'How to implement error handling in distributed systems?';
 
   @override
   String get continueConversation => 'Continue conversation';
@@ -1007,7 +1066,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get openaiCompatibleApi => 'OpenAI-Compatible API';
 
   @override
-  String get openaiCompatibleApiDescription => 'Connect to any OpenAI-compatible API endpoint';
+  String get openaiCompatibleApiDescription =>
+      'Connect to any OpenAI-compatible API endpoint';
 
   @override
   String get permissionAlways => 'Always';
@@ -1078,7 +1138,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get systemPrompt => 'System Prompt';
 
   @override
-  String get systemPromptDescription => 'Instructions that define how the AI behaves';
+  String get systemPromptDescription =>
+      'Instructions that define how the AI behaves';
 
   @override
   String get systemPromptSuggestion => 'You are a helpful assistant.';
@@ -1108,7 +1169,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeGreeting3 => 'Ask me anything';
 
   @override
-  String get welcomeGreeting4 => 'I can help you with coding, writing, and analysis';
+  String get welcomeGreeting4 =>
+      'I can help you with coding, writing, and analysis';
 
   @override
   String get welcomeGreeting5 => 'Let\'s get started';
@@ -1235,7 +1297,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get micStopFailed => 'Failed to stop microphone';
 
   @override
-  String get errorProcessingRequest => 'Sorry, I encountered an error while processing your request. Please try again.';
+  String get errorProcessingRequest =>
+      'Sorry, I encountered an error while processing your request. Please try again.';
 
   @override
   String rateLimitRetryMessage(Object seconds) {
@@ -1255,7 +1318,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get defaultSuggestion4 => 'How does this apply in practice?';
 
   @override
-  String get fileAttachedButNotSupported => 'File attached but not supported by the current model';
+  String get fileAttachedButNotSupported =>
+      'File attached but not supported by the current model';
 
   @override
   String get expandTooltip => 'Expand';
@@ -1347,7 +1411,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get deleteProviderContent => 'This will remove the provider and all its settings. You will need to add it again to use its models.';
+  String get deleteProviderContent =>
+      'This will remove the provider and all its settings. You will need to add it again to use its models.';
 
   @override
   String get errorLoadingProviders => 'Error loading providers';
@@ -1356,7 +1421,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noProvidersConfigured => 'No providers configured';
 
   @override
-  String get addProviderToGetStarted => 'Add a provider with an API key to get started';
+  String get addProviderToGetStarted =>
+      'Add a provider with an API key to get started';
 
   @override
   String statsError(Object error) {
@@ -1426,7 +1492,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mcpEnvHint => 'GITHUB_TOKEN=ghp_xxx';
 
   @override
-  String get mcpEnvHelper => 'Optional. Paste a JSON object of string keys, e.g. a single TOKEN entry.';
+  String get mcpEnvHelper =>
+      'Optional. Paste a JSON object of string keys, e.g. a single TOKEN entry.';
 
   @override
   String get mcpTokenLabel => 'Access token';
@@ -1435,13 +1502,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mcpTokenHint => 'Paste your token only (no Bearer / quotes)';
 
   @override
-  String get mcpTokenHelper => 'Optional. Leave empty for public servers; paste just the token and the header is added automatically.';
+  String get mcpTokenHelper =>
+      'Optional. Leave empty for public servers; paste just the token and the header is added automatically.';
 
   @override
   String get mcpAuthTypeLabel => 'Token type';
 
   @override
-  String get mcpAuthTypeHelper => 'How the token is sent: Bearer (Authorization), ApiKey (X-Api-Key), or plain Token.';
+  String get mcpAuthTypeHelper =>
+      'How the token is sent: Bearer (Authorization), ApiKey (X-Api-Key), or plain Token.';
 
   @override
   String get mcpHeadersLabel => 'Headers (JSON)';
@@ -1450,7 +1519,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mcpHeadersHint => 'Authorization=Bearer token';
 
   @override
-  String get mcpHeadersHelper => 'Optional. Paste a JSON object of string header keys.';
+  String get mcpHeadersHelper =>
+      'Optional. Paste a JSON object of string header keys.';
 
   @override
   String get mcpFormTab => 'Form';
@@ -1462,7 +1532,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mcpRawLabel => 'Server object (JSON)';
 
   @override
-  String get mcpRawHelper => 'Paste the server object as in the docs — the server name is the outer key (e.g. searxng). You can paste the full block including the mcpServers wrapper.';
+  String get mcpRawHelper =>
+      'Paste the server object as in the docs — the server name is the outer key (e.g. searxng). You can paste the full block including the mcpServers wrapper.';
 
   @override
   String mcpParseError(Object field, Object message) {
@@ -1499,7 +1570,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mcpNoServers => 'No MCP servers configured';
 
   @override
-  String get mcpNoServersHint => 'Add a Model Context Protocol server to extend tooling';
+  String get mcpNoServersHint =>
+      'Add a Model Context Protocol server to extend tooling';
 
   @override
   String get mcpTooltipAdd => 'Add server';
@@ -1562,47 +1634,455 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mcpMarketNeedsToken => 'Needs key';
 
   @override
-  String get mcpMarketDescExa => 'Exa provides web search and code documentation lookup for AI workflows. Its connector feeds assistants real-time context to find relevant web pages, technical docs, and source material when grounded external information is needed for an answer.';
+  String get mcpMarketDescExa =>
+      'Exa provides web search and code documentation lookup for AI workflows. Its connector feeds assistants real-time context to find relevant web pages, technical docs, and source material when grounded external information is needed for an answer.';
 
   @override
-  String get mcpMarketDescContext7 => 'Context7 delivers up-to-date code examples and documentation for AI-powered programmers and code editors. Its MCP connector integrates current library context into assistant workflows, reducing tab-switching and helping generated code avoid outdated APIs, nonexistent methods, and stale implementation patterns.';
+  String get mcpMarketDescContext7 =>
+      'Context7 delivers up-to-date code examples and documentation for AI-powered programmers and code editors. Its MCP connector integrates current library context into assistant workflows, reducing tab-switching and helping generated code avoid outdated APIs, nonexistent methods, and stale implementation patterns.';
 
   @override
-  String get mcpMarketDescHuggingFace => 'Hugging Face connects voice assistants to the Hugging Face Hub and thousands of Gradio apps. Its connector integrates model, dataset, space, and app context into AI workflows for discovery, experimentation, and machine learning research.';
+  String get mcpMarketDescHuggingFace =>
+      'Hugging Face connects voice assistants to the Hugging Face Hub and thousands of Gradio apps. Its connector integrates model, dataset, space, and app context into AI workflows for discovery, experimentation, and machine learning research.';
 
   @override
-  String get mcpMarketDescParallel => 'Parallel Search provides real-time web search and content extraction for search-driven AI workflows. Its remote MCP server helps assistants fetch current web-page context, verify pages, and use extracted content when answering questions or researching topics that need fresh information.';
+  String get mcpMarketDescParallel =>
+      'Parallel Search provides real-time web search and content extraction for search-driven AI workflows. Its remote MCP server helps assistants fetch current web-page context, verify pages, and use extracted content when answering questions or researching topics that need fresh information.';
 
   @override
-  String get mcpMarketDescTavily => 'Tavily gives AI agents real-time access to web resources via APIs for search, retrieval, and research. Its connector helps assistants ground answers in live data, extract relevant content, and support production agent workflows with safety controls.';
+  String get mcpMarketDescTavily =>
+      'Tavily gives AI agents real-time access to web resources via APIs for search, retrieval, and research. Its connector helps assistants ground answers in live data, extract relevant content, and support production agent workflows with safety controls.';
 
   @override
-  String get mcpMarketDescGithub => 'GitHub is a platform for collaborating on code, issues, pull requests, and project history. Its official remote MCP server gives assistants structured repository context to understand source changes, reviews, development workflows, and GitHub project status.';
+  String get mcpMarketDescGithub =>
+      'GitHub is a platform for collaborating on code, issues, pull requests, and project history. Its official remote MCP server gives assistants structured repository context to understand source changes, reviews, development workflows, and GitHub project status.';
 
   @override
-  String get mcpMarketDescPostman => 'Postman provides API context for coding agents and developer workflows. Its connector integrates API definitions, documentation, and collaboration context into assistant work, letting agents analyze integrations and implementation details.';
+  String get mcpMarketDescPostman =>
+      'Postman provides API context for coding agents and developer workflows. Its connector integrates API definitions, documentation, and collaboration context into assistant work, letting agents analyze integrations and implementation details.';
 
   @override
-  String get mcpMarketDescSlack => 'Slack is a collaboration hub uniting team messages, channels, users, and shared workspaces. Its remote MCP server integrates workspace conversation context into assistant workflows, helping users find answers, summarize discussions, and understand activity across channels.';
+  String get mcpMarketDescSlack =>
+      'Slack is a collaboration hub uniting team messages, channels, users, and shared workspaces. Its remote MCP server integrates workspace conversation context into assistant workflows, helping users find answers, summarize discussions, and understand activity across channels.';
 
   @override
-  String get mcpMarketDescFigma => 'Figma is a product design platform for UI design, prototyping, and developer handoff. Its remote MCP server brings files, projects, and dev-mode context into assistant workflows, letting agents understand visual work and map it to implementation tasks.';
+  String get mcpMarketDescFigma =>
+      'Figma is a product design platform for UI design, prototyping, and developer handoff. Its remote MCP server brings files, projects, and dev-mode context into assistant workflows, letting agents understand visual work and map it to implementation tasks.';
 
   @override
-  String get mcpMarketDescCanva => 'Canva is a visual communication platform for presentations, social graphics, documents, and brand materials. Its remote MCP server gives assistants access to Canva projects, assets, exported files, and comments, letting them discuss, edit, and prepare creative work from gathered info.';
+  String get mcpMarketDescCanva =>
+      'Canva is a visual communication platform for presentations, social graphics, documents, and brand materials. Its remote MCP server gives assistants access to Canva projects, assets, exported files, and comments, letting them discuss, edit, and prepare creative work from gathered info.';
 
   @override
-  String get mcpMarketDescStripe => 'Stripe is a payments and financial infrastructure platform for processing payments, billing, customers, and developer documentation. Its remote MCP server gives assistants account and implementation context backed by Stripe to understand customer workflows, billing questions, and payment tasks.';
+  String get mcpMarketDescStripe =>
+      'Stripe is a payments and financial infrastructure platform for processing payments, billing, customers, and developer documentation. Its remote MCP server gives assistants account and implementation context backed by Stripe to understand customer workflows, billing questions, and payment tasks.';
 
   @override
-  String get mcpMarketDescTrivago => 'Trivago helps users search for hotels and lodging by coordinates, city, country, dates, and travel context. Its connector gives assistants lodging-search context to find suitable stays near destinations or points of interest.';
+  String get mcpMarketDescTrivago =>
+      'Trivago helps users search for hotels and lodging by coordinates, city, country, dates, and travel context. Its connector gives assistants lodging-search context to find suitable stays near destinations or points of interest.';
 
   @override
-  String get mcpMarketDescSend => 'Send helps users create shareable documents, one-page docs, presentations, and slides. Its connector lets assistants turn requested materials into published links, interactive pages, and trackable deliverables for recipients.';
+  String get mcpMarketDescSend =>
+      'Send helps users create shareable documents, one-page docs, presentations, and slides. Its connector lets assistants turn requested materials into published links, interactive pages, and trackable deliverables for recipients.';
 
   @override
-  String get mcpMarketDescZiprecruiter => 'ZipRecruiter helps users search live jobs by title, company, location, salary, distance, work style, employment type, and posting date. Its connector integrates job-search context into assistant workflows before handing applications back to ZipRecruiter.';
+  String get mcpMarketDescZiprecruiter =>
+      'ZipRecruiter helps users search live jobs by title, company, location, salary, distance, work style, employment type, and posting date. Its connector integrates job-search context into assistant workflows before handing applications back to ZipRecruiter.';
 
   @override
-  String get mcpMarketDescAdobeCreativity => 'Adobe for Creativity unites Photoshop, Lightroom, Illustrator, Firefly, Premiere, Express, InDesign, and Stock with AI-driven creative work. Users can generate, edit, and enhance photos, design assets, and video projects using natural language while work stays tied to their Adobe account.';
+  String get mcpMarketDescAdobeCreativity =>
+      'Adobe for Creativity unites Photoshop, Lightroom, Illustrator, Firefly, Premiere, Express, InDesign, and Stock with AI-driven creative work. Users can generate, edit, and enhance photos, design assets, and video projects using natural language while work stays tied to their Adobe account.';
+
+  @override
+  String get agentsInstructions => 'Agents Instructions';
+
+  @override
+  String get agentsInstructionsSubtitle =>
+      'Manage AGENTS.md and custom instruction files';
+
+  @override
+  String get agentsMdHint =>
+      '# Project rules\n- Be concise\n- Write tests first';
+
+  @override
+  String get agentsMdSaved => 'AGENTS.md saved';
+
+  @override
+  String get instructionsAutoDetectedTitle => 'Detected files';
+
+  @override
+  String get instructionsAutoDetectedHelper =>
+      'AGENTS.md and CLAUDE.md found for this scope. Tap to view or edit.';
+
+  @override
+  String get instructionsFileNotCreated => 'Not created yet';
+
+  @override
+  String get instructionsFileReadOnly => 'Read-only';
+
+  @override
+  String get instructionsBadgeGlobal => 'Global';
+
+  @override
+  String get instructionsBadgeProject => 'Project';
+
+  @override
+  String get instructionsViewFile => 'View';
+
+  @override
+  String get instructionsEditFile => 'Edit';
+
+  @override
+  String get instructionsSectionTitle => 'Instruction files';
+
+  @override
+  String get instructionsSectionHelper =>
+      'Extra Markdown files appended after AGENTS.md, in order.';
+
+  @override
+  String get instructionsAdd => 'Add instruction';
+
+  @override
+  String get instructionsAddInline => 'Write inline';
+
+  @override
+  String get instructionsUploadFile => 'Upload .md file';
+
+  @override
+  String get instructionsEmpty => 'No instruction files yet';
+
+  @override
+  String get instructionsEmptyHint =>
+      'Add an inline instruction or upload a Markdown file.';
+
+  @override
+  String get instructionsNameLabel => 'Name';
+
+  @override
+  String get instructionsNameHint => 'coding-style';
+
+  @override
+  String get instructionsContentLabel => 'Content';
+
+  @override
+  String get instructionsContentHint => 'Write your instructions in Markdown…';
+
+  @override
+  String get instructionsAddedInline => 'Instruction added';
+
+  @override
+  String instructionsAddedFile(Object name) {
+    return 'File added: $name';
+  }
+
+  @override
+  String get instructionsRemoveTitle => 'Remove instruction';
+
+  @override
+  String instructionsRemoveContent(Object name) {
+    return 'Remove \"$name\" from instructions?';
+  }
+
+  @override
+  String get instructionsRemoved => 'Instruction removed';
+
+  @override
+  String get instructionsEditTitle => 'Edit instruction path';
+
+  @override
+  String get instructionsPathLabel => 'Path';
+
+  @override
+  String get instructionsUpdated => 'Instruction updated';
+
+  @override
+  String get instructionsScopeGlobal => 'Global';
+
+  @override
+  String get instructionsScopeProject => 'Project';
+
+  @override
+  String get instructionsScopeGlobalHint =>
+      'Applies everywhere. Stored in your user config.';
+
+  @override
+  String get instructionsScopeProjectHint =>
+      'Applies to the current project folder.';
+
+  @override
+  String get instructionsCreateAgents => 'Create AGENTS.md';
+
+  @override
+  String instructionsSaveError(Object error) {
+    return 'Could not save: $error';
+  }
+
+  @override
+  String get configScopeGlobal => 'Global';
+
+  @override
+  String get configScopeProject => 'Project';
+
+  @override
+  String get configProjectOverrides =>
+      'Project settings override global settings.';
+
+  @override
+  String get configPathLabel => 'Path';
+
+  @override
+  String get configStatusLabel => 'Status';
+
+  @override
+  String get configContentsTitle => 'File contents';
+
+  @override
+  String get configExists => 'Exists';
+
+  @override
+  String get configNotFound => 'Not found';
+
+  @override
+  String get configWillBeCreated => 'Will be created when you save.';
+
+  @override
+  String get skillsTitle => 'Skills';
+
+  @override
+  String get skillsSubtitle =>
+      'Reusable capability packs the assistant can load on demand.';
+
+  @override
+  String get skillsSectionTitle => 'Installed skills';
+
+  @override
+  String get skillsSectionHelper =>
+      'Each skill is a folder with a SKILL.md. Add your own or install from a URL.';
+
+  @override
+  String get skillsNewSkill => 'New skill';
+
+  @override
+  String get skillsInstallFromUrl => 'Install from URL';
+
+  @override
+  String get skillsNameLabel => 'Name';
+
+  @override
+  String get skillsNameHint => 'e.g. Code Reviewer';
+
+  @override
+  String get skillsDescriptionLabel => 'Description';
+
+  @override
+  String get skillsDescriptionHint => 'Short summary of what this skill does';
+
+  @override
+  String get skillsContentLabel => 'SKILL.md content';
+
+  @override
+  String get skillsContentHint => '# Heading\nInstructions for the assistant…';
+
+  @override
+  String get skillsUrlLabel => 'index.json URL';
+
+  @override
+  String get skillsUrlHint => 'https://example.com/skills';
+
+  @override
+  String get skillsApiKeyLabel => 'API key (optional)';
+
+  @override
+  String get skillsReadOnly => 'Read-only';
+
+  @override
+  String skillsFilesCount(int count) {
+    return '$count files';
+  }
+
+  @override
+  String get skillsCreated => 'Skill created';
+
+  @override
+  String get skillsSaved => 'Skill saved';
+
+  @override
+  String get skillsRemoved => 'Skill removed';
+
+  @override
+  String skillsInstalled(int count) {
+    return 'Installed $count skill(s)';
+  }
+
+  @override
+  String get skillsInstallNone => 'No skills found at that URL';
+
+  @override
+  String get skillsRemoveTitle => 'Remove skill';
+
+  @override
+  String skillsRemoveContent(String name) {
+    return 'Remove \"$name\"? This deletes its folder from disk.';
+  }
+
+  @override
+  String skillsSaveError(String error) {
+    return 'Could not complete: $error';
+  }
+
+  @override
+  String get skillsEmpty => 'No skills yet';
+
+  @override
+  String get skillsEmptyHint =>
+      'Create a skill or install one from a URL to get started.';
+
+  @override
+  String get skillsMarketplaceTab => 'Marketplace';
+
+  @override
+  String get skillsMarketplaceSearchHint => 'Search skills';
+
+  @override
+  String get skillsMarketplaceEmpty => 'No skills match your search.';
+
+  @override
+  String get skillsInstalledBadge => 'Installed';
+
+  @override
+  String get skillsInstallAction => 'Install';
+
+  @override
+  String get skillsInstallToGlobal => 'Install to Global';
+
+  @override
+  String get skillsInstallToProject => 'Install to Project';
+
+  @override
+  String skillsInstalledToast(String name) {
+    return '$name · installed';
+  }
+
+  @override
+  String get skillsTabGlobalTooltip => 'Skills available in every project';
+
+  @override
+  String get skillsTabProjectTooltip => 'Skills scoped to this project';
+
+  @override
+  String get skillsTabMarketplaceTooltip =>
+      'Browse and install ready-made skills';
+
+  @override
+  String get skillsPreviewClose => 'Close';
+
+  @override
+  String get skillsCategoryAll => 'All';
+
+  @override
+  String get skillsCategoryCoding => 'Coding';
+
+  @override
+  String get skillsCategoryWriting => 'Writing';
+
+  @override
+  String get skillsCategoryResearch => 'Research';
+
+  @override
+  String get skillsCategoryDesign => 'Design';
+
+  @override
+  String get skillsCategoryProductivity => 'Productivity';
+
+  @override
+  String get skillsCategoryData => 'Data';
+
+  @override
+  String get skillsCategoryOther => 'Other';
+
+  @override
+  String get skillsMarketDescCodeReviewer =>
+      'Elite code review for bugs, security, and maintainability.';
+
+  @override
+  String get skillsMarketDescCleanCode =>
+      'Turn working code into clean, readable code (Uncle Bob).';
+
+  @override
+  String get skillsMarketDescDry =>
+      'Eliminate duplicated knowledge and business logic.';
+
+  @override
+  String get skillsMarketDescArchitectReview =>
+      'Review architecture with clean, distributed-systems principles.';
+
+  @override
+  String get skillsMarketDescBackendArchitect =>
+      'Design scalable APIs, services, and data layers.';
+
+  @override
+  String get skillsMarketDescFlutterExpert =>
+      'Master Dart 3, advanced widgets, and multi-platform delivery.';
+
+  @override
+  String get skillsMarketDescAgentsMd =>
+      'Create and maintain concise, high-signal agent docs.';
+
+  @override
+  String get skillsMarketDescUxCopy => 'Write clear, human UX microcopy.';
+
+  @override
+  String get skillsMarketDescDeepResearch =>
+      'Plan, search, read, and synthesize research reports.';
+
+  @override
+  String get skillsMarketDescUiUxDesigner =>
+      'Design accessible, modern, high-performance interfaces.';
+
+  @override
+  String get skillsMarketDescUxuiPrinciples =>
+      'Apply core UX/UI principles to any interface.';
+
+  @override
+  String get skillsMarketDescCommit =>
+      'Write conventional commits with proper issue references.';
+
+  @override
+  String get skillsMarketDescToolDesign =>
+      'Build tools agents can use effectively.';
+
+  @override
+  String get skillsMarketDescProductManager =>
+      'Shape requirements, roadmaps, and product decisions.';
+
+  @override
+  String get skillsMarketDescDataScientist =>
+      'Advanced analytics, ML, and statistical modeling.';
+
+  @override
+  String get skillsMarketDescDatabaseOptimizer =>
+      'Tune queries and design scalable database schemas.';
+
+  @override
+  String get skillsMarketDescDebugger =>
+      'Systematic debugging for errors and test failures.';
+
+  @override
+  String get skillsMarketDescSecurityAuditor =>
+      'Audit for vulnerabilities and fix insecure code.';
+
+  @override
+  String get commonSave => 'Save';
+
+  @override
+  String get commonCancel => 'Cancel';
+
+  @override
+  String get commonAdd => 'Add';
+
+  @override
+  String get commonRemove => 'Remove';
+
+  @override
+  String get commonEdit => 'Edit';
 }

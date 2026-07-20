@@ -13,11 +13,11 @@ class McpServerIcon extends StatelessWidget {
   const McpServerIcon({super.key, this.serverId, this.size = 28});
 
   static const _iconMap = {
-    'context7': 'assets/provider/context7-color.png',
-    'codegraph': 'assets/provider/codegraph-color.png',
+    'context7': 'assets/provider/context7-color.svg',
+    'codegraph': 'assets/provider/codegraph-color.svg',
     'exa': 'assets/provider/exa-color.svg',
     'searxng': 'assets/provider/searxng.svg',
-    'sequential-thinking': 'assets/provider/sequential-thinking.png',
+    'sequential-thinking': 'assets/provider/sequential-thinking.svg',
   };
 
   @override
@@ -26,21 +26,15 @@ class McpServerIcon extends StatelessWidget {
     final path = id != null ? _iconMap[id] : null;
 
     if (path == null) {
-      final iconColor =
-          Theme.of(context).brightness == Brightness.dark
-              ? Colors.white
-              : Colors.black;
+      final iconColor = Theme.of(context).brightness == Brightness.dark
+          ? Colors.white
+          : Colors.black;
       return Icon(Icons.extension_outlined, size: size, color: iconColor);
     }
 
     if (path.endsWith('.svg')) {
       return SvgPicture.asset(path, width: size, height: size);
     }
-    return Image.asset(
-      path,
-      width: size,
-      height: size,
-      fit: BoxFit.contain,
-    );
+    return Image.asset(path, width: size, height: size, fit: BoxFit.contain);
   }
 }

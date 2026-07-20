@@ -7,43 +7,7 @@ import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/features/chat/services/chat_ai_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 
-const _subagentDeniedTools = {'task', 'todowrite'};
-
-String _escapeXml(String value) => value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;');
-
-String _buildTaskXml({
-  required String sessionId,
-  required String taskId,
-  required String agent,
-  required String state,
-  required String summary,
-  required String content,
-  String? userTaskId,
-}) {
-  final safeId = _escapeXml(taskId);
-  final safeAgent = _escapeXml(agent);
-  final safeSessionId = _escapeXml(sessionId);
-  final safeSummary = _escapeXml(summary);
-  final safeContent = content.replaceAll(']]>', ']]]]><![CDATA[>');
-
-  final taskIdAttr = userTaskId != null && userTaskId.isNotEmpty
-      ? ' task_id="${_escapeXml(userTaskId)}"'
-      : '';
-
-  return '<task id="$safeId"$taskIdAttr agent="$safeAgent" session_id="$safeSessionId" state="$state">'
-      '<summary>$safeSummary</summary>'
-      '<task_result><![CDATA[$safeContent]]></task_result>'
-      '</task>';
-}
-
-String _normalizeSessionId(String id) {
-  if (id.startsWith('ses_')) return id;
-  return 'ses_$id';
-}
+import 'task_shared.dart';
 
 ToolDef createTaskTool({
   ChatAiService? chatAiService,
@@ -120,7 +84,7 @@ ToolDef createTaskTool({
           metadata: {'error': true},
         );
       }
-      final normalizedSessionId = _normalizeSessionId(rawSessionId);
+      final normalizedSessionId = normalizeSessionId(rawSessionId);
 
       final agent = AgentRegistry().get(subagentType);
       if (agent == null) {
@@ -194,114 +158,113 @@ ToolDef createTaskTool({
       final temperatureToUse = effectiveChatAiService.currentTemperature ?? 0.7;
 
       final taskPartId = taskId ?? ctx.toolCallId;
-      final childResult = await runner.runTaskInChild(
-        parentSessionId: SessionID.fromString(normalizedSessionId),
-        taskPrompt: prompt,
-        agent: subagentType,
-        modelRef: childModel,
-        title: titleInput ?? description,
-        taskId: taskId,
-        taskPartId: taskPartId,
-        holder: currentSessionRunner,
-        abortSignal: ctx.abortSignal,
-        streamFn: (child) async {
-          LogTags.chatService.logInfo(
-            'TaskTool: child stream starting agent=$subagentType parent=$normalizedSessionId child=${child.sessionId.value}',
-          );
-          var lastTokensInput = 0;
-          var lastTokensOutput = 0;
-          var lastTokensCacheRead = 0;
-          var lastTokensCacheWrite = 0;
-          await chatAiService!.runChildCompletion(
-            messages: messages,
-            model: childModel,
-            temperature: temperatureToUse,
-            tools: subagentTools,
-            maxSteps: agent.maxSteps ?? unlimitedMaxSteps,
+
+      // Launch the child session WITHOUT awaiting it. The SDK invokes this
+      // `execute` per task call and sequentially awaits each one; by not
+      // blocking here the next parallel task's child session starts
+      // immediately — both run concurrently like two browser tabs. Each child
+      // drops its result into the shared batch (TaskBatch) and publishes it on
+      // the parent session via propagateChildOutput when it finishes.
+      runner
+          .runTaskInChild(
+            parentSessionId: SessionID.fromString(normalizedSessionId),
+            taskPrompt: prompt,
+            agent: subagentType,
+            modelRef: childModel,
+            title: titleInput ?? description,
+            taskId: taskId,
+            taskPartId: taskPartId,
+            holder: currentSessionRunner,
             abortSignal: ctx.abortSignal,
-            onUsage: (input, output, cacheRead, cacheWrite) {
-              lastTokensInput = input;
-              lastTokensOutput = output;
-              lastTokensCacheRead = cacheRead;
-              lastTokensCacheWrite = cacheWrite;
-            },
-            onChunk: child.onChunk,
-            onReasoning: child.onReasoning,
-            onToolStart: (toolCallId, toolName, input) async {
-              await child.onToolStart(toolCallId, toolName, input);
-              final title =
-                  input['command'] as String? ??
-                  input['query'] as String? ??
-                  input['filePath'] as String? ??
-                  input['path'] as String?;
+            streamFn: (child) async {
               LogTags.chatService.logInfo(
-                '[TaskTrace] onChildToolEvent WHAT=child tool started WHERE=task.dart '
-                'WHEN=${DateTime.now()} WHY=notify parent to resolve/update TaskPart header '
-                'child=${child.sessionId.value} tool=$toolName title=${title ?? ''} '
-                'partIdFromMap=${currentSessionRunner?.taskPartForChild(child.sessionId.value)}',
+                'TaskTool: child stream starting agent=$subagentType parent=$normalizedSessionId child=${child.sessionId.value}',
               );
-              currentSessionRunner?.onChildToolEvent
-                  ?.call(child.sessionId.value, toolName, title);
-              return;
-            },
-            onToolEnd: (toolCallId, toolName, result) async {
-              await child.onToolEnd(toolCallId, toolName, result);
-              return;
-            },
-            onToolError: (toolCallId, toolName, error) async {
-              await child.onError(Exception(error));
-              return;
-            },
-            onCompletion: (content) async {
-              await child.onCompletion(
-                content: content,
-                reasoning: null,
+              var lastTokensInput = 0;
+              var lastTokensOutput = 0;
+              var lastTokensCacheRead = 0;
+              var lastTokensCacheWrite = 0;
+              await chatAiService!.runChildCompletion(
+                messages: messages,
                 model: childModel,
-                tokensInput: lastTokensInput,
-                tokensOutput: lastTokensOutput,
-                tokensCacheRead: lastTokensCacheRead,
-                tokensCacheWrite: lastTokensCacheWrite,
+                temperature: temperatureToUse,
+                tools: subagentTools,
+                maxSteps: agent.maxSteps ?? unlimitedMaxSteps,
+                abortSignal: ctx.abortSignal,
+                onUsage: (input, output, cacheRead, cacheWrite) {
+                  lastTokensInput = input;
+                  lastTokensOutput = output;
+                  lastTokensCacheRead = cacheRead;
+                  lastTokensCacheWrite = cacheWrite;
+                },
+                onChunk: child.onChunk,
+                onReasoning: child.onReasoning,
+                onToolStart: (toolCallId, toolName, input) async {
+                  await child.onToolStart(toolCallId, toolName, input);
+                  final title =
+                      input['command'] as String? ??
+                      input['query'] as String? ??
+                      input['filePath'] as String? ??
+                      input['path'] as String?;
+                  currentSessionRunner?.onChildToolEvent?.call(
+                    child.sessionId.value,
+                    toolName,
+                    title,
+                  );
+                  return;
+                },
+                onToolEnd: (toolCallId, toolName, result) async {
+                  await child.onToolEnd(toolCallId, toolName, result);
+                  return;
+                },
+                onToolError: (toolCallId, toolName, error) async {
+                  await child.onError(Exception(error));
+                  return;
+                },
+                onCompletion: (content) async {
+                  await child.onCompletion(
+                    content: content,
+                    reasoning: null,
+                    model: childModel,
+                    tokensInput: lastTokensInput,
+                    tokensOutput: lastTokensOutput,
+                    tokensCacheRead: lastTokensCacheRead,
+                    tokensCacheWrite: lastTokensCacheWrite,
+                  );
+                },
+              );
+            },
+          )
+          .then(
+            (_) {
+              LogTags.chatService.logInfo(
+                'TaskTool: child finished agent=$subagentType part=$taskPartId',
+              );
+            },
+            onError: (e, st) {
+              LogTags.chatService.logWarning(
+                'TaskTool: child failed agent=$subagentType part=$taskPartId error=$e',
               );
             },
           );
-        },
-      );
 
-      final childTaskId = taskId ?? 'task_${childResult.sessionId.value}';
-
-      final xml = _buildTaskXml(
-        sessionId: rawSessionId,
-        taskId: childTaskId,
-        agent: agent.name,
-        state: childResult.aborted ? 'cancelled' : 'completed',
-        summary: childResult.output,
-        content: childResult.output,
-      );
-      LogTags.chatService.logInfo(
-        'TaskTool: child finished agent=$subagentType aborted=${childResult.aborted} outputLen=${childResult.output.length}',
-      );
+      // Return immediately so the SDK can start the next parallel task. The
+      // actual result is delivered to the parent session asynchronously via
+      // propagateChildOutput (TaskCompleted) when the child finishes.
+      final delegatedTaskId = taskId ?? 'task_$taskPartId';
       return ToolOutput(
-        xml,
+        '<task id="$delegatedTaskId" agent="${agent.name}" state="delegated">'
+        'Delegated to ${agent.name} subagent. Result will be reported when complete.'
+        '</task>',
         metadata: {
-          'task_id': childTaskId,
+          'task_id': delegatedTaskId,
           'subagent_type': subagentType,
           'agent_name': agent.name,
           'description': description,
           'session_id': rawSessionId,
-          if (childResult.aborted) 'aborted': true,
+          'delegated': true,
         },
       );
     },
   );
-}
-
-ToolSet deriveSubagentTools(ToolRegistry registry) {
-  final allTools = registry.toSDKTools();
-  final result = <String, Tool<dynamic, dynamic>>{};
-  for (final entry in allTools.entries) {
-    if (!_subagentDeniedTools.contains(entry.key)) {
-      result[entry.key] = entry.value;
-    }
-  }
-  return result;
 }

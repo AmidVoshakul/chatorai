@@ -13,7 +13,7 @@ Previously, the application used hardcoded paths (`~/Documents/chatorai/`, `~/.l
 - **Windows** where paths use backslashes and `APPDATA`/`LOCALAPPDATA`
 - **Mobile** (Android/iOS) where apps are sandboxed and must use `path_provider`
 
-XdgPaths resolves the directory name dynamically from the application's bundle ID at runtime via `package_info_plus`, ensuring correct paths regardless of how the app is distributed or installed.
+XdgPaths resolves the directory name from `pubspec.yaml` in the current working directory via regex (`^name:\s*(.+)$`), falling back to `chatorai` when the file is not present (e.g. globally installed CLI binary). It does **not** use `package_info_plus` or `PackageInfo`.
 
 ## How `init()` Works
 
@@ -29,10 +29,11 @@ void main() async {
 
 The method:
 
-1. Calls `PackageInfo.fromPlatform()` to read the bundle ID (e.g. `com.chatorai.app`)
-2. Validates the name (rejects empty, slashes, `..`)
-3. Caches it in a static field
-4. Subsequent calls are no-ops (safe to call multiple times)
+1. Reads `pubspec.yaml` in the current working directory and extracts the `name:` field via regex (`^name:\s*(.+)$`).
+2. Validates the name (rejects empty, slashes, `..`).
+3. Caches it in a static field.
+4. On mobile (Android/iOS), also caches platform-specific paths from `path_provider`.
+5. Subsequent calls are no-ops (safe to call multiple times).
 
 If `init()` has not been called, all getters fall back to the literal string `chatorai` and emit a warning log.
 
@@ -69,10 +70,12 @@ If `init()` has not been called, all getters fall back to the literal string `ch
 
 | Getter            | Path                                               |
 | ----------------- | -------------------------------------------------- |
-| `dataHomeAsync`   | `getApplicationSupportDirectory()` (sandboxed)     |
-| `configHomeAsync` | Same as data (mobile has no separate config home)  |
+| `dataHomeAsync`   | `getApplicationDocumentsDirectory()` (sandboxed)   |
+| `configHomeAsync` | `getApplicationSupportDirectory()` (sandboxed)     |
 | `cacheHomeAsync`  | `getTemporaryDirectory()/<package>/cache`          |
 | `stateHomeAsync`  | `getApplicationSupportDirectory()/<package>/state` |
+
+Note: on mobile, `dataHome` (documents) and `configHome` (support directory) resolve to different sandboxed paths.
 
 ## Data / Cache / Config Separation
 
@@ -116,3 +119,4 @@ Use async getters when targeting mobile or when running before the platform cont
 | `lib/core/skills/url_source.dart`                | URL-skill cache in `cacheHomeAsync`                   |
 | `lib/core/tools/tool_output_persistence.dart`    | Tool output in `dataSubdirAsync('tool-output')`       |
 | `lib/core/permission/ruleset.dart`               | Expands `~` in permission patterns via `expandHome()` |
+| `lib/shared/utils/xdg_paths_cli.dart`            | CLI paths including `prefsHome` (used by `uninstall`) |

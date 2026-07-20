@@ -66,7 +66,8 @@ void main() {
       await File(p.join(parent.path, 'AGENTS.md')).writeAsString('PARENT');
       await File(p.join(child.path, 'AGENTS.md')).writeAsString('CHILD');
 
-      final resolver = InstructionsResolver();
+      // Disable auto-discovery to test explicit entry behavior only.
+      final resolver = InstructionsResolver(disableProjectConfig: true);
       final blocks = await resolver.resolve(['AGENTS.md'], cwd: child);
       expect(blocks, hasLength(1));
       expect(blocks.single, contains('CHILD'));
@@ -145,6 +146,200 @@ void main() {
         p.join(tmp.path, 'big.md'),
       ], cwd: tmp);
       expect(blocks, isEmpty);
+    });
+
+    // -------------------------------------------------------------------------
+    // Auto-discovery tests
+    // -------------------------------------------------------------------------
+
+    test('auto-discovers AGENTS.md upward from cwd', () async {
+      final project = Directory(p.join(tmp.path, 'project'))..createSync();
+      final nested = Directory(p.join(project.path, 'src', 'lib'))
+        ..createSync(recursive: true);
+      await File(
+        p.join(project.path, 'AGENTS.md'),
+      ).writeAsString('PROJECT AGENTS');
+
+      final resolver = InstructionsResolver();
+      // Resolve with empty config — only auto-discovery should run.
+      final blocks = await resolver.resolve([], cwd: nested);
+      expect(blocks, isNotEmpty);
+      expect(blocks.first, contains('PROJECT AGENTS'));
+    });
+
+    test('auto-discovers CLAUDE.md upward from cwd', () async {
+      final project = Directory(p.join(tmp.path, 'project'))..createSync();
+      await File(
+        p.join(project.path, 'CLAUDE.md'),
+      ).writeAsString('CLAUDE RULES');
+
+      final resolver = InstructionsResolver();
+      final blocks = await resolver.resolve([], cwd: project);
+      expect(blocks, isNotEmpty);
+      expect(blocks.first, contains('CLAUDE RULES'));
+    });
+
+    test(
+      'auto-discovers both AGENTS.md and CLAUDE.md at different levels',
+      () async {
+        final project = Directory(p.join(tmp.path, 'project'))..createSync();
+        final nested = Directory(p.join(project.path, 'src'))..createSync();
+        await File(
+          p.join(project.path, 'AGENTS.md'),
+        ).writeAsString('PROJECT AGENTS');
+        await File(
+          p.join(nested.path, 'CLAUDE.md'),
+        ).writeAsString('NESTED CLAUDE');
+
+        final resolver = InstructionsResolver();
+        final blocks = await resolver.resolve([], cwd: nested);
+        expect(blocks, hasLength(2));
+        // Project-level first (closest to root), then nested (closest to cwd).
+        expect(blocks[0], contains('PROJECT AGENTS'));
+        expect(blocks[1], contains('NESTED CLAUDE'));
+      },
+    );
+
+    test('deduplicates auto-discovered and explicit entries', () async {
+      final project = Directory(p.join(tmp.path, 'project'))..createSync();
+      await File(
+        p.join(project.path, 'AGENTS.md'),
+      ).writeAsString('AUTO DISCOVERED');
+
+      final resolver = InstructionsResolver();
+      // Explicit entry should not duplicate the auto-discovered one.
+      final blocks = await resolver.resolve(['AGENTS.md'], cwd: project);
+      // Only one block for AGENTS.md.
+      expect(blocks.where((b) => b.contains('AUTO DISCOVERED')), hasLength(1));
+    });
+
+    test('respects disableProjectConfig parameter', () async {
+      final project = Directory(p.join(tmp.path, 'project'))..createSync();
+      await File(
+        p.join(project.path, 'AGENTS.md'),
+      ).writeAsString('SHOULD NOT APPEAR');
+
+      final resolver = InstructionsResolver(disableProjectConfig: true);
+      final blocks = await resolver.resolve([], cwd: project);
+      expect(blocks, isEmpty);
+    });
+
+    test('explicit entries still work alongside auto-discovery', () async {
+      final project = Directory(p.join(tmp.path, 'project'))..createSync();
+      await File(p.join(project.path, 'AGENTS.md')).writeAsString('AUTO');
+      await File(p.join(project.path, 'extra.md')).writeAsString('EXPLICIT');
+
+      final resolver = InstructionsResolver();
+      final blocks = await resolver.resolve([
+        p.join(project.path, 'extra.md'),
+      ], cwd: project);
+      expect(blocks, hasLength(2));
+      expect(blocks.any((b) => b.contains('AUTO')), isTrue);
+      expect(blocks.any((b) => b.contains('EXPLICIT')), isTrue);
+    });
+  });
+
+  group('InstructionsResolver.discoverFiles', () {
+    late Directory tmp;
+
+    setUp(() async {
+      tmp = await Directory.systemTemp.createTemp('discover_test_');
+    });
+
+    tearDown(() async {
+      if (await tmp.exists()) await tmp.delete(recursive: true);
+    });
+
+    test('lists global AGENTS.md first (editable, isGlobal)', () {
+      final globalPath = p.join(tmp.path, 'global', 'AGENTS.md');
+      final resolver = InstructionsResolver(disableProjectConfig: true);
+
+      final files = resolver.discoverFiles(globalAgentsPath: globalPath);
+
+      expect(files, hasLength(1));
+      expect(files.first.name, 'AGENTS.md');
+      expect(files.first.path, globalPath);
+      expect(files.first.editable, isTrue);
+      expect(files.first.isGlobal, isTrue);
+      expect(files.first.exists, isFalse);
+    });
+
+    test('reports exists=true when the file is present', () async {
+      final globalDir = Directory(p.join(tmp.path, 'global'))..createSync();
+      final globalPath = p.join(globalDir.path, 'AGENTS.md');
+      await File(globalPath).writeAsString('GLOBAL');
+      final resolver = InstructionsResolver(disableProjectConfig: true);
+
+      final files = resolver.discoverFiles(globalAgentsPath: globalPath);
+
+      expect(files.single.exists, isTrue);
+    });
+
+    test(
+      'discovers project AGENTS.md (editable) and CLAUDE.md (read-only)',
+      () async {
+        final project = Directory(p.join(tmp.path, 'project'))..createSync();
+        await File(p.join(project.path, 'AGENTS.md')).writeAsString('A');
+        await File(p.join(project.path, 'CLAUDE.md')).writeAsString('C');
+        final resolver = InstructionsResolver();
+
+        final files = resolver.discoverFiles(cwd: project);
+
+        final agents = files.firstWhere((f) => f.name == 'AGENTS.md');
+        final claude = files.firstWhere((f) => f.name == 'CLAUDE.md');
+        expect(agents.editable, isTrue);
+        expect(agents.isGlobal, isFalse);
+        expect(claude.editable, isFalse);
+        expect(claude.exists, isTrue);
+      },
+    );
+
+    test('global entry precedes project entries', () async {
+      final globalDir = Directory(p.join(tmp.path, 'global'))..createSync();
+      final globalPath = p.join(globalDir.path, 'AGENTS.md');
+      final project = Directory(p.join(tmp.path, 'project'))..createSync();
+      await File(p.join(project.path, 'AGENTS.md')).writeAsString('A');
+      final resolver = InstructionsResolver();
+
+      final files = resolver.discoverFiles(
+        cwd: project,
+        globalAgentsPath: globalPath,
+      );
+
+      expect(files.first.isGlobal, isTrue);
+      expect(
+        files.any((f) => f.path == p.join(project.path, 'AGENTS.md')),
+        isTrue,
+      );
+    });
+
+    test('deduplicates when global path equals a discovered path', () async {
+      final project = Directory(p.join(tmp.path, 'project'))..createSync();
+      final agentsPath = p.join(project.path, 'AGENTS.md');
+      await File(agentsPath).writeAsString('A');
+      final resolver = InstructionsResolver();
+
+      final files = resolver.discoverFiles(
+        cwd: project,
+        globalAgentsPath: agentsPath,
+      );
+
+      expect(files.where((f) => f.path == agentsPath), hasLength(1));
+    });
+
+    test('returns only global entry when project config disabled', () {
+      final project = Directory(p.join(tmp.path, 'project'))..createSync();
+      File(p.join(project.path, 'AGENTS.md')).writeAsStringSync('A');
+      final globalPath = p.join(tmp.path, 'global', 'AGENTS.md');
+      final resolver = InstructionsResolver(disableProjectConfig: true);
+
+      final files = resolver.discoverFiles(
+        cwd: project,
+        globalAgentsPath: globalPath,
+      );
+
+      expect(files, hasLength(1));
+      expect(files.single.isGlobal, isTrue);
     });
   });
 }

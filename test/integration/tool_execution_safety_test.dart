@@ -1,4 +1,4 @@
-import 'package:ai_sdk_dart/ai_sdk_dart.dart' show ToolSet;
+import 'package:ai_sdk_dart/ai_sdk_dart.dart' show CancellationToken, ToolSet;
 import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/llm/model_resolver.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';

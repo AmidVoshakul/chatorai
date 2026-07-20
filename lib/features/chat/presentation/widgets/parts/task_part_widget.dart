@@ -4,7 +4,6 @@ import 'package:chatorai/features/chat/presentation/widgets/parts/tool_title.dar
 import 'package:chatorai/features/sessions/providers/session_providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/format_utils.dart';
-import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -18,8 +17,9 @@ class _TaskHoverState extends Notifier<Map<String, bool>> {
   void set(String id, bool value) => state = {...state, id: value};
 }
 
-final _taskHoverProvider =
-    NotifierProvider<_TaskHoverState, Map<String, bool>>(_TaskHoverState.new);
+final _taskHoverProvider = NotifierProvider<_TaskHoverState, Map<String, bool>>(
+  _TaskHoverState.new,
+);
 
 class TaskPartWidget extends ConsumerWidget {
   final TaskPart part;
@@ -50,13 +50,6 @@ class TaskPartWidget extends ConsumerWidget {
     // "Read test/test_task_abort.dart [offset=148, limit=45]", rendered
     // through the same toolTitle() formatter used for ordinary tool calls.
     if (part.sessionId != null) {
-      // [TaskTrace] Widget reads live child tools. WHAT=render live header
-      // WHERE=task_part_widget WHEN=${DateTime.now()} WHY=part.sessionId resolved
-      // to child session → read its tool results.
-      LogTags.chatScreen.logInfo(
-        '[TaskTrace] build READ LIVE sessionId=${part.sessionId} '
-        'agent=${part.agent} desc=${part.description}',
-      );
       final results = ref.watch(
         childSessionToolResultsProvider(part.sessionId!),
       );
@@ -75,36 +68,28 @@ class TaskPartWidget extends ConsumerWidget {
         liveCurrentTitle = toolTitle(active.toolName, active.input);
       }
     }
-    if (part.sessionId == null) {
-      LogTags.chatScreen.logInfo(
-        '[TaskTrace] build NO LIVE agent=${part.agent} desc=${part.description} '
-        'currentTool=${part.currentTool} WHY=part.sessionId == null → widget uses fallback currentTool',
-      );
-    }
     final currentTool = liveCurrentTool ?? part.currentTool;
     final currentToolTitle = liveCurrentTitle ?? part.currentToolTitle;
 
     return MouseRegion(
-      onEnter: (_) =>
-          ref.read(_taskHoverProvider.notifier).set(hoverKey, true),
-      onExit: (_) =>
-          ref.read(_taskHoverProvider.notifier).set(hoverKey, false),
+      onEnter: (_) => ref.read(_taskHoverProvider.notifier).set(hoverKey, true),
+      onExit: (_) => ref.read(_taskHoverProvider.notifier).set(hoverKey, false),
       cursor: SystemMouseCursors.click,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 2),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.4,
-              ),
-              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.4,
             ),
-            child: Opacity(
-              opacity: isHovered ? 1.0 : ChatoraiOpacity.low,
-              child: Column(
+            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+          ),
+          child: Opacity(
+            opacity: isHovered ? 1.0 : ChatoraiOpacity.low,
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -125,22 +110,20 @@ class TaskPartWidget extends ConsumerWidget {
                     ),
                   ],
                 ),
-                if (isRunning &&
-                    currentTool != null &&
-                    currentTool.isNotEmpty)
+                if (isRunning && currentTool != null && currentTool.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(left: 24, top: 2),
                     child: Text(
                       '  ↳ ${currentToolTitle ?? _capitalize(currentTool)}'
                           .trim(),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: ChatoraiFontSizes.xs,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: ChatoraiFontSizes.xs,
                       ),
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
                     ),
-                  if (isRunning && hasError)
+                  ),
+                if (isRunning && hasError)
                   Padding(
                     padding: const EdgeInsets.only(left: 24, top: 2),
                     child: Text(
@@ -150,8 +133,8 @@ class TaskPartWidget extends ConsumerWidget {
                         color: theme.colorScheme.error,
                         fontWeight: FontWeight.w500,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
                     ),
                   ),
                 if (isCompleted) ...[

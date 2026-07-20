@@ -5,6 +5,7 @@ import 'package:chatorai/core/mcp/mcp_config.dart';
 import 'package:chatorai/core/mcp/mcp_marketplace_catalog.dart';
 import 'package:chatorai/features/settings/providers/mcp_management_provider.dart';
 import 'package:chatorai/features/settings/screens/mcp_add_server_helpers.dart';
+import 'package:chatorai/features/settings/widgets/premium_blocks.dart';
 import 'package:chatorai/features/models/widgets/mcp_server_icon.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
@@ -386,9 +387,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
     // Recover the editable token + auth type from the stored headers.
     final headers = config.headers ?? const {};
     final tokenEntry = headers.entries.firstWhere(
-      (e) =>
-          e.key == 'Authorization' ||
-          e.key == 'X-Api-Key',
+      (e) => e.key == 'Authorization' || e.key == 'X-Api-Key',
       orElse: () => const MapEntry('', ''),
     );
     _tokenController.text = tokenEntry.value;
@@ -645,7 +644,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                 child: Text(l10n.statsError(error.toString())),
               ),
             ),
-              data: (state) {
+            data: (state) {
               final names = state.servers.keys.toList()..sort();
               if (names.isEmpty) {
                 return _EmptyState(isDark: isDark, onAdd: _showAddDialog);
@@ -654,12 +653,11 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                 padding: const EdgeInsets.all(ChatoraiSpacing.lg),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final crossAxisCount =
-                        constraints.maxWidth >= 720
-                            ? 3
-                            : constraints.maxWidth >= 480
-                            ? 2
-                            : 1;
+                    final crossAxisCount = constraints.maxWidth >= 720
+                        ? 3
+                        : constraints.maxWidth >= 480
+                        ? 2
+                        : 1;
                     final spacing = ChatoraiSpacing.md;
                     final cardWidth =
                         (constraints.maxWidth -
@@ -677,10 +675,8 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                                 .read(mcpManagementProvider.notifier)
                                 .setEnabled(name, enabled),
                             onRemove: () => _confirmRemove(name),
-                            onEdit: () => _showEditDialog(
-                              name,
-                              state.servers[name]!,
-                            ),
+                            onEdit: () =>
+                                _showEditDialog(name, state.servers[name]!),
                           ),
                         ),
                     ];
@@ -764,7 +760,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
             separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               if (index == 0) {
-                return _CategoryChip(
+                return CategoryChip(
                   label: l10n.mcpMarketCategoryAll,
                   selected: _activeCategory == null,
                   isDark: isDark,
@@ -772,7 +768,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                 );
               }
               final cat = categories[index - 1];
-              return _CategoryChip(
+              return CategoryChip(
                 label: _categoryLabel(l10n, cat),
                 selected: _activeCategory == cat,
                 isDark: isDark,
@@ -811,8 +807,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                           : 1;
                       final spacing = ChatoraiSpacing.md;
                       final cardWidth =
-                          (constraints.maxWidth -
-                              spacing * (crossCount - 1)) /
+                          (constraints.maxWidth - spacing * (crossCount - 1)) /
                           crossCount;
                       final children = <Widget>[
                         for (final entry in visible)
@@ -931,24 +926,24 @@ class _ServerCard extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.only(right: ChatoraiSpacing.sm),
-                child: McpServerIcon(serverId: name, size: 24),
-              ),
-              Expanded(
                 child: Tooltip(
                   message: _buildTooltip(name),
                   preferBelow: false,
-                  child: Text(
-                    name,
-                    style: TextStyle(
-                      fontSize: ChatoraiFontSizes.lg,
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? ChatoraiColors.pureWhite
-                          : ChatoraiColors.pureBlack,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: McpServerIcon(serverId: name, size: 24),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  name,
+                  style: TextStyle(
+                    fontSize: ChatoraiFontSizes.lg,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? ChatoraiColors.pureWhite
+                        : ChatoraiColors.pureBlack,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -1143,58 +1138,6 @@ Widget _marketIcon(bool isDark, McpMarketplaceEntry entry, double size) {
       ),
     ),
   );
-}
-
-class _CategoryChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  const _CategoryChip({
-    required this.label,
-    required this.selected,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = selected
-        ? ChatoraiColors.pureWhite
-        : (isDark
-              ? ChatoraiColors.darkSecondaryTextColor
-              : ChatoraiColors.secondaryTextColor);
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected
-              ? ChatoraiColors.orange
-              : (isDark
-                    ? ChatoraiColors.darkInputFill
-                    : ChatoraiColors.inputFill),
-          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.full),
-          border: Border.all(
-            color: selected
-                ? ChatoraiColors.orange
-                : (isDark
-                      ? ChatoraiColors.darkInputBorder
-                      : ChatoraiColors.inputBorder),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: ChatoraiFontSizes.base,
-            fontWeight: FontWeight.w600,
-            color: fg,
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _MarketCard extends StatelessWidget {

@@ -18,7 +18,7 @@ The configuration file location is resolved via `XdgPaths.configHome` (see `lib/
 | Windows  | `%APPDATA%\com.chatorai.app\config\chatorai.json`                  |
 | Mobile   | Sandboxed app support directory (no user-accessible path)          |
 
-The directory name is derived from the package bundle ID at runtime via `package_info_plus`.
+The directory name is derived from the `pubspec.yaml` `name:` field in the current working directory via regex (`^name:\s*(.+)$`), falling back to `chatorai` when the file is not present (e.g. globally installed CLI binary).
 
 If both locations exist, they are deep-merged: the project config overrides the
 global config's keys, while keys absent in the project config are inherited from
@@ -227,6 +227,11 @@ Configures per-agent overrides and customizations. Each key is an agent name (e.
 | Field       | Type     | Description                                                |
 | ----------- | -------- | ---------------------------------------------------------- |
 | `prompt`    | `string` | Override the agent system prompt                           |
+| `name`      | `string` | Override the agent display name                            |
+| `description` | `string` | Override the agent description shown in UI                |
+| `model`     | `string` | Override the default model for this agent                  |
+| `temperature` | `number` | Override the default sampling temperature                 |
+| `permission` | `string` | Override default permission for this agent (`allow`, `ask`, `deny`) |
 | `disabled`  | `bool`   | Remove this agent from registry                            |
 | `hidden`    | `bool`   | Hide this agent from UI                                    |
 | `max_steps` | `int?`   | Override max steps for agent execution. `null` = unlimited |

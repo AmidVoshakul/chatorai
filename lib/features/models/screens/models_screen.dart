@@ -440,7 +440,7 @@ class _RecentModelsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 4),
+          padding: const EdgeInsets.only(left: 18, right: 8, bottom: 8, top: 4),
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
@@ -455,17 +455,17 @@ class _RecentModelsSection extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 96,
+          height: 76,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 15),
             child: Row(
               children: [
                 for (final m in models)
                   Padding(
                     padding: const EdgeInsets.only(right: 12),
                     child: SizedBox(
-                      width: 200,
+                      width: 250,
                       child: Material(
                         color: currentModel == m.id
                             ? theme.primaryColor.withAlpha(28)

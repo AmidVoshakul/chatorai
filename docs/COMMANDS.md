@@ -76,7 +76,7 @@ Prints the main help text listing available commands.
 Prints the installed version, e.g.:
 
 ```
-chatorai 0.1.0
+chatorai 0.1.1
 ```
 
 ### `chatorai stats [options]`
@@ -93,17 +93,64 @@ Options:
   --help            Show this help
 ```
 
-### `chatorai models`
+### `chatorai models [options]`
 
 Lists all available models grouped by provider (from the local catalog cache
 or built-in providers).
 
+```
+Usage: chatorai models [options]
+
+List models available from the provider catalog.
+
+Options:
+  -p, --provider <id>  show only models for the given provider
+  -h, --help           show this help
+```
+
+### `chatorai uninstall [options]`
+
+Uninstall ChatORAI from the system and remove all related files. Installs into
+per-user directories, so no administrator privileges are required.
+
+```
+Usage: chatorai uninstall [options]
+
+uninstall chatorai from the system and remove all related files
+
+Options:
+  -c, --keep-config  keep configuration files
+  -d, --keep-data    keep session data and snapshots
+      --dry-run      show what would be removed without removing
+  -f, --force, --yes skip confirmation prompts
+  -h, --help         show help
+```
+
+### `chatorai mcp [subcommand]`
+
+Manage Model Context Protocol (MCP) servers. Delegates to `runMcp` in
+`lib/core/cli/mcp_cli.dart`.
+
+```
+Usage: chatorai mcp [command] [options]
+
+Commands:
+  (no args)       launch the interactive TUI menu
+  list            list configured MCP servers and their status
+  add <name> ...  add a new MCP server
+  remove <name>   remove an MCP server
+  enable <name>   enable an MCP server
+  disable <name>  disable an MCP server
+  help            show this help
+```
+
 ### `chatorai upgrade [target]`
 
 Upgrade to the latest released build (or a specific `target` version) from GitHub
-Releases and install it to `/usr/local/lib/chatorai/`. Requires `sudo` for the
-copy step. No Flutter SDK needed. This is the one-command way to install or
-update ChatORAI.
+Releases and install it to the user directory (`InstallPaths.installDir`, e.g.
+`~/.local/share/chatorai`). No `sudo` is required — the in-app upgrade installs
+to a per-user directory. Only the standalone installer script (`install_chatorai.sh`)
+uses `sudo` for system-wide installs. No Flutter SDK needed.
 
 ```
 Usage: chatorai upgrade [target]
@@ -114,10 +161,11 @@ Positionals:
   target  version to upgrade to, e.g. '0.1.0' or 'v0.1.0'  [string]
 
 Options:
-  -h, --help  show help
+  -f, --force, --yes  skip confirmation prompt
+  -h, --help          show help
 ```
 
-Equivalent to re-running the installer:
+Equivalent to re-running the installer (system-wide, requires `sudo`):
 
 ```
 curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | sudo bash
@@ -174,14 +222,20 @@ When the AI invokes tools, they appear inline in the chat stream with icons and 
 | `webfetch`       | Fetch URL content                                 | allow              |
 | `websearch`      | Search web via SearXNG                            | allow              |
 | `task`           | Spawn subagent via `SessionRunner`                | allow              |
+| `task_container` | Run parallel subagent tasks, aggregate            | allow              |
 | `question`       | Ask user question (with dedup)                    | allow              |
 | `todowrite`      | Update todo list                                  | allow              |
 | `skill`          | Load specialized skill                            | allow              |
 | `apply_patch`    | Apply unified diff                                | ask                |
 | `lsp`            | LSP hover/signature help                          | allow              |
 | `format`         | Code formatting                                   | ask                |
+| `plan_enter`     | Switch to plan agent mode                         | ask                |
+| `plan_exit`      | Exit plan mode, switch to build agent             | ask                |
+| `json_schema`    | JSON schema validation                            | ask                |
+| `invalid`        | Invalid tool placeholder                          | ask                |
+| `external_directory` | Directory operations (builtin)              | ask                |
 
-**Conditionally registered:** `lsp` (when `LspService` available), `format` (when `FormatService` available), `skill` (when `SkillService` available). Additional built-in tools: `external_directory` (ask), `plan_exit` (ask), `json_schema` (ask fallback).
+**Conditionally registered:** `lsp` (when `LspService` available), `format` (when `FormatService` available), `skill` (when `SkillService` available).
 
 **States:** `pending` (∼), `running` (spinner), `completed` (✓), `error` (✗). Tool results can be expanded to show full output.
 

@@ -53,7 +53,7 @@ All providers are defined using Riverpod 3.x and can be accessed via `ref.watch(
 | `sessionTreeProvider`        | `Provider<SessionTree>`        | Parent-child session navigation.                                |
 | `chatRepositoryProvider`     | `Provider<ChatRepository>`     | Chat persistence repository.                                    |
 | `chatStorageServiceProvider` | `Provider<ChatStorageService>` | Local storage abstraction (SharedPreferences).                  |
-| `toolRegistryProvider`       | `FutureProvider<ToolRegistry>` | Registry of all available tools (16 built-in + dynamic skills). |
+| `toolRegistryProvider`       | `FutureProvider<ToolRegistry>` | Registry of all available tools (18 built-in + dynamic skills). |
 | `skillServiceProvider`       | `FutureProvider<SkillService>` | Skill management service for dynamic capabilities.              |
 | `mcpClientServiceProvider`   | `Provider<McpClientService>`   | MCP server connections for external tool integration.           |
 | `lspServiceProvider`         | `Provider<LspService>`         | LSP integration for code intelligence.                          |
@@ -149,7 +149,7 @@ Registry for all built-in and custom tools. Converts internal `ToolDef` to `ai_s
 
 **Registration:**
 
-- All built-in tools registered in `built_in_tools.dart` via `registerBuiltInTools()` — 16 unconditional + up to 3 conditional (19 total possible).
+- All built-in tools registered in `built_in_tools.dart` via `registerBuiltInTools()` — 18 unconditional + up to 3 conditional (21 total possible).
 - Conditional: `lsp` (when `LspService` is provided), `format` (when `FormatService` is provided), `skill` (when `SkillService` is provided).
 - The `task` tool requires `chatAiService`, `toolRegistry`, and `currentSessionRunner` parameters.
 - Permission defaults defined in `PermissionRuleset.defaults()` (`lib/core/permission/ruleset.dart`).
@@ -197,14 +197,16 @@ Future<TaskChildResult> runTaskInChild({
 
 ```dart
 class SessionRunnerSession {
-  final SessionID sessionId;
-  final SessionID? _parentId; // private; access via getter if needed
-  final String? _agent;       // private
-  final String? _modelRef;    // private
   final SessionRepository repository;
+  final SessionID sessionId;
   final ToolRegistry? toolRegistry;
   final bool immediate;
+  final String? _agent;      // private
+  final String? _modelRef;   // private
+  final String? _title;      // private
+  final SessionID? _parentId; // private
   bool get initialized;
+  String? messageId;
 }
 ```
 
@@ -217,52 +219,6 @@ and Riverpod providers (`sessionProviders`) for UI-level session operations.
 // In a widget or notifier:
 final sessionRunner = ref.read(sessionRunnerProvider);
 final session = sessionRunner.startSession(agent: 'general');
-```
-
-**`SessionRunnerSession` fields (selected public API):**
-
-```dart
-class SessionRunnerSession {
-  final SessionID sessionId;
-  final SessionID? _parentId; // private; access via getter if needed
-  final String? _agent;       // private
-  final String? _modelRef;    // private
-  final SessionRepository repository;
-  final ToolRegistry? toolRegistry;
-  final bool immediate;
-  bool get initialized;
-}
-```
-
-`SessionRunnerSession` is an internal state object. Use the `SessionRepository`
-and Riverpod providers (`sessionProviders`) for UI-level session operations.
-
-**Usage via Riverpod providers:**
-
-```dart
-// In a widget or notifier:
-final sessionRunner = ref.read(sessionRunnerProvider);
-final session = sessionRunner.startSession(agent: 'general');
-```
-
-**Properties of `SessionRunnerSession`:**
-
-```dart
-class SessionRunnerSession {
-  final SessionID id;
-  final SessionID? parentId;
-  final String agent;
-  final String? modelRef;
-  final DateTime createdAt;
-}
-```
-
-**Usage via Riverpod providers:**
-
-```dart
-// In a widget or notifier:
-final sessionRunner = ref.read(sessionRunnerProvider);
-final session = await sessionRunner.startSession(agent: 'general');
 ```
 
 **Stream events** from `SessionRunner` are persisted to the `EventStore` and can be replayed via `SessionRepository` to reconstruct `SessionState`.
@@ -324,9 +280,9 @@ The message system uses a concrete `Message` class (not abstract) with `MessageR
 
 All tools implement the `Tool` interface from `ai_sdk_dart`. The `ToolRegistry` converts internal `ToolDef` implementations to SDK tools.
 
-### Built-in Tools (19 total, 16 unconditional + 3 conditional)
+### Built-in Tools (21 total, 18 unconditional + 3 conditional)
 
-**Always registered (16):**
+**Always registered (18):**
 
 | Tool                 | Description                           | Input Schema                                                            | Default Permission          |
 | -------------------- | ------------------------------------- | ----------------------------------------------------------------------- | --------------------------- |
@@ -339,11 +295,13 @@ All tools implement the `Tool` interface from `ai_sdk_dart`. The `ToolRegistry` 
 | `webfetch`           | Fetch URL content                     | `{ "url": string, "format": "text" \| "markdown" \| "html" }`           | allow                       |
 | `websearch`          | Search web via SearXNG                | `{ "query": string, "engines": string[], "categories": string[] }`      | allow                       |
 | `task`               | Spawn subagent via `SessionRunner`    | `{ "prompt": string, "context": object, "subagentType": string }`       | allow                       |
+| `task_container`     | Run parallel subagent tasks, aggregate | `{ "tasks": [...], "strategy": "race" \| "all" }`                       | allow                       |
 | `todowrite`          | Update todo list                      | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }` | allow                       |
 | `question`           | Ask user question (with dedup)        | `{ "question": string, "options": string[], "multiple": bool }`         | allow                       |
 | `apply_patch`        | Apply unified diff                    | `{ "patch": string, "dryRun": bool }`                                   | no default (fallback `ask`) |
 | `invalid`            | Invalid tool placeholder              | `{}`                                                                    | no default (fallback `ask`) |
 | `external_directory` | Directory operations (builtin)        | —                                                                       | ask                         |
+| `plan_enter`         | Switch to plan agent mode             | —                                                                       | no default (fallback `ask`) |
 | `plan_exit`          | Exit plan mode, switch to build agent | —                                                                       | no default (fallback `ask`) |
 | `json_schema`        | JSON schema validation                | —                                                                       | no default (fallback `ask`) |
 
@@ -355,7 +313,7 @@ All tools implement the `Tool` interface from `ai_sdk_dart`. The `ToolRegistry` 
 | `format` | When `FormatService` is provided | no default (fallback `ask`) |
 | `skill`  | When `SkillService` is provided  | allow                       |
 
-The actual registration in `registerBuiltInTools()` (see `lib/core/tools/built_in/built_in_tools.dart`) registers exactly **16 tools unconditionally**, plus up to 3 conditional tools (`lsp`, `format`, `skill`). Total: 16–19 built-in tools depending on available services. `skill` is **never** unconditionally registered — it requires `skillService != null`.
+The actual registration in `registerBuiltInTools()` (see `lib/core/tools/built_in/built_in_tools.dart`) registers exactly **18 tools unconditionally**, plus up to 3 conditional tools (`lsp`, `format`, `skill`). Total: 18–21 built-in tools depending on available services. `skill` is **never** unconditionally registered — it requires `skillService != null`.
 
 **Note on defaults:** `format`, `json_schema`, `apply_patch`, `invalid`, and `plan_exit` have no entry in `PermissionRuleset.defaults()`. When no rule matches the `evaluate()` function, the fallback action is `ask`.
 
@@ -478,6 +436,7 @@ CHATORAI_DEBUG=true
 - `SessionTree`: Parent-child navigation in the session hierarchy.
 - `EventStore`: `append()`, `read()`, `stream()` on the Drift event store.
 - `McpClientService`: `initialize(config)`, `connect(serverName)`, `callTool(...)`, `listAllTools()`, `getToolDefs()`, `disconnect()`, `dispose()`.
+- `mcp` CLI subcommand: `chatorai mcp` delegates to `runMcp()` in `lib/core/cli/mcp_cli.dart` for managing MCP servers (list/add/remove/enable/disable/tui).
 - `ModelNotifier`: Manages model selection, favorites, usage tracking (`usageCounts`/`lastUsed`), available models, and the `recentModels` (top-6) getter.
 - `PermissionRuleset`: `fromConfig(map)`, `defaults()`, merge via `PermissionEvaluator`.
 - `ToolExecutor`: `execute(def, input, options)` — cache, doom-loop guard, permission check, truncation.

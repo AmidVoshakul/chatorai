@@ -171,22 +171,24 @@ graph LR
 ```mermaid
 graph TD
     start_["App start"]
-    project["Project config\n<project>/.chatorai/chatorai.json\n(highest priority)"]
-    global["Global config\n~/.config/chatorai/chatorai.json\n(fallback)"]
+    global["Global config\n~/.config/chatorai/chatorai.json\n(base layer)"]
+    project["Project config\n<project>/.chatorai/chatorai.json\n(overlay, wins on conflict)"]
+    merge["Deep merge\n(project overrides global;\nlists concatenated, deduped)"]
     schema["Validate against JSON Schema\n(chatorai_schema.dart)"]
     fallback["Empty config {} fallback\n(if neither file exists)"]
     providers_["configProvider\n(FutureProvider<ChatOrAIConfig>)"]
 
-    start_ --> project
-    project -->|"found"| schema
-    project -->|"not found"| global
-    global -->|"found"| schema
+    start_ --> global
+    global --> project
+    project -->|"found"| merge
+    project -->|"not found"| schema
     global -->|"not found"| fallback
+    merge --> schema
     schema --> providers_
     fallback --> providers_
 ```
 
-**Note:** First-found-wins — no CLI/env overrides, no merging of multiple configs.
+**Note:** The two layers are deep-merged: project config keys win over global base keys, while absent keys are inherited from global. Lists are concatenated with duplicates removed.
 ---
 ## Install / Upgrade Flow (Linux)
 
@@ -197,7 +199,7 @@ graph TD
     arch_detect["Detect architecture\n(x64 / arm64)"]
     version_resolve{"Version\nspecified?"}
     resolve_latest["Resolve latest release\nvia GitHub API"]
-    use_specified["Use specified version\n(e.g. 0.1.0 or v0.1.0)"]
+    use_specified["Use specified version\n(e.g. 0.1.1 or v0.1.1)"]
     download["Download tarball\nchatorai-linux-{arch}.tar.gz"]
     extract["Extract bundle"]
     install_files["Copy to /usr/local/lib/chatorai"]
@@ -228,9 +230,9 @@ graph TD
     upgrade_cmd["chatorai upgrade [target]"]
     upgrade_download["Download tarball"]
     upgrade_extract["Extract to staging"]
-    upgrade_rm["rm -rf /usr/local/lib/chatorai"]
+    upgrade_rm["rm -rf InstallPaths.installDir\n(~/.local/share/chatorai)"]
     upgrade_cp["cp -r new bundle"]
-    upgrade_done["Upgrade complete\n(launcher handles GL)"]
+    upgrade_done["Upgrade complete\n(launcher handles GL)\nno sudo required"]
 
     upgrade_cmd --> upgrade_download
     upgrade_download --> upgrade_extract
@@ -240,8 +242,8 @@ graph TD
 ```
 
 **Notes:**
-- Installer script: `install_chatorai.sh`
-- Upgrade command: `chatorai upgrade [target]` (positional version arg, e.g. `0.1.0` or `v0.1.0`; `--help` supported)
+- Installer script: `install_chatorai.sh` (system-wide, requires `sudo`)
+- In-app upgrade: `chatorai upgrade [target]` installs to user directory (`InstallPaths.installDir`), no `sudo` required
 - Launcher auto-detects OpenGL < 3.0 via `glxinfo`, switches to `LIBGL_ALWAYS_SOFTWARE=1` + `GALLIUM_DRIVER=llvmpipe`
 - Override with `CHATORAI_FORCE_SOFT_GL=0/1`; persistence flag `.force_soft_gl`
 - On SIGSEGV=139 / SIGABRT=134, launcher transparently retries with software rendering

@@ -47,34 +47,36 @@ void main() {
       await future;
     });
 
-    test('once grant is not blocked by rate-limit on a different pattern',
-        () async {
-      // Regression: after replying "once", a follow-up ask for the same
-      // permission but a DIFFERENT pattern (e.g. two distinct bash commands)
-      // must not be rate-limited into a PermissionDeniedError, and must not
-      // require a second reply. See logs: "RATE-LIMITED for bash:bash".
-      final req1 = PermissionRequest(
-        id: 'req-once-1',
-        toolName: 'bash',
-        permission: 'bash',
-        patterns: ['git status'],
-        metadata: {'sessionId': 's1'},
-      );
-      final f1 = service.ask(req1, ruleset);
-      await Future.delayed(Duration.zero);
-      service.reply('req-once-1', PermissionReply.once);
-      await f1;
+    test(
+      'once grant is not blocked by rate-limit on a different pattern',
+      () async {
+        // Regression: after replying "once", a follow-up ask for the same
+        // permission but a DIFFERENT pattern (e.g. two distinct bash commands)
+        // must not be rate-limited into a PermissionDeniedError, and must not
+        // require a second reply. See logs: "RATE-LIMITED for bash:bash".
+        final req1 = PermissionRequest(
+          id: 'req-once-1',
+          toolName: 'bash',
+          permission: 'bash',
+          patterns: ['git status'],
+          metadata: {'sessionId': 's1'},
+        );
+        final f1 = service.ask(req1, ruleset);
+        await Future.delayed(Duration.zero);
+        service.reply('req-once-1', PermissionReply.once);
+        await f1;
 
-      final req2 = PermissionRequest(
-        id: 'req-once-2',
-        toolName: 'bash',
-        permission: 'bash',
-        patterns: ['ls -la'],
-        metadata: {'sessionId': 's1'},
-      );
-      // Must complete without throwing and without requiring another reply.
-      await service.ask(req2, ruleset);
-    });
+        final req2 = PermissionRequest(
+          id: 'req-once-2',
+          toolName: 'bash',
+          permission: 'bash',
+          patterns: ['ls -la'],
+          metadata: {'sessionId': 's1'},
+        );
+        // Must complete without throwing and without requiring another reply.
+        await service.ask(req2, ruleset);
+      },
+    );
 
     test('deny throws immediately', () async {
       final denyRuleset = PermissionRuleset(

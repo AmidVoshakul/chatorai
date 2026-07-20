@@ -443,24 +443,28 @@ void main() {
     setUp(() => container = ProviderContainer());
     tearDown(() => container.dispose());
 
-    test('onTaskSessionIdResolved fills taskSessionId for two concurrent tasks',
-        () {
-      final n = container.read(chatScreenProvider.notifier);
-      n.startStreaming('ses_parent');
-      n.onTaskStart('part_a', 'm1', 'ses_parent', 'task A', 'General');
-      n.onTaskStart('part_b', 'm1', 'ses_parent', 'task B', 'General');
+    test(
+      'onTaskSessionIdResolved fills taskSessionId for two concurrent tasks',
+      () {
+        final n = container.read(chatScreenProvider.notifier);
+        n.startStreaming('ses_parent');
+        n.onTaskStart('part_a', 'm1', 'ses_parent', 'task A', 'General');
+        n.onTaskStart('part_b', 'm1', 'ses_parent', 'task B', 'General');
 
-      // Child sessions resolve independently (map-routed, not single var).
-      n.onTaskSessionIdResolved('part_a', 'child_a');
-      n.onTaskSessionIdResolved('part_b', 'child_b');
+        // Child sessions resolve independently (map-routed, not single var).
+        n.onTaskSessionIdResolved('part_a', 'child_a');
+        n.onTaskSessionIdResolved('part_b', 'child_b');
 
-      final parts =
-          container.read(chatScreenProvider).streamingParts.whereType<AssistantTask>();
-      final a = parts.firstWhere((p) => p.id == 'part_a');
-      final b = parts.firstWhere((p) => p.id == 'part_b');
-      expect(a.taskSessionId, 'child_a');
-      expect(b.taskSessionId, 'child_b');
-    });
+        final parts = container
+            .read(chatScreenProvider)
+            .streamingParts
+            .whereType<AssistantTask>();
+        final a = parts.firstWhere((p) => p.id == 'part_a');
+        final b = parts.firstWhere((p) => p.id == 'part_b');
+        expect(a.taskSessionId, 'child_a');
+        expect(b.taskSessionId, 'child_b');
+      },
+    );
 
     test('onTaskSessionIdResolved is idempotent and overwrites stale id', () {
       final n = container.read(chatScreenProvider.notifier);
@@ -485,8 +489,10 @@ void main() {
 
       n.closeAllRunningTasks();
 
-      final parts =
-          container.read(chatScreenProvider).streamingParts.whereType<AssistantTask>();
+      final parts = container
+          .read(chatScreenProvider)
+          .streamingParts
+          .whereType<AssistantTask>();
       expect(parts.every((p) => p.state == ToolState.completed), isTrue);
     });
 

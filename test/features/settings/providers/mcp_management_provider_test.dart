@@ -95,49 +95,53 @@ void main() {
       expect(_state().servers.containsKey('tool'), isFalse);
     });
 
-    test('updateServer edits a remote server token without losing fields',
-        () async {
-      final notifier = _notifier();
-      await notifier.addServer(
-        'api',
-        McpServerConfig.remote(
-          url: 'https://api.example.com/mcp',
-          headers: {'Authorization': 'Bearer old-token'},
-        ),
-      );
-      final before = _state().servers['api']!;
-      expect(before.url, 'https://api.example.com/mcp');
+    test(
+      'updateServer edits a remote server token without losing fields',
+      () async {
+        final notifier = _notifier();
+        await notifier.addServer(
+          'api',
+          McpServerConfig.remote(
+            url: 'https://api.example.com/mcp',
+            headers: {'Authorization': 'Bearer old-token'},
+          ),
+        );
+        final before = _state().servers['api']!;
+        expect(before.url, 'https://api.example.com/mcp');
 
-      final updated = before.copyWith(
-        headers: {'Authorization': 'Bearer new-token'},
-      );
-      await notifier.updateServer('api', updated);
+        final updated = before.copyWith(
+          headers: {'Authorization': 'Bearer new-token'},
+        );
+        await notifier.updateServer('api', updated);
 
-      final after = _state().servers['api']!;
-      expect(after.url, 'https://api.example.com/mcp');
-      expect(after.headers, {'Authorization': 'Bearer new-token'});
-    });
+        final after = _state().servers['api']!;
+        expect(after.url, 'https://api.example.com/mcp');
+        expect(after.headers, {'Authorization': 'Bearer new-token'});
+      },
+    );
 
-    test('updateServer keeps other fields when editing a local server',
-        () async {
-      final notifier = _notifier();
-      await notifier.addServer(
-        'tool',
-        McpServerConfig.local(
-          command: 'mytool',
-          args: ['--a'],
-          environment: {'K': 'V'},
-        ),
-      );
-      final before = _state().servers['tool']!;
-      final updated = before.copyWith(command: 'mytool2');
-      await notifier.updateServer('tool', updated);
+    test(
+      'updateServer keeps other fields when editing a local server',
+      () async {
+        final notifier = _notifier();
+        await notifier.addServer(
+          'tool',
+          McpServerConfig.local(
+            command: 'mytool',
+            args: ['--a'],
+            environment: {'K': 'V'},
+          ),
+        );
+        final before = _state().servers['tool']!;
+        final updated = before.copyWith(command: 'mytool2');
+        await notifier.updateServer('tool', updated);
 
-      final after = _state().servers['tool']!;
-      expect(after.command, 'mytool2');
-      expect(after.args, ['--a']);
-      expect(after.environment, {'K': 'V'});
-    });
+        final after = _state().servers['tool']!;
+        expect(after.command, 'mytool2');
+        expect(after.args, ['--a']);
+        expect(after.environment, {'K': 'V'});
+      },
+    );
 
     test('refresh() picks up external file changes', () async {
       final notifier = _notifier();

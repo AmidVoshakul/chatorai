@@ -8,7 +8,7 @@ IconData toolIcon(String toolName) {
       return Icons.visibility;
     case 'question':
     case 'skill':
-      return Icons.arrow_forward;
+      return Icons.attachment_outlined;
     case 'edit':
       return Icons.edit_note;
     case 'write':

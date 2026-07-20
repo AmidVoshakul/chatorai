@@ -77,6 +77,24 @@ flutter:
   assets:
     - assets/chatorai_logo_black.png
     - assets/provider/
+    - assets/skills/agents-md/
+    - assets/skills/architect-review/
+    - assets/skills/backend-architect/
+    - assets/skills/clean-code/
+    - assets/skills/code-reviewer/
+    - assets/skills/commit/
+    - assets/skills/database-optimizer/
+    - assets/skills/data-scientist/
+    - assets/skills/debugger/
+    - assets/skills/deep-research/
+    - assets/skills/dry/
+    - assets/skills/flutter-expert/
+    - assets/skills/product-manager/
+    - assets/skills/security-auditor/
+    - assets/skills/tool-design/
+    - assets/skills/ui-ux-designer/
+    - assets/skills/ux-copy/
+    - assets/skills/uxui-principles/
 
 l10n:
   arb-dir: lib/l10n

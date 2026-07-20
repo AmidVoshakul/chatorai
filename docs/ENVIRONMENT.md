@@ -21,17 +21,26 @@ This document describes the software and hardware requirements, environment vari
 
 #### Linux (Debian/Ubuntu)
 
-Install system libraries:
+Install system libraries for runtime:
 
 ```bash
 sudo apt update
-sudo apt install libgtk-3-0 libgdk-pixbuf-2.0-0 libpango-1.0-0 libcairo2
+sudo apt install libgtk-3-0 libgdk-pixbuf-2.0-0 libpango-1.0-0 libcairo2 \
+  libblkid1 libglib2.0-0 libsecret-1-0 libepoxy0 libfontconfig1 \
+  libsqlite3-0 libstdc++6 zlib1g
 ```
 
 For audio/video support (optional):
 
 ```bash
 sudo apt install libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+```
+
+For building from source, also install development packages:
+
+```bash
+sudo apt install libgtk-3-dev libsecret-1-dev clang cmake ninja-build \
+  pkg-config libstdc++-12-dev patchelf
 ```
 
 #### Windows
@@ -60,7 +69,7 @@ When installing a prebuilt release via `install_chatorai.sh` / `install_chatorai
 / `install_chatorai.bat` (or the AppImage / `.deb`), **no Flutter SDK or build
 toolchain is required**. The only requirements are:
 
-- **Linux system libraries** — `libgtk-3-0 libgdk-pixbuf-2.0-0 libpango-1.0-0 libcairo2`
+- **Linux system libraries** — `libgtk-3-0 libgdk-pixbuf-2.0-0 libpango-1.0-0 libcairo2 libblkid1 libglib2.0-0 libsecret-1-0 libepoxy0 libfontconfig1 libsqlite3-0 libstdc++6 zlib1g`
 - **Windows** — Visual C++ Redistributable (x64)
 - **Internet access** — for API calls to OpenRouter or custom endpoints
 - **Microphone / Camera** — optional, for voice and image features
@@ -98,9 +107,13 @@ ChatORAI uses two sources of configuration:
 ### 1. `.env` (Development Only)
 
 Located in project root. **Ignored by git** (`.gitignore`). Not bundled in release builds.
+Use `.env.example` as a template.
 
 ```env
-# Required for development: Your OpenRouter API key
+# Multiple provider keys are supported:
+NVIDIA_API_KEY=nv-...
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
 OPENROUTER_API_KEY=sk-or-v1-...
 
 # Optional overrides
@@ -203,14 +216,14 @@ Where `<package>` is the runtime bundle ID (e.g. `com.chatorai.app`). A project-
 
 ### pubspec.yaml
 
-Key dependencies:
+See `pubspec.yaml` for the full dependency list. Notable dependencies:
 
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.3.1
-  ai_sdk_dart: ^1.1.0
+  ai_sdk_dart: ^1.2.0
   ai_sdk_openai: ^1.1.0
   ai_sdk_provider: ^1.1.0
   ai_sdk_anthropic: ^1.1.0
@@ -239,17 +252,20 @@ dependencies:
   json_annotation: ^4.12.0
   mcp_dart: ^2.2.2
   synchronized: ^3.1.0
-  # ... (see full pubspec.yaml)
-
-dev_dependencies:
-  flutter_test:
-  flutter_lints: ^6.0.0
-  test: ^1.26.3
-  mocktail: ^1.0.3
-  drift_dev: ^2.25.1
-  build_runner: ^2.4.0
-  json_serializable: ^6.14.0
-  freezed: 3.2.6-dev.1
+  intl: ^0.20.2
+  flutter_spinkit: ^5.2.2
+  connectivity_plus: ^7.0.0
+  share_plus: ^10.1.4
+  flutter_dotenv: ^6.0.0
+  file_picker: ^10.3.10
+  permission_handler: ^12.0.1
+  package_info_plus: ^9.0.0
+  retry: ^3.1.2
+  html: ^0.15.6
+  command_shield: ^1.1.0
+  nocterm: ^0.8.0
+  cryptography: ^2.9.0
+  cryptography_flutter: ^2.3.4
 ```
 
 ---

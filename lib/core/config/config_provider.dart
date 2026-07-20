@@ -23,6 +23,9 @@ final compactionConfigProvider = Provider<CompactionConfig>((ref) {
 /// shared with non-UI consumers (e.g. the task tool).
 final resolvedInstructionsProvider = FutureProvider<List<String>>((ref) async {
   final config = await ref.watch(configProvider.future);
+  // The project root is always the process working directory, matching the
+  // config loader and the built-in tools. Auto-discovery (AGENTS.md walk-up)
+  // and relative `instructions[]` entries resolve from it.
   InstructionsCache.instance.setRaw(
     config.instructions,
     cwd: Directory.current,

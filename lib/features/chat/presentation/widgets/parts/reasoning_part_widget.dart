@@ -72,23 +72,13 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget> {
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context);
 
-    final isStreaming = widget.part.isStreaming;
-    final card = isStreaming
-        ? Container(
-            padding: const EdgeInsets.all(ChatoraiSpacing.sm),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-            ),
-            child: _cardContent(theme, localizations),
-          )
-        : AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(ChatoraiSpacing.sm),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-            ),
-            child: _cardContent(theme, localizations),
-          );
+    final card = Container(
+      padding: const EdgeInsets.all(ChatoraiSpacing.sm),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+      ),
+      child: _cardContent(theme, localizations),
+    );
     return Align(alignment: Alignment.centerLeft, child: card);
   }
 
@@ -100,17 +90,11 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildHeader(localizations, theme),
-          AnimatedCrossFade(
-            firstChild: const SizedBox.shrink(),
-            secondChild: Padding(
+          if (_isExpanded)
+            Padding(
               padding: const EdgeInsets.only(top: ChatoraiSpacing.sm),
               child: _buildContent(),
             ),
-            crossFadeState: _isExpanded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 200),
-          ),
         ],
       ),
     );
@@ -178,10 +162,10 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget> {
       behavior: HitTestBehavior.opaque,
       child: Row(
         children: [
-          AnimatedRotation(
-            turns: _isExpanded ? 0.25 : 0,
-            duration: const Duration(milliseconds: 200),
-            child: Icon(Icons.chevron_right, size: 14, color: orange),
+          Icon(
+            _isExpanded ? Icons.keyboard_arrow_down : Icons.chevron_right,
+            size: 14,
+            color: orange,
           ),
           const SizedBox(width: 8),
           Text(

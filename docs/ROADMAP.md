@@ -7,7 +7,7 @@ completed milestones and future plans based on the current codebase state.
 
 ## Completed Milestones
 
-### [0.1.0] — 2026-06-28
+### [0.1.1] — 2026-07-20
 
 - Multi-provider AI chat via OpenRouter, local LLMs, and any OpenAI-compatible endpoint
 - Voice input with speech-to-text and camera/image attachments
@@ -31,7 +31,7 @@ completed milestones and future plans based on the current codebase state.
 
 ### Tool Execution System
 
-- 16 unconditional + 3 conditional built-in tools registered via `ToolRegistry`
+- 18 unconditional + 3 conditional built-in tools registered via `ToolRegistry`
 - Doom-loop guard (max 3 steps per turn) with cache deduplication
 - `TruncationService` limits tool outputs to 2000 lines / 50 KB with expandable UI
 - Interactive `QuestionPart` with cooldown dedup and multi-select support
@@ -47,7 +47,7 @@ completed milestones and future plans based on the current codebase state.
 ### Provider & Model Management
 
 - `ProviderCatalogService` with 24-hour SharedPreferences cache
-- 22 SVG provider icons with theme-aware rendering
+- 145 SVG provider icons with theme-aware rendering
 - `AddProviderDialog` and `ModelSelectionDialog` for in-app configuration
 - `ModelResolver` merges provider defaults, model metadata, and variant fields
 - **Recent models**: horizontal "stories"-style strip of the top-6 recently/frequently used models on the model-selection screen, backed by `usageCounts`/`lastUsed` in `SharedPreferences` and the `recentModels` getter (shipped in 0.1.1)
@@ -63,8 +63,34 @@ completed milestones and future plans based on the current codebase state.
 
 - Comprehensive `docs/` reference (API, Commands, Environment, Configuration, Security, XdgPaths)
 - Mermaid diagrams for architecture, sessions, tools, and MCP topology
-- Unit tests (43+ `ProviderCatalogService` tests) and widget tests
+- Unit tests (~62 `ProviderCatalogService` test cases) and widget tests
 - Zero-warning `flutter analyze` target
+
+### CLI Commands
+
+- `chatorai uninstall` with `--keep-config`, `--keep-data`, `--dry-run`, `--force`
+- `chatorai mcp` subcommand (list/add/remove/enable/disable/tui) delegating to `runMcp()` in `lib/core/cli/mcp_cli.dart`
+- `chatorai models` supports `-p/--provider <id>` filter and `--help`
+
+### Plan-Mode Tools
+
+- `plan_enter` tool (switch to plan agent) and `plan_exit` tool (exit plan mode)
+- `task_container` tool for parallel subagent execution with aggregated results
+
+### Provider & Configuration
+
+- `provider` config section for custom OpenAI-compatible providers
+- `instructions` config section for system prompt augmentation
+- 38 built-in providers with 145 SVG icons
+
+### Security
+
+- AES-256-GCM encrypted fallback secret storage (`PrefsSecretStorage`) when OS keyring is unavailable
+- `cryptography` and `cryptography_flutter` back the fallback path
+
+### Terminal Integration
+
+- `nocterm` terminal widget integration for inline shell sessions
 
 ---
 

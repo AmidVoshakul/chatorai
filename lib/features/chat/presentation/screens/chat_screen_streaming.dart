@@ -137,28 +137,26 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     // get their own live header.
     holder.onChildSessionResolved = (childSessionId) {
       final taskPartId = holder.childToTaskPart[childSessionId];
-      LogTags.chatScreen.logInfo(
-        '[TaskTrace] onChildSessionResolved WHAT=resolve child→part WHERE=streaming '
-        'WHEN=${DateTime.now()} WHY=map child session to TaskPart.taskSessionId '
-        'child=$childSessionId taskPartId=$taskPartId '
-        'mapSize=${holder.childToTaskPart.length}',
-      );
       if (taskPartId != null) {
         notifier.onTaskSessionIdResolved(taskPartId, childSessionId);
-      } else {
-        LogTags.chatScreen.logWarning(
-          '[TaskTrace] onChildSessionResolved MISSING MAP ENTRY child=$childSessionId '
-          'WHY=child not registered before event → TaskPart.taskSessionId will NOT be set',
-        );
       }
+    };
+    holder.onTaskStart = (taskPartId, desc, agent) {
+      if (currentMessageId == null) return;
+      notifier.onTaskStart(
+        taskPartId,
+        currentMessageId!,
+        sessionId,
+        desc,
+        agent,
+      );
+    };
+    holder.onTaskEnd = (taskPartId) {
+      if (currentMessageId == null) return;
+      notifier.onTaskEnd(taskPartId);
     };
     holder.onChildToolEvent = (childSessionId, toolName, title) {
       final taskPartId = holder.childToTaskPart[childSessionId];
-      LogTags.chatScreen.logInfo(
-        '[TaskTrace] onChildToolEvent WHAT=child tool→update part WHERE=streaming '
-        'WHEN=${DateTime.now()} WHY=route live tool title to TaskPart '
-        'child=$childSessionId tool=$toolName title=${title ?? ''} taskPartId=$taskPartId',
-      );
       if (taskPartId != null) {
         // Resolve the child session id as soon as the first tool event
         // arrives so the TaskPart can read live tool calls from the child
@@ -166,11 +164,6 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         // child session rather than from the parent task tool).
         notifier.onTaskSessionIdResolved(taskPartId, childSessionId);
         notifier.onTaskToolExecuted(taskPartId, toolName, title);
-      } else {
-        LogTags.chatScreen.logWarning(
-          '[TaskTrace] onChildToolEvent MISSING MAP ENTRY child=$childSessionId '
-          'WHY=child not registered → header will not update for this part',
-        );
       }
     };
 
@@ -300,7 +293,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             }
           } else {
             final partId = _genPartId(toolCallId);
-            if (toolName != 'task' && activeTaskSessionIds.isEmpty) {
+            if (toolName != 'task' &&
+                toolName != 'task_container' &&
+                activeTaskSessionIds.isEmpty) {
               notifier.onToolCall(
                 partId,
                 toolCallId,
@@ -320,12 +315,6 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               final taskId = input['task_id'] as String?;
               final taskPartId = taskId ?? toolCallId;
 
-              LogTags.chatScreen.logInfo(
-                '[TaskTrace] onTaskStart(task) WHAT=create TaskPart WHERE=streaming.onToolStart '
-                'WHEN=${DateTime.now()} WHY=parent received task tool-call → build UI part '
-                'taskId=$taskId toolCallId=$toolCallId taskPartId=$taskPartId '
-                'agent=$agentName desc=$description sessionId=$sessionId',
-              );
               notifier.onTaskStart(
                 taskPartId,
                 currentMessageId!,
@@ -361,14 +350,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           }
 
           if (toolName == 'task') {
-            final id = taskToolToPart.remove(toolCallId) ??
+            final id =
+                taskToolToPart.remove(toolCallId) ??
                 activeTaskSessionIds.firstOrNull;
-            LogTags.chatScreen.logInfo(
-              '[TaskTrace] onToolEnd(task) WHAT=finish TaskPart WHERE=streaming.onToolEnd '
-              'WHEN=${DateTime.now()} WHY=parent task tool-call completed → mark part done '
-              'toolCallId=$toolCallId resolvedId=$id '
-              'remainingActive=${activeTaskSessionIds.length}',
-            );
             if (id != null) {
               activeTaskSessionIds.remove(id);
               resolveTaskChildSession(id);

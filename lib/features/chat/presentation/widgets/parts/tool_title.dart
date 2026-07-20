@@ -56,9 +56,10 @@ String _toolTitleForWrite(Map<String, dynamic> input) {
 }
 
 String _toolTitleForBash(Map<String, dynamic> input) {
+  final command = input['command'] as String? ?? '';
+  if (command.isNotEmpty) return 'bash ${_breakablePath(command)}';
   final desc = input['description'] as String? ?? '';
-  if (desc.isNotEmpty) return desc;
-  return 'bash';
+  return desc.isNotEmpty ? desc : 'bash';
 }
 
 String _toolTitleForGlob(Map<String, dynamic> input) {

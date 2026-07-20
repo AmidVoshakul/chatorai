@@ -86,54 +86,27 @@ class AssistantMessageBubble extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (message.isStreaming)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: ChatoraiSpacing.md,
-              vertical: ChatoraiSpacing.sm,
-            ),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-              boxShadow: ChatoraiShadows.cardShadow,
-              border: Border.all(
-                color: theme.dividerColor.withValues(alpha: 0.3),
-                width: ChatoraiBorderWidth.thinBold,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: groupedParts,
-            ),
-          )
-        else
-          AnimatedSize(
-            duration: const Duration(milliseconds: 150),
-            curve: Curves.easeOut,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: ChatoraiSpacing.md,
-                vertical: ChatoraiSpacing.sm,
-              ),
-              decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-                boxShadow: ChatoraiShadows.cardShadow,
-                border: Border.all(
-                  color: theme.dividerColor.withValues(alpha: 0.3),
-                  width: ChatoraiBorderWidth.thinBold,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: groupedParts,
-              ),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: ChatoraiSpacing.md,
+            vertical: ChatoraiSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+            boxShadow: ChatoraiShadows.cardShadow,
+            border: Border.all(
+              color: theme.dividerColor.withValues(alpha: 0.3),
+              width: ChatoraiBorderWidth.thinBold,
             ),
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: groupedParts,
+          ),
+        ),
         ActionRow(
           isUser: false,
           isLastMessage: isLastMessage && message.isStreaming,

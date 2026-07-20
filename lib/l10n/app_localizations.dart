@@ -66,7 +66,8 @@ import 'app_localizations_zh.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -74,7 +75,8 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -86,12 +88,13 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
@@ -100,7 +103,7 @@ abstract class AppLocalizations {
     Locale('ja'),
     Locale('ru'),
     Locale('uk'),
-    Locale('zh')
+    Locale('zh'),
   ];
 
   /// No description provided for @appName.
@@ -3198,9 +3201,706 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Adobe for Creativity unites Photoshop, Lightroom, Illustrator, Firefly, Premiere, Express, InDesign, and Stock with AI-driven creative work. Users can generate, edit, and enhance photos, design assets, and video projects using natural language while work stays tied to their Adobe account.'**
   String get mcpMarketDescAdobeCreativity;
+
+  /// No description provided for @agentsInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Agents Instructions'**
+  String get agentsInstructions;
+
+  /// No description provided for @agentsInstructionsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage AGENTS.md and custom instruction files'**
+  String get agentsInstructionsSubtitle;
+
+  /// No description provided for @agentsMdHint.
+  ///
+  /// In en, this message translates to:
+  /// **'# Project rules\n- Be concise\n- Write tests first'**
+  String get agentsMdHint;
+
+  /// No description provided for @agentsMdSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'AGENTS.md saved'**
+  String get agentsMdSaved;
+
+  /// No description provided for @instructionsAutoDetectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Detected files'**
+  String get instructionsAutoDetectedTitle;
+
+  /// No description provided for @instructionsAutoDetectedHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'AGENTS.md and CLAUDE.md found for this scope. Tap to view or edit.'**
+  String get instructionsAutoDetectedHelper;
+
+  /// No description provided for @instructionsFileNotCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not created yet'**
+  String get instructionsFileNotCreated;
+
+  /// No description provided for @instructionsFileReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only'**
+  String get instructionsFileReadOnly;
+
+  /// No description provided for @instructionsBadgeGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Global'**
+  String get instructionsBadgeGlobal;
+
+  /// No description provided for @instructionsBadgeProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Project'**
+  String get instructionsBadgeProject;
+
+  /// No description provided for @instructionsViewFile.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get instructionsViewFile;
+
+  /// No description provided for @instructionsEditFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get instructionsEditFile;
+
+  /// No description provided for @instructionsSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Instruction files'**
+  String get instructionsSectionTitle;
+
+  /// No description provided for @instructionsSectionHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra Markdown files appended after AGENTS.md, in order.'**
+  String get instructionsSectionHelper;
+
+  /// No description provided for @instructionsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add instruction'**
+  String get instructionsAdd;
+
+  /// No description provided for @instructionsAddInline.
+  ///
+  /// In en, this message translates to:
+  /// **'Write inline'**
+  String get instructionsAddInline;
+
+  /// No description provided for @instructionsUploadFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload .md file'**
+  String get instructionsUploadFile;
+
+  /// No description provided for @instructionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No instruction files yet'**
+  String get instructionsEmpty;
+
+  /// No description provided for @instructionsEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an inline instruction or upload a Markdown file.'**
+  String get instructionsEmptyHint;
+
+  /// No description provided for @instructionsNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get instructionsNameLabel;
+
+  /// No description provided for @instructionsNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'coding-style'**
+  String get instructionsNameHint;
+
+  /// No description provided for @instructionsContentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get instructionsContentLabel;
+
+  /// No description provided for @instructionsContentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your instructions in Markdown…'**
+  String get instructionsContentHint;
+
+  /// No description provided for @instructionsAddedInline.
+  ///
+  /// In en, this message translates to:
+  /// **'Instruction added'**
+  String get instructionsAddedInline;
+
+  /// No description provided for @instructionsAddedFile.
+  ///
+  /// In en, this message translates to:
+  /// **'File added: {name}'**
+  String instructionsAddedFile(Object name);
+
+  /// No description provided for @instructionsRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove instruction'**
+  String get instructionsRemoveTitle;
+
+  /// No description provided for @instructionsRemoveContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{name}\" from instructions?'**
+  String instructionsRemoveContent(Object name);
+
+  /// No description provided for @instructionsRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Instruction removed'**
+  String get instructionsRemoved;
+
+  /// No description provided for @instructionsEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit instruction path'**
+  String get instructionsEditTitle;
+
+  /// No description provided for @instructionsPathLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Path'**
+  String get instructionsPathLabel;
+
+  /// No description provided for @instructionsUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Instruction updated'**
+  String get instructionsUpdated;
+
+  /// No description provided for @instructionsScopeGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Global'**
+  String get instructionsScopeGlobal;
+
+  /// No description provided for @instructionsScopeProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Project'**
+  String get instructionsScopeProject;
+
+  /// No description provided for @instructionsScopeGlobalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies everywhere. Stored in your user config.'**
+  String get instructionsScopeGlobalHint;
+
+  /// No description provided for @instructionsScopeProjectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to the current project folder.'**
+  String get instructionsScopeProjectHint;
+
+  /// No description provided for @instructionsCreateAgents.
+  ///
+  /// In en, this message translates to:
+  /// **'Create AGENTS.md'**
+  String get instructionsCreateAgents;
+
+  /// No description provided for @instructionsSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save: {error}'**
+  String instructionsSaveError(Object error);
+
+  /// No description provided for @configScopeGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Global'**
+  String get configScopeGlobal;
+
+  /// No description provided for @configScopeProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Project'**
+  String get configScopeProject;
+
+  /// No description provided for @configProjectOverrides.
+  ///
+  /// In en, this message translates to:
+  /// **'Project settings override global settings.'**
+  String get configProjectOverrides;
+
+  /// No description provided for @configPathLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Path'**
+  String get configPathLabel;
+
+  /// No description provided for @configStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get configStatusLabel;
+
+  /// No description provided for @configContentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'File contents'**
+  String get configContentsTitle;
+
+  /// No description provided for @configExists.
+  ///
+  /// In en, this message translates to:
+  /// **'Exists'**
+  String get configExists;
+
+  /// No description provided for @configNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Not found'**
+  String get configNotFound;
+
+  /// No description provided for @configWillBeCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Will be created when you save.'**
+  String get configWillBeCreated;
+
+  /// No description provided for @skillsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills'**
+  String get skillsTitle;
+
+  /// No description provided for @skillsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reusable capability packs the assistant can load on demand.'**
+  String get skillsSubtitle;
+
+  /// No description provided for @skillsSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed skills'**
+  String get skillsSectionTitle;
+
+  /// No description provided for @skillsSectionHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Each skill is a folder with a SKILL.md. Add your own or install from a URL.'**
+  String get skillsSectionHelper;
+
+  /// No description provided for @skillsNewSkill.
+  ///
+  /// In en, this message translates to:
+  /// **'New skill'**
+  String get skillsNewSkill;
+
+  /// No description provided for @skillsInstallFromUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Install from URL'**
+  String get skillsInstallFromUrl;
+
+  /// No description provided for @skillsNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get skillsNameLabel;
+
+  /// No description provided for @skillsNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Code Reviewer'**
+  String get skillsNameHint;
+
+  /// No description provided for @skillsDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get skillsDescriptionLabel;
+
+  /// No description provided for @skillsDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Short summary of what this skill does'**
+  String get skillsDescriptionHint;
+
+  /// No description provided for @skillsContentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SKILL.md content'**
+  String get skillsContentLabel;
+
+  /// No description provided for @skillsContentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'# Heading\nInstructions for the assistant…'**
+  String get skillsContentHint;
+
+  /// No description provided for @skillsUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'index.json URL'**
+  String get skillsUrlLabel;
+
+  /// No description provided for @skillsUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://example.com/skills'**
+  String get skillsUrlHint;
+
+  /// No description provided for @skillsApiKeyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'API key (optional)'**
+  String get skillsApiKeyLabel;
+
+  /// No description provided for @skillsReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only'**
+  String get skillsReadOnly;
+
+  /// No description provided for @skillsFilesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} files'**
+  String skillsFilesCount(int count);
+
+  /// No description provided for @skillsCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill created'**
+  String get skillsCreated;
+
+  /// No description provided for @skillsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill saved'**
+  String get skillsSaved;
+
+  /// No description provided for @skillsRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill removed'**
+  String get skillsRemoved;
+
+  /// No description provided for @skillsInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed {count} skill(s)'**
+  String skillsInstalled(int count);
+
+  /// No description provided for @skillsInstallNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No skills found at that URL'**
+  String get skillsInstallNone;
+
+  /// No description provided for @skillsRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove skill'**
+  String get skillsRemoveTitle;
+
+  /// No description provided for @skillsRemoveContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{name}\"? This deletes its folder from disk.'**
+  String skillsRemoveContent(String name);
+
+  /// No description provided for @skillsSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not complete: {error}'**
+  String skillsSaveError(String error);
+
+  /// No description provided for @skillsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No skills yet'**
+  String get skillsEmpty;
+
+  /// No description provided for @skillsEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a skill or install one from a URL to get started.'**
+  String get skillsEmptyHint;
+
+  /// No description provided for @skillsMarketplaceTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Marketplace'**
+  String get skillsMarketplaceTab;
+
+  /// No description provided for @skillsMarketplaceSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search skills'**
+  String get skillsMarketplaceSearchHint;
+
+  /// No description provided for @skillsMarketplaceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No skills match your search.'**
+  String get skillsMarketplaceEmpty;
+
+  /// No description provided for @skillsInstalledBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed'**
+  String get skillsInstalledBadge;
+
+  /// No description provided for @skillsInstallAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Install'**
+  String get skillsInstallAction;
+
+  /// No description provided for @skillsInstallToGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Install to Global'**
+  String get skillsInstallToGlobal;
+
+  /// No description provided for @skillsInstallToProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Install to Project'**
+  String get skillsInstallToProject;
+
+  /// No description provided for @skillsInstalledToast.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} · installed'**
+  String skillsInstalledToast(String name);
+
+  /// No description provided for @skillsTabGlobalTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills available in every project'**
+  String get skillsTabGlobalTooltip;
+
+  /// No description provided for @skillsTabProjectTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills scoped to this project'**
+  String get skillsTabProjectTooltip;
+
+  /// No description provided for @skillsTabMarketplaceTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse and install ready-made skills'**
+  String get skillsTabMarketplaceTooltip;
+
+  /// No description provided for @skillsPreviewClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get skillsPreviewClose;
+
+  /// No description provided for @skillsCategoryAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get skillsCategoryAll;
+
+  /// No description provided for @skillsCategoryCoding.
+  ///
+  /// In en, this message translates to:
+  /// **'Coding'**
+  String get skillsCategoryCoding;
+
+  /// No description provided for @skillsCategoryWriting.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing'**
+  String get skillsCategoryWriting;
+
+  /// No description provided for @skillsCategoryResearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Research'**
+  String get skillsCategoryResearch;
+
+  /// No description provided for @skillsCategoryDesign.
+  ///
+  /// In en, this message translates to:
+  /// **'Design'**
+  String get skillsCategoryDesign;
+
+  /// No description provided for @skillsCategoryProductivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Productivity'**
+  String get skillsCategoryProductivity;
+
+  /// No description provided for @skillsCategoryData.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get skillsCategoryData;
+
+  /// No description provided for @skillsCategoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get skillsCategoryOther;
+
+  /// No description provided for @skillsMarketDescCodeReviewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Elite code review for bugs, security, and maintainability.'**
+  String get skillsMarketDescCodeReviewer;
+
+  /// No description provided for @skillsMarketDescCleanCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn working code into clean, readable code (Uncle Bob).'**
+  String get skillsMarketDescCleanCode;
+
+  /// No description provided for @skillsMarketDescDry.
+  ///
+  /// In en, this message translates to:
+  /// **'Eliminate duplicated knowledge and business logic.'**
+  String get skillsMarketDescDry;
+
+  /// No description provided for @skillsMarketDescArchitectReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review architecture with clean, distributed-systems principles.'**
+  String get skillsMarketDescArchitectReview;
+
+  /// No description provided for @skillsMarketDescBackendArchitect.
+  ///
+  /// In en, this message translates to:
+  /// **'Design scalable APIs, services, and data layers.'**
+  String get skillsMarketDescBackendArchitect;
+
+  /// No description provided for @skillsMarketDescFlutterExpert.
+  ///
+  /// In en, this message translates to:
+  /// **'Master Dart 3, advanced widgets, and multi-platform delivery.'**
+  String get skillsMarketDescFlutterExpert;
+
+  /// No description provided for @skillsMarketDescAgentsMd.
+  ///
+  /// In en, this message translates to:
+  /// **'Create and maintain concise, high-signal agent docs.'**
+  String get skillsMarketDescAgentsMd;
+
+  /// No description provided for @skillsMarketDescUxCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Write clear, human UX microcopy.'**
+  String get skillsMarketDescUxCopy;
+
+  /// No description provided for @skillsMarketDescDeepResearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan, search, read, and synthesize research reports.'**
+  String get skillsMarketDescDeepResearch;
+
+  /// No description provided for @skillsMarketDescUiUxDesigner.
+  ///
+  /// In en, this message translates to:
+  /// **'Design accessible, modern, high-performance interfaces.'**
+  String get skillsMarketDescUiUxDesigner;
+
+  /// No description provided for @skillsMarketDescUxuiPrinciples.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply core UX/UI principles to any interface.'**
+  String get skillsMarketDescUxuiPrinciples;
+
+  /// No description provided for @skillsMarketDescCommit.
+  ///
+  /// In en, this message translates to:
+  /// **'Write conventional commits with proper issue references.'**
+  String get skillsMarketDescCommit;
+
+  /// No description provided for @skillsMarketDescToolDesign.
+  ///
+  /// In en, this message translates to:
+  /// **'Build tools agents can use effectively.'**
+  String get skillsMarketDescToolDesign;
+
+  /// No description provided for @skillsMarketDescProductManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Shape requirements, roadmaps, and product decisions.'**
+  String get skillsMarketDescProductManager;
+
+  /// No description provided for @skillsMarketDescDataScientist.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced analytics, ML, and statistical modeling.'**
+  String get skillsMarketDescDataScientist;
+
+  /// No description provided for @skillsMarketDescDatabaseOptimizer.
+  ///
+  /// In en, this message translates to:
+  /// **'Tune queries and design scalable database schemas.'**
+  String get skillsMarketDescDatabaseOptimizer;
+
+  /// No description provided for @skillsMarketDescDebugger.
+  ///
+  /// In en, this message translates to:
+  /// **'Systematic debugging for errors and test failures.'**
+  String get skillsMarketDescDebugger;
+
+  /// No description provided for @skillsMarketDescSecurityAuditor.
+  ///
+  /// In en, this message translates to:
+  /// **'Audit for vulnerabilities and fix insecure code.'**
+  String get skillsMarketDescSecurityAuditor;
+
+  /// No description provided for @commonSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get commonSave;
+
+  /// No description provided for @commonCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get commonCancel;
+
+  /// No description provided for @commonAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get commonAdd;
+
+  /// No description provided for @commonRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get commonRemove;
+
+  /// No description provided for @commonEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get commonEdit;
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -3209,29 +3909,40 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['ar', 'en', 'ja', 'ru', 'uk', 'zh'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>[
+    'ar',
+    'en',
+    'ja',
+    'ru',
+    'uk',
+    'zh',
+  ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-
-
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'ar': return AppLocalizationsAr();
-    case 'en': return AppLocalizationsEn();
-    case 'ja': return AppLocalizationsJa();
-    case 'ru': return AppLocalizationsRu();
-    case 'uk': return AppLocalizationsUk();
-    case 'zh': return AppLocalizationsZh();
+    case 'ar':
+      return AppLocalizationsAr();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'ja':
+      return AppLocalizationsJa();
+    case 'ru':
+      return AppLocalizationsRu();
+    case 'uk':
+      return AppLocalizationsUk();
+    case 'zh':
+      return AppLocalizationsZh();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
+    'that was used.',
   );
 }

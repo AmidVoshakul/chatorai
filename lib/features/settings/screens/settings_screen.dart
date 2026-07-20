@@ -1,6 +1,8 @@
+import 'package:chatorai/features/settings/screens/agents_instructions_screen.dart';
 import 'package:chatorai/features/settings/screens/config_screen.dart';
 import 'package:chatorai/features/settings/screens/mcp_servers_screen.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_screen.dart';
+import 'package:chatorai/features/settings/screens/skills_screen.dart';
 import 'package:chatorai/features/settings/screens/stats_screen.dart';
 import 'package:chatorai/features/settings/widgets/about_dialog.dart';
 import 'package:chatorai/features/settings/widgets/language_selection_dialog.dart';
@@ -91,6 +93,30 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const McpServersScreen()),
+              ),
+            ),
+            const SizedBox(height: ChatoraiSpacing.xl),
+            SettingsSelectionCard(
+              context: context,
+              icon: Icons.description_outlined,
+              title: localizations.agentsInstructions,
+              subtitle: localizations.agentsInstructionsSubtitle,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AgentsInstructionsScreen(),
+                ),
+              ),
+            ),
+            const SizedBox(height: ChatoraiSpacing.md),
+            SettingsSelectionCard(
+              context: context,
+              icon: Icons.auto_awesome_outlined,
+              title: localizations.skillsTitle,
+              subtitle: localizations.skillsSubtitle,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SkillsScreen()),
               ),
             ),
             const SizedBox(height: ChatoraiSpacing.xl),

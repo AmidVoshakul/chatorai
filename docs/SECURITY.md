@@ -85,6 +85,8 @@ The "Always allow" choice is confirmed with a secondary dialog to prevent accide
 
 - **API keys** are never stored in the repository. The `.env` file is for development only and is gitignored.
 - In release builds, users enter their API key and base URL through the app's settings UI. Values are stored in platform-specific secure storage (Keychain/Android Keystore/Windows DPAPI/Linux LibSecret) or, if unavailable, in `SharedPreferences` with **AES-256-GCM encryption**.
+- The AES-256-GCM fallback (`PrefsSecretStorage` in `lib/shared/utils/secret_storage.dart`) stores the encryption key alongside the encrypted data. This provides obfuscation against casual inspection but **not full security** — a user with access to the device can extract both the key and the ciphertext. This is by design: the fallback ensures functionality on systems without a keyring daemon (e.g. headless Linux, TTY sessions), while the OS keyring remains the security boundary when available.
+- The fallback is backed by the `cryptography` and `cryptography_flutter` packages.
 - On Linux systems without a running keyring daemon (e.g., antiX, server Linux, TTY sessions), the app transparently falls back to encrypted SharedPreferences so it remains fully functional without requiring `gnome-keyring` or other system packages.
 - API keys are transmitted only over HTTPS (TLS) to the respective provider endpoints.
 - The codebase avoids logging any secrets. Log statements do not include raw API keys, tokens, or authentication headers.

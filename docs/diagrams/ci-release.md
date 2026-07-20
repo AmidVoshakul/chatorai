@@ -64,7 +64,7 @@ graph TD
 
     subgraph deb["deb"]
         staging["debian-staging/"]
-        control["DEBIAN/control\n(Package: chatorai, Depends: GTK libs…)"]
+        control["DEBIAN/control\n(Package: chatorai, Depends: GTK libs, libsecret-1-0, libsqlite3-0, zlib1g…)"]
         postinst["DEBIAN/postinst\n(glxinfo heuristic → .force_soft_gl)"]
         launcher["usr/bin/chatorai\n(software-GL fallback + crash retry)"]
         deb_pkg["dpkg-deb --build → .deb"]
@@ -114,7 +114,7 @@ graph LR
 
 ```mermaid
 graph LR
-    tag_push["git push --tags v0.1.0"]
+    tag_push["git push --tags v0.1.1"]
     download["Download all artifacts"]
     rename_apk["mv app-release.apk\n→ chatorai-release-{tag}.apk"]
     gh_release["softprops/action-gh-release@v2\n(generate_release_notes: true)"]
@@ -127,4 +127,5 @@ graph LR
     stable_copies --> gh_release
 ```
 
-**First git tag:** `v0.1.0`
+**First git tag:** `v0.1.0`  
+**Current version:** `0.1.1`
