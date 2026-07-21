@@ -1,6 +1,6 @@
 # ChatORAI
 
-![Screenshot of ChatORAI interface](https://github.com/AmidVoshakul/chatorai/blob/main/screenshots/Screenshot_2026-12-30_01-04-32.png)
+![Screenshot of ChatORAI interface](https://github.com/AmidVoshakul/chatorai/raw/main/screenshots/Screenshot_2025-12-30_01-04-32.png)
 
 A modern AI chat application built with Flutter and Riverpod. Connect to any OpenAI-compatible API (OpenRouter, local models, custom endpoints) and chat with powerful language models.
 
