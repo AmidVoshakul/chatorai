@@ -837,7 +837,6 @@ class _SkillMarketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final installed = installedGlobal || installedProject;
 
     return Material(
@@ -864,7 +863,7 @@ class _SkillMarketCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                description ?? entry.localizedDescription(l10n),
+                description ?? entry.localizedDescription(),
                 style: TextStyle(
                   fontSize: ChatoraiFontSizes.sm,
                   height: 1.35,
@@ -966,11 +965,25 @@ class _InstallButton extends StatelessWidget {
       items: [
         PopupMenuItem(
           value: SkillsScope.global,
-          child: Text(l10n.skillsInstallToGlobal),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.public_rounded, size: ChatoraiIconSizes.md),
+              const SizedBox(width: ChatoraiSpacing.sm),
+              Text(l10n.skillsInstallToGlobal),
+            ],
+          ),
         ),
         PopupMenuItem(
           value: SkillsScope.project,
-          child: Text(l10n.skillsInstallToProject),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.folder_outlined, size: ChatoraiIconSizes.md),
+              const SizedBox(width: ChatoraiSpacing.sm),
+              Text(l10n.skillsInstallToProject),
+            ],
+          ),
         ),
       ],
     );
@@ -1323,36 +1336,11 @@ class _InstallUrlDialogState extends State<_InstallUrlDialog> {
   }
 }
 
-/// Resolves a marketplace entry's localized one-line description in the UI
-/// layer, keeping [SkillMarketplaceEntry] a pure, Flutter-free data source.
+/// Returns the fallback description for a marketplace entry.
 ///
-/// Falls back to [SkillMarketplaceEntry.displayName] for any entry whose
-/// [SkillMarketplaceEntry.descriptionKey] has no matching ARB string yet, so a
-/// newly-added catalog entry never renders as blank text.
+/// The real description is parsed from the bundled skill's `SKILL.md`
+/// frontmatter and passed in separately at the call site; this exists only as
+/// a fallback when that parsed description is null.
 extension SkillMarketplaceL10n on SkillMarketplaceEntry {
-  String localizedDescription(AppLocalizations l10n) {
-    return switch (descriptionKey) {
-      'skillsMarketDescCodeReviewer' => l10n.skillsMarketDescCodeReviewer,
-      'skillsMarketDescCleanCode' => l10n.skillsMarketDescCleanCode,
-      'skillsMarketDescDry' => l10n.skillsMarketDescDry,
-      'skillsMarketDescArchitectReview' => l10n.skillsMarketDescArchitectReview,
-      'skillsMarketDescBackendArchitect' =>
-        l10n.skillsMarketDescBackendArchitect,
-      'skillsMarketDescFlutterExpert' => l10n.skillsMarketDescFlutterExpert,
-      'skillsMarketDescAgentsMd' => l10n.skillsMarketDescAgentsMd,
-      'skillsMarketDescUxCopy' => l10n.skillsMarketDescUxCopy,
-      'skillsMarketDescDeepResearch' => l10n.skillsMarketDescDeepResearch,
-      'skillsMarketDescUiUxDesigner' => l10n.skillsMarketDescUiUxDesigner,
-      'skillsMarketDescUxuiPrinciples' => l10n.skillsMarketDescUxuiPrinciples,
-      'skillsMarketDescCommit' => l10n.skillsMarketDescCommit,
-      'skillsMarketDescToolDesign' => l10n.skillsMarketDescToolDesign,
-      'skillsMarketDescProductManager' => l10n.skillsMarketDescProductManager,
-      'skillsMarketDescDataScientist' => l10n.skillsMarketDescDataScientist,
-      'skillsMarketDescDatabaseOptimizer' =>
-        l10n.skillsMarketDescDatabaseOptimizer,
-      'skillsMarketDescDebugger' => l10n.skillsMarketDescDebugger,
-      'skillsMarketDescSecurityAuditor' => l10n.skillsMarketDescSecurityAuditor,
-      _ => displayName,
-    };
-  }
+  String localizedDescription() => displayName;
 }

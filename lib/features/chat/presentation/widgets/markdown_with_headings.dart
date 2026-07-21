@@ -34,7 +34,6 @@ class MarkdownWithHeadings extends StatelessWidget {
     return MarkdownBody(
       data: data,
       styleSheet: ChatoraiMarkdownStyles.getMarkdownStyles(context),
-      selectable: true,
       builders: HeadingBuilder.headingBuilders(
         headings: filteredHeadings,
         messageId: effectiveMessageId,

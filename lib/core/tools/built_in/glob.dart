@@ -34,10 +34,11 @@ ToolDef createGlobTool() {
       }
 
       final root = input['path'] as String? ?? Directory.current.path;
-      final safeRoot = resolveSafePath(root);
+      final safeRoot = resolveSafePath(root, allowedRoots: managedReadRoots);
       final boundary = FilesystemBoundary(workspace: Directory.current);
       final globResolution = boundary.resolve(safeRoot);
-      if (globResolution.isExternal) {
+      if (globResolution.isExternal &&
+          !isWithinAnyRoot(globResolution.path, managedReadRoots)) {
         await ctx.ask(
           permission: 'external_directory',
           patterns: [globResolution.path],
@@ -57,7 +58,9 @@ ToolDef createGlobTool() {
         );
       }
 
-      await ctx.ask(permission: 'glob', patterns: [pattern]);
+      if (!isWithinAnyRoot(globResolution.path, managedReadRoots)) {
+        await ctx.ask(permission: 'glob', patterns: [pattern]);
+      }
 
       final globMatcher = Glob(pattern, recursive: true);
       final matchFiles = <File>[];

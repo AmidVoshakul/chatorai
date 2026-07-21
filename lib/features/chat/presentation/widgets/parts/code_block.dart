@@ -5,9 +5,9 @@ import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/message_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:flutter_highlight/themes/vs2015.dart';
+import 'package:highlight/highlight.dart' show highlight, Node;
 
 // ===========================================================================
 // WIDGET CLASS
@@ -168,18 +168,15 @@ class _CodeBlockState extends State<CodeBlock> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: SelectionArea(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: HighlightView(
-                              widget.code,
-                              language: widget.language.toLowerCase(),
-                              theme: isDark ? vs2015Theme : githubTheme,
-                              padding: EdgeInsets.zero,
-                              textStyle: TextStyle(
-                                fontSize: ChatoraiFontSizes.base,
-                                height: ChatoraiSizes.codeBlockLineHeight,
-                              ),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: _SelectableHighlightView(
+                            widget.code,
+                            language: widget.language.toLowerCase(),
+                            theme: isDark ? vs2015Theme : githubTheme,
+                            textStyle: TextStyle(
+                              fontSize: ChatoraiFontSizes.base,
+                              height: ChatoraiSizes.codeBlockLineHeight,
                             ),
                           ),
                         ),
@@ -191,6 +188,99 @@ class _CodeBlockState extends State<CodeBlock> {
             ),
         ],
       ),
+    );
+  }
+}
+
+// ===========================================================================
+// SELECTABLE HIGHLIGHT VIEW
+// ===========================================================================
+
+/// A drop-in replacement for `flutter_highlight`'s `HighlightView` that
+/// renders via [Text.rich] instead of `RichText`. We switched to `Text.rich`
+/// (and removed `flutter_highlight` itself in favor of the lower-level
+/// `highlight` package) because the outer [SelectionArea] in
+/// `chat_messages.dart` only makes widgets that already expose selectable text
+/// participate in the shared selection — `Text.rich` does, `RichText` does
+/// not. Output is visually identical to the previous `HighlightView`.
+class _SelectableHighlightView extends StatelessWidget {
+  final String source;
+  final String? language;
+  final Map<String, TextStyle> theme;
+  final TextStyle? textStyle;
+
+  _SelectableHighlightView(
+    String input, {
+    this.language,
+    this.theme = const {},
+    this.textStyle,
+    int tabSize = 8,
+  }) : source = input.replaceAll('\t', ' ' * tabSize);
+
+  static const _rootKey = 'root';
+  static const _defaultFontColor = Color(0xff000000);
+  static const _defaultBackgroundColor = Color(0xffffffff);
+  static const _defaultFontFamily = 'monospace';
+
+  List<TextSpan> _convert(List<Node> nodes) {
+    final List<TextSpan> spans = [];
+    var currentSpans = spans;
+    final List<List<TextSpan>> stack = [];
+
+    void traverse(Node node) {
+      if (node.value != null) {
+        currentSpans.add(
+          node.className == null
+              ? TextSpan(text: node.value)
+              : TextSpan(text: node.value, style: theme[node.className!]),
+        );
+      } else if (node.children != null) {
+        final List<TextSpan> tmp = [];
+        currentSpans.add(
+          TextSpan(children: tmp, style: theme[node.className!]),
+        );
+        stack.add(currentSpans);
+        currentSpans = tmp;
+
+        for (final n in node.children!) {
+          traverse(n);
+          if (n == node.children!.last) {
+            currentSpans = stack.isEmpty ? spans : stack.removeLast();
+          }
+        }
+      }
+    }
+
+    for (final node in nodes) {
+      traverse(node);
+    }
+
+    return spans;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var baseStyle = TextStyle(
+      fontFamily: _defaultFontFamily,
+      color: theme[_rootKey]?.color ?? _defaultFontColor,
+    );
+    if (textStyle != null) {
+      baseStyle = baseStyle.merge(textStyle);
+    }
+
+    final nodes = highlight.parse(source, language: language).nodes;
+    if (nodes == null || nodes.isEmpty) {
+      // Fall back to plain text so the surrounding SelectionArea can still
+      // select it instead of crashing on a null parse result.
+      return Container(
+        color: theme[_rootKey]?.backgroundColor ?? _defaultBackgroundColor,
+        child: Text(source, style: baseStyle),
+      );
+    }
+
+    return Container(
+      color: theme[_rootKey]?.backgroundColor ?? _defaultBackgroundColor,
+      child: Text.rich(TextSpan(style: baseStyle, children: _convert(nodes))),
     );
   }
 }

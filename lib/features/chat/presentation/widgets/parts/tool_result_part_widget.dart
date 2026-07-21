@@ -246,9 +246,7 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
           Padding(
             padding: const EdgeInsets.only(top: 2),
             child: Icon(
-              _isExpanded
-                  ? Icons.keyboard_arrow_up
-                  : Icons.keyboard_arrow_down,
+              _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
               size: 14,
               color: theme.colorScheme.muted,
             ),

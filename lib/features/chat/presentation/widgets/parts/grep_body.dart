@@ -47,7 +47,7 @@ class GrepBody extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.only(left: 12),
-            child: SelectableText(
+            child: Text(
               displayedResult,
               style: ChatoraiFontSizes.mono(
                 ChatoraiFontSizes.sm,

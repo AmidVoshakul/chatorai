@@ -317,165 +317,171 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
         children: [
           Expanded(
             child: RepaintBoundary(
-              child: ListView.builder(
-                physics: _scrollPhysics(context),
-                addAutomaticKeepAlives: false,
-                addRepaintBoundaries: true,
-                padding: EdgeInsets.only(
-                  left: ChatMessagesConstants.horizontalPadding,
-                  right: ChatMessagesConstants.horizontalPadding,
-                  top: ChatMessagesConstants.verticalPadding,
-                  bottom: ChatMessagesConstants.verticalPadding,
-                ),
-                itemCount:
-                    messages.length +
-                    (shouldShowWaitingAnimation ? 1 : 0) +
-                    (showStreamingBubble ? 1 : 0) +
-                    (widget.showSuggestions &&
-                            widget.continuationSuggestions.isNotEmpty
-                        ? 1
-                        : 0) +
-                    (shouldShowWelcome ? 1 : 0),
-                controller: _scrollController,
-                itemBuilder: (context, index) {
-                  int welcomeOffset = 0;
+              child: SelectionArea(
+                child: ListView.builder(
+                  physics: _scrollPhysics(context),
+                  addAutomaticKeepAlives: false,
+                  addRepaintBoundaries: true,
+                  padding: EdgeInsets.only(
+                    left: ChatMessagesConstants.horizontalPadding,
+                    right: ChatMessagesConstants.horizontalPadding,
+                    top: ChatMessagesConstants.verticalPadding,
+                    bottom: ChatMessagesConstants.verticalPadding,
+                  ),
+                  itemCount:
+                      messages.length +
+                      (shouldShowWaitingAnimation ? 1 : 0) +
+                      (showStreamingBubble ? 1 : 0) +
+                      (widget.showSuggestions &&
+                              widget.continuationSuggestions.isNotEmpty
+                          ? 1
+                          : 0) +
+                      (shouldShowWelcome ? 1 : 0),
+                  controller: _scrollController,
+                  itemBuilder: (context, index) {
+                    int welcomeOffset = 0;
 
-                  if (shouldShowWelcome) {
-                    if (index == 0) {
-                      return ChatMessagesWelcomeSuggestions(
-                        suggestions: widget.welcomeSuggestions,
+                    if (shouldShowWelcome) {
+                      if (index == 0) {
+                        return ChatMessagesWelcomeSuggestions(
+                          suggestions: widget.welcomeSuggestions,
+                          parentContext: context,
+                          onSuggestionTap: (suggestion) {
+                            widget.onSendMessage(MessageData(text: suggestion));
+                          },
+                          onClose: widget.onWelcomeSuggestionsClose,
+                        );
+                      }
+                      welcomeOffset = 1;
+                    }
+
+                    final msgIndex = index - welcomeOffset;
+                    if (msgIndex >= 0 && msgIndex < messages.length) {
+                      final message = messages[msgIndex];
+                      final isLastMessage = msgIndex == messages.length - 1;
+
+                      final chatMsg = messageToChatMessage(message);
+                      final agentNameForMessage = (chatMsg is AssistantMessage)
+                          ? (chatMsg.agent ?? currentAgent.name)
+                          : currentAgent.name;
+                      final originalModelId = (chatMsg is AssistantMessage)
+                          ? chatMsg.model
+                          : null;
+                      final resolvedMsg = (chatMsg is AssistantMessage)
+                          ? chatMsg.copyWith(
+                              model: _resolveModelDisplayName(chatMsg.model),
+                            )
+                          : chatMsg;
+                      final reasoningEnabled = originalModelId != null
+                          ? (ref
+                                    .read(modelSettingsProvider)
+                                    .settingsCache[originalModelId]
+                                    ?.reasoningEnabled ??
+                                true)
+                          : true;
+                      return ChatMessageBubble(
+                        key: ValueKey(message.id),
+                        message: resolvedMsg,
+                        chatId: widget.chat!.id,
+                        messageId: message.id,
+                        chatStorageService: widget.chatStorageService,
+                        agentName: widget.agentName ?? agentNameForMessage,
+                        onContinuationSelected:
+                            message.role == MessageRole.assistant
+                            ? (_) => widget.onContinueResponse?.call(message.id)
+                            : null,
+                        onMessageDeleted: widget.onMessageDeleted,
+                        onMessageRegenerate: widget.onRegenerateResponse != null
+                            ? () => widget.onRegenerateResponse!(message.id)
+                            : null,
+                        onMessageEdited: widget.onMessageEdited,
+                        onMessageEditedAndSend: widget.onMessageEditAndSend,
+                        isLastMessage: isLastMessage,
+                        cumulativeTokens: message.role == MessageRole.assistant
+                            ? (widget.totalTokens ??
+                                  cumulativeForIndex(msgIndex))
+                            : null,
+                        contextLength: message.contextLength,
+                        onTaskTap: widget.onTaskTap,
+                        expandReasoningByDefault: ref
+                            .read(themeProvider)
+                            .expandReasoningByDefault,
+                        reasoningEnabled: reasoningEnabled,
+                      );
+                    }
+
+                    final afterMessages = welcomeOffset + messages.length;
+                    var extraPos = afterMessages;
+
+                    if (showStreamingBubble) {
+                      if (index == extraPos) {
+                        final lastMessage = messages.isNotEmpty
+                            ? messages.last
+                            : null;
+                        final agentNameForStream =
+                            lastMessage?.agent ??
+                            widget.agentName ??
+                            currentAgent.name;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: ChatMessageBubble(
+                            message: AssistantMessage(
+                              id: lastMessage?.id ?? 'streaming',
+                              parts: streamingMessageParts,
+                              model: _resolveModelDisplayName(
+                                lastMessage?.model,
+                              ),
+                              isStreaming: streamingIsActive,
+                              timestamp:
+                                  lastMessage?.timestamp ?? DateTime.now(),
+                              contextLength: lastMessage?.contextLength,
+                            ),
+                            chatId: widget.chat?.id ?? '',
+                            messageId: lastMessage?.id ?? 'streaming',
+                            chatStorageService: widget.chatStorageService,
+                            agentName: agentNameForStream,
+                            onTaskTap: widget.onTaskTap,
+                            expandReasoningByDefault: ref
+                                .read(themeProvider)
+                                .expandReasoningByDefault,
+                            reasoningEnabled: lastMessage?.model != null
+                                ? (ref
+                                          .read(modelSettingsProvider)
+                                          .settingsCache[lastMessage!.model]
+                                          ?.reasoningEnabled ??
+                                      true)
+                                : true,
+                          ),
+                        );
+                      }
+                      extraPos++;
+                    } else if (shouldShowWaitingAnimation) {
+                      if (index == extraPos) {
+                        return ChatMessagesWaitingAnimation(
+                          loadingIndicatorKey: _loadingIndicatorKey,
+                        );
+                      }
+                      extraPos++;
+                    }
+
+                    if (widget.showSuggestions &&
+                        widget.continuationSuggestions.isNotEmpty &&
+                        index == extraPos) {
+                      return ChatMessagesContinuationSuggestions(
+                        suggestions: widget.continuationSuggestions,
+                        isLoading: widget.isSuggestionsLoading,
                         parentContext: context,
                         onSuggestionTap: (suggestion) {
                           widget.onSendMessage(MessageData(text: suggestion));
                         },
-                        onClose: widget.onWelcomeSuggestionsClose,
+                        onClose: widget.onSuggestionsClose,
+                        onRefresh: widget.onSuggestionsRefresh,
                       );
                     }
-                    welcomeOffset = 1;
-                  }
 
-                  final msgIndex = index - welcomeOffset;
-                  if (msgIndex >= 0 && msgIndex < messages.length) {
-                    final message = messages[msgIndex];
-                    final isLastMessage = msgIndex == messages.length - 1;
-
-                    final chatMsg = messageToChatMessage(message);
-                    final agentNameForMessage = (chatMsg is AssistantMessage)
-                        ? (chatMsg.agent ?? currentAgent.name)
-                        : currentAgent.name;
-                    final originalModelId = (chatMsg is AssistantMessage)
-                        ? chatMsg.model
-                        : null;
-                    final resolvedMsg = (chatMsg is AssistantMessage)
-                        ? chatMsg.copyWith(
-                            model: _resolveModelDisplayName(chatMsg.model),
-                          )
-                        : chatMsg;
-                    final reasoningEnabled = originalModelId != null
-                        ? (ref
-                                  .read(modelSettingsProvider)
-                                  .settingsCache[originalModelId]
-                                  ?.reasoningEnabled ??
-                              true)
-                        : true;
-                    return ChatMessageBubble(
-                      key: ValueKey(message.id),
-                      message: resolvedMsg,
-                      chatId: widget.chat!.id,
-                      messageId: message.id,
-                      chatStorageService: widget.chatStorageService,
-                      agentName: widget.agentName ?? agentNameForMessage,
-                      onContinuationSelected:
-                          message.role == MessageRole.assistant
-                          ? (_) => widget.onContinueResponse?.call(message.id)
-                          : null,
-                      onMessageDeleted: widget.onMessageDeleted,
-                      onMessageRegenerate: widget.onRegenerateResponse != null
-                          ? () => widget.onRegenerateResponse!(message.id)
-                          : null,
-                      onMessageEdited: widget.onMessageEdited,
-                      onMessageEditedAndSend: widget.onMessageEditAndSend,
-                      isLastMessage: isLastMessage,
-                      cumulativeTokens: message.role == MessageRole.assistant
-                          ? (widget.totalTokens ?? cumulativeForIndex(msgIndex))
-                          : null,
-                      contextLength: message.contextLength,
-                      onTaskTap: widget.onTaskTap,
-                      expandReasoningByDefault: ref
-                          .read(themeProvider)
-                          .expandReasoningByDefault,
-                      reasoningEnabled: reasoningEnabled,
-                    );
-                  }
-
-                  final afterMessages = welcomeOffset + messages.length;
-                  var extraPos = afterMessages;
-
-                  if (showStreamingBubble) {
-                    if (index == extraPos) {
-                      final lastMessage = messages.isNotEmpty
-                          ? messages.last
-                          : null;
-                      final agentNameForStream =
-                          lastMessage?.agent ??
-                          widget.agentName ??
-                          currentAgent.name;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: ChatMessageBubble(
-                          message: AssistantMessage(
-                            id: lastMessage?.id ?? 'streaming',
-                            parts: streamingMessageParts,
-                            model: _resolveModelDisplayName(lastMessage?.model),
-                            isStreaming: streamingIsActive,
-                            timestamp: lastMessage?.timestamp ?? DateTime.now(),
-                            contextLength: lastMessage?.contextLength,
-                          ),
-                          chatId: widget.chat?.id ?? '',
-                          messageId: lastMessage?.id ?? 'streaming',
-                          chatStorageService: widget.chatStorageService,
-                          agentName: agentNameForStream,
-                          onTaskTap: widget.onTaskTap,
-                          expandReasoningByDefault: ref
-                              .read(themeProvider)
-                              .expandReasoningByDefault,
-                          reasoningEnabled: lastMessage?.model != null
-                              ? (ref
-                                        .read(modelSettingsProvider)
-                                        .settingsCache[lastMessage!.model]
-                                        ?.reasoningEnabled ??
-                                    true)
-                              : true,
-                        ),
-                      );
-                    }
-                    extraPos++;
-                  } else if (shouldShowWaitingAnimation) {
-                    if (index == extraPos) {
-                      return ChatMessagesWaitingAnimation(
-                        loadingIndicatorKey: _loadingIndicatorKey,
-                      );
-                    }
-                    extraPos++;
-                  }
-
-                  if (widget.showSuggestions &&
-                      widget.continuationSuggestions.isNotEmpty &&
-                      index == extraPos) {
-                    return ChatMessagesContinuationSuggestions(
-                      suggestions: widget.continuationSuggestions,
-                      isLoading: widget.isSuggestionsLoading,
-                      parentContext: context,
-                      onSuggestionTap: (suggestion) {
-                        widget.onSendMessage(MessageData(text: suggestion));
-                      },
-                      onClose: widget.onSuggestionsClose,
-                      onRefresh: widget.onSuggestionsRefresh,
-                    );
-                  }
-
-                  return const SizedBox.shrink();
-                },
+                    return const SizedBox.shrink();
+                  },
+                ),
               ),
             ),
           ),

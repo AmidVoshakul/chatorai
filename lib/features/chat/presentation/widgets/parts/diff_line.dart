@@ -206,7 +206,7 @@ class DiffLine extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Expanded(
-            child: SelectableText(
+            child: Text(
               data.text,
               style: TextStyle(
                 fontFamily: ChatoraiFontSizes.monospaceFont,

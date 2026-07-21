@@ -158,7 +158,7 @@ class _TableBlockState extends State<TableBlock> {
           ),
 
           // ── Table body ──
-          if (!_isCollapsed) SelectionArea(child: _buildTable(context, isDark)),
+          if (!_isCollapsed) _buildTable(context, isDark),
         ],
       ),
     );
@@ -253,7 +253,7 @@ class _TableBlockState extends State<TableBlock> {
                 : MarkdownBody(
                     data: cellText,
                     styleSheet: mdStyleSheet,
-                    selectable: true,
+                    selectable: false,
                     softLineBreak: true,
                     fitContent: true,
                   ),

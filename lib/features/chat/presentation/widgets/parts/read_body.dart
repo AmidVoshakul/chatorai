@@ -58,7 +58,7 @@ class ReadBody extends StatelessWidget {
           if (originalResult.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(left: 12),
-              child: SelectableText(
+              child: Text(
                 displayedResult,
                 style: ChatoraiFontSizes.mono(
                   ChatoraiFontSizes.sm,

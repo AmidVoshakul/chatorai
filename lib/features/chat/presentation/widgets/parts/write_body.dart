@@ -51,7 +51,7 @@ class WriteBody extends StatelessWidget {
                 color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
               ),
-              child: SelectableText(
+              child: Text(
                 previewLines.join('\n'),
                 style: ChatoraiFontSizes.mono(
                   ChatoraiFontSizes.xs,

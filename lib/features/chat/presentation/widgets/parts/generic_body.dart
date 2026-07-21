@@ -26,7 +26,7 @@ class GenericBody extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 12),
-          child: SelectableText(
+          child: Text(
             displayedBody,
             style: ChatoraiFontSizes.mono(
               ChatoraiFontSizes.sm,

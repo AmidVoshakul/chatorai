@@ -105,7 +105,7 @@ class _TextPartWidgetState extends State<TextPartWidget> {
         _prefixChildren != null) {
       final tail = part.content.substring(prev.length);
       if (_isPlainTextTail(tail)) {
-        _prefixChildren!.add(RepaintBoundary(child: SelectableText(tail)));
+        _prefixChildren!.add(RepaintBoundary(child: Text(tail)));
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: _prefixChildren!,
@@ -277,7 +277,6 @@ class _TextPartWidgetState extends State<TextPartWidget> {
       child: MarkdownBody(
         data: data,
         styleSheet: styleSheet,
-        selectable: true,
         builders: HeadingBuilder.headingBuilders(),
       ),
     );

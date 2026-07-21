@@ -1931,60 +1931,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get skillsCategoryOther => 'その他';
 
   @override
-  String get skillsMarketDescCodeReviewer => 'バグ・セキュリティ・保守性の一流コードレビュー。';
-
-  @override
-  String get skillsMarketDescCleanCode => '動くコードを読みやすいクリーンコードへ（Uncle Bob）。';
-
-  @override
-  String get skillsMarketDescDry => '知識とビジネスロジックの重複を排除。';
-
-  @override
-  String get skillsMarketDescArchitectReview => 'クリーンな分散システム原則でアーキテクチャをレビュー。';
-
-  @override
-  String get skillsMarketDescBackendArchitect => 'スケーラブルな API・サービス・データ層を設計。';
-
-  @override
-  String get skillsMarketDescFlutterExpert => 'Dart 3・高度なウィジェット・マルチプラットフォーム対応。';
-
-  @override
-  String get skillsMarketDescAgentsMd => '簡潔で情報密度の高いエージェントドキュメントを作成・維持。';
-
-  @override
-  String get skillsMarketDescUxCopy => '明確で人間味のある UX マイクロコピーを執筆。';
-
-  @override
-  String get skillsMarketDescDeepResearch => '調査レポートの計画・検索・読解・統合。';
-
-  @override
-  String get skillsMarketDescUiUxDesigner => 'アクセシブルでモダンかつ高性能な UI を設計。';
-
-  @override
-  String get skillsMarketDescUxuiPrinciples => 'あらゆる UI に核心的な UX/UI 原則を適用。';
-
-  @override
-  String get skillsMarketDescCommit => '課題参照付きの Conventional コミットを作成。';
-
-  @override
-  String get skillsMarketDescToolDesign => 'エージェントが使いやすいツールを構築。';
-
-  @override
-  String get skillsMarketDescProductManager => '要件・ロードマップ・プロダクト判断を形成。';
-
-  @override
-  String get skillsMarketDescDataScientist => '高度な分析・機械学習・統計モデリング。';
-
-  @override
-  String get skillsMarketDescDatabaseOptimizer => 'クエリ最適化とスケーラブルな DB スキーマ設計。';
-
-  @override
-  String get skillsMarketDescDebugger => 'エラーとテスト失敗の体系的なデバッグ。';
-
-  @override
-  String get skillsMarketDescSecurityAuditor => '脆弱性を監査し安全でないコードを修正。';
-
-  @override
   String get commonSave => '保存';
 
   @override

@@ -69,7 +69,7 @@ class UserMessageBubble extends StatelessWidget {
                         ...message.files.map(
                           (f) => Padding(
                             padding: const EdgeInsets.only(top: 4),
-                            child: SelectableText(
+                            child: Text(
                               f,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.primary,
@@ -77,10 +77,7 @@ class UserMessageBubble extends StatelessWidget {
                             ),
                           ),
                         ),
-                      SelectableText(
-                        message.content,
-                        style: theme.textTheme.bodyMedium,
-                      ),
+                      Text(message.content, style: theme.textTheme.bodyMedium),
                     ],
                   ),
                 ),

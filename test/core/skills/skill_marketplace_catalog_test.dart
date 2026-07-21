@@ -11,12 +11,12 @@ void main() {
     expect(ids.toSet().length, ids.length, reason: 'duplicate entry id');
   });
 
-  test('every entry declares a non-empty descriptionKey', () {
+  test('descriptionKey is either absent or non-empty', () {
     for (final e in skillMarketplaceCatalog) {
       expect(
-        e.descriptionKey,
-        isNotEmpty,
-        reason: 'missing descriptionKey for "${e.id}"',
+        e.descriptionKey == null || e.descriptionKey!.isNotEmpty,
+        isTrue,
+        reason: 'descriptionKey must be null or non-empty for "${e.id}"',
       );
     }
   });

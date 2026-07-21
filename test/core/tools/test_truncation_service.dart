@@ -1,7 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/tools/truncation_service.dart';
+import 'package:chatorai/shared/utils/xdg_paths.dart';
 
 void main() {
+  setUp(() async {
+    await XdgPaths.init();
+  });
+
   group('TruncationService.compute', () {
     test('returns untruncated result when within limits', () {
       final text = 'hello world';
@@ -129,10 +134,24 @@ void main() {
 
   group('TruncationService (file I/O)', () {
     test(
-      'cleanup does not throw even if getApplicationDocumentsDirectory is unavailable',
+      'cleanup does not throw even if the data directory is unavailable',
       () async {
         final service = TruncationService.instance;
         await expectLater(service.cleanup(), completes);
+      },
+    );
+
+    test(
+      'writes overflow to the data tool-output directory, not Documents',
+      () async {
+        final service = TruncationService.instance;
+        final big = 'x' * (60 * 1024);
+        final result = await service.output(big);
+        expect(result.truncated, isTrue);
+        expect(result.outputPath, isNotNull);
+        final dataDir = XdgPaths.dataSubdirSync('tool-output').path;
+        expect(result.outputPath, startsWith(dataDir));
+        expect(result.outputPath, isNot(contains('Documents')));
       },
     );
   });

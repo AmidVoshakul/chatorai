@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:path_provider/path_provider.dart';
+import 'package:chatorai/shared/utils/xdg_paths.dart';
 
 /// Result of a truncation operation.
 class TruncationResult {
@@ -59,11 +59,7 @@ class TruncationService {
 
   Future<Directory> _ensureDir() async {
     if (_dataDir != null) return _dataDir!;
-    final base = await getApplicationDocumentsDirectory();
-    final dir = Directory('${base.path}/chatorai/tool-output');
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
+    final dir = await XdgPaths.dataSubdirAsync('tool-output');
     _dataDir = dir;
     return dir;
   }

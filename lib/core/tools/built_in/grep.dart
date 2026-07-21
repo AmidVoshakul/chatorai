@@ -42,8 +42,6 @@ ToolDef createGrepTool() {
         );
       }
 
-      await ctx.ask(permission: 'grep', patterns: [pattern]);
-
       final root = input['path'] as String? ?? Directory.current.path;
       final includePattern = input['include'] as String?;
       final regex = RegExp(
@@ -53,10 +51,11 @@ ToolDef createGrepTool() {
       final maxMatches = input['max_matches'] as int? ?? 50;
 
       final results = <String>[];
-      final safeRoot = resolveSafePath(root);
+      final safeRoot = resolveSafePath(root, allowedRoots: managedReadRoots);
       final boundary = FilesystemBoundary(workspace: Directory.current);
       final grepResolution = boundary.resolve(safeRoot);
-      if (grepResolution.isExternal) {
+      if (grepResolution.isExternal &&
+          !isWithinAnyRoot(grepResolution.path, managedReadRoots)) {
         await ctx.ask(
           permission: 'external_directory',
           patterns: [grepResolution.path],
@@ -67,6 +66,9 @@ ToolDef createGrepTool() {
             'tool': 'grep',
           },
         );
+      }
+      if (!isWithinAnyRoot(grepResolution.path, managedReadRoots)) {
+        await ctx.ask(permission: 'grep', patterns: [pattern]);
       }
       final dir = Directory(safeRoot);
       if (!dir.existsSync()) {

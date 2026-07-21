@@ -95,10 +95,14 @@ ToolDef createReadTool() {
         );
       }
 
-      final safePath = resolveSafePath(filePath);
+      final safePath = resolveSafePath(
+        filePath,
+        allowedRoots: managedReadRoots,
+      );
       final boundary = FilesystemBoundary(workspace: Directory.current);
       final resolution = boundary.resolve(safePath);
-      if (resolution.isExternal) {
+      if (resolution.isExternal &&
+          !isWithinAnyRoot(resolution.path, managedReadRoots)) {
         await ctx.ask(
           permission: 'external_directory',
           patterns: [resolution.path],
@@ -110,7 +114,9 @@ ToolDef createReadTool() {
           },
         );
       }
-      await ctx.ask(permission: 'read', patterns: [safePath]);
+      if (!isWithinAnyRoot(resolution.path, managedReadRoots)) {
+        await ctx.ask(permission: 'read', patterns: [resolution.path]);
+      }
       final offset = input['offset'] as int? ?? 0;
       final limit = input['limit'] as int? ?? 2000;
       final file = File(safePath);

@@ -92,7 +92,7 @@ class _BashBodyState extends State<BashBody> {
         if (originalResult.isNotEmpty) const SizedBox(height: 6),
         if (originalResult.isNotEmpty)
           SingleChildScrollView(
-            child: SelectableText(
+            child: Text(
               displayedResult,
               style: ChatoraiFontSizes.mono(
                 ChatoraiFontSizes.md,

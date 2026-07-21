@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- **Tool-output storage path**: Truncated tool output was previously written to `getApplicationDocumentsDirectory()` (`~/Documents/chatorai/` on Linux), which caused `Path denied` errors when the model later tried to read it back via `read`/`grep`/`glob` because Documents is outside the project root and the path sandbox rejected it. Output is now written to the cross-platform data directory (`~/.local/share/chatorai/tool-output` on Linux, XDG-compliant on other desktops, sandboxed Documents on mobile). The `read`/`grep`/`glob` tools now accept this directory as a managed read root (symlink-safe via `FilesystemBoundary.resolve()`), so the model can read back its own truncated output without permission prompts. Deleted the dead `tool_output_bounding_service.dart` (no callers).
+
 ## [0.1.1]
 
 ### Added
@@ -42,7 +48,7 @@ First public release.
 - **ShortcutHandler & AppShortcuts**: Centralized keyboard shortcut management widget.
 - **SecureFileService**: New service for filesystem boundary enforcement and external directory access authorization.
 - **PermissionBridge**: New bridge integrating tool-specific permission requests with the existing `PermissionService`.
-- **ToolOutputBoundingService**: Prevents context overflow by truncating large tool outputs and saving them to disk.
+- **TruncationService**: Prevents context overflow by truncating large tool outputs and saving them to the managed data directory.
 - **ChatRetryService**: Infinite retries for retryable errors with exponential backoff and `Retry-After` header support.
 - **Enhanced SessionEvent Schema**: Support for task-specific parts and improved metadata persistence.
 - **AssistantQuestion Multiple Selection**: `AssistantQuestion` now supports `multiple` boolean for multi-select questions.

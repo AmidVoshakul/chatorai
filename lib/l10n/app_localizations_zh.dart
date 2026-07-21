@@ -1922,60 +1922,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get skillsCategoryOther => '其他';
 
   @override
-  String get skillsMarketDescCodeReviewer => '顶级代码审查：漏洞、安全与可维护性。';
-
-  @override
-  String get skillsMarketDescCleanCode => '把可运行的代码变成整洁易读的代码（Uncle Bob）。';
-
-  @override
-  String get skillsMarketDescDry => '消除重复的知识与业务逻辑。';
-
-  @override
-  String get skillsMarketDescArchitectReview => '以整洁的分布式系统原则审查架构。';
-
-  @override
-  String get skillsMarketDescBackendArchitect => '设计可扩展的 API、服务与数据层。';
-
-  @override
-  String get skillsMarketDescFlutterExpert => '精通 Dart 3、高级组件与多平台交付。';
-
-  @override
-  String get skillsMarketDescAgentsMd => '创建并维护简洁、高信息量的智能体文档。';
-
-  @override
-  String get skillsMarketDescUxCopy => '撰写清晰、人性化的 UX 文案。';
-
-  @override
-  String get skillsMarketDescDeepResearch => '规划、搜索、阅读并综合研究报告。';
-
-  @override
-  String get skillsMarketDescUiUxDesigner => '设计无障碍、现代且高性能的界面。';
-
-  @override
-  String get skillsMarketDescUxuiPrinciples => '将核心 UX/UI 原则应用于任何界面。';
-
-  @override
-  String get skillsMarketDescCommit => '编写规范化提交并正确引用问题。';
-
-  @override
-  String get skillsMarketDescToolDesign => '构建智能体易用的工具。';
-
-  @override
-  String get skillsMarketDescProductManager => '梳理需求、路线图与产品决策。';
-
-  @override
-  String get skillsMarketDescDataScientist => '高级分析、机器学习与统计建模。';
-
-  @override
-  String get skillsMarketDescDatabaseOptimizer => '优化查询并设计可扩展的数据库架构。';
-
-  @override
-  String get skillsMarketDescDebugger => '系统化调试错误与测试失败。';
-
-  @override
-  String get skillsMarketDescSecurityAuditor => '审计漏洞并修复不安全的代码。';
-
-  @override
   String get commonSave => '保存';
 
   @override

@@ -3,9 +3,9 @@ name: deep-research
 description: "Run autonomous research tasks that plan, search, read, and synthesize information into comprehensive reports."
 ---
 
-# Gemini Deep Research Skill
+> Note: The commands below invoke `scripts/research.py`. That helper script is not bundled in this repository — provide it or adapt the commands to your own research tooling.
 
-Run autonomous research tasks that plan, search, read, and synthesize information into comprehensive reports.
+# Gemini Deep Research Skill
 
 ## When to Use This Skill
 

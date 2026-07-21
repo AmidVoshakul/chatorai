@@ -63,9 +63,8 @@ lib/
 │       ├── built_in/        # Individual tool implementations
 │       ├── permission_bridge.dart        # Integrates tool permission requests
 │       ├── secure_file_service.dart      # Filesystem boundary enforcement
-│       ├── tool_output_bounding_service.dart # Context-overflow prevention
+│       ├── truncation_service.dart      # Context-overflow prevention (truncates + persists large outputs to the managed data dir)
 │       ├── tool_execution.dart  # Execution context with doom-loop guard
-│       │   ├── truncation_service.dart  # Output size limits
 │       │   ├── file_edit_guard.dart     # File edit permission checks
 │       │   ├── filesystem_boundary.dart # Path sandboxing
 │       │   utils/               # Shared utilities (logger, formatters, secure storage, xdg_paths)
@@ -383,7 +382,7 @@ lib/core/tools/
 │   └── built_in_tools.dart       # Registration barrel (registers 16+ tools)
 ├── permission_bridge.dart        # Integrates tool permission requests with PermissionService
 ├── secure_file_service.dart      # Filesystem boundary checks and external directory access
-├── tool_output_bounding_service.dart # Prevents context overflow; truncates + saves large outputs
+├── truncation_service.dart       # Prevents context overflow; truncates + saves large outputs to the managed data dir
 ├── tool_permission.dart          # Tool permission metadata and helpers
 ├── tool.dart                     # Tool interface
 ├── tool_definition.dart          # ToolDef model
@@ -394,7 +393,6 @@ lib/core/tools/
 ├── tool_registry.dart            # Singleton registry, toSDKTools()
 ├── tool_registry_provider.dart   # Riverpod provider
 ├── tool_title.dart               # Tool title formatting
-├── truncation_service.dart       # Output size limits (2000 lines / 50KB)
 ├── file_edit_guard.dart          # File edit permission boundary checks
 ├── filesystem_boundary.dart      # Path sandboxing enforcement
 └── json_schema_validator.dart    # JSON schema validation logic
