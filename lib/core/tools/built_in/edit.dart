@@ -1,11 +1,19 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dartdiff/dartdiff.dart';
 import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
 import 'package:path/path.dart' as p;
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
+
+String _generatePatch(String oldText, String newText) {
+  if (oldText == newText) return '';
+  final patch = createTwoFilesPatch('', '', oldText, newText,
+      headerOptions: omitHeaders);
+  return patch?.trimRight() ?? '';
+}
 
 ToolDef createEditTool() {
   return ToolDef(
@@ -69,10 +77,8 @@ ToolDef createEditTool() {
           },
         );
       }
-      // Use pattern 'edit:file_path=$safePath' as required
       await ctx.ask(permission: 'edit', patterns: ['edit:file_path=$safePath']);
 
-      // Read-before-edit guard: reject if file was modified externally
       final staleMtime = await FileEditGuard.checkStale(safePath);
       if (staleMtime != null) {
         return ToolOutput(
@@ -102,10 +108,14 @@ ToolDef createEditTool() {
       final newContent = replaceAll
           ? content.replaceAll(oldString, newString)
           : content.replaceFirst(oldString, newString);
+      final patch = _generatePatch(content, newContent);
       await file.writeAsString(newContent, encoding: utf8);
 
       return ToolOutput(
-        'File edited successfully',
+        jsonEncode({
+          'message': 'File edited successfully',
+          'patch': patch,
+        }),
         metadata: {'path': safePath},
       );
     },

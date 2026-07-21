@@ -164,8 +164,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appInfo => '应用信息';
 
   @override
-  String get appDescription =>
-      '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n使用 Flutter 开发';
+  String get appDescription => '通过 OpenRouter API 与 AI 模型聊天的应用程序。\n\n功能：\n• 与各种 AI 模型聊天\n• 聊天历史记录存储\n• 深色和浅色主题\n• 自适应界面\n\n使用 Flutter 开发';
 
   @override
   String get shareChat => '分享聊天';
@@ -426,6 +425,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get edit => '编辑';
+
+  @override
+  String editToolTitle(String path) {
+    return '编辑 $path';
+  }
+
+  @override
+  String patchToolTitle(String path) {
+    return '补丁 $path';
+  }
 
   @override
   String get share => '分享';
@@ -1082,8 +1091,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get systemPromptDescription => 'AI助手的指令';
 
   @override
-  String get systemPromptSuggestion =>
-      '你是一个有用的助手。继续对话，为最后一条消息提供3个具体且合乎逻辑的延续。用中文回答。';
+  String get systemPromptSuggestion => '你是一个有用的助手。继续对话，为最后一条消息提供3个具体且合乎逻辑的延续。用中文回答。';
 
   @override
   String get temperature => '温度';
@@ -1443,8 +1451,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpAuthTypeLabel => '令牌类型';
 
   @override
-  String get mcpAuthTypeHelper =>
-      '令牌的发送方式：Bearer（Authorization）、ApiKey（X-Api-Key）或纯 Token。';
+  String get mcpAuthTypeHelper => '令牌的发送方式：Bearer（Authorization）、ApiKey（X-Api-Key）或纯 Token。';
 
   @override
   String get mcpHeadersLabel => '请求头 (JSON)';
@@ -1465,8 +1472,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpRawLabel => '服务器对象 (JSON)';
 
   @override
-  String get mcpRawHelper =>
-      '按文档粘贴服务器对象——服务器名称是外层键（例如 searxng）。也可以直接粘贴包含 mcpServers 外层包裹的完整块。';
+  String get mcpRawHelper => '按文档粘贴服务器对象——服务器名称是外层键（例如 searxng）。也可以直接粘贴包含 mcpServers 外层包裹的完整块。';
 
   @override
   String mcpParseError(Object field, Object message) {
@@ -1566,64 +1572,49 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mcpMarketNeedsToken => '需要密钥';
 
   @override
-  String get mcpMarketDescExa =>
-      'Exa 为 AI 工作流提供网页搜索和代码文档查询能力。其连接器为助手提供实时上下文，以便在需要依据外部信息作答时查找相关网页、技术文档和原始资料。';
+  String get mcpMarketDescExa => 'Exa 为 AI 工作流提供网页搜索和代码文档查询能力。其连接器为助手提供实时上下文，以便在需要依据外部信息作答时查找相关网页、技术文档和原始资料。';
 
   @override
-  String get mcpMarketDescContext7 =>
-      'Context7 为基于 AI 的程序员和代码编辑器提供最新的代码示例与文档。其 MCP 连接器将当前的库上下文集成到助手工作流中，减少切换标签页，并帮助生成的代码避免过时的 API、不存在的方法和陈旧的实现模式。';
+  String get mcpMarketDescContext7 => 'Context7 为基于 AI 的程序员和代码编辑器提供最新的代码示例与文档。其 MCP 连接器将当前的库上下文集成到助手工作流中，减少切换标签页，并帮助生成的代码避免过时的 API、不存在的方法和陈旧的实现模式。';
 
   @override
-  String get mcpMarketDescHuggingFace =>
-      'Hugging Face 将语音助手连接到 Hugging Face Hub 和数千个 Gradio 应用。其连接器将模型、数据集、空间和应用的上下文集成到 AI 工作流中，用于发现、实验和机器学习研究。';
+  String get mcpMarketDescHuggingFace => 'Hugging Face 将语音助手连接到 Hugging Face Hub 和数千个 Gradio 应用。其连接器将模型、数据集、空间和应用的上下文集成到 AI 工作流中，用于发现、实验和机器学习研究。';
 
   @override
-  String get mcpMarketDescParallel =>
-      'Parallel Search 为以搜索为核心的 AI 工作流提供实时网页搜索与内容提取。其远程 MCP 服务器帮助助手获取最新的网页上下文、核验页面，并在回答需要新鲜信息的问题或研究主题时使用提取的内容。';
+  String get mcpMarketDescParallel => 'Parallel Search 为以搜索为核心的 AI 工作流提供实时网页搜索与内容提取。其远程 MCP 服务器帮助助手获取最新的网页上下文、核验页面，并在回答需要新鲜信息的问题或研究主题时使用提取的内容。';
 
   @override
-  String get mcpMarketDescTavily =>
-      'Tavily 通过搜索、检索和研究 API 为 AI 智能体提供实时网络资源访问。其连接器帮助助手以实时数据为依据作答、提取相关内容，并通过安全控制在生产环境中支撑智能体工作流。';
+  String get mcpMarketDescTavily => 'Tavily 通过搜索、检索和研究 API 为 AI 智能体提供实时网络资源访问。其连接器帮助助手以实时数据为依据作答、提取相关内容，并通过安全控制在生产环境中支撑智能体工作流。';
 
   @override
-  String get mcpMarketDescGithub =>
-      'GitHub 是用于协作处理代码、议题、拉取请求和项目历史的平台。其官方远程 MCP 服务器为助手提供结构化的仓库上下文，以理解源码变更、评审、开发流程以及 GitHub 项目状态。';
+  String get mcpMarketDescGithub => 'GitHub 是用于协作处理代码、议题、拉取请求和项目历史的平台。其官方远程 MCP 服务器为助手提供结构化的仓库上下文，以理解源码变更、评审、开发流程以及 GitHub 项目状态。';
 
   @override
-  String get mcpMarketDescPostman =>
-      'Postman 为编码智能体和开发者工作流提供 API 上下文。其连接器将 API 定义、文档与协作上下文集成到助手工作中，使智能体能够分析集成与实现细节。';
+  String get mcpMarketDescPostman => 'Postman 为编码智能体和开发者工作流提供 API 上下文。其连接器将 API 定义、文档与协作上下文集成到助手工作中，使智能体能够分析集成与实现细节。';
 
   @override
-  String get mcpMarketDescSlack =>
-      'Slack 是汇聚团队消息、频道、用户和共享工作区的协作中心。其远程 MCP 服务器将工作区对话上下文集成到助手工作流中，帮助用户查找答案、总结讨论并了解各频道的动态。';
+  String get mcpMarketDescSlack => 'Slack 是汇聚团队消息、频道、用户和共享工作区的协作中心。其远程 MCP 服务器将工作区对话上下文集成到助手工作流中，帮助用户查找答案、总结讨论并了解各频道的动态。';
 
   @override
-  String get mcpMarketDescFigma =>
-      'Figma 是用于界面设计、原型制作和开发者交接的产品设计平台。其远程 MCP 服务器将文件、项目和开发模式上下文带入助手工作流，使智能体理解视觉工作并将其映射到实现任务。';
+  String get mcpMarketDescFigma => 'Figma 是用于界面设计、原型制作和开发者交接的产品设计平台。其远程 MCP 服务器将文件、项目和开发模式上下文带入助手工作流，使智能体理解视觉工作并将其映射到实现任务。';
 
   @override
-  String get mcpMarketDescCanva =>
-      'Canva 是用于演示文稿、社媒图形、文档和品牌素材的视觉传播平台。其远程 MCP 服务器让助手可访问 Canva 项目、资源、导出文件和评论，从而基于所获信息讨论、编辑并准备创意作品。';
+  String get mcpMarketDescCanva => 'Canva 是用于演示文稿、社媒图形、文档和品牌素材的视觉传播平台。其远程 MCP 服务器让助手可访问 Canva 项目、资源、导出文件和评论，从而基于所获信息讨论、编辑并准备创意作品。';
 
   @override
-  String get mcpMarketDescStripe =>
-      'Stripe 是面向支付处理的支付与金融基础设施平台，涵盖账单、客户和开发者文档。其远程 MCP 服务器在 Stripe 支持下为助手提供账户与实现上下文，以理解客户流程、账单问题与支付任务。';
+  String get mcpMarketDescStripe => 'Stripe 是面向支付处理的支付与金融基础设施平台，涵盖账单、客户和开发者文档。其远程 MCP 服务器在 Stripe 支持下为助手提供账户与实现上下文，以理解客户流程、账单问题与支付任务。';
 
   @override
-  String get mcpMarketDescTrivago =>
-      'Trivago 帮助用户按坐标、城市、国家、日期和旅行上下文搜索酒店与住宿。其连接器为助手提供住宿搜索上下文，以便在目的地或景点附近找到合适的住宿。';
+  String get mcpMarketDescTrivago => 'Trivago 帮助用户按坐标、城市、国家、日期和旅行上下文搜索酒店与住宿。其连接器为助手提供住宿搜索上下文，以便在目的地或景点附近找到合适的住宿。';
 
   @override
-  String get mcpMarketDescSend =>
-      'Send 帮助用户创建可共享文档、单页文档、演示文稿和幻灯片。其连接器让助手将所需材料转化为发布链接、交互式页面以及可追踪的交付物。';
+  String get mcpMarketDescSend => 'Send 帮助用户创建可共享文档、单页文档、演示文稿和幻灯片。其连接器让助手将所需材料转化为发布链接、交互式页面以及可追踪的交付物。';
 
   @override
-  String get mcpMarketDescZiprecruiter =>
-      'ZipRecruiter 帮助用户按职位名称、公司、地点、薪资、距离、工作风格、雇佣类型和发布日期搜索实时职位。其连接器在将申请交回 ZipRecruiter 之前，将求职上下文集成到助手工作流中。';
+  String get mcpMarketDescZiprecruiter => 'ZipRecruiter 帮助用户按职位名称、公司、地点、薪资、距离、工作风格、雇佣类型和发布日期搜索实时职位。其连接器在将申请交回 ZipRecruiter 之前，将求职上下文集成到助手工作流中。';
 
   @override
-  String get mcpMarketDescAdobeCreativity =>
-      'Adobe for Creativity 将 Photoshop、Lightroom、Illustrator、Firefly、Premiere、Express、InDesign 和 Stock 与 AI 驱动创意工作相结合。用户可使用自然语言生成、编辑并增强照片、设计素材和视频项目，同时作品始终关联到其 Adobe 账户。';
+  String get mcpMarketDescAdobeCreativity => 'Adobe for Creativity 将 Photoshop、Lightroom、Illustrator、Firefly、Premiere、Express、InDesign 和 Stock 与 AI 驱动创意工作相结合。用户可使用自然语言生成、编辑并增强照片、设计素材和视频项目，同时作品始终关联到其 Adobe 账户。';
 
   @override
   String get agentsInstructions => '智能体指令';
@@ -1641,8 +1632,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get instructionsAutoDetectedTitle => '检测到的文件';
 
   @override
-  String get instructionsAutoDetectedHelper =>
-      '为此范围找到的 AGENTS.md 和 CLAUDE.md。点按可查看或编辑。';
+  String get instructionsAutoDetectedHelper => '为此范围找到的 AGENTS.md 和 CLAUDE.md。点按可查看或编辑。';
 
   @override
   String get instructionsFileNotCreated => '尚未创建';

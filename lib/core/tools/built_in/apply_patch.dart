@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:dartdiff/dartdiff.dart';
 import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
@@ -44,108 +46,49 @@ ToolDef createApplyPatchTool() {
           metadata: {'error': true},
         );
       }
-      final originalLines = await file.readAsLines();
-      final patchLines = patchStr.split(RegExp(r'\r?\n'));
-      final headerRegex = RegExp(r'^@@ -(\d+),?(\d*) \+(\d+),?(\d*) @@');
-      int? oldStart;
-      int oldCount = 1;
-      int? newStart;
-      int newCount = 1;
-      int headerIndex = -1;
-      for (var i = 0; i < patchLines.length; i++) {
-        final match = headerRegex.firstMatch(patchLines[i]);
-        if (match != null) {
-          oldStart = int.parse(match.group(1)!) - 1;
-          oldCount = match.group(2)!.isEmpty ? 1 : int.parse(match.group(2)!);
-          newStart = int.parse(match.group(3)!) - 1;
-          newCount = match.group(4)!.isEmpty ? 1 : int.parse(match.group(4)!);
-          headerIndex = i;
-          break;
+      final originalContent = await file.readAsString();
+      try {
+        final patches = parsePatch(patchStr);
+        if (patches.isEmpty || patches.every((p) => p.hunks.isEmpty)) {
+          return ToolOutput(
+            'Error: no valid @@ header found in patch',
+            metadata: {'error': true},
+          );
         }
+      } catch (_) {
+        // fall through — let applyPatch do its own parsing
       }
-      if (oldStart == null || newStart == null || headerIndex == -1) {
+      final String result;
+      try {
+        final r = applyPatch(originalContent, patchStr);
+        if (r == null) {
+          return ToolOutput(
+            'Error: patch context mismatch — could not apply patch to the current file content',
+            metadata: {'error': true},
+          );
+        }
+        result = r;
+      } catch (e) {
         return ToolOutput(
-          'Error: no valid @@ header found in patch',
+          'Error: invalid patch — $e',
           metadata: {'error': true},
         );
       }
-      final hunkLines = patchLines.sublist(headerIndex + 1);
-      int currentFileIdx = oldStart;
-      for (final line in hunkLines) {
-        if (line.startsWith('---') ||
-            line.startsWith('+++') ||
-            line.startsWith('@@')) {
-          break;
-        }
-        if (line.startsWith(' ') || line.startsWith('-')) {
-          final expectedLine = line.isNotEmpty ? line.substring(1) : '';
-          if (currentFileIdx < 0 || currentFileIdx >= originalLines.length) {
-            return ToolOutput(
-              'Error: patch index out of bounds. File has ${originalLines.length} lines, trying to access index $currentFileIdx.',
-              metadata: {'error': true, 'bounds_error': true},
-            );
-          }
-          if (originalLines[currentFileIdx] != expectedLine) {
-            return ToolOutput(
-              'Error: context mismatch at line ${currentFileIdx + 1}.\nExpected: "$expectedLine"\nActual: "${originalLines[currentFileIdx]}"',
-              metadata: {'error': true, 'context_mismatch': true},
-            );
-          }
-          currentFileIdx++;
-        }
-      }
-      final result = <String>[];
-      for (var i = 0; i < oldStart; i++) {
-        result.add(originalLines[i]);
-      }
-      int inserted = 0;
-      for (final line in hunkLines) {
-        if (line.startsWith('---') ||
-            line.startsWith('+++') ||
-            line.startsWith('@@')) {
-          break;
-        }
-        if (line.startsWith('-') || line.startsWith('\\')) {
-          continue;
-        }
-        if (line.startsWith('+')) {
-          result.add(line.substring(1));
-          inserted++;
-        } else if (line.startsWith(' ')) {
-          result.add(line.substring(1));
-          inserted++;
-        } else if (line.isEmpty) {
-          result.add('');
-          inserted++;
-        }
-      }
-      for (var i = oldStart + oldCount; i < originalLines.length; i++) {
-        if (i >= 0 && i < originalLines.length) {
-          result.add(originalLines[i]);
-        }
-      }
-      await file.writeAsString(result.join('\n'));
-      await FileEditGuard.recordRead(safePath);
-      final expectedTotalLines = originalLines.length - oldCount + newCount;
-      if (result.length != expectedTotalLines) {
+      if (result == originalContent) {
         return ToolOutput(
-          'Patch applied with line count warning: expected total $expectedTotalLines, got ${result.length}',
-          metadata: {
-            'warning': true,
-            'old_count': oldCount,
-            'new_count': newCount,
-            'actual_new_count': inserted,
-            'total_lines': result.length,
-          },
+          'Patch applied with no changes (patch did not modify the file)',
+          metadata: {'no_change': true},
         );
       }
+      await file.writeAsString(result);
+      await FileEditGuard.recordRead(safePath);
       return ToolOutput(
-        'Patch successfully applied to $safePath ($oldCount lines replaced with $inserted lines)',
+        jsonEncode({
+          'message': 'Patch successfully applied to $safePath',
+          'patch': patchStr,
+        }),
         metadata: {
           'file_path': safePath,
-          'old_count': oldCount,
-          'new_count': inserted,
-          'total_lines': result.length,
         },
       );
     },

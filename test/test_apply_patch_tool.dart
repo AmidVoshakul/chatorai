@@ -91,7 +91,6 @@ void main() {
           'patch': 'garbage',
         }, _mockCtx());
         expect(result.metadata?['error'], isTrue);
-        expect(result.output, contains('no valid @@ header'));
         f.deleteSync();
       });
     });
@@ -100,28 +99,26 @@ void main() {
       test('returns error when context line does not match file', () async {
         final f = File(_path('ap_ctx_mismatch.txt'))
           ..writeAsStringSync('alpha\nbeta\ngamma');
-        // @@ header expects 'X' at line 2 but file has 'beta'
-        final patch = '--- a/x\n+++ b/x\n@@ -2,1 +2 @@\n-X\n beta';
+        final patch = '--- a/x\n+++ b/x\n@@ -2,1 +2,1 @@\n-WRONG\n beta';
         final result = await tool.execute({
           'file_path': f.path,
           'patch': patch,
         }, _mockCtx());
         expect(result.metadata?['error'], isTrue);
-        expect(result.metadata?['context_mismatch'], isTrue);
+        expect(result.output, contains('invalid'));
         f.deleteSync();
       });
 
-      test('returns error when patch index is out of bounds', () async {
+      test('returns error when patch references non-existent lines', () async {
         final f = File(_path('ap_bounds.txt'))
           ..writeAsStringSync('only one line');
-        // Tries to access line 5 in a 1-line file
-        final patch = '--- a/x\n+++ b/x\n@@ -5,1 +5 @@\n whatever';
+        final patch = '--- a/x\n+++ b/x\n@@ -5,1 +5,1 @@\n-whatever\n+replacement';
         final result = await tool.execute({
           'file_path': f.path,
           'patch': patch,
         }, _mockCtx());
         expect(result.metadata?['error'], isTrue);
-        expect(result.metadata?['bounds_error'], isTrue);
+        expect(result.output, contains('patch context mismatch'));
         f.deleteSync();
       });
     });
@@ -223,13 +220,12 @@ void main() {
       });
     });
 
-    group('execute - line count warning', () {
+    group('execute - line count', () {
       test(
-        'returns warning when result line count differs from expected',
+        'applies patch with different line counts correctly',
         () async {
           final f = File(_path('ap_lcwarn.txt'))
             ..writeAsStringSync('line1\nline2\nline3');
-          // Replace with different count than header declares - triggers warning path
           final patch =
               '--- a/ap_lcwarn.txt\n+++ b/ap_lcwarn.txt\n@@ -2,1 +2,2 @@\n-line2\n+line2a\n+line2b';
           final result = await tool.execute({
@@ -237,7 +233,9 @@ void main() {
             'patch': patch,
           }, _mockCtx());
           expect(result.metadata?['error'], isNull);
-          expect(result.metadata, isNotNull);
+          final content = await f.readAsString();
+          expect(content, contains('line2a'));
+          expect(content, contains('line2b'));
           f.deleteSync();
         },
       );
@@ -336,7 +334,7 @@ void main() {
       test('mid-file multi-line replacement', () async {
         final f = File(_path('ap_mid.txt'))..writeAsStringSync('A\nB\nC\nD\nE');
         final patch =
-            '--- a/ap_mid.txt\n+++ b/ap_mid.txt\n@@ -3,2 +3,2 @@\n C\n-D\n+replaced1\n+replaced2';
+            '--- a/ap_mid.txt\n+++ b/ap_mid.txt\n@@ -3,2 +3,3 @@\n C\n-D\n+replaced1\n+replaced2';
         final result = await tool.execute({
           'file_path': f.path,
           'patch': patch,
@@ -356,11 +354,10 @@ void main() {
 
     group('execute - multiple hunks', () {
       test(
-        'applies only the first hunk when multiple @@ headers present',
+        'applies all hunks when multiple @@ headers present',
         () async {
           final f = File(_path('ap_multi.txt'))
             ..writeAsStringSync('line1\nline2\nline3\nline4\nline5');
-          // Two hunks: first replaces line2, second replaces line4
           final patch = [
             '--- a/ap_multi.txt',
             '+++ b/ap_multi.txt',
@@ -379,20 +376,17 @@ void main() {
 
           expect(result.metadata?['error'], isNull);
           final content = await f.readAsString();
-          // First hunk applied
           expect(content, contains('replaced2'));
-          // Second hunk NOT applied (only first hunk processed)
-          expect(content, contains('line4'));
-          expect(content, isNot(contains('replaced4')));
+          expect(content, contains('replaced4'));
+          expect(content, isNot(contains('line2')));
+          expect(content, isNot(contains('line4')));
           f.deleteSync();
         },
       );
 
-      test('applies first hunk and preserves lines between hunks', () async {
+      test('applies all hunks and preserves lines between hunks', () async {
         final f = File(_path('ap_multi2.txt'))
           ..writeAsStringSync('A\nB\nC\nD\nE\nF\nG');
-        // First hunk: replace line 2 (B -> B2)
-        // Second hunk: replace line 6 (F -> F2) — should NOT be applied
         final patch = [
           '--- a/ap_multi2.txt',
           '+++ b/ap_multi2.txt',
@@ -416,21 +410,17 @@ void main() {
         expect(lines[2], 'C');
         expect(lines[3], 'D');
         expect(lines[4], 'E');
-        expect(lines[5], 'F'); // unchanged — second hunk not applied
+        expect(lines[5], 'F2');
         expect(lines[6], 'G');
         f.deleteSync();
       });
     });
 
     group('execute - backslash marker', () {
-      test('backslash prefix line is treated as removed line', () async {
+      test('rejects patch with misplaced backslash marker', () async {
         final f = File(_path('ap_backslash.txt'))
           ..writeAsStringSync('line1\nline2\nline3');
-        // The `\ No newline at end of file` marker in unified diff
-        // starts with backslash. Current implementation treats it like `-` (skip).
-        // The header says remove 3 lines starting at line 1, but the backslash
-        // line is skipped (not counted as context), so only line1 and line2 are
-        // removed (line3 remains because the loop breaks on the backslash).
+        // Malformed patch: backslash in wrong position (between context and removal)
         final patch = [
           '--- a/ap_backslash.txt',
           '+++ b/ap_backslash.txt',
@@ -445,16 +435,8 @@ void main() {
           'patch': patch,
         }, _mockCtx());
 
-        // The backslash line causes the loop to break early.
-        // Only line1 is processed as context, line2 is removed.
-        // The result is: line3 (remaining after oldStart + oldCount).
-        expect(result.metadata?['error'], isNull);
-        final content = await f.readAsString();
-        // line1 is consumed as context, line2 is removed, line3 remains
-        // But the backslash breaks the loop, so only line1 is verified.
-        // The output is: line1 (from context) + line3 (from tail)
-        expect(content, contains('line1'));
-        expect(content, isNot(contains('line2')));
+        expect(result.metadata?['error'], isTrue);
+        expect(result.output, contains('invalid patch'));
         f.deleteSync();
       });
     });

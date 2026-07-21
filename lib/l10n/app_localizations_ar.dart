@@ -95,22 +95,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get autoScrollDuringStreaming => 'التمرير التلقائي أثناء البث';
 
   @override
-  String get autoScrollDuringStreamingDesc =>
-      'التمرير لأسفل القائمة تلقائيًا عند ظهور محتوى جديد';
+  String get autoScrollDuringStreamingDesc => 'التمرير لأسفل القائمة تلقائيًا عند ظهور محتوى جديد';
 
   @override
   String get showContinuationSuggestions => 'إظهار اقتراحات المتابعة';
 
   @override
-  String get showContinuationSuggestionsDesc =>
-      'عرض اقتراحات المتابعة بعد رد الذكاء الاصطناعي';
+  String get showContinuationSuggestionsDesc => 'عرض اقتراحات المتابعة بعد رد الذكاء الاصطناعي';
 
   @override
   String get expandReasoningByDefault => 'توسيع الاستدلال افتراضياً';
 
   @override
-  String get expandReasoningByDefaultDesc =>
-      'عرض كتل الاستدلال/التفكير مفتوحة عند رد الذكاء الاصطناعي';
+  String get expandReasoningByDefaultDesc => 'عرض كتل الاستدلال/التفكير مفتوحة عند رد الذكاء الاصطناعي';
 
   @override
   String get language => 'اللغة';
@@ -137,8 +134,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get resetSettings => 'إعادة تعيين الإعدادات';
 
   @override
-  String get resetAllSettings =>
-      'إعادة تعيين جميع الإعدادات إلى القيم الافتراضية';
+  String get resetAllSettings => 'إعادة تعيين جميع الإعدادات إلى القيم الافتراضية';
 
   @override
   String get save => 'حفظ';
@@ -168,8 +164,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appInfo => 'معلومات التطبيق';
 
   @override
-  String get appDescription =>
-      'تطبيق دردشة مع نماذج الذكاء الاصطناعي عبر OpenRouter API.\n\nالميزات:\n• الدردشة مع نماذج ذكاء اصطناعي مختلفة\n• تخزين سجل الدردشة\n• السمات الداكنة والفاتحة\n• واجهة تكيفية\n\nتم التطوير ب ❤️ باستخدام Flutter';
+  String get appDescription => 'تطبيق دردشة مع نماذج الذكاء الاصطناعي عبر OpenRouter API.\n\nالميزات:\n• الدردشة مع نماذج ذكاء اصطناعي مختلفة\n• تخزين سجل الدردشة\n• السمات الداكنة والفاتحة\n• واجهة تكيفية\n\nتم التطوير ب ❤️ باستخدام Flutter';
 
   @override
   String get shareChat => 'مشاركة الدردشة';
@@ -199,8 +194,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noChatsYet => 'لا توجد دردشات بعد';
 
   @override
-  String get startConversation =>
-      'ابدأ محادثة عن طريق النقر على \"دردشة جديدة\"';
+  String get startConversation => 'ابدأ محادثة عن طريق النقر على \"دردشة جديدة\"';
 
   @override
   String get reasoning => 'التفكير';
@@ -322,8 +316,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get features => 'الميزات';
 
   @override
-  String get featuresDisplayedBasedOnActualModelCapabilities =>
-      'يتم عرض الميزات بناءً على قدرات النموذج الفعلية';
+  String get featuresDisplayedBasedOnActualModelCapabilities => 'يتم عرض الميزات بناءً على قدرات النموذج الفعلية';
 
   @override
   String get noModelsFound => 'لم يتم العثور على نماذج';
@@ -335,8 +328,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tryADifferentSearchQuery => 'جرب استعلام بحث مختلف';
 
   @override
-  String get tryRefreshingOrCheckYourInternetConnection =>
-      'حاول التحديث أو تحقق من اتصال الإنترنت';
+  String get tryRefreshingOrCheckYourInternetConnection => 'حاول التحديث أو تحقق من اتصال الإنترنت';
 
   @override
   String get aiIsTyping => 'الذكاء الاصطناعي يكتب';
@@ -381,15 +373,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get failedToEditMessage => 'فشل في تعديل الرسالة';
 
   @override
-  String get messageEditedAndResponseRegenerated =>
-      'تم تعديل الرسالة وإعادة توليد الاستجابة';
+  String get messageEditedAndResponseRegenerated => 'تم تعديل الرسالة وإعادة توليد الاستجابة';
 
   @override
   String get failedToEditAndSendMessage => 'فشل في تعديل وإرسال الرسالة';
 
   @override
-  String get areYouSureYouWantToDeleteThisMessage =>
-      'هل أنت متأكد أنك تريد حذف هذه الرسالة؟';
+  String get areYouSureYouWantToDeleteThisMessage => 'هل أنت متأكد أنك تريد حذف هذه الرسالة؟';
 
   @override
   String confirmDeleteMessage(Object chatTitle) {
@@ -397,8 +387,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get areYouSureYouWantToRegenerateThisMessage =>
-      'هل أنت متأكد أنك تريد إعادة توليد هذه الرسالة؟';
+  String get areYouSureYouWantToRegenerateThisMessage => 'هل أنت متأكد أنك تريد إعادة توليد هذه الرسالة؟';
 
   @override
   String modelDoesNotSupportImages(Object modelId) {
@@ -436,6 +425,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get edit => 'تعديل';
+
+  @override
+  String editToolTitle(String path) {
+    return 'تعديل $path';
+  }
+
+  @override
+  String patchToolTitle(String path) {
+    return 'رقع $path';
+  }
 
   @override
   String get share => 'مشاركة';
@@ -504,8 +503,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion9 => 'ما هي أفضل الممارسات لتطوير Flutter؟';
 
   @override
-  String get welcomeQuestion10 =>
-      'اشرح الفرق بين البرمجة غير المتزامنة والمتزامنة';
+  String get welcomeQuestion10 => 'اشرح الفرق بين البرمجة غير المتزامنة والمتزامنة';
 
   @override
   String get welcomeQuestion11 => 'كيف أحسّن أداء الكود الخاص بي؟';
@@ -541,8 +539,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion21 => 'كيف أستعد لمقابلة هندسة البرمجيات؟';
 
   @override
-  String get welcomeQuestion22 =>
-      'ما هي المهارات الأكثر قيمة في صناعة التكنولوجيا؟';
+  String get welcomeQuestion22 => 'ما هي المهارات الأكثر قيمة في صناعة التكنولوجيا؟';
 
   @override
   String get welcomeQuestion23 => 'كيف أتفاوض على زيادة الراتب؟';
@@ -575,15 +572,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion32 => 'كيف أحافظ على الحافز عند تعلم شيء صعب؟';
 
   @override
-  String get welcomeQuestion33 =>
-      'ما هي أفضل لغات البرمجة لتعلمها في عام 2026؟';
+  String get welcomeQuestion33 => 'ما هي أفضل لغات البرمجة لتعلمها في عام 2026؟';
 
   @override
   String get welcomeQuestion34 => 'كيف أبني محفظة قوية لوظائف التكنولوجيا؟';
 
   @override
-  String get welcomeQuestion35 =>
-      'ما هي أفضل أدوات الذكاء الاصطناعي للإنتاجية؟';
+  String get welcomeQuestion35 => 'ما هي أفضل أدوات الذكاء الاصطناعي للإنتاجية؟';
 
   @override
   String get welcomeQuestion36 => 'كيف يعمل التعلم الآلي فعلياً؟';
@@ -607,8 +602,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion42 => 'كيف أستعد للمقابلات التقنية؟';
 
   @override
-  String get welcomeQuestion43 =>
-      'ما هي المهارات الناعمة التي يحتاجها كل مطور؟';
+  String get welcomeQuestion43 => 'ما هي المهارات الناعمة التي يحتاجها كل مطور؟';
 
   @override
   String get welcomeQuestion44 => 'كيف أتفاوض على الراتب كمطور؟';
@@ -629,8 +623,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion49 => 'ما هي أفضل الكتب عن القيادة؟';
 
   @override
-  String get welcomeQuestion50 =>
-      'كيف أطلق شركة ناشئة ناجحة في مجال التكنولوجيا؟';
+  String get welcomeQuestion50 => 'كيف أطلق شركة ناشئة ناجحة في مجال التكنولوجيا؟';
 
   @override
   String get welcomeQuestion51 => 'ما هي أحدث الاتجاهات في تطوير الويب؟';
@@ -654,8 +647,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion57 => 'ما هي أخلاقيات الذكاء الاصطناعي؟';
 
   @override
-  String get welcomeQuestion58 =>
-      'كيف سيغير الذكاء الاصطناعي الوظائف في المستقبل؟';
+  String get welcomeQuestion58 => 'كيف سيغير الذكاء الاصطناعي الوظائف في المستقبل؟';
 
   @override
   String get welcomeQuestion59 => 'ما هي أفضل ممارسات الأمن السيبراني؟';
@@ -688,8 +680,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion68 => 'كيف أنشئ محتوى جذاباً؟';
 
   @override
-  String get welcomeQuestion69 =>
-      'ما هي أفضل استراتيجيات وسائل التواصل الاجتماعي؟';
+  String get welcomeQuestion69 => 'ما هي أفضل استراتيجيات وسائل التواصل الاجتماعي؟';
 
   @override
   String get welcomeQuestion70 => 'كيف أبني علامة تجارية شخصية؟';
@@ -842,8 +833,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeQuestion119 => 'ما هي أفضل ممارسات التسجيل؟';
 
   @override
-  String get welcomeQuestion120 =>
-      'كيف أنفذ معالجة الأخطاء في الأنظمة الموزعة؟';
+  String get welcomeQuestion120 => 'كيف أنفذ معالجة الأخطاء في الأنظمة الموزعة؟';
 
   @override
   String get continueConversation => 'متابعة المحادثة';
@@ -893,8 +883,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noFavoriteModels => 'لا توجد نماذج مفضلة';
 
   @override
-  String get tapHeartToAddFavorites =>
-      'اضغط على أيقونة القلب على النماذج لإضافتها إلى المفضلة';
+  String get tapHeartToAddFavorites => 'اضغط على أيقونة القلب على النماذج لإضافتها إلى المفضلة';
 
   @override
   String get addToFavorites => 'إضافة إلى المفضلة';
@@ -1028,8 +1017,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get openaiCompatibleApi => 'واجهة برمجة تطبيقات متوافقة مع OpenAI';
 
   @override
-  String get openaiCompatibleApiDescription =>
-      'الاتصال بأي نقطة نهاية لواجهة برمجة تطبيقات متوافقة مع OpenAI';
+  String get openaiCompatibleApiDescription => 'الاتصال بأي نقطة نهاية لواجهة برمجة تطبيقات متوافقة مع OpenAI';
 
   @override
   String get permissionAlways => 'السماح دائماً';
@@ -1065,8 +1053,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get speechErrorNoMatch => 'تعذر التعرف على الكلام. حاول مرة أخرى.';
 
   @override
-  String get speechErrorNotAuthorized =>
-      'لا يوجد وصول إلى الميكروفون. تحقق من الأذونات في الإعدادات.';
+  String get speechErrorNotAuthorized => 'لا يوجد وصول إلى الميكروفون. تحقق من الأذونات في الإعدادات.';
 
   @override
   String get speechErrorServer => 'خطأ في خادم التعرف. حاول مرة أخرى لاحقًا.';
@@ -1075,8 +1062,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get speechErrorTimeout => 'انتهت مهلة الاستماع. لم يتم سماع أي شيء.';
 
   @override
-  String get speechErrorTooManyRequests =>
-      'الطلبات كثيرة جدًا. حاول مرة أخرى لاحقًا.';
+  String get speechErrorTooManyRequests => 'الطلبات كثيرة جدًا. حاول مرة أخرى لاحقًا.';
 
   @override
   String get speechErrorUnknown => 'خطأ التعرف على الكلام';
@@ -1105,22 +1091,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get systemPromptDescription => 'تعليمات مساعد الذكاء الاصطناعي';
 
   @override
-  String get systemPromptSuggestion =>
-      'أنت مساعد مفيد. استمر في المحادثة من خلال تقديم 3 استمرارات محددة ومنطقية لآخر رسالة. رد باللغة نفسها التي يستخدمها المستخدم.';
+  String get systemPromptSuggestion => 'أنت مساعد مفيد. استمر في المحادثة من خلال تقديم 3 استمرارات محددة ومنطقية لآخر رسالة. رد باللغة نفسها التي يستخدمها المستخدم.';
 
   @override
   String get temperature => 'درجة الحرارة';
 
   @override
-  String get temperatureDescription =>
-      'التحكم في العشوائية: أقل = أكثر تركيزًا، أعلى = أكثر إبداعًا';
+  String get temperatureDescription => 'التحكم في العشوائية: أقل = أكثر تركيزًا، أعلى = أكثر إبداعًا';
 
   @override
   String get toggleNavigatorTooltip => 'تبديل الملاحة';
 
   @override
-  String get userPromptSuggestion =>
-      'قدم 3 استمرارات محددة ومنطقية لهذه الرسالة. أجب بالقائمة فقط، بدون نص إضافي.';
+  String get userPromptSuggestion => 'قدم 3 استمرارات محددة ومنطقية لهذه الرسالة. أجب بالقائمة فقط، بدون نص إضافي.';
 
   @override
   String get versionLabel => 'الإصدار:';
@@ -1135,8 +1118,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeGreeting3 => 'اطرح سؤالًا أو ابدأ استكشافًا.';
 
   @override
-  String get welcomeGreeting4 =>
-      'اطرح أي سؤال، شارك فكرة، أو اطلب المساعدة — أنا هنا للمساعدة.';
+  String get welcomeGreeting4 => 'اطرح أي سؤال، شارك فكرة، أو اطلب المساعدة — أنا هنا للمساعدة.';
 
   @override
   String get welcomeGreeting5 => 'لديك فكرة؟ دعنا نكتشف.';
@@ -1263,8 +1245,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get micStopFailed => 'فشل إيقاف الميكروفون';
 
   @override
-  String get errorProcessingRequest =>
-      'عذرًا، حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.';
+  String get errorProcessingRequest => 'عذرًا، حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.';
 
   @override
   String rateLimitRetryMessage(Object seconds) {
@@ -1284,8 +1265,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get defaultSuggestion4 => 'كيف يتم تطبيق هذا في الممارسة العملية؟';
 
   @override
-  String get fileAttachedButNotSupported =>
-      'تم إرفاق الملف ولكن النموذج الحالي لا يدعمه';
+  String get fileAttachedButNotSupported => 'تم إرفاق الملف ولكن النموذج الحالي لا يدعمه';
 
   @override
   String get expandTooltip => 'توسيع';
@@ -1377,8 +1357,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get deleteProviderContent =>
-      'سيؤدي هذا إلى إزالة المزود وجميع إعداداته. ستحتاج إلى إضافته مرة أخرى لاستخدام نماذجه.';
+  String get deleteProviderContent => 'سيؤدي هذا إلى إزالة المزود وجميع إعداداته. ستحتاج إلى إضافته مرة أخرى لاستخدام نماذجه.';
 
   @override
   String get errorLoadingProviders => 'خطأ في تحميل المزودين';
@@ -1457,8 +1436,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mcpEnvHint => 'GITHUB_TOKEN=ghp_xxx';
 
   @override
-  String get mcpEnvHelper =>
-      'اختياري. الصق كائن JSON بمفاتيح نصية، مثل إدخال TOKEN واحد.';
+  String get mcpEnvHelper => 'اختياري. الصق كائن JSON بمفاتيح نصية، مثل إدخال TOKEN واحد.';
 
   @override
   String get mcpTokenLabel => 'رمز الوصول';
@@ -1467,15 +1445,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mcpTokenHint => 'الصق الرمز فقط (دون Bearer / علامات اقتباس)';
 
   @override
-  String get mcpTokenHelper =>
-      'اختياري. اتركه فارغًا للخوادم العامة؛ الصق الرمز فقط فيُضاف الترويس تلقائيًا.';
+  String get mcpTokenHelper => 'اختياري. اتركه فارغًا للخوادم العامة؛ الصق الرمز فقط فيُضاف الترويس تلقائيًا.';
 
   @override
   String get mcpAuthTypeLabel => 'نوع الرمز';
 
   @override
-  String get mcpAuthTypeHelper =>
-      'كيفية إرسال الرمز: Bearer (Authorization) أو ApiKey (X-Api-Key) أو Token عادي.';
+  String get mcpAuthTypeHelper => 'كيفية إرسال الرمز: Bearer (Authorization) أو ApiKey (X-Api-Key) أو Token عادي.';
 
   @override
   String get mcpHeadersLabel => 'الترويسات (JSON)';
@@ -1496,8 +1472,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mcpRawLabel => 'كائن الخادم (JSON)';
 
   @override
-  String get mcpRawHelper =>
-      'الصق كائن الخادم كما في التوثيق — اسم الخادم هو المفتاح الخارجي (مثل searxng). يمكنك لصق الكتلة الكاملة بما فيها الغلاف mcpServers.';
+  String get mcpRawHelper => 'الصق كائن الخادم كما في التوثيق — اسم الخادم هو المفتاح الخارجي (مثل searxng). يمكنك لصق الكتلة الكاملة بما فيها الغلاف mcpServers.';
 
   @override
   String mcpParseError(Object field, Object message) {
@@ -1597,75 +1572,58 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mcpMarketNeedsToken => 'يتطلب مفتاحًا';
 
   @override
-  String get mcpMarketDescExa =>
-      'يوفّر Exa إمكانات البحث على الويب والبحث في توثيق الأكواد لسير عمل الذكاء الاصطناعي. يزوّد موصِّله بسياق لحظي للعثور على صفحات ويب ذات صلة وتوثيق تقني ومواد مصدرية عند الحاجة إلى معلومات خارجية موثوقة للإجابة.';
+  String get mcpMarketDescExa => 'يوفّر Exa إمكانات البحث على الويب والبحث في توثيق الأكواد لسير عمل الذكاء الاصطناعي. يزوّد موصِّله بسياق لحظي للعثور على صفحات ويب ذات صلة وتوثيق تقني ومواد مصدرية عند الحاجة إلى معلومات خارجية موثوقة للإجابة.';
 
   @override
-  String get mcpMarketDescContext7 =>
-      'يوفّر Context7 أمثلة التعليمات البرمجية وتوثيقًا محدّثًا للمبرمجين ومحرري الأكواد المدعومين بالذكاء الاصطناعي. يدمج موصِّله سياق المكتبة الحالي في سير العمل، فيقلّل التنقّل بين التبويبات ويساعد الكود المولّد على تجنّب واجهات برمجة التطبيقات القديمة والدوال غير الموجودة وأنماط التنفيذ البالية.';
+  String get mcpMarketDescContext7 => 'يوفّر Context7 أمثلة التعليمات البرمجية وتوثيقًا محدّثًا للمبرمجين ومحرري الأكواد المدعومين بالذكاء الاصطناعي. يدمج موصِّله سياق المكتبة الحالي في سير العمل، فيقلّل التنقّل بين التبويبات ويساعد الكود المولّد على تجنّب واجهات برمجة التطبيقات القديمة والدوال غير الموجودة وأنماط التنفيذ البالية.';
 
   @override
-  String get mcpMarketDescHuggingFace =>
-      'يربط Hugging Face المساعدين الصوتيين بـ Hugging Face Hub وبآلاف تطبيقات Gradio. يدمج موصِّله سياق النموذج ومجموعة البيانات والمساحة والتطبيق في سير عمل الذكاء الاصطناعي لاكتشاف التجارب وأبحاث تعلّم الآلة.';
+  String get mcpMarketDescHuggingFace => 'يربط Hugging Face المساعدين الصوتيين بـ Hugging Face Hub وبآلاف تطبيقات Gradio. يدمج موصِّله سياق النموذج ومجموعة البيانات والمساحة والتطبيق في سير عمل الذكاء الاصطناعي لاكتشاف التجارب وأبحاث تعلّم الآلة.';
 
   @override
-  String get mcpMarketDescParallel =>
-      'يوفّر Parallel Search بحثًا لحظيًا على الويب واستخراج محتوى لسير عمل الذكاء الاصطناعي المعتمدة على البحث. يساعد خادمه البعيد الموصِّلات على جلب سياق صفحات الويب الحالي والتحقق من الصفحات واستخدام المحتوى المستخرج عند الإجابة عن أسئلة أو دراسة مواضيع تتطلب معلومات طازجة.';
+  String get mcpMarketDescParallel => 'يوفّر Parallel Search بحثًا لحظيًا على الويب واستخراج محتوى لسير عمل الذكاء الاصطناعي المعتمدة على البحث. يساعد خادمه البعيد الموصِّلات على جلب سياق صفحات الويب الحالي والتحقق من الصفحات واستخدام المحتوى المستخرج عند الإجابة عن أسئلة أو دراسة مواضيع تتطلب معلومات طازجة.';
 
   @override
-  String get mcpMarketDescTavily =>
-      'يمنح Tavily وكلاء الذكاء الاصطناعي وصولًا لحظيًا إلى موارد الويب عبر واجهات برمجة التطبيقات للبحث والاسترجاع والدراسة. يساعد موصِّله الوكلاء على بناء الإجابات على بيانات حيّة واستخراج محتوى ذي صلة ودعم سير عمل الوكلاء في الإنتاج مع ضوابط أمان.';
+  String get mcpMarketDescTavily => 'يمنح Tavily وكلاء الذكاء الاصطناعي وصولًا لحظيًا إلى موارد الويب عبر واجهات برمجة التطبيقات للبحث والاسترجاع والدراسة. يساعد موصِّله الوكلاء على بناء الإجابات على بيانات حيّة واستخراج محتوى ذي صلة ودعم سير عمل الوكلاء في الإنتاج مع ضوابط أمان.';
 
   @override
-  String get mcpMarketDescGithub =>
-      'GitHub منصة للتعاون على الأكواد والقضايا وطلبات الدمج وتاريخ المشاريع. يمنح خادمه البعيد الرسمي الموصِّلات سياقًا منظّمًا للمستودع لفهم التغييرات في المصدر والمراجعات ومسارات التطوير وحالة مشاريع GitHub.';
+  String get mcpMarketDescGithub => 'GitHub منصة للتعاون على الأكواد والقضايا وطلبات الدمج وتاريخ المشاريع. يمنح خادمه البعيد الرسمي الموصِّلات سياقًا منظّمًا للمستودع لفهم التغييرات في المصدر والمراجعات ومسارات التطوير وحالة مشاريع GitHub.';
 
   @override
-  String get mcpMarketDescPostman =>
-      'يوفّر Postman سياق واجهات برمجة التطبيقات لوكلاء البرمجة وسير عمل المطوّرين. يدمج موصِّله تعريفات الواجهات والتوثيق وسياق التعاون في عمل الموصِّل، متيحًا للوكلاء تحليل التكاملات وتفاصيل التنفيذ.';
+  String get mcpMarketDescPostman => 'يوفّر Postman سياق واجهات برمجة التطبيقات لوكلاء البرمجة وسير عمل المطوّرين. يدمج موصِّله تعريفات الواجهات والتوثيق وسياق التعاون في عمل الموصِّل، متيحًا للوكلاء تحليل التكاملات وتفاصيل التنفيذ.';
 
   @override
-  String get mcpMarketDescSlack =>
-      'Slack حاضنة للتعاون تجمع رسائل الفرق والقنوات والمستخدمين ومساحات العمل المشتركة. يدمج خادمه البعيد سياق المحادثات في مساحة العمل في سير عمل الموصِّلات، ويساعد المستخدمين على إيجاد إجابات وتلخيص النقاشات وفهم النشاط عبر القنوات.';
+  String get mcpMarketDescSlack => 'Slack حاضنة للتعاون تجمع رسائل الفرق والقنوات والمستخدمين ومساحات العمل المشتركة. يدمج خادمه البعيد سياق المحادثات في مساحة العمل في سير عمل الموصِّلات، ويساعد المستخدمين على إيجاد إجابات وتلخيص النقاشات وفهم النشاط عبر القنوات.';
 
   @override
-  String get mcpMarketDescFigma =>
-      'Figma منصة لتصميم المنتجات تُعنى بتصميم الواجهات والنماذج الأولية وتسليم العمل للمطوّرين. ينقل خادمه البعيد الملفات والمشاريع وسياق وضع التطوير إلى سير عمل الموصِّلات، ويسمح للوكلاء بفهم العمل البصري ومقارنته بمهام التنفيذ.';
+  String get mcpMarketDescFigma => 'Figma منصة لتصميم المنتجات تُعنى بتصميم الواجهات والنماذج الأولية وتسليم العمل للمطوّرين. ينقل خادمه البعيد الملفات والمشاريع وسياق وضع التطوير إلى سير عمل الموصِّلات، ويسمح للوكلاء بفهم العمل البصري ومقارنته بمهام التنفيذ.';
 
   @override
-  String get mcpMarketDescCanva =>
-      'Canva منصة تواصل بصري لإنشاء العروض التقديمية ورسومات التواصل الاجتماعي والمستندات والمواد التجارية. يمنح خادمه البعيد الموصِّلات وصولًا إلى مشاريع Canva وأصولها والملفات المصدّرة والتعليقات، فيتيح مناقشة الأعمال الإبداعية وتحريرها وتجهيزها من المعلومات المجمّعة.';
+  String get mcpMarketDescCanva => 'Canva منصة تواصل بصري لإنشاء العروض التقديمية ورسومات التواصل الاجتماعي والمستندات والمواد التجارية. يمنح خادمه البعيد الموصِّلات وصولًا إلى مشاريع Canva وأصولها والملفات المصدّرة والتعليقات، فيتيح مناقشة الأعمال الإبداعية وتحريرها وتجهيزها من المعلومات المجمّعة.';
 
   @override
-  String get mcpMarketDescStripe =>
-      'Stripe منصة للمدفوعات والبنية التحتية المالية لمعالجة المدفوعات والفوترة والعملاء وتوثيق المطوّرين. يمنح خادمه البعيد الموصِّلات سياق الحساب والتنفيذ المدعوم من Stripe لفهم مسارات العملاء وأسئلة الفوترة ومهام الدفع.';
+  String get mcpMarketDescStripe => 'Stripe منصة للمدفوعات والبنية التحتية المالية لمعالجة المدفوعات والفوترة والعملاء وتوثيق المطوّرين. يمنح خادمه البعيد الموصِّلات سياق الحساب والتنفيذ المدعوم من Stripe لفهم مسارات العملاء وأسئلة الفوترة ومهام الدفع.';
 
   @override
-  String get mcpMarketDescTrivago =>
-      'يساعد Trivago المستخدمين على البحث عن الفنادق وخيارات الإقامة حسب الإحداثيات والمدن والدول والتواريخ وسياق السفر. يزوّد موصِّله بسياق البحث عن السكن لإيجاد خيارات مناسبة قرب الوجهات أو المعالم.';
+  String get mcpMarketDescTrivago => 'يساعد Trivago المستخدمين على البحث عن الفنادق وخيارات الإقامة حسب الإحداثيات والمدن والدول والتواريخ وسياق السفر. يزوّد موصِّله بسياق البحث عن السكن لإيجاد خيارات مناسبة قرب الوجهات أو المعالم.';
 
   @override
-  String get mcpMarketDescSend =>
-      'يساعد Send المستخدمين على إنشاء مستندات قابلة للمشاركة وصفحات مفردة وعروض تقديمية وشرائح. يتيح موصِّله للوكلاء تحويل المواد المطلوبة إلى روابط منشورة وصفحات تفاعلية ومواد قابلة للتتبّع للمستلمين.';
+  String get mcpMarketDescSend => 'يساعد Send المستخدمين على إنشاء مستندات قابلة للمشاركة وصفحات مفردة وعروض تقديمية وشرائح. يتيح موصِّله للوكلاء تحويل المواد المطلوبة إلى روابط منشورة وصفحات تفاعلية ومواد قابلة للتتبّع للمستلمين.';
 
   @override
-  String get mcpMarketDescZiprecruiter =>
-      'يساعد ZipRecruiter المستخدمين على البحث عن الوظائف الحيّة حسب المسمى والشركة والموقع والراتب والمسافة وأسلوب العمل ونوع التوظيف وتاريخ النشر. يدمج موصِّله سياق البحث عن العمل في سير عمل الموصِّل قبل إعادة الطلبات إلى ZipRecruiter.';
+  String get mcpMarketDescZiprecruiter => 'يساعد ZipRecruiter المستخدمين على البحث عن الوظائف الحيّة حسب المسمى والشركة والموقع والراتب والمسافة وأسلوب العمل ونوع التوظيف وتاريخ النشر. يدمج موصِّله سياق البحث عن العمل في سير عمل الموصِّل قبل إعادة الطلبات إلى ZipRecruiter.';
 
   @override
-  String get mcpMarketDescAdobeCreativity =>
-      'يجمع Adobe for Creativity قدرات Photoshop وLightroom وIllustrator وFirefly وPremiere وExpress وInDesign وStock مع العمل الإبداعي المدفوع بالذكاء الاصطناعي. يمكن للمستخدمين إنشاء الصور وتحريرها وتحسينها والأصول التصميمية والمشاريع المرئية بلغة طبيعية مع بقاء العمل مرتبطًا بحساب Adobe.';
+  String get mcpMarketDescAdobeCreativity => 'يجمع Adobe for Creativity قدرات Photoshop وLightroom وIllustrator وFirefly وPremiere وExpress وInDesign وStock مع العمل الإبداعي المدفوع بالذكاء الاصطناعي. يمكن للمستخدمين إنشاء الصور وتحريرها وتحسينها والأصول التصميمية والمشاريع المرئية بلغة طبيعية مع بقاء العمل مرتبطًا بحساب Adobe.';
 
   @override
   String get agentsInstructions => 'تعليمات الوكلاء';
 
   @override
-  String get agentsInstructionsSubtitle =>
-      'إدارة AGENTS.md وملفات التعليمات المخصصة';
+  String get agentsInstructionsSubtitle => 'إدارة AGENTS.md وملفات التعليمات المخصصة';
 
   @override
-  String get agentsMdHint =>
-      '# قواعد المشروع\n- كن موجزًا\n- اكتب الاختبارات أولًا';
+  String get agentsMdHint => '# قواعد المشروع\n- كن موجزًا\n- اكتب الاختبارات أولًا';
 
   @override
   String get agentsMdSaved => 'تم حفظ AGENTS.md';
@@ -1674,8 +1632,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get instructionsAutoDetectedTitle => 'الملفات المكتشفة';
 
   @override
-  String get instructionsAutoDetectedHelper =>
-      'ملفات AGENTS.md و CLAUDE.md المكتشفة لهذا النطاق. اضغط للعرض أو التعديل.';
+  String get instructionsAutoDetectedHelper => 'ملفات AGENTS.md و CLAUDE.md المكتشفة لهذا النطاق. اضغط للعرض أو التعديل.';
 
   @override
   String get instructionsFileNotCreated => 'لم يُنشأ بعد';
@@ -1699,8 +1656,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get instructionsSectionTitle => 'ملفات التعليمات';
 
   @override
-  String get instructionsSectionHelper =>
-      'ملفات Markdown إضافية تُضاف بعد AGENTS.md بالترتيب.';
+  String get instructionsSectionHelper => 'ملفات Markdown إضافية تُضاف بعد AGENTS.md بالترتيب.';
 
   @override
   String get instructionsAdd => 'إضافة تعليمات';
@@ -1715,8 +1671,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get instructionsEmpty => 'لا توجد ملفات تعليمات بعد';
 
   @override
-  String get instructionsEmptyHint =>
-      'أضف تعليمات يدويًا أو ارفع ملف Markdown.';
+  String get instructionsEmptyHint => 'أضف تعليمات يدويًا أو ارفع ملف Markdown.';
 
   @override
   String get instructionsNameLabel => 'الاسم';
@@ -1765,8 +1720,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get instructionsScopeProject => 'المشروع';
 
   @override
-  String get instructionsScopeGlobalHint =>
-      'يُطبَّق في كل مكان. يُخزَّن في إعدادات المستخدم.';
+  String get instructionsScopeGlobalHint => 'يُطبَّق في كل مكان. يُخزَّن في إعدادات المستخدم.';
 
   @override
   String get instructionsScopeProjectHint => 'يُطبَّق على مجلد المشروع الحالي.';
@@ -1786,8 +1740,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get configScopeProject => 'المشروع';
 
   @override
-  String get configProjectOverrides =>
-      'تتجاوز إعدادات المشروع الإعدادات العامة.';
+  String get configProjectOverrides => 'تتجاوز إعدادات المشروع الإعدادات العامة.';
 
   @override
   String get configPathLabel => 'المسار';
@@ -1811,15 +1764,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get skillsTitle => 'المهارات';
 
   @override
-  String get skillsSubtitle =>
-      'حزم قدرات قابلة لإعادة الاستخدام يحمّلها المساعد عند الحاجة.';
+  String get skillsSubtitle => 'حزم قدرات قابلة لإعادة الاستخدام يحمّلها المساعد عند الحاجة.';
 
   @override
   String get skillsSectionTitle => 'المهارات المثبّتة';
 
   @override
-  String get skillsSectionHelper =>
-      'كل مهارة هي مجلد يحتوي على ملف SKILL.md. أضف مهاراتك أو ثبّت من رابط.';
+  String get skillsSectionHelper => 'كل مهارة هي مجلد يحتوي على ملف SKILL.md. أضف مهاراتك أو ثبّت من رابط.';
 
   @override
   String get skillsNewSkill => 'مهارة جديدة';

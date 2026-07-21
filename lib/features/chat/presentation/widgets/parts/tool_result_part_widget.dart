@@ -1,3 +1,5 @@
+import 'dart:io' as io;
+
 import 'package:chatorai/core/lsp/lsp_provider.dart';
 import 'package:chatorai/core/lsp/lsp_types.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
@@ -7,7 +9,6 @@ import 'package:chatorai/features/chat/presentation/widgets/parts/edit_body.dart
 import 'package:chatorai/features/chat/presentation/widgets/parts/generic_body.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/grep_body.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/lsp_body.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/patch_body.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/read_body.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_icon.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_title.dart';
@@ -50,6 +51,18 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
   bool _isLoadingDiagnostics = false;
 
   @override
+  void initState() {
+    super.initState();
+    final toolName = widget.part.toolName.toLowerCase();
+    if (toolName == 'edit' || toolName == 'apply_patch') {
+      _isExpanded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _triggerDiagnosticsFetch();
+      });
+    }
+  }
+
+  @override
   void didUpdateWidget(covariant ToolResultPartWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     final input = widget.part.input ?? {};
@@ -66,6 +79,19 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
         _isExpanded) {
       _fetchDiagnostics(filePath);
     }
+  }
+
+  void _triggerDiagnosticsFetch() {
+    if (!mounted) return;
+    final input = widget.part.input ?? {};
+    final filePath =
+        (input['filePath'] as String?) ?? (input['file_path'] as String?);
+    if (filePath == null || filePath.isEmpty) return;
+    if (!io.File(filePath).existsSync()) {
+      setState(() => _isLoadingDiagnostics = false);
+      return;
+    }
+    _fetchDiagnostics(filePath);
   }
 
   Future<void> _fetchDiagnostics(String filePath) async {
@@ -172,6 +198,16 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 1),
         child: _buildBashContent(theme, isError, isRunning, part, canExpand),
+      );
+    }
+
+    final isEditOrPatch =
+        toolNameLower == 'edit' || toolNameLower == 'apply_patch';
+
+    if (isEditOrPatch) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 1),
+        child: _buildBody(theme, isError, part),
       );
     }
 
@@ -360,17 +396,23 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
             ? () => _fetchDiagnostics(filePath)
             : null,
         onDiagnosticTap: _showDiagnosticDetails,
-        previewOutput: truncateOutput,
-        buildResultFooter: (String displayedBody, bool error) =>
-            _buildResultFooter(theme, displayedBody, error),
       ),
-      'apply_patch' => PatchBody(
+      'apply_patch' => EditBody(
         theme: theme,
         part: part,
         displayFull: displayFull,
         isError: isError,
-        buildResultFooter: (String displayedBody, bool error) =>
-            _buildResultFooter(theme, displayedBody, error),
+        isLoadingDiagnostics: _isLoadingDiagnostics,
+        diagnosticsByLine: _diagnosticsByLine,
+        onFetchDiagnostics:
+            (displayFull &&
+                filePath != null &&
+                filePath.isNotEmpty &&
+                _diagnosticsByLine.isEmpty &&
+                !_isLoadingDiagnostics)
+            ? () => _fetchDiagnostics(filePath)
+            : null,
+        onDiagnosticTap: _showDiagnosticDetails,
       ),
       'write' => WriteBody(
         theme: theme,

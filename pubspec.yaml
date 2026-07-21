@@ -62,6 +62,7 @@ dependencies:
   mcp_dart: ^2.2.2
   synchronized: ^3.1.0
   nocterm: ^0.8.0
+  dartdiff: ^1.0.0
 
 dev_dependencies:
   flutter_test:

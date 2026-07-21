@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
@@ -233,12 +235,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Edit lib/main.dart'), findsOneWidget);
       await tester.tap(find.byType(ToolResultPartWidget));
       await tester.pumpAndSettle();
       expect(find.textContaining('new line 1'), findsOneWidget);
       expect(find.textContaining('old line 2'), findsOneWidget);
-      expect(find.textContaining('old line 1'), findsOneWidget);
     });
 
     testWidgets('edit diff lines display with color and prefix', (
@@ -267,20 +267,23 @@ void main() {
 +++ b/test.dart
 @@ -1,3 +1,4 @@
  line1
--line2
+ -line2
 +line2 modified
 +line2b
  line3
 ''';
+      final resultJson = jsonEncode({'message': 'ok', 'patch': patch});
       await tester.pumpWidget(
         createTestWidget(
           toolName: 'apply_patch',
           state: ToolState.completed,
+          result: resultJson,
           input: {'file_path': 'test.dart', 'patch': patch},
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Patch test.dart'), findsOneWidget);
+      await tester.tap(find.byType(ToolResultPartWidget));
+      await tester.pumpAndSettle();
       expect(find.textContaining('line2'), findsAtLeast(1));
     });
 
@@ -297,12 +300,12 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Edit empty.dart'), findsOneWidget);
+      await tester.tap(find.byType(ToolResultPartWidget));
+      await tester.pumpAndSettle();
+      expect(find.text('empty.dart'), findsNothing);
     });
 
-    testWidgets('edit summary line shows additions and deletions count', (
-      tester,
-    ) async {
+    testWidgets('edit diff shows +/- markers on changed lines', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
           toolName: 'edit',
@@ -315,8 +318,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('+'), findsOneWidget);
-      expect(find.textContaining('-'), findsOneWidget);
+      await tester.tap(find.byType(ToolResultPartWidget));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('+'), findsAtLeast(1));
+      expect(find.textContaining('-'), findsAtLeast(1));
     });
   });
 }

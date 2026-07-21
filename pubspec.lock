@@ -297,6 +297,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.8"
+  dartdiff:
+    dependency: "direct main"
+    description:
+      name: dartdiff
+      sha256: "7f114e5edc851e9145b99de901211cf0d11fe08cfeaa32a185e9512f189d61c8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   dbus:
     dependency: transitive
     description:
