@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **GUI launcher no longer blocks terminal** — running `chatorai` without arguments now launches the GUI in the background and returns control to the shell immediately. CLI commands (`chatorai stats`, `chatorai models`, etc.) remain foreground and preserve exit codes. Added error message if the binary is missing.
 - **Tool-output storage path**: Truncated tool output was previously written to `getApplicationDocumentsDirectory()` (`~/Documents/chatorai/` on Linux), which caused `Path denied` errors when the model later tried to read it back via `read`/`grep`/`glob` because Documents is outside the project root and the path sandbox rejected it. Output is now written to the cross-platform data directory (`~/.local/share/chatorai/tool-output` on Linux, XDG-compliant on other desktops, sandboxed Documents on mobile). The `read`/`grep`/`glob` tools now accept this directory as a managed read root (symlink-safe via `FilesystemBoundary.resolve()`), so the model can read back its own truncated output without permission prompts. Deleted the dead `tool_output_bounding_service.dart` (no callers).
 
 ## [0.1.1]

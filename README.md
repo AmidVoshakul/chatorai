@@ -28,12 +28,12 @@ Install ChatORAI with a single command — prebuilt binaries are published to
 **Linux (one-line installer):**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | bash
 ```
 
 Alternative Linux formats from the release page: `chatorai-*.AppImage` (portable, just `chmod +x` and run) and `chatorai-*.deb` (`sudo apt install ./chatorai-*.deb`).
 
-**Windows:** download `install_chatorai.ps1` (run as Administrator) or `install_chatorai.bat` from the release, or use the `chatorai-*.zip` directly.
+**Windows:** download `install_chatorai.ps1` or `install_chatorai.bat` from the release, or use the `chatorai-*.zip` directly.
 
 **macOS:** download `chatorai-*.dmg` from the release and drag to Applications.
 
@@ -113,14 +113,14 @@ Prebuilt binaries are published to [GitHub Releases](https://github.com/AmidVosh
 ### Linux (one command)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | bash
 ```
 
-Downloads the latest prebuilt bundle, installs to `/usr/local/lib/chatorai/` with a desktop entry and `chatorai` command. Or grab `chatorai-*.AppImage` (run directly) / `chatorai-*.deb` from the release page.
+Downloads the latest prebuilt bundle, installs to `~/.local/share/chatorai/` with a desktop entry and `chatorai` command. Or grab `chatorai-*.AppImage` (run directly) / `chatorai-*.deb` from the release page.
 
 ### Windows
 
-Download `install_chatorai.ps1` (run as Administrator) or `install_chatorai.bat` from the release, or extract `chatorai-*.zip` to `C:\Program Files\ChatORAI\`. Adds Start Menu shortcut and PATH entry.
+Download `install_chatorai.ps1` or `install_chatorai.bat` from the release, or extract `chatorai-*.zip` to `C:\Program Files\ChatORAI\`. Adds Start Menu shortcut and PATH entry.
 
 ### macOS
 
@@ -135,10 +135,7 @@ chatorai upgrade
 ### Uninstall
 
 ```bash
-sudo rm -rf /usr/local/lib/chatorai \
-           /usr/local/bin/chatorai \
-           /usr/share/applications/chatorai.desktop \
-           /usr/share/icons/hicolor/256x256/apps/chatorai.png
+chatorai uninstall
 ```
 
 ### CLI

@@ -62,17 +62,14 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Build Debug APK
-        run: flutter build apk --debug
+      - name: Sync version from pubspec.yaml
+        run: dart run tool/update_version.dart
+
+      - name: Accept Android SDK licenses
+        run: yes | flutter doctor --android-licenses
 
       - name: Build Release APK
         run: flutter build apk --release
-
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: chatorai-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
@@ -108,8 +105,72 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Sync version from pubspec.yaml
+        run: dart run tool/update_version.dart
+
       - name: Build Linux release bundle
         run: flutter build linux --release
+
+      - name: Add launcher wrapper to bundle (for OpenGL fallback)
+        run: |
+          set -e
+          BUNDLE_DIR=build/linux/x64/release/bundle
+          # Rename binary to chatorai-bin, create wrapper script 'chatorai'
+          mv "$BUNDLE_DIR/chatorai" "$BUNDLE_DIR/chatorai-bin"
+          cat > "$BUNDLE_DIR/chatorai" << 'EOF'
+          #!/bin/bash
+          SELF_DIR="$(dirname "$(readlink -f "$0")")"
+
+          # Support both direct bundle usage and PATH-launcher mode.
+          if [ -x "$SELF_DIR/chatorai-bin" ]; then
+            INSTALL_DIR="$SELF_DIR"
+          else
+            INSTALL_DIR="$HOME/.local/share/chatorai"
+          fi
+          FLAG_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatorai"
+
+          _run_gui() {
+            if [ "$CHATORAI_FORCE_SOFT_GL" = "1" ] || [ -f "$INSTALL_DIR/.force_soft_gl" ] || [ -f "$FLAG_DIR/.force_soft_gl" ]; then
+              export LIBGL_ALWAYS_SOFTWARE=1
+              export GALLIUM_DRIVER=llvmpipe
+            fi
+            if [ "$CHATORAI_FORCE_SOFT_GL" = "0" ]; then
+              unset LIBGL_ALWAYS_SOFTWARE
+              unset GALLIUM_DRIVER
+            fi
+            if command -v glxinfo >/dev/null 2>&1; then
+              GLV="$(glxinfo 2>/dev/null | grep -m1 -i 'OpenGL version string' | sed -n 's/^[^:]*: *\([0-9]\+\)\..*/\1/p')"
+              if [ -n "$GLV" ] && [ "$GLV" -lt 3 ]; then
+                mkdir -p "$FLAG_DIR" 2>/dev/null || true
+                touch "$FLAG_DIR/.force_soft_gl" 2>/dev/null || true
+                export LIBGL_ALWAYS_SOFTWARE=1
+                export GALLIUM_DRIVER=llvmpipe
+              fi
+            fi
+            exec "$INSTALL_DIR/chatorai-bin" "$@"
+          }
+
+          # GUI mode (no args): launch in background so terminal isn't blocked.
+          if [ "$#" -eq 0 ]; then
+            ( _run_gui "$@" ) >/dev/null 2>&1 &
+            disown $! 2>/dev/null || true
+            exit 0
+          fi
+
+          # CLI mode: foreground so the caller can capture exit codes and output.
+          "$INSTALL_DIR/chatorai-bin" "$@"
+          RC=$?
+          if { [ "$RC" = "139" ] || [ "$RC" = "134" ]; } && [ "$#" -eq 0 ]; then
+            echo "chatorai: hardware OpenGL crashed (exit $RC); retrying with software rendering" >&2
+            mkdir -p "$FLAG_DIR" 2>/dev/null || true
+            touch "$FLAG_DIR/.force_soft_gl" 2>/dev/null || true
+            export LIBGL_ALWAYS_SOFTWARE=1
+            export GALLIUM_DRIVER=llvmpipe
+            exec "$INSTALL_DIR/chatorai-bin" "$@"
+          fi
+          exit $RC
+          EOF
+          chmod +x "$BUNDLE_DIR/chatorai"
 
       - name: Package tar.gz
         run: |
@@ -130,6 +191,7 @@ jobs:
           # libapp.so) and `data/` (flutter_assets) to live in the SAME
           # directory. Replicate that exact layout at the AppDir root so the
           # engine can resolve libapp.so and the asset bundle at runtime.
+          cp "$BUNDLE_DIR/chatorai-bin" "$APPDIR/chatorai-bin"
           cp "$BUNDLE_DIR/chatorai" "$APPDIR/chatorai"
           cp -a "$BUNDLE_DIR/lib/." "$APPDIR/lib/"
           cp -a "$BUNDLE_DIR/data/." "$APPDIR/data/"
@@ -167,39 +229,53 @@ jobs:
           SELF=$(readlink -f "$0")
           APPDIR="${SELF%/*}"
           export LD_LIBRARY_PATH="$APPDIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          FLAG_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatorai"
 
-          # AppImage is portable, so decide OpenGL mode at runtime. Explicit
-          # override via CHATORAI_FORCE_SOFT_GL=0/1 always wins.
-          if [ "$CHATORAI_FORCE_SOFT_GL" = "1" ]; then
-            export LIBGL_ALWAYS_SOFTWARE=1
-            export GALLIUM_DRIVER=llvmpipe
-            exec "$APPDIR/chatorai" "$@"
-          fi
-          if [ "$CHATORAI_FORCE_SOFT_GL" = "0" ]; then
-            exec "$APPDIR/chatorai" "$@"
+          # Verify the binary exists.
+          if [ ! -x "$APPDIR/chatorai-bin" ]; then
+            echo "chatorai: binary not found at $APPDIR/chatorai-bin" >&2
+            exit 1
           fi
 
-          # Proactively switch to software rendering on GPUs exposing OpenGL < 3.0
-          # (e.g. Intel HD Ironlake) before the first crash.
-          if command -v glxinfo >/dev/null 2>&1; then
-            GLV="$(glxinfo 2>/dev/null | grep -m1 -i 'OpenGL version string' | sed -n 's/^[^:]*: *\([0-9]\+\)\..*/\1/p')"
-            if [ -n "$GLV" ] && [ "$GLV" -lt 3 ]; then
+          # Helper: apply GL overrides and run the GUI binary.
+          _run_gui() {
+            if [ "$CHATORAI_FORCE_SOFT_GL" = "1" ] || [ -f "$FLAG_DIR/.force_soft_gl" ]; then
               export LIBGL_ALWAYS_SOFTWARE=1
               export GALLIUM_DRIVER=llvmpipe
-              exec "$APPDIR/chatorai" "$@"
             fi
+            if [ "$CHATORAI_FORCE_SOFT_GL" = "0" ]; then
+              unset LIBGL_ALWAYS_SOFTWARE
+              unset GALLIUM_DRIVER
+            fi
+            if command -v glxinfo >/dev/null 2>&1; then
+              GLV="$(glxinfo 2>/dev/null | grep -m1 -i 'OpenGL version string' | sed -n 's/^[^:]*: *\([0-9]\+\)\..*/\1/p')"
+              if [ -n "$GLV" ] && [ "$GLV" -lt 3 ]; then
+                mkdir -p "$FLAG_DIR" 2>/dev/null || true
+                touch "$FLAG_DIR/.force_soft_gl" 2>/dev/null || true
+                export LIBGL_ALWAYS_SOFTWARE=1
+                export GALLIUM_DRIVER=llvmpipe
+              fi
+            fi
+            exec "$APPDIR/chatorai-bin" "$@"
+          }
+
+          # GUI mode (no args): launch in background so terminal isn't blocked.
+          if [ "$#" -eq 0 ]; then
+            ( _run_gui "$@" ) >/dev/null 2>&1 &
+            disown $! 2>/dev/null || true
+            exit 0
           fi
 
-          # Try hardware GL first; on a GL-related crash (SIGSEGV=139 /
-          # SIGABRT=134) transparently retry with software rendering. Only
-          # auto-retry the GUI (no args) so CLI exit codes are preserved.
-          "$APPDIR/chatorai" "$@"
+          # CLI mode: foreground so the caller can capture exit codes and output.
+          "$APPDIR/chatorai-bin" "$@"
           RC=$?
           if { [ "$RC" = "139" ] || [ "$RC" = "134" ]; } && [ "$#" -eq 0 ]; then
             echo "chatorai: hardware OpenGL crashed (exit $RC); retrying with software rendering" >&2
+            mkdir -p "$FLAG_DIR" 2>/dev/null || true
+            touch "$FLAG_DIR/.force_soft_gl" 2>/dev/null || true
             export LIBGL_ALWAYS_SOFTWARE=1
             export GALLIUM_DRIVER=llvmpipe
-            exec "$APPDIR/chatorai" "$@"
+            exec "$APPDIR/chatorai-bin" "$@"
           fi
           exit $RC
           EOF
@@ -225,45 +301,54 @@ jobs:
           mkdir -p "$STAGING/usr/local/lib/$PKG"
           mkdir -p "$STAGING/usr/share/applications"
           mkdir -p "$STAGING/usr/share/icons/hicolor/256x256/apps"
-          mkdir -p "$STAGING/usr/share/$PKG"
-
-          cp "$BUNDLE_DIR/chatorai" "$STAGING/usr/local/lib/$PKG/chatorai"
+          cp "$BUNDLE_DIR/chatorai-bin" "$STAGING/usr/local/lib/$PKG/chatorai-bin"
           cp -a "$BUNDLE_DIR/lib/." "$STAGING/usr/local/lib/$PKG/"
-          cp -a "$BUNDLE_DIR/data/." "$STAGING/usr/share/$PKG/"
+          cp -a "$BUNDLE_DIR/data/." "$STAGING/usr/local/lib/$PKG/"
 
           cat > "$STAGING/usr/bin/chatorai" << 'EOF'
           #!/bin/bash
           INSTALL_DIR="/usr/local/lib/chatorai"
           FLAG_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatorai"
 
-          # Honor an explicit user override first.
-          if [ "$CHATORAI_FORCE_SOFT_GL" = "1" ] || [ -f "$INSTALL_DIR/.force_soft_gl" ] || [ -f "$FLAG_DIR/.force_soft_gl" ]; then
-            export LIBGL_ALWAYS_SOFTWARE=1
-            export GALLIUM_DRIVER=llvmpipe
-            exec "$INSTALL_DIR/chatorai" "$@"
-          fi
-          if [ "$CHATORAI_FORCE_SOFT_GL" = "0" ]; then
-            exec "$INSTALL_DIR/chatorai" "$@"
+          # Verify the binary exists.
+          if [ ! -x "$INSTALL_DIR/chatorai-bin" ]; then
+            echo "chatorai: binary not found at $INSTALL_DIR/chatorai-bin" >&2
+            echo "chatorai: reinstall with your package manager or download from:" >&2
+            echo "chatorai: https://github.com/AmidVoshakul/chatorai/releases" >&2
+            exit 1
           fi
 
-          # Proactively switch to software rendering on GPUs exposing OpenGL < 3.0
-          # (e.g. Intel HD Ironlake) before the first crash. Cache the decision in
-          # the user's cache dir (the deb tree is read-only for normal users).
-          if command -v glxinfo >/dev/null 2>&1; then
-            GLV="$(glxinfo 2>/dev/null | grep -m1 -i 'OpenGL version string' | sed -n 's/^[^:]*: *\([0-9]\+\)\..*/\1/p')"
-            if [ -n "$GLV" ] && [ "$GLV" -lt 3 ]; then
-              mkdir -p "$FLAG_DIR" 2>/dev/null || true
-              touch "$FLAG_DIR/.force_soft_gl" 2>/dev/null || true
+          # Helper: apply GL overrides and run the GUI binary.
+          _run_gui() {
+            if [ "$CHATORAI_FORCE_SOFT_GL" = "1" ] || [ -f "$INSTALL_DIR/.force_soft_gl" ] || [ -f "$FLAG_DIR/.force_soft_gl" ]; then
               export LIBGL_ALWAYS_SOFTWARE=1
               export GALLIUM_DRIVER=llvmpipe
-              exec "$INSTALL_DIR/chatorai" "$@"
             fi
+            if [ "$CHATORAI_FORCE_SOFT_GL" = "0" ]; then
+              unset LIBGL_ALWAYS_SOFTWARE
+              unset GALLIUM_DRIVER
+            fi
+            if command -v glxinfo >/dev/null 2>&1; then
+              GLV="$(glxinfo 2>/dev/null | grep -m1 -i 'OpenGL version string' | sed -n 's/^[^:]*: *\([0-9]\+\)\..*/\1/p')"
+              if [ -n "$GLV" ] && [ "$GLV" -lt 3 ]; then
+                mkdir -p "$FLAG_DIR" 2>/dev/null || true
+                touch "$FLAG_DIR/.force_soft_gl" 2>/dev/null || true
+                export LIBGL_ALWAYS_SOFTWARE=1
+                export GALLIUM_DRIVER=llvmpipe
+              fi
+            fi
+            exec "$INSTALL_DIR/chatorai-bin" "$@"
+          }
+
+          # GUI mode (no args): launch in background so terminal isn't blocked.
+          if [ "$#" -eq 0 ]; then
+            ( _run_gui "$@" ) >/dev/null 2>&1 &
+            disown $! 2>/dev/null || true
+            exit 0
           fi
 
-          # Try hardware GL; if the process dies from a GL-related crash
-          # (e.g. SIGSEGV=139, SIGABRT=134) on old GPUs, transparently retry
-          # with software rendering. Only auto-retry for CLI-less GUI launches.
-          "$INSTALL_DIR/chatorai" "$@"
+          # CLI mode: foreground so the caller can capture exit codes and output.
+          "$INSTALL_DIR/chatorai-bin" "$@"
           RC=$?
           if { [ "$RC" = "139" ] || [ "$RC" = "134" ]; } && [ "$#" -eq 0 ]; then
             echo "chatorai: hardware OpenGL crashed (exit $RC); retrying with software rendering" >&2
@@ -271,7 +356,7 @@ jobs:
             touch "$FLAG_DIR/.force_soft_gl" 2>/dev/null || true
             export LIBGL_ALWAYS_SOFTWARE=1
             export GALLIUM_DRIVER=llvmpipe
-            exec "$INSTALL_DIR/chatorai" "$@"
+            exec "$INSTALL_DIR/chatorai-bin" "$@"
           fi
           exit $RC
           EOF
@@ -382,6 +467,9 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Sync version from pubspec.yaml
+        run: dart run tool/update_version.dart
+
       - name: Build Windows release
         # permission_handler_windows pulls in the deprecated
         # <experimental/coroutine> header, which newer MSVC toolchains reject
@@ -434,6 +522,9 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Sync version from pubspec.yaml
+        run: dart run tool/update_version.dart
+
       - name: Build macOS release
         run: flutter build macos --release
 
@@ -454,7 +545,6 @@ jobs:
           name: chatorai-macos-artifacts
           path: |
             chatorai-macos-${{ github.ref_name }}.dmg
-            chatorai-macos.dmg
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
@@ -472,6 +562,8 @@ jobs:
       contents: write
 
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download Android APK
         uses: actions/download-artifact@v4
         with:
@@ -502,6 +594,22 @@ jobs:
           cd artifacts
           mv app-release.apk "chatorai-release-${{ github.ref_name }}.apk"
 
+      - name: Generate release notes from CHANGELOG
+        run: |
+          set -e
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          # Extract the section between ## [VERSION] and the next ## [ or EOF
+          awk -v ver="[$VERSION]" '
+            $0 ~ "^## " ver {found=1; print; next}
+            found && $0 ~ /^## \[/ {exit}
+            found {print}
+          ' CHANGELOG.md > release_body.txt
+          if [ ! -s release_body.txt ]; then
+            echo "No changelog section found for $VERSION, using fallback." >&2
+            echo "Release $TAG" > release_body.txt
+          fi
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -512,7 +620,7 @@ jobs:
             artifacts/chatorai-linux-x64-${{ github.ref_name }}.deb
             artifacts/chatorai-windows-x64-${{ github.ref_name }}.zip
             artifacts/chatorai-macos-${{ github.ref_name }}.dmg
-          generate_release_notes: true
+          body_path: release_body.txt
           prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

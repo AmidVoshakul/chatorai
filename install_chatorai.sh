@@ -124,14 +124,14 @@ echo "Extracting..."
 mkdir -p bundle
 tar -xzf bundle.tar.gz -C bundle
 
-# Find the directory that holds the `chatorai` executable (expect exactly one).
-mapfile -t BIN_MATCHES < <(find bundle -type f -name chatorai 2>/dev/null)
+# Find the directory that holds the `chatorai-bin` executable (expect exactly one).
+mapfile -t BIN_MATCHES < <(find bundle -type f -name chatorai-bin 2>/dev/null)
 if [ "${#BIN_MATCHES[@]}" -ne 1 ]; then
-    echo -e "${RED}Expected exactly one 'chatorai' binary in the archive, found ${#BIN_MATCHES[@]}.${NC}"
+    echo -e "${RED}Expected exactly one 'chatorai-bin' binary in the archive, found ${#BIN_MATCHES[@]}.${NC}"
     exit 1
 fi
 BUNDLE_ROOT="$(dirname "${BIN_MATCHES[0]}")"
-if [ ! -f "$BUNDLE_ROOT/chatorai" ]; then
+if [ ! -f "$BUNDLE_ROOT/chatorai-bin" ]; then
     echo -e "${RED}Could not locate the ChatORAI executable in the archive.${NC}"
     exit 1
 fi
@@ -153,38 +153,51 @@ cat > "$BIN_DIR/chatorai" << 'EOF'
 #!/bin/bash
 INSTALL_DIR="$HOME/.local/share/chatorai"
 
-# Explicit override always wins.
-if [ "$CHATORAI_FORCE_SOFT_GL" = "1" ] || [ -f "$INSTALL_DIR/.force_soft_gl" ]; then
-    export LIBGL_ALWAYS_SOFTWARE=1
-    export GALLIUM_DRIVER=llvmpipe
-    exec "$INSTALL_DIR/chatorai" "$@"
-fi
-if [ "$CHATORAI_FORCE_SOFT_GL" = "0" ]; then
-    exec "$INSTALL_DIR/chatorai" "$@"
-fi
-
-# Proactively check the OpenGL version once and cache the decision.
-if command -v glxinfo >/dev/null 2>&1; then
-    GLV="$(glxinfo 2>/dev/null | grep -m1 -i 'OpenGL version string' \
-        | sed -n 's/^[^:]*: *\([0-9]\+\)\..*/\1/p')"
-    if [ -n "$GLV" ] && [ "$GLV" -lt 3 ]; then
-        touch "$INSTALL_DIR/.force_soft_gl" 2>/dev/null || true
+# Helper: run the GUI binary after applying GL overrides.
+_run_gui() {
+    if [ "$CHATORAI_FORCE_SOFT_GL" = "1" ] || [ -f "$INSTALL_DIR/.force_soft_gl" ]; then
         export LIBGL_ALWAYS_SOFTWARE=1
         export GALLIUM_DRIVER=llvmpipe
-        exec "$INSTALL_DIR/chatorai" "$@"
     fi
+    if [ "$CHATORAI_FORCE_SOFT_GL" = "0" ]; then
+        unset LIBGL_ALWAYS_SOFTWARE
+        unset GALLIUM_DRIVER
+    fi
+    if command -v glxinfo >/dev/null 2>&1; then
+        GLV="$(glxinfo 2>/dev/null | grep -m1 -i 'OpenGL version string' \
+            | sed -n 's/^[^:]*: *\([0-9]\+\)\..*/\1/p')"
+        if [ -n "$GLV" ] && [ "$GLV" -lt 3 ]; then
+            touch "$INSTALL_DIR/.force_soft_gl" 2>/dev/null || true
+            export LIBGL_ALWAYS_SOFTWARE=1
+            export GALLIUM_DRIVER=llvmpipe
+        fi
+    fi
+    exec "$INSTALL_DIR/chatorai-bin" "$@"
+}
+
+# Verify the binary exists before starting.
+if [ ! -x "$INSTALL_DIR/chatorai-bin" ]; then
+    echo "chatorai: binary not found at $INSTALL_DIR/chatorai-bin" >&2
+    echo "chatorai: reinstall with: curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | bash" >&2
+    exit 1
 fi
 
-# Otherwise try hardware GL. If the GUI dies from a GL-related crash, retry with
-# software rendering and remember it. Only auto-retry the GUI (no CLI args).
-"$INSTALL_DIR/chatorai" "$@"
+# GUI mode (no args): launch in background so terminal isn't blocked.
+if [ "$#" -eq 0 ]; then
+    ( _run_gui "$@" ) >/dev/null 2>&1 &
+    disown $! 2>/dev/null || true
+    exit 0
+fi
+
+# CLI mode: foreground so the caller can capture exit codes and output.
+"$INSTALL_DIR/chatorai-bin" "$@"
 RC=$?
 if { [ "$RC" = "139" ] || [ "$RC" = "134" ]; } && [ "$#" -eq 0 ]; then
     echo "chatorai: hardware OpenGL crashed (exit $RC); retrying with software rendering" >&2
     touch "$INSTALL_DIR/.force_soft_gl" 2>/dev/null || true
     export LIBGL_ALWAYS_SOFTWARE=1
     export GALLIUM_DRIVER=llvmpipe
-    exec "$INSTALL_DIR/chatorai" "$@"
+    exec "$INSTALL_DIR/chatorai-bin" "$@"
 fi
 exit $RC
 EOF
@@ -192,7 +205,7 @@ chmod +x "$BIN_DIR/chatorai"
 
 echo "Creating desktop entry..."
 install -d "$APP_DIR"
-cat > "$APP_DIR/chatorai.desktop" << 'EOF'
+cat > "$APP_DIR/chatorai.desktop" << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -290,3 +303,6 @@ echo "Update later:   chatorai upgrade"
 echo "Uninstall:      chatorai uninstall          (removes app only)"
 echo "                chatorai uninstall --keep-data   (removes app, keeps data)"
 echo ""
+echo "If the GUI crashes on launch (OpenGL issues), run:"
+echo "                CHATORAI_FORCE_SOFT_GL=1 chatorai"
+echo "                or add 'export CHATORAI_FORCE_SOFT_GL=1' to your shell profile."

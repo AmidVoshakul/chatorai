@@ -34,7 +34,7 @@ $versionTag = Resolve-Version -InputVersion $Version
 Write-Host "Installing ChatORAI $versionTag ..." -ForegroundColor Yellow
 
 $arch = "x64"
-$url = "https://github.com/$repo/releases/download/$versionTag/chatorai-windows-$arch.zip"
+$url = "https://github.com/$repo/releases/download/$versionTag/chatorai-windows-$arch-$versionTag.zip"
 $tmpDir = Join-Path $env:TEMP ("chatorai-install-" + [guid]::NewGuid().ToString("N"))
 
 try {

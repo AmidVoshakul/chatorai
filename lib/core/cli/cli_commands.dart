@@ -502,11 +502,15 @@ Future<bool> _extractArchive(String archive, String stage) async {
 /// Copy the extracted bundle into [target] (user directory, no elevation).
 Future<bool> _installBundle(String bundleRoot, String target) async {
   try {
+    // Preserve the user's software-rendering preference across upgrades.
+    final flagFile = p.join(target, '.force_soft_gl');
+    final hadFlag = await File(flagFile).exists();
     final dir = Directory(target);
     if (await dir.exists()) await dir.delete(recursive: true);
     await Directory(target).create(recursive: true);
     // Copy contents recursively.
     await _copyDirectory(bundleRoot, target);
+    if (hadFlag) await File(flagFile).create();
     // On Linux the launcher lives outside the install dir (on PATH); copy the
     // executable there. On macOS/Windows launcherPath is inside installDir.
     if (Platform.isLinux) {

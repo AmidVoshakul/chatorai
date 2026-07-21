@@ -24,12 +24,12 @@
 **Linux (одна команда):**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | bash
 ```
 
 Альтернативные форматы на странице релиза: `chatorai-*.AppImage` (переносимый, просто `chmod +x` и запуск) и `chatorai-*.deb` (`sudo apt install ./chatorai-*.deb`).
 
-**Windows:** скачайте `install_chatorai.ps1` (запустите от администратора) или `install_chatorai.bat` из релиза, либо используйте `chatorai-*.zip`.
+**Windows:** скачайте `install_chatorai.ps1` или `install_chatorai.bat` из релиза, либо используйте `chatorai-*.zip`.
 
 **macOS:** скачайте `chatorai-*.dmg` из релиза и перетащите в Applications.
 
@@ -107,14 +107,14 @@ LIBGL_ALWAYS_SOFTWARE=1 flutter run -d linux  # Linux software rendering
 ### Linux (одна команда)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | bash
 ```
 
-Скачивает пребилд, устанавливает в `/usr/local/lib/chatorai/` с ярлыком в меню и командой `chatorai`. Или возьмите `chatorai-*.AppImage` (запуск напрямую) / `chatorai-*.deb` со страницы релиза.
+Скачивает пребилд, устанавливает в `~/.local/share/chatorai/` с ярлыком в меню и командой `chatorai`. Или возьмите `chatorai-*.AppImage` (запуск напрямую) / `chatorai-*.deb` со страницы релиза.
 
 ### Windows
 
-Скачайте `install_chatorai.ps1` (от администратора) или `install_chatorai.bat` из релиза, либо распакуйте `chatorai-*.zip` в `C:\Program Files\ChatORAI\`. Добавляются ярлык в меню Пуск и PATH.
+Скачайте `install_chatorai.ps1` или `install_chatorai.bat` из релиза, либо распакуйте `chatorai-*.zip` в `C:\Program Files\ChatORAI\`. Добавляются ярлык в меню Пуск и PATH.
 
 ### macOS
 
@@ -129,10 +129,7 @@ chatorai upgrade
 ### Удаление
 
 ```bash
-sudo rm -rf /usr/local/lib/chatorai \
-           /usr/local/bin/chatorai \
-           /usr/share/applications/chatorai.desktop \
-           /usr/share/icons/hicolor/256x256/apps/chatorai.png
+chatorai uninstall
 ```
 
 ### CLI

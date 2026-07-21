@@ -286,7 +286,7 @@ dependencies:
   ```powershell
   flutter build windows --release
   ```
-- **Installer**: `install_chatorai.ps1` (PowerShell) or `install_chatorai.bat` (CMD). Downloads the prebuilt bundle; run as Administrator. No Flutter needed.
+- **Installer**: `install_chatorai.ps1` (PowerShell) or `install_chatorai.bat` (CMD). Downloads the prebuilt bundle; no Flutter needed.
 - **Runtime DLLs**: If you see missing DLL errors, install [Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe).
 
 ### Android

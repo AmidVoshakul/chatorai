@@ -15,6 +15,9 @@ for %%a in (%*) do (
     set PREV=%%a
 )
 
+:: Normalize v-prefix for manual --version
+if not "!VERSION!"=="" if not "!VERSION:~0,1!"=="v" set VERSION=v!VERSION!
+
 echo Resolving latest release...
 if "%VERSION%"=="" (
     for /f "delims=" %%i in ('powershell -NoProfile -Command "(Invoke-RestMethod -Uri 'https://api.github.com/repos/%REPO%/releases/latest' -Headers @{'User-Agent'='chatorai-installer'}).tag_name"') do set VERSION=%%i
@@ -26,7 +29,7 @@ if "%VERSION%"=="" (
 )
 echo Installing ChatORAI %VERSION% ...
 
-set URL=https://github.com/%REPO%/releases/download/%VERSION%/chatorai-windows-%ARCH%.zip
+set URL=https://github.com/%REPO%/releases/download/%VERSION%/chatorai-windows-%ARCH%-%VERSION%.zip
 set TMPDIR=%TEMP%\chatorai-install-%RANDOM%
 set ZIP=%TMPDIR%\bundle.zip
 
@@ -65,8 +68,8 @@ cscript //nologo %SCRIPT%
 del %SCRIPT%
 echo Desktop shortcut created.
 
-:: Add to User PATH (no administrator needed)
-powershell -Command "[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'User') + ';%INSTALL_DIR%', 'User')"
+:: Add to User PATH (no administrator needed, duplicate-safe)
+powershell -Command "if ([Environment]::GetEnvironmentVariable('Path','User') -notlike '*ChatORAI*') { [Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path','User') + ';%INSTALL_DIR%', 'User') }"
 echo Added to PATH. You may need to restart terminal.
 
 echo.

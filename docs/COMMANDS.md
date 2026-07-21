@@ -148,9 +148,7 @@ Commands:
 
 Upgrade to the latest released build (or a specific `target` version) from GitHub
 Releases and install it to the user directory (`InstallPaths.installDir`, e.g.
-`~/.local/share/chatorai`). No `sudo` is required — the in-app upgrade installs
-to a per-user directory. Only the standalone installer script (`install_chatorai.sh`)
-uses `sudo` for system-wide installs. No Flutter SDK needed.
+`~/.local/share/chatorai`). No `sudo` is required — both the in-app upgrade and the standalone installer script install to a per-user directory. No Flutter SDK needed.
 
 ```
 Usage: chatorai upgrade [target]
@@ -165,10 +163,10 @@ Options:
   -h, --help          show help
 ```
 
-Equivalent to re-running the installer (system-wide, requires `sudo`):
+Equivalent to re-running the installer:
 
 ```
-curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/AmidVoshakul/chatorai/main/install_chatorai.sh | bash
 ```
 
 ---
