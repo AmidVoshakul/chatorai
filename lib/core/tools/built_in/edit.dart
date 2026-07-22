@@ -10,8 +10,13 @@ import 'package:chatorai/core/tools/filesystem_boundary.dart';
 
 String _generatePatch(String oldText, String newText) {
   if (oldText == newText) return '';
-  final patch = createTwoFilesPatch('', '', oldText, newText,
-      headerOptions: omitHeaders);
+  final patch = createTwoFilesPatch(
+    '',
+    '',
+    oldText,
+    newText,
+    headerOptions: omitHeaders,
+  );
   return patch?.trimRight() ?? '';
 }
 
@@ -112,10 +117,7 @@ ToolDef createEditTool() {
       await file.writeAsString(newContent, encoding: utf8);
 
       return ToolOutput(
-        jsonEncode({
-          'message': 'File edited successfully',
-          'patch': patch,
-        }),
+        jsonEncode({'message': 'File edited successfully', 'patch': patch}),
         metadata: {'path': safePath},
       );
     },

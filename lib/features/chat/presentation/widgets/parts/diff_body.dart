@@ -7,6 +7,10 @@ import 'diff_parser.dart';
 import 'tool_icon.dart';
 import 'tool_title.dart';
 
+// ===========================================================================
+// DiffBody — public widget
+// ===========================================================================
+
 class DiffBody extends StatelessWidget {
   final ThemeData theme;
   final String? oldSource;
@@ -52,7 +56,26 @@ class DiffBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isError) {
-      return _buildHeader(theme, filePath ?? '');
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, size: 14, color: theme.colorScheme.error),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                filePath ?? '',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.error,
+                  fontSize: ChatoraiFontSizes.sm,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     final hasDiff = _hunks.isNotEmpty;
@@ -60,7 +83,7 @@ class DiffBody extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
-      decoration: const BoxDecoration(color: Color(0xFF000000)),
+      decoration: const BoxDecoration(color: diffBgColor),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,7 +97,6 @@ class DiffBody extends StatelessWidget {
               children: [
                 _DiffTable(
                   hunks: _hunks,
-                  theme: theme,
                   diagnosticsByLine: diagnosticsByLine,
                   onDiagnosticTap: onDiagnosticTap,
                   isLoadingDiagnostics: isLoadingDiagnostics,
@@ -82,32 +104,8 @@ class DiffBody extends StatelessWidget {
                 _DiagnosticFooter(
                   diagnosticsByLine: diagnosticsByLine,
                   isLoadingDiagnostics: isLoadingDiagnostics,
-                  theme: theme,
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(ThemeData theme, String filePath) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(Icons.error_outline, size: 14, color: theme.colorScheme.error),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              filePath,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.error,
-                fontSize: ChatoraiFontSizes.sm,
-                height: 1.4,
-              ),
             ),
           ),
         ],
@@ -145,29 +143,30 @@ class DiffBody extends StatelessWidget {
   }
 }
 
+// ===========================================================================
+// _DiagnosticFooter
+// ===========================================================================
+
 class _DiagnosticFooter extends StatelessWidget {
   final Map<int, List<LspDiagnostic>> diagnosticsByLine;
   final bool isLoadingDiagnostics;
-  final ThemeData theme;
 
   const _DiagnosticFooter({
     required this.diagnosticsByLine,
     required this.isLoadingDiagnostics,
-    required this.theme,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     if (isLoadingDiagnostics) {
       return Padding(
         padding: const EdgeInsets.only(top: 4),
         child: SizedBox(
           width: 12,
           height: 12,
-          child: CircularProgressIndicator(
-            strokeWidth: 1.5,
-            color: theme.colorScheme.muted,
-          ),
+          child: CircularProgressIndicator(strokeWidth: 1.5, color: cs.muted),
         ),
       );
     }
@@ -203,18 +202,14 @@ class _DiagnosticFooter extends StatelessWidget {
           Icon(
             errors > 0 ? Icons.error : Icons.warning_amber_rounded,
             size: 12,
-            color: errors > 0
-                ? theme.colorScheme.error
-                : theme.colorScheme.tertiary,
+            color: errors > 0 ? cs.error : cs.tertiary,
           ),
           const SizedBox(width: 4),
           Text(
             parts.join(', '),
             style: TextStyle(
               fontSize: 10,
-              color: errors > 0
-                  ? theme.colorScheme.error
-                  : theme.colorScheme.tertiary,
+              color: errors > 0 ? cs.error : cs.tertiary,
             ),
           ),
         ],
@@ -223,16 +218,18 @@ class _DiagnosticFooter extends StatelessWidget {
   }
 }
 
+// ===========================================================================
+// _DiffTable — diff rows layout
+// ===========================================================================
+
 class _DiffTable extends StatelessWidget {
   final List<DiffHunk> hunks;
-  final ThemeData theme;
   final Map<int, List<LspDiagnostic>> diagnosticsByLine;
   final void Function(LspDiagnostic) onDiagnosticTap;
   final bool isLoadingDiagnostics;
 
   const _DiffTable({
     required this.hunks,
-    required this.theme,
     required this.diagnosticsByLine,
     required this.onDiagnosticTap,
     required this.isLoadingDiagnostics,
@@ -255,7 +252,6 @@ class _DiffTable extends StatelessWidget {
                   row: row,
                   isWide: isWide,
                   gutterWidth: gutterWidth,
-                  theme: theme,
                   diagnostics:
                       diagnosticsByLine[row.oldLineNumber ??
                           row.newLineNumber ??
@@ -281,11 +277,14 @@ class _DiffTable extends StatelessWidget {
   }
 }
 
+// ===========================================================================
+// _DiffRow — single diff row
+// ===========================================================================
+
 class _DiffRow extends StatelessWidget {
   final DiffRow row;
   final bool isWide;
   final double gutterWidth;
-  final ThemeData theme;
   final List<LspDiagnostic>? diagnostics;
   final void Function(LspDiagnostic) onDiagnosticTap;
 
@@ -293,13 +292,11 @@ class _DiffRow extends StatelessWidget {
     required this.row,
     required this.isWide,
     required this.gutterWidth,
-    required this.theme,
     this.diagnostics,
     required this.onDiagnosticTap,
   });
 
-  _RowColors _computeColors() {
-    final cs = theme.colorScheme;
+  _RowColors _computeColors(ColorScheme cs) {
     return switch (row.type) {
       DiffLineType.addition => _RowColors(
         leftBg: Colors.transparent,
@@ -346,15 +343,15 @@ class _DiffRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = _computeColors();
+    final cs = Theme.of(context).colorScheme;
+    final colors = _computeColors(cs);
     final hasDiagnostics = diagnostics != null && diagnostics!.isNotEmpty;
-    final cs = theme.colorScheme;
 
     final rowWidget = isWide
-        ? _buildWideRow(colors, hasDiagnostics, cs)
+        ? _buildWideRow(colors, cs)
         : row.type == DiffLineType.modified
         ? _buildModifiedNarrowRow(cs)
-        : _buildNarrowRow();
+        : _buildNarrowRow(cs);
 
     if (!hasDiagnostics) return rowWidget;
 
@@ -362,11 +359,8 @@ class _DiffRow extends StatelessWidget {
       children: [
         Expanded(child: rowWidget),
         ...diagnostics!.map(
-          (d) => _DiagnosticBadge(
-            diagnostic: d,
-            theme: theme,
-            onTap: () => onDiagnosticTap(d),
-          ),
+          (d) =>
+              _DiagnosticBadge(diagnostic: d, onTap: () => onDiagnosticTap(d)),
         ),
       ],
     );
@@ -377,12 +371,14 @@ class _DiffRow extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildNarrowRowWith(
+          cs,
           bg: cs.diffRemovedBg,
           marker: '-',
           text: row.left,
           line: row.oldLineNumber,
         ),
         _buildNarrowRowWith(
+          cs,
           bg: cs.diffAddedBg,
           marker: '+',
           text: row.right,
@@ -392,7 +388,8 @@ class _DiffRow extends StatelessWidget {
     );
   }
 
-  Widget _buildNarrowRowWith({
+  Widget _buildNarrowRowWith(
+    ColorScheme cs, {
     required Color bg,
     required String marker,
     required String text,
@@ -408,10 +405,10 @@ class _DiffRow extends StatelessWidget {
             width: gutterWidth,
             lineNumber: line,
             bg: hasBg ? bg : Colors.transparent,
-            fg: theme.colorScheme.diffLineNumberFg,
+            fg: cs.diffLineNumberFg,
           ),
           Container(
-            width: 20,
+            width: diffMarkerWidth,
             color: hasBg ? bg : Colors.transparent,
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(vertical: 2),
@@ -421,7 +418,7 @@ class _DiffRow extends StatelessWidget {
                 ChatoraiFontSizes.sm,
                 color: hasBg
                     ? (marker == '-' ? removalColor : additionColor)
-                    : theme.colorScheme.dim,
+                    : cs.dim,
                 weight: FontWeight.w700,
               ),
             ),
@@ -433,7 +430,7 @@ class _DiffRow extends StatelessWidget {
                 text,
                 style: ChatoraiFontSizes.mono(
                   ChatoraiFontSizes.md,
-                  color: theme.colorScheme.dim,
+                  color: cs.dim,
                 ),
                 softWrap: true,
               ),
@@ -444,7 +441,7 @@ class _DiffRow extends StatelessWidget {
     );
   }
 
-  Widget _buildWideRow(_RowColors colors, bool hasDiagnostics, ColorScheme cs) {
+  Widget _buildWideRow(_RowColors colors, ColorScheme cs) {
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -456,7 +453,6 @@ class _DiffRow extends StatelessWidget {
               marker: colors.leftMarker,
               text: colors.leftText,
               gutterWidth: gutterWidth,
-              theme: theme,
             ),
           ),
           Expanded(
@@ -466,7 +462,6 @@ class _DiffRow extends StatelessWidget {
               marker: colors.rightMarker,
               text: colors.rightText,
               gutterWidth: gutterWidth,
-              theme: theme,
             ),
           ),
         ],
@@ -474,17 +469,17 @@ class _DiffRow extends StatelessWidget {
     );
   }
 
-  Widget _buildNarrowRow() {
+  Widget _buildNarrowRow(ColorScheme cs) {
     return _buildNarrowRowWith(
-      bg: _bgForType(),
+      cs,
+      bg: _bgForType(cs),
       marker: _markerForType(),
       text: _textForType(),
       line: _lineForType(),
     );
   }
 
-  Color _bgForType() {
-    final cs = theme.colorScheme;
+  Color _bgForType(ColorScheme cs) {
     return switch (row.type) {
       DiffLineType.addition => cs.diffAddedBg,
       DiffLineType.removal => cs.diffRemovedBg,
@@ -521,20 +516,20 @@ class _DiffRow extends StatelessWidget {
   }
 }
 
+// ===========================================================================
+// _DiagnosticBadge
+// ===========================================================================
+
 class _DiagnosticBadge extends StatelessWidget {
   final LspDiagnostic diagnostic;
-  final ThemeData theme;
   final VoidCallback onTap;
 
-  const _DiagnosticBadge({
-    required this.diagnostic,
-    required this.theme,
-    required this.onTap,
-  });
+  const _DiagnosticBadge({required this.diagnostic, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final color = _severityColor(diagnostic.severity, theme);
+    final cs = Theme.of(context).colorScheme;
+    final color = _severityColor(diagnostic.severity, cs);
     final icon = diagnostic.severity == 1
         ? Icons.error
         : diagnostic.severity == 2
@@ -555,19 +550,23 @@ class _DiagnosticBadge extends StatelessWidget {
     );
   }
 
-  Color _severityColor(int severity, ThemeData theme) {
+  Color _severityColor(int severity, ColorScheme cs) {
     switch (severity) {
       case 1:
-        return theme.colorScheme.error;
+        return cs.error;
       case 2:
-        return theme.colorScheme.tertiary;
+        return cs.tertiary;
       case 3:
-        return theme.colorScheme.primary;
+        return cs.primary;
       default:
-        return theme.colorScheme.muted;
+        return cs.muted;
     }
   }
 }
+
+// ===========================================================================
+// _RowColors
+// ===========================================================================
 
 class _RowColors {
   final Color leftBg;
@@ -591,13 +590,16 @@ class _RowColors {
   });
 }
 
+// ===========================================================================
+// _Side — wide layout side column
+// ===========================================================================
+
 class _Side extends StatelessWidget {
   final Color bg;
   final int? line;
   final String marker;
   final String text;
   final double gutterWidth;
-  final ThemeData theme;
 
   const _Side({
     required this.bg,
@@ -605,11 +607,11 @@ class _Side extends StatelessWidget {
     required this.marker,
     required this.text,
     required this.gutterWidth,
-    required this.theme,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final hasBg = bg != Colors.transparent;
     return Container(
       color: bg,
@@ -620,10 +622,10 @@ class _Side extends StatelessWidget {
             width: gutterWidth,
             lineNumber: line,
             bg: hasBg ? bg : Colors.transparent,
-            fg: theme.colorScheme.diffLineNumberFg,
+            fg: cs.diffLineNumberFg,
           ),
           Container(
-            width: 15,
+            width: diffMarkerWidth,
             color: hasBg ? bg : Colors.transparent,
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(vertical: 2),
@@ -633,7 +635,7 @@ class _Side extends StatelessWidget {
                 ChatoraiFontSizes.md,
                 color: hasBg
                     ? (marker == '-' ? removalColor : additionColor)
-                    : theme.colorScheme.diffLineNumberFg,
+                    : cs.diffLineNumberFg,
                 weight: FontWeight.w400,
               ),
             ),
@@ -647,7 +649,7 @@ class _Side extends StatelessWidget {
                       text,
                       style: ChatoraiFontSizes.mono(
                         ChatoraiFontSizes.md,
-                        color: theme.colorScheme.dim,
+                        color: cs.dim,
                       ),
                       softWrap: true,
                     ),
@@ -658,6 +660,10 @@ class _Side extends StatelessWidget {
     );
   }
 }
+
+// ===========================================================================
+// _Gutter — line number column
+// ===========================================================================
 
 class _Gutter extends StatelessWidget {
   final double width;

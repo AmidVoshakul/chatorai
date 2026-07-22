@@ -42,7 +42,9 @@ class EditBody extends StatelessWidget {
         }
       } catch (e) {
         if (kDebugMode) {
-          LogTags.chatService.logWarning('[EditBody] failed to parse tool result: $e');
+          LogTags.chatService.logWarning(
+            '[EditBody] failed to parse tool result: $e',
+          );
         }
       }
     }

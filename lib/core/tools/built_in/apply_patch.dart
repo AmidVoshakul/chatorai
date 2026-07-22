@@ -87,9 +87,7 @@ ToolDef createApplyPatchTool() {
           'message': 'Patch successfully applied to $safePath',
           'patch': patchStr,
         }),
-        metadata: {
-          'file_path': safePath,
-        },
+        metadata: {'file_path': safePath},
       );
     },
   );

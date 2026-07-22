@@ -45,10 +45,7 @@ void main() {
 
     testWidgets('error state shows only red file path', (tester) async {
       await tester.pumpWidget(
-        createTestWidget(
-          isError: true,
-          filePath: 'src/main.dart',
-        ),
+        createTestWidget(isError: true, filePath: 'src/main.dart'),
       );
       expect(find.text('src/main.dart'), findsOneWidget);
     });

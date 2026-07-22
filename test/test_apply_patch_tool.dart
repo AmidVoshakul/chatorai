@@ -112,7 +112,8 @@ void main() {
       test('returns error when patch references non-existent lines', () async {
         final f = File(_path('ap_bounds.txt'))
           ..writeAsStringSync('only one line');
-        final patch = '--- a/x\n+++ b/x\n@@ -5,1 +5,1 @@\n-whatever\n+replacement';
+        final patch =
+            '--- a/x\n+++ b/x\n@@ -5,1 +5,1 @@\n-whatever\n+replacement';
         final result = await tool.execute({
           'file_path': f.path,
           'patch': patch,
@@ -221,24 +222,21 @@ void main() {
     });
 
     group('execute - line count', () {
-      test(
-        'applies patch with different line counts correctly',
-        () async {
-          final f = File(_path('ap_lcwarn.txt'))
-            ..writeAsStringSync('line1\nline2\nline3');
-          final patch =
-              '--- a/ap_lcwarn.txt\n+++ b/ap_lcwarn.txt\n@@ -2,1 +2,2 @@\n-line2\n+line2a\n+line2b';
-          final result = await tool.execute({
-            'file_path': f.path,
-            'patch': patch,
-          }, _mockCtx());
-          expect(result.metadata?['error'], isNull);
-          final content = await f.readAsString();
-          expect(content, contains('line2a'));
-          expect(content, contains('line2b'));
-          f.deleteSync();
-        },
-      );
+      test('applies patch with different line counts correctly', () async {
+        final f = File(_path('ap_lcwarn.txt'))
+          ..writeAsStringSync('line1\nline2\nline3');
+        final patch =
+            '--- a/ap_lcwarn.txt\n+++ b/ap_lcwarn.txt\n@@ -2,1 +2,2 @@\n-line2\n+line2a\n+line2b';
+        final result = await tool.execute({
+          'file_path': f.path,
+          'patch': patch,
+        }, _mockCtx());
+        expect(result.metadata?['error'], isNull);
+        final content = await f.readAsString();
+        expect(content, contains('line2a'));
+        expect(content, contains('line2b'));
+        f.deleteSync();
+      });
     });
 
     group('execute - permission', () {
@@ -353,36 +351,33 @@ void main() {
     });
 
     group('execute - multiple hunks', () {
-      test(
-        'applies all hunks when multiple @@ headers present',
-        () async {
-          final f = File(_path('ap_multi.txt'))
-            ..writeAsStringSync('line1\nline2\nline3\nline4\nline5');
-          final patch = [
-            '--- a/ap_multi.txt',
-            '+++ b/ap_multi.txt',
-            '@@ -2,1 +2,1 @@',
-            '-line2',
-            '+replaced2',
-            '@@ -4,1 +4,1 @@',
-            '-line4',
-            '+replaced4',
-          ].join('\n');
+      test('applies all hunks when multiple @@ headers present', () async {
+        final f = File(_path('ap_multi.txt'))
+          ..writeAsStringSync('line1\nline2\nline3\nline4\nline5');
+        final patch = [
+          '--- a/ap_multi.txt',
+          '+++ b/ap_multi.txt',
+          '@@ -2,1 +2,1 @@',
+          '-line2',
+          '+replaced2',
+          '@@ -4,1 +4,1 @@',
+          '-line4',
+          '+replaced4',
+        ].join('\n');
 
-          final result = await tool.execute({
-            'file_path': f.path,
-            'patch': patch,
-          }, _mockCtx());
+        final result = await tool.execute({
+          'file_path': f.path,
+          'patch': patch,
+        }, _mockCtx());
 
-          expect(result.metadata?['error'], isNull);
-          final content = await f.readAsString();
-          expect(content, contains('replaced2'));
-          expect(content, contains('replaced4'));
-          expect(content, isNot(contains('line2')));
-          expect(content, isNot(contains('line4')));
-          f.deleteSync();
-        },
-      );
+        expect(result.metadata?['error'], isNull);
+        final content = await f.readAsString();
+        expect(content, contains('replaced2'));
+        expect(content, contains('replaced4'));
+        expect(content, isNot(contains('line2')));
+        expect(content, isNot(contains('line4')));
+        f.deleteSync();
+      });
 
       test('applies all hunks and preserves lines between hunks', () async {
         final f = File(_path('ap_multi2.txt'))

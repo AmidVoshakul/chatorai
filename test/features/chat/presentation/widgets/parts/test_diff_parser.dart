@@ -45,7 +45,10 @@ void main() {
       });
 
       test('context prefix and suffix preserved', () {
-        final hunks = parseUnifiedDiff(oldSource: 'a\nb\nc', newSource: 'a\nx\nc');
+        final hunks = parseUnifiedDiff(
+          oldSource: 'a\nb\nc',
+          newSource: 'a\nx\nc',
+        );
         final rows = hunks.first.rows;
         expect(rows[0].type, DiffLineType.context);
         expect(rows[0].left, 'a');
@@ -70,7 +73,10 @@ void main() {
         expect(rows.last.oldLineNumber, 324);
         expect(rows.last.newLineNumber, 324);
         expect(rows.any((r) => r.type != DiffLineType.context), isTrue);
-        expect(rows.where((r) => r.type == DiffLineType.context).length, greaterThan(0));
+        expect(
+          rows.where((r) => r.type == DiffLineType.context).length,
+          greaterThan(0),
+        );
       });
 
       test('trims single change to 4+1+4=9 rows', () {
@@ -112,11 +118,11 @@ void main() {
         final hunks = parseUnifiedDiff(patch: patch);
         expect(hunks, hasLength(1));
         expect(hunks.first.rows, hasLength(3));
-      expect(hunks.first.rows[0].type, DiffLineType.context);
-      expect(hunks.first.rows[1].type, DiffLineType.modified);
-      expect(hunks.first.rows[1].left, 'removed');
-      expect(hunks.first.rows[1].right, 'added');
-      expect(hunks.first.rows[2].type, DiffLineType.context);
+        expect(hunks.first.rows[0].type, DiffLineType.context);
+        expect(hunks.first.rows[1].type, DiffLineType.modified);
+        expect(hunks.first.rows[1].left, 'removed');
+        expect(hunks.first.rows[1].right, 'added');
+        expect(hunks.first.rows[2].type, DiffLineType.context);
       });
 
       test('skips --- and +++ file headers', () {

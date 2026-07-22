@@ -23,6 +23,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
+// ==================================================================
+// ToolResultPartWidget — collapsible tool result widget
+// ==================================================================
+
 class ToolResultPartWidget extends ConsumerStatefulWidget {
   final ToolResultPart part;
 
@@ -33,10 +37,13 @@ class ToolResultPartWidget extends ConsumerStatefulWidget {
       _ToolResultPartWidgetState();
 }
 
+// ==================================================================
+// State
+// ==================================================================
+
 class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
   static const _noBodyTools = {'websearch', 'webfetch', 'read', 'glob', 'grep'};
 
-  /// Built-in tools with underscores/dashes that are NOT MCP.
   static const _builtInCompoundNames = {
     'apply_patch',
     'external-directory',
@@ -45,10 +52,18 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
     'plan_exit',
   };
 
+  // ================================================================
+  // Fields
+  // ================================================================
+
   bool _isExpanded = false;
   bool _isCopied = false;
   final Map<int, List<LspDiagnostic>> _diagnosticsByLine = {};
   bool _isLoadingDiagnostics = false;
+
+  // ================================================================
+  // Lifecycle
+  // ================================================================
 
   @override
   void initState() {
@@ -80,6 +95,10 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
       _fetchDiagnostics(filePath);
     }
   }
+
+  // ================================================================
+  // LSP Diagnostics
+  // ================================================================
 
   void _triggerDiagnosticsFetch() {
     if (!mounted) return;
@@ -175,6 +194,10 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
     );
   }
 
+  // ================================================================
+  // Build
+  // ================================================================
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -201,10 +224,12 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
       );
     }
 
-    final isEditOrPatch =
-        toolNameLower == 'edit' || toolNameLower == 'apply_patch';
+    final isNonCollapsible =
+        toolNameLower == 'edit' ||
+        toolNameLower == 'apply_patch' ||
+        toolNameLower == 'write';
 
-    if (isEditOrPatch) {
+    if (isNonCollapsible) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 1),
         child: _buildBody(theme, isError, part),
@@ -239,6 +264,10 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
       ),
     );
   }
+
+  // ================================================================
+  // Header
+  // ================================================================
 
   Widget _buildHeader(
     ThemeData theme,
@@ -291,6 +320,10 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
     );
   }
 
+  // ================================================================
+  // Bash content
+  // ================================================================
+
   Widget _buildBashContent(
     ThemeData theme,
     bool isError,
@@ -318,6 +351,10 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
       ),
     );
   }
+
+  // ================================================================
+  // Body router
+  // ================================================================
 
   Widget _buildBody(
     ThemeData theme,
@@ -414,14 +451,7 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
             : null,
         onDiagnosticTap: _showDiagnosticDetails,
       ),
-      'write' => WriteBody(
-        theme: theme,
-        part: part,
-        displayFull: displayFull,
-        isError: isError,
-        buildResultFooter: (String displayedBody, bool error) =>
-            _buildResultFooter(theme, displayedBody, error),
-      ),
+      'write' => WriteBody(theme: theme, part: part),
       'lsp' => LspBody(theme: theme, part: part, displayFull: displayFull),
       _ => GenericBody(
         theme: theme,
@@ -432,6 +462,10 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
       ),
     };
   }
+
+  // ================================================================
+  // Todo body
+  // ================================================================
 
   Widget _buildTodoBody(ThemeData theme, ToolResultPart part) {
     final isDark = theme.brightness == Brightness.dark;
@@ -534,6 +568,10 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
     return (match.group(1)!, match.group(2)!, match.group(3)!);
   }
 
+  // ================================================================
+  // Footer
+  // ================================================================
+
   Widget _buildResultFooter(
     ThemeData theme,
     String displayedBody,
@@ -602,6 +640,10 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
       ),
     );
   }
+
+  // ================================================================
+  // Copy to clipboard
+  // ================================================================
 
   Future<void> _copyToClipboard(String text) async {
     try {

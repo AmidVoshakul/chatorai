@@ -20,35 +20,39 @@ class DiffRow {
   });
 
   factory DiffRow.context(int oldLine, int newLine, String text) => DiffRow(
-        type: DiffLineType.context,
-        oldLineNumber: oldLine,
-        newLineNumber: newLine,
-        left: text,
-        right: text,
-      );
+    type: DiffLineType.context,
+    oldLineNumber: oldLine,
+    newLineNumber: newLine,
+    left: text,
+    right: text,
+  );
 
   factory DiffRow.addition(int newLine, String text) => DiffRow(
-        type: DiffLineType.addition,
-        newLineNumber: newLine,
-        left: '',
-        right: text,
-      );
+    type: DiffLineType.addition,
+    newLineNumber: newLine,
+    left: '',
+    right: text,
+  );
 
   factory DiffRow.removal(int oldLine, String text) => DiffRow(
-        type: DiffLineType.removal,
-        oldLineNumber: oldLine,
-        left: text,
-        right: '',
-      );
+    type: DiffLineType.removal,
+    oldLineNumber: oldLine,
+    left: text,
+    right: '',
+  );
 
-  factory DiffRow.modified(int oldLine, int newLine, String left, String right) =>
-      DiffRow(
-        type: DiffLineType.modified,
-        oldLineNumber: oldLine,
-        newLineNumber: newLine,
-        left: left,
-        right: right,
-      );
+  factory DiffRow.modified(
+    int oldLine,
+    int newLine,
+    String left,
+    String right,
+  ) => DiffRow(
+    type: DiffLineType.modified,
+    oldLineNumber: oldLine,
+    newLineNumber: newLine,
+    left: left,
+    right: right,
+  );
 }
 
 class DiffHunk {
@@ -66,8 +70,12 @@ List<DiffHunk> parseUnifiedDiff({
 }) {
   if (patch != null && patch.isNotEmpty) return _parsePatchString(patch);
   if (oldSource != null && newSource != null) {
-    return _parseOldNew(oldSource, newSource, contextLines,
-        fileStartLine: fileStartLine);
+    return _parseOldNew(
+      oldSource,
+      newSource,
+      contextLines,
+      fileStartLine: fileStartLine,
+    );
   }
   return [];
 }
@@ -86,7 +94,9 @@ String trimDiff(String diff) {
       commonPrefix = ws;
     } else {
       var i = 0;
-      while (i < commonPrefix.length && i < ws.length && commonPrefix[i] == ws[i]) {
+      while (i < commonPrefix.length &&
+          i < ws.length &&
+          commonPrefix[i] == ws[i]) {
         i++;
       }
       commonPrefix = commonPrefix.substring(0, i);
@@ -95,24 +105,38 @@ String trimDiff(String diff) {
 
   if (commonPrefix == null || commonPrefix.isEmpty) return diff;
 
-  return lines.map((line) {
-    if (line.startsWith('---') || line.startsWith('+++')) return line;
-    if (line.trim().isEmpty) return line;
-    if (line.isNotEmpty && (line[0] == ' ' || line[0] == '+' || line[0] == '-')) {
-      return line[0] + line.substring(1).substring(commonPrefix!.length);
-    }
-    return line;
-  }).join('\n');
+  return lines
+      .map((line) {
+        if (line.startsWith('---') || line.startsWith('+++')) return line;
+        if (line.trim().isEmpty) return line;
+        if (line.isNotEmpty &&
+            (line[0] == ' ' || line[0] == '+' || line[0] == '-')) {
+          return line[0] + line.substring(1).substring(commonPrefix!.length);
+        }
+        return line;
+      })
+      .join('\n');
 }
 
-List<DiffHunk> _parseOldNew(String oldSource, String newSource, int contextLines,
-    {int? fileStartLine}) {
+List<DiffHunk> _parseOldNew(
+  String oldSource,
+  String newSource,
+  int contextLines, {
+  int? fileStartLine,
+}) {
   if (oldSource == newSource) return [];
   String normEndings(String s) => (s.isEmpty || s.endsWith('\n')) ? s : '$s\n';
-  final patch = createPatch('', normEndings(oldSource), normEndings(newSource),
-      context: contextLines, headerOptions: omitHeaders);
+  final patch = createPatch(
+    '',
+    normEndings(oldSource),
+    normEndings(newSource),
+    context: contextLines,
+    headerOptions: omitHeaders,
+  );
   if (patch == null || patch.isEmpty) return [];
-  final lineOffset = fileStartLine != null && fileStartLine > 1 ? fileStartLine - 1 : 0;
+  final lineOffset = fileStartLine != null && fileStartLine > 1
+      ? fileStartLine - 1
+      : 0;
   return _parsePatchString(patch, lineOffset: lineOffset);
 }
 
@@ -179,7 +203,14 @@ List<DiffRow> _hunkLinesToRows(StructuredPatchHunk hunk, {int lineOffset = 0}) {
         final hasOld = k < removals.length;
         final hasNew = k < additions.length;
         if (hasOld && hasNew) {
-          rows.add(DiffRow.modified(oldStart + k, newStart + k, removals[k], additions[k]));
+          rows.add(
+            DiffRow.modified(
+              oldStart + k,
+              newStart + k,
+              removals[k],
+              additions[k],
+            ),
+          );
         } else if (hasOld) {
           rows.add(DiffRow.removal(oldStart + k, removals[k]));
         } else {
