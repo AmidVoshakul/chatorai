@@ -8,6 +8,7 @@ import 'package:chatorai/features/chat/services/chat_ai_service.dart';
 
 import 'apply_patch.dart';
 import 'bash.dart';
+import 'document_extract.dart';
 import 'edit.dart';
 import 'external_directory.dart';
 import 'format.dart';
@@ -39,6 +40,7 @@ Future<void> registerBuiltInTools(
 }) async {
   registry.register(createBashTool());
   registry.register(createReadTool());
+  registry.register(createDocumentExtractTool());
   registry.register(createGlobTool());
   registry.register(createGrepTool());
   registry.register(createEditTool());

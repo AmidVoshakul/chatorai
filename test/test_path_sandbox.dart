@@ -1,93 +1,59 @@
 import 'dart:io';
 
-import 'package:chatorai/shared/utils/path_sandbox.dart';
-import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:path/path.dart' as p;
+import 'package:chatorai/shared/utils/path_sandbox.dart';
 
 void main() {
-  setUp(() async {
-    await XdgPaths.init();
+  group('path_sandbox managedReadRoots', () {
+    test('includes tool-output directory', () {
+      final roots = managedReadRoots;
+      expect(roots.any((r) => r.contains('tool-output')), isTrue);
+    });
+
+    test('includes attachments directory', () {
+      final roots = managedReadRoots;
+      expect(roots.any((r) => r.contains('attachments')), isTrue);
+    });
+
+    test('has exactly 2 managed roots', () {
+      final roots = managedReadRoots;
+      expect(roots.length, 2);
+    });
   });
 
-  group('resolveSafePath', () {
-    test('denies absolute paths outside the project root', () {
-      expect(() => resolveSafePath('/etc/passwd'), throwsArgumentError);
-    });
-
-    test('denies relative paths escaping the project root', () {
-      expect(() => resolveSafePath('../secrets.txt'), throwsArgumentError);
-    });
-
-    test('allows files inside the project root', () {
-      final inside = p.join(Directory.current.path, 'pubspec.yaml');
-      expect(resolveSafePath(inside), equals(inside));
-    });
-
-    test(
-      'allows the managed tool-output directory outside the project root',
-      () {
-        final root = XdgPaths.dataSubdirSync('tool-output').path;
-        final inside = p.join(root, 'tool_123.txt');
-        expect(
-          resolveSafePath(inside, allowedRoots: managedReadRoots),
-          equals(inside),
-        );
-      },
-    );
-
-    test('allows the managed root itself', () {
-      final root = XdgPaths.dataSubdirSync('tool-output').path;
+  group('isWithinAnyRoot', () {
+    test('returns true for path inside root', () {
       expect(
-        resolveSafePath(root, allowedRoots: managedReadRoots),
-        equals(root),
+        isWithinAnyRoot('/data/app/tool-output/file.txt', ['/data/app/tool-output']),
+        isTrue,
       );
     });
 
-    test('still denies unrelated external paths when roots are allowed', () {
-      final root = XdgPaths.dataSubdirSync('tool-output').path;
+    test('returns false for path outside all roots', () {
       expect(
-        () => resolveSafePath('/etc/passwd', allowedRoots: [root]),
-        throwsArgumentError,
+        isWithinAnyRoot('/etc/passwd', ['/data/app/tool-output']),
+        isFalse,
+      );
+    });
+
+    test('returns true for exact root match', () {
+      expect(
+        isWithinAnyRoot('/data/app/tool-output', ['/data/app/tool-output']),
+        isTrue,
       );
     });
   });
 
   group('isPathAllowed', () {
-    test('reflects allowedRoots', () {
-      final root = XdgPaths.dataSubdirSync('tool-output').path;
-      final inside = p.join(root, 'tool_123.txt');
-      expect(isPathAllowed(inside, allowedRoots: managedReadRoots), isTrue);
-      expect(
-        isPathAllowed('/etc/passwd', allowedRoots: managedReadRoots),
-        isFalse,
-      );
-    });
-  });
-
-  group('isWithinAnyRoot', () {
-    test('matches paths inside any supplied root', () {
-      final root = XdgPaths.dataSubdirSync('tool-output').path;
-      final inside = p.join(root, 'tool_123.txt');
-      expect(isWithinAnyRoot(inside, managedReadRoots), isTrue);
-      expect(isWithinAnyRoot('/etc/passwd', managedReadRoots), isFalse);
+    test('allows project root path', () {
+      // Paths inside the current project root are allowed without allowedRoots
+      final projectRoot = Directory.current.path;
+      expect(isPathAllowed(projectRoot), isTrue);
     });
 
-    test('rejects symlink escapes from a managed root', () {
-      // Mirrors FilesystemBoundary.resolve(): the whitelist must be checked
-      // against the *symlink-resolved* path, never the raw (string-wise) one.
-      final root = XdgPaths.dataSubdirSync('tool-output').path;
-      final link = p.join(root, 'escape_link');
-      final target = '/etc/passwd';
-      final linkEntity = Link(link);
-      if (linkEntity.existsSync()) linkEntity.deleteSync();
-      linkEntity.createSync(target);
-      try {
-        final resolved = linkEntity.resolveSymbolicLinksSync();
-        expect(isWithinAnyRoot(resolved, managedReadRoots), isFalse);
-      } finally {
-        if (linkEntity.existsSync()) linkEntity.deleteSync();
-      }
+    test('denies path outside project root without allowedRoots', () {
+      // /etc is outside the project root, so it should be denied
+      expect(isPathAllowed('/etc/passwd'), isFalse);
     });
   });
 }

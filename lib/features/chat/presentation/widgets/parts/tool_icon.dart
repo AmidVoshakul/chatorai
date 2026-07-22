@@ -29,6 +29,8 @@ IconData toolIcon(String toolName) {
       return Icons.more_horiz;
     case 'todowrite':
       return Icons.wrap_text;
+    case 'document_extract':
+      return Icons.description;
     default:
       return Icons.settings_suggest_sharp;
   }

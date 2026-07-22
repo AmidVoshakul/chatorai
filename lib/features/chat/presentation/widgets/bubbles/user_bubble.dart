@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/action_row.dart';
@@ -17,6 +20,14 @@ class UserMessageBubble extends StatelessWidget {
   final int? contextLength;
   final DateTime? timestamp;
   final double maxWidth;
+
+  static Uint8List _imageBytes(String base64) {
+    try {
+      return base64Decode(base64);
+    } catch (_) {
+      return Uint8List(0);
+    }
+  }
 
   const UserMessageBubble({
     super.key,
@@ -65,7 +76,50 @@ class UserMessageBubble extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (message.files.isNotEmpty)
+                      if (message.imageData != null &&
+                          message.imageType != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(
+                              ChatoraiBorderRadius.sm,
+                            ),
+                            child: Image.memory(
+                              _imageBytes(message.imageData!),
+                              fit: BoxFit.contain,
+                              width: effectiveMaxWidth,
+                              errorBuilder: (_, _, _) =>
+                                  const Icon(Icons.broken_image, size: 48),
+                            ),
+                          ),
+                        ),
+                      if (message.attachedDocName != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.description,
+                                size: 16,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  message.attachedDocName!,
+                                  style:
+                                      theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (message.files.isNotEmpty &&
+                          message.imageData == null)
                         ...message.files.map(
                           (f) => Padding(
                             padding: const EdgeInsets.only(top: 4),

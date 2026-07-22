@@ -53,6 +53,7 @@ class Message {
   final String? reasoning; // Model's reasoning/thoughts
   final String? imageData; // Base64 encoded image data
   final String? imageType; // Image MIME type (e.g., 'image/jpeg')
+  final String? attachedDocPath; // Path to attached document file
   final int? tokensInput;
   final int? tokensOutput;
   final int? tokensReasoning;
@@ -73,6 +74,7 @@ class Message {
     this.reasoning,
     this.imageData,
     this.imageType,
+    this.attachedDocPath,
     this.tokensInput,
     this.tokensOutput,
     this.tokensReasoning,
@@ -97,6 +99,7 @@ class Message {
     String? reasoning,
     String? imageData,
     String? imageType,
+    String? attachedDocPath,
     int? tokensInput,
     int? tokensOutput,
     int? tokensReasoning,
@@ -116,6 +119,7 @@ class Message {
       reasoning: reasoning ?? this.reasoning,
       imageData: imageData ?? this.imageData,
       imageType: imageType ?? this.imageType,
+      attachedDocPath: attachedDocPath ?? this.attachedDocPath,
       tokensInput: tokensInput ?? this.tokensInput,
       tokensOutput: tokensOutput ?? this.tokensOutput,
       tokensReasoning: tokensReasoning ?? this.tokensReasoning,
@@ -179,6 +183,7 @@ class Message {
       'reasoning': reasoning,
       'imageData': imageData,
       'imageType': imageType,
+      'attachedDocPath': attachedDocPath,
       'tokensInput': tokensInput,
       'tokensOutput': tokensOutput,
       'tokensReasoning': tokensReasoning,
@@ -195,6 +200,7 @@ class Message {
     final reasoning = json['reasoning'];
     final imageData = json['imageData'];
     final imageType = json['imageType'];
+    final attachedDocPath = json['attachedDocPath'];
 
     return Message(
       id: json['id'],
@@ -207,6 +213,7 @@ class Message {
       reasoning: reasoning,
       imageData: imageData,
       imageType: imageType,
+      attachedDocPath: attachedDocPath,
       tokensInput: json['tokensInput'] as int?,
       tokensOutput: json['tokensOutput'] as int?,
       tokensReasoning: json['tokensReasoning'] as int?,

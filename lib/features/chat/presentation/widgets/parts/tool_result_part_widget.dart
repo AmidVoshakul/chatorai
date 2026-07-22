@@ -46,6 +46,7 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
 
   static const _builtInCompoundNames = {
     'apply_patch',
+    'document_extract',
     'external-directory',
     'json_schema',
     'plan_enter',

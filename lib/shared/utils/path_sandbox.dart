@@ -13,7 +13,10 @@ List<String>? _cachedManagedReadRoots;
 /// of [XdgPaths.dataSubdirSync]) on every [resolveSafePath] / [isWithinAnyRoot]
 /// call.
 List<String> get managedReadRoots =>
-    _cachedManagedReadRoots ??= [XdgPaths.dataSubdirSync('tool-output').path];
+    _cachedManagedReadRoots ??= [
+      XdgPaths.dataSubdirSync('tool-output').path,
+      XdgPaths.dataSubdirSync('attachments').path,
+    ];
 
 /// True when [path] equals [root] or sits inside it. This is a pure string
 /// check — it does **not** resolve symlinks. Callers that need symlink-safe

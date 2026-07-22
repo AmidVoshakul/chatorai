@@ -1,3 +1,5 @@
+import 'package:path/path.dart' as p;
+
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 
 import 'chat_message.dart';
@@ -35,6 +37,12 @@ ChatMessage messageToChatMessage(Message message) {
         id: id,
         content: message.content,
         files: files,
+        imageData: message.imageData,
+        imageType: message.imageType,
+        attachedDocName: message.attachedDocPath != null
+            ? p.basename(message.attachedDocPath!)
+            : null,
+        attachedDocPath: message.attachedDocPath,
         timestamp: timestamp,
       );
 

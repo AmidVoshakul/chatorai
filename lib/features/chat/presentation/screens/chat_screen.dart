@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:math';
+import 'package:path/path.dart' as p;
 
 import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/config/config_provider.dart';

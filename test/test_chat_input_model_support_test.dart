@@ -48,5 +48,24 @@ void main() {
       expect(message.imageType, isNull);
       expect(message.base64Data, isNull);
     });
+
+    // Test 6: MessageData with attachedDocPath
+    test('MessageData accepts attachedDocPath', () {
+      final message = MessageData(
+        text: 'Check this doc',
+        attachedDocPath: '/path/to/document.pdf',
+      );
+
+      expect(message.text, 'Check this doc');
+      expect(message.attachedDocPath, '/path/to/document.pdf');
+      expect(message.imagePath, isNull);
+    });
+
+    // Test 7: MessageData attachedDocPath is null by default
+    test('MessageData attachedDocPath defaults to null', () {
+      final message = MessageData(text: 'No attachment');
+
+      expect(message.attachedDocPath, isNull);
+    });
   });
 }

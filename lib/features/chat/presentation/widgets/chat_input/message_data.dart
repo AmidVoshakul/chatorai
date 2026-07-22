@@ -5,6 +5,7 @@ class MessageData {
   final String? base64Data;
   final String? delegateAgentId;
   final String? agentMention;
+  final String? attachedDocPath;
 
   MessageData({
     required this.text,
@@ -13,5 +14,6 @@ class MessageData {
     this.base64Data,
     this.delegateAgentId,
     this.agentMention,
+    this.attachedDocPath,
   });
 }

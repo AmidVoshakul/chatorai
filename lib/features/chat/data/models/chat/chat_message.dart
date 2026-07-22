@@ -50,10 +50,18 @@ abstract class ChatMessage {
 class UserMessage extends ChatMessage {
   final String content;
   final List<String> files;
+  final String? imageData;
+  final String? imageType;
+  final String? attachedDocName;
+  final String? attachedDocPath;
   const UserMessage({
     required super.id,
     required this.content,
     this.files = const [],
+    this.imageData,
+    this.imageType,
+    this.attachedDocName,
+    this.attachedDocPath,
     required super.timestamp,
   });
 
@@ -63,6 +71,10 @@ class UserMessage extends ChatMessage {
     'id': id,
     'content': content,
     'files': files,
+    'imageData': imageData,
+    'imageType': imageType,
+    'attachedDocName': attachedDocName,
+    'attachedDocPath': attachedDocPath,
     'timestamp': timestamp.toIso8601String(),
   };
 
@@ -71,6 +83,10 @@ class UserMessage extends ChatMessage {
       id: json['id'] as String,
       content: json['content'] as String,
       files: (json['files'] as List?)?.cast<String>() ?? [],
+      imageData: json['imageData'] as String?,
+      imageType: json['imageType'] as String?,
+      attachedDocName: json['attachedDocName'] as String?,
+      attachedDocPath: json['attachedDocPath'] as String?,
       timestamp: DateTime.parse(json['timestamp'] as String),
     );
   }

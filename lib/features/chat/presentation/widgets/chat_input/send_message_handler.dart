@@ -85,12 +85,18 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     }
 
     text = resolved.text;
+    final chatInput = ref.read(chatInputProvider);
     final messageData = MessageData(
       text: text,
       agentMention: resolved.agentMention,
-      imagePath: ref.read(chatInputProvider).attachedFilePath,
-      imageType: ref.read(chatInputProvider).attachedImageType,
-      base64Data: ref.read(chatInputProvider).attachedBase64Data,
+      imagePath: chatInput.attachedFilePath,
+      imageType: chatInput.attachedImageType,
+      base64Data: chatInput.attachedBase64Data,
+      // attachedImageType == null && attachedFilePath != null → document
+      // attachedImageType != null                         → image
+      attachedDocPath: chatInput.attachedImageType == null
+          ? chatInput.attachedFilePath
+          : null,
     );
     onSendMessage(messageData);
     onToggleStreaming(true);

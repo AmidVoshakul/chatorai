@@ -55,9 +55,22 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
 
     final messages = recentMessages.where((m) => !m.isError).map((msg) {
       final result = <String, dynamic>{'role': msg.role.name};
+
+      var content = msg.content;
+      if (msg.attachedDocPath != null) {
+        final safeName =
+            p.basename(msg.attachedDocPath!).replaceAll('"', '\\"');
+        final safePath =
+            msg.attachedDocPath!.replaceAll('"', '\\"');
+        content +=
+            '\n\n[Attached file: "$safeName". '
+            'Use the document_extract tool with filePath: "$safePath" '
+            'to read its contents.]';
+      }
+
       if (msg.imageData != null && msg.imageType != null) {
         result['content'] = [
-          {'type': 'text', 'text': msg.content},
+          {'type': 'text', 'text': content},
           {
             'type': 'image_url',
             'image_url': {
@@ -66,7 +79,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
           },
         ];
       } else {
-        result['content'] = msg.content;
+        result['content'] = content;
       }
       return result;
     }).toList();
@@ -243,6 +256,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       messageData.text,
       base64Data: messageData.base64Data,
       imageType: messageData.imageType,
+      attachedDocPath: messageData.attachedDocPath,
     );
     await _chatStorageService.addMessageToChat(chat.id, userMessage);
     var streamChat = await _chatStorageService.getChat(chat.id);
@@ -352,6 +366,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     String content, {
     String? base64Data,
     String? imageType,
+    String? attachedDocPath,
   }) {
     return Message(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -361,6 +376,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       isComplete: true,
       imageData: base64Data,
       imageType: imageType,
+      attachedDocPath: attachedDocPath,
     );
   }
 

@@ -405,6 +405,18 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         onToolError: (toolCallId, toolName, error) async {
           final errorStr = error.toString();
 
+          if (toolName == 'document_extract' && mounted) {
+            final displayMsg = errorStr.length > 120
+                ? '${errorStr.substring(0, 120)}…'
+                : errorStr;
+            SnackbarUtils.showErrorSnackBar(
+              context: context,
+              message: 'document_extract: $displayMsg',
+              icon: Icons.description,
+              duration: const Duration(seconds: 6),
+            );
+          }
+
           notifier.onToolError(toolCallId, errorStr);
 
           if (activeTaskSessionIds.isNotEmpty) {

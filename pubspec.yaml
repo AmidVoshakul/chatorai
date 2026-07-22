@@ -63,6 +63,10 @@ dependencies:
   synchronized: ^3.1.0
   nocterm: ^0.8.0
   dartdiff: ^1.0.0
+  pdf_render_maintained: ^1.6.2
+  archive: ^4.0.9
+  xml: ^6.6.1
+  image: ^4.8.0
 
 dev_dependencies:
   flutter_test:
