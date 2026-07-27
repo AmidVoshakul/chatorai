@@ -107,6 +107,41 @@ const Map<String, dynamic> chatoraiSchema = {
         },
       },
     },
+    'lsp': {
+      'type': ['object', 'boolean'],
+      'description':
+          'LSP server configuration. Set to true to enable all built-in servers, false to disable all.',
+      'properties': {
+        'servers': {
+          'type': 'object',
+          'additionalProperties': {
+            'type': 'object',
+            'properties': {
+              'disabled': {'type': 'boolean'},
+              'command': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+              'args': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+              'environment': {
+                'type': 'object',
+                'additionalProperties': {'type': 'string'},
+              },
+              'extensions': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+              'languageId': {'type': 'string'},
+              'initialization': {'type': 'object'},
+              'autoInstall': {'type': 'boolean'},
+            },
+          },
+        },
+      },
+    },
     'mcp': {
       'type': 'object',
       'description':

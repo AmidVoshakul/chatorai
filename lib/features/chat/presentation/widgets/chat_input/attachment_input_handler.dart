@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -9,9 +10,6 @@ import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/file_helpers.dart';
-
-/// Document files dir name under [XdgPaths.dataHome].
-const _attachmentsDirName = 'attachments';
 
 mixin AttachmentInputHandler<T extends ConsumerStatefulWidget>
     on ConsumerState<T> {
@@ -102,19 +100,20 @@ mixin AttachmentInputHandler<T extends ConsumerStatefulWidget>
         final base64Data = await ImageUtils.fileToBase64(file);
         if (base64Data == null) return;
         final imageType = ImageUtils.getMimeType(file);
-        ref.read(chatInputProvider.notifier).setAttachedFile(
-          path: getFilePath(file),
-          name: fileName,
-          imageType: imageType,
-          base64Data: base64Data,
-        );
+        ref
+            .read(chatInputProvider.notifier)
+            .setAttachedFile(
+              path: getFilePath(file),
+              name: fileName,
+              imageType: imageType,
+              base64Data: base64Data,
+            );
       } else {
         // Document file: copy to temp directory, store path only
         final tempPath = await _saveDocumentToTempDir(file);
-        ref.read(chatInputProvider.notifier).setAttachedFile(
-          path: tempPath,
-          name: fileName,
-        );
+        ref
+            .read(chatInputProvider.notifier)
+            .setAttachedFile(path: tempPath, name: fileName);
       }
     } catch (e) {
       if (mounted) {
@@ -137,16 +136,39 @@ mixin AttachmentInputHandler<T extends ConsumerStatefulWidget>
 
   void clearAttachedFile() {
     if (!mounted) return;
-    final state = ref.read(chatInputProvider);
-    final path = state.attachedFilePath;
     final notifier = ref.read(chatInputProvider.notifier);
     notifier.clearAttachedFile();
-    if (path != null && path.contains('$_attachmentsDirName/')) {
-      try {
-        File(path).deleteSync();
-      } on Exception {
-        // Non-fatal: temp file cleanup should never break the UI.
+  }
+}
+
+class AttachmentCleanup {
+  Timer? _timer;
+  static const _maxAge = Duration(hours: 24);
+  static const _interval = Duration(hours: 1);
+  static final _instance = AttachmentCleanup._();
+
+  factory AttachmentCleanup() => _instance;
+  AttachmentCleanup._();
+
+  Future<Directory> _dir() async => XdgPaths.dataSubdirAsync('attachments');
+
+  void initialize() {
+    if (_timer != null) return;
+    _timer = Timer.periodic(_interval, (_) => unawaited(_cleanup()));
+    unawaited(_cleanup());
+  }
+
+  Future<void> _cleanup() async {
+    try {
+      final dir = await _dir();
+      final cutoff = DateTime.now().subtract(_maxAge);
+      await for (final entity in dir.list()) {
+        if (entity is File && entity.lastModifiedSync().isBefore(cutoff)) {
+          try {
+            await entity.delete();
+          } catch (_) {}
+        }
       }
-    }
+    } catch (_) {}
   }
 }

@@ -7,6 +7,8 @@ import 'package:chatorai/core/config/instructions_resolver.dart';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/core/tools/tool_output_persistence.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_input/attachment_input_handler.dart'
+    show AttachmentCleanup;
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,4 +59,5 @@ final appBootstrapProvider = FutureProvider<void>((ref) async {
   await ref.watch(catalogInitializationProvider.future);
 
   ToolOutputPersistence.instance.initialize();
+  AttachmentCleanup().initialize();
 });

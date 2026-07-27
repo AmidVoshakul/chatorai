@@ -15,16 +15,18 @@ void main() {
       expect(roots.any((r) => r.contains('attachments')), isTrue);
     });
 
-    test('has exactly 2 managed roots', () {
+    test('has exactly 3 managed roots', () {
       final roots = managedReadRoots;
-      expect(roots.length, 2);
+      expect(roots.length, 3);
     });
   });
 
   group('isWithinAnyRoot', () {
     test('returns true for path inside root', () {
       expect(
-        isWithinAnyRoot('/data/app/tool-output/file.txt', ['/data/app/tool-output']),
+        isWithinAnyRoot('/data/app/tool-output/file.txt', [
+          '/data/app/tool-output',
+        ]),
         isTrue,
       );
     });

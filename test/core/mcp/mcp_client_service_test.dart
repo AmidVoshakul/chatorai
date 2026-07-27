@@ -446,8 +446,8 @@ void main() {
 
       final toolsJson = [
         {
-          'name': 'bash',
-          'description': 'Run bash',
+          'name': 'shell',
+          'description': 'Run shell',
           'inputSchema': {'type': 'object'},
         },
         {
@@ -487,7 +487,7 @@ void main() {
       final result = await client.listTools();
       expect(result.tools, hasLength(5));
       expect(result.tools.map((t) => t.name).toList(), [
-        'bash',
+        'shell',
         'read',
         'write',
         'edit',

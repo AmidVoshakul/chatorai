@@ -7,6 +7,7 @@ import 'package:chatorai/core/mcp/mcp_client_service.dart';
 import 'package:chatorai/core/permission/permission_provider.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/core/session/session_db_provider.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/skills/skill_providers.dart';
 import 'package:chatorai/core/tools/built_in/built_in_tools.dart' as built_in;
@@ -50,6 +51,9 @@ final toolRegistryProvider = FutureProvider<ToolRegistry>((ref) async {
   final aiService = ref.read(chatAiServiceProvider);
   final skillService = await ref.read(skillServiceProvider.future);
   final lspService = await ref.watch(lspServiceProvider.future);
+  final fileSnapshotService = await ref.watch(
+    fileSnapshotServiceProvider.future,
+  );
   final registry = ToolRegistry(ref.read(permissionServiceProvider), rules);
 
   final holder = SessionRunnerHolder(null, parentSessionId: null);
@@ -61,6 +65,7 @@ final toolRegistryProvider = FutureProvider<ToolRegistry>((ref) async {
     toolRegistry: registry,
     skillService: skillService,
     lspService: lspService,
+    fileSnapshotService: fileSnapshotService,
     formatService: FormatService.instance,
     formatterConfig: config.formatter,
     currentSessionRunner: holder,

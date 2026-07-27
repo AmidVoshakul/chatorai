@@ -1704,6 +1704,66 @@ class AppLocalizationsEn extends AppLocalizations {
       'Adobe for Creativity unites Photoshop, Lightroom, Illustrator, Firefly, Premiere, Express, InDesign, and Stock with AI-driven creative work. Users can generate, edit, and enhance photos, design assets, and video projects using natural language while work stays tied to their Adobe account.';
 
   @override
+  String get mcpInstallToGlobal => 'Install to Global';
+
+  @override
+  String get mcpInstallToProject => 'Install to Project';
+
+  @override
+  String get mcpScopeGlobal => 'Global';
+
+  @override
+  String get mcpScopeProject => 'Project';
+
+  @override
+  String get mcpScopeGlobalProject => 'Global + Project';
+
+  @override
+  String mcpRemoveFromScope(String scope) {
+    return 'Remove from $scope';
+  }
+
+  @override
+  String get mcpRemoveFromAll => 'Remove from all';
+
+  @override
+  String get mcpTokenDialogTitle => 'Authentication';
+
+  @override
+  String get mcpTokenDialogTitleHint =>
+      'Choose how to authenticate with this server';
+
+  @override
+  String get mcpTokenInputLabel => 'Token';
+
+  @override
+  String get mcpTokenInputHint => 'Paste your access token';
+
+  @override
+  String get mcpTokenInputHelper => 'Sent as Authorization: Bearer <token>';
+
+  @override
+  String get mcpOAuthClientIdLabel => 'Client ID';
+
+  @override
+  String get mcpOAuthClientIdHint => 'OAuth 2.1 client ID';
+
+  @override
+  String get mcpOAuthClientSecretLabel => 'Client Secret';
+
+  @override
+  String get mcpOAuthClientSecretHint => 'OAuth 2.1 client secret (optional)';
+
+  @override
+  String get mcpOAuthScopeLabel => 'Scope';
+
+  @override
+  String get mcpOAuthScopeHint => 'e.g. read write';
+
+  @override
+  String get mcpAuthConfirm => 'Confirm';
+
+  @override
   String get agentsInstructions => 'Agents Instructions';
 
   @override
@@ -2024,4 +2084,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonEdit => 'Edit';
+
+  @override
+  String get toolResultOriginal => 'Original';
+
+  @override
+  String get toolResultRestore => 'Restore';
+
+  @override
+  String get toolResultRestoredSnackbar =>
+      'Files restored to before-edit state';
+
+  @override
+  String get toolResultOriginalTitle => 'Original content before edit';
+
+  @override
+  String restoreFailed(String error) {
+    return 'Restore failed: $error';
+  }
 }

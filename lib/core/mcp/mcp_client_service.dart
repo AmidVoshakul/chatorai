@@ -359,7 +359,11 @@ class McpClientService {
 
     final transport = StreamableHttpClientTransport(
       uri,
-      opts: StreamableHttpClientTransportOptions(requestInit: config.headers),
+      opts: StreamableHttpClientTransportOptions(
+        requestInit: config.headers != null && config.headers!.isNotEmpty
+            ? {'headers': config.headers}
+            : null,
+      ),
     );
 
     final client = McpClient(

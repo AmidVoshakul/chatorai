@@ -128,6 +128,7 @@ const List<McpMarketplaceEntry> mcpMarketplaceCatalog = [
     descriptionKey: 'mcpMarketDescTavily',
     iconAsset: 'assets/provider/tavily-color.svg',
     brandColor: '#008080',
+    requiresToken: true,
   ),
   McpMarketplaceEntry(
     id: 'github',

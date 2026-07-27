@@ -7,8 +7,6 @@ completed milestones and future plans based on the current codebase state.
 
 ## Completed Milestones
 
-### [0.1.1] — 2026-07-20
-
 - Multi-provider AI chat via OpenRouter, local LLMs, and any OpenAI-compatible endpoint
 - Voice input with speech-to-text and camera/image attachments
 - Advanced Markdown rendering with syntax highlighting and collapsible reasoning blocks
@@ -43,6 +41,16 @@ completed milestones and future plans based on the current codebase state.
 - `McpClientService` connects to local (stdio) and remote (HTTP) MCP servers
 - Tool discovery and proxying into the native `ToolRegistry`
 - Config models (`McpConfig`, `McpServerConfig`, `McpOAuthConfig`) in `lib/core/mcp/`
+
+### LSP Expansion
+
+- 15 built-in LSP servers (dart, typescript, python, java, kotlin, go, rust, csharp, yaml, shell, clangd, lua, markdown, swift, zig) with lazy per-extension startup — no unused-language cost.
+- On-demand auto-install via platform package managers (`npm`, `cargo`, `brew`, `pip`, `go`) when a built-in command is missing on PATH.
+- `lsp: true/false` global toggle and `lsp.servers.*` per-server overrides in `chatorai.json` (`LspConfig` / `LspServerEntryConfig`).
+- `LspService` refactored: built-in `_builtInServers` table + `AutoInstallHint` + user override + `lsp: false` global disable flag + per-cache-key creation lock + `didClose` in diagnostics lifecycle + timeout on `Process.run` calls.
+- `LspProvider` wires user servers from `config.lsp` at startup via `service.loadUserServers(config.lsp!)`.
+- Removed dead code `_legacyFallback`; `_openedFiles` cleared in `shutdownAll()`.
+- Tests: `test/core/lsp/lsp_service_test.dart` covers boolean lsp parsing, user server load/skip disabled, `AutoInstallHint`, `shutdownAll` idempotency.
 
 ### Provider & Model Management
 

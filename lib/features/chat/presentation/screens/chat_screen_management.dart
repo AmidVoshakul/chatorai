@@ -4,6 +4,7 @@ extension _ChatScreenManagementExt on _ChatScreenState {
   Future<void> _createNewChat() async {
     final newChat = await ref.read(chatListProvider.notifier).createNewChat();
     ref.read(currentChatIdProvider.notifier).setChatId(newChat.id);
+    ref.read(permissionServiceProvider).clearSession();
     _showWelcomeSuggestions();
   }
 

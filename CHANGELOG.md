@@ -9,10 +9,23 @@ All notable changes to this project will be documented in this file.
 - **GUI launcher no longer blocks terminal** — running `chatorai` without arguments now launches the GUI in the background and returns control to the shell immediately. CLI commands (`chatorai stats`, `chatorai models`, etc.) remain foreground and preserve exit codes. Added error message if the binary is missing.
 - **Tool-output storage path**: Truncated tool output was previously written to `getApplicationDocumentsDirectory()` (`~/Documents/chatorai/` on Linux), which caused `Path denied` errors when the model later tried to read it back via `read`/`grep`/`glob` because Documents is outside the project root and the path sandbox rejected it. Output is now written to the cross-platform data directory (`~/.local/share/chatorai/tool-output` on Linux, XDG-compliant on other desktops, sandboxed Documents on mobile). The `read`/`grep`/`glob` tools now accept this directory as a managed read root (symlink-safe via `FilesystemBoundary.resolve()`), so the model can read back its own truncated output without permission prompts. Deleted the dead `tool_output_bounding_service.dart` (no callers).
 
-## [0.1.1]
-
 ### Added
 
+- **LSP expansion to 15 built-in servers**:
+  dart, typescript, python, java, kotlin, go, rust, csharp, yaml, shell, clangd, lua, markdown, swift, zig.
+  Servers are started lazily on first file match, so unused languages incur no startup cost.
+- **LSP auto-install**: When a built-in server command is missing on PATH, ChatORAI installs it on-demand via platform package managers (`npm`, `cargo`, `brew`, `pip`, `go`) before falling back to empty diagnostics.
+- **`lsp` config section** in `chatorai.json`: global `enabled` flag plus per-server `servers.*` overrides via `LspConfig` / `LspServerEntryConfig`.
+  - `lsp: true/false` — enable or disable all built-in LSP.
+  - `lsp.servers.<id>.disabled` / `command` / `args` / `extensions` / `languageId` / `environment` / `autoInstall` — per-server overrides.
+- **LSP service refactor** (`lib/core/lsp/lsp_service.dart`):
+  - Built-in `_builtInServers` table (15 entries) with per-server `AutoInstallHint`.
+  - Per-cache-key `_activeCreation` lock prevents duplicate client spawning.
+  - `textDocument/didClose` sent in `diagnostics()` and `diagnosticsForFile()` lifecycle.
+  - 5-second timeout on `Process.run` in `_commandExists()`.
+- **LSP provider wiring** (`lib/core/lsp/lsp_provider.dart`): `lspServiceProvider` loads user servers from `config.lsp` at startup and invokes `service.shutdownAll()` on dispose.
+- **Removed dead code**: `_legacyFallback` path removed; `_openedFiles` cleared in `shutdownAll()`.
+- **Tests** (`test/core/lsp/lsp_service_test.dart`): boolean `lsp` parsing, user server load/skip disabled, `AutoInstallHint`, `shutdownAll` idempotency.
 - **Recent models** on the model-selection screen: a horizontal "stories"-style strip of the top-6 most recently and frequently used models, with a localized "Recent" header (English, Russian, Ukrainian, Chinese, Japanese, Arabic).
 - `ModelState` now tracks per-model `usageCounts` and `lastUsed` timestamps, persisted in `SharedPreferences` (`model_usage_counts`, `model_last_used`) alongside favorites. `setSelectedModel` increments the usage count and refreshes `lastUsed`.
 - `ModelState.recentModels` getter: top-6 models merged by usage count (desc) then last-used timestamp (desc), limited to currently available models.
@@ -42,8 +55,8 @@ First public release.
 
 ### Changed
 
-- **Bash tool security policy**: Changed default `bash` permission from `allow` to `ask` in `PermissionRuleset.defaults()`. Removed `DangerousCharacterPolicy` from `lib/core/tools/built_in/bash.dart` that was overly aggressive in flagging safe shell metacharacters (`|`, `>`, `<`, `&`) as `highRisk`. Safe commands (`find`, `echo hello | cat`, etc.) now run without prompts; medium/high-risk commands (`echo foo; echo bar`, `rm -rf /`, blocked executables) trigger permission dialogs. Nothing is harshly denied — only `ask` or `allow`.
-- **Sensitive env file protection**: Added `*.env` and `*.env.*` to default `read` permission rules as `ask`. Added `ArgumentPatternPolicy` in bash tool to detect `cat/less/more/head/tail/vi/vim/nvim/nano .env` commands as `highRisk` review. `.env.example` remains `allow`.
+- **Shell tool security policy**: Changed default `shell` permission from `allow` to `ask` in `PermissionRuleset.defaults()`. Removed `DangerousCharacterPolicy` from `lib/core/tools/built_in/shell.dart` that was overly aggressive in flagging safe shell metacharacters (`|`, `>`, `<`, `&`) as `highRisk`. Safe commands (`find`, `echo hello | cat`, etc.) now run without prompts; medium/high-risk commands (`echo foo; echo bar`, `rm -rf /`, blocked executables) trigger permission dialogs. Nothing is harshly denied — only `ask` or `allow`.
+- **Sensitive env file protection**: Added `*.env` and `*.env.*` to default `read` permission rules as `ask`. Added `ArgumentPatternPolicy` in shell tool to detect `cat/less/more/head/tail/vi/vim/nvim/nano .env` commands as `highRisk` review. `.env.example` remains `allow`.
 - **Explicit Part IDs**: `SessionRunnerSession` now tracks explicit part IDs for text, reasoning, and tool-related content segments.
 - **QuestionOption Model**: New `QuestionOption` model supports richer interactive questions with `multiple` selection support.
 - **ShortcutHandler & AppShortcuts**: Centralized keyboard shortcut management widget.
@@ -55,16 +68,16 @@ First public release.
 - **AssistantQuestion Multiple Selection**: `AssistantQuestion` now supports `multiple` boolean for multi-select questions.
 - **ChatScreen Refactor**: Split into focused files (`chat_screen_ai.dart`, `chat_screen_edits.dart`, `chat_screen_build.dart`, `chat_screen_messaging.dart`, `chat_screen_management.dart`, `chat_screen_navigator.dart`, `chat_screen_part_placeholder.dart`).
 - **Widget Parts Split**: Tool body and display widgets separated into individual files:
-  `_bash_body_widget.dart`, `_read_body_widget.dart`, `_grep_body_widget.dart`,
+  `_shell_body_widget.dart`, `_read_body_widget.dart`, `_grep_body_widget.dart`,
   `_write_body_widget.dart`, `_edit_body_widget.dart`, `_lsp_body_widget.dart`,
   `_patch_body_widget.dart`, `_generic_body_widget.dart`, `_diff_line_widget.dart`,
   `_webfetch_body_widget.dart`, `_tool_icon.dart`, `_tool_title.dart`.
   49 new tests added.
-- **Widget Refactoring Phase 2**: Extracted shared formatting utilities to `lib/shared/utils/format_utils.dart` with `formatTokenCount`, `tokenDisplay`, `formatDurationMs`, `formatDuration`, and `bashPreview` to eliminate code duplication across `action_row.dart`, `task_part_widget.dart`, and `reasoning_part_widget.dart`.
+- **Widget Refactoring Phase 2**: Extracted shared formatting utilities to `lib/shared/utils/format_utils.dart` with `formatTokenCount`, `tokenDisplay`, `formatDurationMs`, `formatDuration`, and `shellPreview` to eliminate code duplication across `action_row.dart`, `task_part_widget.dart`, and `reasoning_part_widget.dart`.
 - **UserMessageEdit Widget**: Extracted user message editing interface from `ChatMessageBubble` into a dedicated `lib/features/chat/presentation/widgets/parts/user_message_edit.dart` file, reducing `ChatMessageBubble` responsibility to message dispatching only.
 - **Unified ContinuationSuggestions**: Removed duplicate `_ContinuationSuggestions` from `assistant_bubble.dart`; now uses the shared `ContinuationSuggestions` from `action_menu_button.dart`.
 - **Renamed tool body widgets** (removed underscore prefix for consistency):
-  - `_bash_body_widget.dart` → `bash_body.dart`
+  - `_shell_body_widget.dart` → `shell_body.dart`
   - `_read_body_widget.dart` → `read_body.dart`
   - `_grep_body_widget.dart` → `grep_body.dart`
   - `_write_body_widget.dart` → `write_body.dart`
@@ -76,7 +89,7 @@ First public release.
   - `_diff_line_widget.dart` → `diff_line.dart`
   - `_tool_icon.dart` → `tool_icon.dart`
   - `_tool_title.dart` → `tool_title.dart`
-- **Eliminated duplicate `bashPreview`**: Removed duplicate implementation from `tool_result_part_widget.dart`; now imports and uses the shared version from `format_utils.dart`.
+- **Eliminated duplicate `shellPreview`**: Removed duplicate implementation from `tool_result_part_widget.dart`; now imports and uses the shared version from `format_utils.dart`.
 - **Centralized duration formatting**: `task_part_widget.dart` and `reasoning_part_widget.dart` now use shared `formatDurationMs(int?)` and `formatDuration(Duration)` from `format_utils.dart`.
 - **Empty directory cleanup**: Confirmed empty `lib/features/chat/presentation/widgets/chat/` directory already removed.
 
@@ -84,7 +97,7 @@ First public release.
 
 - **Linter warnings**: Resolved unused imports and dangling library doc comments introduced during refactoring. `flutter analyze` reports zero issues.
 - **Unused imports cleaned up**: Removed stale imports from `chat_message_bubble.dart`, `user_message_edit.dart`, and `format_utils.dart`.
-- **Bash tool security policy**: Changed command_shield policies in `lib/core/tools/built_in/bash.dart` from immediate `deny` to `review` (ask-permission flow). `DangerousCharacterPolicy` now returns `review` at `highRisk` level; `ArgumentPatternPolicy` for `chmod` and redirect patterns now return `review`; `ExecutableBlockListPolicy` uses `onMatch: CommandDecision.review`; replaced `RiskThresholdPolicy` with custom `_ReviewOnlyPolicy` that never denies and always asks permission for `mediumRisk` and above. Removed duplicate blocked-executable deny check. Verified with `dart analyze` (clean) and `flutter test test/integration/bash_integration_test.dart` (15/15 passed). Goal: commands such as `curl`, `rm -rf`, and `npm` now trigger a permission dialog instead of being immediately blocked.
+- **Shell tool security policy**: Changed command_shield policies in `lib/core/tools/built_in/shell.dart` from immediate `deny` to `review` (ask-permission flow). `DangerousCharacterPolicy` now returns `review` at `highRisk` level; `ArgumentPatternPolicy` for `chmod` and redirect patterns now return `review`; `ExecutableBlockListPolicy` uses `onMatch: CommandDecision.review`; replaced `RiskThresholdPolicy` with custom `_ReviewOnlyPolicy` that never denies and always asks permission for `mediumRisk` and above. Removed duplicate blocked-executable deny check. Verified with `dart analyze` (clean) and `flutter test test/integration/shell_integration_test.dart` (15/15 passed). Goal: commands such as `curl`, `rm -rf`, and `npm` now trigger a permission dialog instead of being immediately blocked.
 
 ### Documentation
 
@@ -98,7 +111,7 @@ First public release.
   - `sessions.md`: Drift ER diagram corrected (all column names/types match `database.dart`/`schema.dart`; added missing columns: `cost`, `tokensInput/Output/Reasoning/CacheRead/CacheWrite`, `permissionRules`, `seq`, `promptText`, `agent`, `modelRef`, `status`); state machine added missing events (`StepFailed`, `TaskStarted/Completed`, `TaskPart*`, `QuestionPart*`, `TodoPart*`); removed non-existent `ToolCalled` event; noted `SessionState` is `Equatable` not `freezed`; corrected `replayEvents()` signature and `projectEvent()` as pure function.
   - `tools.md`: Corrected conditional registration — `skill` is conditional (not unconditional); all 3 conditionals are independent `if` statements (not sequential); fixed doom-loop constant to 3 steps; corrected execution flow order.
   - `mcp.md`: Fixed `McpConnectionStatus` enum values (`connected/disabled/failed/needsAuth/needsClientRegistration`, not `Disconnected/Connecting/Connected/Error`); `McpOAuthConfig` corrected (`scope` singular not `scopes`, no `tokenUrl`, added `callbackPort` and `redirectUri`); `McpCallResult.content` corrected from `dynamic` to `List<McpContentPart>`; `McpConfig.defaultTimeout` corrected to `int?`; added missing `enabled`, `timeout`, `cwd`, `environment` on `McpServerConfig`.
-- **docs/API.md** (additional corrections): Fixed `SessionRunner` section — `startSession()` is synchronous (not `Future<...>`); `startInitializedSession()` has `SessionID? sessionId` parameter; `runTaskInChild()` returns `Future<TaskChildResult>` (not `Future<void>`), has `SessionRunnerHolder? holder` parameter; removed non-existent `sdk.CancellationToken? abortSignal`; fixed Chinese character artifact (`Session跑了` → `SessionRunner`); corrected `SessionRunnerSession` fields — `sessionId` (not `id`), `createdAt` does not exist; added note that most session fields are private. Fixed `PermissionRequest` example — `permission: 'execute'` changed to `permission: 'bash'`. Fixed tool defaults table — `format`, `json_schema`, `apply_patch`, `invalid`, `plan_exit` have no `defaults()` entry (fallback `ask`); `skill` is conditional not unconditional; corrected unconditional count to 16.
+- **docs/API.md** (additional corrections): Fixed `SessionRunner` section — `startSession()` is synchronous (not `Future<...>`); `startInitializedSession()` has `SessionID? sessionId` parameter; `runTaskInChild()` returns `Future<TaskChildResult>` (not `Future<void>`), has `SessionRunnerHolder? holder` parameter; removed non-existent `sdk.CancellationToken? abortSignal`; fixed Chinese character artifact (`Session跑了` → `SessionRunner`); corrected `SessionRunnerSession` fields — `sessionId` (not `id`), `createdAt` does not exist; added note that most session fields are private. Fixed `PermissionRequest` example — `permission: 'execute'` changed to `permission: 'shell'`. Fixed tool defaults table — `format`, `json_schema`, `apply_patch`, `invalid`, `plan_exit` have no `defaults()` entry (fallback `ask`); `skill` is conditional not unconditional; corrected unconditional count to 16.
 - **docs/ENVIRONMENT.md**: Corrected Dart SDK version from 3.9 to 3.11.0 (matching `pubspec.yaml`).
 - **docs/ROADMAP.md**: Created roadmap documenting completed milestones and future plans.
 - **lib/l10n/app_en.arb / app_ru.arb**: Restored 19 missing localization keys to match the canonical 398-key set used by `app_uk.arb`, `app_zh.arb`, `app_ja.arb`, and `app_ar.arb`.
@@ -119,7 +132,7 @@ First public release.
 - **Provider options pattern**: `ProviderConfig` gained `buildProviderOptions()` and `buildProviderHeaders()` methods, for merging provider defaults, model metadata, and variant-specific fields.
 - **Compaction orchestrator**: `CompactionOrchestrator` now receives a real `CompletionProvider` via constructor injection and no longer uses the stub implementation. Integrated with `SessionRepository` for event persistence across compaction cycles.
 
-- **Tool Execution Loop**: 16 built-in tools (`bash`, `read`, `edit`, `write`, `glob`, `grep`, `webfetch`, `websearch`, `apply_patch`, `todowrite`, `task`, `question`, `invalid`, `external_directory`, `json_schema`, `plan`, `lsp`, `format`, `skill`) with `streamChatCompletion` integration via `SessionRunner`, max 5 steps per turn, auto-compaction on overflow.
+- **Tool Execution Loop**: 16 built-in tools (`shell`, `read`, `edit`, `write`, `glob`, `grep`, `webfetch`, `websearch`, `apply_patch`, `todowrite`, `task`, `question`, `invalid`, `external_directory`, `json_schema`, `plan`, `lsp`, `format`, `skill`) with `streamChatCompletion` integration via `SessionRunner`, max 5 steps per turn, auto-compaction on overflow.
 - **Permission System**: Default ruleset (`read`/`glob`/`grep` = allow, rest = ask) with `chatorai.json` configuration, last-match-wins evaluator, Once/Always/Reject modal dialog.
 - **@-mention Subagent System**: Quick agent invocation (`@explore`, `@general`, etc.) with fuzzy search dropdown above chat input. Agent registry with predefined subagents.
 - **Tool Display**: Inline icons with state indicators (pending/running/completed/error), expandable outputs, standardized title formatting.
@@ -170,7 +183,6 @@ First public release.
 
 - **lib/core/tools/tool_registry_provider.dart [COMPLETED]** — Fixed permission defaults merging: defaults are applied first, config overrides on top. When `config.permission` is non-empty, the merged ruleset preserves default `allow` rules for tools not explicitly overridden in the config (e.g., `websearch`, `webfetch`, `skill`, `lsp`, `task`, `question`, `todowrite`), preventing unintended fallback to `ask`.
 - **lib/core/permission/permission_service.dart [REFACTORED]** — Removed cross-session persistence from "Always allow". Session scoping added via `_sessionId` field: `_approved` is cleared automatically when `sessionId` changes in `ask()`. Removed `SharedPreferences` import and persistence methods. Deprecated `clearRateLimitHistory()` as an alias for `clearSession()`.
-- **lib/features/chat/presentation/widgets/parts/\_tool_title.dart [COMPLETED]** — Fixed path key detection by adding `file_path` fallback alongside `path` and `filePath`. Appended `$args` to the `write` case header. Bash header now shows `# $description` when a description exists, otherwise falls back to `toolName`. Fixed `skill` title to use `input['name']` instead of path. MCP/unknown tools now display `toolName [args]` when args are present.
-- **lib/features/chat/presentation/widgets/parts/tool_result_part_widget.dart [COMPLETED]** — Complete terminal-style bash output redesign: uniform background (`Colors.black26` / `Colors.white38`), monospaced `$` prompt with command on the same row, `SingleChildScrollView` with `SelectableText` for output, and copy button with "✅ Copied" timer feedback. Bash body is always visible (not hidden behind `AnimatedCrossFade`); collapsed state renders `_bashPreview` (max 10 lines / 500 chars), expanded state renders full output. Standardized all tool header opacity to `0.5`. Unified terminal color across prompt, command, and result using `onSurface` at `alpha: 0.7`.
-- **lib/core/tools/tool_registry.dart [COMPLETED]** — Fixed JSON wrapping in tool result streaming. `executeDynamic` now extracts the plain text output key from `Map<String, dynamic>` results (`'output'`, then `'message'`, then `toString()` fallback) before returning to the SDK. Eliminates the nested `{"output":"...","metadata":{...}}` JSON wrapping previously produced for all tool results (bash, read, grep, write, edit, etc.).
-
+- **lib/features/chat/presentation/widgets/parts/\_tool_title.dart [COMPLETED]** — Fixed path key detection by adding `file_path` fallback alongside `path` and `filePath`. Appended `$args` to the `write` case header. Shell header now shows `# $description` when a description exists, otherwise falls back to `toolName`. Fixed `skill` title to use `input['name']` instead of path. MCP/unknown tools now display `toolName [args]` when args are present.
+- **lib/features/chat/presentation/widgets/parts/tool_result_part_widget.dart [COMPLETED]** — Complete terminal-style sjell output redesign: uniform background (`Colors.black26` / `Colors.white38`), monospaced `$` prompt with command on the same row, `SingleChildScrollView` with `SelectableText` for output, and copy button with "✅ Copied" timer feedback. Shell body is always visible (not hidden behind `AnimatedCrossFade`); collapsed state renders `_shellPreview` (max 10 lines / 500 chars), expanded state renders full output. Standardized all tool header opacity to `0.5`. Unified terminal color across prompt, command, and result using `onSurface` at `alpha: 0.7`.
+- **lib/core/tools/tool_registry.dart [COMPLETED]** — Fixed JSON wrapping in tool result streaming. `executeDynamic` now extracts the plain text output key from `Map<String, dynamic>` results (`'output'`, then `'message'`, then `toString()` fallback) before returning to the SDK. Eliminates the nested `{"output":"...","metadata":{...}}` JSON wrapping previously produced for all tool results (shell, read, grep, write, edit, etc.).

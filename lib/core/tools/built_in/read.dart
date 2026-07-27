@@ -127,7 +127,17 @@ ToolDef createReadTool() {
         );
       }
 
-      final bytes = await file.readAsBytes();
+      late final List<int> bytes;
+      try {
+        bytes = await file.readAsBytes();
+      } on FileSystemException catch (e) {
+        return ToolOutput(
+          'Error: cannot read $safePath (${e.message}). '
+          'On Android 11+, direct file path access to shared storage is restricted. '
+          'Use the app file picker or copy the file into the app folder, then read it from there.',
+          metadata: {'error': true, 'os_permission': true, 'path': safePath},
+        );
+      }
 
       if (_isLikelyBinary(safePath, bytes)) {
         final size = bytes.length;
@@ -141,7 +151,10 @@ ToolDef createReadTool() {
         );
       }
 
-      final text = utf8.decode(bytes, allowMalformed: true);
+      var text = utf8.decode(bytes, allowMalformed: true);
+      if (text.isNotEmpty && text.codeUnitAt(0) == 0xFEFF) {
+        text = text.substring(1);
+      }
       final lines = text.split('\n');
       final start = offset.clamp(0, lines.length);
       final end = (offset + limit).clamp(start, lines.length);

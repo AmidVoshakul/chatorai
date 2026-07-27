@@ -39,7 +39,7 @@ void main() {
       final parentRules = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
@@ -57,9 +57,11 @@ void main() {
       expect(result.rules, hasLength(4));
 
       // Parent denies are present
-      final bashRule = result.rules.where((r) => r.permission == 'bash').single;
-      expect(bashRule.action, PermissionAction.deny);
-      expect(bashRule.pattern, '*');
+      final shellRule = result.rules
+          .where((r) => r.permission == 'shell')
+          .single;
+      expect(shellRule.action, PermissionAction.deny);
+      expect(shellRule.pattern, '*');
 
       final editRule = result.rules.where((r) => r.permission == 'edit').single;
       expect(editRule.action, PermissionAction.deny);
@@ -85,7 +87,7 @@ void main() {
             action: PermissionAction.allow,
           ),
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.allow,
           ),
@@ -113,7 +115,7 @@ void main() {
               action: PermissionAction.allow,
             ),
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: 'rm *',
               action: PermissionAction.deny,
             ),
@@ -127,18 +129,18 @@ void main() {
 
         final result = SessionRepository.deriveChildPermissions(parentRules);
 
-        // 1 parent deny (bash rm *) + 2 mandatory = 3 total
+        // 1 parent deny (shell rm *) + 2 mandatory = 3 total
         expect(result.rules, hasLength(3));
         expect(
           result.rules.every((r) => r.action == PermissionAction.deny),
           isTrue,
         );
 
-        // Verify the propagated bash deny kept its original pattern
-        final bashRule = result.rules
-            .where((r) => r.permission == 'bash')
+        // Verify the propagated shell deny kept its original pattern
+        final shellRule = result.rules
+            .where((r) => r.permission == 'shell')
             .single;
-        expect(bashRule.pattern, 'rm *');
+        expect(shellRule.pattern, 'rm *');
       },
     );
 
@@ -171,7 +173,7 @@ void main() {
       final permission = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
@@ -187,7 +189,7 @@ void main() {
 
       expect(state.permission, isNotNull);
       expect(state.permission!.rules, hasLength(1));
-      expect(state.permission!.rules.first.permission, 'bash');
+      expect(state.permission!.rules.first.permission, 'shell');
     });
 
     test('copyWith(permission: ...) updates permission', () {
@@ -222,7 +224,7 @@ void main() {
       final permission = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
@@ -276,7 +278,7 @@ void main() {
       final permission = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
@@ -303,7 +305,7 @@ void main() {
       expect(state.id, sessionId);
       expect(state.permission, isNotNull);
       expect(state.permission!.rules, hasLength(1));
-      expect(state.permission!.rules.first.permission, 'bash');
+      expect(state.permission!.rules.first.permission, 'shell');
       expect(state.permission!.rules.first.action, PermissionAction.deny);
     });
   });
@@ -328,7 +330,7 @@ void main() {
       final parentPermission = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
@@ -347,7 +349,7 @@ void main() {
 
       final child = await repository.createChildSession(parent.id);
 
-      // Child should have parent deny (bash) + task + todowrite = 3 denies
+      // Child should have parent deny (shell) + task + todowrite = 3 denies
       expect(child.permission, isNotNull);
       expect(child.permission!.rules, hasLength(3));
       expect(
@@ -357,7 +359,7 @@ void main() {
 
       // Verify the parent deny was propagated
       expect(
-        child.permission!.rules.any((r) => r.permission == 'bash'),
+        child.permission!.rules.any((r) => r.permission == 'shell'),
         isTrue,
       );
       // Verify the allow was NOT propagated
@@ -392,7 +394,7 @@ void main() {
       final parentPermission = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: 'rm *',
             action: PermissionAction.deny,
           ),
@@ -414,11 +416,11 @@ void main() {
 
       expect(loaded, isNotNull);
       expect(loaded!.permission, isNotNull);
-      // bash deny + task deny + todowrite deny = 3
+      // shell deny + task deny + todowrite deny = 3
       expect(loaded.permission!.rules, hasLength(3));
       expect(
         loaded.permission!.rules.any(
-          (r) => r.permission == 'bash' && r.pattern == 'rm *',
+          (r) => r.permission == 'shell' && r.pattern == 'rm *',
         ),
         isTrue,
       );
@@ -437,7 +439,7 @@ void main() {
         final permission = PermissionRuleset(
           rules: [
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: 'rm -rf *',
               action: PermissionAction.deny,
             ),
@@ -471,7 +473,7 @@ void main() {
         expect(
           loaded.permission!.rules.any(
             (r) =>
-                r.permission == 'bash' &&
+                r.permission == 'shell' &&
                 r.pattern == 'rm -rf *' &&
                 r.action == PermissionAction.deny,
           ),

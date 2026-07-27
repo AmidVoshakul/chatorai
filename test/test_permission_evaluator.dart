@@ -31,18 +31,18 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.ask,
           ),
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
         ],
       );
-      final result = evaluate('bash', 'git *', [ruleset]);
+      final result = evaluate('shell', 'git *', [ruleset]);
       expect(result.action, equals(PermissionAction.deny));
     });
 

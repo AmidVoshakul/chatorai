@@ -91,7 +91,7 @@ void main() {
         sessionId: 'ses',
         messageId: 'm',
         callId: 'tc_x',
-        tool: 'bash',
+        tool: 'shell',
         state: ToolState.completed,
         input: {'cmd': 'ls'},
         output: 'file1.txt',
@@ -105,7 +105,7 @@ void main() {
       );
       expect(
         json['toolName'],
-        'bash',
+        'shell',
         reason: 'must use "toolName" key, not "tool"',
       );
       expect(
@@ -127,7 +127,7 @@ void main() {
         sessionId: 'ses',
         messageId: 'm',
         callId: 'tc_x',
-        tool: 'bash',
+        tool: 'shell',
         state: ToolState.error,
         input: {},
         output: 'command not found',
@@ -263,7 +263,7 @@ void main() {
           sessionId: 'ses',
           messageId: 'm',
           callId: 'tc_1',
-          tool: 'bash',
+          tool: 'shell',
           state: ToolState.completed,
           input: {},
           output: 'out1',

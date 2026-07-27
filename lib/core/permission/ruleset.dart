@@ -98,7 +98,7 @@ class PermissionRuleset {
           action: PermissionAction.allow,
         ),
         const PermissionRule(
-          permission: 'bash',
+          permission: 'shell',
           pattern: '*',
           action: PermissionAction.allow,
         ),

@@ -170,3 +170,21 @@ class LspDiagnosticSeverity {
 
   const LspDiagnosticSeverity._();
 }
+
+/// Simplified diagnostic line for agent-facing tool output.
+class LspDiagnosticLine {
+  final String severity;
+  final int line;
+  final int column;
+  final String message;
+
+  const LspDiagnosticLine({
+    required this.severity,
+    required this.line,
+    required this.column,
+    required this.message,
+  });
+
+  @override
+  String toString() => '[ $severity ] $line:$column — $message';
+}

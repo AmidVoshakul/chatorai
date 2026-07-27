@@ -87,7 +87,7 @@ void main() {
       // Invalid actions should throw ConfigValidationError
       expect(
         () => throw const ConfigValidationError(
-          'Invalid permission action "block" for "bash". Must be one of: allow, ask, deny',
+          'Invalid permission action "block" for "shell". Must be one of: allow, ask, deny',
         ),
         throwsA(isA<ConfigValidationError>()),
       );

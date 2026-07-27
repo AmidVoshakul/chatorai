@@ -79,7 +79,7 @@ void main() {
         n.startStreaming('ses_abc');
         // Use onToolCall which closes open parts via _closeOpenStreamingParts
         n.onReasoning('p1', 'm1', 'ses_abc', 'r1');
-        n.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'bash', {'cmd': 'ls'});
+        n.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'shell', {'cmd': 'ls'});
 
         n.finalizeStreaming();
         final state = container.read(chatScreenProvider);
@@ -119,7 +119,7 @@ void main() {
 
     test('onToolCall closes open reasoning before adding a new tool', () {
       notifier.onReasoning('p1', 'm1', 'ses_abc', 'before tool');
-      notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'bash', {
+      notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'shell', {
         'cmd': 'ls',
       });
 
@@ -140,7 +140,7 @@ void main() {
       'reasoning AFTER tool creates a NEW reasoning block (Bug 6 regression)',
       () {
         notifier.onReasoning('p1', 'm1', 'ses_abc', 'reasoning 1');
-        notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'bash', {
+        notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'shell', {
           'cmd': 'ls',
         });
         notifier.onReasoning('p2', 'm1', 'ses_abc', 'reasoning 2');
@@ -164,12 +164,12 @@ void main() {
     );
 
     test('text AFTER tool creates a NEW text block', () {
-      notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'bash', {});
+      notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'shell', {});
 
       notifier.onChunk('txt1', 'm1', 'ses_abc', 'first answer ');
       notifier.onChunk('txt1', 'm1', 'ses_abc', 'continues');
 
-      notifier.onToolCall('tc2', 'tool_2', 'm1', 'ses_abc', 'bash', {});
+      notifier.onToolCall('tc2', 'tool_2', 'm1', 'ses_abc', 'shell', {});
 
       notifier.onChunk('txt2', 'm1', 'ses_abc', 'second answer');
 
@@ -193,9 +193,9 @@ void main() {
         notifier.onReasoning('r1', 'm1', 'ses_abc', 'thought 1');
         notifier.onChunk('t1', 'm1', 'ses_abc', 'answer 1');
         notifier.onReasoning('r2', 'm1', 'ses_abc', 'thought 2');
-        notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'bash', {});
-        notifier.onToolCall('tc2', 'tool_2', 'm1', 'ses_abc', 'bash', {});
-        notifier.onToolCall('tc3', 'tool_3', 'm1', 'ses_abc', 'bash', {});
+        notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'shell', {});
+        notifier.onToolCall('tc2', 'tool_2', 'm1', 'ses_abc', 'shell', {});
+        notifier.onToolCall('tc3', 'tool_3', 'm1', 'ses_abc', 'shell', {});
         notifier.onReasoning('r3', 'm1', 'ses_abc', 'thought 3');
         notifier.onChunk('t2', 'm1', 'ses_abc', 'answer 2');
 
@@ -323,7 +323,7 @@ void main() {
         sessionId: 'ses_abc',
         messageId: 'm1',
         callId: 'tc_1',
-        tool: 'bash',
+        tool: 'shell',
         state: ToolState.completed,
         input: {'cmd': 'ls'},
         output: 'file.txt',
@@ -335,7 +335,7 @@ void main() {
         'tool_result',
         reason: 'schema uses tool_result, not tool',
       );
-      expect(json['toolName'], 'bash', reason: 'schema uses toolName');
+      expect(json['toolName'], 'shell', reason: 'schema uses toolName');
       expect(json['toolCallId'], 'tc_1', reason: 'schema uses toolCallId');
       expect(
         json['result'],
@@ -352,7 +352,7 @@ void main() {
         description: 'Do something',
         agent: 'explore',
         state: ToolState.completed,
-        currentTool: 'bash',
+        currentTool: 'shell',
         startedAt: DateTime.now().subtract(const Duration(seconds: 5)),
         endedAt: DateTime.now(),
       );
@@ -365,7 +365,7 @@ void main() {
         reason:
             'schema uses status (not state) — critical to avoid default "running"',
       );
-      expect(json['currentTool'], 'bash');
+      expect(json['currentTool'], 'shell');
       expect(json['startedAt'], isNotNull);
     });
 
@@ -373,7 +373,7 @@ void main() {
       // Simulate a full natural flow ending in saved message
       notifier.onReasoning('r1', 'm1', 'ses_abc', 'thought');
       notifier.onChunk('t1', 'm1', 'ses_abc', 'answer');
-      notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'bash', {
+      notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'shell', {
         'cmd': 'ls',
       });
 

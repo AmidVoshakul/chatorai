@@ -13,7 +13,7 @@ graph TD
     reg_call["registerBuiltInTools()"]
 
     subgraph unconditional["18 unconditional (always registered)"]
-        bash["bash\n(execute shell)"]
+        shell["shell\n(execute shell)"]
         read["read\n(file contents)"]
         edit["edit\n(text replace)"]
         write["write\n(create/overwrite)"]

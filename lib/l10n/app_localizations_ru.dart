@@ -1712,6 +1712,68 @@ class AppLocalizationsRu extends AppLocalizations {
       'Adobe для творчества объединяет возможности Photoshop, Lightroom, Illustrator, Firefly, Premiere, Express, InDesign и Stock с творческой работой, выполняемой с помощью искусственного интеллекта. Пользователи могут создавать, редактировать и улучшать фотографии, дизайнерские материалы и видеопроекты, используя естественный язык, при этом работа остаётся привязанной к учётной записи Adobe.';
 
   @override
+  String get mcpInstallToGlobal => 'Установить глобально';
+
+  @override
+  String get mcpInstallToProject => 'Установить в проект';
+
+  @override
+  String get mcpScopeGlobal => 'Глобально';
+
+  @override
+  String get mcpScopeProject => 'Проект';
+
+  @override
+  String get mcpScopeGlobalProject => 'Глобально + Проект';
+
+  @override
+  String mcpRemoveFromScope(String scope) {
+    return 'Удалить из $scope';
+  }
+
+  @override
+  String get mcpRemoveFromAll => 'Удалить из всех';
+
+  @override
+  String get mcpTokenDialogTitle => 'Аутентификация';
+
+  @override
+  String get mcpTokenDialogTitleHint =>
+      'Выберите способ аутентификации с сервером';
+
+  @override
+  String get mcpTokenInputLabel => 'Токен';
+
+  @override
+  String get mcpTokenInputHint => 'Вставьте токен доступа';
+
+  @override
+  String get mcpTokenInputHelper =>
+      'Отправляется как Authorization: Bearer <token>';
+
+  @override
+  String get mcpOAuthClientIdLabel => 'Client ID';
+
+  @override
+  String get mcpOAuthClientIdHint => 'Client ID для OAuth 2.1';
+
+  @override
+  String get mcpOAuthClientSecretLabel => 'Client Secret';
+
+  @override
+  String get mcpOAuthClientSecretHint =>
+      'Client Secret для OAuth 2.1 (необязательно)';
+
+  @override
+  String get mcpOAuthScopeLabel => 'Scope';
+
+  @override
+  String get mcpOAuthScopeHint => 'например read write';
+
+  @override
+  String get mcpAuthConfirm => 'Подтвердить';
+
+  @override
   String get agentsInstructions => 'Инструкции для агентов';
 
   @override
@@ -2031,4 +2093,23 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get commonEdit => 'Изменить';
+
+  @override
+  String get toolResultOriginal => 'Оригинал';
+
+  @override
+  String get toolResultRestore => 'Вернуть';
+
+  @override
+  String get toolResultRestoredSnackbar =>
+      'Файлы восстановлены до состояния перед редактированием';
+
+  @override
+  String get toolResultOriginalTitle =>
+      'Исходное содержимое перед редактированием';
+
+  @override
+  String restoreFailed(String error) {
+    return 'Не удалось восстановить: $error';
+  }
 }

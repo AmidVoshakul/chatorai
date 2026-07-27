@@ -98,13 +98,13 @@ void main() {
 
     test('reply(reject) throws PermissionRejectedError', () async {
       service.seedRules(
-        PermissionRuleset(rules: [rule('bash', '*', PermissionAction.ask)]),
+        PermissionRuleset(rules: [rule('shell', '*', PermissionAction.ask)]),
       );
 
       final req = PermissionRequest(
         id: 'r4',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['*'],
       );
 

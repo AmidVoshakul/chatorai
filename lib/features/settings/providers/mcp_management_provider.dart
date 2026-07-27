@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:chatorai/core/config/config_manager.dart';
 import 'package:chatorai/core/config/config_writer.dart';
 import 'package:chatorai/core/mcp/mcp_client_service.dart';
@@ -9,14 +11,63 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final _logger = LogTags.mcp;
 
+/// Which scope an MCP server mutation targets.
+///
+/// - [global]: user-level servers in `<XDG_CONFIG_HOME>/chatorai.json`, available
+///   everywhere (including mobile).
+/// - [project]: servers under the current working directory's project config
+///   path (`.chatorai/chatorai.json`). Desktop only.
+enum McpScope { global, project }
+
 /// UI-facing state for the MCP servers management screen.
+///
+/// Both scope maps are loaded independently so the Installed tab can show
+/// per-scope badges (Global / Project / Global + Project) and the merged
+/// [servers] view preserves project-override-global semantics identical to
+/// [ConfigLoader]'s deep-merge.
 class McpManagementState {
-  final Map<String, McpServerConfig> servers;
+  final Map<String, McpServerConfig> globalServers;
+  final Map<String, McpServerConfig> projectServers;
+  final bool supportsProjectScope;
 
-  const McpManagementState({this.servers = const {}});
+  const McpManagementState({
+    this.globalServers = const {},
+    this.projectServers = const {},
+    this.supportsProjectScope = false,
+  });
 
-  McpManagementState copyWith({Map<String, McpServerConfig>? servers}) {
-    return McpManagementState(servers: servers ?? this.servers);
+  /// Deep-merged view: project keys override global ones.
+  Map<String, McpServerConfig> get servers => {
+    ...globalServers,
+    ...projectServers,
+  };
+
+  McpManagementState copyWith({
+    Map<String, McpServerConfig>? globalServers,
+    Map<String, McpServerConfig>? projectServers,
+    bool? supportsProjectScope,
+  }) {
+    return McpManagementState(
+      globalServers: globalServers ?? this.globalServers,
+      projectServers: projectServers ?? this.projectServers,
+      supportsProjectScope: supportsProjectScope ?? this.supportsProjectScope,
+    );
+  }
+
+  /// Returns the scopes where [name] is installed.
+  Set<McpScope> serverScopes(String name) {
+    final scopes = <McpScope>{};
+    if (globalServers.containsKey(name)) scopes.add(McpScope.global);
+    if (projectServers.containsKey(name)) scopes.add(McpScope.project);
+    return scopes;
+  }
+
+  /// Human-readable scope label for display on installed-server cards.
+  String scopeLabel(String name) {
+    final scopes = serverScopes(name);
+    if (scopes.length == 2) return 'Global + Project';
+    if (scopes.contains(McpScope.project)) return 'Project';
+    return 'Global';
   }
 }
 
@@ -41,25 +92,59 @@ class McpManagementNotifier extends AsyncNotifier<McpManagementState> {
   void setServiceSyncEnabledForTest(bool enabled) =>
       _serviceSyncEnabled = enabled;
 
+  bool get _supportsProjectScope =>
+      _overridePath == null &&
+      (Platform.isLinux || Platform.isMacOS || Platform.isWindows);
+
   @override
   Future<McpManagementState> build() => _reload();
 
   Future<McpManagementState> _reload() async {
     try {
       final config = await ConfigManager.loadConfig(path: _overridePath);
-      final servers = config.mcp?.servers ?? const <String, McpServerConfig>{};
+      final mcp = config.mcp ?? const McpConfig();
+      final globalServers = await _loadScopeServers(McpScope.global);
+      final projectServers = _supportsProjectScope
+          ? await _loadScopeServers(McpScope.project)
+          : const <String, McpServerConfig>{};
+
       _logger.logInfo(
-        'McpManagementNotifier: loaded ${servers.length} MCP server(s)',
+        'McpManagementNotifier: loaded ${mcp.servers.length} MCP server(s) '
+        '(global: ${globalServers.length}, project: ${projectServers.length})',
       );
-      return McpManagementState(servers: servers);
+      return McpManagementState(
+        globalServers: globalServers,
+        projectServers: projectServers,
+        supportsProjectScope: _supportsProjectScope,
+      );
     } catch (e, st) {
       _logger.logError('McpManagementNotifier: failed to load config', e, st);
       rethrow;
     }
   }
 
-  Future<String> _configPath() async =>
-      _overridePath ?? await ConfigWriter.resolveConfigPath(global: true);
+  /// Loads servers from a single scope's config file.
+  Future<Map<String, McpServerConfig>> _loadScopeServers(McpScope scope) async {
+    try {
+      final path =
+          _overridePath ??
+          await ConfigWriter.resolveConfigPath(
+            global: scope == McpScope.global,
+          );
+      final raw = await ConfigWriter.readRawConfig(path);
+      final mcp = raw['mcp'];
+      if (mcp == null || mcp is! Map<String, dynamic>) {
+        return const {};
+      }
+      return McpConfig.fromJson(mcp).servers;
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  Future<String> _configPath(McpScope scope) async =>
+      _overridePath ??
+      await ConfigWriter.resolveConfigPath(global: scope == McpScope.global);
 
   /// Reconcile the live [McpClientService] and dependent providers with the
   /// current on-disk config, so MCP connections and the chat status bar update
@@ -73,16 +158,35 @@ class McpManagementNotifier extends AsyncNotifier<McpManagementState> {
     ref.invalidate(toolRegistryProvider);
   }
 
-  Future<void> addServer(String name, McpServerConfig config) async {
-    final path = await _configPath();
+  Future<void> addServer(
+    String name,
+    McpServerConfig config, {
+    McpScope scope = McpScope.global,
+  }) async {
+    final path = await _configPath(scope);
     await ConfigWriter.upsertMcpServer(name, config, configPath: path);
     state = AsyncValue.data(await _reload());
     await _syncService();
   }
 
-  Future<void> removeServer(String name) async {
-    final path = await _configPath();
-    await ConfigWriter.removeMcpServer(name, configPath: path);
+  Future<void> removeServer(String name, {McpScope? scope}) async {
+    // When scope is null, remove from all scopes.
+    if (scope != null) {
+      final path = await _configPath(scope);
+      await ConfigWriter.removeMcpServer(name, configPath: path);
+    } else {
+      final stateData = state.value;
+      if (stateData != null) {
+        if (stateData.globalServers.containsKey(name)) {
+          final path = await _configPath(McpScope.global);
+          await ConfigWriter.removeMcpServer(name, configPath: path);
+        }
+        if (stateData.projectServers.containsKey(name)) {
+          final path = await _configPath(McpScope.project);
+          await ConfigWriter.removeMcpServer(name, configPath: path);
+        }
+      }
+    }
     state = AsyncValue.data(await _reload());
     await _syncService();
   }
@@ -90,16 +194,35 @@ class McpManagementNotifier extends AsyncNotifier<McpManagementState> {
   /// Updates an existing server's configuration in place (e.g. editing a token
   /// for an auth-gated remote server). Persists through [ConfigWriter] and
   /// re-syncs the live MCP client.
-  Future<void> updateServer(String name, McpServerConfig config) async {
-    final path = await _configPath();
+  Future<void> updateServer(
+    String name,
+    McpServerConfig config, {
+    McpScope scope = McpScope.global,
+  }) async {
+    final path = await _configPath(scope);
     await ConfigWriter.upsertMcpServer(name, config, configPath: path);
     state = AsyncValue.data(await _reload());
     await _syncService();
   }
 
-  Future<void> setEnabled(String name, bool enabled) async {
-    final path = await _configPath();
-    await ConfigWriter.setMcpEnabled(name, enabled, configPath: path);
+  Future<void> setEnabled(String name, bool enabled, {McpScope? scope}) async {
+    // When scope is null, toggle all scopes where this server exists.
+    if (scope != null) {
+      final path = await _configPath(scope);
+      await ConfigWriter.setMcpEnabled(name, enabled, configPath: path);
+    } else {
+      final stateData = state.value;
+      if (stateData != null) {
+        if (stateData.globalServers.containsKey(name)) {
+          final path = await _configPath(McpScope.global);
+          await ConfigWriter.setMcpEnabled(name, enabled, configPath: path);
+        }
+        if (stateData.projectServers.containsKey(name)) {
+          final path = await _configPath(McpScope.project);
+          await ConfigWriter.setMcpEnabled(name, enabled, configPath: path);
+        }
+      }
+    }
     state = AsyncValue.data(await _reload());
     await _syncService();
   }

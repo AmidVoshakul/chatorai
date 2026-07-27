@@ -3455,6 +3455,470 @@ class SessionSnapshotsCompanion extends UpdateCompanion<SessionSnapshot> {
   }
 }
 
+class $FileSnapshotsTable extends FileSnapshots
+    with TableInfo<$FileSnapshotsTable, FileSnapshot> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FileSnapshotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _filePathMeta = const VerificationMeta(
+    'filePath',
+  );
+  @override
+  late final GeneratedColumn<String> filePath = GeneratedColumn<String>(
+    'file_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stepIdMeta = const VerificationMeta('stepId');
+  @override
+  late final GeneratedColumn<String> stepId = GeneratedColumn<String>(
+    'step_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _toolNameMeta = const VerificationMeta(
+    'toolName',
+  );
+  @override
+  late final GeneratedColumn<String> toolName = GeneratedColumn<String>(
+    'tool_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    sessionId,
+    filePath,
+    content,
+    stepId,
+    toolName,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'file_snapshots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FileSnapshot> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('file_path')) {
+      context.handle(
+        _filePathMeta,
+        filePath.isAcceptableOrUnknown(data['file_path']!, _filePathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_filePathMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('step_id')) {
+      context.handle(
+        _stepIdMeta,
+        stepId.isAcceptableOrUnknown(data['step_id']!, _stepIdMeta),
+      );
+    }
+    if (data.containsKey('tool_name')) {
+      context.handle(
+        _toolNameMeta,
+        toolName.isAcceptableOrUnknown(data['tool_name']!, _toolNameMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FileSnapshot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FileSnapshot(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      filePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_path'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      stepId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}step_id'],
+      ),
+      toolName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_name'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $FileSnapshotsTable createAlias(String alias) {
+    return $FileSnapshotsTable(attachedDatabase, alias);
+  }
+}
+
+class FileSnapshot extends DataClass implements Insertable<FileSnapshot> {
+  final String id;
+  final String sessionId;
+  final String filePath;
+  final String content;
+  final String? stepId;
+  final String? toolName;
+  final DateTime createdAt;
+  const FileSnapshot({
+    required this.id,
+    required this.sessionId,
+    required this.filePath,
+    required this.content,
+    this.stepId,
+    this.toolName,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['session_id'] = Variable<String>(sessionId);
+    map['file_path'] = Variable<String>(filePath);
+    map['content'] = Variable<String>(content);
+    if (!nullToAbsent || stepId != null) {
+      map['step_id'] = Variable<String>(stepId);
+    }
+    if (!nullToAbsent || toolName != null) {
+      map['tool_name'] = Variable<String>(toolName);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  FileSnapshotsCompanion toCompanion(bool nullToAbsent) {
+    return FileSnapshotsCompanion(
+      id: Value(id),
+      sessionId: Value(sessionId),
+      filePath: Value(filePath),
+      content: Value(content),
+      stepId: stepId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stepId),
+      toolName: toolName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toolName),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory FileSnapshot.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FileSnapshot(
+      id: serializer.fromJson<String>(json['id']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      filePath: serializer.fromJson<String>(json['filePath']),
+      content: serializer.fromJson<String>(json['content']),
+      stepId: serializer.fromJson<String?>(json['stepId']),
+      toolName: serializer.fromJson<String?>(json['toolName']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'filePath': serializer.toJson<String>(filePath),
+      'content': serializer.toJson<String>(content),
+      'stepId': serializer.toJson<String?>(stepId),
+      'toolName': serializer.toJson<String?>(toolName),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  FileSnapshot copyWith({
+    String? id,
+    String? sessionId,
+    String? filePath,
+    String? content,
+    Value<String?> stepId = const Value.absent(),
+    Value<String?> toolName = const Value.absent(),
+    DateTime? createdAt,
+  }) => FileSnapshot(
+    id: id ?? this.id,
+    sessionId: sessionId ?? this.sessionId,
+    filePath: filePath ?? this.filePath,
+    content: content ?? this.content,
+    stepId: stepId.present ? stepId.value : this.stepId,
+    toolName: toolName.present ? toolName.value : this.toolName,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  FileSnapshot copyWithCompanion(FileSnapshotsCompanion data) {
+    return FileSnapshot(
+      id: data.id.present ? data.id.value : this.id,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      content: data.content.present ? data.content.value : this.content,
+      stepId: data.stepId.present ? data.stepId.value : this.stepId,
+      toolName: data.toolName.present ? data.toolName.value : this.toolName,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FileSnapshot(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('filePath: $filePath, ')
+          ..write('content: $content, ')
+          ..write('stepId: $stepId, ')
+          ..write('toolName: $toolName, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    sessionId,
+    filePath,
+    content,
+    stepId,
+    toolName,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FileSnapshot &&
+          other.id == this.id &&
+          other.sessionId == this.sessionId &&
+          other.filePath == this.filePath &&
+          other.content == this.content &&
+          other.stepId == this.stepId &&
+          other.toolName == this.toolName &&
+          other.createdAt == this.createdAt);
+}
+
+class FileSnapshotsCompanion extends UpdateCompanion<FileSnapshot> {
+  final Value<String> id;
+  final Value<String> sessionId;
+  final Value<String> filePath;
+  final Value<String> content;
+  final Value<String?> stepId;
+  final Value<String?> toolName;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const FileSnapshotsCompanion({
+    this.id = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.filePath = const Value.absent(),
+    this.content = const Value.absent(),
+    this.stepId = const Value.absent(),
+    this.toolName = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FileSnapshotsCompanion.insert({
+    required String id,
+    required String sessionId,
+    required String filePath,
+    required String content,
+    this.stepId = const Value.absent(),
+    this.toolName = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sessionId = Value(sessionId),
+       filePath = Value(filePath),
+       content = Value(content),
+       createdAt = Value(createdAt);
+  static Insertable<FileSnapshot> custom({
+    Expression<String>? id,
+    Expression<String>? sessionId,
+    Expression<String>? filePath,
+    Expression<String>? content,
+    Expression<String>? stepId,
+    Expression<String>? toolName,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sessionId != null) 'session_id': sessionId,
+      if (filePath != null) 'file_path': filePath,
+      if (content != null) 'content': content,
+      if (stepId != null) 'step_id': stepId,
+      if (toolName != null) 'tool_name': toolName,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FileSnapshotsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? sessionId,
+    Value<String>? filePath,
+    Value<String>? content,
+    Value<String?>? stepId,
+    Value<String?>? toolName,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return FileSnapshotsCompanion(
+      id: id ?? this.id,
+      sessionId: sessionId ?? this.sessionId,
+      filePath: filePath ?? this.filePath,
+      content: content ?? this.content,
+      stepId: stepId ?? this.stepId,
+      toolName: toolName ?? this.toolName,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (filePath.present) {
+      map['file_path'] = Variable<String>(filePath.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (stepId.present) {
+      map['step_id'] = Variable<String>(stepId.value);
+    }
+    if (toolName.present) {
+      map['tool_name'] = Variable<String>(toolName.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FileSnapshotsCompanion(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('filePath: $filePath, ')
+          ..write('content: $content, ')
+          ..write('stepId: $stepId, ')
+          ..write('toolName: $toolName, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3466,6 +3930,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SessionSnapshotsTable sessionSnapshots = $SessionSnapshotsTable(
     this,
   );
+  late final $FileSnapshotsTable fileSnapshots = $FileSnapshotsTable(this);
   late final Index idxEventsSessionSeq = Index(
     'idx_events_session_seq',
     'CREATE INDEX idx_events_session_seq ON events (session_id, sequence)',
@@ -3486,6 +3951,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_session_snapshots_session',
     'CREATE INDEX idx_session_snapshots_session ON session_snapshots (session_id)',
   );
+  late final Index idxFileSnapshotsSession = Index(
+    'idx_file_snapshots_session',
+    'CREATE INDEX idx_file_snapshots_session ON file_snapshots (session_id)',
+  );
+  late final Index idxFileSnapshotsSessionStepCreated = Index(
+    'idx_file_snapshots_session_step_created',
+    'CREATE INDEX idx_file_snapshots_session_step_created ON file_snapshots (session_id, step_id, created_at)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3497,11 +3970,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     toolResults,
     contextEpochs,
     sessionSnapshots,
+    fileSnapshots,
     idxEventsSessionSeq,
     idxMessagesSessionSeq,
     idxToolResultsSession,
     idxContextEpochsSession,
     idxSessionSnapshotsSession,
+    idxFileSnapshotsSession,
+    idxFileSnapshotsSessionStepCreated,
   ];
 }
 
@@ -5209,6 +5685,244 @@ typedef $$SessionSnapshotsTableProcessedTableManager =
       SessionSnapshot,
       PrefetchHooks Function()
     >;
+typedef $$FileSnapshotsTableCreateCompanionBuilder =
+    FileSnapshotsCompanion Function({
+      required String id,
+      required String sessionId,
+      required String filePath,
+      required String content,
+      Value<String?> stepId,
+      Value<String?> toolName,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$FileSnapshotsTableUpdateCompanionBuilder =
+    FileSnapshotsCompanion Function({
+      Value<String> id,
+      Value<String> sessionId,
+      Value<String> filePath,
+      Value<String> content,
+      Value<String?> stepId,
+      Value<String?> toolName,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$FileSnapshotsTableFilterComposer
+    extends Composer<_$AppDatabase, $FileSnapshotsTable> {
+  $$FileSnapshotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stepId => $composableBuilder(
+    column: $table.stepId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolName => $composableBuilder(
+    column: $table.toolName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FileSnapshotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FileSnapshotsTable> {
+  $$FileSnapshotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stepId => $composableBuilder(
+    column: $table.stepId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toolName => $composableBuilder(
+    column: $table.toolName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FileSnapshotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FileSnapshotsTable> {
+  $$FileSnapshotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<String> get filePath =>
+      $composableBuilder(column: $table.filePath, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<String> get stepId =>
+      $composableBuilder(column: $table.stepId, builder: (column) => column);
+
+  GeneratedColumn<String> get toolName =>
+      $composableBuilder(column: $table.toolName, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$FileSnapshotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FileSnapshotsTable,
+          FileSnapshot,
+          $$FileSnapshotsTableFilterComposer,
+          $$FileSnapshotsTableOrderingComposer,
+          $$FileSnapshotsTableAnnotationComposer,
+          $$FileSnapshotsTableCreateCompanionBuilder,
+          $$FileSnapshotsTableUpdateCompanionBuilder,
+          (
+            FileSnapshot,
+            BaseReferences<_$AppDatabase, $FileSnapshotsTable, FileSnapshot>,
+          ),
+          FileSnapshot,
+          PrefetchHooks Function()
+        > {
+  $$FileSnapshotsTableTableManager(_$AppDatabase db, $FileSnapshotsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FileSnapshotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FileSnapshotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FileSnapshotsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> sessionId = const Value.absent(),
+                Value<String> filePath = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<String?> stepId = const Value.absent(),
+                Value<String?> toolName = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FileSnapshotsCompanion(
+                id: id,
+                sessionId: sessionId,
+                filePath: filePath,
+                content: content,
+                stepId: stepId,
+                toolName: toolName,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String sessionId,
+                required String filePath,
+                required String content,
+                Value<String?> stepId = const Value.absent(),
+                Value<String?> toolName = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => FileSnapshotsCompanion.insert(
+                id: id,
+                sessionId: sessionId,
+                filePath: filePath,
+                content: content,
+                stepId: stepId,
+                toolName: toolName,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FileSnapshotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FileSnapshotsTable,
+      FileSnapshot,
+      $$FileSnapshotsTableFilterComposer,
+      $$FileSnapshotsTableOrderingComposer,
+      $$FileSnapshotsTableAnnotationComposer,
+      $$FileSnapshotsTableCreateCompanionBuilder,
+      $$FileSnapshotsTableUpdateCompanionBuilder,
+      (
+        FileSnapshot,
+        BaseReferences<_$AppDatabase, $FileSnapshotsTable, FileSnapshot>,
+      ),
+      FileSnapshot,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5225,4 +5939,6 @@ class $AppDatabaseManager {
       $$ContextEpochsTableTableManager(_db, _db.contextEpochs);
   $$SessionSnapshotsTableTableManager get sessionSnapshots =>
       $$SessionSnapshotsTableTableManager(_db, _db.sessionSnapshots);
+  $$FileSnapshotsTableTableManager get fileSnapshots =>
+      $$FileSnapshotsTableTableManager(_db, _db.fileSnapshots);
 }

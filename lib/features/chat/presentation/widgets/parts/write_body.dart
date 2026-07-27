@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chatorai/core/lsp/lsp_types.dart';
 import 'package:chatorai/features/chat/data/models/chat/tool_result_part.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_icon.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
@@ -11,8 +12,16 @@ import 'package:chatorai/shared/theme/theme_extensions.dart';
 class WriteBody extends StatelessWidget {
   final ThemeData theme;
   final ToolResultPart part;
+  final Map<int, List<LspDiagnostic>> diagnosticsByLine;
+  final void Function(LspDiagnostic) onDiagnosticTap;
 
-  const WriteBody({required this.theme, required this.part, super.key});
+  const WriteBody({
+    super.key,
+    required this.theme,
+    required this.part,
+    this.diagnosticsByLine = const {},
+    required this.onDiagnosticTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +72,12 @@ class WriteBody extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: _WriteContent(lines: lines),
+            ),
+          if (diagnosticsByLine.isNotEmpty)
+            _DiagnosticFooter(
+              diagnosticsByLine: diagnosticsByLine,
+              isLoadingDiagnostics: false,
+              onDiagnosticTap: onDiagnosticTap,
             ),
         ],
       ),
@@ -178,6 +193,83 @@ class _WriteLine extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ===========================================================================
+// _DiagnosticFooter — inline footer for write body diagnostics
+// ===========================================================================
+
+class _DiagnosticFooter extends StatelessWidget {
+  final Map<int, List<LspDiagnostic>> diagnosticsByLine;
+  final bool isLoadingDiagnostics;
+  final void Function(LspDiagnostic) onDiagnosticTap;
+
+  const _DiagnosticFooter({
+    required this.diagnosticsByLine,
+    required this.isLoadingDiagnostics,
+    required this.onDiagnosticTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    if (isLoadingDiagnostics) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: SizedBox(
+          width: 12,
+          height: 12,
+          child: CircularProgressIndicator(strokeWidth: 1.5, color: cs.muted),
+        ),
+      );
+    }
+
+    if (diagnosticsByLine.isEmpty) return const SizedBox.shrink();
+
+    int errors = 0;
+    int warnings = 0;
+    for (final diags in diagnosticsByLine.values) {
+      for (final d in diags) {
+        if (d.severity == 1) {
+          errors++;
+        } else if (d.severity == 2) {
+          warnings++;
+        }
+      }
+    }
+
+    if (errors == 0 && warnings == 0) return const SizedBox.shrink();
+
+    final parts = <String>[];
+    if (errors > 0) {
+      parts.add('$errors ${errors == 1 ? 'error' : 'errors'}');
+    }
+    if (warnings > 0) {
+      parts.add('$warnings ${warnings == 1 ? 'warning' : 'warnings'}');
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 2, bottom: 2),
+      child: Row(
+        children: [
+          Icon(
+            errors > 0 ? Icons.error : Icons.warning_amber_rounded,
+            size: 12,
+            color: errors > 0 ? cs.error : cs.tertiary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            parts.join(', '),
+            style: TextStyle(
+              fontSize: 10,
+              color: errors > 0 ? cs.error : cs.tertiary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

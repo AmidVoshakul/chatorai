@@ -743,7 +743,7 @@ void main() {
       expect(def.extensions, equals(['.tf', '.tfvars']));
     });
 
-    test('shfmt covers sh and bash', () {
+    test('shfmt covers sh and shell', () {
       final def = builtInFormatters['shfmt']!;
       expect(def.extensions, equals(['.sh', '.bash']));
     });

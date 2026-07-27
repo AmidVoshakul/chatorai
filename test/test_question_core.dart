@@ -256,7 +256,7 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.ask,
           ),
@@ -267,8 +267,8 @@ void main() {
       final askFuture = service.ask(
         PermissionRequest(
           id: 'cancel-perm-1',
-          toolName: 'bash',
-          permission: 'bash',
+          toolName: 'shell',
+          permission: 'shell',
           patterns: ['dangerous-command'],
           metadata: {'sessionId': 's1'},
         ),

@@ -2,6 +2,7 @@ import 'package:chatorai/core/lsp/lsp_types.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 
 import 'diff_parser.dart';
 import 'tool_icon.dart';
@@ -22,10 +23,12 @@ class DiffBody extends StatelessWidget {
   final bool isError;
   final bool isLoadingDiagnostics;
   final Map<int, List<LspDiagnostic>> diagnosticsByLine;
-  final VoidCallback? onFetchDiagnostics;
   final void Function(LspDiagnostic) onDiagnosticTap;
   final int contextLines;
   final int? fileStartLine;
+  final String? sessionId;
+  final VoidCallback? onRestore;
+  final VoidCallback? onShowOriginal;
 
   const DiffBody({
     super.key,
@@ -39,10 +42,12 @@ class DiffBody extends StatelessWidget {
     required this.isError,
     this.isLoadingDiagnostics = false,
     this.diagnosticsByLine = const {},
-    this.onFetchDiagnostics,
     required this.onDiagnosticTap,
     this.contextLines = 4,
     this.fileStartLine,
+    this.sessionId,
+    this.onRestore,
+    this.onShowOriginal,
   });
 
   List<DiffHunk> get _hunks => parseUnifiedDiff(
@@ -104,6 +109,9 @@ class DiffBody extends StatelessWidget {
                 _DiagnosticFooter(
                   diagnosticsByLine: diagnosticsByLine,
                   isLoadingDiagnostics: isLoadingDiagnostics,
+                  sessionId: sessionId,
+                  onRestore: onRestore,
+                  onShowOriginal: onShowOriginal,
                 ),
               ],
             ),
@@ -150,15 +158,22 @@ class DiffBody extends StatelessWidget {
 class _DiagnosticFooter extends StatelessWidget {
   final Map<int, List<LspDiagnostic>> diagnosticsByLine;
   final bool isLoadingDiagnostics;
+  final String? sessionId;
+  final VoidCallback? onRestore;
+  final VoidCallback? onShowOriginal;
 
   const _DiagnosticFooter({
     required this.diagnosticsByLine,
     required this.isLoadingDiagnostics,
+    this.sessionId,
+    this.onRestore,
+    this.onShowOriginal,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final loc = AppLocalizations.of(context);
 
     if (isLoadingDiagnostics) {
       return Padding(
@@ -170,8 +185,6 @@ class _DiagnosticFooter extends StatelessWidget {
         ),
       );
     }
-
-    if (diagnosticsByLine.isEmpty) return const SizedBox.shrink();
 
     int errors = 0;
     int warnings = 0;
@@ -185,8 +198,78 @@ class _DiagnosticFooter extends StatelessWidget {
       }
     }
 
-    if (errors == 0 && warnings == 0) return const SizedBox.shrink();
+    final hasDiagnostics = errors > 0 || warnings > 0;
+    final canRestore = sessionId != null && onRestore != null;
+    final canShowOriginal = sessionId != null && onShowOriginal != null;
 
+    if (!hasDiagnostics && !canRestore && !canShowOriginal) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 2, bottom: 2),
+      child: Row(
+        children: [
+          if (hasDiagnostics) ...[
+            Icon(
+              errors > 0 ? Icons.error : Icons.warning_amber_rounded,
+              size: 12,
+              color: errors > 0 ? cs.error : cs.tertiary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              _diagnosticSummary(errors, warnings),
+              style: TextStyle(
+                fontSize: 10,
+                color: errors > 0 ? cs.error : cs.tertiary,
+              ),
+            ),
+          ],
+          const Spacer(),
+          if (canShowOriginal)
+            InkWell(
+              onTap: onShowOriginal,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.history, size: 12, color: cs.muted),
+                    const SizedBox(width: 2),
+                    Text(
+                      loc?.toolResultOriginal ?? 'Original',
+                      style: TextStyle(fontSize: 10, color: cs.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (canRestore)
+            InkWell(
+              onTap: onRestore,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.restore, size: 12, color: cs.muted),
+                    const SizedBox(width: 2),
+                    Text(
+                      loc?.toolResultRestore ?? 'Restore',
+                      style: TextStyle(fontSize: 10, color: cs.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _diagnosticSummary(int errors, int warnings) {
     final parts = <String>[];
     if (errors > 0) {
       parts.add('$errors ${errors == 1 ? 'error' : 'errors'}');
@@ -194,27 +277,7 @@ class _DiagnosticFooter extends StatelessWidget {
     if (warnings > 0) {
       parts.add('$warnings ${warnings == 1 ? 'warning' : 'warnings'}');
     }
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 2, bottom: 2),
-      child: Row(
-        children: [
-          Icon(
-            errors > 0 ? Icons.error : Icons.warning_amber_rounded,
-            size: 12,
-            color: errors > 0 ? cs.error : cs.tertiary,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            parts.join(', '),
-            style: TextStyle(
-              fontSize: 10,
-              color: errors > 0 ? cs.error : cs.tertiary,
-            ),
-          ),
-        ],
-      ),
-    );
+    return parts.join(', ');
   }
 }
 
@@ -253,8 +316,8 @@ class _DiffTable extends StatelessWidget {
                   isWide: isWide,
                   gutterWidth: gutterWidth,
                   diagnostics:
-                      diagnosticsByLine[row.oldLineNumber ??
-                          row.newLineNumber ??
+                      diagnosticsByLine[row.newLineNumber ??
+                          row.oldLineNumber ??
                           -1],
                   onDiagnosticTap: onDiagnosticTap,
                 ),

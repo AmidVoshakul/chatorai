@@ -3,7 +3,7 @@ import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 
-class BashBody extends StatefulWidget {
+class ShellBody extends StatefulWidget {
   final ThemeData theme;
   final ToolResultPart part;
   final bool displayFull;
@@ -12,7 +12,7 @@ class BashBody extends StatefulWidget {
   final String Function(String) previewOutput;
   final VoidCallback? onToggle;
 
-  const BashBody({
+  const ShellBody({
     required this.theme,
     required this.part,
     required this.displayFull,
@@ -24,10 +24,10 @@ class BashBody extends StatefulWidget {
   });
 
   @override
-  State<BashBody> createState() => _BashBodyState();
+  State<ShellBody> createState() => _ShellBodyState();
 }
 
-class _BashBodyState extends State<BashBody> {
+class _ShellBodyState extends State<ShellBody> {
   Offset? _tapDown;
 
   @override

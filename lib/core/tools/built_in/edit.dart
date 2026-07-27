@@ -1,12 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:dartdiff/dartdiff.dart';
 import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
 import 'package:path/path.dart' as p;
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
+import 'package:chatorai/core/lsp/lsp_service.dart';
+import 'package:chatorai/core/tools/lsp_diagnostics_format.dart';
+import 'package:chatorai/core/format/format_service.dart';
+import 'package:chatorai/core/session/file_snapshot_service.dart';
 
 String _generatePatch(String oldText, String newText) {
   if (oldText == newText) return '';
@@ -20,7 +25,87 @@ String _generatePatch(String oldText, String newText) {
   return patch?.trimRight() ?? '';
 }
 
-ToolDef createEditTool() {
+/// Try fallback matching strategies when the exact [oldString] is not found
+/// in [content]. Returns the actual matched text, or null if no strategy works.
+String? _fuzzyFindMatch(String content, String oldString) {
+  if (oldString.isEmpty) return null;
+
+  // 1. Line-trimmed: trim each line of oldString then find in trimmed content
+  final trimmedOld = oldString.split('\n').map((l) => l.trim()).join('\n');
+  if (trimmedOld != oldString) {
+    final trimmedContent = content.split('\n').map((l) => l.trim()).join('\n');
+    final trimmedIdx = trimmedContent.indexOf(trimmedOld);
+    if (trimmedIdx >= 0) {
+      // Map back: find the same range in the trimmed content, then map forward
+      final before = trimmedContent.substring(0, trimmedIdx);
+      final beforeLines = '\n'.allMatches(before).length;
+      final contentLines = content.split('\n');
+      final matchedLines = trimmedOld.split('\n').length;
+      return contentLines.skip(beforeLines).take(matchedLines).join('\n');
+    }
+  }
+
+  // 2. Whitespace-normalized: collapse all whitespace sequences to single space
+  final wsPattern = RegExp(r'\s+');
+  final normalizedOld = oldString.replaceAll(wsPattern, ' ');
+  final normalizedContent = content.replaceAll(wsPattern, ' ');
+  final wsIdx = normalizedContent.indexOf(normalizedOld);
+  if (wsIdx >= 0 && normalizedOld != oldString.replaceAll('\n', ' ')) {
+    final before = normalizedContent.substring(0, wsIdx);
+    final charCount = before.length;
+    // approximate: use character count in normalized space
+    int actualStart = 0;
+    int normalizedPos = 0;
+    for (int i = 0; i < content.length && normalizedPos < charCount; i++) {
+      if (wsPattern.hasMatch(content[i])) {
+        normalizedPos++;
+        while (i + 1 < content.length && wsPattern.hasMatch(content[i + 1])) {
+          i++;
+        }
+      } else {
+        normalizedPos++;
+      }
+      actualStart = i + 1;
+    }
+    final matchLen = normalizedOld.length;
+    int actualEnd = actualStart;
+    normalizedPos = 0;
+    for (
+      int i = actualStart;
+      i < content.length && normalizedPos < matchLen;
+      i++
+    ) {
+      if (wsPattern.hasMatch(content[i])) {
+        normalizedPos++;
+        while (i + 1 < content.length && wsPattern.hasMatch(content[i + 1])) {
+          i++;
+        }
+      } else {
+        normalizedPos++;
+      }
+      actualEnd = i + 1;
+    }
+    return content.substring(actualStart, actualEnd);
+  }
+
+  if (oldString.length <= 200) {
+    try {
+      final re = RegExp(RegExp.escape(oldString), multiLine: true);
+      final match = re.firstMatch(content);
+      if (match != null) {
+        return match.group(0);
+      }
+    } catch (_) {}
+  }
+
+  return null;
+}
+
+ToolDef createEditTool({
+  LspService? lspService,
+  FileSnapshotService? fileSnapshotService,
+  FormatService? formatService,
+}) {
   return ToolDef(
     id: 'edit',
     description: 'Edit a file by replacing text',
@@ -101,23 +186,82 @@ ToolDef createEditTool() {
         );
       }
 
-      var content = await file.readAsString(encoding: utf8);
-      if (!content.contains(oldString)) {
+      var content = '';
+      try {
+        content = await file.readAsString(encoding: utf8);
+      } on FileSystemException catch (e) {
         return ToolOutput(
-          'Error: old_string not found in file',
-          metadata: {'error': true},
+          'Error: cannot read $safePath (${e.message}). '
+          'On Android 11+, direct file path access to shared storage is restricted. '
+          'Use the app file picker or copy the file into the app folder, then edit it from there.',
+          metadata: {'error': true, 'os_permission': true, 'path': safePath},
         );
+      }
+      String matchText = oldString;
+      bool foundExact = content.contains(oldString);
+      if (!foundExact) {
+        final fuzzy = _fuzzyFindMatch(content, oldString);
+        if (fuzzy != null) {
+          matchText = fuzzy;
+        } else {
+          return ToolOutput(
+            'Error: old_string not found in file',
+            metadata: {'error': true},
+          );
+        }
       }
 
       final replaceAll = input['replace_all'] as bool? ?? true;
       final newContent = replaceAll
-          ? content.replaceAll(oldString, newString)
-          : content.replaceFirst(oldString, newString);
+          ? content.replaceAll(matchText, newString)
+          : content.replaceFirst(matchText, newString);
       final patch = _generatePatch(content, newContent);
-      await file.writeAsString(newContent, encoding: utf8);
+
+      if (fileSnapshotService != null && ctx.sessionId != null) {
+        await fileSnapshotService.capture(
+          sessionId: ctx.sessionId!,
+          filePath: safePath,
+          content: content,
+          stepId: ctx.toolCallId,
+          toolName: 'edit',
+        );
+      }
+
+      var cleanNewContent = newContent;
+      if (cleanNewContent.isNotEmpty &&
+          cleanNewContent.codeUnitAt(0) == 0xFEFF) {
+        cleanNewContent = cleanNewContent.substring(1);
+      }
+      try {
+        await file.writeAsString(cleanNewContent, encoding: utf8);
+      } on FileSystemException catch (e) {
+        return ToolOutput(
+          'Error: cannot edit $safePath (${e.message}). '
+          'On Android 11+, direct file path access to shared storage is restricted. '
+          'Use the app file picker or copy the file into the app folder, then edit it from there.',
+          metadata: {'error': true, 'os_permission': true, 'path': safePath},
+        );
+      }
+      await FileEditGuard.recordRead(safePath);
+
+      if (formatService != null) {
+        try {
+          await formatService.applyFix(safePath);
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('[edit] formatService.applyFix failed: $e');
+          }
+        }
+      }
+
+      String lspOutput = '';
+      if (lspService != null) {
+        final diags = await lspService.diagnosticsForFile(safePath);
+        lspOutput = '\n\n${formatLspDiagnostics(diags)}';
+      }
 
       return ToolOutput(
-        jsonEncode({'message': 'File edited successfully', 'patch': patch}),
+        '${jsonEncode({'message': 'File edited successfully', 'patch': patch})}$lspOutput',
         metadata: {'path': safePath},
       );
     },

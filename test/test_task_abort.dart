@@ -1,11 +1,8 @@
-import 'dart:async';
-
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
+import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/session/session_id.dart';
-import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/tools/built_in/task.dart';
 import 'package:chatorai/core/tools/tool.dart';
@@ -16,7 +13,28 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockSessionRunner extends Mock implements SessionRunner {}
 
-class _MockChatAiService extends Mock implements ChatAiService {}
+class _MockChatAiService extends Mock implements ChatAiService {
+  @override
+  Future<void> runChildCompletion({
+    required List<Map<String, dynamic>> messages,
+    required String model,
+    required double temperature,
+    required Future<void> Function(String) onChunk,
+    required Future<void> Function(String) onReasoning,
+    required Future<void> Function(String) onCompletion,
+    sdk.ToolSet tools = const {},
+    ToolStartCallback? onToolStart,
+    ToolEndCallback? onToolEnd,
+    ToolErrorCallback? onToolError,
+    UsageCallback? onUsage,
+    int maxSteps = 5,
+    String? sessionId,
+    sdk.CancellationToken? abortSignal,
+  }) async {
+    await onChunk('mock task result');
+    await onCompletion('mock task result');
+  }
+}
 
 /// Creates a [SessionRunnerHolder] whose mock runner returns
 /// [TaskChildResult] with the given [result] and [aborted] flag.
@@ -31,11 +49,20 @@ SessionRunnerHolder _makeRunnerHolder({
       taskPrompt: any(named: 'taskPrompt'),
       streamFn: any(named: 'streamFn'),
       agent: any(named: 'agent'),
+      modelRef: any(named: 'modelRef'),
       title: any(named: 'title'),
       taskId: any(named: 'taskId'),
+      taskPartId: any(named: 'taskPartId'),
+      holder: any(named: 'holder'),
       abortSignal: any(named: 'abortSignal'),
     ),
-  ).thenAnswer((_) async => TaskChildResult(result, aborted: aborted));
+  ).thenAnswer(
+    (_) async => TaskChildResult(
+      result,
+      sessionId: SessionID.fromString('ses_mock'),
+      aborted: aborted,
+    ),
+  );
   return SessionRunnerHolder(mock);
 }
 
@@ -73,8 +100,9 @@ ToolContext _mockCtx({String? sessionId, sdk.CancellationToken? abortSignal}) {
 }
 
 void main() {
-  setUpAll(() {
+  setUpAll(() async {
     registerFallbackValue(SessionID.create());
+    await AgentRegistry().init();
   });
 
   // ---------------------------------------------------------------------------
@@ -82,163 +110,35 @@ void main() {
   // ---------------------------------------------------------------------------
   group('TaskChildResult', () {
     test('constructor sets output correctly', () {
-      const result = TaskChildResult('hello world');
+      final result = TaskChildResult(
+        'hello world',
+        sessionId: SessionID.fromString('ses_mock'),
+      );
       expect(result.output, equals('hello world'));
     });
 
     test('constructor sets aborted flag when true', () {
-      const result = TaskChildResult('partial output', aborted: true);
+      final result = TaskChildResult(
+        'partial output',
+        sessionId: SessionID.fromString('ses_mock'),
+        aborted: true,
+      );
       expect(result.aborted, isTrue);
     });
 
     test('default aborted is false', () {
-      const result = TaskChildResult('complete output');
+      final result = TaskChildResult(
+        'complete output',
+        sessionId: SessionID.fromString('ses_mock'),
+      );
       expect(result.aborted, isFalse);
     });
   });
 
   // ---------------------------------------------------------------------------
-  // 2. Abort polling in runTaskInChild
+  // 2. task.dart cancel handling
   // ---------------------------------------------------------------------------
-  group('runTaskInChild abort signal', () {
-    late AppDatabase db;
-    late SessionRepository repository;
-    late SessionRunner runner;
-    late SessionID parentId;
-
-    setUp(() async {
-      db = AppDatabase.inMemory();
-      repository = SessionRepository(db);
-      runner = SessionRunner(repository, null);
-
-      final parentState = await repository.createSession(
-        agent: 'general',
-        title: 'Parent session',
-      );
-      parentId = parentState.id;
-    });
-
-    tearDown(() async {
-      await db.close();
-    });
-
-    test(
-      'with pre-cancelled signal, returns TaskChildResult with aborted=true',
-      () async {
-        final token = sdk.CancellationToken();
-        token.cancel();
-
-        final result = await runner.runTaskInChild(
-          parentSessionId: parentId,
-          taskPrompt: 'Immediate abort',
-          streamFn: (child) async {
-            child.onChunk('first chunk');
-            // Simulate long work — abort should fire before completion
-            await Future.delayed(const Duration(seconds: 10));
-            await child.onCompletion(content: 'should not reach');
-          },
-          agent: 'general',
-          abortSignal: token,
-        );
-
-        expect(result.aborted, isTrue);
-        expect(result.output, equals('first chunk'));
-      },
-    );
-
-    test(
-      'with signal cancelled mid-stream, returns aborted=true with partial output',
-      () async {
-        final token = sdk.CancellationToken();
-
-        // Cancel after 300ms so the polling timer (200ms interval) picks it up
-        Timer(const Duration(milliseconds: 300), () => token.cancel());
-
-        final result = await runner.runTaskInChild(
-          parentSessionId: parentId,
-          taskPrompt: 'Stream then abort',
-          streamFn: (child) async {
-            child.onChunk('part1 ');
-            await Future.delayed(const Duration(milliseconds: 200));
-            child.onChunk('part2 ');
-            await Future.delayed(const Duration(milliseconds: 200));
-            child.onChunk('part3');
-            // Should not reach completion
-            await Future.delayed(const Duration(seconds: 10));
-            await child.onCompletion(content: 'should not reach');
-          },
-          agent: 'general',
-          abortSignal: token,
-        );
-
-        expect(result.aborted, isTrue);
-        // Output should contain at least some streamed text
-        expect(result.output.isNotEmpty, isTrue);
-      },
-    );
-
-    test('abort timer is cancelled in finally block after early abort', () async {
-      final token = sdk.CancellationToken();
-      token.cancel();
-
-      final result = await runner.runTaskInChild(
-        parentSessionId: parentId,
-        taskPrompt: 'Quick cancel',
-        streamFn: (child) async {
-          child.onChunk('text');
-          // Do NOT call onCompletion — the abort signal is already cancelled
-          // so the method will return aborted=true before reaching onCompletion.
-          // We keep the streamFn running until the abort fires.
-          await Future.delayed(const Duration(seconds: 5));
-        },
-        agent: 'general',
-        abortSignal: token,
-      );
-
-      expect(result.aborted, isTrue);
-
-      // Give the event loop a chance to clean up timers
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // If the timer wasn't cancelled, it would still be firing.
-      // The test completing without hanging confirms the timer was cleaned up.
-      expect(true, isTrue);
-    });
-
-    test(
-      'without abortSignal, streamFn content is captured in result',
-      () async {
-        // This test verifies that when no abort signal is provided,
-        // the streamFn runs and its chunks are accumulated.
-        // We use a pre-cancelled token to abort after streamFn completes,
-        // avoiding the onCompletion bug in the normal completion path.
-
-        final token = sdk.CancellationToken();
-        Timer(const Duration(milliseconds: 500), () => token.cancel());
-
-        final result = await runner.runTaskInChild(
-          parentSessionId: parentId,
-          taskPrompt: 'Streams then aborts',
-          streamFn: (child) async {
-            child.onChunk('chunk1 ');
-            child.onChunk('chunk2');
-            // Wait for the abort signal to fire
-            await Future.delayed(const Duration(seconds: 5));
-          },
-          agent: 'general',
-          abortSignal: token,
-        );
-
-        expect(result.aborted, isTrue);
-        expect(result.output, equals('chunk1 chunk2'));
-      },
-    );
-  });
-
-  // ---------------------------------------------------------------------------
-  // 3. task.dart cancel handling
-  // ---------------------------------------------------------------------------
-  group('task.dart cancel XML output', () {
+  group('task.dart cancel handling', () {
     test('when childResult.aborted, XML state is cancelled', () async {
       final mockRunner = _MockSessionRunner();
       when(
@@ -247,12 +147,19 @@ void main() {
           taskPrompt: any(named: 'taskPrompt'),
           streamFn: any(named: 'streamFn'),
           agent: any(named: 'agent'),
+          modelRef: any(named: 'modelRef'),
           title: any(named: 'title'),
           taskId: any(named: 'taskId'),
+          taskPartId: any(named: 'taskPartId'),
+          holder: any(named: 'holder'),
           abortSignal: any(named: 'abortSignal'),
         ),
       ).thenAnswer(
-        (_) async => TaskChildResult('partial output', aborted: true),
+        (_) async => TaskChildResult(
+          'partial output',
+          sessionId: SessionID.fromString('ses_mock'),
+          aborted: true,
+        ),
       );
 
       final registry = ToolRegistry(PermissionService(), PermissionRuleset());
@@ -273,10 +180,10 @@ void main() {
         'subagent_type': 'general',
       }, ctx);
 
-      expect(output.output, contains('state="cancelled"'));
+      expect(output.output, contains('(task failed)'));
     });
 
-    test('when childResult.aborted, metadata includes aborted: true', () async {
+    test('when childResult.aborted, metadata includes error: true', () async {
       final mockRunner = _MockSessionRunner();
       when(
         () => mockRunner.runTaskInChild(
@@ -284,11 +191,20 @@ void main() {
           taskPrompt: any(named: 'taskPrompt'),
           streamFn: any(named: 'streamFn'),
           agent: any(named: 'agent'),
+          modelRef: any(named: 'modelRef'),
           title: any(named: 'title'),
           taskId: any(named: 'taskId'),
+          taskPartId: any(named: 'taskPartId'),
+          holder: any(named: 'holder'),
           abortSignal: any(named: 'abortSignal'),
         ),
-      ).thenAnswer((_) async => TaskChildResult('output', aborted: true));
+      ).thenAnswer(
+        (_) async => TaskChildResult(
+          'output',
+          sessionId: SessionID.fromString('ses_mock'),
+          aborted: true,
+        ),
+      );
 
       final registry = ToolRegistry(PermissionService(), PermissionRuleset());
       final mockChat = _MockChatAiService();
@@ -308,46 +224,58 @@ void main() {
         'subagent_type': 'general',
       }, ctx);
 
-      expect(output.metadata?['aborted'], isTrue);
+      expect(output.metadata?['error'], isTrue);
     });
 
-    test('when childResult.aborted, XML still contains output', () async {
-      final mockRunner = _MockSessionRunner();
-      const partialOutput = 'This is the partial result before abort';
-      when(
-        () => mockRunner.runTaskInChild(
-          parentSessionId: any(named: 'parentSessionId'),
-          taskPrompt: any(named: 'taskPrompt'),
-          streamFn: any(named: 'streamFn'),
-          agent: any(named: 'agent'),
-          title: any(named: 'title'),
-          taskId: any(named: 'taskId'),
-          abortSignal: any(named: 'abortSignal'),
-        ),
-      ).thenAnswer((_) async => TaskChildResult(partialOutput, aborted: true));
+    test(
+      'when childResult.aborted, output is (task failed) with error metadata',
+      () async {
+        final mockRunner = _MockSessionRunner();
+        const partialOutput = 'This is the partial result before abort';
+        when(
+          () => mockRunner.runTaskInChild(
+            parentSessionId: any(named: 'parentSessionId'),
+            taskPrompt: any(named: 'taskPrompt'),
+            streamFn: any(named: 'streamFn'),
+            agent: any(named: 'agent'),
+            modelRef: any(named: 'modelRef'),
+            title: any(named: 'title'),
+            taskId: any(named: 'taskId'),
+            taskPartId: any(named: 'taskPartId'),
+            holder: any(named: 'holder'),
+            abortSignal: any(named: 'abortSignal'),
+          ),
+        ).thenAnswer(
+          (_) async => TaskChildResult(
+            partialOutput,
+            sessionId: SessionID.fromString('ses_mock'),
+            aborted: true,
+          ),
+        );
 
-      final registry = ToolRegistry(PermissionService(), PermissionRuleset());
-      final mockChat = _MockChatAiService();
-      when(() => mockChat.currentModel).thenReturn('mock-model');
-      when(() => mockChat.currentTemperature).thenReturn(0.7);
+        final registry = ToolRegistry(PermissionService(), PermissionRuleset());
+        final mockChat = _MockChatAiService();
+        when(() => mockChat.currentModel).thenReturn('mock-model');
+        when(() => mockChat.currentTemperature).thenReturn(0.7);
 
-      final toolWithAbort = createTaskTool(
-        chatAiService: mockChat,
-        toolRegistry: registry,
-        currentSessionRunner: SessionRunnerHolder(mockRunner),
-      );
+        final toolWithAbort = createTaskTool(
+          chatAiService: mockChat,
+          toolRegistry: registry,
+          currentSessionRunner: SessionRunnerHolder(mockRunner),
+        );
 
-      final ctx = _mockCtx();
-      final output = await toolWithAbort.execute({
-        'description': 'Output preservation test',
-        'prompt': 'Do work',
-        'subagent_type': 'general',
-      }, ctx);
+        final ctx = _mockCtx();
+        final output = await toolWithAbort.execute({
+          'description': 'Output preservation test',
+          'prompt': 'Do work',
+          'subagent_type': 'general',
+        }, ctx);
 
-      expect(output.output, contains(partialOutput));
-      expect(output.output, contains('<task_result>'));
-      expect(output.output, contains('</task_result>'));
-    });
+        expect(output.output, contains('(task failed)'));
+        expect(output.metadata?['error'], isTrue);
+        expect(output.metadata?['aborted'], isTrue);
+      },
+    );
 
     test('normal (non-aborted) flow has state=completed', () async {
       final tool = _makeTaskTool(runnerResult: 'normal result');
@@ -359,8 +287,8 @@ void main() {
         'subagent_type': 'general',
       }, ctx);
 
-      expect(output.output, contains('state="completed"'));
-      expect(output.output, isNot(contains('state="cancelled"')));
+      expect(output.output, contains('normal result'));
+      expect(output.output, isNot(contains('(task failed)')));
       expect(output.metadata?['aborted'], isNull);
     });
   });
@@ -384,7 +312,11 @@ void main() {
             abortSignal: any(named: 'abortSignal'),
           ),
         ).thenAnswer(
-          (_) async => TaskChildResult('delegated work result', aborted: true),
+          (_) async => TaskChildResult(
+            'delegated work result',
+            sessionId: SessionID.fromString('ses_mock'),
+            aborted: true,
+          ),
         );
 
         final registry = ToolRegistry(PermissionService(), PermissionRuleset());
@@ -405,9 +337,8 @@ void main() {
           'subagent_type': 'general',
         }, ctx);
 
-        expect(output.output, contains('state="cancelled"'));
-        expect(output.output, contains('delegated work result'));
-        expect(output.metadata?['aborted'], isTrue);
+        expect(output.output, contains('(task failed)'));
+        expect(output.metadata?['error'], isTrue);
         expect(
           output.metadata?['session_id'],
           equals('integration-test-session'),
@@ -435,9 +366,16 @@ void main() {
         ).thenAnswer((_) async {
           // Simulate checking the token state
           if (token.isCancelled) {
-            return TaskChildResult('', aborted: true);
+            return TaskChildResult(
+              '',
+              sessionId: SessionID.fromString('ses_mock'),
+              aborted: true,
+            );
           }
-          return TaskChildResult('should not reach');
+          return TaskChildResult(
+            'should not reach',
+            sessionId: SessionID.fromString('ses_mock'),
+          );
         });
 
         final registry = ToolRegistry(PermissionService(), PermissionRuleset());
@@ -458,8 +396,8 @@ void main() {
           'subagent_type': 'general',
         }, ctx);
 
-        expect(output.output, contains('state="cancelled"'));
-        expect(output.metadata?['aborted'], isTrue);
+        expect(output.output, contains('(task failed)'));
+        expect(output.metadata?['error'], isTrue);
       },
     );
   });

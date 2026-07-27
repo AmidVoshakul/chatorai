@@ -157,9 +157,9 @@ void main() {
     });
 
     test('get returns registered tool', () {
-      final tool = _simpleTool('bash');
+      final tool = _simpleTool('shell');
       registry.register(tool);
-      expect(registry.get('bash'), same(tool));
+      expect(registry.get('shell'), same(tool));
     });
 
     test('get returns null for unknown tool', () {
@@ -213,14 +213,14 @@ void main() {
     });
 
     test('toSDKTools produces map of converted tools', () {
-      registry.register(_simpleTool('bash'));
+      registry.register(_simpleTool('shell'));
       final sdkTools = registry.toSDKTools();
-      expect(sdkTools.containsKey('bash'), isTrue);
-      expect(sdkTools['bash'], isNotNull);
+      expect(sdkTools.containsKey('shell'), isTrue);
+      expect(sdkTools['shell'], isNotNull);
     });
 
     test('pruneSession does not throw for any session', () {
-      registry.register(_simpleTool('bash'));
+      registry.register(_simpleTool('shell'));
       // pruneSession is a no-op if the session has no cached state;
       // the important invariant is that it never throws.
       expect(() => registry.pruneSession('sess1'), returnsNormally);

@@ -264,7 +264,10 @@ ToolDef createTaskContainerTool({
                   return;
                 },
                 onToolError: (toolCallId, toolName, error) async {
-                  await child.onError(Exception(error));
+                  // Use onToolError (not onError) to mark the tool as failed
+                  // WITHOUT finalizing the child session. This lets the agent
+                  // recover and continue working after a tool error.
+                  await child.onToolError(toolCallId, toolName, error);
                   return;
                 },
                 onCompletion: (content) async {

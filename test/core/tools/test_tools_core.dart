@@ -20,8 +20,8 @@ void main() {
     });
 
     test('ToolTimeoutError stores toolName', () {
-      const error = ToolTimeoutError('bash');
-      expect(error.toolName, 'bash');
+      const error = ToolTimeoutError('shell');
+      expect(error.toolName, 'shell');
       expect(error, isA<ToolError>());
     });
 
@@ -39,8 +39,8 @@ void main() {
     });
 
     test('ToolOverflowError stores toolName and message', () {
-      const error = ToolOverflowError('bash', 'output exceeds limit');
-      expect(error.toolName, 'bash');
+      const error = ToolOverflowError('shell', 'output exceeds limit');
+      expect(error.toolName, 'shell');
       expect(error.message, 'output exceeds limit');
       expect(error, isA<ToolError>());
     });
@@ -288,17 +288,17 @@ void main() {
       final denyRuleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
         ],
       );
       final denyRegistry = ToolRegistry(permissions, denyRuleset);
-      denyRegistry.register(_fakeTool('bash'));
+      denyRegistry.register(_fakeTool('shell'));
       denyRegistry.register(_fakeTool('read'));
 
-      expect(denyRegistry.available.any((t) => t.id == 'bash'), isFalse);
+      expect(denyRegistry.available.any((t) => t.id == 'shell'), isFalse);
       expect(denyRegistry.available.any((t) => t.id == 'read'), isTrue);
     });
 

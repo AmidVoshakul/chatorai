@@ -156,11 +156,11 @@ void main() {
         const ReasoningPart(content: 'reasoning'),
         ToolCallPart(
           toolCallId: 'id',
-          toolName: 'bash',
+          toolName: 'shell',
           input: const {},
           createdAt: DateTime(2025),
         ),
-        const ToolResultPart(toolCallId: 'id', toolName: 'bash'),
+        const ToolResultPart(toolCallId: 'id', toolName: 'shell'),
         const TaskPart(description: 'task', agent: 'agent'),
         const QuestionPart(question: 'q'),
         const TodoPart(todos: []),
@@ -212,7 +212,7 @@ void main() {
     test('can extract state from ToolResultPart', () {
       const part = ToolResultPart(
         toolCallId: 'id',
-        toolName: 'bash',
+        toolName: 'shell',
         state: ToolState.error,
       );
       final state = switch (part) {
@@ -390,7 +390,7 @@ void main() {
     test('pending → running → completed lifecycle', () {
       const initial = ToolResultPart(
         toolCallId: 'tool-1',
-        toolName: 'bash',
+        toolName: 'shell',
         state: ToolState.running,
       );
 

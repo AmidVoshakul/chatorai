@@ -40,7 +40,7 @@ void main() {
   group('ToolResultPartWidget UI Tests', () {
     testWidgets('shows correct line and char counts in footer', (tester) async {
       await tester.pumpWidget(
-        createTestWidget(toolName: 'bash', result: shortText),
+        createTestWidget(toolName: 'shell', result: shortText),
       );
       expect(find.textContaining('lines,'), findsOneWidget);
       expect(find.textContaining('chars'), findsOneWidget);
@@ -49,35 +49,35 @@ void main() {
     testWidgets('footer shows (truncated) when truncated', (tester) async {
       final longText = 'x' * 60000;
       await tester.pumpWidget(
-        createTestWidget(toolName: 'bash', result: longText),
+        createTestWidget(toolName: 'shell', result: longText),
       );
       expect(find.textContaining('(truncated)'), findsOneWidget);
     });
 
     testWidgets('copy button is present', (tester) async {
       await tester.pumpWidget(
-        createTestWidget(toolName: 'bash', result: 'test'),
+        createTestWidget(toolName: 'shell', result: 'test'),
       );
       expect(find.text('Copy'), findsOneWidget);
     });
 
     testWidgets('short output shows no truncation indicator', (tester) async {
       await tester.pumpWidget(
-        createTestWidget(toolName: 'bash', result: shortText),
+        createTestWidget(toolName: 'shell', result: shortText),
       );
       expect(find.textContaining('[...truncated...]'), findsNothing);
       expect(find.text(shortText), findsOneWidget);
     });
 
     testWidgets('empty output shows no truncation', (tester) async {
-      await tester.pumpWidget(createTestWidget(toolName: 'bash', result: ''));
+      await tester.pumpWidget(createTestWidget(toolName: 'shell', result: ''));
       expect(find.textContaining('[...truncated...]'), findsNothing);
     });
 
     testWidgets('error state shows error message, not result', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'should not show',
           error: 'Something went wrong',
           state: ToolState.error,
@@ -90,7 +90,7 @@ void main() {
     testWidgets('running state shows spinner', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'should not show yet',
           state: ToolState.running,
         ),
@@ -101,7 +101,7 @@ void main() {
     testWidgets('duration shown only for completed state', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'output',
           state: ToolState.completed,
           duration: const Duration(milliseconds: 150),
@@ -113,7 +113,7 @@ void main() {
     testWidgets('duration not shown for running state', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'output',
           state: ToolState.running,
           duration: const Duration(milliseconds: 150),
@@ -125,15 +125,15 @@ void main() {
     testWidgets('truncation marker appears for long text', (tester) async {
       final longText = 'x' * 60000;
       await tester.pumpWidget(
-        createTestWidget(toolName: 'bash', result: longText),
+        createTestWidget(toolName: 'shell', result: longText),
       );
       expect(find.textContaining('[...truncated...]'), findsOneWidget);
     });
 
-    testWidgets('bash tool shows command and description', (tester) async {
+    testWidgets('shell tool shows command and description', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'output',
           input: {'command': 'ls -la', 'description': 'List files'},
         ),
@@ -183,7 +183,7 @@ void main() {
     testWidgets('no expand icon when running', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'output',
           state: ToolState.running,
         ),
@@ -195,7 +195,7 @@ void main() {
     testWidgets('expand icon present when completed', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'output',
           state: ToolState.completed,
         ),

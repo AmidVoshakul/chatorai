@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'evaluator.dart';
 import 'rule.dart';
 import 'ruleset.dart';
+import 'wildcard.dart';
 
 class PermissionRequest {
   final String id;
@@ -27,12 +28,10 @@ class PermissionRequest {
 class PermissionService {
   final _pending = <String, _PendingEntry>{};
   final _approved = <PermissionRule>[];
+  static const _maxApproved = 200;
+  final _onceApproved = <PermissionRule>[];
+  static const _maxOnceApproved = 200;
   final _defaultRules = <PermissionRule>[];
-
-  // Cache of "once" grants to handle SDK retries before result cache is populated.
-  // Key: "permission:pattern" normalized, Value: timestamp (expires with session).
-  // This allows retry calls to skip permission dialogs when "Once" was already granted.
-  final _onceGranted = <String, DateTime>{};
 
   final _controller = StreamController<PermissionRequest>.broadcast();
   bool _rulesSeeded = false;
@@ -60,6 +59,8 @@ class PermissionService {
   Stream<PermissionRequest> get onAsked => _controller.stream;
   Stream<QuestionRequest> get onQuestionAsked => _questionController.stream;
   List<PermissionRule> get approvedRules => List.unmodifiable(_approved);
+  List<PermissionRule> get onceApprovedRules =>
+      List.unmodifiable(_onceApproved);
 
   void attachPreferences(SharedPreferences prefs) {
     // Session-scoped: "Always allow" rules live in memory for the current
@@ -82,6 +83,7 @@ class PermissionService {
     final rule = evaluate(permission, normalized, [
       PermissionRuleset(rules: _defaultRules),
       PermissionRuleset(sessionApproved: _approved),
+      PermissionRuleset(sessionApproved: _onceApproved),
     ]);
     return rule.action == PermissionAction.allow;
   }
@@ -143,7 +145,7 @@ class PermissionService {
     if (reqSessionId != null && reqSessionId != _sessionId) {
       _sessionId = reqSessionId;
       _approved.clear();
-      _onceGranted.clear();
+      _onceApproved.clear();
       LogTags.permission.logInfo(
         'PermissionService: session changed to $reqSessionId, cleared caches',
       );
@@ -152,10 +154,11 @@ class PermissionService {
     var needsAsk = false;
 
     for (final pattern in req.patterns) {
-      final normalized = _validatePattern(pattern);
+      final normalized = pattern.trim().isEmpty ? '*' : pattern.trim();
       final rule = evaluate(req.permission, normalized, [
         ruleset,
         PermissionRuleset(sessionApproved: _approved),
+        PermissionRuleset(sessionApproved: _onceApproved),
       ]);
 
       if (rule.action == PermissionAction.deny) {
@@ -180,24 +183,6 @@ class PermissionService {
       return;
     }
 
-    // Check "once" cache - handles SDK retries that come after "Once" was granted
-    // but before the result is cached. Must check BEFORE creating dialog.
-    var allOnceGranted = true;
-    for (final pattern in req.patterns) {
-      final normalized = pattern.trim().isEmpty ? '*' : pattern.trim();
-      final key = '${req.permission}:$normalized';
-      if (!_onceGranted.containsKey(key)) {
-        allOnceGranted = false;
-        break;
-      }
-      LogTags.permission.logInfo(
-        'PermissionService.ask: ONCE-CACHE HIT for $key',
-      );
-    }
-    if (allOnceGranted) {
-      return; // Permission already granted once for all patterns
-    }
-
     // Check for existing in-flight request with same ID (preliminary + final dispatch)
     final existing = _pending[req.id];
     if (existing != null) {
@@ -210,10 +195,13 @@ class PermissionService {
 
     final rateKey = '${req.toolName}:${req.permission}';
 
-    // If this permission was granted "once" for any pattern, never rate-limit
-    // it — the user already approved it and SDK retries must not be denied.
-    final onceGrantedForPermission = _onceGranted.keys.any(
-      (k) => k.startsWith('${req.permission}:'),
+    // If this permission was granted "once" for any matching pattern, never
+    // rate-limit it — the user already approved it and SDK retries must not
+    // be denied. Uses same wildcard matching as evaluate().
+    final onceGrantedForPermission = _onceApproved.any(
+      (r) =>
+          match(req.permission, r.permission) &&
+          req.patterns.any((p) => match(p, r.pattern)),
     );
     if (!onceGrantedForPermission && _isRateLimited(rateKey)) {
       // Soft limit: rate-limiting must never deny a request that was already
@@ -276,6 +264,7 @@ class PermissionService {
       );
       return '';
     }
+    _recordQuestionAsk('question');
 
     final completer = Completer<String>();
     _questionPending[id] = _QuestionEntry(
@@ -334,9 +323,12 @@ class PermissionService {
     final now = DateTime.now();
     final history = _questionAskHistory[key] ??= [];
     history.removeWhere((t) => now.difference(t) > _questionLimitWindow);
-    if (history.length >= _questionLimitMax) return true;
-    history.add(now);
-    return false;
+    return history.length >= _questionLimitMax;
+  }
+
+  void _recordQuestionAsk(String key) {
+    final now = DateTime.now();
+    _questionAskHistory.putIfAbsent(key, () => []).add(now);
   }
 
   void _recordAsk(String key) {
@@ -371,24 +363,37 @@ class PermissionService {
             in entry.request.always.isNotEmpty
                 ? entry.request.always
                 : entry.request.patterns) {
+          final normalized = pattern.trim().isEmpty ? '*' : pattern.trim();
           newRules.add(
             PermissionRule(
               permission: entry.request.permission,
-              pattern: pattern,
+              pattern: normalized,
               action: PermissionAction.allow,
             ),
           );
         }
         _approved.addAll(newRules);
+        // Cap list size to prevent unbounded growth in long sessions
+        if (_approved.length > _maxApproved) {
+          _approved.removeRange(0, _approved.length - _maxApproved);
+        }
         _resolveSiblings(entry, newRules);
       }
       // Cache "once" grants for patterns to handle SDK retries
       if (reply == PermissionReply.once) {
-        final now = DateTime.now();
         for (final pattern in entry.request.patterns) {
           final normalized = pattern.trim().isEmpty ? '*' : pattern.trim();
-          final key = '${entry.request.permission}:$normalized';
-          _onceGranted[key] = now;
+          _onceApproved.add(
+            PermissionRule(
+              permission: entry.request.permission,
+              pattern: normalized,
+              action: PermissionAction.allow,
+            ),
+          );
+        }
+        // Cap list size to prevent unbounded growth in long sessions
+        if (_onceApproved.length > _maxOnceApproved) {
+          _onceApproved.removeRange(0, _onceApproved.length - _maxOnceApproved);
         }
         LogTags.permission.logInfo(
           'PermissionService.reply: Cached once grants for patterns: ${entry.request.patterns}',
@@ -409,7 +414,7 @@ class PermissionService {
 
     final mergedRuleset = PermissionRuleset(
       rules: [..._defaultRules, ..._approved],
-      sessionApproved: const [],
+      sessionApproved: _onceApproved,
     );
 
     final siblingsToResolve = <_PendingEntry>[];
@@ -419,7 +424,8 @@ class PermissionService {
       if (pending.rejected) continue;
 
       final allAllowed = pending.request.patterns.every((pattern) {
-        final rule = evaluate(pending.request.permission, pattern, [
+        final normalized = pattern.trim().isEmpty ? '*' : pattern.trim();
+        final rule = evaluate(pending.request.permission, normalized, [
           mergedRuleset,
         ]);
         return rule.action == PermissionAction.allow;
@@ -443,7 +449,8 @@ class PermissionService {
       );
     }
     _pending.clear();
-    _onceGranted.clear();
+    _approved.clear();
+    _onceApproved.clear();
     _askHistory.clear();
     for (final entry in _questionPending.values) {
       if (!entry.completer.isCompleted) {
@@ -459,7 +466,7 @@ class PermissionService {
     _askHistory.clear();
     _questionAskHistory.clear();
     _approved.clear();
-    _onceGranted.clear();
+    _onceApproved.clear();
     _sessionId = null;
   }
 

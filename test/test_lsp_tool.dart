@@ -1,276 +1,458 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:test/test.dart';
-import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
+import 'package:mocktail/mocktail.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/lsp.dart';
-
 import 'package:chatorai/core/lsp/lsp_service.dart';
+import 'package:chatorai/core/lsp/lsp_types.dart';
 
-ToolContext _mockCtx({
-  List<String>? askedPermission,
-  List<String>? askedPatterns,
-}) {
-  askedPermission = askedPermission;
-  askedPatterns = askedPatterns;
-  return ToolContext(
-    toolCallId: 'test-call-id',
-    sessionId: 'test-session',
-    ask:
-        ({
-          required String permission,
-          required List<String> patterns,
-          Map<String, dynamic>? metadata,
-          List<String>? always,
-        }) async {
-          askedPermission = [permission];
-          askedPatterns = patterns;
-        },
-    askQuestion:
-        ({required question, options = const [], multiple = false}) async => '',
-  );
-}
+class MockLspService extends Mock implements LspService {}
 
-ToolContext _cancelledCtx() {
-  final token = sdk.CancellationToken();
-  token.cancel();
-  return ToolContext(
-    toolCallId: 'test-cancelled',
-    sessionId: 'test-session',
-    abortSignal: token,
-    ask:
-        ({
-          required String permission,
-          required List<String> patterns,
-          Map<String, dynamic>? metadata,
-          List<String>? always,
-        }) async {},
-    askQuestion:
-        ({required question, options = const [], multiple = false}) async => '',
-  );
-}
-
-String _tempFile(String name, String content) {
-  final dir = Directory('test/temp');
-  if (!dir.existsSync()) dir.createSync(recursive: true);
-  final file = File('test/temp/$name');
-  file.writeAsStringSync(content);
-  return file.path;
-}
-
-ToolDef _createLspTool() => createLspTool(LspService());
+ToolContext _mockCtx() => ToolContext(
+  toolCallId: 'test-call-id',
+  sessionId: 'test-session',
+  ask:
+      ({
+        required String permission,
+        required List<String> patterns,
+        Map<String, dynamic>? metadata,
+        List<String>? always,
+      }) async {},
+  askQuestion:
+      ({required question, options = const [], multiple = false}) async => '',
+);
 
 void main() {
-  group('lsp tool', () {
-    test('description is non-empty', () {
-      final tool = _createLspTool();
+  late MockLspService mockLsp;
+  late ToolDef tool;
+
+  setUp(() {
+    mockLsp = MockLspService();
+    tool = createLspTool(mockLsp);
+  });
+
+  group('schema & identity', () {
+    test('tool id is "lsp"', () {
+      expect(tool.id, 'lsp');
+    });
+
+    test('description is non-empty and mentions LSP', () {
       expect(tool.description, isNotEmpty);
+      expect(tool.description.toLowerCase(), contains('language server'));
     });
 
-    test('inputSchema has required filePath field', () {
-      final tool = _createLspTool();
-      final schema = tool.inputSchema;
-      final properties = schema['properties'] as Map<String, dynamic>;
-      expect(properties.containsKey('filePath'), isTrue);
-      expect(properties['filePath']['type'], equals('string'));
-      expect(schema['required'], contains('filePath'));
+    test('inputSchema requires filePath', () {
+      final required = tool.inputSchema['required'] as List;
+      expect(required, contains('filePath'));
     });
 
-    test('inputSchema has optional verbose and timeout fields', () {
-      final tool = _createLspTool();
-      final schema = tool.inputSchema;
-      final properties = schema['properties'] as Map<String, dynamic>;
-      expect(properties.containsKey('verbose'), isTrue);
-      expect(properties['verbose']['type'], equals('boolean'));
-      expect(properties.containsKey('timeout'), isTrue);
-      expect(properties['timeout']['type'], equals('integer'));
+    test('inputSchema has action, line, character properties', () {
+      final props = tool.inputSchema['properties'] as Map<String, dynamic>;
+      expect(props.containsKey('action'), isTrue);
+      expect(props.containsKey('line'), isTrue);
+      expect(props.containsKey('character'), isTrue);
     });
 
-    test('execute with null filePath returns error', () async {
-      final tool = _createLspTool();
-      final ctx = _mockCtx();
-      final output = await tool.execute({}, ctx);
+    test('action enum lists all supported actions', () {
+      final props = tool.inputSchema['properties'] as Map<String, dynamic>;
+      final actionProp = props['action'] as Map<String, dynamic>;
+      final enumValues = actionProp['enum'] as List;
+      expect(
+        enumValues,
+        containsAll([
+          'diagnostics',
+          'hover',
+          'definition',
+          'references',
+          'symbols',
+        ]),
+      );
+    });
+  });
+
+  group('input validation', () {
+    test('missing filePath returns error', () async {
+      final output = await tool.execute({}, _mockCtx());
       expect(output.metadata?['error'], isTrue);
       expect(output.output, contains('filePath is required'));
     });
 
-    test('execute with empty filePath returns error', () async {
-      final tool = _createLspTool();
-      final ctx = _mockCtx();
-      final output = await tool.execute({'filePath': ''}, ctx);
+    test('empty filePath returns error', () async {
+      final output = await tool.execute({'filePath': ''}, _mockCtx());
       expect(output.metadata?['error'], isTrue);
       expect(output.output, contains('filePath is required'));
     });
+  });
 
-    test('execute with non-existent path returns error', () async {
-      final tool = _createLspTool();
-      final ctx = _mockCtx();
+  group('diagnostics action (default)', () {
+    test('defaults to diagnostics when no action specified', () async {
+      when(
+        () => mockLsp.diagnostics('/tmp/f.dart'),
+      ).thenAnswer((_) => const Stream.empty());
+
       final output = await tool.execute({
-        'filePath': 'test/temp/nonexistent_file.dart',
-      }, ctx);
+        'filePath': '/tmp/f.dart',
+      }, _mockCtx());
+
+      expect(output.metadata?['action'], 'diagnostics');
+      expect(output.metadata?['errorCount'], 0);
+      expect(output.metadata?['warningCount'], 0);
+    });
+
+    test('returns valid JSON with summary when no diagnostics', () async {
+      when(
+        () => mockLsp.diagnostics('/tmp/f.dart'),
+      ).thenAnswer((_) => const Stream.empty());
+
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+      }, _mockCtx());
+      final decoded = jsonDecode(output.output) as Map<String, dynamic>;
+
+      expect(decoded['action'], 'diagnostics');
+      expect(decoded['summary']['errors'], 0);
+      expect(decoded['summary']['warnings'], 0);
+      expect(decoded['summary']['total'], 0);
+      expect(decoded['diagnostics'], isEmpty);
+    });
+
+    test('counts errors (severity 1) and warnings (severity 2)', () async {
+      when(() => mockLsp.diagnostics('/tmp/f.dart')).thenAnswer(
+        (_) => Stream.fromIterable([
+          const LspDiagnostic(
+            severity: 1,
+            range: LspRange(
+              start: LspPosition(line: 0, character: 0),
+              end: LspPosition(line: 0, character: 5),
+            ),
+            message: 'error msg',
+          ),
+          const LspDiagnostic(
+            severity: 1,
+            range: LspRange(
+              start: LspPosition(line: 1, character: 0),
+              end: LspPosition(line: 1, character: 3),
+            ),
+            message: 'another error',
+          ),
+          const LspDiagnostic(
+            severity: 2,
+            range: LspRange(
+              start: LspPosition(line: 2, character: 0),
+              end: LspPosition(line: 2, character: 4),
+            ),
+            message: 'warning msg',
+          ),
+        ]),
+      );
+
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+      }, _mockCtx());
+      final decoded = jsonDecode(output.output) as Map<String, dynamic>;
+
+      expect(decoded['summary']['errors'], 2);
+      expect(decoded['summary']['warnings'], 1);
+      expect(decoded['summary']['total'], 3);
+      expect(decoded['diagnostics'], hasLength(3));
+    });
+
+    test('sets error=true in metadata when errors > 0', () async {
+      when(() => mockLsp.diagnostics('/tmp/f.dart')).thenAnswer(
+        (_) => Stream.fromIterable([
+          const LspDiagnostic(
+            severity: 1,
+            range: LspRange(
+              start: LspPosition(line: 0, character: 0),
+              end: LspPosition(line: 0, character: 1),
+            ),
+            message: 'err',
+          ),
+        ]),
+      );
+
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+      }, _mockCtx());
       expect(output.metadata?['error'], isTrue);
-      expect(output.output, contains('Path not found'));
     });
 
-    test('execute with cancelled abort signal returns aborted error', () async {
-      final tool = _createLspTool();
-      final path = _tempFile('lsp_cancel.dart', 'void main() {}\n');
-      final ctx = _cancelledCtx();
-      final output = await tool.execute({'filePath': path}, ctx);
-      expect(output.metadata?['error'], isTrue);
-      expect(output.metadata?['aborted'], isTrue);
-    });
-
-    test(
-      'execute does not call ctx.ask (lsp has no permission prompt)',
-      () async {
-        final tool = _createLspTool();
-        bool askCalled = false;
-        final ctx = ToolContext(
-          toolCallId: 'test',
-          sessionId: 'test',
-          ask:
-              ({
-                required String permission,
-                required List<String> patterns,
-                Map<String, dynamic>? metadata,
-                List<String>? always,
-              }) async {
-                askCalled = true;
-              },
-          askQuestion:
-              ({
-                required question,
-                options = const [],
-                multiple = false,
-              }) async => '',
-        );
-
-        final path = _tempFile('lsp_perm.dart', 'void main() {}\n');
-        await tool.execute({'filePath': path}, ctx);
-
-        // LSP tool runs dart analyze without permission prompt
-        expect(askCalled, isFalse);
-      },
-    );
-
-    test('execute returns valid JSON for clean file', () async {
-      final tool = _createLspTool();
-      final ctx = _mockCtx();
-      final path = _tempFile(
-        'lsp_clean.dart',
-        'void main() {\n  print("hello");\n}\n',
+    test('error key absent when no errors', () async {
+      when(() => mockLsp.diagnostics('/tmp/f.dart')).thenAnswer(
+        (_) => Stream.fromIterable([
+          const LspDiagnostic(
+            severity: 2,
+            range: LspRange(
+              start: LspPosition(line: 0, character: 0),
+              end: LspPosition(line: 0, character: 1),
+            ),
+            message: 'warn',
+          ),
+        ]),
       );
-      final output = await tool.execute({'filePath': path}, ctx);
 
-      // Output should be valid JSON
-      final decoded = jsonDecode(output.output) as Map<String, dynamic>;
-      expect(decoded.containsKey('exitCode'), isTrue);
-      expect(decoded.containsKey('issues'), isTrue);
-      expect(decoded.containsKey('summary'), isTrue);
-    });
-
-    test('execute returns error metadata for file with issues', () async {
-      final tool = _createLspTool();
-      final ctx = _mockCtx();
-      // File with intentional issue: missing semicolon (info-level in Dart)
-      final path = _tempFile(
-        'lsp_issues.dart',
-        'void main() {\n  var x = 1\n}\n',
-      );
-      final output = await tool.execute({'filePath': path}, ctx);
-
-      // Should still return valid JSON even if there are issues
-      final decoded = jsonDecode(output.output) as Map<String, dynamic>;
-      expect(decoded.containsKey('summary'), isTrue);
-      final summary = decoded['summary'] as Map<String, dynamic>;
-      expect(summary.containsKey('errors'), isTrue);
-      expect(summary.containsKey('warnings'), isTrue);
-    });
-
-    test('execute with verbose flag includes info diagnostics', () async {
-      final tool = _createLspTool();
-      final ctx = _mockCtx();
-      final path = _tempFile(
-        'lsp_verbose.dart',
-        'void main() {\n  print("test");\n}\n',
-      );
       final output = await tool.execute({
-        'filePath': path,
-        'verbose': true,
-      }, ctx);
-
-      final decoded = jsonDecode(output.output) as Map<String, dynamic>;
-      // With verbose, --fatal-infos is removed so info diagnostics may appear
-      expect(decoded.containsKey('summary'), isTrue);
-    });
-
-    test(
-      'execute returns error on filesystem exception',
-      () async {
-        final tool = _createLspTool();
-        final ctx = _mockCtx();
-        // Use a path that will cause a filesystem error (directory as file)
-        final dir = Directory('test/temp/lsp_dir_test');
-        if (!dir.existsSync()) dir.createSync(recursive: true);
-
-        // Try to read a directory as a file — dart analyze on a directory
-        // should return an error but not crash
-        final output = await tool.execute({
-          'filePath': 'test/temp/lsp_dir_test',
-        }, ctx);
-        // Should either return valid JSON with errors or an error message
-        expect(output.output, isNotEmpty);
-      },
-      skip: 'Directory analyze behavior varies by Dart version',
-    );
-
-    test('execute handles timeout parameter', () async {
-      final tool = _createLspTool();
-      final ctx = _mockCtx();
-      final path = _tempFile('lsp_timeout.dart', 'void main() {}\n');
-      // Very short timeout — should still work for a small file
-      final output = await tool.execute({
-        'filePath': path,
-        'timeout': 60000,
-      }, ctx);
-      expect(output.output, isNotEmpty);
-    });
-
-    test('metadata includes filePath and counts', () async {
-      final tool = _createLspTool();
-      final ctx = _mockCtx();
-      final path = _tempFile('lsp_meta.dart', 'void main() {}\n');
-      final output = await tool.execute({'filePath': path}, ctx);
-
-      expect(output.metadata?['filePath'], equals(path));
-      expect(output.metadata?['exitCode'], isNotNull);
-      expect(output.metadata?['errors'], isNotNull);
-      expect(output.metadata?['warnings'], isNotNull);
+        'filePath': '/tmp/f.dart',
+      }, _mockCtx());
+      expect(output.metadata?['error'], isNull);
+      expect(output.metadata?['warningCount'], 1);
     });
 
     test('title is set correctly', () async {
-      final tool = _createLspTool();
-      final ctx = _mockCtx();
-      final path = _tempFile('lsp_title.dart', 'void main() {}\n');
-      final output = await tool.execute({'filePath': path}, ctx);
+      when(
+        () => mockLsp.diagnostics('/tmp/f.dart'),
+      ).thenAnswer((_) => const Stream.empty());
 
-      expect(output.title, equals('dart analyze $path'));
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+      }, _mockCtx());
+      expect(output.title, 'LSP diagnostics: /tmp/f.dart');
     });
 
-    tearDown(() {
-      // Clean up temp files
-      final dir = Directory('test/temp');
-      if (dir.existsSync()) {
-        for (final entity in dir.listSync()) {
-          if (entity is File && entity.path.contains('lsp_')) {
-            entity.deleteSync();
-          } else if (entity is Directory && entity.path.contains('lsp_')) {
-            entity.deleteSync(recursive: true);
-          }
-        }
-      }
+    test('metadata includes filePath', () async {
+      when(
+        () => mockLsp.diagnostics('/tmp/f.dart'),
+      ).thenAnswer((_) => const Stream.empty());
+
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+      }, _mockCtx());
+      expect(output.metadata?['filePath'], '/tmp/f.dart');
+    });
+  });
+
+  group('hover action', () {
+    test('returns hover information', () async {
+      when(() => mockLsp.hover('/tmp/f.dart', 10, 5)).thenAnswer(
+        (_) async => {
+          'contents': {'kind': 'markdown', 'value': '**int**'},
+        },
+      );
+
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+        'action': 'hover',
+        'line': 10,
+        'character': 5,
+      }, _mockCtx());
+
+      expect(output.metadata?['action'], 'hover');
+      expect(output.metadata?['line'], 10);
+      expect(output.metadata?['character'], 5);
+      expect(output.output, contains('int'));
+      expect(output.title, 'LSP hover: /tmp/f.dart:10:5');
+    });
+
+    test('defaults line and character to 0 when not provided', () async {
+      when(
+        () => mockLsp.hover('/tmp/f.dart', 0, 0),
+      ).thenAnswer((_) async => null);
+
+      await tool.execute({
+        'filePath': '/tmp/f.dart',
+        'action': 'hover',
+      }, _mockCtx());
+
+      verify(() => mockLsp.hover('/tmp/f.dart', 0, 0)).called(1);
+    });
+
+    test('returns message when no hover info available', () async {
+      when(
+        () => mockLsp.hover('/tmp/f.dart', 0, 0),
+      ).thenAnswer((_) async => null);
+
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+        'action': 'hover',
+      }, _mockCtx());
+
+      expect(output.output, contains('No hover information'));
+      expect(output.metadata?['action'], 'hover');
+    });
+  });
+
+  group('definition action', () {
+    test('returns definition locations', () async {
+      when(() => mockLsp.definition('/tmp/f.dart', 5, 10)).thenAnswer(
+        (_) async => [
+          {'uri': 'file:///lib/utils.dart', 'line': 20, 'character': 0},
+        ],
+      );
+
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+        'action': 'definition',
+        'line': 5,
+        'character': 10,
+      }, _mockCtx());
+
+      expect(output.metadata?['action'], 'definition');
+      expect(output.metadata?['count'], 1);
+      expect(output.output, contains('utils.dart'));
+      expect(output.title, 'LSP definition: /tmp/f.dart:5:10');
+    });
+
+    test('defaults line and character to 0', () async {
+      when(
+        () => mockLsp.definition('/tmp/f.dart', 0, 0),
+      ).thenAnswer((_) async => []);
+
+      await tool.execute({
+        'filePath': '/tmp/f.dart',
+        'action': 'definition',
+      }, _mockCtx());
+
+      verify(() => mockLsp.definition('/tmp/f.dart', 0, 0)).called(1);
+    });
+
+    test('count is 0 when no definitions found', () async {
+      when(
+        () => mockLsp.definition('/tmp/f.dart', 0, 0),
+      ).thenAnswer((_) async => []);
+
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+        'action': 'definition',
+      }, _mockCtx());
+
+      expect(output.metadata?['count'], 0);
+    });
+  });
+
+  group('references action', () {
+    test('returns reference locations', () async {
+      when(() => mockLsp.references('/tmp/f.dart', 3, 7)).thenAnswer(
+        (_) async => [
+          {'uri': 'file:///lib/main.dart', 'line': 10, 'character': 5},
+          {'uri': 'file:///lib/app.dart', 'line': 42, 'character': 0},
+        ],
+      );
+
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+        'action': 'references',
+        'line': 3,
+        'character': 7,
+      }, _mockCtx());
+
+      expect(output.metadata?['action'], 'references');
+      expect(output.metadata?['count'], 2);
+      expect(output.output, contains('main.dart'));
+      expect(output.title, 'LSP references: /tmp/f.dart:3:7');
+    });
+
+    test('defaults line and character to 0', () async {
+      when(
+        () => mockLsp.references('/tmp/f.dart', 0, 0),
+      ).thenAnswer((_) async => []);
+
+      await tool.execute({
+        'filePath': '/tmp/f.dart',
+        'action': 'references',
+      }, _mockCtx());
+
+      verify(() => mockLsp.references('/tmp/f.dart', 0, 0)).called(1);
+    });
+  });
+
+  group('unsupported action', () {
+    test('returns error for unknown action', () async {
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+        'action': 'symbols',
+      }, _mockCtx());
+
+      expect(output.metadata?['error'], isTrue);
+      expect(output.output, contains('Unsupported action'));
+      expect(output.output, contains('symbols'));
+    });
+  });
+
+  group('exception handling', () {
+    test('catches LspService exception and returns error', () async {
+      when(
+        () => mockLsp.diagnostics('/tmp/f.dart'),
+      ).thenThrow(StateError('LSP server crashed'));
+
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+        'action': 'diagnostics',
+      }, _mockCtx());
+
+      expect(output.metadata?['error'], isTrue);
+      expect(output.output, contains('LSP error'));
+    });
+
+    test('hover exception returns error', () async {
+      when(
+        () => mockLsp.hover('/tmp/f.dart', 0, 0),
+      ).thenThrow(StateError('connection lost'));
+
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+        'action': 'hover',
+      }, _mockCtx());
+
+      expect(output.metadata?['error'], isTrue);
+      expect(output.output, contains('LSP error'));
+    });
+
+    test('definition exception returns error', () async {
+      when(
+        () => mockLsp.definition('/tmp/f.dart', 0, 0),
+      ).thenThrow(StateError('timeout'));
+
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+        'action': 'definition',
+      }, _mockCtx());
+
+      expect(output.metadata?['error'], isTrue);
+      expect(output.output, contains('LSP error'));
+    });
+
+    test('references exception returns error', () async {
+      when(
+        () => mockLsp.references('/tmp/f.dart', 0, 0),
+      ).thenThrow(StateError('server died'));
+
+      final output = await tool.execute({
+        'filePath': '/tmp/f.dart',
+        'action': 'references',
+      }, _mockCtx());
+
+      expect(output.metadata?['error'], isTrue);
+      expect(output.output, contains('LSP error'));
+    });
+  });
+
+  group('permission', () {
+    test('does not call ctx.ask', () async {
+      bool askCalled = false;
+      when(
+        () => mockLsp.diagnostics('/tmp/f.dart'),
+      ).thenAnswer((_) => const Stream.empty());
+
+      final ctx = ToolContext(
+        toolCallId: 'test',
+        sessionId: 'test',
+        ask:
+            ({
+              required String permission,
+              required List<String> patterns,
+              Map<String, dynamic>? metadata,
+              List<String>? always,
+            }) async {
+              askCalled = true;
+            },
+        askQuestion:
+            ({required question, options = const [], multiple = false}) async =>
+                '',
+      );
+
+      await tool.execute({'filePath': '/tmp/f.dart'}, ctx);
+      expect(askCalled, isFalse);
     });
   });
 }

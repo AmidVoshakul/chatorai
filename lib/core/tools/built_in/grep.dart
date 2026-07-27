@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
 import 'package:path/path.dart' as p;
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 
 ToolDef createGrepTool() {
   return ToolDef(
@@ -84,28 +86,33 @@ ToolDef createGrepTool() {
       )) {
         if (results.length >= maxMatches) break;
         if (entity is File) {
-          // Apply include filter if provided
           if (includePattern != null) {
             final relative = p.relative(entity.path, from: safeRoot);
-            // Simple glob matching: convert glob to regex
             final globRegex = _globToRegex(includePattern);
             if (!RegExp(globRegex).hasMatch(relative)) {
               continue;
             }
           }
+          String content;
           try {
-            final content = await entity.readAsString(encoding: utf8);
-            final lines = content.split('\n');
-            for (int lineNum = 0; lineNum < lines.length; lineNum++) {
-              if (results.length >= maxMatches) break;
-              final line = lines[lineNum];
-              if (regex.hasMatch(line)) {
-                final relative = p.relative(entity.path, from: safeRoot);
-                // Format: path:lineNumber: line (1-indexed line numbers)
-                results.add('$relative:${lineNum + 1}: $line');
-              }
+            content = await entity.readAsString(encoding: utf8);
+          } on FileSystemException catch (e) {
+            if (kDebugMode) {
+              LogTags.permission.logWarning(
+                'grep: skipping $entity — ${e.message}',
+              );
             }
-          } catch (_) {}
+            continue;
+          }
+          final lines = content.split('\n');
+          for (int lineNum = 0; lineNum < lines.length; lineNum++) {
+            if (results.length >= maxMatches) break;
+            final line = lines[lineNum];
+            if (regex.hasMatch(line)) {
+              final relative = p.relative(entity.path, from: safeRoot);
+              results.add('$relative:${lineNum + 1}: $line');
+            }
+          }
         }
       }
 

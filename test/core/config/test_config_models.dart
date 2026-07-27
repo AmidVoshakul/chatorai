@@ -18,7 +18,7 @@ void main() {
     test('parses full config with all fields', () {
       final json = {
         'version': 1,
-        'permission': {'bash': 'ask', 'read': 'allow'},
+        'permission': {'shell': 'ask', 'read': 'allow'},
         'keybinding': {'session_child_next': 'ctrl+right'},
         'skills': {
           'paths': ['/path/to/skills'],
@@ -37,7 +37,7 @@ void main() {
       final config = ChatOrAIConfig.fromJson(json);
 
       expect(config.version, equals(1));
-      expect(config.permission['bash']?.defaultAction, equals('ask'));
+      expect(config.permission['shell']?.defaultAction, equals('ask'));
       expect(config.permission['read']?.defaultAction, equals('allow'));
       expect(config.keybinding?['session_child_next'], equals('ctrl+right'));
       expect(config.skills, isNotNull);
@@ -53,16 +53,16 @@ void main() {
       final json = {
         'version': 1,
         'permission': {
-          'bash': {'git *': 'allow', 'rm *': 'deny'},
+          'shell': {'git *': 'allow', 'rm *': 'deny'},
         },
       };
 
       final config = ChatOrAIConfig.fromJson(json);
-      final bashConfig = config.permission['bash'];
-      expect(bashConfig, isNotNull);
-      expect(bashConfig!.defaultAction, isNull);
-      expect(bashConfig.patternActions?['git *'], equals('allow'));
-      expect(bashConfig.patternActions?['rm *'], equals('deny'));
+      final shellConfig = config.permission['shell'];
+      expect(shellConfig, isNotNull);
+      expect(shellConfig!.defaultAction, isNull);
+      expect(shellConfig.patternActions?['git *'], equals('allow'));
+      expect(shellConfig.patternActions?['rm *'], equals('deny'));
     });
 
     test('handles missing permission section gracefully', () {
@@ -128,7 +128,7 @@ void main() {
       final original = ChatOrAIConfig(
         version: 1,
         permission: {
-          'bash': const PermissionRuleConfig(defaultAction: 'ask'),
+          'shell': const PermissionRuleConfig(defaultAction: 'ask'),
           'edit': const PermissionRuleConfig(
             patternActions: {'*.dart': 'allow'},
           ),
@@ -147,7 +147,7 @@ void main() {
       final restored = ChatOrAIConfig.fromJson(json);
 
       expect(restored.version, equals(original.version));
-      expect(restored.permission['bash']?.defaultAction, equals('ask'));
+      expect(restored.permission['shell']?.defaultAction, equals('ask'));
       expect(
         restored.permission['edit']?.patternActions?['*.dart'],
         equals('allow'),
@@ -308,11 +308,11 @@ void main() {
     test('parses global tools config with string actions', () {
       final config = ChatOrAIConfig.fromJson(<String, dynamic>{
         'version': 1,
-        'tools': {'mcp__server_tool': 'deny', 'bash': 'ask'},
+        'tools': {'mcp__server_tool': 'deny', 'shell': 'ask'},
       });
       expect(config.tools, isNotNull);
       expect(config.tools!['mcp__server_tool'], equals('deny'));
-      expect(config.tools!['bash'], equals('ask'));
+      expect(config.tools!['shell'], equals('ask'));
     });
 
     test('roundtrip preserves tools field', () {

@@ -108,8 +108,7 @@ class UserMessageBubble extends StatelessWidget {
                               Flexible(
                                 child: Text(
                                   message.attachedDocName!,
-                                  style:
-                                      theme.textTheme.bodySmall?.copyWith(
+                                  style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.primary,
                                   ),
                                   overflow: TextOverflow.ellipsis,
@@ -118,8 +117,7 @@ class UserMessageBubble extends StatelessWidget {
                             ],
                           ),
                         ),
-                      if (message.files.isNotEmpty &&
-                          message.imageData == null)
+                      if (message.files.isNotEmpty && message.imageData == null)
                         ...message.files.map(
                           (f) => Padding(
                             padding: const EdgeInsets.only(top: 4),

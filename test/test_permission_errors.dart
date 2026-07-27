@@ -20,11 +20,11 @@ void main() {
         );
       });
 
-      test('has correct message for bash tool', () {
-        final error = PermissionDeniedError('bash', 'rm -rf /');
+      test('has correct message for shell tool', () {
+        final error = PermissionDeniedError('shell', 'rm -rf /');
         expect(
           error.toString(),
-          equals('Permission denied: bash cannot access "rm -rf /"'),
+          equals('Permission denied: shell cannot access "rm -rf /"'),
         );
       });
 
@@ -53,8 +53,8 @@ void main() {
 
     group('PermissionRejectedError', () {
       test('has correct message with toolName', () {
-        final error = PermissionRejectedError('bash');
-        expect(error.toString(), equals('Permission rejected by user: bash'));
+        final error = PermissionRejectedError('shell');
+        expect(error.toString(), equals('Permission rejected by user: shell'));
       });
 
       test('has correct message for write tool', () {
@@ -68,20 +68,20 @@ void main() {
       });
 
       test('stores toolName correctly', () {
-        final error = PermissionRejectedError('bash');
-        expect(error.toolName, equals('bash'));
+        final error = PermissionRejectedError('shell');
+        expect(error.toolName, equals('shell'));
       });
 
       test('implements Exception', () {
-        final error = PermissionRejectedError('bash');
+        final error = PermissionRejectedError('shell');
         expect(error, isA<Exception>());
       });
 
       test('message indicates user rejection', () {
-        final error = PermissionRejectedError('bash');
+        final error = PermissionRejectedError('shell');
         final message = error.toString();
         expect(message, contains('rejected by user'));
-        expect(message, contains('bash'));
+        expect(message, contains('shell'));
       });
     });
 

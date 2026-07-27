@@ -160,7 +160,7 @@ Where `<package>` is the runtime bundle ID (e.g. `com.chatorai.app`). A project-
     rules: [
       { tool: "read", action: "*", resource: "*", permission: "allow" },
       {
-        tool: "bash",
+        tool: "shell",
         action: "execute",
         resource: "/home/**",
         permission: "deny",

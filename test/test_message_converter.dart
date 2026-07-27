@@ -28,13 +28,17 @@ void main() {
         content: 'Read this doc',
         timestamp: DateTime(2025, 6, 1),
         isComplete: true,
-        attachedDocPath: '/home/user/.local/share/chatorai/attachments/123_report.pdf',
+        attachedDocPath:
+            '/home/user/.local/share/chatorai/attachments/123_report.pdf',
       );
 
       final converted = messageToChatMessage(legacy) as UserMessage;
 
       expect(converted.content, 'Read this doc');
-      expect(converted.attachedDocPath, '/home/user/.local/share/chatorai/attachments/123_report.pdf');
+      expect(
+        converted.attachedDocPath,
+        '/home/user/.local/share/chatorai/attachments/123_report.pdf',
+      );
       expect(converted.attachedDocName, '123_report.pdf');
     });
 
@@ -44,7 +48,8 @@ void main() {
         content: 'Analyze this file',
         timestamp: DateTime(2025, 6, 1),
         isComplete: true,
-        attachedDocPath: '/home/user/.local/share/chatorai/attachments/456_document.docx',
+        attachedDocPath:
+            '/home/user/.local/share/chatorai/attachments/456_document.docx',
       );
 
       final converted = messageToChatMessage(legacy) as UserMessage;
@@ -85,25 +90,28 @@ void main() {
       expect(converted.attachedDocName, 'doc.pdf');
     });
 
-    test('toJson/fromJson roundtrip preserves imageData and attachedDocPath', () {
-      final original = UserMessage(
-        id: 'test-msg-1',
-        content: 'Hello with attachment',
-        imageData: 'base64img',
-        imageType: 'image/png',
-        attachedDocName: 'doc.pdf',
-        attachedDocPath: '/path/to/doc.pdf',
-        timestamp: DateTime(2025, 6, 1),
-      );
+    test(
+      'toJson/fromJson roundtrip preserves imageData and attachedDocPath',
+      () {
+        final original = UserMessage(
+          id: 'test-msg-1',
+          content: 'Hello with attachment',
+          imageData: 'base64img',
+          imageType: 'image/png',
+          attachedDocName: 'doc.pdf',
+          attachedDocPath: '/path/to/doc.pdf',
+          timestamp: DateTime(2025, 6, 1),
+        );
 
-      final json = original.toJson();
-      final restored = UserMessage.fromJson(json);
+        final json = original.toJson();
+        final restored = UserMessage.fromJson(json);
 
-      expect(restored.content, original.content);
-      expect(restored.imageData, 'base64img');
-      expect(restored.imageType, 'image/png');
-      expect(restored.attachedDocName, 'doc.pdf');
-      expect(restored.attachedDocPath, '/path/to/doc.pdf');
-    });
+        expect(restored.content, original.content);
+        expect(restored.imageData, 'base64img');
+        expect(restored.imageType, 'image/png');
+        expect(restored.attachedDocName, 'doc.pdf');
+        expect(restored.attachedDocPath, '/path/to/doc.pdf');
+      },
+    );
   });
 }

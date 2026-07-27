@@ -186,27 +186,30 @@ void main() {
       },
     );
 
-    test('execute does NOT cache side-effecting tools (bash, write)', () async {
-      var callCount = 0;
-      final bashTool = ToolDef(
-        id: 'bash',
-        description: 'Bash',
-        inputSchema: {'type': 'object'},
-        execute: (input, ctx) async {
-          callCount++;
-          return ToolOutput('output $callCount');
-        },
-      );
+    test(
+      'execute does NOT cache side-effecting tools (shell, write)',
+      () async {
+        var callCount = 0;
+        final shellTool = ToolDef(
+          id: 'shell',
+          description: 'shell',
+          inputSchema: {'type': 'object'},
+          execute: (input, ctx) async {
+            callCount++;
+            return ToolOutput('output $callCount');
+          },
+        );
 
-      final options = _FakeToolOptions(
-        sessionId: 'no-cache-test',
-        experimentalContext: {'sessionId': 'no-cache-test'},
-      );
+        final options = _FakeToolOptions(
+          sessionId: 'no-cache-test',
+          experimentalContext: {'sessionId': 'no-cache-test'},
+        );
 
-      await executor.execute(bashTool, {'cmd': 'ls'}, options);
-      await executor.execute(bashTool, {'cmd': 'ls'}, options);
-      expect(callCount, equals(2));
-    });
+        await executor.execute(shellTool, {'cmd': 'ls'}, options);
+        await executor.execute(shellTool, {'cmd': 'ls'}, options);
+        expect(callCount, equals(2));
+      },
+    );
 
     test('execute handles ToolInvalidArgsError', () async {
       final tool = _echoTool(throwInvalidArgs: true);
@@ -277,12 +280,12 @@ void main() {
 
     test('doom loop detection activates after threshold', () async {
       // The doom loop threshold is 3 same-input calls.
-      // Use 'bash' as a side-effecting tool (NOT cached) so each call
+      // Use 'shell' as a side-effecting tool (NOT cached) so each call
       // actually goes through execute() and doom-loop tracking.
       var callCount = 0;
-      final bashLikeTool = ToolDef(
-        id: 'bash',
-        description: 'Bash-like tool for doom test',
+      final shellLikeTool = ToolDef(
+        id: 'shell',
+        description: 'shell-like tool for doom test',
         inputSchema: {'type': 'object'},
         execute: (input, ctx) async {
           callCount++;
@@ -299,7 +302,7 @@ void main() {
             action: PermissionAction.deny,
           ),
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.allow,
           ),
@@ -316,12 +319,12 @@ void main() {
 
       // Execute 3 times — doom loop tracker records but doesn't trigger yet
       for (var i = 0; i < 3; i++) {
-        final r = await executor2.execute(bashLikeTool, input, options);
+        final r = await executor2.execute(shellLikeTool, input, options);
         expect(r['output'], isNotNull);
       }
 
       // 4th execution: doom loop threshold met (count=3 >= threshold=3), deny rule → empty output
-      final result = await executor2.execute(bashLikeTool, input, options);
+      final result = await executor2.execute(shellLikeTool, input, options);
       expect(result['output'], equals(''));
     });
   });

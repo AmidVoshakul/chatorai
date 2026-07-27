@@ -178,12 +178,12 @@ void main() {
       final created = DateTime(2025, 1, 1, 12, 0);
       final part = ToolCallPart(
         toolCallId: 'call-123',
-        toolName: 'bash',
+        toolName: 'shell',
         input: const {'command': 'echo hello'},
         createdAt: created,
       );
       expect(part.toolCallId, 'call-123');
-      expect(part.toolName, 'bash');
+      expect(part.toolName, 'shell');
       expect(part.input, {'command': 'echo hello'});
       expect(part.createdAt, created);
     });
@@ -192,7 +192,7 @@ void main() {
       final created = DateTime(2025, 1, 1);
       final part = ToolCallPart(
         toolCallId: 'id',
-        toolName: 'bash',
+        toolName: 'shell',
         input: const {},
         createdAt: created,
       );
@@ -260,7 +260,7 @@ void main() {
 
   group('ToolResultPart', () {
     test('creates with running state by default', () {
-      const part = ToolResultPart(toolCallId: 'call-1', toolName: 'bash');
+      const part = ToolResultPart(toolCallId: 'call-1', toolName: 'shell');
       expect(part.state, ToolState.running);
       expect(part.result, isNull);
       expect(part.error, isNull);
@@ -290,7 +290,7 @@ void main() {
     test('copyWith updates state to completed', () {
       const part = ToolResultPart(
         toolCallId: 'call-1',
-        toolName: 'bash',
+        toolName: 'shell',
         state: ToolState.running,
       );
       final updated = part.copyWith(
@@ -305,7 +305,7 @@ void main() {
     test('copyWith updates error', () {
       const part = ToolResultPart(
         toolCallId: 'call-1',
-        toolName: 'bash',
+        toolName: 'shell',
         state: ToolState.running,
       );
       final updated = part.copyWith(
@@ -319,7 +319,7 @@ void main() {
     test('toJson serializes state as name and duration as ms', () {
       const part = ToolResultPart(
         toolCallId: 'call-1',
-        toolName: 'bash',
+        toolName: 'shell',
         result: 'output',
         state: ToolState.completed,
         duration: Duration(milliseconds: 200),
@@ -329,7 +329,7 @@ void main() {
       final json = part.toJson();
       expect(json['type'], 'tool_result');
       expect(json['toolCallId'], 'call-1');
-      expect(json['toolName'], 'bash');
+      expect(json['toolName'], 'shell');
       expect(json['result'], 'output');
       expect(json['state'], 'completed');
       expect(json['duration'], 200);
@@ -341,7 +341,7 @@ void main() {
       final json = {
         'type': 'tool_result',
         'toolCallId': 'call-1',
-        'toolName': 'bash',
+        'toolName': 'shell',
         'result': 'out',
         'state': 'completed',
         'duration': 300,
@@ -356,7 +356,7 @@ void main() {
       final json = {
         'type': 'tool_result',
         'toolCallId': 'call-1',
-        'toolName': 'bash',
+        'toolName': 'shell',
         'result': 'out',
         'isStreaming': false,
       };
@@ -368,7 +368,7 @@ void main() {
       final json = {
         'type': 'tool_result',
         'toolCallId': 'call-1',
-        'toolName': 'bash',
+        'toolName': 'shell',
         'state': 'error',
         'duration': null,
         'isStreaming': false,
@@ -700,7 +700,7 @@ void main() {
       // Note: ToolCallPart uses non-const DateTime, so we build the list differently
       final toolCall = ToolCallPart(
         toolCallId: 'id',
-        toolName: 'bash',
+        toolName: 'shell',
         input: const {},
         createdAt: DateTime(2025),
       );
@@ -708,7 +708,7 @@ void main() {
         const TextPart(content: 'text'),
         const ReasoningPart(content: 'reasoning'),
         toolCall,
-        const ToolResultPart(toolCallId: 'id', toolName: 'bash'),
+        const ToolResultPart(toolCallId: 'id', toolName: 'shell'),
         const TaskPart(description: 'task', agent: 'agent'),
         const QuestionPart(question: 'q'),
         const TodoPart(todos: []),
@@ -722,11 +722,11 @@ void main() {
         const ReasoningPart(content: 'reasoning'),
         ToolCallPart(
           toolCallId: 'id',
-          toolName: 'bash',
+          toolName: 'shell',
           input: const {},
           createdAt: DateTime(2025),
         ),
-        const ToolResultPart(toolCallId: 'id', toolName: 'bash'),
+        const ToolResultPart(toolCallId: 'id', toolName: 'shell'),
         const TaskPart(description: 'task', agent: 'agent'),
         const QuestionPart(question: 'q'),
         const TodoPart(todos: []),
@@ -788,7 +788,7 @@ void main() {
           {
             'type': 'tool_result',
             'toolCallId': 'id',
-            'toolName': 'bash',
+            'toolName': 'shell',
             'isStreaming': false,
           },
         ],

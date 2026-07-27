@@ -13,10 +13,10 @@ extension ToolOutputMetadata on ToolOutput {
   /// True when the tool result was aborted (e.g. user pressed stop).
   bool get isAborted => metadata?['aborted'] == true;
 
-  // ── Bash ───────────────────────────────────────────────────────────────────
+  // ── Shell ───────────────────────────────────────────────────────────────────
 
-  int? get bashExitCode => metadata?['exit_code'] as int?;
-  String? get bashBannedCommand => metadata?['banned'] as String?;
+  int? get shellExitCode => metadata?['exit_code'] as int?;
+  String? get shellBannedCommand => metadata?['banned'] as String?;
 
   // ── Read ───────────────────────────────────────────────────────────────────
 

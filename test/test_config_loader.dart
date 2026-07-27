@@ -27,13 +27,13 @@ void main() {
     test('valid config parses correctly', () async {
       final data = {
         'version': 1,
-        'permission': {'bash': 'ask'},
+        'permission': {'shell': 'ask'},
         'keybinding': {'session_child_next': 'ctrl+right'},
       };
 
       final config = ChatOrAIConfig.fromJson(data);
       expect(config.version, 1);
-      expect(config.permission['bash']?.defaultAction, 'ask');
+      expect(config.permission['shell']?.defaultAction, 'ask');
       expect(config.keybinding?['session_child_next'], 'ctrl+right');
     });
 
@@ -41,7 +41,7 @@ void main() {
       final original = ChatOrAIConfig(
         version: 1,
         permission: {
-          'bash': const PermissionRuleConfig(defaultAction: 'ask'),
+          'shell': const PermissionRuleConfig(defaultAction: 'ask'),
           'web_fetch': const PermissionRuleConfig(
             patternActions: {'*.example.com': 'allow', '*': 'ask'},
           ),
@@ -53,7 +53,7 @@ void main() {
       final restored = ChatOrAIConfig.fromJson(json);
 
       expect(restored.version, original.version);
-      expect(restored.permission['bash']?.defaultAction, 'ask');
+      expect(restored.permission['shell']?.defaultAction, 'ask');
       expect(
         restored.permission['web_fetch']?.patternActions?['*.example.com'],
         'allow',
@@ -76,7 +76,7 @@ void main() {
         await projectConfig.writeAsString(
           json.encode({
             'version': 1,
-            'permission': {'bash': 'alloww'}, // typo: should be "allow"
+            'permission': {'shell': 'alloww'}, // typo: should be "allow"
           }),
         );
 

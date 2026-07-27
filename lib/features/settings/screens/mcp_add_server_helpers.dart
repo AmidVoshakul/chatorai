@@ -40,14 +40,13 @@ const String mcpRawExample = '''
 /// Authentication scheme for a remote MCP server token. The user pastes only
 /// the bare token; the dialog wraps it into the correct header following
 /// common API best practices:
-/// - [bearer]  -> `Authorization: Bearer <token>` (OAuth2 standard)
-/// - [apiKey]  -> `X-Api-Key: <token>` (dedicated header, avoids confusion with
-///                Bearer; matches APIVerve/apidog conventions)
-/// - [plain]   -> `Authorization: <token>`
+/// - [noAuth]  -> no headers (public servers)
+/// - [token]   -> `Authorization: Bearer <token>` (OAuth2 standard / API key)
+/// - [oauth]   -> OAuth 2.1 configuration (client credentials flow)
 enum AuthType {
-  bearer('Bearer'),
-  apiKey('ApiKey'),
-  plain('Token');
+  noAuth('No Auth'),
+  token('Token'),
+  oauth('OAuth 2.1');
 
   const AuthType(this.label);
   final String label;
@@ -55,16 +54,17 @@ enum AuthType {
 
 /// Wraps a bare [token] into the headers map dictated by [type].
 ///
-/// Returns an empty map when [token] is blank. Throws [McpDialogParseError]
-/// when [token] is blank but a remote server requires authentication.
+/// Returns an empty map when [type] is [AuthType.noAuth] or when [token]
+/// is blank.
 Map<String, String> buildAuthHeaders(String token, AuthType type) {
+  if (type == AuthType.noAuth) return const {};
   final trimmed = token.trim();
   if (trimmed.isEmpty) return const {};
 
   return switch (type) {
-    AuthType.bearer => {'Authorization': 'Bearer $trimmed'},
-    AuthType.apiKey => {'X-Api-Key': trimmed},
-    AuthType.plain => {'Authorization': trimmed},
+    AuthType.token => {'Authorization': 'Bearer $trimmed'},
+    AuthType.oauth => const {},
+    AuthType.noAuth => const {},
   };
 }
 

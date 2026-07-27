@@ -33,7 +33,7 @@ String formatDuration(Duration d) {
   return '${minutes}m ${seconds}s';
 }
 
-String bashPreview(String text) {
+String shellPreview(String text) {
   const maxLines = 10;
   const maxChars = 500;
   if (text.isEmpty) return text;

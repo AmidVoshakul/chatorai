@@ -337,6 +337,60 @@ void main() {
           expect(result!.name, equals('real-skill'));
         },
       );
+
+      test('permission rejection propagates exception', () async {
+        final skill = SkillInfo(
+          name: 'guarded',
+          description: 'Guarded skill',
+          directory: '/skills/guarded',
+          content: 'secret',
+        );
+        final service = FakeSkillService(skills: {'guarded': skill});
+        final tool = createSkillTool(service, [skill]);
+
+        final ctx = ToolContext(
+          toolCallId: 'test',
+          sessionId: 'test',
+          ask:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                throw StateError('Permission denied by user');
+              },
+          askQuestion:
+              ({
+                required question,
+                options = const [],
+                multiple = false,
+              }) async => '',
+        );
+
+        expect(
+          () => tool.execute({'name': 'guarded'}, ctx),
+          throwsA(isA<StateError>()),
+        );
+      });
+
+      test('skill with empty content still produces valid XML', () async {
+        final skill = SkillInfo(
+          name: 'empty-skill',
+          description: 'Empty skill',
+          directory: '/skills/empty',
+          content: '',
+        );
+        final service = FakeSkillService(skills: {'empty-skill': skill});
+        final tool = createSkillTool(service, [skill]);
+        final ctx = _mockCtx();
+
+        final output = await tool.execute({'name': 'empty-skill'}, ctx);
+
+        expect(output.metadata?['error'], isNull);
+        expect(output.output, contains('<skill_content name="empty-skill">'));
+        expect(output.output, contains('</skill_content>'));
+      });
     });
 
     group('successful skill load with full context injection', () {

@@ -1636,6 +1636,65 @@ class AppLocalizationsZh extends AppLocalizations {
       'Adobe for Creativity 将 Photoshop、Lightroom、Illustrator、Firefly、Premiere、Express、InDesign 和 Stock 与 AI 驱动创意工作相结合。用户可使用自然语言生成、编辑并增强照片、设计素材和视频项目，同时作品始终关联到其 Adobe 账户。';
 
   @override
+  String get mcpInstallToGlobal => '安装到全局';
+
+  @override
+  String get mcpInstallToProject => '安装到项目';
+
+  @override
+  String get mcpScopeGlobal => '全局';
+
+  @override
+  String get mcpScopeProject => '项目';
+
+  @override
+  String get mcpScopeGlobalProject => '全局 + 项目';
+
+  @override
+  String mcpRemoveFromScope(String scope) {
+    return '从 $scope 移除';
+  }
+
+  @override
+  String get mcpRemoveFromAll => '从所有位置移除';
+
+  @override
+  String get mcpTokenDialogTitle => '身份验证';
+
+  @override
+  String get mcpTokenDialogTitleHint => '选择与此服务器的身份验证方式';
+
+  @override
+  String get mcpTokenInputLabel => '令牌';
+
+  @override
+  String get mcpTokenInputHint => '粘贴您的访问令牌';
+
+  @override
+  String get mcpTokenInputHelper => '以 Authorization: Bearer <token> 形式发送';
+
+  @override
+  String get mcpOAuthClientIdLabel => '客户端 ID';
+
+  @override
+  String get mcpOAuthClientIdHint => 'OAuth 2.1 客户端 ID';
+
+  @override
+  String get mcpOAuthClientSecretLabel => '客户端密钥';
+
+  @override
+  String get mcpOAuthClientSecretHint => 'OAuth 2.1 客户端密钥（可选）';
+
+  @override
+  String get mcpOAuthScopeLabel => '范围';
+
+  @override
+  String get mcpOAuthScopeHint => '例如 read write';
+
+  @override
+  String get mcpAuthConfirm => '确认';
+
+  @override
   String get agentsInstructions => '智能体指令';
 
   @override
@@ -1945,4 +2004,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get commonEdit => '编辑';
+
+  @override
+  String get toolResultOriginal => '原始';
+
+  @override
+  String get toolResultRestore => '还原';
+
+  @override
+  String get toolResultRestoredSnackbar => '文件已还原到编辑前状态';
+
+  @override
+  String get toolResultOriginalTitle => '编辑前的原始内容';
+
+  @override
+  String restoreFailed(String error) {
+    return '还原失败：$error';
+  }
 }

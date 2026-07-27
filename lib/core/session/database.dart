@@ -15,13 +15,14 @@ part 'database.g.dart';
     ToolResults,
     ContextEpochs,
     SessionSnapshots,
+    FileSnapshots,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration {
@@ -67,6 +68,9 @@ class AppDatabase extends _$AppDatabase {
             'CREATE INDEX IF NOT EXISTS idx_session_snapshots_session '
             'ON session_snapshots(session_id)',
           );
+        }
+        if (from < 6) {
+          await mgr.createTable(fileSnapshots);
         }
       },
     );

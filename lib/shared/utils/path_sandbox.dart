@@ -12,11 +12,11 @@ List<String>? _cachedManagedReadRoots;
 /// Computed lazily and cached so we don't create the directory (a side effect
 /// of [XdgPaths.dataSubdirSync]) on every [resolveSafePath] / [isWithinAnyRoot]
 /// call.
-List<String> get managedReadRoots =>
-    _cachedManagedReadRoots ??= [
-      XdgPaths.dataSubdirSync('tool-output').path,
-      XdgPaths.dataSubdirSync('attachments').path,
-    ];
+List<String> get managedReadRoots => _cachedManagedReadRoots ??= [
+  Directory.current.path,
+  XdgPaths.dataSubdirSync('tool-output').path,
+  XdgPaths.dataSubdirSync('attachments').path,
+];
 
 /// True when [path] equals [root] or sits inside it. This is a pure string
 /// check — it does **not** resolve symlinks. Callers that need symlink-safe

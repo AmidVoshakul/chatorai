@@ -102,6 +102,16 @@ final Map<String, AgentDefinition> builtInAgents = {
           pattern: '*',
           action: PermissionAction.allow,
         ),
+        PermissionRule(
+          permission: 'plan_enter',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+        PermissionRule(
+          permission: 'plan_exit',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
       ],
     ),
   ),
@@ -179,7 +189,7 @@ Available subagents: explore (codebase exploration), general (general-purpose ta
           action: PermissionAction.deny,
         ),
         PermissionRule(
-          permission: 'bash',
+          permission: 'shell',
           pattern: '*',
           action: PermissionAction.ask,
         ),
@@ -218,11 +228,11 @@ Available subagents: explore (codebase exploration), general (general-purpose ta
           pattern: '*',
           action: PermissionAction.allow,
         ),
-        PermissionRule(
-          permission: 'plan_enter',
-          pattern: '*',
-          action: PermissionAction.allow,
-        ),
+        // PermissionRule(
+        //   permission: 'plan_enter',
+        //   pattern: '*',
+        //   action: PermissionAction.allow,
+        // ),
         PermissionRule(
           permission: 'plan_exit',
           pattern: '*',
@@ -266,11 +276,11 @@ Guidelines:
 - Use Glob for broad file pattern matching
 - Use Grep for searching file contents with regex
 - Use Read when you know the specific file path you need to read
-- Use Bash for file operations like copying, moving, or listing directory contents
+- Use shell for file operations like copying, moving, or listing directory contents
 - Adapt your search approach based on the thoroughness level specified by the caller
 - Return file paths as absolute paths in your final response
 - For clear communication, avoid using emojis
-- Do not create any files, or run bash commands that modify the user's system state in any way
+- Do not create any files, or run shell commands that modify the user's system state in any way
 
 Complete the user's search request efficiently and report your findings clearly.
 ''',
@@ -282,7 +292,7 @@ Complete the user's search request efficiently and report your findings clearly.
           action: PermissionAction.allow,
         ),
         PermissionRule(
-          permission: 'bash',
+          permission: 'shell',
           pattern: '*',
           action: PermissionAction.ask,
         ),
@@ -409,7 +419,7 @@ Your output must be:
 <rules>
 - you MUST use the same language as the user message you are summarizing
 - Title must be grammatically correct and read naturally - no word salad
-- Never include tool names in the title (e.g. "read tool", "bash tool", "edit tool")
+- Never include tool names in the title (e.g. "read tool", "shell tool", "edit tool")
 - Focus on the main topic or question the user needs to retrieve
 - Vary your phrasing - avoid repetitive patterns like always starting with "Analyzing"
 - When a file is mentioned, focus on WHAT the user wants to do WITH the file, not just that they shared it

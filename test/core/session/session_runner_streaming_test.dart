@@ -124,10 +124,10 @@ void main() {
         final session = await runner.startInitializedSession(agent: 'general');
 
         const part = 'abcdefghij'; // 10 chars
-        for (var i = 0; i < 50; i++) {
+        for (var i = 0; i < 12; i++) {
           await session.onChunk(
             part,
-          ); // total 500 < threshold -> stays buffered
+          ); // total 120 < threshold -> stays buffered
         }
 
         final eventsBefore = await repository.eventStore.getEvents(
@@ -138,14 +138,14 @@ void main() {
         expect(eventsBefore.whereType<TextDelta>().length, 0);
 
         // Completing flushes all buffered chunks as a single aggregated delta.
-        await session.onCompletion(content: part * 50, model: 'gpt-4');
+        await session.onCompletion(content: part * 12, model: 'gpt-4');
 
         final events = await repository.eventStore.getEvents(session.sessionId);
         expect(events.whereType<TextStarted>().length, 1);
         final deltas = events.whereType<TextDelta>();
-        expect(deltas.length, 1); // 50 tokens -> 1 batched delta
-        expect(deltas.first.delta, part * 50);
-        expect(events.whereType<TextEnded>().single.fullText, part * 50);
+        expect(deltas.length, 1); // 12 chunks -> 1 batched delta
+        expect(deltas.first.delta, part * 12);
+        expect(events.whereType<TextEnded>().single.fullText, part * 12);
       },
     );
 
@@ -236,7 +236,7 @@ void main() {
       final session = await runner.startInitializedSession(agent: 'general');
 
       session.onReasoning('Thinking...');
-      await session.onToolStart('tc_1', 'bash', {'cmd': 'ls'});
+      await session.onToolStart('tc_1', 'shell', {'cmd': 'ls'});
 
       await Future.delayed(const Duration(milliseconds: 50));
 
@@ -248,8 +248,8 @@ void main() {
     test('onToolEnd appends ToolSuccess event', () async {
       final session = await runner.startInitializedSession(agent: 'general');
 
-      await session.onToolStart('tc_1', 'bash', {'cmd': 'pwd'});
-      await session.onToolEnd('tc_1', 'bash', '/home/user');
+      await session.onToolStart('tc_1', 'shell', {'cmd': 'pwd'});
+      await session.onToolEnd('tc_1', 'shell', '/home/user');
 
       await Future.delayed(const Duration(milliseconds: 50));
 
@@ -262,8 +262,8 @@ void main() {
     test('onToolError appends ToolFailed event', () async {
       final session = await runner.startInitializedSession(agent: 'general');
 
-      await session.onToolStart('tc_1', 'bash', {'cmd': 'fail'});
-      await session.onToolError('tc_1', 'bash', 'Command not found');
+      await session.onToolStart('tc_1', 'shell', {'cmd': 'fail'});
+      await session.onToolError('tc_1', 'shell', 'Command not found');
 
       await Future.delayed(const Duration(milliseconds: 50));
 
@@ -278,9 +278,9 @@ void main() {
 
       // Each text chunk exceeds the flush threshold so its delta is persisted.
       await session.onChunk('Starting' + 'x' * 1100);
-      await session.onToolStart('tc_order', 'bash', {'cmd': 'ls'});
+      await session.onToolStart('tc_order', 'shell', {'cmd': 'ls'});
       await session.onChunk(' middle' + 'x' * 1100);
-      await session.onToolEnd('tc_order', 'bash', 'file1.txt');
+      await session.onToolEnd('tc_order', 'shell', 'file1.txt');
       await session.onChunk(' end' + 'x' * 1100);
 
       await Future.delayed(const Duration(milliseconds: 50));
@@ -464,8 +464,8 @@ void main() {
 
         final futures = <Future<void>>[];
         for (var i = 0; i < 100; i++) {
-          // Small chunks stay buffered until completion (no threshold flush).
-          futures.add(Future(() => session.onChunk('tok$i ')));
+          // Very small 1-char chunks — total 100 chars stays below threshold.
+          futures.add(Future(() => session.onChunk('${i % 10}')));
         }
         await Future.wait(futures);
         await session.onCompletion(content: 'final');
@@ -480,7 +480,7 @@ void main() {
         // All 100 tokens aggregated into a single flushed delta.
         final deltas = events.whereType<TextDelta>();
         expect(deltas.length, 1);
-        expect(deltas.single.delta, contains('tok99'));
+        expect(deltas.single.delta, contains('9'));
       },
     );
 

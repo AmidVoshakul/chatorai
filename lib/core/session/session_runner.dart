@@ -1,14 +1,14 @@
+import 'package:ai_sdk_dart/ai_sdk_dart.dart';
 import 'package:chatorai/core/agents/agent_registry.dart';
-import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/permission/rule.dart';
+import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_state.dart';
+import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
     show AssistantText;
-import 'package:ai_sdk_dart/ai_sdk_dart.dart';
-import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:synchronized/synchronized.dart';
 
 /// Collects the results of concurrent delegated tasks ("the box") for a single
@@ -367,7 +367,7 @@ class SessionRunnerSession {
   /// in batches (like opencode's `fragments`), so a long token stream does
   /// not open one database transaction — and emit one `streamEvents`
   /// notification — per token.
-  static const int _flushThreshold = 1024;
+  static const int _flushThreshold = 128;
   final StringBuffer _pendingText = StringBuffer();
   final StringBuffer _pendingReasoning = StringBuffer();
   final StringBuffer _fullText = StringBuffer();

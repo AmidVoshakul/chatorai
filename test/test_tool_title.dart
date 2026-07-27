@@ -41,12 +41,12 @@ void main() {
       expect(formatGrepTitle('TODO', null, null), equals('Grep "TODO"'));
     });
 
-    test('formatBashTitle with description', () {
-      expect(formatBashTitle('Run tests'), equals('Run tests'));
+    test('formatShellTitle with description', () {
+      expect(formatShellTitle('Run tests'), equals('Run tests'));
     });
 
-    test('formatBashTitle without description', () {
-      expect(formatBashTitle(null), equals('Shell command'));
+    test('formatShellTitle without description', () {
+      expect(formatShellTitle(null), equals('Shell command'));
     });
 
     test('formatWebfetchTitle with url', () {

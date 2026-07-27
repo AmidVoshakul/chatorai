@@ -13,7 +13,7 @@ IconData toolIcon(String toolName) {
       return Icons.edit_note;
     case 'write':
       return Icons.arrow_back;
-    case 'bash':
+    case 'shell':
       return Icons.terminal;
     case 'glob':
       return Icons.manage_search_rounded;

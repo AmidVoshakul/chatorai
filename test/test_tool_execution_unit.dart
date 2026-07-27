@@ -70,19 +70,19 @@ void main() {
       expect(output, contains('truncated'));
     });
 
-    test('does not cache side-effecting tools (bash)', () async {
+    test('does not cache side-effecting tools (shell)', () async {
       var callCount = 0;
-      final tool = _simpleToolDef('bash', (input, ctx) async {
+      final tool = _simpleToolDef('shell', (input, ctx) async {
         callCount++;
         return ToolOutput('output $callCount');
       });
 
-      final options = _experimentalContext('session-bash');
+      final options = _experimentalContext('session-shell');
 
       final result1 = await executor.execute(tool, {'input': 'cmd1'}, options);
       final result2 = await executor.execute(tool, {'input': 'cmd1'}, options);
 
-      // bash is side-effecting, so both calls should execute
+      // shell is side-effecting, so both calls should execute
       expect(callCount, equals(2));
       // Results might differ since both executed
       expect(result1['output'], isNotNull);

@@ -1,13 +1,13 @@
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/format/format_service.dart';
 import 'package:chatorai/core/lsp/lsp_service.dart';
+import 'package:chatorai/core/session/file_snapshot_service.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/skills/skill_service.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/features/chat/services/chat_ai_service.dart';
 
 import 'apply_patch.dart';
-import 'bash.dart';
 import 'document_extract.dart';
 import 'edit.dart';
 import 'external_directory.dart';
@@ -20,9 +20,10 @@ import 'lsp.dart';
 import 'plan.dart';
 import 'question.dart';
 import 'read.dart';
+import 'shell.dart';
 import 'skill.dart';
-import 'task_container.dart';
 import 'task.dart';
+import 'task_container.dart';
 import 'todowrite.dart';
 import 'webfetch.dart';
 import 'websearch.dart';
@@ -34,20 +35,41 @@ Future<void> registerBuiltInTools(
   ToolRegistry? toolRegistry,
   SkillService? skillService,
   LspService? lspService,
+  FileSnapshotService? fileSnapshotService,
   FormatService? formatService,
   FormatterConfig? formatterConfig,
   SessionRunnerHolder? currentSessionRunner,
 }) async {
-  registry.register(createBashTool());
+  registry.register(createShellTool());
   registry.register(createReadTool());
-  registry.register(createDocumentExtractTool());
+  registry.register(createDocumentExtractPdfTool());
+  registry.register(createDocumentExtractDocxTool());
+  registry.register(createDocumentExtractXlsxTool());
   registry.register(createGlobTool());
   registry.register(createGrepTool());
-  registry.register(createEditTool());
-  registry.register(createWriteTool());
+  registry.register(
+    createEditTool(
+      lspService: lspService,
+      fileSnapshotService: fileSnapshotService,
+      formatService: formatService,
+    ),
+  );
+  registry.register(
+    createWriteTool(
+      lspService: lspService,
+      fileSnapshotService: fileSnapshotService,
+      formatService: formatService,
+    ),
+  );
   registry.register(createWebfetchTool());
   registry.register(createWebsearchTool());
-  registry.register(createApplyPatchTool());
+  registry.register(
+    createApplyPatchTool(
+      lspService: lspService,
+      fileSnapshotService: fileSnapshotService,
+      formatService: formatService,
+    ),
+  );
   registry.register(createInvalidTool());
   registry.register(createExternalDirectoryTool());
   registry.register(createJsonSchemaTool());

@@ -7,6 +7,7 @@ import 'package:chatorai/core/tools/filesystem_boundary.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/truncation_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/core/permission/arity.dart' as arity;
 import 'package:command_shield/command_shield.dart';
 import 'package:path/path.dart' as p;
 
@@ -55,7 +56,7 @@ const _blockedExecutables = <String>{
 
 const _defaultTimeoutMs = 60000;
 
-final _bashValidator = CommandShield(
+final _shellValidator = CommandShield(
   defaultSyntax: CommandSyntax.bash,
   policy: PolicySet([
     // Layer 1 — argument-pattern defenses
@@ -126,8 +127,8 @@ Future<_PreFlightResult> _analyzeCommand(
   String command,
   String workingDir,
 ) async {
-  final analysis = _bashValidator.analyze(command);
-  final decision = _bashValidator.validate(command).decision;
+  final analysis = _shellValidator.analyze(command);
+  final decision = _shellValidator.validate(command).decision;
 
   final invocations = analysis.invocations;
   if (invocations.isEmpty) {
@@ -206,6 +207,59 @@ void _scanPath(
 /// Matches chmod octal modes like `755`, `4755`, `777`.
 final _chmodModePattern = RegExp(r'^[0-7]{3,4}$');
 
+/// Splits [command] into tokens respecting single/double quotes.
+List<String> _tokenizeCommand(String command) {
+  final tokens = <String>[];
+  final buffer = StringBuffer();
+  bool inQuotes = false;
+  String quoteChar = '';
+
+  for (var i = 0; i < command.length; i++) {
+    final char = command[i];
+
+    if (!inQuotes && (char == '"' || char == "'")) {
+      inQuotes = true;
+      quoteChar = char;
+      buffer.write(char);
+    } else if (inQuotes && char == quoteChar) {
+      inQuotes = false;
+      quoteChar = '';
+      buffer.write(char);
+    } else if (!inQuotes && char == ' ') {
+      if (buffer.isNotEmpty) {
+        tokens.add(buffer.toString().trim());
+        buffer.clear();
+      }
+    } else {
+      buffer.write(char);
+    }
+  }
+
+  if (buffer.isNotEmpty) {
+    tokens.add(buffer.toString().trim());
+  }
+
+  return tokens;
+}
+
+/// Returns an arity error message if the command violates the expected
+/// argument count from [arity.shellArity], or null if the command is valid.
+String? _checkCommandArity(String command) {
+  final tokens = _tokenizeCommand(command);
+  if (tokens.isEmpty) return null;
+
+  for (var len = tokens.length; len > 0; len--) {
+    final prefixStr = tokens.take(len).join(' ');
+    final expected = arity.shellArity[prefixStr];
+    if (expected != null && tokens.length < expected) {
+      final need = expected - tokens.length;
+      return 'Arity mismatch: "$prefixStr" expects at least $expected arguments (got ${tokens.length}, missing $need)';
+    }
+  }
+
+  return null;
+}
+
 class _ReviewOnlyPolicy extends CommandPolicy {
   const _ReviewOnlyPolicy();
 
@@ -230,7 +284,7 @@ class _ReviewOnlyPolicy extends CommandPolicy {
   }
 }
 
-/// Rolling output accumulator for streaming bash execution.
+/// Rolling output accumulator for streaming shell execution.
 ///
 /// Holds at most [_memoryLimit] bytes in RAM as a rolling preview for the UI.
 /// Once total bytes exceed [_diskThreshold], further chunks are spooled to a
@@ -274,7 +328,7 @@ class _StreamingAccumulator {
 
   Future<void> _startDiskSpool() async {
     final tempFile = File(
-      '${Directory.systemTemp.path}/chatorai_bash_${DateTime.now().microsecondsSinceEpoch}.log',
+      '${Directory.systemTemp.path}/chatorai_shell_${DateTime.now().microsecondsSinceEpoch}.log',
     );
     await tempFile.create(recursive: true);
     _tempPath = tempFile.path;
@@ -301,9 +355,9 @@ class _StreamingAccumulator {
   }
 }
 
-ToolDef createBashTool() {
+ToolDef createShellTool() {
   return ToolDef(
-    id: 'bash',
+    id: 'shell',
     description:
         'Execute a shell command in the project directory or specified '
         'working directory. Use when you need to run system commands, git '
@@ -349,6 +403,14 @@ ToolDef createBashTool() {
         );
       }
 
+      final arityError = _checkCommandArity(command);
+      if (arityError != null) {
+        return ToolOutput(
+          arityError,
+          metadata: {'error': true, 'arity_mismatch': true},
+        );
+      }
+
       final timeoutMs = input['timeout'] as int? ?? _defaultTimeoutMs;
       final workingDir = input['working_dir'] as String?;
       final effectiveWorkingDir = workingDir ?? Directory.current.path;
@@ -364,7 +426,7 @@ ToolDef createBashTool() {
             metadata: {
               'filepath': resolution.path,
               'parentDir': p.dirname(resolution.path),
-              'tool': 'bash',
+              'tool': 'shell',
             },
           );
         }
@@ -385,14 +447,17 @@ ToolDef createBashTool() {
       final decision = preflight.decision;
       if (decision == CommandDecision.deny) {
         LogTags.permission.logWarning(
-          'BashTool: command_shield returned deny, falling back to review',
+          'shellTool: command_shield returned deny, falling back to review',
         );
         // Never deny - convert to review
+        final tokens = _tokenizeCommand(command);
+        final prefixPattern = arity.prefix(tokens).join(' ');
+        final alwaysPattern = '$prefixPattern *';
         try {
           await ctx.ask(
-            permission: 'bash',
+            permission: 'shell',
             patterns: [command],
-            always: [command],
+            always: [alwaysPattern],
             metadata: {'security_level': preflight.decision.name},
           );
         } on PermissionRejectedError catch (_) {
@@ -408,11 +473,14 @@ ToolDef createBashTool() {
         }
       }
       if (decision == CommandDecision.review) {
+        final tokens = _tokenizeCommand(command);
+        final prefixPattern = arity.prefix(tokens).join(' ');
+        final alwaysPattern = '$prefixPattern *';
         try {
           await ctx.ask(
-            permission: 'bash',
+            permission: 'shell',
             patterns: [command],
-            always: [command],
+            always: [alwaysPattern],
           );
         } on PermissionRejectedError catch (_) {
           return ToolOutput(
@@ -437,7 +505,7 @@ ToolDef createBashTool() {
       final truncation = TruncationService.instance;
 
       LogTags.permission.logInfo(
-        'BashTool: START command="$command" timeout=${timeoutMs}ms workingDir=$workingDir',
+        'shellTool: START command="$command" timeout=${timeoutMs}ms workingDir=$workingDir',
       );
 
       try {
@@ -512,7 +580,7 @@ ToolDef createBashTool() {
         accumulator.dispose();
 
         LogTags.permission.logInfo(
-          'BashTool: DONE exitCode=$exitCode outputLen=${output.length}',
+          'shellTool: DONE exitCode=$exitCode outputLen=${output.length}',
         );
 
         return ToolOutput(
@@ -521,7 +589,7 @@ ToolDef createBashTool() {
           title: input['description'] as String?,
         );
       } catch (e) {
-        LogTags.permission.logError('BashTool: ERROR $e');
+        LogTags.permission.logError('shellTool: ERROR $e');
         return ToolOutput(
           'Error executing command: $e',
           metadata: {'error': true},

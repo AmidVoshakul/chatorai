@@ -102,7 +102,7 @@ void main() {
       final event = ToolCalled(
         sessionId: sessionId,
         toolCallId: 'tool_call_1',
-        toolName: 'bash',
+        toolName: 'shell',
         input: {'command': 'ls -la'},
         timestamp: timestamp,
       );
@@ -121,7 +121,7 @@ void main() {
       final toolCalled = ToolCalled(
         sessionId: sessionId,
         toolCallId: 'tool_call_1',
-        toolName: 'bash',
+        toolName: 'shell',
         input: {'command': 'ls -la'},
         timestamp: timestamp,
       );
@@ -147,7 +147,7 @@ void main() {
       final toolResults = await db.select(db.toolResults).get();
       expect(toolResults.length, 1);
       expect(toolResults.first.id, 'tool_call_1');
-      expect(toolResults.first.toolName, 'bash');
+      expect(toolResults.first.toolName, 'shell');
       expect(
         toolResults.first.outputText,
         'total 0\ndrwxr-xr-x 2 user user 4096 Jun 24 10:00 .',
@@ -163,7 +163,7 @@ void main() {
         final toolCalled = ToolCalled(
           sessionId: sessionId,
           toolCallId: 'tool_call_1',
-          toolName: 'bash',
+          toolName: 'shell',
           input: {'command': 'ls -la'},
           timestamp: timestamp,
         );
@@ -318,7 +318,7 @@ void main() {
       final toolCalled = ToolCalled(
         sessionId: sessionId,
         toolCallId: 'tool_1',
-        toolName: 'bash',
+        toolName: 'shell',
         input: {'command': 'echo hello'},
         timestamp: timestamp,
       );

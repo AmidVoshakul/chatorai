@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 import 'package:chatorai/core/tools/tool.dart';
-import 'package:chatorai/core/tools/built_in/bash.dart';
+import 'package:chatorai/core/tools/built_in/shell.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 
@@ -13,8 +13,8 @@ import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 class MockCancellationToken extends Mock implements sdk.CancellationToken {}
 
 void main() {
-  group('BashTool Unit Tests', () {
-    late ToolDef bashTool;
+  group('shellTool Unit Tests', () {
+    late ToolDef shellTool;
 
     // Helper to create a mock context with auto-approved permissions
     ToolContext _createMockContext({
@@ -53,7 +53,7 @@ void main() {
     }
 
     setUp(() {
-      bashTool = createBashTool();
+      shellTool = createShellTool();
     });
 
     group('Safe commands (no permission needed)', () {
@@ -71,7 +71,7 @@ void main() {
               },
         );
 
-        final output = await bashTool.execute({'command': 'echo hello'}, ctx);
+        final output = await shellTool.execute({'command': 'echo hello'}, ctx);
 
         expect(output, isA<ToolOutput>());
         expect(output.metadata?['error'], isNull);
@@ -97,7 +97,7 @@ void main() {
               },
         );
 
-        final output = await bashTool.execute({'command': 'ls -la'}, ctx);
+        final output = await shellTool.execute({'command': 'ls -la'}, ctx);
 
         expect(output, isA<ToolOutput>());
         expect(askCalled, isFalse);
@@ -117,7 +117,7 @@ void main() {
               },
         );
 
-        final output = await bashTool.execute({'command': 'pwd'}, ctx);
+        final output = await shellTool.execute({'command': 'pwd'}, ctx);
 
         expect(output, isA<ToolOutput>());
         expect(output.output, isNotEmpty);
@@ -126,7 +126,7 @@ void main() {
     });
 
     group('Shell operator detection', () {
-      test('cmd1; cmd2 → ask(permission: "bash") called once', () async {
+      test('cmd1; cmd2 → ask(permission: "shell") called once', () async {
         var askCalled = false;
         var capturedPermission = '';
         final ctx = _createMockContext(
@@ -142,10 +142,10 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'echo foo; echo bar'}, ctx);
+        await shellTool.execute({'command': 'echo foo; echo bar'}, ctx);
 
         expect(askCalled, isTrue);
-        expect(capturedPermission, equals('bash'));
+        expect(capturedPermission, equals('shell'));
       });
 
       test('cmd1 && cmd2 → ask called once', () async {
@@ -162,7 +162,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'echo foo && echo bar'}, ctx);
+        await shellTool.execute({'command': 'echo foo && echo bar'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -181,7 +181,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'echo foo || echo bar'}, ctx);
+        await shellTool.execute({'command': 'echo foo || echo bar'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -200,7 +200,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'echo foo | cat'}, ctx);
+        await shellTool.execute({'command': 'echo foo | cat'}, ctx);
 
         expect(askCalled, isFalse);
       });
@@ -219,7 +219,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'echo foo &'}, ctx);
+        await shellTool.execute({'command': 'echo foo &'}, ctx);
 
         expect(askCalled, isFalse);
       });
@@ -242,10 +242,10 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'curl example.com'}, ctx);
+        await shellTool.execute({'command': 'curl example.com'}, ctx);
 
         expect(askCalled, isTrue);
-        expect(capturedPermission, equals('bash'));
+        expect(capturedPermission, equals('shell'));
       });
 
       test('npm install → ask called once', () async {
@@ -262,7 +262,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'npm install'}, ctx);
+        await shellTool.execute({'command': 'npm install'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -281,7 +281,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'wget file'}, ctx);
+        await shellTool.execute({'command': 'wget file'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -302,7 +302,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'echo foo>/etc/passwd'}, ctx);
+        await shellTool.execute({'command': 'echo foo>/etc/passwd'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -321,7 +321,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({
+        await shellTool.execute({
           'command': 'cat /etc/passwd > /etc/shadow',
         }, ctx);
 
@@ -344,7 +344,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({
+        await shellTool.execute({
           'command': 'go get github.com/example/pkg',
         }, ctx);
 
@@ -365,7 +365,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({
+        await shellTool.execute({
           'command': 'go install github.com/example/pkg',
         }, ctx);
 
@@ -388,7 +388,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'cat .env'}, ctx);
+        await shellTool.execute({'command': 'cat .env'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -407,7 +407,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'cat .env.local'}, ctx);
+        await shellTool.execute({'command': 'cat .env.local'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -426,7 +426,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'less README.md'}, ctx);
+        await shellTool.execute({'command': 'less README.md'}, ctx);
 
         expect(askCalled, isFalse);
       });
@@ -452,7 +452,7 @@ void main() {
           );
 
           // Use /tmp which is typically external to project workspace
-          await bashTool.execute({
+          await shellTool.execute({
             'command': 'echo test',
             'working_dir': '/tmp',
           }, ctx);
@@ -475,11 +475,11 @@ void main() {
                   Map<String, dynamic>? metadata,
                   List<String>? always,
                 }) async {
-                  throw PermissionRejectedError('bash');
+                  throw PermissionRejectedError('shell');
                 },
           );
 
-          final output = await bashTool.execute({
+          final output = await shellTool.execute({
             'command': 'curl example.com',
           }, ctx);
 
@@ -501,11 +501,11 @@ void main() {
                   Map<String, dynamic>? metadata,
                   List<String>? always,
                 }) async {
-                  throw PermissionRejectedError('bash');
+                  throw PermissionRejectedError('shell');
                 },
           );
 
-          final output = await bashTool.execute({
+          final output = await shellTool.execute({
             'command': 'echo foo; echo bar',
           }, ctx);
 
@@ -518,7 +518,7 @@ void main() {
       test('null command → returns error metadata', () async {
         final ctx = _createMockContext();
 
-        final output = await bashTool.execute({}, ctx);
+        final output = await shellTool.execute({}, ctx);
 
         expect(output, isA<ToolOutput>());
         expect(output.metadata?['error'], isTrue);
@@ -528,7 +528,7 @@ void main() {
       test('empty command → returns error metadata', () async {
         final ctx = _createMockContext();
 
-        final output = await bashTool.execute({'command': ''}, ctx);
+        final output = await shellTool.execute({'command': ''}, ctx);
 
         expect(output, isA<ToolOutput>());
         expect(output.metadata?['error'], isTrue);
@@ -543,7 +543,7 @@ void main() {
 
         final ctx = _createMockContext(abortSignal: abortSignal);
 
-        final output = await bashTool.execute({'command': 'echo test'}, ctx);
+        final output = await shellTool.execute({'command': 'echo test'}, ctx);
 
         expect(output.metadata?['aborted'], isTrue);
         expect(output.output, contains('aborted'));
@@ -551,18 +551,18 @@ void main() {
     });
 
     group('Tool definition', () {
-      test('createBashTool returns ToolDef with correct id', () {
-        expect(bashTool.id, equals('bash'));
+      test('createShellTool returns ToolDef with correct id', () {
+        expect(shellTool.id, equals('shell'));
       });
 
-      test('createBashTool has correct input schema', () {
-        expect(bashTool.inputSchema['type'], equals('object'));
-        expect(bashTool.inputSchema['required'], contains('command'));
-        expect(bashTool.inputSchema['properties'], isNotNull);
+      test('createShellTool has correct input schema', () {
+        expect(shellTool.inputSchema['type'], equals('object'));
+        expect(shellTool.inputSchema['required'], contains('command'));
+        expect(shellTool.inputSchema['properties'], isNotNull);
       });
 
       test('description is non-empty', () {
-        expect(bashTool.description, isNotEmpty);
+        expect(shellTool.description, isNotEmpty);
       });
     });
 
@@ -582,7 +582,7 @@ void main() {
         );
 
         // Just verify the tool accepts timeout parameter
-        final output = await bashTool.execute({
+        final output = await shellTool.execute({
           'command': 'echo test',
           'timeout': 5000,
         }, ctx);
@@ -595,7 +595,7 @@ void main() {
       test('description is passed as title in output', () async {
         final ctx = _createMockContext();
 
-        final output = await bashTool.execute({
+        final output = await shellTool.execute({
           'command': 'echo test',
           'description': 'Test command',
         }, ctx);
@@ -609,7 +609,7 @@ void main() {
       test('successful command returns exit_code 0', () async {
         final ctx = _createMockContext();
 
-        final output = await bashTool.execute({'command': 'true'}, ctx);
+        final output = await shellTool.execute({'command': 'true'}, ctx);
 
         expect(output.metadata?['exit_code'], equals(0));
         expect(output.metadata?['error'], isNull);
@@ -618,7 +618,7 @@ void main() {
       test('failed command returns non-zero exit code', () async {
         final ctx = _createMockContext();
 
-        final output = await bashTool.execute({'command': 'false'}, ctx);
+        final output = await shellTool.execute({'command': 'false'}, ctx);
 
         expect(output.metadata?['exit_code'], isNot(0));
         expect(output.metadata?['error'], isTrue);
@@ -640,7 +640,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'ssh user@host'}, ctx);
+        await shellTool.execute({'command': 'ssh user@host'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -659,7 +659,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'eval "echo test"'}, ctx);
+        await shellTool.execute({'command': 'eval "echo test"'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -680,7 +680,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': r'echo $(whoami)'}, ctx);
+        await shellTool.execute({'command': r'echo $(whoami)'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -691,7 +691,7 @@ void main() {
         // Use a command that will fail during execution
         final ctx = _createMockContext();
 
-        final output = await bashTool.execute({
+        final output = await shellTool.execute({
           'command': 'ls /nonexistent_directory_xyz_12345',
         }, ctx);
 
@@ -717,7 +717,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'chmod 777 file.txt'}, ctx);
+        await shellTool.execute({'command': 'chmod 777 file.txt'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -736,7 +736,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'chmod 755 file.txt'}, ctx);
+        await shellTool.execute({'command': 'chmod 755 file.txt'}, ctx);
 
         expect(askCalled, isTrue);
       });
@@ -755,7 +755,7 @@ void main() {
               },
         );
 
-        await bashTool.execute({'command': 'chmod +x file.txt'}, ctx);
+        await shellTool.execute({'command': 'chmod +x file.txt'}, ctx);
 
         expect(askCalled, isFalse);
       });
@@ -770,7 +770,7 @@ void main() {
           },
         );
 
-        await bashTool.execute({'command': 'echo test'}, ctx);
+        await shellTool.execute({'command': 'echo test'}, ctx);
 
         // onMetadata should be called during streaming
         expect(metadataCalled, isTrue);
@@ -794,7 +794,7 @@ void main() {
 
         // chmod -v 777 should still trigger ask due to octal mode pattern
         // but the argument skip logic is tested
-        await bashTool.execute({'command': 'chmod -v file.txt'}, ctx);
+        await shellTool.execute({'command': 'chmod -v file.txt'}, ctx);
 
         // -v is a flag, so no octal mode check, but command is still safe
         expect(askCalled, isFalse);
@@ -821,7 +821,7 @@ void main() {
         // Use a command that would trigger deny (if any policy returns deny)
         // Since all policies return review, we test the deny branch indirectly
         // by using a command that triggers the deny path
-        await bashTool.execute({'command': 'echo foo; echo bar'}, ctx);
+        await shellTool.execute({'command': 'echo foo; echo bar'}, ctx);
 
         // The command triggers review, not deny, so this tests the review path
         expect(askCalled, isTrue);

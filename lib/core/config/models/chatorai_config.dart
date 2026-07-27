@@ -33,6 +33,87 @@ class FormatterEntryConfig {
   };
 }
 
+class LspServerEntryConfig {
+  final bool? disabled;
+  final List<String>? command;
+  final List<String>? args;
+  final Map<String, String>? environment;
+  final List<String>? extensions;
+  final String? languageId;
+  final Map<String, dynamic>? initialization;
+  final bool? autoInstall;
+
+  const LspServerEntryConfig({
+    this.disabled,
+    this.command,
+    this.args,
+    this.environment,
+    this.extensions,
+    this.languageId,
+    this.initialization,
+    this.autoInstall,
+  });
+
+  factory LspServerEntryConfig.fromJson(Map<String, dynamic> json) {
+    return LspServerEntryConfig(
+      disabled: json['disabled'] as bool?,
+      command: (json['command'] as List<dynamic>?)?.cast<String>(),
+      args: (json['args'] as List<dynamic>?)?.cast<String>(),
+      environment: (json['environment'] as Map<String, dynamic>?)
+          ?.cast<String, String>(),
+      extensions: (json['extensions'] as List<dynamic>?)?.cast<String>(),
+      languageId: json['languageId'] as String?,
+      initialization: json['initialization'] as Map<String, dynamic>?,
+      autoInstall: json['autoInstall'] as bool?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    if (disabled != null) 'disabled': disabled,
+    if (command != null) 'command': command,
+    if (args != null) 'args': args,
+    if (environment != null) 'environment': environment,
+    if (extensions != null) 'extensions': extensions,
+    if (languageId != null) 'languageId': languageId,
+    if (initialization != null) 'initialization': initialization,
+    if (autoInstall != null) 'autoInstall': autoInstall,
+  };
+}
+
+class LspConfig {
+  final bool enabled;
+  final Map<String, LspServerEntryConfig> servers;
+
+  const LspConfig({this.enabled = true, this.servers = const {}});
+
+  factory LspConfig.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const LspConfig();
+    final servers = <String, LspServerEntryConfig>{};
+    for (final entry in json.entries) {
+      if (entry.key == 'enabled') continue;
+      if (entry.value is Map<String, dynamic>) {
+        servers[entry.key] = LspServerEntryConfig.fromJson(
+          entry.value as Map<String, dynamic>,
+        );
+      }
+    }
+    final enabled = json['enabled'];
+    return LspConfig(
+      enabled: enabled is bool ? enabled : true,
+      servers: servers,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    if (!enabled) map['enabled'] = enabled;
+    for (final entry in servers.entries) {
+      map[entry.key] = entry.value.toJson();
+    }
+    return map;
+  }
+}
+
 class FormatterConfig {
   final Map<String, FormatterEntryConfig> formatters;
 
@@ -67,6 +148,7 @@ class ChatOrAIConfig {
   final SkillConfig? skills;
   final CompactionConfig? compaction;
   final FormatterConfig? formatter;
+  final LspConfig? lsp;
   final McpConfig? mcp;
   final AgentSectionConfig? agent;
   final Map<String, dynamic>? tools;
@@ -80,6 +162,7 @@ class ChatOrAIConfig {
     this.skills,
     this.compaction,
     this.formatter,
+    this.lsp,
     this.mcp,
     this.agent,
     this.tools,
@@ -94,6 +177,7 @@ class ChatOrAIConfig {
     for (final entry in permissionJson.entries) {
       permission[entry.key] = PermissionRuleConfig.fromJson(entry.value);
     }
+    final lspRaw = json['lsp'];
     return ChatOrAIConfig(
       version: json['version'] as int? ?? 0,
       permission: permission,
@@ -109,6 +193,13 @@ class ChatOrAIConfig {
       formatter: json['formatter'] != null
           ? FormatterConfig.fromJson(json['formatter'] as Map<String, dynamic>?)
           : null,
+      lsp: lspRaw == null
+          ? null
+          : (lspRaw is bool
+                ? LspConfig(enabled: lspRaw)
+                : (lspRaw is Map
+                      ? LspConfig.fromJson(Map<String, dynamic>.from(lspRaw))
+                      : null)),
       mcp: json['mcp'] != null
           ? McpConfig.fromJson(json['mcp'] as Map<String, dynamic>?)
           : null,
@@ -136,6 +227,7 @@ class ChatOrAIConfig {
     if (skills != null) 'skills': skills!.toJson(),
     if (compaction != null) 'compaction': compaction!.toJson(),
     if (formatter != null) 'formatter': formatter!.toJson(),
+    if (lsp != null) 'lsp': lsp!.toJson(),
     if (mcp != null) 'mcp': mcp!.toJson(),
     if (agent != null) 'agent': agent!.toJson(),
     if (tools != null) 'tools': tools,

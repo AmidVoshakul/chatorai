@@ -18,6 +18,19 @@ class McpServerIcon extends StatelessWidget {
     'exa': 'assets/provider/exa-color.svg',
     'searxng': 'assets/provider/searxng.svg',
     'sequential-thinking': 'assets/provider/sequential-thinking.svg',
+    'tavily': 'assets/provider/tavily-color.svg',
+    'hugging-face': 'assets/provider/huggingface-icon.svg',
+    'parallel': 'assets/provider/parallel-color.svg',
+    'github': 'assets/provider/githubcopilot.svg',
+    'postman': 'assets/provider/postman-color.svg',
+    'slack': 'assets/provider/slack-color.svg',
+    'figma': 'assets/provider/figma-color.svg',
+    'canva': 'assets/provider/canva-icon.svg',
+    'stripe': 'assets/provider/stripe-payment-icon.svg',
+    'trivago': 'assets/provider/trivago-color.svg',
+    'send': 'assets/provider/send-color.svg',
+    'ziprecruiter': 'assets/provider/ziprecruiter-color.svg',
+    'adobe-creativity': 'assets/provider/adobe-color.svg',
   };
 
   @override

@@ -24,20 +24,20 @@ void main() {
 
     group('ToolTimeoutError', () {
       test('is a ToolError', () {
-        const error = ToolTimeoutError('bash');
+        const error = ToolTimeoutError('shell');
         expect(error, isA<ToolError>());
       });
 
       test('has correct toolName', () {
-        const error = ToolTimeoutError('bash');
-        expect(error.toolName, equals('bash'));
+        const error = ToolTimeoutError('shell');
+        expect(error.toolName, equals('shell'));
       });
 
       test('timeout errors are conceptually retryable', () {
         // ToolTimeoutError represents a timeout - retrying with longer
         // timeout is a valid strategy
-        const error = ToolTimeoutError('bash');
-        expect(error.toolName, equals('bash'));
+        const error = ToolTimeoutError('shell');
+        expect(error.toolName, equals('shell'));
       });
     });
 
@@ -61,23 +61,23 @@ void main() {
 
     group('ToolExecutionError', () {
       test('is a ToolError', () {
-        const error = ToolExecutionError('bash', 'exit code 1');
+        const error = ToolExecutionError('shell', 'exit code 1');
         expect(error, isA<ToolError>());
       });
 
       test('has correct toolName', () {
-        const error = ToolExecutionError('bash', 'exit code 1');
-        expect(error.toolName, equals('bash'));
+        const error = ToolExecutionError('shell', 'exit code 1');
+        expect(error.toolName, equals('shell'));
       });
 
       test('has correct message', () {
-        const error = ToolExecutionError('bash', 'exit code 1');
+        const error = ToolExecutionError('shell', 'exit code 1');
         expect(error.message, equals('exit code 1'));
       });
 
       test('execution errors are not retryable', () {
         // Execution errors (non-zero exit code) won't succeed on retry
-        const error = ToolExecutionError('bash', 'file not found');
+        const error = ToolExecutionError('shell', 'file not found');
         expect(error.message, isNotEmpty);
       });
     });
@@ -86,7 +86,7 @@ void main() {
       test('all ToolError subtypes have toolName', () {
         const errors = <ToolError>[
           ToolNotFoundError('read'),
-          ToolTimeoutError('bash'),
+          ToolTimeoutError('shell'),
           ToolPermissionDeniedError('write'),
           ToolExecutionError('grep', 'pattern not found'),
         ];

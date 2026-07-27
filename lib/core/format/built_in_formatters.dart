@@ -1,5 +1,5 @@
-import 'package:chatorai/core/format/formatter_definition.dart';
 import 'package:chatorai/core/format/format_utils.dart';
+import 'package:chatorai/core/format/formatter_definition.dart';
 
 // Common helpers
 

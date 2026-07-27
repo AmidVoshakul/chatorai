@@ -150,7 +150,7 @@ void main() {
       final denyAllRuleset = PermissionRuleset(
         rules: [
           PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
@@ -198,7 +198,7 @@ void main() {
       );
       final registry = ToolRegistry(service, denyAllRuleset);
 
-      registry.register(_fakeTool('bash', description: 'Bash'));
+      registry.register(_fakeTool('shell', description: 'shell'));
       registry.register(_fakeTool('read', description: 'Read'));
       registry.register(_fakeTool('write', description: 'Write'));
       registry.register(_fakeTool('glob', description: 'Glob'));

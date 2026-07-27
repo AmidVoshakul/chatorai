@@ -131,7 +131,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
                   id: current.id!,
                   sessionId: current.sessionId!,
                   messageId: current.messageId!,
-                  text: fullText,
+                  text: current.text,
                   synthetic: current.synthetic,
                   ignored: current.ignored,
                   title: current.title,
@@ -143,7 +143,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
                     id: p.id!,
                     sessionId: p.sessionId!,
                     messageId: p.messageId!,
-                    text: fullText,
+                    text: p.text,
                     synthetic: p.synthetic,
                     ignored: p.ignored,
                     title: p.title,
@@ -897,12 +897,7 @@ List<AssistantContent> _updateLastReasoningPart(
     started: existing.started,
     ended: ended,
   );
-  final without = List<AssistantContent>.from(parts)..removeAt(idx);
-  final textIdx = without.indexWhere(
-    (p) => p is AssistantText && p.messageId == messageId,
-  );
-  if (textIdx == -1) return without..insert(idx, updated);
-  return without..insert(textIdx, updated);
+  return [...parts.sublist(0, idx), updated, ...parts.sublist(idx + 1)];
 }
 
 // ── Helper functions for typed AssistantContent parts ──────────────────────

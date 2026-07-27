@@ -21,6 +21,11 @@ class _ShortcutHandlerState extends ConsumerState<ShortcutHandler> {
   final FocusNode _focusNode = FocusNode();
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   void dispose() {
     _focusNode.dispose();
     super.dispose();
@@ -40,9 +45,9 @@ class _ShortcutHandlerState extends ConsumerState<ShortcutHandler> {
         if (doublePressed) {
           _doublePressTimestamp = null;
           shortcut.onExecute(context, ref);
-          return KeyEventResult.handled;
+        } else {
+          _doublePressTimestamp = now;
         }
-        _doublePressTimestamp = now;
         return KeyEventResult.handled;
       }
 
@@ -56,7 +61,6 @@ class _ShortcutHandlerState extends ConsumerState<ShortcutHandler> {
   Widget build(BuildContext context) {
     return Focus(
       focusNode: _focusNode,
-      autofocus: true,
       onKeyEvent: _onKeyEvent,
       child: widget.child,
     );

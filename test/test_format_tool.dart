@@ -178,6 +178,77 @@ void main() {
     });
   });
 
+  group('createFormatTool — changed: false path', () {
+    test('reports changed: false when no changes made', () async {
+      when(
+        () => mockService.formatFile(
+          any(),
+          preferredFormatter: null,
+          formatterConfig: null,
+        ),
+      ).thenAnswer(
+        (_) async => FormatResult(
+          formattedContent: 'void main() {}',
+          formatter: 'dartfmt',
+          changed: false,
+        ),
+      );
+
+      tool = createFormatTool(mockService);
+      final result = await tool.execute({'filePath': '/tmp/f.dart'}, makeCtx());
+
+      expect(result.metadata?['error'], isNull);
+      expect(result.metadata?['changed'], isFalse);
+      expect(result.output, contains('dartfmt'));
+    });
+  });
+
+  group('createFormatTool — originalContent in output', () {
+    test('includes original content when provided by service', () async {
+      when(
+        () => mockService.formatFile(
+          any(),
+          preferredFormatter: null,
+          formatterConfig: null,
+        ),
+      ).thenAnswer(
+        (_) async => FormatResult(
+          formattedContent: 'void main() {}',
+          originalContent: 'void main(){}',
+          formatter: 'dartfmt',
+          changed: true,
+        ),
+      );
+
+      tool = createFormatTool(mockService);
+      final result = await tool.execute({'filePath': '/tmp/f.dart'}, makeCtx());
+
+      expect(result.output, contains('original'));
+      expect(result.output, contains('void main(){}'));
+    });
+
+    test('omits original key when null', () async {
+      when(
+        () => mockService.formatFile(
+          any(),
+          preferredFormatter: null,
+          formatterConfig: null,
+        ),
+      ).thenAnswer(
+        (_) async => FormatResult(
+          formattedContent: 'void main() {}',
+          formatter: 'dartfmt',
+          changed: true,
+        ),
+      );
+
+      tool = createFormatTool(mockService);
+      final result = await tool.execute({'filePath': '/tmp/f.dart'}, makeCtx());
+
+      expect(result.output, isNot(contains('"original"')));
+    });
+  });
+
   group('createFormatTool — exception path', () {
     test('catches exception and returns error output', () async {
       when(

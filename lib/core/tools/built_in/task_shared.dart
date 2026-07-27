@@ -1,7 +1,13 @@
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 import 'package:chatorai/core/tools/tool_registry.dart';
 
-const Set<String> subagentDeniedTools = {'task', 'todowrite'};
+const Set<String> subagentDeniedTools = {
+  'task',
+  'task_container',
+  'todowrite',
+  'plan_enter',
+  'plan_exit',
+};
 
 String normalizeSessionId(String id) {
   if (id.startsWith('ses_')) return id;

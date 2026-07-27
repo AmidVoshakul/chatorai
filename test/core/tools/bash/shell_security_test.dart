@@ -2,7 +2,7 @@ import 'package:test/test.dart';
 import 'package:command_shield/command_shield.dart';
 
 void main() {
-  group('Bash Security Policy Tests', () {
+  group('shell Security Policy Tests', () {
     group('DangerousCharacterPolicy', () {
       test('semicolon (;) triggers review decision', () {
         final shield = CommandShield(

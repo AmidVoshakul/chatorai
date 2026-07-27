@@ -136,7 +136,7 @@ void main() {
         ToolCalled(
           sessionId: id,
           toolCallId: 'tc_1',
-          toolName: 'bash',
+          toolName: 'shell',
           input: {'cmd': 'ls'},
           timestamp: DateTime.now(),
         ),
@@ -153,7 +153,7 @@ void main() {
         ToolCalled(
           sessionId: id,
           toolCallId: 'tc_1',
-          toolName: 'bash',
+          toolName: 'shell',
           input: {},
           timestamp: DateTime.now(),
         ),
@@ -180,7 +180,7 @@ void main() {
         ToolCalled(
           sessionId: id,
           toolCallId: 'tc_1',
-          toolName: 'bash',
+          toolName: 'shell',
           input: {},
           timestamp: DateTime.now(),
         ),
@@ -341,6 +341,9 @@ void main() {
       'TextStarted → ToolCalled → TextEnded keeps text before tool in parts',
       () {
         final now = DateTime.now();
+        // Event order matches real streaming: text starts → text delta →
+        // tool call → reasoning → TextEnded → tool result.
+        // Parts are created in event order: Text, Tool, Reasoning.
         final events = [
           SessionCreated(sessionId: id, timestamp: now),
           MessageAdded(
@@ -351,10 +354,16 @@ void main() {
             timestamp: now,
           ),
           TextStarted(sessionId: id, messageId: 'a1', timestamp: now),
+          TextDelta(
+            sessionId: id,
+            messageId: 'a1',
+            delta: 'initial ',
+            timestamp: now,
+          ),
           ToolCalled(
             sessionId: id,
             toolCallId: 'tc1',
-            toolName: 'bash',
+            toolName: 'shell',
             input: {'cmd': 'ls'},
             timestamp: now,
           ),
@@ -374,7 +383,7 @@ void main() {
           TextEnded(
             sessionId: id,
             messageId: 'a1',
-            fullText: 'ok',
+            fullText: 'initial ok',
             model: 'm1',
             timestamp: now,
           ),
@@ -389,15 +398,89 @@ void main() {
         final state = replayEvents(events);
 
         expect(state.parts.length, 3);
-        expect(state.parts[0], isA<AssistantReasoning>());
-        expect(state.parts[1], isA<AssistantText>());
-        expect(state.parts[2], isA<AssistantTool>());
-        if (state.parts[1] is AssistantText) {
-          expect((state.parts[1] as AssistantText).text, 'ok');
+        // Parts are in creation order: Text → Tool → Reasoning
+        expect(state.parts[0], isA<AssistantText>());
+        expect(state.parts[1], isA<AssistantTool>());
+        expect(state.parts[2], isA<AssistantReasoning>());
+        // TextEnded preserves per-part accumulated text (not fullText)
+        if (state.parts[0] is AssistantText) {
+          expect((state.parts[0] as AssistantText).text, 'initial ');
         }
-        if (state.parts[2] is AssistantTool) {
-          expect((state.parts[2] as AssistantTool).state, ToolState.completed);
+        if (state.parts[1] is AssistantTool) {
+          expect((state.parts[1] as AssistantTool).state, ToolState.completed);
         }
+        // Message-level content is fullText
+        expect(
+          state.messages.firstWhere((m) => m.id == 'a1').content,
+          'initial ok',
+        );
+      },
+    );
+
+    test(
+      'TextEnded preserves per-part accumulated text across multiple parts',
+      () {
+        final now = DateTime.now();
+        // Simulate multi-step: text → tool → more text → TextEnded
+        // The SDK's fullText will contain ALL text concatenated;
+        // each part should keep only its own accumulated text.
+        final events = [
+          SessionCreated(sessionId: id, timestamp: now),
+          // Step 1: first text part
+          TextStarted(sessionId: id, messageId: 'a1', timestamp: now),
+          TextDelta(
+            sessionId: id,
+            messageId: 'a1',
+            delta: 'Hello ',
+            timestamp: now,
+          ),
+          // Tool call closes first text part
+          ToolCalled(
+            sessionId: id,
+            toolCallId: 'tc1',
+            toolName: 'shell',
+            input: {'cmd': 'ls'},
+            timestamp: now,
+          ),
+          ToolSuccess(
+            sessionId: id,
+            toolCallId: 'tc1',
+            outputText: 'files',
+            timestamp: now,
+          ),
+          // Step 2: second text part (same messageId)
+          TextStarted(sessionId: id, messageId: 'a1', timestamp: now),
+          TextDelta(
+            sessionId: id,
+            messageId: 'a1',
+            delta: 'World',
+            timestamp: now,
+          ),
+          // TextEnded with fullText = concatenation of all text from SDK
+          TextEnded(
+            sessionId: id,
+            messageId: 'a1',
+            fullText: 'Hello World',
+            model: 'gpt-4',
+            timestamp: now,
+          ),
+        ];
+
+        final state = replayEvents(events);
+
+        // Message-level content should be the fullText
+        expect(state.messages.first.content, 'Hello World');
+
+        // Parts: [AssistantText("Hello "), AssistantTool, AssistantText("World")]
+        expect(state.parts.length, 3);
+        expect(state.parts[0], isA<AssistantText>());
+        expect(state.parts[1], isA<AssistantTool>());
+        expect(state.parts[2], isA<AssistantText>());
+
+        // Each text part must preserve its own accumulated text
+        // (NOT replaced by fullText)
+        expect((state.parts[0] as AssistantText).text, 'Hello ');
+        expect((state.parts[2] as AssistantText).text, 'World');
       },
     );
 
@@ -426,9 +509,12 @@ void main() {
 
     test('ReasoningDelta/Ended updates existing reasoning part in place', () {
       final now = DateTime.now();
+      // Event order: TextStarted creates AssistantText first,
+      // then ReasoningStarted creates AssistantReasoning.
       final events = [
         SessionCreated(sessionId: id, timestamp: now),
         TextStarted(sessionId: id, messageId: 'a1', timestamp: now),
+        TextDelta(sessionId: id, messageId: 'a1', delta: 'He', timestamp: now),
         ReasoningStarted(sessionId: id, messageId: 'a1', timestamp: now),
         ReasoningDelta(
           sessionId: id,
@@ -451,7 +537,7 @@ void main() {
         TextEnded(
           sessionId: id,
           messageId: 'a1',
-          fullText: 'done',
+          fullText: 'Hellothink',
           model: 'm1',
           timestamp: now,
         ),
@@ -460,10 +546,12 @@ void main() {
       final state = replayEvents(events);
 
       expect(state.parts.length, 2);
-      expect(state.parts[0], isA<AssistantReasoning>());
-      expect((state.parts[0] as AssistantReasoning).text, 'think');
-      expect(state.parts[1], isA<AssistantText>());
-      expect((state.parts[1] as AssistantText).text, 'done');
+      // Parts in creation order: Text, then Reasoning
+      expect(state.parts[0], isA<AssistantText>());
+      expect(state.parts[1], isA<AssistantReasoning>());
+      // Each part preserves its own accumulated text
+      expect((state.parts[0] as AssistantText).text, 'He');
+      expect((state.parts[1] as AssistantReasoning).text, 'think');
     });
   });
 
@@ -488,7 +576,7 @@ void main() {
         ToolCalled(
           sessionId: id,
           toolCallId: 'tc1',
-          toolName: 'bash',
+          toolName: 'shell',
           input: {'cmd': 'ls'},
           timestamp: now,
         ),

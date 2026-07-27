@@ -3214,6 +3214,120 @@ abstract class AppLocalizations {
   /// **'Adobe for Creativity unites Photoshop, Lightroom, Illustrator, Firefly, Premiere, Express, InDesign, and Stock with AI-driven creative work. Users can generate, edit, and enhance photos, design assets, and video projects using natural language while work stays tied to their Adobe account.'**
   String get mcpMarketDescAdobeCreativity;
 
+  /// No description provided for @mcpInstallToGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Install to Global'**
+  String get mcpInstallToGlobal;
+
+  /// No description provided for @mcpInstallToProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Install to Project'**
+  String get mcpInstallToProject;
+
+  /// No description provided for @mcpScopeGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Global'**
+  String get mcpScopeGlobal;
+
+  /// No description provided for @mcpScopeProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Project'**
+  String get mcpScopeProject;
+
+  /// No description provided for @mcpScopeGlobalProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Global + Project'**
+  String get mcpScopeGlobalProject;
+
+  /// No description provided for @mcpRemoveFromScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from {scope}'**
+  String mcpRemoveFromScope(String scope);
+
+  /// No description provided for @mcpRemoveFromAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from all'**
+  String get mcpRemoveFromAll;
+
+  /// No description provided for @mcpTokenDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication'**
+  String get mcpTokenDialogTitle;
+
+  /// No description provided for @mcpTokenDialogTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how to authenticate with this server'**
+  String get mcpTokenDialogTitleHint;
+
+  /// No description provided for @mcpTokenInputLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Token'**
+  String get mcpTokenInputLabel;
+
+  /// No description provided for @mcpTokenInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste your access token'**
+  String get mcpTokenInputHint;
+
+  /// No description provided for @mcpTokenInputHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent as Authorization: Bearer <token>'**
+  String get mcpTokenInputHelper;
+
+  /// No description provided for @mcpOAuthClientIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Client ID'**
+  String get mcpOAuthClientIdLabel;
+
+  /// No description provided for @mcpOAuthClientIdHint.
+  ///
+  /// In en, this message translates to:
+  /// **'OAuth 2.1 client ID'**
+  String get mcpOAuthClientIdHint;
+
+  /// No description provided for @mcpOAuthClientSecretLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Client Secret'**
+  String get mcpOAuthClientSecretLabel;
+
+  /// No description provided for @mcpOAuthClientSecretHint.
+  ///
+  /// In en, this message translates to:
+  /// **'OAuth 2.1 client secret (optional)'**
+  String get mcpOAuthClientSecretHint;
+
+  /// No description provided for @mcpOAuthScopeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Scope'**
+  String get mcpOAuthScopeLabel;
+
+  /// No description provided for @mcpOAuthScopeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. read write'**
+  String get mcpOAuthScopeHint;
+
+  /// No description provided for @mcpAuthConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get mcpAuthConfirm;
+
   /// No description provided for @agentsInstructions.
   ///
   /// In en, this message translates to:
@@ -3801,6 +3915,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit'**
   String get commonEdit;
+
+  /// No description provided for @toolResultOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get toolResultOriginal;
+
+  /// No description provided for @toolResultRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get toolResultRestore;
+
+  /// No description provided for @toolResultRestoredSnackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'Files restored to before-edit state'**
+  String get toolResultRestoredSnackbar;
+
+  /// No description provided for @toolResultOriginalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Original content before edit'**
+  String get toolResultOriginalTitle;
+
+  /// No description provided for @restoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore failed: {error}'**
+  String restoreFailed(String error);
 }
 
 class _AppLocalizationsDelegate

@@ -4,32 +4,57 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
-import 'package:image/image.dart' as img;
+import 'package:image/image.dart';
 import 'package:path/path.dart' as p;
-import 'package:pdf_render_maintained/pdf_render.dart';
+import 'package:pdf_document/pdf_document.dart' as pdf_doc;
+import 'package:pdf_graphics/pdf_graphics.dart' as pdfg;
+import 'package:pdfrx/pdfrx.dart' as rxd;
+import 'package:pdfrx_engine/pdfrx_engine.dart' as rxengine;
 import 'package:xml/xml.dart';
 
-import 'truncation_service.dart';
+enum DocumentType { pdf, docx, xlsx, unknown }
 
-enum DocumentType { pdf, docx, txt, md, unknown }
+class PageRange {
+  final int start;
+  final int? end;
+
+  const PageRange(this.start, this.end);
+
+  (int, int) toStartEnd(int totalPages) {
+    final s = start < 1 ? 1 : start;
+    final e = end == null
+        ? totalPages
+        : (end! > totalPages ? totalPages : end!);
+    return (s, e.clamp(s, totalPages));
+  }
+}
 
 class DocumentExtractorService {
-  static const _maxPageImages = 10;
-  static const _renderScale = 2.0;
-  static const _maxTextFileBytes = 5 * 1024 * 1024;
   static const _maxDocxBytes = 20 * 1024 * 1024;
-  static const _maxPdfBytes = 100 * 1024 * 1024;
-  static const _defaultPdfOpenTimeout = Duration(seconds: 15);
-  static const _defaultPdfPageTimeout = Duration(seconds: 30);
+  static const _maxXlsxBytes = 20 * 1024 * 1024;
+  static const maxFileSizeMb = 50;
+  static const defaultRenderScale = 1.5;
+
+  static bool _pdfrxAvailable = true;
+  static bool get pdfrxAvailable => _pdfrxAvailable;
+
+  static Future<void> initPdfRx() async {
+    try {
+      await rxd.pdfrxInitialize();
+    } on Exception catch (_) {
+      _pdfrxAvailable = false;
+    } catch (_) {
+      _pdfrxAvailable = false;
+    }
+  }
 
   DocumentType detectType(String filePath) {
     final ext = p.extension(filePath).toLowerCase().replaceFirst('.', '');
     switch (ext) {
       case 'pdf':
       case 'docx':
-      case 'txt':
-      case 'md':
-      case 'markdown':
+      case 'xlsx':
+      case 'xls':
         final type = _detectByExtension(ext);
         if (type == DocumentType.unknown) return type;
         final headerType = _detectByMagicBytes(filePath);
@@ -45,11 +70,9 @@ class DocumentExtractorService {
         return DocumentType.pdf;
       case 'docx':
         return DocumentType.docx;
-      case 'txt':
-        return DocumentType.txt;
-      case 'md':
-      case 'markdown':
-        return DocumentType.md;
+      case 'xlsx':
+      case 'xls':
+        return DocumentType.xlsx;
       default:
         return DocumentType.unknown;
     }
@@ -62,16 +85,15 @@ class DocumentExtractorService {
       final raf = file.openSync(mode: FileMode.read);
       try {
         final header = raf.readSync(8);
-        if (header.length >= 4) {
-          if (header[0] == 0x25 && header[1] == 0x50 &&
-              header[2] == 0x44 && header[3] == 0x46) {
-            return DocumentType.pdf;
-          }
+        if (header.length >= 4 &&
+            header[0] == 0x25 &&
+            header[1] == 0x50 &&
+            header[2] == 0x44 &&
+            header[3] == 0x46) {
+          return DocumentType.pdf;
         }
-        if (header.length >= 2) {
-          if (header[0] == 0x50 && header[1] == 0x4B) {
-            return DocumentType.docx;
-          }
+        if (header.length >= 2 && header[0] == 0x50 && header[1] == 0x4B) {
+          return DocumentType.docx;
         }
         return DocumentType.unknown;
       } finally {
@@ -84,131 +106,184 @@ class DocumentExtractorService {
 
   Future<String> extract(
     String filePath, {
-    int? pageLimit,
-    Duration? pdfPageTimeout,
+    PageRange? pages,
+    int? maxFileSizeMb,
+    double renderScale = defaultRenderScale,
     void Function()? onAbort,
+    String? sheet,
   }) async {
     final type = detectType(filePath);
     if (type == DocumentType.unknown) {
-      throw ArgumentError('Unsupported file type: $filePath');
+      throw ArgumentError('unsupported file type: $filePath');
     }
+
+    final sizeLimit =
+        (maxFileSizeMb ?? DocumentExtractorService.maxFileSizeMb) * 1024 * 1024;
 
     switch (type) {
       case DocumentType.pdf:
-        return _extractPdf(
+        return extractPdf(
           filePath,
-          pageLimit: pageLimit,
-          pdfPageTimeout: pdfPageTimeout,
+          pages: pages,
+          maxFileSizeBytes: sizeLimit,
+          renderScale: renderScale,
           onAbort: onAbort,
         );
       case DocumentType.docx:
-        return _extractDocx(filePath);
-      case DocumentType.txt:
-        return _extractTextFile(filePath);
-      case DocumentType.md:
-        return _extractTextFile(filePath);
+        final docxSize = await File(filePath).stat().then((s) => s.size);
+        if (docxSize > _maxDocxBytes) {
+          throw ArgumentError(
+            'DOCX too large: $docxSize bytes (max $_maxDocxBytes)',
+          );
+        }
+        return extractDocx(filePath);
+      case DocumentType.xlsx:
+        final xlsxSize = await File(filePath).stat().then((s) => s.size);
+        if (xlsxSize > _maxXlsxBytes) {
+          throw ArgumentError(
+            'XLSX too large: $xlsxSize bytes (max $_maxXlsxBytes)',
+          );
+        }
+        return extractXlsx(filePath, sheet: sheet);
       case DocumentType.unknown:
         throw StateError('unreachable');
     }
   }
 
-  Future<String> _extractPdf(
+  Future<String> extractPdf(
     String filePath, {
-    int? pageLimit,
-    Duration? pdfPageTimeout,
+    PageRange? pages,
+    required int maxFileSizeBytes,
+    double renderScale = defaultRenderScale,
     void Function()? onAbort,
   }) async {
     onAbort?.call();
 
     final stat = await File(filePath).stat();
-    if (stat.size > _maxPdfBytes) {
+    if (stat.size > maxFileSizeBytes) {
       throw ArgumentError(
-        'PDF too large: ${stat.size} bytes (max $_maxPdfBytes)',
-      );
-    }
-
-    final pageTimeout = pdfPageTimeout ?? _defaultPdfPageTimeout;
-    final openTimeout =
-        pageTimeout > _defaultPdfOpenTimeout
-            ? pageTimeout
-            : _defaultPdfOpenTimeout;
-
-    final doc = await PdfDocument
-        .openFile(filePath)
-        .timeout(openTimeout, onTimeout: () {
-      throw TimeoutException('PDF open timed out');
-    });
-    try {
-      final totalPages = doc.pageCount;
-      final limit = pageLimit ?? totalPages;
-      final pages = limit.clamp(1, totalPages).clamp(1, _maxPageImages);
-
-      final buffer = StringBuffer();
-      buffer.writeln('# PDF Document: ${p.basename(filePath)}');
-      buffer.writeln('- Total pages: $totalPages');
-      buffer.writeln(
-        '- Pages shown: $pages${pages < totalPages ? ' (limited)' : ''}',
-      );
-      buffer.writeln('');
-
-      for (int i = 1; i <= pages; i++) {
-        onAbort?.call();
-
-        final page = await doc.getPage(i);
-        try {
-          final fullWidth = (page.width * _renderScale).round();
-          final fullHeight = (page.height * _renderScale).round();
-          final image = await page
-              .render(width: fullWidth, height: fullHeight)
-              .timeout(pageTimeout, onTimeout: () {
-            throw TimeoutException('Page $i render timed out');
-          });
-          try {
-            final pngBytes = _rgbaToPng(
-              image.pixels,
-              image.width,
-              image.height,
-            );
-            final b64 = base64Encode(pngBytes);
-            buffer.writeln('### Page $i');
-            buffer.writeln('![](${'data:image/png;base64,$b64'})');
-            buffer.writeln('');
-          } finally {
-            image.dispose();
-          }
-        } finally {
-        }
-      }
-
-      return buffer.toString();
-    } finally {
-      await doc.dispose();
-    }
-  }
-
-  Future<String> _extractDocx(String filePath) async {
-    final stat = await File(filePath).stat();
-    if (stat.size > _maxDocxBytes) {
-      throw ArgumentError(
-        'DOCX too large: ${stat.size} bytes (max $_maxDocxBytes)',
+        'PDF too large: ${stat.size} bytes (max $maxFileSizeBytes)',
       );
     }
 
     final bytes = await File(filePath).readAsBytes();
+    final doc = pdf_doc.PdfDocument.open(bytes);
+    final totalPages = doc.pageCount;
+    final effectivePages = pages ?? const PageRange(1, null);
+    final (start, end) = effectivePages.toStartEnd(totalPages);
+
+    final buffer = StringBuffer();
+    buffer.writeln('# PDF Document: ${p.basename(filePath)}');
+    buffer.writeln('- Total pages: $totalPages');
+    if (pages != null) {
+      buffer.writeln('- Pages shown: $start–${end - 1} (limited)');
+    }
+    buffer.writeln('');
+
+    for (var i = start - 1; i < end; i++) {
+      onAbort?.call();
+
+      final pageText = pdfg.PdfTextExtractor.extract(doc, i);
+      final text = pageText.text.trim();
+      if (text.isNotEmpty) {
+        buffer.writeln('### Page ${i + 1}');
+        buffer.writeln(text);
+        buffer.writeln('');
+      }
+
+      if (_pdfrxAvailable) {
+        rxengine.PdfImage? renderedPage;
+        rxengine.PdfDocument? pageDoc;
+        try {
+          final result = await _openPdfRxPage(bytes, i);
+          pageDoc = result.$1;
+          final rxPage = result.$2;
+          if (rxPage != null) {
+            final scale = renderScale.clamp(0.5, 4.0);
+            final w = (rxPage.width * scale).toInt();
+            final h = (rxPage.height * scale).toInt();
+
+            renderedPage = await rxPage.render(
+              width: w,
+              height: h,
+              backgroundColor: 0xFFFFFFFF,
+            );
+
+            if (renderedPage != null) {
+              final img = _bgraToImage(
+                renderedPage.pixels,
+                renderedPage.width,
+                renderedPage.height,
+              );
+              final pngBytes = Uint8List.fromList(encodePng(img));
+              final b64 = base64Encode(pngBytes);
+              buffer.write(
+                '![Page ${i + 1}]'
+                '(data:image/png;base64,$b64)',
+              );
+              buffer.writeln('');
+            }
+          }
+        } on Exception catch (_) {
+          // PDFium unavailable — silently skip rendering for this page
+        } finally {
+          renderedPage?.dispose();
+          pageDoc?.dispose();
+        }
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  Image _bgraToImage(Uint8List bgra, int width, int height) {
+    final img = Image(
+      width: width,
+      height: height,
+      format: Format.uint8,
+      numChannels: 4,
+    );
+    final len = width * height;
+    final src = bgra;
+    for (var i = 0; i < len; i++) {
+      final si = i << 2;
+      final r = src[si + 2];
+      final g = src[si + 1];
+      final b = src[si];
+      final a = src[si + 3];
+      img.data!.setPixelRgba(i % width, i ~/ width, r, g, b, a);
+    }
+    return img;
+  }
+
+  Future<(rxengine.PdfDocument?, rxengine.PdfPage?)> _openPdfRxPage(
+    Uint8List bytes,
+    int pageIndex,
+  ) async {
+    if (!_pdfrxAvailable) return (null, null);
+    try {
+      final doc = await rxengine.PdfDocument.openData(bytes);
+      final page = doc.pages[pageIndex];
+      await page.ensureLoaded();
+      return (doc, page);
+    } on Exception {
+      return (null, null);
+    }
+  }
+
+  Future<String> extractDocx(String filePath) async {
+    final bytes = await File(filePath).readAsBytes();
     final archive = ZipDecoder().decodeBytes(bytes);
 
     final buffer = StringBuffer();
-    buffer.writeln('# DOCX Document: ${p.basename(filePath)}');
-    buffer.writeln('');
 
     final documentFile = archive.findFile('word/document.xml');
     if (documentFile != null) {
       final xmlContent = utf8.decode(documentFile.content);
       final document = XmlDocument.parse(xmlContent);
       final paragraphs = document.findAllElements('w:p');
-      for (final p in paragraphs) {
-        final texts = p
-            .descendants
+      for (final para in paragraphs) {
+        final texts = para.descendants
             .whereType<XmlText>()
             .map((t) => t.value.trim())
             .where((t) => t.isNotEmpty)
@@ -246,39 +321,101 @@ class DocumentExtractorService {
     return buffer.toString();
   }
 
-  Future<String> _extractTextFile(String filePath) async {
-    final stat = await File(filePath).stat();
-    if (stat.size > _maxTextFileBytes) {
-      final fullContent = await File(filePath).readAsString();
-      final fullBytes = utf8.encode(fullContent);
-      final truncatedBytes = fullBytes.sublist(0, _maxTextFileBytes);
-      final truncated = utf8.decode(truncatedBytes, allowMalformed: true);
-      final fullPath = await TruncationService.instance.write(fullContent);
-      return '# ${p.basename(filePath)} (truncated)\n\n'
-          'File size: ${stat.size} bytes (limit: $_maxTextFileBytes).\n'
-          'Showing first $_maxTextFileBytes bytes.\n'
-          'Full file written to: $fullPath\n'
-          'Use the Read tool with filePath: "$fullPath" to read the full content.\n\n'
-          '```\n$truncated\n```\n';
-    }
-    final content = await File(filePath).readAsString();
-    return '# ${p.basename(filePath)}\n\n```\n$content\n```\n';
-  }
+  Future<String> extractXlsx(String filePath, {String? sheet}) async {
+    final bytes = await File(filePath).readAsBytes();
+    final archive = ZipDecoder().decodeBytes(bytes);
 
-  Uint8List _rgbaToPng(Uint8List rgba, int width, int height) {
-    final expected = width * height * 4;
-    if (rgba.length < expected) {
-      throw StateError(
-        'Insufficient pixel data: expected $expected bytes, got ${rgba.length}',
-      );
+    final sheetNames = <String>[];
+    final worksheetFiles = <String>[];
+    final sharedStrings = <String>[];
+
+    for (final file in archive.files) {
+      final lower = file.name.toLowerCase();
+      if (lower == 'xl/workbook.xml') {
+        final xml = utf8.decode(file.content);
+        final doc = XmlDocument.parse(xml);
+        final sheetElems = doc.findAllElements('sheet').toList();
+        for (final s in sheetElems) {
+          final name = s.getAttribute('name');
+          sheetNames.add(name ?? '');
+        }
+        for (var i = 0; i < sheetElems.length; i++) {
+          worksheetFiles.add('xl/worksheets/sheet${i + 1}.xml');
+        }
+      } else if (lower == 'xl/sharedstrings.xml') {
+        final xml = utf8.decode(file.content);
+        final doc = XmlDocument.parse(xml);
+        for (final si in doc.findAllElements('si')) {
+          final parts = si.findAllElements('t').map((t) => t.value).toList();
+          sharedStrings.add(parts.join(' '));
+        }
+      }
     }
-    final safeBytes = Uint8List.sublistView(rgba, 0, expected);
-    final image = img.Image.fromBytes(
-      width: width,
-      height: height,
-      bytes: safeBytes.buffer,
-      numChannels: 4,
+
+    final targetIndex = sheet != null
+        ? sheetNames.indexWhere((n) => n.toLowerCase() == sheet.toLowerCase())
+        : 0;
+
+    if (targetIndex < 0) {
+      final available = sheetNames.isEmpty
+          ? 'unknown'
+          : sheetNames.map((n) => '"$n"').join(', ');
+      return '# ${p.basename(filePath)}\n\nSheet "$sheet" not found. Available: $available';
+    }
+
+    final targetFile = targetIndex < worksheetFiles.length
+        ? worksheetFiles[targetIndex]
+        : null;
+    if (targetFile == null) {
+      return '# ${p.basename(filePath)}\n\nNo sheets found.';
+    }
+
+    final displayName = sheetNames.isNotEmpty
+        ? sheetNames[targetIndex]
+        : 'Sheet${targetIndex + 1}';
+
+    final sheetFile = archive.files.firstWhere(
+      (f) => f.name.toLowerCase() == targetFile.toLowerCase(),
+      orElse: () => throw ArchiveException(
+        'Sheet file not found for "$displayName" (expected: $targetFile). '
+        'Available: ${archive.files.map((f) => f.name).join(", ")}',
+      ),
     );
-    return Uint8List.fromList(img.encodePng(image));
+    final sheetXml = utf8.decode(sheetFile.content);
+    final sheetDoc = XmlDocument.parse(sheetXml);
+    final rows = sheetDoc.findAllElements('row');
+
+    final buffer = StringBuffer();
+    buffer.writeln('# ${p.basename(filePath)} — Sheet: $displayName');
+    buffer.writeln('');
+
+    for (final row in rows) {
+      final cells = row.findAllElements('c').toList();
+      final values = <String>[];
+      for (final cell in cells) {
+        final type = cell.getAttribute('t');
+        final text = cell.descendants.whereType<XmlText>().join();
+
+        if (text.isEmpty) {
+          values.add('');
+          continue;
+        }
+
+        if (type == 's') {
+          final index = int.tryParse(text) ?? -1;
+          values.add(
+            index >= 0 && index < sharedStrings.length
+                ? sharedStrings[index]
+                : text,
+          );
+        } else {
+          values.add(text);
+        }
+      }
+      if (values.isEmpty) continue;
+      buffer.writeln('${values.map((v) => '| $v ').join()}|');
+    }
+
+    return buffer.toString();
   }
 }

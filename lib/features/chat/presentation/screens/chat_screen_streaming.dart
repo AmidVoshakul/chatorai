@@ -224,6 +224,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         messages: attemptMsgs,
         model: modelId,
         temperature: temperature,
+        sessionId: sessionId,
         tools: toolRegistry.toSDKTools(),
         onRetry: (info) {
           flushPendingUpdates();
@@ -580,7 +581,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             completedMessage,
           );
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _chatInputFocusNode.requestFocus();
+            _chatInputFocusNode.unfocus();
           });
           _showContinuationSuggestions(completedMessage);
         },

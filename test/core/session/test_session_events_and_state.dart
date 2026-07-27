@@ -141,7 +141,7 @@ void main() {
       final called = ToolCalled(
         sessionId: testSid,
         toolCallId: 'tc-2',
-        toolName: 'bash',
+        toolName: 'shell',
         input: {'command': 'ls'},
         timestamp: ts,
       );
@@ -158,7 +158,7 @@ void main() {
         timestamp: ts,
       );
 
-      expect(called.toolName, equals('bash'));
+      expect(called.toolName, equals('shell'));
       expect(called.input, equals({'command': 'ls'}));
       expect(success.outputText, equals('file1.txt'));
       expect(failed.error, equals('Command not found'));
@@ -427,7 +427,7 @@ void main() {
       final now = DateTime.now();
       final result = ToolResult(
         id: 'tr-1',
-        toolName: 'bash',
+        toolName: 'shell',
         input: {'command': 'ls'},
         outputText: 'file.txt',
         durationMs: 100,
@@ -439,7 +439,7 @@ void main() {
       final restored = ToolResult.fromJson(json);
 
       expect(restored.id, equals('tr-1'));
-      expect(restored.toolName, equals('bash'));
+      expect(restored.toolName, equals('shell'));
       expect(restored.outputText, equals('file.txt'));
       expect(restored.durationMs, equals(100));
     });

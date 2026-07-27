@@ -120,8 +120,8 @@ void main() {
 
     test('{env:VAR} missing in env falls back to shell rc file', () {
       final dir = Directory.systemTemp.createTempSync('chatorai_rc_');
-      final rc = File('${dir.path}/.bashrc');
-      rc.writeAsStringSync('export MY_RC_KEY="rc-secret"\n');
+      final rc = File('${dir.path}/.profile');
+      rc.writeAsStringSync('MY_RC_KEY=rc-secret\n');
       final parser = ConfigProviderParser(
         environment: {},
         homeDirectory: dir.path,

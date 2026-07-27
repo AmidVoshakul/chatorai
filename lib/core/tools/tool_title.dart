@@ -23,7 +23,7 @@ String formatGrepTitle(String pattern, String? root, int? matches) {
   return '$s ${parts.join(' ')}'.trim();
 }
 
-String formatBashTitle(String? description) =>
+String formatShellTitle(String? description) =>
     description?.isNotEmpty == true ? description! : 'Shell command';
 
 String formatWebfetchTitle(String? url) =>

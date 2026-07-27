@@ -15,8 +15,10 @@ class EditBody extends StatelessWidget {
   final bool isError;
   final bool isLoadingDiagnostics;
   final Map<int, List<LspDiagnostic>> diagnosticsByLine;
-  final VoidCallback? onFetchDiagnostics;
   final void Function(LspDiagnostic) onDiagnosticTap;
+  final String? sessionId;
+  final VoidCallback? onRestore;
+  final VoidCallback? onShowOriginal;
 
   const EditBody({
     super.key,
@@ -26,8 +28,10 @@ class EditBody extends StatelessWidget {
     required this.isError,
     required this.isLoadingDiagnostics,
     required this.diagnosticsByLine,
-    this.onFetchDiagnostics,
     required this.onDiagnosticTap,
+    this.sessionId,
+    this.onRestore,
+    this.onShowOriginal,
   });
 
   @override
@@ -71,6 +75,9 @@ class EditBody extends StatelessWidget {
       diagnosticsByLine: diagnosticsByLine,
       onDiagnosticTap: onDiagnosticTap,
       fileStartLine: fileStartLine,
+      sessionId: sessionId,
+      onRestore: onRestore,
+      onShowOriginal: onShowOriginal,
     );
   }
 

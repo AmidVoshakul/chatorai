@@ -156,7 +156,7 @@ void main() {
         ToolCalled(
           sessionId: sessionId,
           toolCallId: 'tc_1',
-          toolName: 'bash',
+          toolName: 'shell',
           input: {'cmd': 'ls'},
           timestamp: timestamp,
         ),
@@ -175,7 +175,7 @@ void main() {
         ToolCalled(
           sessionId: sessionId,
           toolCallId: 'tc_1',
-          toolName: 'bash',
+          toolName: 'shell',
           input: {'cmd': 'ls'},
           timestamp: timestamp,
         ),
@@ -197,7 +197,7 @@ void main() {
       final toolResults = await db.select(db.toolResults).get();
       expect(toolResults.length, 1);
       expect(toolResults.first.id, 'tc_1');
-      expect(toolResults.first.toolName, 'bash');
+      expect(toolResults.first.toolName, 'shell');
       expect(toolResults.first.outputText, 'file1.txt');
       expect(toolResults.first.status, 'success');
     });
@@ -208,7 +208,7 @@ void main() {
         ToolCalled(
           sessionId: sessionId,
           toolCallId: 'tc_1',
-          toolName: 'bash',
+          toolName: 'shell',
           input: {'cmd': 'ls'},
           timestamp: timestamp,
         ),

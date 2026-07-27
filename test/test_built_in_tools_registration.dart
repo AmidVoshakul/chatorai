@@ -103,8 +103,9 @@ void main() {
       expect(
         registry.registered,
         containsAll([
-          'bash',
+          'shell',
           'read',
+          'document_extract',
           'glob',
           'grep',
           'edit',
@@ -112,8 +113,12 @@ void main() {
           'webfetch',
           'websearch',
           'apply_patch',
+          'invalid',
+          'external-directory',
+          'json_schema',
           'todowrite',
           'task',
+          'task_container',
           'question',
           'plan_enter',
           'plan_exit',

@@ -57,11 +57,11 @@ void main() {
 
     test('stores tool name in metadata', () async {
       final result = await _tool().execute({
-        'tool': 'bash',
+        'tool': 'shell',
         'error': 'command not found',
       }, _ctx());
       expect(result.metadata, isNotNull);
-      expect(result.metadata!['tool'], 'bash');
+      expect(result.metadata!['tool'], 'shell');
     });
 
     test('inputSchema requires tool and error fields', () async {

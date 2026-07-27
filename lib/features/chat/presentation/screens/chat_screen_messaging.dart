@@ -58,10 +58,10 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
 
       var content = msg.content;
       if (msg.attachedDocPath != null) {
-        final safeName =
-            p.basename(msg.attachedDocPath!).replaceAll('"', '\\"');
-        final safePath =
-            msg.attachedDocPath!.replaceAll('"', '\\"');
+        final safeName = p
+            .basename(msg.attachedDocPath!)
+            .replaceAll('"', '\\"');
+        final safePath = msg.attachedDocPath!.replaceAll('"', '\\"');
         content +=
             '\n\n[Attached file: "$safeName". '
             'Use the document_extract tool with filePath: "$safePath" '
@@ -246,6 +246,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     Chat chat;
     if (currentChat == null) {
       _currentSessionId = null;
+      ref.read(permissionServiceProvider).clearSession();
       chat = await ref.read(chatListProvider.notifier).createNewChat();
       ref.read(currentChatIdProvider.notifier).setChatId(chat.id);
     } else {

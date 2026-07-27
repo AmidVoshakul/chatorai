@@ -1,19 +1,20 @@
-import 'dart:io' as io;
-
-import 'package:chatorai/core/lsp/lsp_provider.dart';
 import 'package:chatorai/core/lsp/lsp_types.dart';
+import 'package:chatorai/core/session/database.dart';
+import 'package:chatorai/core/session/session_db_provider.dart';
+import 'package:chatorai/core/tools/lsp_diagnostics_format.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
 import 'package:chatorai/features/chat/data/models/chat/tool_result_part.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/bash_body.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/edit_body.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/generic_body.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/grep_body.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/lsp_body.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/read_body.dart';
+import 'package:chatorai/features/chat/presentation/widgets/parts/shell_body.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_icon.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_title.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/webfetch_body.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/write_body.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/theme/theme_extensions.dart';
 import 'package:chatorai/shared/utils/format_utils.dart';
@@ -59,8 +60,8 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
 
   bool _isExpanded = false;
   bool _isCopied = false;
+  bool _isRestoring = false;
   final Map<int, List<LspDiagnostic>> _diagnosticsByLine = {};
-  bool _isLoadingDiagnostics = false;
 
   // ================================================================
   // Lifecycle
@@ -70,71 +71,44 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
   void initState() {
     super.initState();
     final toolName = widget.part.toolName.toLowerCase();
-    if (toolName == 'edit' || toolName == 'apply_patch') {
+    if (toolName == 'edit' ||
+        toolName == 'apply_patch' ||
+        toolName == 'write') {
       _isExpanded = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _triggerDiagnosticsFetch();
-      });
+      _parseDiagnosticsFromResult();
     }
   }
 
   @override
   void didUpdateWidget(covariant ToolResultPartWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final input = widget.part.input ?? {};
-    final filePath =
-        (input['filePath'] as String?) ?? (input['file_path'] as String?);
-    final oldFilePath =
-        (oldWidget.part.input?['filePath'] as String?) ??
-        (oldWidget.part.input?['file_path'] as String?);
-
-    if (filePath != null &&
-        filePath.isNotEmpty &&
-        filePath != oldFilePath &&
+    final result = widget.part.result;
+    final oldResult = oldWidget.part.result;
+    if (result != null &&
+        result != oldResult &&
         widget.part.toolName.toLowerCase() == 'edit' &&
         _isExpanded) {
-      _fetchDiagnostics(filePath);
+      _parseDiagnosticsFromResult();
     }
   }
 
   // ================================================================
-  // LSP Diagnostics
+  // LSP Diagnostics — parse from tool output text
   // ================================================================
 
-  void _triggerDiagnosticsFetch() {
-    if (!mounted) return;
-    final input = widget.part.input ?? {};
-    final filePath =
-        (input['filePath'] as String?) ?? (input['file_path'] as String?);
-    if (filePath == null || filePath.isEmpty) return;
-    if (!io.File(filePath).existsSync()) {
-      setState(() => _isLoadingDiagnostics = false);
+  void _parseDiagnosticsFromResult() {
+    final result = widget.part.result;
+    if (result == null || result.isEmpty) {
+      setState(() => _diagnosticsByLine.clear());
       return;
     }
-    _fetchDiagnostics(filePath);
-  }
-
-  Future<void> _fetchDiagnostics(String filePath) async {
-    if (_isLoadingDiagnostics) return;
-    setState(() => _isLoadingDiagnostics = true);
-
-    try {
-      final service = await ref.read(lspServiceProvider.future);
-      final diagnostics = await service.diagnostics(filePath).toList();
-      final byLine = <int, List<LspDiagnostic>>{};
-      for (final diag in diagnostics) {
-        final line = diag.range.start.line;
-        byLine.putIfAbsent(line, () => []).add(diag);
-      }
-
-      if (mounted) {
-        setState(() => _diagnosticsByLine.clear());
-        _diagnosticsByLine.addAll(byLine);
-      }
-    } catch (e) {
-      if (mounted) setState(() => _diagnosticsByLine.clear());
-    } finally {
-      if (mounted) setState(() => _isLoadingDiagnostics = false);
+    final parsed = parseLspFromToolOutput(result);
+    if (mounted) {
+      setState(() {
+        _diagnosticsByLine
+          ..clear()
+          ..addAll(parsed);
+      });
     }
   }
 
@@ -196,6 +170,155 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
   }
 
   // ================================================================
+  // Restore
+  // ================================================================
+
+  Future<void> _onRestore() async {
+    final metadata = widget.part.metadata;
+    final sessionId = metadata?['session_id'] as String?;
+    if (sessionId == null || sessionId.isEmpty || !mounted) return;
+    setState(() => _isRestoring = true);
+    try {
+      final service = await ref.read(fileSnapshotServiceProvider.future);
+      await service.restoreByStep(sessionId, widget.part.toolCallId);
+      if (mounted) {
+        final loc = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              loc?.toolResultRestoredSnackbar ??
+                  'Files restored to before-edit state',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        final loc = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              loc?.restoreFailed(e.toString()) ?? 'Restore failed: $e',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isRestoring = false);
+    }
+  }
+
+  Future<void> _showOriginal() async {
+    final metadata = widget.part.metadata;
+    final sessionId = metadata?['session_id'] as String?;
+    if (sessionId == null || sessionId.isEmpty) return;
+    try {
+      final service = await ref.read(fileSnapshotServiceProvider.future);
+      final snapshots = await service.listByStep(
+        sessionId,
+        widget.part.toolCallId,
+      );
+      if (snapshots.isEmpty || !mounted) return;
+      _showSnapshotDialog(snapshots);
+    } catch (_) {}
+  }
+
+  void _showSnapshotDialog(List<FileSnapshot> snapshots) {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final loc = AppLocalizations.of(ctx);
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          child: Container(
+            width: double.maxFinite,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.history,
+                        size: 16,
+                        color: theme.colorScheme.muted,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        loc!.toolResultOriginalTitle,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.muted,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 16),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        color: theme.colorScheme.muted,
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Flexible(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    itemCount: snapshots.length,
+                    itemBuilder: (_, i) {
+                      final snap = snapshots[i];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              snap.filePath,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: SelectableText(
+                                snap.content,
+                                style: ChatoraiFontSizes.mono(
+                                  ChatoraiFontSizes.sm,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ================================================================
   // Build
   // ================================================================
 
@@ -211,17 +334,17 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
         _noBodyTools.contains(toolNameLower) ||
         (toolNameLower.contains('_') &&
             !_builtInCompoundNames.contains(toolNameLower));
-    final isBash = toolNameLower == 'bash';
+    final isShell = toolNameLower == 'shell';
     final canExpand = (isCompleted || isError) && !isRunning && !isNoBodyTool;
 
     if (part.toolName.toLowerCase() == 'todowrite') {
       return _buildTodoBody(theme, part);
     }
 
-    if (isBash && !isNoBodyTool) {
+    if (isShell && !isNoBodyTool) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 1),
-        child: _buildBashContent(theme, isError, isRunning, part, canExpand),
+        child: _buildShellContent(theme, isError, isRunning, part, canExpand),
       );
     }
 
@@ -287,7 +410,7 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
 
     final icon = ToolIcon(
       toolName: part.toolName,
-      color: theme.colorScheme.muted,
+      color: isError ? theme.colorScheme.error : theme.colorScheme.muted,
       size: 13,
     );
 
@@ -302,7 +425,9 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
             toolTitle(part.toolName, part.input ?? {}),
             style: theme.textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w500,
-              color: theme.colorScheme.muted,
+              color: isError
+                  ? theme.colorScheme.error
+                  : theme.colorScheme.muted,
               fontSize: ChatoraiFontSizes.sm,
               height: 1.4,
             ),
@@ -322,10 +447,10 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
   }
 
   // ================================================================
-  // Bash content
+  // Shell content
   // ================================================================
 
-  Widget _buildBashContent(
+  Widget _buildShellContent(
     ThemeData theme,
     bool isError,
     bool isRunning,
@@ -373,14 +498,10 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
       );
     }
 
-    // When expanded, show full output without truncation
     final displayFull = _isExpanded;
-    final input = part.input ?? {};
-    final filePath =
-        (input['filePath'] as String?) ?? (input['file_path'] as String?);
 
     return switch (part.toolName.toLowerCase()) {
-      'bash' => BashBody(
+      'shell' => ShellBody(
         theme: theme,
         part: part,
         displayFull: displayFull,
@@ -389,7 +510,7 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
         onToggle: canExpand
             ? () => setState(() => _isExpanded = !_isExpanded)
             : null,
-        previewOutput: bashPreview,
+        previewOutput: shellPreview,
       ),
       'read' => ReadBody(
         theme: theme,
@@ -423,36 +544,31 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
         part: part,
         displayFull: displayFull,
         isError: isError,
-        isLoadingDiagnostics: _isLoadingDiagnostics,
+        isLoadingDiagnostics: false,
         diagnosticsByLine: _diagnosticsByLine,
-        onFetchDiagnostics:
-            (displayFull &&
-                filePath != null &&
-                filePath.isNotEmpty &&
-                _diagnosticsByLine.isEmpty &&
-                !_isLoadingDiagnostics)
-            ? () => _fetchDiagnostics(filePath)
-            : null,
         onDiagnosticTap: _showDiagnosticDetails,
+        sessionId: part.metadata?['session_id'] as String?,
+        onRestore: _isRestoring ? null : _onRestore,
+        onShowOriginal: _showOriginal,
       ),
       'apply_patch' => EditBody(
         theme: theme,
         part: part,
         displayFull: displayFull,
         isError: isError,
-        isLoadingDiagnostics: _isLoadingDiagnostics,
+        isLoadingDiagnostics: false,
         diagnosticsByLine: _diagnosticsByLine,
-        onFetchDiagnostics:
-            (displayFull &&
-                filePath != null &&
-                filePath.isNotEmpty &&
-                _diagnosticsByLine.isEmpty &&
-                !_isLoadingDiagnostics)
-            ? () => _fetchDiagnostics(filePath)
-            : null,
+        onDiagnosticTap: _showDiagnosticDetails,
+        sessionId: part.metadata?['session_id'] as String?,
+        onRestore: _isRestoring ? null : _onRestore,
+        onShowOriginal: _showOriginal,
+      ),
+      'write' => WriteBody(
+        theme: theme,
+        part: part,
+        diagnosticsByLine: _diagnosticsByLine,
         onDiagnosticTap: _showDiagnosticDetails,
       ),
-      'write' => WriteBody(theme: theme, part: part),
       'lsp' => LspBody(theme: theme, part: part, displayFull: displayFull),
       _ => GenericBody(
         theme: theme,
@@ -641,10 +757,6 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
       ),
     );
   }
-
-  // ================================================================
-  // Copy to clipboard
-  // ================================================================
 
   Future<void> _copyToClipboard(String text) async {
     try {

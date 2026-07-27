@@ -1,6 +1,8 @@
 // ── Converter: SessionState → ChatMessage ─────────────────────────────────────
 // Bridges Session Core to Chat UI without legacy Message types.
 
+import 'dart:convert';
+
 import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
@@ -50,13 +52,23 @@ MessagePart assistantContentToMessagePart(AssistantContent content) {
     );
   }
   if (content is AssistantTool) {
+    final meta = <String, dynamic>{'session_id': content.sessionId};
+    final files = _extractFileDiffMeta(content);
+    if (files != null) {
+      meta['files'] = files;
+    }
+    final output = content.output;
+    final isErrorOutput =
+        content.state == ToolState.error ||
+        (output != null && output.startsWith('Error:'));
     return ToolResultPart(
       toolCallId: content.callId,
       toolName: content.tool,
-      result: content.output,
-      error: content.state == ToolState.error ? content.output : null,
+      result: output,
+      error: isErrorOutput ? output : null,
       state: content.state,
       input: content.input,
+      metadata: meta,
     );
   }
   if (content is AssistantFile) {
@@ -151,4 +163,73 @@ Map<String, List<AssistantContent>> groupPartsByMessage(
     }
   }
   return result;
+}
+
+/// Extracts per-file diff metadata from tool output for edit/apply_patch/write tools.
+List<Map<String, dynamic>>? _extractFileDiffMeta(AssistantTool tool) {
+  final toolName = tool.tool.toLowerCase();
+  final output = tool.output;
+  if (output == null || output.isEmpty) return null;
+
+  final files = <Map<String, dynamic>>[];
+
+  try {
+    if (toolName == 'edit') {
+      final parsed = _parseToolJson(output);
+      if (parsed == null) return null;
+      final patch = parsed['patch'] as String? ?? '';
+      final path =
+          tool.input['filePath'] as String? ??
+          tool.input['file_path'] as String? ??
+          '';
+      files.add(_fileEntry(path, patch));
+    } else if (toolName == 'apply_patch') {
+      final parsed = _parseToolJson(output);
+      if (parsed == null) return null;
+      final patches = parsed['patches'] as List<dynamic>?;
+      if (patches != null) {
+        for (final p in patches) {
+          final path = p['path'] as String? ?? '';
+          final patch = p['patch'] as String? ?? '';
+          files.add(_fileEntry(path, patch));
+        }
+      }
+    } else if (toolName == 'write') {
+      final path =
+          tool.input['filePath'] as String? ??
+          tool.input['file_path'] as String? ??
+          '';
+      files.add(_fileEntry(path, ''));
+    }
+  } catch (_) {
+    return null;
+  }
+
+  return files.isNotEmpty ? files : null;
+}
+
+Map<String, dynamic>? _parseToolJson(String output) {
+  final lspHeader = output.contains('\nLSP')
+      ? output.indexOf('\nLSP')
+      : output.length;
+  final jsonPart = output.substring(0, lspHeader).trim();
+  if (jsonPart.isEmpty) return null;
+  try {
+    return jsonDecode(jsonPart) as Map<String, dynamic>;
+  } on FormatException {
+    return null;
+  }
+}
+
+Map<String, dynamic> _fileEntry(String path, String patch) {
+  final lines = patch.isNotEmpty ? '\n'.allMatches(patch).length : 0;
+  final additions = patch.isNotEmpty ? '+\n'.allMatches(patch).length : 0;
+  final deletions = patch.isNotEmpty ? '-\n'.allMatches(patch).length : 0;
+  return {
+    'path': path,
+    'patch_length': patch.length,
+    if (lines > 0) 'lines': lines,
+    if (additions > 0) 'additions': additions,
+    if (deletions > 0) 'deletions': deletions,
+  };
 }

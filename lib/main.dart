@@ -2,13 +2,14 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' show PlatformDispatcher;
 
+import 'package:chatorai/core/cli/cwd_override.dart';
+import 'package:chatorai/core/cli/cli_commands.dart';
 import 'package:chatorai/features/bootstrap/bootstrap_error_screen.dart';
 import 'package:chatorai/features/bootstrap/splash_screen.dart';
 import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/permission_overlay.dart';
 import 'package:chatorai/features/settings/screens/settings_screen.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/core/cli/cli_commands.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/logger.dart';
@@ -18,49 +19,60 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pdfrx/pdfrx.dart';
+import 'package:chatorai/core/tools/document_extractor_service.dart';
 
 // ===========================================================================
 // MAIN ENTRY POINT
 // ===========================================================================
 
-void main(List<String> args) async {
-  // CLI mode (--help / stats / models / upgrade / --version) must be handled
-  // before any Flutter initialization so the engine never starts for non-GUI
-  // use. The compiled GUI binary embeds the same CLI logic. exit() ensures
-  // background workers (drift/sqlite isolate) don't keep the process alive.
-  if (await runCliIfRequested(args)) exit(0);
+Future<void> main(List<String> args) async {
+  final cwdResult = detectCwdOverride(args);
 
-  WidgetsFlutterBinding.ensureInitialized();
+  Future<void> run() async {
+    if (await runCliIfRequested(cwdResult.remainingArgs)) exit(0);
 
-  LogConfig.enabled = true;
-  LogConfig.minimumLevel = LogLevel.debug;
-
-  // Catch unhandled errors from ai_sdk_dart's internal async contexts.
-  // These originate inside streamText() (which has its own _withRetry), then
-  // escape through the stream's error channel and reach the zone handler.
-  // They are already handled by ChatAiService._retry — we just prevent them
-  // from reaching VSCode's exception breakpoint.
-  final platformHandler = PlatformDispatcher.instance.onError;
-  PlatformDispatcher.instance.onError = (error, estack) {
-    if (error is DioException) {
-      LogTags.chatService.logDebug(
-        '[Global] swallowed DioException (handled by _retry)',
+    WidgetsFlutterBinding.ensureInitialized();
+    try {
+      pdfrxFlutterInitialize();
+      await DocumentExtractorService.initPdfRx();
+    } on Exception catch (_) {
+      LogTags.skills.logWarning(
+        'pdfrx: PDFium unavailable — PDF image rendering disabled',
       );
-      return true;
     }
-    if (error is TimeoutException) {
-      LogTags.chatService.logDebug(
-        '[Global] swallowed TimeoutException (handled by _retry)',
-      );
-      return true;
-    }
-    return platformHandler?.call(error, estack) ?? false;
-  };
 
-  // Вся тяжёлая инициализация (XdgPaths, конфиг, AgentRegistry, catalog/
-  // preloadApiKeys, MCP) вынесена в appBootstrapProvider и выполняется за
-  // первым кадром. Splash-экран показывается сразу после runApp().
-  runApp(const ProviderScope(child: ChatoraiApp()));
+    LogConfig.enabled = true;
+    LogConfig.minimumLevel = LogLevel.debug;
+
+    final platformHandler = PlatformDispatcher.instance.onError;
+    PlatformDispatcher.instance.onError = (error, estack) {
+      if (error is DioException) {
+        LogTags.chatService.logDebug(
+          '[Global] swallowed DioException (handled by _retry)',
+        );
+        return true;
+      }
+      if (error is TimeoutException) {
+        LogTags.chatService.logDebug(
+          '[Global] swallowed TimeoutException (handled by _retry)',
+        );
+        return true;
+      }
+      return platformHandler?.call(error, estack) ?? false;
+    };
+
+    runApp(const ProviderScope(child: ChatoraiApp()));
+  }
+
+  if (cwdResult.hasOverride) {
+    IOOverrides.runZoned(
+      run,
+      getCurrentDirectory: () => Directory(cwdResult.path!),
+    );
+  } else {
+    await run();
+  }
 }
 
 // ===========================================================================

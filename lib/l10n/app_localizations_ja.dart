@@ -1643,6 +1643,65 @@ class AppLocalizationsJa extends AppLocalizations {
       'Adobe for Creativity は Photoshop、Lightroom、Illustrator、Firefly、Premiere、Express、InDesign、Stock の能力を AI 主導のクリエイティブ作業と結びつけます。ユーザーは自然言語を用いて写真、デザイン素材、映像プロジェクトを生成・編集・強化でき、作業は Adobe アカウントに紐付いたままです。';
 
   @override
+  String get mcpInstallToGlobal => 'グローバルにインストール';
+
+  @override
+  String get mcpInstallToProject => 'プロジェクトにインストール';
+
+  @override
+  String get mcpScopeGlobal => 'グローバル';
+
+  @override
+  String get mcpScopeProject => 'プロジェクト';
+
+  @override
+  String get mcpScopeGlobalProject => 'グローバル + プロジェクト';
+
+  @override
+  String mcpRemoveFromScope(String scope) {
+    return '$scope から削除';
+  }
+
+  @override
+  String get mcpRemoveFromAll => 'すべての場所から削除';
+
+  @override
+  String get mcpTokenDialogTitle => '認証';
+
+  @override
+  String get mcpTokenDialogTitleHint => 'このサーバーとの認証方法を選択してください';
+
+  @override
+  String get mcpTokenInputLabel => 'トークン';
+
+  @override
+  String get mcpTokenInputHint => 'アクセストークンを貼り付けてください';
+
+  @override
+  String get mcpTokenInputHelper => 'Authorization: Bearer <token> として送信されます';
+
+  @override
+  String get mcpOAuthClientIdLabel => 'クライアント ID';
+
+  @override
+  String get mcpOAuthClientIdHint => 'OAuth 2.1 クライアント ID';
+
+  @override
+  String get mcpOAuthClientSecretLabel => 'クライアントシークレット';
+
+  @override
+  String get mcpOAuthClientSecretHint => 'OAuth 2.1 クライアントシークレット（オプション）';
+
+  @override
+  String get mcpOAuthScopeLabel => 'スコープ';
+
+  @override
+  String get mcpOAuthScopeHint => '例: read write';
+
+  @override
+  String get mcpAuthConfirm => '確認';
+
+  @override
   String get agentsInstructions => 'エージェント指示';
 
   @override
@@ -1954,4 +2013,21 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get commonEdit => '編集';
+
+  @override
+  String get toolResultOriginal => 'オリジナル';
+
+  @override
+  String get toolResultRestore => '復元';
+
+  @override
+  String get toolResultRestoredSnackbar => '編集前の状態にファイルを復元しました';
+
+  @override
+  String get toolResultOriginalTitle => '編集前の元のコンテンツ';
+
+  @override
+  String restoreFailed(String error) {
+    return '復元に失敗しました：$error';
+  }
 }

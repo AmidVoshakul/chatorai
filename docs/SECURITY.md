@@ -12,23 +12,23 @@ ChatORAI uses a granular permission system to control tool access. Permissions a
 
 Out of the box, the following defaults apply (source: `lib/core/permission/ruleset.dart` — `PermissionRuleset.defaults()`):
 
-| Permission             | Default Action |
-| ---------------------- | -------------- |
-| `read`                 | `allow`        |
-| `glob`                 | `allow`        |
-| `grep`                 | `allow`        |
-| `webfetch`             | `allow`        |
-| `websearch`            | `allow`        |
-| `task`                 | `allow`        |
-| `question`             | `allow`        |
-| `todowrite`            | `allow`        |
-| `skill`                | `allow`        |
-| `lsp`                  | `allow`        |
-| `bash`                 | `ask`          |
-| `edit`                 | `ask`          |
-| `write`                | `ask`          |
-| `doom_loop`            | `ask`          |
-| `external_directory`   | `ask`          |
+| Permission           | Default Action |
+| -------------------- | -------------- |
+| `read`               | `allow`        |
+| `glob`               | `allow`        |
+| `grep`               | `allow`        |
+| `webfetch`           | `allow`        |
+| `websearch`          | `allow`        |
+| `task`               | `allow`        |
+| `question`           | `allow`        |
+| `todowrite`          | `allow`        |
+| `skill`              | `allow`        |
+| `lsp`                | `allow`        |
+| `shell`              | `ask`          |
+| `edit`               | `ask`          |
+| `write`              | `ask`          |
+| `doom_loop`          | `ask`          |
+| `external_directory` | `ask`          |
 
 Tools without an explicit ruleset entry (`apply_patch`, `format`, `invalid`, `plan_exit`, `json_schema`) fall back to `ask` via the permission evaluator (`lib/core/permission/evaluator.dart`).
 
@@ -54,7 +54,7 @@ Example:
   "version": 1,
   "permission": {
     "read": "allow",
-    "bash": "deny",
+    "shell": "deny",
     "edit": {
       "*.env": "deny",
       "lib/**": "allow"
@@ -108,6 +108,7 @@ To prevent accidental leakage of sensitive data, the app sanitizes error message
 ## MCP Trust Boundary
 
 Tools discovered from external MCP servers are treated as **untrusted**:
+
 - MCP tool execution follows the same permission rules as built-in tools (`ask` by default).
 - MCP server configurations are stored in `chatorai.json` under the `mcp` section.
 - Stdio transport: server processes are spawned with restricted environment variables.

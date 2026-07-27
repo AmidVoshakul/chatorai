@@ -25,7 +25,7 @@ void main() {
     test('saves tool result to JSON file', () async {
       await persistence.saveResult(
         toolCallId: 'tool_123',
-        toolName: 'bash',
+        toolName: 'shell',
         input: {'command': 'echo hello'},
         output: 'hello\n',
         sessionId: 'ses_test',
@@ -40,7 +40,7 @@ void main() {
       final data = jsonDecode(content) as Map<String, dynamic>;
 
       expect(data['toolCallId'], 'tool_123');
-      expect(data['toolName'], 'bash');
+      expect(data['toolName'], 'shell');
       expect(data['input'], {'command': 'echo hello'});
       expect(data['output'], 'hello\n');
       expect(data['sessionId'], 'ses_test');
@@ -52,7 +52,7 @@ void main() {
     test('saves error status correctly', () async {
       await persistence.saveResult(
         toolCallId: 'tool_err_456',
-        toolName: 'bash',
+        toolName: 'shell',
         input: {'command': 'ls /nonexistent'},
         output: 'ls: /nonexistent: No such file or directory',
         sessionId: 'ses_test',
@@ -106,7 +106,7 @@ void main() {
     test('uses atomic write (temp then rename)', () async {
       await persistence.saveResult(
         toolCallId: 'tool_atomic',
-        toolName: 'bash',
+        toolName: 'shell',
         input: {},
         output: 'result',
         sessionId: 'ses_test',

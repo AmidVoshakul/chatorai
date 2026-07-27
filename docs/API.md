@@ -21,27 +21,27 @@ All providers are defined using Riverpod 3.x and can be accessed via `ref.watch(
 
 ### Chat Providers
 
-| Provider                   | Type                                                                     | Description                                                                      |
-| -------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| `chatListProvider`         | `NotifierProvider<ChatListNotifier, AsyncValue<List<Chat>>>`             | List of all chats with CRUD operations.                                          |
-| `chatScreenProvider`       | `NotifierProvider<ChatScreenNotifier, ChatScreenState>`                  | UI state for chat screen (streaming, suggestions, sidebar, headings).            |
-| `sessionPartsProvider`     | `StreamProvider.family<SessionState, String>`                            | Live session state (parts accumulation) for a given session ID.                  |
-| `currentChatIdProvider`    | `NotifierProvider<CurrentChatIdNotifier, String?>`                       | Currently active chat ID (router-level).                                         |
-| `currentChatProvider`      | `Provider<Chat?>`                                                        | Computed chat by ID (derived from `currentChatIdProvider` + `chatListProvider`). |
+| Provider                | Type                                                         | Description                                                                      |
+| ----------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `chatListProvider`      | `NotifierProvider<ChatListNotifier, AsyncValue<List<Chat>>>` | List of all chats with CRUD operations.                                          |
+| `chatScreenProvider`    | `NotifierProvider<ChatScreenNotifier, ChatScreenState>`      | UI state for chat screen (streaming, suggestions, sidebar, headings).            |
+| `sessionPartsProvider`  | `StreamProvider.family<SessionState, String>`                | Live session state (parts accumulation) for a given session ID.                  |
+| `currentChatIdProvider` | `NotifierProvider<CurrentChatIdNotifier, String?>`           | Currently active chat ID (router-level).                                         |
+| `currentChatProvider`   | `Provider<Chat?>`                                            | Computed chat by ID (derived from `currentChatIdProvider` + `chatListProvider`). |
 
 ### Model Providers
 
 | Provider        | Type                                          | Description                                                                                                  |
 | --------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `modelProvider` | `NotifierProvider<ModelNotifier, ModelState>` | Model selection, favorites, usage tracking (`usageCounts`/`lastUsed`), available models, and `recentModels`. |
-| `themeProvider` | `NotifierProvider<ThemeNotifier, ThemeState>` | Theme, language, font size, wide screen mode.                                                               |
+| `themeProvider` | `NotifierProvider<ThemeNotifier, ThemeState>` | Theme, language, font size, wide screen mode.                                                                |
 
 ### Configuration Providers
 
-| Provider            | Type                          | Description                                       |
-| ------------------- | ----------------------------- | ------------------------------------------------- |
-| `configProvider`    | `Provider<ChatOrAIConfig>`    | Validated `chatorai.json` configuration.          |
-| `permissionProvider`| `Provider<PermissionService>` | Permission service instance (singleton).          |
+| Provider             | Type                          | Description                              |
+| -------------------- | ----------------------------- | ---------------------------------------- |
+| `configProvider`     | `Provider<ChatOrAIConfig>`    | Validated `chatorai.json` configuration. |
+| `permissionProvider` | `Provider<PermissionService>` | Permission service instance (singleton). |
 
 ### Core Services
 
@@ -117,7 +117,7 @@ Controls tool execution based on user-defined rules from `chatorai.json` and bui
 | `todowrite`          | `allow`                             |
 | `skill`              | `allow`                             |
 | `lsp`                | `allow`                             |
-| `bash`               | `ask`                               |
+| `shell`              | `ask`                               |
 | `edit`               | `ask`                               |
 | `write`              | `ask`                               |
 | `doom_loop`          | `ask`                               |
@@ -132,8 +132,8 @@ Controls tool execution based on user-defined rules from `chatorai.json` and bui
 await permissionService.ask(
   PermissionRequest(
     id: 'unique_id',
-    toolName: 'bash',
-    permission: 'bash', // matches PermissionRule.permission name
+    toolName: 'shell',
+    permission: 'shell', // matches PermissionRule.permission name
     patterns: ['/home/**'],
     metadata: {...},
   ),
@@ -284,26 +284,26 @@ All tools implement the `Tool` interface from `ai_sdk_dart`. The `ToolRegistry` 
 
 **Always registered (18):**
 
-| Tool                 | Description                           | Input Schema                                                            | Default Permission          |
-| -------------------- | ------------------------------------- | ----------------------------------------------------------------------- | --------------------------- |
-| `bash`               | Execute shell command                 | `{ "command": string, "timeoutMs": number }`                            | ask                         |
-| `read`               | Read file contents                    | `{ "path": string, "offset": number, "limit": number }`                 | allow                       |
-| `edit`               | Replace text in file                  | `{ "path": string, "oldString": string, "newString": string }`          | ask                         |
-| `write`              | Create/overwrite file                 | `{ "path": string, "content": string }`                                 | ask                         |
-| `glob`               | Find files by pattern                 | `{ "pattern": string, "path": string }`                                 | allow                       |
-| `grep`               | Search file contents                  | `{ "pattern": string, "path": string, "filePattern": string }`          | allow                       |
-| `webfetch`           | Fetch URL content                     | `{ "url": string, "format": "text" \| "markdown" \| "html" }`           | allow                       |
-| `websearch`          | Search web via SearXNG                | `{ "query": string, "engines": string[], "categories": string[] }`      | allow                       |
-| `task`               | Spawn subagent via `SessionRunner`    | `{ "prompt": string, "context": object, "subagentType": string }`       | allow                       |
+| Tool                 | Description                            | Input Schema                                                            | Default Permission          |
+| -------------------- | -------------------------------------- | ----------------------------------------------------------------------- | --------------------------- |
+| `shell`              | Execute shell command                  | `{ "command": string, "timeoutMs": number }`                            | ask                         |
+| `read`               | Read file contents                     | `{ "path": string, "offset": number, "limit": number }`                 | allow                       |
+| `edit`               | Replace text in file                   | `{ "path": string, "oldString": string, "newString": string }`          | ask                         |
+| `write`              | Create/overwrite file                  | `{ "path": string, "content": string }`                                 | ask                         |
+| `glob`               | Find files by pattern                  | `{ "pattern": string, "path": string }`                                 | allow                       |
+| `grep`               | Search file contents                   | `{ "pattern": string, "path": string, "filePattern": string }`          | allow                       |
+| `webfetch`           | Fetch URL content                      | `{ "url": string, "format": "text" \| "markdown" \| "html" }`           | allow                       |
+| `websearch`          | Search web via SearXNG                 | `{ "query": string, "engines": string[], "categories": string[] }`      | allow                       |
+| `task`               | Spawn subagent via `SessionRunner`     | `{ "prompt": string, "context": object, "subagentType": string }`       | allow                       |
 | `task_container`     | Run parallel subagent tasks, aggregate | `{ "tasks": [...], "strategy": "race" \| "all" }`                       | allow                       |
-| `todowrite`          | Update todo list                      | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }` | allow                       |
-| `question`           | Ask user question (with dedup)        | `{ "question": string, "options": string[], "multiple": bool }`         | allow                       |
-| `apply_patch`        | Apply unified diff                    | `{ "patch": string, "dryRun": bool }`                                   | no default (fallback `ask`) |
-| `invalid`            | Invalid tool placeholder              | `{}`                                                                    | no default (fallback `ask`) |
-| `external_directory` | Directory operations (builtin)        | —                                                                       | ask                         |
-| `plan_enter`         | Switch to plan agent mode             | —                                                                       | no default (fallback `ask`) |
-| `plan_exit`          | Exit plan mode, switch to build agent | —                                                                       | no default (fallback `ask`) |
-| `json_schema`        | JSON schema validation                | —                                                                       | no default (fallback `ask`) |
+| `todowrite`          | Update todo list                       | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }` | allow                       |
+| `question`           | Ask user question (with dedup)         | `{ "question": string, "options": string[], "multiple": bool }`         | allow                       |
+| `apply_patch`        | Apply unified diff                     | `{ "patch": string, "dryRun": bool }`                                   | no default (fallback `ask`) |
+| `invalid`            | Invalid tool placeholder               | `{}`                                                                    | no default (fallback `ask`) |
+| `external_directory` | Directory operations (builtin)         | —                                                                       | ask                         |
+| `plan_enter`         | Switch to plan agent mode              | —                                                                       | no default (fallback `ask`) |
+| `plan_exit`          | Exit plan mode, switch to build agent  | —                                                                       | no default (fallback `ask`) |
+| `json_schema`        | JSON schema validation                 | —                                                                       | no default (fallback `ask`) |
 
 **Conditionally registered (up to 3):** All three checks are independent `if` statements — all three can be active simultaneously.
 
@@ -381,7 +381,7 @@ Validated against JSON Schema in `lib/core/config/chatorai_schema.dart`.
     rules: [
       { tool: "read", action: "*", resource: "*", permission: "allow" },
       {
-        tool: "bash",
+        tool: "shell",
         action: "execute",
         resource: "/home/**",
         permission: "deny",

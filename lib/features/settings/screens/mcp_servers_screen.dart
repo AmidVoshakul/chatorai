@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:chatorai/core/mcp/mcp_client_service.dart';
 import 'package:chatorai/core/mcp/mcp_config.dart';
 import 'package:chatorai/core/mcp/mcp_marketplace_catalog.dart';
+import 'package:chatorai/core/mcp/mcp_status_provider.dart';
+import 'package:chatorai/core/mcp/mcp_types.dart';
 import 'package:chatorai/features/settings/providers/mcp_management_provider.dart';
 import 'package:chatorai/features/settings/screens/mcp_add_server_helpers.dart';
 import 'package:chatorai/features/settings/widgets/premium_blocks.dart';
@@ -31,8 +33,12 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
   final _tokenController = TextEditingController();
   final _rawController = TextEditingController();
   final _searchController = TextEditingController();
+  final _oauthClientIdController = TextEditingController();
+  final _oauthClientSecretController = TextEditingController();
+  final _oauthScopeController = TextEditingController();
   var _isRemote = false;
-  AuthType _authType = AuthType.bearer;
+  AuthType _authType = AuthType.token;
+  McpScope _addScope = McpScope.global;
   var _isRefreshing = false;
 
   late final TabController _tabController;
@@ -63,6 +69,9 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
     _tokenController.dispose();
     _rawController.dispose();
     _searchController.dispose();
+    _oauthClientIdController.dispose();
+    _oauthClientSecretController.dispose();
+    _oauthScopeController.dispose();
     _tabController.dispose();
     _screenTabController.dispose();
     super.dispose();
@@ -95,8 +104,12 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
     _envController.clear();
     _tokenController.clear();
     _rawController.clear();
+    _oauthClientIdController.clear();
+    _oauthClientSecretController.clear();
+    _oauthScopeController.clear();
     _isRemote = false;
-    _authType = AuthType.bearer;
+    _authType = AuthType.token;
+    _addScope = McpScope.global;
     _tabController.index = _tabForm;
 
     Map<String, dynamic>? result;
@@ -121,6 +134,19 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Scope picker — visible on desktop only.
+                    if (ref
+                            .read(mcpManagementProvider)
+                            .value
+                            ?.supportsProjectScope ??
+                        false) ...[
+                      _ScopePicker(
+                        scope: _addScope,
+                        isDark: isDark,
+                        onChanged: (v) => setLocal(() => _addScope = v),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     if (_tabController.index == _tabForm) ...[
                       TextField(
                         controller: _nameController,
@@ -222,16 +248,50 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                               ),
                             const SizedBox(height: 12),
                             if (_isRemote) ...[
-                              TextField(
-                                controller: _tokenController,
-                                decoration: _fieldDecoration(
-                                  label: l10n.mcpTokenLabel,
-                                  hint: l10n.mcpTokenHint,
-                                  helper: l10n.mcpTokenHelper,
-                                  isDark: isDark,
+                              if (_authType == AuthType.token) ...[
+                                TextField(
+                                  controller: _tokenController,
+                                  decoration: _fieldDecoration(
+                                    label: l10n.mcpTokenLabel,
+                                    hint: l10n.mcpTokenHint,
+                                    helper: l10n.mcpTokenHelper,
+                                    isDark: isDark,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
+                                const SizedBox(height: 8),
+                              ],
+                              if (_authType == AuthType.oauth) ...[
+                                TextField(
+                                  controller: _oauthClientIdController,
+                                  decoration: _fieldDecoration(
+                                    label: l10n.mcpOAuthClientIdLabel,
+                                    hint: l10n.mcpOAuthClientIdHint,
+                                    helper: '',
+                                    isDark: isDark,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                TextField(
+                                  controller: _oauthClientSecretController,
+                                  decoration: _fieldDecoration(
+                                    label: l10n.mcpOAuthClientSecretLabel,
+                                    hint: l10n.mcpOAuthClientSecretHint,
+                                    helper: '',
+                                    isDark: isDark,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                TextField(
+                                  controller: _oauthScopeController,
+                                  decoration: _fieldDecoration(
+                                    label: l10n.mcpOAuthScopeLabel,
+                                    hint: l10n.mcpOAuthScopeHint,
+                                    helper: '',
+                                    isDark: isDark,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                              ],
                               Row(
                                 children: [
                                   Expanded(
@@ -245,16 +305,16 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                                       ),
                                       items: const [
                                         DropdownMenuItem(
-                                          value: AuthType.bearer,
-                                          child: Text('Bearer'),
+                                          value: AuthType.noAuth,
+                                          child: Text('No Auth'),
                                         ),
                                         DropdownMenuItem(
-                                          value: AuthType.apiKey,
-                                          child: Text('ApiKey'),
-                                        ),
-                                        DropdownMenuItem(
-                                          value: AuthType.plain,
+                                          value: AuthType.token,
                                           child: Text('Token'),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: AuthType.oauth,
+                                          child: Text('OAuth 2.1'),
                                         ),
                                       ],
                                       onChanged: (v) =>
@@ -313,12 +373,22 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                     } else if (_isRemote) {
                       final url = _urlController.text.trim();
                       if (url.isEmpty) return;
+                      McpOAuthConfig? oauthConfig;
+                      if (_authType == AuthType.oauth) {
+                        oauthConfig = McpOAuthConfig(
+                          clientId: _oauthClientIdController.text.trim(),
+                          clientSecret: _oauthClientSecretController.text
+                              .trim(),
+                          scope: _oauthScopeController.text.trim(),
+                        );
+                      }
                       config = McpServerConfig.remote(
                         url: url,
                         headers: buildAuthHeaders(
                           _tokenController.text,
                           _authType,
                         ),
+                        oauth: oauthConfig,
                       );
                     } else {
                       final raw = _commandController.text.trim();
@@ -360,6 +430,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
           .addServer(
             result!['name'] as String,
             result!['config'] as McpServerConfig,
+            scope: _addScope,
           );
     }
   }
@@ -368,7 +439,11 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
   /// Persists changes via [McpManagementNotifier.updateServer], which keeps the
   /// server name and all other fields intact while applying edits (e.g. a new
   /// auth token for an auth-gated remote server).
-  Future<void> _showEditDialog(String name, McpServerConfig config) async {
+  Future<void> _showEditDialog(
+    String name,
+    McpServerConfig config,
+    Set<McpScope> scopes,
+  ) async {
     _nameController.text = name;
     _commandController.text = config.isLocal
         ? '${config.command}${config.args.isNotEmpty ? ' ${config.args.join(' ')}' : ''}'
@@ -386,16 +461,29 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
 
     // Recover the editable token + auth type from the stored headers.
     final headers = config.headers ?? const {};
-    final tokenEntry = headers.entries.firstWhere(
-      (e) => e.key == 'Authorization' || e.key == 'X-Api-Key',
-      orElse: () => const MapEntry('', ''),
-    );
-    _tokenController.text = tokenEntry.value;
-    _authType = tokenEntry.key == 'X-Api-Key'
-        ? AuthType.apiKey
-        : tokenEntry.value.startsWith('Bearer ')
-        ? AuthType.bearer
-        : AuthType.plain;
+    final hasOAuth = config.oauth != null;
+    if (hasOAuth) {
+      _authType = AuthType.oauth;
+      _tokenController.text = '';
+      _oauthClientIdController.text = config.oauth!.clientId ?? '';
+      _oauthClientSecretController.text = config.oauth!.clientSecret ?? '';
+      _oauthScopeController.text = config.oauth!.scope ?? '';
+    } else if (headers.isEmpty) {
+      _authType = AuthType.noAuth;
+      _tokenController.text = '';
+      _oauthClientIdController.clear();
+      _oauthClientSecretController.clear();
+      _oauthScopeController.clear();
+    } else {
+      final authHeader = headers['Authorization'] ?? '';
+      _tokenController.text = authHeader.startsWith('Bearer ')
+          ? authHeader.substring(7)
+          : authHeader;
+      _authType = AuthType.token;
+      _oauthClientIdController.clear();
+      _oauthClientSecretController.clear();
+      _oauthScopeController.clear();
+    }
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -450,16 +538,50 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                       ),
                     const SizedBox(height: 12),
                     if (_isRemote) ...[
-                      TextField(
-                        controller: _tokenController,
-                        decoration: _fieldDecoration(
-                          label: l10n.mcpTokenLabel,
-                          hint: l10n.mcpTokenHint,
-                          helper: l10n.mcpTokenHelper,
-                          isDark: isDark,
+                      if (_authType == AuthType.token)
+                        TextField(
+                          controller: _tokenController,
+                          decoration: _fieldDecoration(
+                            label: l10n.mcpTokenLabel,
+                            hint: l10n.mcpTokenHint,
+                            helper: l10n.mcpTokenHelper,
+                            isDark: isDark,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
+                      if (_authType == AuthType.token)
+                        const SizedBox(height: 8),
+                      if (_authType == AuthType.oauth) ...[
+                        TextField(
+                          controller: _oauthClientIdController,
+                          decoration: _fieldDecoration(
+                            label: l10n.mcpOAuthClientIdLabel,
+                            hint: l10n.mcpOAuthClientIdHint,
+                            helper: '',
+                            isDark: isDark,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _oauthClientSecretController,
+                          decoration: _fieldDecoration(
+                            label: l10n.mcpOAuthClientSecretLabel,
+                            hint: l10n.mcpOAuthClientSecretHint,
+                            helper: '',
+                            isDark: isDark,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _oauthScopeController,
+                          decoration: _fieldDecoration(
+                            label: l10n.mcpOAuthScopeLabel,
+                            hint: l10n.mcpOAuthScopeHint,
+                            helper: '',
+                            isDark: isDark,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                       DropdownButtonFormField<AuthType>(
                         initialValue: _authType,
                         decoration: _fieldDecoration(
@@ -470,16 +592,16 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                         ),
                         items: const [
                           DropdownMenuItem(
-                            value: AuthType.bearer,
-                            child: Text('Bearer'),
+                            value: AuthType.noAuth,
+                            child: Text('No Auth'),
                           ),
                           DropdownMenuItem(
-                            value: AuthType.apiKey,
-                            child: Text('ApiKey'),
-                          ),
-                          DropdownMenuItem(
-                            value: AuthType.plain,
+                            value: AuthType.token,
                             child: Text('Token'),
+                          ),
+                          DropdownMenuItem(
+                            value: AuthType.oauth,
+                            child: Text('OAuth 2.1'),
                           ),
                         ],
                         onChanged: (v) => setLocal(() => _authType = v!),
@@ -512,12 +634,23 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                   if (_isRemote) {
                     final url = _urlController.text.trim();
                     if (url.isEmpty) return;
-                    updated = config.copyWith(
+                    McpOAuthConfig? oauthConfig;
+                    if (_authType == AuthType.oauth) {
+                      oauthConfig = McpOAuthConfig(
+                        clientId: _oauthClientIdController.text.trim(),
+                        clientSecret: _oauthClientSecretController.text.trim(),
+                        scope: _oauthScopeController.text.trim(),
+                      );
+                    }
+                    updated = McpServerConfig.remote(
                       url: url,
                       headers: buildAuthHeaders(
                         _tokenController.text,
                         _authType,
                       ),
+                      oauth: oauthConfig,
+                      enabled: config.enabled,
+                      timeout: config.timeout,
                     );
                   } else {
                     final raw = _commandController.text.trim();
@@ -540,12 +673,17 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
     );
 
     if (result != null) {
-      await ref
-          .read(mcpManagementProvider.notifier)
-          .updateServer(
-            result['name'] as String,
-            result['config'] as McpServerConfig,
-          );
+      final notifier = ref.read(mcpManagementProvider.notifier);
+      final updatedName = result['name'] as String;
+      final updatedConfig = result['config'] as McpServerConfig;
+      // Update all scopes where this server exists.
+      for (final scope in scopes) {
+        await notifier.updateServer(updatedName, updatedConfig, scope: scope);
+      }
+      // If server was in no scopes (shouldn't happen), default to global.
+      if (scopes.isEmpty) {
+        await notifier.updateServer(updatedName, updatedConfig);
+      }
     }
   }
 
@@ -559,11 +697,75 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
     }
   }
 
-  Future<void> _confirmRemove(String name) async {
+  Future<void> _confirmRemove(String name, Set<McpScope> scopes) async {
+    final l10n = AppLocalizations.of(context)!;
+
+    // If server is in both scopes, show a scope picker dialog.
+    if (scopes.length > 1) {
+      final scope = await showDialog<McpScope?>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: Text(l10n.mcpRemoveTitle),
+            content: Text(l10n.mcpRemoveContent(name)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(l10n.mcpCancelAction),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, McpScope.global),
+                child: Text(l10n.mcpScopeGlobal),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, McpScope.project),
+                child: Text(l10n.mcpScopeProject),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: dialogContext,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(l10n.mcpRemoveTitle),
+                      content: Text(l10n.mcpRemoveContent(name)),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text(l10n.mcpCancelAction),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.red,
+                          ),
+                          child: Text(l10n.mcpRemoveFromAll),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true && dialogContext.mounted) {
+                    Navigator.pop(dialogContext);
+                  }
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: Text(l10n.mcpRemoveFromAll),
+              ),
+            ],
+          );
+        },
+      );
+      if (scope != null) {
+        await ref
+            .read(mcpManagementProvider.notifier)
+            .removeServer(name, scope: scope);
+      }
+      return;
+    }
+
+    // Single-scope: simple confirmation.
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        final l10n = AppLocalizations.of(dialogContext)!;
         return AlertDialog(
           title: Text(l10n.mcpRemoveTitle),
           content: Text(l10n.mcpRemoveContent(name)),
@@ -649,6 +851,11 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
               if (names.isEmpty) {
                 return _EmptyState(isDark: isDark, onAdd: _showAddDialog);
               }
+              final statusesAsync = ref.watch(mcpStatusesProvider);
+              final statuses = switch (statusesAsync) {
+                AsyncData(:final value) => value,
+                _ => <String, McpServerStatus>{},
+              };
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(ChatoraiSpacing.lg),
                 child: LayoutBuilder(
@@ -670,13 +877,19 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                           child: _ServerCard(
                             name: name,
                             config: state.servers[name]!,
+                            scopes: state.serverScopes(name),
+                            status: statuses[name],
                             isDark: isDark,
                             onToggle: (enabled) => ref
                                 .read(mcpManagementProvider.notifier)
                                 .setEnabled(name, enabled),
-                            onRemove: () => _confirmRemove(name),
-                            onEdit: () =>
-                                _showEditDialog(name, state.servers[name]!),
+                            onRemove: () =>
+                                _confirmRemove(name, state.serverScopes(name)),
+                            onEdit: () => _showEditDialog(
+                              name,
+                              state.servers[name]!,
+                              state.serverScopes(name),
+                            ),
                           ),
                         ),
                     ];
@@ -705,8 +918,11 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
   }
 
   Widget _buildMarketplace(bool isDark, AppLocalizations l10n) {
-    final installed =
-        ref.watch(mcpManagementProvider).value?.servers ?? const {};
+    final asyncState = ref.watch(mcpManagementProvider);
+    final state = asyncState.value;
+    final globalServers = state?.globalServers ?? const {};
+    final projectServers = state?.projectServers ?? const {};
+    final supportsProject = state?.supportsProjectScope ?? false;
     final query = _query.trim().toLowerCase();
     final categories = marketplaceCategories();
 
@@ -816,7 +1032,13 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                             child: _MarketCard(
                               entry: entry,
                               isDark: isDark,
-                              isInstalled: installed.containsKey(entry.id),
+                              supportsProject: supportsProject,
+                              installedGlobal: globalServers.containsKey(
+                                entry.id,
+                              ),
+                              installedProject: projectServers.containsKey(
+                                entry.id,
+                              ),
                               expanded: _expanded.contains(entry.id),
                               description: entry.description(l10n),
                               onToggleExpand: () => setState(() {
@@ -826,9 +1048,8 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                                   _expanded.add(entry.id);
                                 }
                               }),
-                              onInstall: installed.containsKey(entry.id)
-                                  ? null
-                                  : () => _installFromMarketplace(entry),
+                              onInstall: (scope) =>
+                                  _installFromMarketplace(entry, scope),
                             ),
                           ),
                       ];
@@ -868,10 +1089,28 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
         McpCategory.other => l10n.mcpMarketCategoryOther,
       };
 
-  Future<void> _installFromMarketplace(McpMarketplaceEntry entry) async {
+  Future<void> _installFromMarketplace(
+    McpMarketplaceEntry entry,
+    McpScope scope,
+  ) async {
+    String? token;
+    if (entry.requiresToken) {
+      token = await _showMarketplaceTokenDialog(entry);
+      if (token == null) return;
+    }
+
+    McpServerConfig config;
+    if (entry.requiresToken && token != null && token.isNotEmpty) {
+      config = entry.toConfig().copyWith(
+        headers: {'Authorization': 'Bearer $token'},
+      );
+    } else {
+      config = entry.toConfig();
+    }
+
     await ref
         .read(mcpManagementProvider.notifier)
-        .addServer(entry.id, entry.toConfig());
+        .addServer(entry.id, config, scope: scope);
     if (mounted) {
       SnackbarUtils.showSuccessSnackBar(
         context: context,
@@ -880,11 +1119,77 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
       );
     }
   }
+
+  Future<String?> _showMarketplaceTokenDialog(McpMarketplaceEntry entry) {
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        final controller = TextEditingController();
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: Text(l10n.mcpTokenDialogTitle),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.displayName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? ChatoraiColors.pureWhite
+                          : ChatoraiColors.pureBlack,
+                    ),
+                  ),
+                  const SizedBox(height: ChatoraiSpacing.md),
+                  TextField(
+                    controller: controller,
+                    obscureText: true,
+                    decoration: _fieldDecoration(
+                      label: l10n.mcpTokenInputLabel,
+                      hint: l10n.mcpTokenInputHint,
+                      helper: l10n.mcpTokenInputHelper,
+                      isDark: isDark,
+                    ),
+                    autofocus: true,
+                    onChanged: (_) => setDialogState(() {}),
+                    onSubmitted: (_) {
+                      if (controller.text.trim().isNotEmpty) {
+                        Navigator.pop(ctx, controller.text.trim());
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l10n.mcpCancelAction),
+              ),
+              FilledButton(
+                onPressed: controller.text.trim().isEmpty
+                    ? null
+                    : () => Navigator.pop(ctx, controller.text.trim()),
+                child: Text(l10n.mcpAuthConfirm),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _ServerCard extends StatelessWidget {
   final String name;
   final McpServerConfig config;
+  final Set<McpScope> scopes;
+  final McpServerStatus? status;
   final bool isDark;
   final ValueChanged<bool> onToggle;
   final VoidCallback onRemove;
@@ -893,6 +1198,8 @@ class _ServerCard extends StatelessWidget {
   const _ServerCard({
     required this.name,
     required this.config,
+    required this.scopes,
+    this.status,
     required this.isDark,
     required this.onToggle,
     required this.onRemove,
@@ -921,9 +1228,10 @@ class _ServerCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: icon + name.
+          // Row 1: status dot + icon + name.
           Row(
             children: [
+              _StatusDot(status: status),
               Padding(
                 padding: const EdgeInsets.only(right: ChatoraiSpacing.sm),
                 child: Tooltip(
@@ -1002,6 +1310,27 @@ class _ServerCard extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: ChatoraiSpacing.sm,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? ChatoraiColors.orange.withAlpha(25)
+                      : ChatoraiColors.orange.withAlpha(18),
+                  borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xs),
+                ),
+                child: Text(
+                  _scopeLabel(context, scopes),
+                  style: TextStyle(
+                    fontSize: ChatoraiFontSizes.caption,
+                    fontWeight: FontWeight.w600,
+                    color: ChatoraiColors.orange,
+                  ),
+                ),
+              ),
               const Spacer(),
               IconButton(
                 icon: const Icon(Icons.edit_outlined),
@@ -1037,6 +1366,56 @@ class _ServerCard extends StatelessWidget {
         ? '\n• … (+${tools.length - maxShown} more)'
         : '';
     return '$serverName\n\nTools (${tools.length}):\n• $shown$overflow';
+  }
+
+  String _scopeLabel(BuildContext context, Set<McpScope> scopes) {
+    final l10n = AppLocalizations.of(context)!;
+    if (scopes.length == 2) return l10n.mcpScopeGlobalProject;
+    if (scopes.contains(McpScope.project)) return l10n.mcpScopeProject;
+    return l10n.mcpScopeGlobal;
+  }
+}
+
+class _StatusDot extends StatelessWidget {
+  final McpServerStatus? status;
+
+  const _StatusDot({this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color;
+    final String tooltip;
+    if (status == null || status!.status == McpConnectionStatus.disabled) {
+      color = Colors.grey;
+      tooltip = 'Disabled';
+    } else {
+      switch (status!.status) {
+        case McpConnectionStatus.connected:
+          color = Colors.green;
+          tooltip = 'Connected';
+        case McpConnectionStatus.failed:
+          color = Colors.red;
+          tooltip = status?.error ?? 'Failed';
+        case McpConnectionStatus.needsAuth:
+          color = Colors.orange;
+          tooltip = 'Needs authentication';
+        case McpConnectionStatus.needsClientRegistration:
+          color = Colors.orange;
+          tooltip = 'Needs client registration';
+        case McpConnectionStatus.disabled:
+          color = Colors.grey;
+          tooltip = 'Disabled';
+      }
+    }
+    return Tooltip(
+      message: tooltip,
+      child: Container(
+        width: 8,
+        height: 8,
+        margin: const EdgeInsets.only(right: 6),
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
+    );
   }
 }
 
@@ -1143,16 +1522,20 @@ Widget _marketIcon(bool isDark, McpMarketplaceEntry entry, double size) {
 class _MarketCard extends StatelessWidget {
   final McpMarketplaceEntry entry;
   final bool isDark;
-  final bool isInstalled;
+  final bool supportsProject;
+  final bool installedGlobal;
+  final bool installedProject;
   final bool expanded;
   final String description;
   final VoidCallback onToggleExpand;
-  final VoidCallback? onInstall;
+  final void Function(McpScope) onInstall;
 
   const _MarketCard({
     required this.entry,
     required this.isDark,
-    required this.isInstalled,
+    required this.supportsProject,
+    required this.installedGlobal,
+    required this.installedProject,
     required this.expanded,
     required this.description,
     required this.onToggleExpand,
@@ -1229,7 +1612,7 @@ class _MarketCard extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        _categoryLabelStatic(entry.category),
+                        _categoryLabel(l10n, entry.category),
                         style: TextStyle(
                           fontSize: ChatoraiFontSizes.caption,
                           color: isDark
@@ -1290,26 +1673,12 @@ class _MarketCard extends StatelessWidget {
                 const SizedBox(height: ChatoraiSpacing.sm),
                 SizedBox(
                   width: double.infinity,
-                  child: isInstalled
-                      ? OutlinedButton.icon(
-                          onPressed: null,
-                          icon: const Icon(Icons.check, size: 18),
-                          label: Text(l10n.mcpInstalled),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: ChatoraiColors.success,
-                            side: BorderSide(
-                              color: ChatoraiColors.success.withAlpha(120),
-                            ),
-                          ),
-                        )
-                      : FilledButton(
-                          onPressed: onInstall,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: ChatoraiColors.orange,
-                            foregroundColor: ChatoraiColors.pureWhite,
-                          ),
-                          child: Text(l10n.mcpInstall),
-                        ),
+                  child: _MarketInstallButton(
+                    installedGlobal: installedGlobal,
+                    installedProject: installedProject,
+                    supportsProject: supportsProject,
+                    onInstall: onInstall,
+                  ),
                 ),
               ],
             ),
@@ -1319,18 +1688,266 @@ class _MarketCard extends StatelessWidget {
     );
   }
 
-  String _categoryLabelStatic(McpCategory cat) => switch (cat) {
-    McpCategory.search => 'Search',
-    McpCategory.docs => 'Docs',
-    McpCategory.design => 'Design',
-    McpCategory.dev => 'Dev',
-    McpCategory.finance => 'Finance',
-    McpCategory.travel => 'Travel',
-    McpCategory.jobs => 'Jobs',
-    McpCategory.productivity => 'Productivity',
-    McpCategory.social => 'Social',
-    McpCategory.other => 'Other',
-  };
+  String _categoryLabel(AppLocalizations l10n, McpCategory cat) =>
+      switch (cat) {
+        McpCategory.search => l10n.mcpMarketCategorySearch,
+        McpCategory.docs => l10n.mcpMarketCategoryDocs,
+        McpCategory.design => l10n.mcpMarketCategoryDesign,
+        McpCategory.dev => l10n.mcpMarketCategoryDev,
+        McpCategory.finance => l10n.mcpMarketCategoryFinance,
+        McpCategory.travel => l10n.mcpMarketCategoryTravel,
+        McpCategory.jobs => l10n.mcpMarketCategoryJobs,
+        McpCategory.productivity => l10n.mcpMarketCategoryProductivity,
+        McpCategory.social => l10n.mcpMarketCategorySocial,
+        McpCategory.other => l10n.mcpMarketCategoryOther,
+      };
+}
+
+/// Install control for marketplace cards: plain button when only global scope
+/// exists, or a scope-picker popup (Global / Project) on desktop.
+class _MarketInstallButton extends StatelessWidget {
+  final bool installedGlobal;
+  final bool installedProject;
+  final bool supportsProject;
+  final void Function(McpScope) onInstall;
+
+  const _MarketInstallButton({
+    required this.installedGlobal,
+    required this.installedProject,
+    required this.supportsProject,
+    required this.onInstall,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final installed = installedGlobal || installedProject;
+
+    if (installed) {
+      return OutlinedButton.icon(
+        onPressed: null,
+        icon: const Icon(Icons.check, size: 18),
+        label: Text(l10n.mcpInstalled),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: ChatoraiColors.success,
+          side: BorderSide(color: ChatoraiColors.success.withAlpha(120)),
+        ),
+      );
+    }
+
+    if (!supportsProject) {
+      return OutlinedButton.icon(
+        style: _installButtonStyle(),
+        onPressed: () => onInstall(McpScope.global),
+        icon: const Icon(Icons.download_rounded, size: 18),
+        label: Text(l10n.mcpInstall),
+      );
+    }
+
+    return OutlinedButton.icon(
+      style: _installButtonStyle(),
+      onPressed: () => _showScopeMenu(context, l10n),
+      icon: const Icon(Icons.download_rounded, size: 18),
+      label: Text(l10n.mcpInstall),
+    );
+  }
+
+  Future<void> _showScopeMenu(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
+    final button = context.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
+      ),
+      Offset.zero & overlay.size,
+    );
+    final scope = await showMenu<McpScope>(
+      context: context,
+      position: position,
+      items: [
+        PopupMenuItem(
+          value: McpScope.global,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.public_rounded, size: ChatoraiIconSizes.md),
+              const SizedBox(width: ChatoraiSpacing.sm),
+              Text(l10n.mcpInstallToGlobal),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: McpScope.project,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.folder_outlined, size: ChatoraiIconSizes.md),
+              const SizedBox(width: ChatoraiSpacing.sm),
+              Text(l10n.mcpInstallToProject),
+            ],
+          ),
+        ),
+      ],
+    );
+    if (scope != null) onInstall(scope);
+  }
+}
+
+ButtonStyle _installButtonStyle() {
+  bool active(Set<WidgetState> states) =>
+      states.contains(WidgetState.pressed) ||
+      states.contains(WidgetState.hovered) ||
+      states.contains(WidgetState.focused);
+
+  return ButtonStyle(
+    foregroundColor: WidgetStateProperty.resolveWith(
+      (states) =>
+          active(states) ? ChatoraiColors.pureWhite : ChatoraiColors.orange,
+    ),
+    backgroundColor: WidgetStateProperty.resolveWith(
+      (states) => active(states) ? ChatoraiColors.orange : null,
+    ),
+    overlayColor: WidgetStateProperty.all(Colors.transparent),
+    side: WidgetStateProperty.resolveWith(
+      (states) => BorderSide(
+        color: active(states)
+            ? ChatoraiColors.orange
+            : ChatoraiColors.orange.withAlpha(120),
+      ),
+    ),
+  );
+}
+
+/// Scope picker row used in the add/edit dialog.
+class _ScopePicker extends StatelessWidget {
+  final McpScope scope;
+  final bool isDark;
+  final ValueChanged<McpScope> onChanged;
+
+  const _ScopePicker({
+    required this.scope,
+    required this.isDark,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final subtleColor = isDark
+        ? ChatoraiColors.darkSecondaryTextColor
+        : ChatoraiColors.secondaryTextColor;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Scope',
+          style: TextStyle(
+            fontSize: ChatoraiFontSizes.caption,
+            color: subtleColor,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: _ScopeChip(
+                icon: Icons.public_rounded,
+                label: l10n.mcpScopeGlobal,
+                selected: scope == McpScope.global,
+                isDark: isDark,
+                onTap: () => onChanged(McpScope.global),
+              ),
+            ),
+            const SizedBox(width: ChatoraiSpacing.sm),
+            Expanded(
+              child: _ScopeChip(
+                icon: Icons.folder_outlined,
+                label: l10n.mcpScopeProject,
+                selected: scope == McpScope.project,
+                isDark: isDark,
+                onTap: () => onChanged(McpScope.project),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ScopeChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _ScopeChip({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedColor = ChatoraiColors.orange;
+    final bgColor = selected
+        ? selectedColor.withAlpha(isDark ? 40 : 25)
+        : isDark
+        ? ChatoraiColors.darkInputFill
+        : ChatoraiColors.inputFill;
+    final borderColor = selected
+        ? selectedColor.withAlpha(150)
+        : isDark
+        ? ChatoraiColors.darkInputBorder
+        : ChatoraiColors.inputBorder;
+    final fgColor = selected
+        ? selectedColor
+        : isDark
+        ? ChatoraiColors.darkSecondaryTextColor
+        : ChatoraiColors.secondaryTextColor;
+
+    return Material(
+      color: bgColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+        side: BorderSide(color: borderColor),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: fgColor),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: ChatoraiFontSizes.sm,
+                  fontWeight: FontWeight.w600,
+                  color: fgColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Segmented Local / Remote selector used inside the add-server dialog.

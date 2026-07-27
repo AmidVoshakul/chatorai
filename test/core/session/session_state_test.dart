@@ -120,14 +120,14 @@ void main() {
       final now = DateTime.now();
       final result = ToolResult(
         id: 'tr1',
-        toolName: 'bash',
+        toolName: 'shell',
         input: {'cmd': 'ls'},
         outputText: 'files',
         durationMs: 100,
         status: 'success',
         createdAt: now,
       );
-      expect(result.toolName, 'bash');
+      expect(result.toolName, 'shell');
       expect(result.status, 'success');
     });
   });

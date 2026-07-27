@@ -77,6 +77,24 @@ class ContextEpochs extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@TableIndex(name: 'idx_file_snapshots_session', columns: {#sessionId})
+@TableIndex(
+  name: 'idx_file_snapshots_session_step_created',
+  columns: {#sessionId, #stepId, #createdAt},
+)
+class FileSnapshots extends Table {
+  TextColumn get id => text()();
+  TextColumn get sessionId => text()();
+  TextColumn get filePath => text()();
+  TextColumn get content => text()();
+  TextColumn? get stepId => text().nullable()();
+  TextColumn? get toolName => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @TableIndex(name: 'idx_session_snapshots_session', columns: {#sessionId})
 class SessionSnapshots extends Table {
   TextColumn get id => text()();

@@ -147,7 +147,7 @@ void main() {
               id: 'r1',
               sessionId: 's1',
               messageId: 'm1',
-              toolName: 'bash',
+              toolName: 'shell',
               createdAt: DateTime.now(),
             ),
           );
@@ -158,7 +158,7 @@ void main() {
               id: 'r2',
               sessionId: 's1',
               messageId: 'm2',
-              toolName: 'bash',
+              toolName: 'shell',
               createdAt: DateTime.now(),
             ),
           );
@@ -176,8 +176,8 @@ void main() {
 
       final stats = await aggregator.aggregate();
       expect(stats.toolUsage.length, 2);
-      final bash = stats.toolUsage.firstWhere((t) => t.toolName == 'bash');
-      expect(bash.count, 2);
+      final shell = stats.toolUsage.firstWhere((t) => t.toolName == 'shell');
+      expect(shell.count, 2);
       final grep = stats.toolUsage.firstWhere((t) => t.toolName == 'grep');
       expect(grep.count, 1);
     });

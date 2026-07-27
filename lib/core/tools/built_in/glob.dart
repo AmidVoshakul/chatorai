@@ -66,15 +66,27 @@ ToolDef createGlobTool() {
       final matchFiles = <File>[];
       final gitignore = _loadGitignore(safeRoot);
 
-      for (final entity in dir.listSync(recursive: true, followLinks: false)) {
-        if (entity is! File) continue;
-        final rel = p.relative(entity.path, from: safeRoot);
-        final relPosix = p.posix.joinAll(p.split(rel));
-        if (gitignore.any((g) => g.matches(relPosix))) continue;
-        if (globMatcher.matches(rel) || globMatcher.matches(relPosix)) {
-          matchFiles.add(entity);
-          if (matchFiles.length >= 1000) break;
+      try {
+        for (final entity in dir.listSync(
+          recursive: true,
+          followLinks: false,
+        )) {
+          if (entity is! File) continue;
+          final rel = p.relative(entity.path, from: safeRoot);
+          final relPosix = p.posix.joinAll(p.split(rel));
+          if (gitignore.any((g) => g.matches(relPosix))) continue;
+          if (globMatcher.matches(rel) || globMatcher.matches(relPosix)) {
+            matchFiles.add(entity);
+            if (matchFiles.length >= 1000) break;
+          }
         }
+      } on FileSystemException catch (e) {
+        return ToolOutput(
+          'Error: cannot list files under $safeRoot (${e.message}). '
+          'On Android 11+, direct directory path access to shared storage is restricted. '
+          'Use the app file picker or copy files into the app folder, then search from there.',
+          metadata: {'error': true, 'os_permission': true, 'path': safeRoot},
+        );
       }
 
       if (matchFiles.isEmpty) {

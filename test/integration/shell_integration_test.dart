@@ -2,18 +2,18 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-import 'package:chatorai/core/tools/built_in/bash.dart';
+import 'package:chatorai/core/tools/built_in/shell.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'helpers/test_context.dart';
 
-/// Integration tests for the bash tool.
+/// Integration tests for the shell tool.
 ///
 /// These tests execute REAL shell commands on the host system.
 /// They verify end-to-end behavior: command execution, stdout/stderr capture,
 /// timeout handling, and error conditions.
 ///
 /// Skip policy:
-/// - If `bash` executable is not found in PATH, all tests are SKIPPED.
+/// - If `shell` executable is not found in PATH, all tests are SKIPPED.
 /// - Tests that rely on specific utilities (echo, printf, sleep) assume they
 ///   exist on a standard Unix/Linux/macOS system. CI environments should have them.
 Future<bool> _isBashAvailable() async {
@@ -37,9 +37,9 @@ Future<void> _requireBash() async {
 }
 
 void main() {
-  group('Bash Integration Tests', () {
+  group('shell Integration Tests', () {
     group('Environment', () {
-      test('bash is available in PATH', () async {
+      test('shell is available in PATH', () async {
         await _requireBash();
       });
     });
@@ -48,10 +48,10 @@ void main() {
       test('simple echo command returns expected output', () async {
         await _requireBash();
 
-        final tool = createBashTool();
+        final tool = createShellTool();
         final ctx = const IntegrationTestContext(
-          toolCallId: 'bash-integration-test',
-          sessionId: 'bash-integration-session',
+          toolCallId: 'shell-integration-test',
+          sessionId: 'shell-integration-session',
         );
 
         final output = await tool.execute({'command': 'echo hello'}, ctx);
@@ -69,10 +69,10 @@ void main() {
       test('command with arguments (printf) produces correct lines', () async {
         await _requireBash();
 
-        final tool = createBashTool();
+        final tool = createShellTool();
         final ctx = const IntegrationTestContext(
-          toolCallId: 'bash-integration-test',
-          sessionId: 'bash-integration-session',
+          toolCallId: 'shell-integration-test',
+          sessionId: 'shell-integration-session',
         );
 
         final output = await tool.execute({'command': r'printf "a\nb\n"'}, ctx);
@@ -90,10 +90,10 @@ void main() {
       test('multi-line output via printf works', () async {
         await _requireBash();
 
-        final tool = createBashTool();
+        final tool = createShellTool();
         final ctx = const IntegrationTestContext(
-          toolCallId: 'bash-integration-test',
-          sessionId: 'bash-integration-session',
+          toolCallId: 'shell-integration-test',
+          sessionId: 'shell-integration-session',
         );
 
         final output = await tool.execute({
@@ -111,10 +111,10 @@ void main() {
       test('simple echo command captures output', () async {
         await _requireBash();
 
-        final tool = createBashTool();
+        final tool = createShellTool();
         final ctx = const IntegrationTestContext(
-          toolCallId: 'bash-integration-test',
-          sessionId: 'bash-integration-session',
+          toolCallId: 'shell-integration-test',
+          sessionId: 'shell-integration-session',
         );
 
         final output = await tool.execute({
@@ -129,10 +129,10 @@ void main() {
       test('printf with newline produces multi-line output', () async {
         await _requireBash();
 
-        final tool = createBashTool();
+        final tool = createShellTool();
         final ctx = const IntegrationTestContext(
-          toolCallId: 'bash-integration-test',
-          sessionId: 'bash-integration-session',
+          toolCallId: 'shell-integration-test',
+          sessionId: 'shell-integration-session',
         );
 
         final output = await tool.execute({
@@ -149,10 +149,10 @@ void main() {
       test('non-existent command returns error metadata', () async {
         await _requireBash();
 
-        final tool = createBashTool();
+        final tool = createShellTool();
         final ctx = const IntegrationTestContext(
-          toolCallId: 'bash-integration-test',
-          sessionId: 'bash-integration-session',
+          toolCallId: 'shell-integration-test',
+          sessionId: 'shell-integration-session',
         );
 
         final output = await tool.execute({
@@ -171,10 +171,10 @@ void main() {
       test('command with invalid syntax returns error', () async {
         await _requireBash();
 
-        final tool = createBashTool();
+        final tool = createShellTool();
         final ctx = const IntegrationTestContext(
-          toolCallId: 'bash-integration-test',
-          sessionId: 'bash-integration-session',
+          toolCallId: 'shell-integration-test',
+          sessionId: 'shell-integration-session',
         );
 
         final output = await tool.execute({
@@ -188,10 +188,10 @@ void main() {
       test('permission denied (e.g., /etc/shadow) returns error', () async {
         await _requireBash();
 
-        final tool = createBashTool();
+        final tool = createShellTool();
         final ctx = const IntegrationTestContext(
-          toolCallId: 'bash-integration-test',
-          sessionId: 'bash-integration-session',
+          toolCallId: 'shell-integration-test',
+          sessionId: 'shell-integration-session',
         );
 
         final output = await tool.execute({
@@ -210,10 +210,10 @@ void main() {
         () async {
           await _requireBash();
 
-          final tool = createBashTool();
+          final tool = createShellTool();
           final ctx = const IntegrationTestContext(
-            toolCallId: 'bash-integration-test',
-            sessionId: 'bash-integration-session',
+            toolCallId: 'shell-integration-test',
+            sessionId: 'shell-integration-session',
           );
 
           // Use a short timeout (500ms) with a command that sleeps 5 seconds.
@@ -241,10 +241,10 @@ void main() {
       test('command within timeout completes successfully', () async {
         await _requireBash();
 
-        final tool = createBashTool();
+        final tool = createShellTool();
         final ctx = const IntegrationTestContext(
-          toolCallId: 'bash-integration-test',
-          sessionId: 'bash-integration-session',
+          toolCallId: 'shell-integration-test',
+          sessionId: 'shell-integration-session',
         );
 
         // Simple echo with 2-second timeout should succeed
@@ -264,10 +264,10 @@ void main() {
       test('successful command returns exit_code 0', () async {
         await _requireBash();
 
-        final tool = createBashTool();
+        final tool = createShellTool();
         final ctx = const IntegrationTestContext(
-          toolCallId: 'bash-integration-test',
-          sessionId: 'bash-integration-session',
+          toolCallId: 'shell-integration-test',
+          sessionId: 'shell-integration-session',
         );
 
         final output = await tool.execute({'command': 'true'}, ctx);
@@ -279,10 +279,10 @@ void main() {
       test('failed command (false) returns non-zero exit code', () async {
         await _requireBash();
 
-        final tool = createBashTool();
+        final tool = createShellTool();
         final ctx = const IntegrationTestContext(
-          toolCallId: 'bash-integration-test',
-          sessionId: 'bash-integration-session',
+          toolCallId: 'shell-integration-test',
+          sessionId: 'shell-integration-session',
         );
 
         final output = await tool.execute({'command': 'false'}, ctx);
@@ -294,10 +294,10 @@ void main() {
       test('command with explicit exit code propagates correctly', () async {
         await _requireBash();
 
-        final tool = createBashTool();
+        final tool = createShellTool();
         final ctx = const IntegrationTestContext(
-          toolCallId: 'bash-integration-test',
-          sessionId: 'bash-integration-session',
+          toolCallId: 'shell-integration-test',
+          sessionId: 'shell-integration-session',
         );
 
         final output = await tool.execute({'command': 'exit 42'}, ctx);
@@ -313,10 +313,10 @@ void main() {
         () async {
           await _requireBash();
 
-          final tool = createBashTool();
+          final tool = createShellTool();
           final ctx = const IntegrationTestContext(
-            toolCallId: 'bash-integration-test',
-            sessionId: 'bash-integration-session',
+            toolCallId: 'shell-integration-test',
+            sessionId: 'shell-integration-session',
           );
 
           // Generate 60,000 'x' characters

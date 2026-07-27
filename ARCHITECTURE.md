@@ -360,7 +360,7 @@ lib/features/chat/
 ```
 lib/core/tools/
 ├── built_in/                      # 16+ built-in tool implementations
-│   ├── bash.dart                 # Shell command execution
+│   ├── shell.dart                 # Shell command execution
 │   ├── read.dart                 # File reading
 │   ├── write.dart                # File creation/overwrite
 │   ├── edit.dart                 # In-file text replacement
@@ -421,10 +421,24 @@ lib/core/mcp/
 
 ```
 lib/core/lsp/
-└── lsp_service.dart         — LspService wrapping dart-mcp-server_lsp
+├── lsp_service.dart    — LspService: 15-language server table, auto-install dispatch, lazy file-driven client lifecycle
+├── lsp_client.dart     — LspClient: JSON-RPC adapter, didOpen/didChange/didClose lifecycle, stream controller
+├── lsp_types.dart      — LSP types (LspDiagnostic, LspRange, LspPosition, LspPublishDiagnosticsParams, ...)
+├── lsp_methods.dart    — LspMethod constants + state enums
+└── lsp_provider.dart   — Riverpod providers (lspServiceProvider, lspClientProvider)
 ```
 
-The `lsp` tool provides hover information and code intelligence via LSP. It is conditionally registered when an LSP server is available.
+`LspService` manages a cache of `LspClient` instances keyed by `(rootUri, serverId)`.
+
+- **Built-in table**: 15 `LspServerDefinition` entries in `_builtInServers` (dart, typescript, python, java, kotlin, go, rust, csharp, yaml, shell, clangd, lua, markdown, swift, zig). Each entry specifies `command`, `args`, `extensions`, optional `autoInstall` hint, and optional `env`.
+- **Auto-install**: When a command is missing on PATH, `LspService.clientForFile()` checks the built-in `AutoInstallHint` and invokes the platform package manager (`npm`, `cargo`, `brew`, `pip`, `go`) once per server ID. Path checks are bounded by a 5-second `Process.run` timeout.
+- **Config models**: `LspConfig` (top-level `lsp` section) and `LspServerEntryConfig` (per-server overrides) in `lib/core/config/models/chatorai_config.dart`. `LspConfig.fromJson` accepts both `lsp: true/false` and `lsp: { servers: { ... } }`.
+- **Provider wiring**: `lspServiceProvider` (FutureProvider) loads user overrides via `service.loadUserServers(config.lsp!)` at startup and calls `service.shutdownAll()` on dispose.
+- **Concurrency**: `_activeCreation` map guards against duplicate client creation per cache key.
+- **Diagnostics lifecycle**: `diagnostics()` opens a file, subscribes to the diagnostics stream, and sends `textDocument/didClose` in the `finally` block. `diagnosticsForFile()` follows the same pattern with a configurable 3-second timeout. `_openedFiles` is cleared in `shutdownAll()`.
+- **Dead code removed**: `_legacyFallback` path removed.
+
+The `lsp` tool is registered conditionally when `LspService` is provided.
 
 ### Models & Settings Feature Modules
 

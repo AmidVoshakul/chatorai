@@ -1667,6 +1667,65 @@ class AppLocalizationsAr extends AppLocalizations {
       'يجمع Adobe for Creativity قدرات Photoshop وLightroom وIllustrator وFirefly وPremiere وExpress وInDesign وStock مع العمل الإبداعي المدفوع بالذكاء الاصطناعي. يمكن للمستخدمين إنشاء الصور وتحريرها وتحسينها والأصول التصميمية والمشاريع المرئية بلغة طبيعية مع بقاء العمل مرتبطًا بحساب Adobe.';
 
   @override
+  String get mcpInstallToGlobal => 'تثبيت عالمي';
+
+  @override
+  String get mcpInstallToProject => 'تثبيت في المشروع';
+
+  @override
+  String get mcpScopeGlobal => 'عالمي';
+
+  @override
+  String get mcpScopeProject => 'المشروع';
+
+  @override
+  String get mcpScopeGlobalProject => 'عالمي + المشروع';
+
+  @override
+  String mcpRemoveFromScope(String scope) {
+    return 'إزالة من $scope';
+  }
+
+  @override
+  String get mcpRemoveFromAll => 'إزالة من الكل';
+
+  @override
+  String get mcpTokenDialogTitle => 'المصادقة';
+
+  @override
+  String get mcpTokenDialogTitleHint => 'اختر كيفية المصادقة مع هذا الخادم';
+
+  @override
+  String get mcpTokenInputLabel => 'الرمز';
+
+  @override
+  String get mcpTokenInputHint => 'الصق رمز الوصول';
+
+  @override
+  String get mcpTokenInputHelper => 'يُرسل كـ Authorization: Bearer <token>';
+
+  @override
+  String get mcpOAuthClientIdLabel => 'Client ID';
+
+  @override
+  String get mcpOAuthClientIdHint => 'معرف عميل OAuth 2.1';
+
+  @override
+  String get mcpOAuthClientSecretLabel => 'Client Secret';
+
+  @override
+  String get mcpOAuthClientSecretHint => 'سر العميل OAuth 2.1 (اختياري)';
+
+  @override
+  String get mcpOAuthScopeLabel => 'النطاق';
+
+  @override
+  String get mcpOAuthScopeHint => 'مثال read write';
+
+  @override
+  String get mcpAuthConfirm => 'تأكيد';
+
+  @override
   String get agentsInstructions => 'تعليمات الوكلاء';
 
   @override
@@ -1984,4 +2043,22 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get commonEdit => 'تعديل';
+
+  @override
+  String get toolResultOriginal => 'الأصلي';
+
+  @override
+  String get toolResultRestore => 'استعادة';
+
+  @override
+  String get toolResultRestoredSnackbar =>
+      'تم استعادة الملفات إلى الحالة قبل التعديل';
+
+  @override
+  String get toolResultOriginalTitle => 'المحتوى الأصلي قبل التعديل';
+
+  @override
+  String restoreFailed(String error) {
+    return 'فشلت الاستعادة: $error';
+  }
 }

@@ -18,7 +18,7 @@ import 'package:chatorai/shared/utils/logger.dart';
 // ---------------------------------------------------------------------------
 class ToolExecutor {
   static const _doomLoopThreshold = 3;
-  static const _sideEffectingTools = <String>{'bash', 'write'};
+  static const _sideEffectingTools = <String>{'shell', 'write'};
 
   // Session-scoped caches (pruned on session close)
   final Map<String, Map<String, dynamic>> _resultCache = {};
@@ -107,7 +107,7 @@ class ToolExecutor {
     final cacheKey = '${def.id}:$cacheKeySuffix:${_normalizeInput(inputMap)}';
 
     // Deduplicate in-flight requests by toolCallId (preliminary + final dispatch)
-    // This works for ALL tools including side-effecting (bash/write)
+    // This works for ALL tools including side-effecting (shell/write)
     // Register immediately to prevent race condition with concurrent calls
     if (toolCallId != null) {
       final inFlight = _inFlightCache[toolCallId];
@@ -397,7 +397,10 @@ class _AskContext {
     }
     return PermissionRuleset(
       rules: rules,
-      sessionApproved: permissions.approvedRules,
+      sessionApproved: [
+        ...permissions.approvedRules,
+        ...permissions.onceApprovedRules,
+      ],
     );
   }
 

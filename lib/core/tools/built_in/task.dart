@@ -104,6 +104,7 @@ ToolDef createTaskTool({
       await ctx.ask(
         permission: 'task',
         patterns: [subagentType, agent.name],
+        always: ['*'],
         metadata: {
           'description': description,
           'subagent_type': subagentType,
@@ -159,112 +160,128 @@ ToolDef createTaskTool({
 
       final taskPartId = taskId ?? ctx.toolCallId;
 
-      // Launch the child session WITHOUT awaiting it. The SDK invokes this
-      // `execute` per task call and sequentially awaits each one; by not
-      // blocking here the next parallel task's child session starts
-      // immediately — both run concurrently like two browser tabs. Each child
-      // drops its result into the shared batch (TaskBatch) and publishes it on
-      // the parent session via propagateChildOutput when it finishes.
-      runner
-          .runTaskInChild(
-            parentSessionId: SessionID.fromString(normalizedSessionId),
-            taskPrompt: prompt,
-            agent: subagentType,
-            modelRef: childModel,
-            title: titleInput ?? description,
-            taskId: taskId,
-            taskPartId: taskPartId,
-            holder: currentSessionRunner,
-            abortSignal: ctx.abortSignal,
-            streamFn: (child) async {
-              LogTags.chatService.logInfo(
-                'TaskTool: child stream starting agent=$subagentType parent=$normalizedSessionId child=${child.sessionId.value}',
-              );
-              var lastTokensInput = 0;
-              var lastTokensOutput = 0;
-              var lastTokensCacheRead = 0;
-              var lastTokensCacheWrite = 0;
-              await chatAiService!.runChildCompletion(
-                messages: messages,
-                model: childModel,
-                temperature: temperatureToUse,
-                tools: subagentTools,
-                maxSteps: agent.maxSteps ?? unlimitedMaxSteps,
-                abortSignal: ctx.abortSignal,
-                onUsage: (input, output, cacheRead, cacheWrite) {
-                  lastTokensInput = input;
-                  lastTokensOutput = output;
-                  lastTokensCacheRead = cacheRead;
-                  lastTokensCacheWrite = cacheWrite;
-                },
-                onChunk: child.onChunk,
-                onReasoning: child.onReasoning,
-                onToolStart: (toolCallId, toolName, input) async {
-                  await child.onToolStart(toolCallId, toolName, input);
-                  final title =
-                      input['command'] as String? ??
-                      input['query'] as String? ??
-                      input['filePath'] as String? ??
-                      input['path'] as String?;
-                  currentSessionRunner?.onChildToolEvent?.call(
-                    child.sessionId.value,
-                    toolName,
-                    title,
-                  );
-                  return;
-                },
-                onToolEnd: (toolCallId, toolName, result) async {
-                  await child.onToolEnd(toolCallId, toolName, result);
-                  return;
-                },
-                onToolError: (toolCallId, toolName, error) async {
-                  await child.onError(Exception(error));
-                  return;
-                },
-                onCompletion: (content) async {
-                  await child.onCompletion(
-                    content: content,
-                    reasoning: null,
-                    model: childModel,
-                    tokensInput: lastTokensInput,
-                    tokensOutput: lastTokensOutput,
-                    tokensCacheRead: lastTokensCacheRead,
-                    tokensCacheWrite: lastTokensCacheWrite,
-                  );
-                },
-              );
-            },
-          )
-          .then(
-            (_) {
-              LogTags.chatService.logInfo(
-                'TaskTool: child finished agent=$subagentType part=$taskPartId',
-              );
-            },
-            onError: (e, st) {
-              LogTags.chatService.logWarning(
-                'TaskTool: child failed agent=$subagentType part=$taskPartId error=$e',
-              );
+      try {
+        final taskResult = await runner.runTaskInChild(
+          parentSessionId: SessionID.fromString(normalizedSessionId),
+          taskPrompt: prompt,
+          agent: subagentType,
+          modelRef: childModel,
+          title: titleInput ?? description,
+          taskId: taskId,
+          taskPartId: taskPartId,
+          holder: currentSessionRunner,
+          abortSignal: ctx.abortSignal,
+          streamFn: (child) async {
+            LogTags.chatService.logInfo(
+              'TaskTool: child stream starting agent=$subagentType parent=$normalizedSessionId child=${child.sessionId.value}',
+            );
+            var lastTokensInput = 0;
+            var lastTokensOutput = 0;
+            var lastTokensCacheRead = 0;
+            var lastTokensCacheWrite = 0;
+            await chatAiService!.runChildCompletion(
+              messages: messages,
+              model: childModel,
+              temperature: temperatureToUse,
+              sessionId: normalizedSessionId,
+              tools: subagentTools,
+              maxSteps: agent.maxSteps ?? unlimitedMaxSteps,
+              abortSignal: ctx.abortSignal,
+              onUsage: (input, output, cacheRead, cacheWrite) {
+                lastTokensInput = input;
+                lastTokensOutput = output;
+                lastTokensCacheRead = cacheRead;
+                lastTokensCacheWrite = cacheWrite;
+              },
+              onChunk: child.onChunk,
+              onReasoning: child.onReasoning,
+              onToolStart: (toolCallId, toolName, input) async {
+                await child.onToolStart(toolCallId, toolName, input);
+                final title =
+                    input['command'] as String? ??
+                    input['query'] as String? ??
+                    input['filePath'] as String? ??
+                    input['path'] as String?;
+                currentSessionRunner?.onChildToolEvent?.call(
+                  child.sessionId.value,
+                  toolName,
+                  title,
+                );
+                return;
+              },
+              onToolEnd: (toolCallId, toolName, result) async {
+                await child.onToolEnd(toolCallId, toolName, result);
+                return;
+              },
+              onToolError: (toolCallId, toolName, error) async {
+                // Use onToolError (not onError) to mark the tool as failed
+                // WITHOUT finalizing the child session. This lets the agent
+                // recover and continue working after a tool error.
+                await child.onToolError(toolCallId, toolName, error);
+                return;
+              },
+              onCompletion: (content) async {
+                await child.onCompletion(
+                  content: content,
+                  reasoning: null,
+                  model: childModel,
+                  tokensInput: lastTokensInput,
+                  tokensOutput: lastTokensOutput,
+                  tokensCacheRead: lastTokensCacheRead,
+                  tokensCacheWrite: lastTokensCacheWrite,
+                );
+              },
+            );
+          },
+        );
+        LogTags.chatService.logInfo(
+          'TaskTool: child finished agent=$subagentType part=$taskPartId',
+        );
+        final delegatedTaskId = taskId ?? 'task_$taskPartId';
+        if (taskResult.aborted) {
+          return ToolOutput(
+            '(task failed)',
+            metadata: {
+              'task_id': delegatedTaskId,
+              'subagent_type': subagentType,
+              'agent_name': agent.name,
+              'description': description,
+              'session_id': rawSessionId,
+              'delegated': false,
+              'error': true,
+              'aborted': true,
             },
           );
-
-      // Return immediately so the SDK can start the next parallel task. The
-      // actual result is delivered to the parent session asynchronously via
-      // propagateChildOutput (TaskCompleted) when the child finishes.
-      final delegatedTaskId = taskId ?? 'task_$taskPartId';
-      return ToolOutput(
-        '<task id="$delegatedTaskId" agent="${agent.name}" state="delegated">'
-        'Delegated to ${agent.name} subagent. Result will be reported when complete.'
-        '</task>',
-        metadata: {
-          'task_id': delegatedTaskId,
-          'subagent_type': subagentType,
-          'agent_name': agent.name,
-          'description': description,
-          'session_id': rawSessionId,
-          'delegated': true,
-        },
-      );
+        }
+        return ToolOutput(
+          taskResult.output,
+          metadata: {
+            'task_id': delegatedTaskId,
+            'subagent_type': subagentType,
+            'agent_name': agent.name,
+            'description': description,
+            'session_id': rawSessionId,
+            'delegated': false,
+          },
+        );
+      } catch (e) {
+        LogTags.chatService.logWarning(
+          'TaskTool: child failed agent=$subagentType part=$taskPartId error=$e',
+        );
+        final delegatedTaskId = taskId ?? 'task_$taskPartId';
+        return ToolOutput(
+          '(task failed)',
+          metadata: {
+            'task_id': delegatedTaskId,
+            'subagent_type': subagentType,
+            'agent_name': agent.name,
+            'description': description,
+            'session_id': rawSessionId,
+            'error': true,
+            'error_message': '$e',
+          },
+        );
+      }
     },
   );
 }

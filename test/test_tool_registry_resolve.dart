@@ -161,11 +161,11 @@ void main() {
 
   group('ToolRegistry — toSDKTools', () {
     test('toSDKTools returns map with all registered tools', () {
-      registry.register(_tool('bash'));
+      registry.register(_tool('shell'));
       registry.register(_tool('read'));
 
       final sdkTools = registry.toSDKTools();
-      expect(sdkTools.containsKey('bash'), isTrue);
+      expect(sdkTools.containsKey('shell'), isTrue);
       expect(sdkTools.containsKey('read'), isTrue);
       expect(sdkTools.length, 2);
     });
@@ -195,19 +195,19 @@ void main() {
       final mixedRules = PermissionRuleset(
         rules: [
           PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
         ],
       );
       final reg = ToolRegistry(PermissionService(), mixedRules);
-      reg.register(_tool('bash'));
+      reg.register(_tool('shell'));
       reg.register(_tool('read'));
       reg.register(_tool('write'));
 
       final avail = reg.available;
-      expect(avail.any((t) => t.id == 'bash'), isFalse);
+      expect(avail.any((t) => t.id == 'shell'), isFalse);
       expect(avail.any((t) => t.id == 'read'), isTrue);
       expect(avail.any((t) => t.id == 'write'), isTrue);
     });

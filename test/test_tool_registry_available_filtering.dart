@@ -21,7 +21,7 @@ void main() {
 
       registry.register(_tool('read'));
       registry.register(_tool('write'));
-      registry.register(_tool('bash'));
+      registry.register(_tool('shell'));
 
       registry.agentRules = PermissionRuleset(
         rules: const [
@@ -31,7 +31,7 @@ void main() {
             action: PermissionAction.deny,
           ),
           PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
@@ -41,7 +41,7 @@ void main() {
       final available = registry.available.map((t) => t.id).toList();
       expect(available, contains('read'));
       expect(available, isNot(contains('write')));
-      expect(available, isNot(contains('bash')));
+      expect(available, isNot(contains('shell')));
     });
 
     test('shows tools allowed by agentRules overriding default deny', () {

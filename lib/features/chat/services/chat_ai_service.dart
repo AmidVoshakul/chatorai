@@ -155,6 +155,42 @@ class ChatAiService implements CompletionProvider {
     // no-op; kept for compatibility
   }
 
+  Future<void> _handleStreamToolResult({
+    required String prefix,
+    required LanguageModelV3ToolResultPart toolResult,
+    required bool preliminary,
+    required Set<String> seenToolResults,
+    required Future<void> Function(String, String, String)? onToolEnd,
+  }) async {
+    LogTags.chatService.logDebug(
+      '$prefix: ToolResultEvent tool=${toolResult.toolName} '
+      'callId=${toolResult.toolCallId} preliminary=$preliminary',
+    );
+    if (!preliminary && !seenToolResults.contains(toolResult.toolCallId)) {
+      seenToolResults.add(toolResult.toolCallId);
+      final outputText = switch (toolResult.output) {
+        ToolResultOutputText(:final text) => text,
+        ToolResultOutputContent(:final parts) =>
+          parts.map((p) => p.toString()).join(),
+      };
+      LogTags.chatService.logInfo(
+        '$prefix: onToolEnd tool=${toolResult.toolName} '
+        'outputLen=${outputText.length}',
+      );
+      await onToolEnd?.call(
+        toolResult.toolCallId,
+        toolResult.toolName,
+        outputText,
+      );
+    } else if (!preliminary &&
+        seenToolResults.contains(toolResult.toolCallId)) {
+      LogTags.chatService.logWarning(
+        '$prefix: duplicate ToolResultEvent '
+        'tool=${toolResult.toolName} callId=${toolResult.toolCallId}',
+      );
+    }
+  }
+
   // ===========================================================================
   // MESSAGE CONVERSION
   // ===========================================================================
@@ -339,28 +375,13 @@ class ChatAiService implements CompletionProvider {
                   :final toolResult,
                   :final preliminary,
                 ):
-                  LogTags.chatService.logDebug(
-                    'streamChatCompletion: ToolResultEvent tool=${toolResult.toolName} '
-                    'callId=${toolResult.toolCallId} preliminary=$preliminary',
+                  await _handleStreamToolResult(
+                    prefix: 'streamChatCompletion',
+                    toolResult: toolResult,
+                    preliminary: preliminary,
+                    seenToolResults: seenToolResults,
+                    onToolEnd: onToolEnd,
                   );
-                  if (!preliminary &&
-                      !seenToolResults.contains(toolResult.toolCallId)) {
-                    seenToolResults.add(toolResult.toolCallId);
-                    final outputText = switch (toolResult.output) {
-                      ToolResultOutputText(:final text) => text,
-                      ToolResultOutputContent(:final parts) =>
-                        parts.map((p) => p.toString()).join(),
-                    };
-                    LogTags.chatService.logInfo(
-                      'streamChatCompletion: onToolEnd tool=${toolResult.toolName} '
-                      'outputLen=${outputText.length}',
-                    );
-                    await onToolEnd?.call(
-                      toolResult.toolCallId,
-                      toolResult.toolName,
-                      outputText,
-                    );
-                  }
                 case StreamTextToolErrorEvent(
                   :final toolCallId,
                   :final toolName,
@@ -569,24 +590,13 @@ class ChatAiService implements CompletionProvider {
                 :final toolResult,
                 :final preliminary,
               ):
-                if (!preliminary &&
-                    !seenToolResults.contains(toolResult.toolCallId)) {
-                  seenToolResults.add(toolResult.toolCallId);
-                  final outputText = switch (toolResult.output) {
-                    ToolResultOutputText(:final text) => text,
-                    ToolResultOutputContent(:final parts) =>
-                      parts.map((p) => p.toString()).join(),
-                  };
-                  LogTags.chatService.logInfo(
-                    'runChildCompletion: onToolEnd tool=${toolResult.toolName} '
-                    'outputLen=${outputText.length}',
-                  );
-                  onToolEnd?.call(
-                    toolResult.toolCallId,
-                    toolResult.toolName,
-                    outputText,
-                  );
-                }
+                await _handleStreamToolResult(
+                  prefix: 'runChildCompletion',
+                  toolResult: toolResult,
+                  preliminary: preliminary,
+                  seenToolResults: seenToolResults,
+                  onToolEnd: onToolEnd,
+                );
               case StreamTextToolErrorEvent(
                 :final toolCallId,
                 :final toolName,
@@ -599,6 +609,22 @@ class ChatAiService implements CompletionProvider {
                     toolName,
                     error.toString(),
                   );
+                }
+              case StreamTextErrorEvent(:final error):
+                LogTags.chatService.logError(
+                  'runChildCompletion: StreamTextErrorEvent',
+                  error,
+                );
+                if (error is AiNoSuchToolError) {
+                  final toolName = _extractToolName(error.message);
+                  final syntheticCallId =
+                      'hallucinated_${DateTime.now().microsecondsSinceEpoch}';
+                  onToolStart?.call(syntheticCallId, toolName, {});
+                  onToolError?.call(syntheticCallId, toolName, error.message);
+                  // Gracefully finalize — don't throw to avoid retry duplication.
+                  await onCompletion('');
+                } else {
+                  throw error;
                 }
               case StreamTextFinishEvent(:final text, :final usage):
                 onUsage?.call(

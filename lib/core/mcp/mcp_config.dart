@@ -185,7 +185,9 @@ class McpServerConfig {
         command: command,
         args: args,
         cwd: json['cwd'] as String?,
-        environment: Map<String, String>.from(json['environment'] ?? const {}),
+        environment: Map<String, String>.from(
+          json['environment'] ?? json['env'] ?? const {},
+        ),
         enabled: enabled,
         timeout: timeout,
       );

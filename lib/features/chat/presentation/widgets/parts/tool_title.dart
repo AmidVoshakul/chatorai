@@ -55,11 +55,11 @@ String _toolTitleForWrite(Map<String, dynamic> input) {
   return 'Write ${_breakablePath(path)}${_formatArgs(input)}';
 }
 
-String _toolTitleForBash(Map<String, dynamic> input) {
+String _toolTitleForShell(Map<String, dynamic> input) {
   final command = input['command'] as String? ?? '';
-  if (command.isNotEmpty) return 'bash ${_breakablePath(command)}';
+  if (command.isNotEmpty) return 'shell ${_breakablePath(command)}';
   final desc = input['description'] as String? ?? '';
-  return desc.isNotEmpty ? desc : 'bash';
+  return desc.isNotEmpty ? desc : 'shell';
 }
 
 String _toolTitleForGlob(Map<String, dynamic> input) {
@@ -108,7 +108,7 @@ const _toolNames = <String, String Function(Map<String, dynamic>)>{
   'read': _toolTitleForRead,
   'edit': _toolTitleForEdit,
   'write': _toolTitleForWrite,
-  'bash': _toolTitleForBash,
+  'shell': _toolTitleForShell,
   'glob': _toolTitleForGlob,
   'grep': _toolTitleForGrep,
   'webfetch': _toolTitleForWebfetch,
