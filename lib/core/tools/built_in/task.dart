@@ -179,6 +179,7 @@ ToolDef createTaskTool({
             var lastTokensOutput = 0;
             var lastTokensCacheRead = 0;
             var lastTokensCacheWrite = 0;
+            var lastTokensReasoning = 0;
             await chatAiService!.runChildCompletion(
               messages: messages,
               model: childModel,
@@ -187,11 +188,12 @@ ToolDef createTaskTool({
               tools: subagentTools,
               maxSteps: agent.maxSteps ?? unlimitedMaxSteps,
               abortSignal: ctx.abortSignal,
-              onUsage: (input, output, cacheRead, cacheWrite) {
+              onUsage: (input, output, cacheRead, cacheWrite, reasoning) {
                 lastTokensInput = input;
                 lastTokensOutput = output;
                 lastTokensCacheRead = cacheRead;
                 lastTokensCacheWrite = cacheWrite;
+                lastTokensReasoning = reasoning;
               },
               onChunk: child.onChunk,
               onReasoning: child.onReasoning,
@@ -229,6 +231,7 @@ ToolDef createTaskTool({
                   tokensOutput: lastTokensOutput,
                   tokensCacheRead: lastTokensCacheRead,
                   tokensCacheWrite: lastTokensCacheWrite,
+                  tokensReasoning: lastTokensReasoning,
                 );
               },
             );

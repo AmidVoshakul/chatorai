@@ -32,10 +32,17 @@ class ModelSettingsHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.tune,
-            color: ChatoraiColors.orange,
-            size: ChatoraiIconSizes.xxl,
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: ChatoraiColors.orange.withAlpha(20),
+              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+            ),
+            child: Icon(
+              Icons.tune_rounded,
+              color: ChatoraiColors.orange,
+              size: ChatoraiIconSizes.xl,
+            ),
           ),
           const SizedBox(width: ChatoraiSpacing.md),
           Expanded(
@@ -46,7 +53,8 @@ class ModelSettingsHeader extends StatelessWidget {
                   localizations.modelSettings,
                   style: TextStyle(
                     fontSize: ChatoraiFontSizes.xl,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
                     color: isDark
                         ? ChatoraiColors.pureWhite
                         : ChatoraiColors.pureBlack,
@@ -67,17 +75,54 @@ class ModelSettingsHeader extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            icon: Icon(
-              Icons.close,
-              color: isDark
-                  ? ChatoraiColors.white70
-                  : ChatoraiColors.secondaryTextColor,
-            ),
-            onPressed: onClose,
+          _HeaderIconButton(
+            icon: Icons.close_rounded,
             tooltip: localizations.close,
+            onPressed: onClose,
+            isDark: isDark,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+  final bool isDark;
+
+  const _HeaderIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+        onTap: onPressed,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isDark
+                ? ChatoraiColors.darkInputFill
+                : ChatoraiColors.inputFill,
+            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+          ),
+          child: Icon(
+            icon,
+            size: ChatoraiIconSizes.md,
+            color: isDark
+                ? ChatoraiColors.darkSecondaryTextColor
+                : ChatoraiColors.secondaryTextColor,
+          ),
+        ),
       ),
     );
   }

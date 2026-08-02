@@ -18,7 +18,16 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class McpServersScreen extends ConsumerStatefulWidget {
-  const McpServersScreen({super.key});
+  final bool embedded;
+  final VoidCallback? onAdd;
+  final VoidCallback? onRefresh;
+
+  const McpServersScreen({
+    super.key,
+    this.embedded = false,
+    this.onAdd,
+    this.onRefresh,
+  });
 
   @override
   ConsumerState<McpServersScreen> createState() => _McpServersScreenState();
@@ -744,6 +753,9 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                     ),
                   );
                   if (confirm == true && dialogContext.mounted) {
+                    await ref
+                        .read(mcpManagementProvider.notifier)
+                        .removeServer(name);
                     Navigator.pop(dialogContext);
                   }
                 },
@@ -794,125 +806,159 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
     final l10n = AppLocalizations.of(context)!;
     final asyncState = ref.watch(mcpManagementProvider);
 
+    final actions = <Widget>[
+      IconButton(
+        icon: const Icon(Icons.add),
+        tooltip: l10n.mcpTooltipAdd,
+        onPressed: widget.onAdd ?? _showAddDialog,
+      ),
+      if (_isRefreshing)
+        const Padding(
+          padding: EdgeInsets.all(12),
+          child: SpinKitCircle(color: ChatoraiColors.orange, size: 22),
+        )
+      else
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          tooltip: l10n.mcpTooltipRefresh,
+          onPressed: widget.onRefresh ?? _onRefresh,
+        ),
+    ];
+
+    final tabBar = TabBar(
+      controller: _screenTabController,
+      indicatorColor: ChatoraiColors.orange,
+      indicatorSize: TabBarIndicatorSize.tab,
+      dividerColor: isDark
+          ? ChatoraiColors.darkBorderColor
+          : ChatoraiColors.lightBorderColor,
+      labelColor: isDark ? ChatoraiColors.pureWhite : ChatoraiColors.pureBlack,
+      unselectedLabelColor: isDark
+          ? ChatoraiColors.darkSecondaryTextColor
+          : ChatoraiColors.secondaryTextColor,
+      tabs: [
+        Tab(text: l10n.mcpMarketplaceTab),
+        Tab(text: l10n.mcpInstalledTab),
+      ],
+    );
+
+    final body = TabBarView(
+      controller: _screenTabController,
+      children: [
+        _buildMarketplace(isDark, l10n),
+        asyncState.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(l10n.statsError(error.toString())),
+            ),
+          ),
+          data: (state) {
+            final names = state.servers.keys.toList()..sort();
+            if (names.isEmpty) {
+              return _EmptyState(isDark: isDark, onAdd: _showAddDialog);
+            }
+            final statusesAsync = ref.watch(mcpStatusesProvider);
+            final statuses = switch (statusesAsync) {
+              AsyncData(:final value) => value,
+              _ => <String, McpServerStatus>{},
+            };
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(ChatoraiSpacing.lg),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxColumns = widget.embedded ? 2 : 3;
+                  final crossAxisCount = constraints.maxWidth >= 720
+                      ? maxColumns
+                      : constraints.maxWidth >= 480
+                      ? 2
+                      : 1;
+                  final spacing = ChatoraiSpacing.md;
+                  final cardWidth =
+                      (constraints.maxWidth - spacing * (crossAxisCount - 1)) /
+                      crossAxisCount;
+                  final children = <Widget>[
+                    for (final name in names)
+                      SizedBox(
+                        width: cardWidth,
+                        child: _ServerCard(
+                          name: name,
+                          config: state.servers[name]!,
+                          scopes: state.serverScopes(name),
+                          status: statuses[name],
+                          isDark: isDark,
+                          onToggle: (enabled) => ref
+                              .read(mcpManagementProvider.notifier)
+                              .setEnabled(name, enabled),
+                          onRemove: () =>
+                              _confirmRemove(name, state.serverScopes(name)),
+                          onEdit: () => _showEditDialog(
+                            name,
+                            state.servers[name]!,
+                            state.serverScopes(name),
+                          ),
+                        ),
+                      ),
+                  ];
+                  final remainder = names.length % crossAxisCount;
+                  if (remainder != 0) {
+                    children.addAll(
+                      List.generate(
+                        crossAxisCount - remainder,
+                        (_) => SizedBox(width: cardWidth),
+                      ),
+                    );
+                  }
+                  return Wrap(
+                    spacing: spacing,
+                    runSpacing: spacing,
+                    children: children,
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+
+    if (widget.embedded) {
+      return Column(
+        children: [
+          _tabBarContainer(tabBar: tabBar, isDark: isDark),
+          Expanded(child: body),
+        ],
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.mcpServers),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: l10n.mcpTooltipAdd,
-            onPressed: _showAddDialog,
-          ),
-          if (_isRefreshing)
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: SpinKitCircle(color: ChatoraiColors.orange, size: 22),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              tooltip: l10n.mcpTooltipRefresh,
-              onPressed: _onRefresh,
-            ),
-        ],
-        bottom: TabBar(
-          controller: _screenTabController,
-          indicatorColor: ChatoraiColors.orange,
-          indicatorSize: TabBarIndicatorSize.tab,
-          dividerColor: isDark
-              ? ChatoraiColors.darkBorderColor
-              : ChatoraiColors.lightBorderColor,
-          labelColor: isDark
-              ? ChatoraiColors.pureWhite
-              : ChatoraiColors.pureBlack,
-          unselectedLabelColor: isDark
-              ? ChatoraiColors.darkSecondaryTextColor
-              : ChatoraiColors.secondaryTextColor,
-          tabs: [
-            Tab(text: l10n.mcpMarketplaceTab),
-            Tab(text: l10n.mcpInstalledTab),
-          ],
-        ),
+        actions: actions,
+        bottom: _tabBarContainer(tabBar: tabBar, isDark: isDark),
       ),
-      body: TabBarView(
-        controller: _screenTabController,
-        children: [
-          _buildMarketplace(isDark, l10n),
-          asyncState.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(l10n.statsError(error.toString())),
-              ),
+      body: body,
+    );
+  }
+
+  PreferredSizeWidget _tabBarContainer({
+    required TabBar tabBar,
+    required bool isDark,
+  }) {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(48),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isDark
+                  ? ChatoraiColors.darkBorderColor
+                  : ChatoraiColors.lightBorderColor,
             ),
-            data: (state) {
-              final names = state.servers.keys.toList()..sort();
-              if (names.isEmpty) {
-                return _EmptyState(isDark: isDark, onAdd: _showAddDialog);
-              }
-              final statusesAsync = ref.watch(mcpStatusesProvider);
-              final statuses = switch (statusesAsync) {
-                AsyncData(:final value) => value,
-                _ => <String, McpServerStatus>{},
-              };
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(ChatoraiSpacing.lg),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final crossAxisCount = constraints.maxWidth >= 720
-                        ? 3
-                        : constraints.maxWidth >= 480
-                        ? 2
-                        : 1;
-                    final spacing = ChatoraiSpacing.md;
-                    final cardWidth =
-                        (constraints.maxWidth -
-                            spacing * (crossAxisCount - 1)) /
-                        crossAxisCount;
-                    final children = <Widget>[
-                      for (final name in names)
-                        SizedBox(
-                          width: cardWidth,
-                          child: _ServerCard(
-                            name: name,
-                            config: state.servers[name]!,
-                            scopes: state.serverScopes(name),
-                            status: statuses[name],
-                            isDark: isDark,
-                            onToggle: (enabled) => ref
-                                .read(mcpManagementProvider.notifier)
-                                .setEnabled(name, enabled),
-                            onRemove: () =>
-                                _confirmRemove(name, state.serverScopes(name)),
-                            onEdit: () => _showEditDialog(
-                              name,
-                              state.servers[name]!,
-                              state.serverScopes(name),
-                            ),
-                          ),
-                        ),
-                    ];
-                    final remainder = names.length % crossAxisCount;
-                    if (remainder != 0) {
-                      children.addAll(
-                        List.generate(
-                          crossAxisCount - remainder,
-                          (_) => SizedBox(width: cardWidth),
-                        ),
-                      );
-                    }
-                    return Wrap(
-                      spacing: spacing,
-                      runSpacing: spacing,
-                      children: children,
-                    );
-                  },
-                ),
-              );
-            },
           ),
-        ],
+        ),
+        child: tabBar,
       ),
     );
   }
@@ -1289,49 +1335,64 @@ class _ServerCard extends StatelessWidget {
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: ChatoraiSpacing.sm,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? ChatoraiColors.darkInputFill
-                      : ChatoraiColors.inputFill,
-                  borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xs),
-                ),
-                child: Text(
-                  typeLabel,
-                  style: TextStyle(
-                    fontSize: ChatoraiFontSizes.caption,
-                    color: isDark
-                        ? ChatoraiColors.darkSecondaryTextColor
-                        : ChatoraiColors.secondaryTextColor,
-                  ),
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: ChatoraiSpacing.sm,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? ChatoraiColors.darkInputFill
+                              : ChatoraiColors.inputFill,
+                          borderRadius: BorderRadius.circular(
+                            ChatoraiBorderRadius.xs,
+                          ),
+                        ),
+                        child: Text(
+                          typeLabel,
+                          style: TextStyle(
+                            fontSize: ChatoraiFontSizes.caption,
+                            color: isDark
+                                ? ChatoraiColors.darkSecondaryTextColor
+                                : ChatoraiColors.secondaryTextColor,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: ChatoraiSpacing.sm,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? ChatoraiColors.orange.withAlpha(25)
+                              : ChatoraiColors.orange.withAlpha(18),
+                          borderRadius: BorderRadius.circular(
+                            ChatoraiBorderRadius.xs,
+                          ),
+                        ),
+                        child: Text(
+                          _scopeLabel(context, scopes),
+                          style: TextStyle(
+                            fontSize: ChatoraiFontSizes.caption,
+                            fontWeight: FontWeight.w600,
+                            color: ChatoraiColors.orange,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: ChatoraiSpacing.sm,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? ChatoraiColors.orange.withAlpha(25)
-                      : ChatoraiColors.orange.withAlpha(18),
-                  borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xs),
-                ),
-                child: Text(
-                  _scopeLabel(context, scopes),
-                  style: TextStyle(
-                    fontSize: ChatoraiFontSizes.caption,
-                    fontWeight: FontWeight.w600,
-                    color: ChatoraiColors.orange,
-                  ),
-                ),
-              ),
-              const Spacer(),
               IconButton(
                 icon: const Icon(Icons.edit_outlined),
                 iconSize: ChatoraiIconSizes.lg,
@@ -1744,11 +1805,13 @@ class _MarketInstallButton extends StatelessWidget {
       );
     }
 
-    return OutlinedButton.icon(
-      style: _installButtonStyle(),
-      onPressed: () => _showScopeMenu(context, l10n),
-      icon: const Icon(Icons.download_rounded, size: 18),
-      label: Text(l10n.mcpInstall),
+    return Builder(
+      builder: (ctx) => OutlinedButton.icon(
+        style: _installButtonStyle(),
+        onPressed: () => _showScopeMenu(ctx, l10n),
+        icon: const Icon(Icons.download_rounded, size: 18),
+        label: Text(l10n.mcpInstall),
+      ),
     );
   }
 

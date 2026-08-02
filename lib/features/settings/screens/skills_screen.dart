@@ -18,7 +18,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// invalidates the skill service so a running chat picks it up without a
 /// restart.
 class SkillsScreen extends ConsumerStatefulWidget {
-  const SkillsScreen({super.key});
+  final bool embedded;
+
+  const SkillsScreen({super.key, this.embedded = false});
 
   @override
   ConsumerState<SkillsScreen> createState() => _SkillsScreenState();
@@ -219,6 +221,17 @@ class _SkillsScreenState extends ConsumerState<SkillsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final asyncState = ref.watch(skillsManagementProvider);
 
+    Widget contentFor(SkillsManagementState state) =>
+        _buildScaffold(context, l10n, isDark, state);
+
+    if (widget.embedded) {
+      return asyncState.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text(error.toString())),
+        data: contentFor,
+      );
+    }
+
     return asyncState.when(
       loading: () => Scaffold(
         appBar: AppBar(title: Text(l10n.skillsTitle)),
@@ -302,32 +315,41 @@ class _SkillsScreenState extends ConsumerState<SkillsScreen> {
       ),
     ];
 
+    final tabBar = PreferredSize(
+      preferredSize: const Size.fromHeight(48),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: hairlineColor(isDark))),
+        ),
+        child: TabBar(
+          indicatorColor: ChatoraiColors.orange,
+          dividerColor: Colors.transparent,
+          labelColor: titleColor(isDark),
+          unselectedLabelColor: subtleColor(isDark),
+          tabs: [
+            for (final spec in tabSpecs)
+              _ScopeTab(spec: spec, iconOnly: iconOnly),
+          ],
+        ),
+      ),
+    );
+
+    if (widget.embedded) {
+      return DefaultTabController(
+        length: tabSpecs.length,
+        child: Column(
+          children: [
+            tabBar,
+            Expanded(child: TabBarView(children: views)),
+          ],
+        ),
+      );
+    }
+
     return DefaultTabController(
       length: tabSpecs.length,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.skillsTitle),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(48),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: hairlineColor(isDark)),
-                ),
-              ),
-              child: TabBar(
-                indicatorColor: ChatoraiColors.orange,
-                dividerColor: Colors.transparent,
-                labelColor: titleColor(isDark),
-                unselectedLabelColor: subtleColor(isDark),
-                tabs: [
-                  for (final spec in tabSpecs)
-                    _ScopeTab(spec: spec, iconOnly: iconOnly),
-                ],
-              ),
-            ),
-          ),
-        ),
+        appBar: AppBar(title: Text(l10n.skillsTitle), bottom: tabBar),
         body: TabBarView(children: views),
       ),
     );
@@ -935,11 +957,13 @@ class _InstallButton extends StatelessWidget {
       );
     }
 
-    return OutlinedButton.icon(
-      style: _installButtonStyle(),
-      onPressed: () => _showScopeMenu(context, l10n),
-      icon: const Icon(Icons.download_rounded, size: 18),
-      label: Text(l10n.skillsInstallAction),
+    return Builder(
+      builder: (ctx) => OutlinedButton.icon(
+        style: _installButtonStyle(),
+        onPressed: () => _showScopeMenu(ctx, l10n),
+        icon: const Icon(Icons.download_rounded, size: 18),
+        label: Text(l10n.skillsInstallAction),
+      ),
     );
   }
 

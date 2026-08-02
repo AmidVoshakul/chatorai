@@ -351,6 +351,20 @@ class ChatoraiShadows {
       offset: const Offset(0, 8),
     ),
   ];
+
+  /// Deep soft elevation for the desktop settings modal window.
+  static List<BoxShadow> get windowShadow => [
+    BoxShadow(
+      color: ChatoraiColors.pureBlack.withValues(alpha: 0.45),
+      blurRadius: 48,
+      offset: const Offset(0, 24),
+    ),
+    BoxShadow(
+      color: ChatoraiColors.pureBlack.withValues(alpha: 0.25),
+      blurRadius: 16,
+      offset: const Offset(0, 8),
+    ),
+  ];
 }
 
 // ===============================================================
@@ -381,6 +395,89 @@ class ChatoraiGradients {
     end: Alignment.centerRight,
     colors: [Color(0xFF4A4A4A), Color(0xFF2A2A2A)],
   );
+}
+
+// ===============================================================
+// SETTINGS WINDOW (desktop modal)
+// ===============================================================
+/// Layout and palette tokens for the premium two-column settings window
+/// shown on wide/desktop screens. Both light and dark palettes live here so
+/// the settings UI never hardcodes colors or dimensions.
+class ChatoraiSettingsWindow {
+  ChatoraiSettingsWindow._();
+
+  // Layout
+  static const double navWidth = 248.0;
+  static const double maxWindowWidth = 1080.0;
+  static const double maxWindowHeight = 720.0;
+  static const double minWindowHeight = 440.0;
+  static const double contentMaxWidth = 760.0;
+  static const double navItemHeight = 44.0;
+  static const double topBarHeight = 60.0;
+  static const double frameWidth = 1.4;
+
+  /// Returns the palette matching the ambient [context] brightness.
+  static ChatoraiSettingsWindowColors of(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? dark : light;
+
+  // Palettes
+  static const ChatoraiSettingsWindowColors light =
+      ChatoraiSettingsWindowColors(
+        surface: Color(0xFFFBFAF8),
+        nav: Color(0xFFF4F3F0),
+        navItemHover: Color(0x0A000000),
+        navItemSelected: Color(0xFFFDEEDB),
+        content: Color(0xFFFEFDFC),
+        divider: Color(0xFFE9E5DE),
+        border: Color(0xFFDDD8CF),
+        text: Color(0xFF201B15),
+        textMuted: Color(0xFF7A736A),
+        icon: Color(0xFF5F5A52),
+        indicator: ChatoraiColors.orange,
+      );
+
+  static const ChatoraiSettingsWindowColors dark = ChatoraiSettingsWindowColors(
+    surface: Color(0xFF1B1B1B),
+    nav: Color(0xFF202020),
+    navItemHover: Color(0x14FFFFFF),
+    navItemSelected: Color(0xFF2A2A2A),
+    content: Color(0xFF161616),
+    divider: Color(0xFF2C2C2C),
+    border: Color(0xFF343434),
+    text: Color(0xFFEDEDED),
+    textMuted: Color(0xFF9C9C9C),
+    icon: Color(0xFFADADAD),
+    indicator: ChatoraiColors.orange,
+  );
+}
+
+/// Immutable color palette for one brightness of the settings window.
+class ChatoraiSettingsWindowColors {
+  final Color surface;
+  final Color nav;
+  final Color navItemHover;
+  final Color navItemSelected;
+  final Color content;
+  final Color divider;
+  final Color border;
+  final Color text;
+  final Color textMuted;
+  final Color icon;
+  final Color indicator;
+
+  const ChatoraiSettingsWindowColors({
+    required this.surface,
+    required this.nav,
+    required this.navItemHover,
+    required this.navItemSelected,
+    required this.content,
+    required this.divider,
+    required this.border,
+    required this.text,
+    required this.textMuted,
+    required this.icon,
+    required this.indicator,
+  });
 }
 
 // ===============================================================

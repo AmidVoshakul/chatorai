@@ -131,7 +131,9 @@ void main() {
       expect(find.textContaining('[...truncated...]'), findsOneWidget);
     });
 
-    testWidgets('shell tool shows prompt and command without header', (tester) async {
+    testWidgets('shell tool shows prompt and command without header', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         createTestWidget(
           toolName: 'shell',
@@ -144,7 +146,9 @@ void main() {
       expect(find.textContaining('shell ls -la'), findsNothing);
     });
 
-    testWidgets('shell tool shows spinner at prompt while running', (tester) async {
+    testWidgets('shell tool shows spinner at prompt while running', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         createTestWidget(
           toolName: 'shell',

@@ -17,7 +17,9 @@ import 'package:path/path.dart' as p;
 /// and invalidates the resolved instructions so a running chat picks it up
 /// without an app restart.
 class AgentsInstructionsScreen extends ConsumerStatefulWidget {
-  const AgentsInstructionsScreen({super.key});
+  final bool embedded;
+
+  const AgentsInstructionsScreen({super.key, this.embedded = false});
 
   @override
   ConsumerState<AgentsInstructionsScreen> createState() =>
@@ -171,6 +173,17 @@ class _AgentsInstructionsScreenState
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final asyncState = ref.watch(instructionsManagementProvider);
 
+    Widget contentFor(InstructionsManagementState state) =>
+        _buildScaffold(context, l10n, isDark, state);
+
+    if (widget.embedded) {
+      return asyncState.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text(error.toString())),
+        data: contentFor,
+      );
+    }
+
     return asyncState.when(
       loading: () => Scaffold(
         appBar: AppBar(title: Text(l10n.agentsInstructions)),
@@ -195,51 +208,42 @@ class _AgentsInstructionsScreenState
     bool isDark,
     InstructionsManagementState state,
   ) {
-    // Mobile (no project scope): a single global view, no tabs.
-    if (!state.supportsProjectScope) {
-      return Scaffold(
-        appBar: AppBar(title: Text(l10n.agentsInstructions)),
-        body: _ScopeView(
-          scope: InstructionsScope.global,
-          data: state.global,
-          isDark: isDark,
-          onOpen: _openDiscovered,
-          onCreateProjectAgents: _createProjectAgents,
-          onInline: _showInlineDialog,
-          onUpload: _uploadFile,
-          onRemove: _confirmRemove,
-        ),
-      );
-    }
+    Widget content;
+    PreferredSizeWidget? tabBar;
 
-    // Desktop: Global / Project tabs.
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.agentsInstructions),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(48),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: hairlineColor(isDark)),
-                ),
-              ),
-              child: TabBar(
-                indicatorColor: ChatoraiColors.orange,
-                dividerColor: Colors.transparent,
-                labelColor: titleColor(isDark),
-                unselectedLabelColor: subtleColor(isDark),
-                tabs: [
-                  Tab(text: l10n.instructionsScopeGlobal),
-                  Tab(text: l10n.instructionsScopeProject),
-                ],
-              ),
-            ),
+    if (!state.supportsProjectScope) {
+      content = _ScopeView(
+        scope: InstructionsScope.global,
+        data: state.global,
+        isDark: isDark,
+        onOpen: _openDiscovered,
+        onCreateProjectAgents: _createProjectAgents,
+        onInline: _showInlineDialog,
+        onUpload: _uploadFile,
+        onRemove: _confirmRemove,
+      );
+    } else {
+      tabBar = PreferredSize(
+        preferredSize: const Size.fromHeight(48),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: hairlineColor(isDark))),
+          ),
+          child: TabBar(
+            indicatorColor: ChatoraiColors.orange,
+            dividerColor: Colors.transparent,
+            labelColor: titleColor(isDark),
+            unselectedLabelColor: subtleColor(isDark),
+            tabs: [
+              Tab(text: l10n.instructionsScopeGlobal),
+              Tab(text: l10n.instructionsScopeProject),
+            ],
           ),
         ),
-        body: TabBarView(
+      );
+      content = DefaultTabController(
+        length: 2,
+        child: TabBarView(
           children: [
             _ScopeView(
               scope: InstructionsScope.global,
@@ -263,6 +267,27 @@ class _AgentsInstructionsScreenState
             ),
           ],
         ),
+      );
+    }
+
+    if (widget.embedded) {
+      if (tabBar == null) return content;
+      return DefaultTabController(
+        length: 2,
+        child: Column(
+          children: [
+            tabBar,
+            Expanded(child: content),
+          ],
+        ),
+      );
+    }
+
+    return DefaultTabController(
+      length: state.supportsProjectScope ? 2 : 1,
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.agentsInstructions), bottom: tabBar),
+        body: content,
       ),
     );
   }

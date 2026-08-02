@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/features/settings/data/models/model_settings.dart';
+import 'package:chatorai/features/settings/widgets/premium_blocks.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
@@ -147,10 +148,28 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
+        gradient: isDark
+            ? const LinearGradient(
+                colors: [Color(0xFF1A1A1A), Color(0xFF222222)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : const LinearGradient(
+                colors: [Color(0xFFFAFAFA), Color(0xFFF7F7F7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(ChatoraiBorderRadius.xl),
           topRight: Radius.circular(ChatoraiBorderRadius.xl),
+        ),
+        border: Border(
+          top: BorderSide(
+            color: isDark
+                ? ChatoraiColors.darkBorderColor
+                : ChatoraiColors.lightBorderColor,
+            width: ChatoraiBorderWidth.thinBold,
+          ),
         ),
         boxShadow: ChatoraiShadows.popupShadow,
       ),
@@ -161,95 +180,159 @@ class _ModelSettingsSheetState extends ConsumerState<ModelSettingsSheet> {
             modelName: modelName,
             onClose: () => Navigator.of(context).pop(),
           ),
+          _HairlineDivider(
+            color: isDark
+                ? ChatoraiColors.darkInputBorder
+                : ChatoraiColors.inputBorder,
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(ChatoraiSpacing.lg),
               child: settingsState.isLoading
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              ChatoraiColors.orange,
-                            ),
-                          ),
-                          const SizedBox(height: ChatoraiSpacing.lg),
-                          Text(
-                            localizations.loadingSettings,
-                            style: TextStyle(
-                              fontSize: ChatoraiFontSizes.lg,
-                              color: isDark
-                                  ? ChatoraiColors.darkSecondaryTextColor
-                                  : ChatoraiColors.secondaryTextColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
+                  ? _LoadingState(isDark: isDark, localizations: localizations)
                   : settingsState.activeSettings == null
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.settings_suggest,
-                            size: ChatoraiIconSizes.xxxl,
-                            color: isDark
-                                ? ChatoraiColors.darkSecondaryTextColor
-                                : ChatoraiColors.secondaryTextColor,
-                          ),
-                          const SizedBox(height: ChatoraiSpacing.lg),
-                          Text(
-                            localizations.noModelSelected,
-                            style: TextStyle(
-                              fontSize: ChatoraiFontSizes.lg,
-                              color: isDark
-                                  ? ChatoraiColors.darkSecondaryTextColor
-                                  : ChatoraiColors.secondaryTextColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          localizations.modelParameters,
-                          style: TextStyle(
-                            fontSize: ChatoraiFontSizes.lg,
-                            fontWeight: FontWeight.bold,
-                            color: isDark
-                                ? ChatoraiColors.pureWhite
-                                : ChatoraiColors.pureBlack,
-                          ),
-                        ),
-                        const SizedBox(height: ChatoraiSpacing.lg),
-                        ModelSettingsParameterField(
-                          label: localizations.temperature,
-                          description: localizations.temperatureDescription,
-                          controller: _temperatureController,
-                          hintText: localizations.temperatureHint,
-                          isDecimal: true,
-                          min: 0.0,
-                          max: 2.0,
-                        ),
-                        ModelSettingsSystemPrompt(
-                          controller: _systemPromptController,
-                        ),
-                        const SizedBox(height: ChatoraiSpacing.xxl),
-                        ModelSettingsActions(
-                          isMobile: isMobile,
-                          onReset: _resetToDefaults,
-                          onApply: _applySettings,
-                        ),
-                      ],
+                  ? _EmptyState(isDark: isDark, localizations: localizations)
+                  : _SettingsForm(
+                      isDark: isDark,
+                      localizations: localizations,
+                      temperatureController: _temperatureController,
+                      systemPromptController: _systemPromptController,
+                      isMobile: isMobile,
+                      onReset: _resetToDefaults,
+                      onApply: _applySettings,
                     ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _HairlineDivider extends StatelessWidget {
+  final Color color;
+  const _HairlineDivider({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(height: ChatoraiBorderWidth.thin, color: color);
+  }
+}
+
+class _LoadingState extends StatelessWidget {
+  final bool isDark;
+  final AppLocalizations localizations;
+
+  const _LoadingState({required this.isDark, required this.localizations});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(ChatoraiColors.orange),
+          ),
+          const SizedBox(height: ChatoraiSpacing.lg),
+          Text(
+            localizations.loadingSettings,
+            style: TextStyle(
+              fontSize: ChatoraiFontSizes.lg,
+              color: isDark
+                  ? ChatoraiColors.darkSecondaryTextColor
+                  : ChatoraiColors.secondaryTextColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final bool isDark;
+  final AppLocalizations localizations;
+
+  const _EmptyState({required this.isDark, required this.localizations});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.settings_suggest,
+            size: ChatoraiIconSizes.xxxl,
+            color: isDark
+                ? ChatoraiColors.darkSecondaryTextColor
+                : ChatoraiColors.secondaryTextColor,
+          ),
+          const SizedBox(height: ChatoraiSpacing.lg),
+          Text(
+            localizations.noModelSelected,
+            style: TextStyle(
+              fontSize: ChatoraiFontSizes.lg,
+              color: isDark
+                  ? ChatoraiColors.darkSecondaryTextColor
+                  : ChatoraiColors.secondaryTextColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsForm extends StatelessWidget {
+  final bool isDark;
+  final AppLocalizations localizations;
+  final TextEditingController temperatureController;
+  final TextEditingController systemPromptController;
+  final bool isMobile;
+  final VoidCallback onReset;
+  final VoidCallback onApply;
+
+  const _SettingsForm({
+    required this.isDark,
+    required this.localizations,
+    required this.temperatureController,
+    required this.systemPromptController,
+    required this.isMobile,
+    required this.onReset,
+    required this.onApply,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionTitle(
+          title: localizations.modelParameters,
+          helper: localizations.temperatureDescription,
+          isDark: isDark,
+        ),
+        const SizedBox(height: ChatoraiSpacing.lg),
+        ModelSettingsParameterField(
+          label: localizations.temperature,
+          description: localizations.temperatureDescription,
+          controller: temperatureController,
+          hintText: localizations.temperatureHint,
+          isDecimal: true,
+          min: 0.0,
+          max: 2.0,
+        ),
+        const SizedBox(height: ChatoraiSpacing.xl),
+        ModelSettingsSystemPrompt(controller: systemPromptController),
+        const SizedBox(height: ChatoraiSpacing.xxl),
+        ModelSettingsActions(
+          isMobile: isMobile,
+          onReset: onReset,
+          onApply: onApply,
+        ),
+      ],
     );
   }
 }

@@ -33,6 +33,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     final attemptMsgs = aiService.sanitizeMessages(messages);
     int? latestTokensInput;
     int? latestTokensOutput;
+    int? latestTokensReasoning;
+    int? latestTokensCacheRead;
+    int? latestTokensCacheWrite;
     final modelContextLength = ref
         .read(modelProvider)
         .selectedModelObject
@@ -174,9 +177,12 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             retryAttempt: info.attempt,
           );
         },
-        onUsage: (input, output, cacheRead, cacheWrite) {
+        onUsage: (input, output, cacheRead, cacheWrite, reasoning) {
           latestTokensInput = input;
           latestTokensOutput = output;
+          latestTokensCacheRead = cacheRead;
+          latestTokensCacheWrite = cacheWrite;
+          latestTokensReasoning = reasoning;
         },
         onToolStart: (toolCallId, toolName, input) async {
           toolInputs[toolCallId] = input;
@@ -318,6 +324,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             model: modelId,
             tokensInput: latestTokensInput ?? 0,
             tokensOutput: latestTokensOutput ?? 0,
+            tokensReasoning: latestTokensReasoning ?? 0,
+            tokensCacheRead: latestTokensCacheRead ?? 0,
+            tokensCacheWrite: latestTokensCacheWrite ?? 0,
           );
           // Only keep parts belonging to the current message — every part
           // (AssistantText, AssistantTool, etc.) carries a messageId, but the
@@ -383,6 +392,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               partsJson: partsJson,
               tokensInput: latestTokensInput,
               tokensOutput: latestTokensOutput,
+              tokensReasoning: latestTokensReasoning,
               contextLength: modelContextLength ?? lastMsg.contextLength,
             );
             newMessages = [
@@ -398,6 +408,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               partsJson: partsJson,
               tokensInput: latestTokensInput,
               tokensOutput: latestTokensOutput,
+              tokensReasoning: latestTokensReasoning,
               contextLength: modelContextLength,
               agent: activeAgent,
             );

@@ -5,14 +5,11 @@ import 'package:chatorai/features/settings/screens/provider_settings_screen.dart
 import 'package:chatorai/features/settings/screens/skills_screen.dart';
 import 'package:chatorai/features/settings/screens/stats_screen.dart';
 import 'package:chatorai/features/settings/widgets/about_dialog.dart';
-import 'package:chatorai/features/settings/widgets/language_selection_dialog.dart';
+import 'package:chatorai/features/settings/widgets/settings_appearance_section.dart';
+import 'package:chatorai/features/settings/widgets/settings_accessibility_section.dart';
 import 'package:chatorai/features/settings/widgets/settings_section_header.dart';
 import 'package:chatorai/features/settings/widgets/settings_selection_card.dart';
-import 'package:chatorai/features/settings/widgets/settings_slider_card.dart';
-import 'package:chatorai/features/settings/widgets/settings_toggle_tile.dart';
-import 'package:chatorai/features/settings/widgets/theme_selection_dialog.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,8 +24,6 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final localizations = AppLocalizations.of(context)!;
-    final theme = ref.watch(themeProvider);
-    final language = ref.watch(languageProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -88,7 +83,7 @@ class SettingsScreen extends ConsumerWidget {
             SettingsSelectionCard(
               context: context,
               icon: Icons.extension,
-              title: 'MCP servers',
+              title: localizations.mcpServers,
               subtitle: 'Manage Model Context Protocol tool servers',
               onTap: () => Navigator.push(
                 context,
@@ -120,23 +115,16 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: ChatoraiSpacing.xl),
-            _buildAppearanceSection(
-              context,
-              ref,
-              localizations,
-              theme,
-              language,
-            ),
+            const SettingsAppearanceSection(),
             const SizedBox(height: ChatoraiSpacing.xl),
-            _buildAccessibilitySection(context, ref, localizations, theme),
+            const SettingsAccessibilitySection(),
             const SizedBox(height: ChatoraiSpacing.xl),
             SettingsSelectionCard(
               context: context,
-              icon: Icons.info,
+              icon: Icons.info_outline,
               title: localizations.appInfo,
               subtitle: '',
-              onTap: () async =>
-                  showSettingsAboutDialog(context, localizations),
+              onTap: () => showSettingsAboutDialog(context, localizations),
             ),
             const SizedBox(height: ChatoraiSpacing.xxxl),
           ],
@@ -146,130 +134,6 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   // ===========================================================================
-  // SECTION BUILDERS
-  // ===========================================================================
-
-  Widget _buildAppearanceSection(
-    BuildContext context,
-    WidgetRef ref,
-    AppLocalizations localizations,
-    ThemeState theme,
-    LanguageState language,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SettingsSectionHeader(title: localizations.appearance),
-        const SizedBox(height: ChatoraiSpacing.lg),
-        SettingsSelectionCard(
-          context: context,
-          icon: Icons.palette,
-          title: _getThemeModeName(theme.themeMode, localizations),
-          subtitle: localizations.theme,
-          onTap: () => showThemeSelectionDialog(context, localizations),
-        ),
-        const SizedBox(height: ChatoraiSpacing.xl),
-        SettingsSelectionCard(
-          context: context,
-          icon: Icons.language,
-          title: _getLanguageName(language.selectedLanguage, localizations),
-          subtitle: localizations.language,
-          onTap: () => showLanguageSelectionDialog(context, localizations),
-        ),
-        const SizedBox(height: ChatoraiSpacing.xl),
-        SettingsSectionHeader(title: localizations.fontSize),
-        const SizedBox(height: ChatoraiSpacing.lg),
-        SettingsSliderCard(
-          context: context,
-          value: theme.fontSize,
-          min: 0.8,
-          max: 1.5,
-          divisions: 7,
-          label: '${(theme.fontSize * 100).toInt()}%',
-          onChanged: (value) =>
-              ref.read(themeProvider.notifier).setFontSize(value),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAccessibilitySection(
-    BuildContext context,
-    WidgetRef ref,
-    AppLocalizations localizations,
-    ThemeState theme,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SettingsSectionHeader(title: localizations.accessibility),
-        const SizedBox(height: ChatoraiSpacing.lg),
-        SettingsToggleTile(
-          context: context,
-          title: localizations.wideScreenMode,
-          subtitle: localizations.useFullScreenWidth,
-          value: theme.wideScreenMode,
-          onChanged: (value) =>
-              ref.read(themeProvider.notifier).setWideScreenMode(value),
-        ),
-        const SizedBox(height: ChatoraiSpacing.lg),
-        SettingsToggleTile(
-          context: context,
-          title: localizations.autoScrollDuringStreaming,
-          subtitle: localizations.autoScrollDuringStreamingDesc,
-          value: theme.autoScrollDuringStreaming,
-          onChanged: (value) => ref
-              .read(themeProvider.notifier)
-              .setAutoScrollDuringStreaming(value),
-        ),
-        const SizedBox(height: ChatoraiSpacing.lg),
-        SettingsToggleTile(
-          context: context,
-          title: localizations.showContinuationSuggestions,
-          subtitle: localizations.showContinuationSuggestionsDesc,
-          value: theme.showContinuationSuggestions,
-          onChanged: (value) => ref
-              .read(themeProvider.notifier)
-              .setShowContinuationSuggestions(value),
-        ),
-        const SizedBox(height: ChatoraiSpacing.lg),
-        SettingsToggleTile(
-          context: context,
-          title: localizations.expandReasoningByDefault,
-          subtitle: localizations.expandReasoningByDefaultDesc,
-          value: theme.expandReasoningByDefault,
-          onChanged: (value) => ref
-              .read(themeProvider.notifier)
-              .setExpandReasoningByDefault(value),
-        ),
-      ],
-    );
-  }
-
-  // ===========================================================================
   // HELPERS
   // ===========================================================================
-
-  String _getThemeModeName(AppThemeMode mode, AppLocalizations localizations) {
-    switch (mode) {
-      case AppThemeMode.system:
-        return localizations.system;
-      case AppThemeMode.light:
-        return localizations.light;
-      case AppThemeMode.dark:
-        return localizations.dark;
-    }
-  }
-
-  String _getLanguageName(String code, AppLocalizations localizations) {
-    final languages = <String, String>{
-      'en': localizations.english,
-      'ru': localizations.russian,
-      'uk': localizations.ukrainian,
-      'ar': localizations.arabic,
-      'zh': localizations.chinese,
-      'ja': localizations.japanese,
-    };
-    return languages[code] ?? code.toUpperCase();
-  }
 }

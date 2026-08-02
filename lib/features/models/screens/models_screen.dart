@@ -6,12 +6,9 @@ import 'package:chatorai/features/models/widgets/model_details_dialog_widget.dar
 import 'package:chatorai/features/models/widgets/models_empty_state_widget.dart';
 import 'package:chatorai/features/models/widgets/provider_icon.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-// ===========================================================================
-// MODELS SCREEN WIDGET
-// ===========================================================================
 
 class ModelsScreen extends ConsumerStatefulWidget {
   final Function(String, ModelConfig?)? onModelSelected;
@@ -35,21 +32,31 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(modelsScreenProvider);
 
     return Scaffold(
+      backgroundColor: Theme.of(context).canvasColor,
       appBar: AppBar(
         title: Text(
           localizations.models,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: isDark ? ChatoraiColors.pureWhite : ChatoraiColors.pureBlack,
+          ),
         ),
         backgroundColor: Theme.of(context).canvasColor,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.maybePop(context),
+        ),
         actions: [
           IconButton(
             icon: Icon(
               state.showFavoritesOnly ? Icons.favorite : Icons.favorite_border,
               color: state.showFavoritesOnly ? Colors.red : null,
+              size: ChatoraiIconSizes.md,
             ),
             onPressed: () {
               ref.read(modelsScreenProvider.notifier).toggleFavoritesFilter();
@@ -60,21 +67,65 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ref
-              .read(modelsScreenProvider.notifier)
-              .loadModels(forceRefresh: true);
-        },
-        tooltip: localizations.refresh,
-        child: const Icon(Icons.refresh),
-      ),
       body: Column(
         children: [
-          _buildSearchBar(context, localizations, state),
-          const SizedBox(height: 8),
-          Expanded(child: _buildContent(context, localizations, state)),
+          const SizedBox(height: ChatoraiSpacing.lg),
+          _PremiumSearchBar(
+            isDark: isDark,
+            localizations: localizations,
+            state: state,
+            controller: _searchController,
+            onChanged: (value) {
+              ref.read(modelsScreenProvider.notifier).setSearchQuery(value);
+            },
+            onClear: () {
+              ref.read(modelsScreenProvider.notifier).clearSearch();
+            },
+          ),
+          const SizedBox(height: ChatoraiSpacing.md),
+          Expanded(child: _buildContent(context, localizations, state, isDark)),
         ],
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFF5A623), ChatoraiColors.orange],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: ChatoraiColors.orange.withValues(alpha: 0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: ChatoraiColors.pureBlack.withValues(alpha: 0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          onPressed: () {
+            ref
+                .read(modelsScreenProvider.notifier)
+                .loadModels(forceRefresh: true);
+          },
+          tooltip: localizations.refresh,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          highlightElevation: 0,
+          child: const Icon(
+            Icons.refresh,
+            color: ChatoraiColors.pureWhite,
+            size: 22,
+          ),
+        ),
       ),
     );
   }
@@ -83,6 +134,7 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
     BuildContext context,
     AppLocalizations localizations,
     ModelsScreenState state,
+    bool isDark,
   ) {
     if (state.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -118,99 +170,18 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
                 ref.read(modelsScreenProvider.notifier).toggleFavorite(id),
             onInfo: (model) => showModelDetailsDialog(context, model),
             localizations: localizations,
+            isDark: isDark,
           ),
-        Expanded(child: _buildGroupedList(context, state)),
+        Expanded(child: _buildGroupedList(context, state, isDark)),
       ],
     );
   }
 
-  Widget _buildSearchBar(
+  Widget _buildGroupedList(
     BuildContext context,
-    AppLocalizations localizations,
     ModelsScreenState state,
+    bool isDark,
   ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: TextField(
-        controller: _searchController,
-        onChanged: (value) {
-          ref.read(modelsScreenProvider.notifier).setSearchQuery(value);
-        },
-        decoration: InputDecoration(
-          hintText: state.showFavoritesOnly
-              ? localizations.searchFavorites
-              : localizations.searchModels,
-          hintStyle: TextStyle(
-            color: isDark ? Colors.grey[400] : Colors.grey[600],
-            fontSize: 16,
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: isDark ? Colors.grey[300] : Colors.grey[700],
-          ),
-          suffixIcon: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (state.showFavoritesOnly)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Icon(Icons.favorite, color: Colors.red, size: 20),
-                ),
-              if (state.searchQuery.isNotEmpty)
-                IconButton(
-                  icon: Icon(
-                    Icons.clear,
-                    color: isDark ? Colors.grey[300] : Colors.grey[700],
-                  ),
-                  onPressed: () {
-                    _searchController.clear();
-                    ref.read(modelsScreenProvider.notifier).clearSearch();
-                  },
-                ),
-            ],
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: isDark ? Colors.grey[700]! : Colors.grey[400]!,
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: isDark ? Colors.grey[700]! : Colors.grey[400]!,
-              width: 1,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: Theme.of(context).primaryColor,
-              width: 2,
-            ),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
-          filled: true,
-          fillColor: isDark ? Theme.of(context).cardColor : Colors.white,
-          isDense: true,
-        ),
-        style: TextStyle(
-          color: Theme.of(context).textTheme.bodyLarge!.color,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
-        cursorColor: Theme.of(context).primaryColor,
-        textInputAction: TextInputAction.search,
-      ),
-    );
-  }
-
-  Widget _buildGroupedList(BuildContext context, ModelsScreenState state) {
     final localizations = AppLocalizations.of(context)!;
     final grouped = <String, List<ModelConfig>>{};
     for (final m in state.filteredModels) {
@@ -220,7 +191,10 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
       ..sort((a, b) => _providerName(a.key).compareTo(_providerName(b.key)));
 
     return ListView(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: ChatoraiSpacing.md,
+        vertical: ChatoraiSpacing.sm,
+      ),
       children: [
         for (final entry in sorted)
           _DeferredModelTile(
@@ -240,6 +214,7 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
                 ref.read(modelsScreenProvider.notifier).toggleFavorite(id),
             onInfo: (model) => showModelDetailsDialog(context, model),
             localizations: localizations,
+            isDark: isDark,
           ),
       ],
     );
@@ -266,9 +241,113 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
   String _providerName(String? id) => _providerNames[id] ?? (id ?? 'Unknown');
 }
 
-// ===========================================================================
-// DEFERRED MODEL TILE — builds grid only on first expansion
-// ===========================================================================
+class _PremiumSearchBar extends StatelessWidget {
+  final bool isDark;
+  final AppLocalizations localizations;
+  final ModelsScreenState state;
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  const _PremiumSearchBar({
+    required this.isDark,
+    required this.localizations,
+    required this.state,
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.lg),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        style: TextStyle(
+          color: isDark ? ChatoraiColors.pureWhite : ChatoraiColors.pureBlack,
+          fontSize: ChatoraiFontSizes.base,
+        ),
+        cursorColor: ChatoraiColors.orange,
+        decoration: InputDecoration(
+          hintText: state.showFavoritesOnly
+              ? localizations.searchFavorites
+              : localizations.searchModels,
+          hintStyle: TextStyle(
+            color: isDark
+                ? ChatoraiColors.darkSecondaryTextColor
+                : ChatoraiColors.secondaryTextColor,
+            fontSize: ChatoraiFontSizes.base,
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: isDark
+                ? ChatoraiColors.darkSecondaryTextColor
+                : ChatoraiColors.secondaryTextColor,
+            size: ChatoraiIconSizes.md,
+          ),
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (state.showFavoritesOnly)
+                Padding(
+                  padding: const EdgeInsets.only(right: ChatoraiSpacing.xs),
+                  child: Icon(
+                    Icons.favorite,
+                    color: Colors.red,
+                    size: ChatoraiIconSizes.sm,
+                  ),
+                ),
+              if (state.searchQuery.isNotEmpty)
+                IconButton(
+                  icon: Icon(
+                    Icons.clear,
+                    color: isDark
+                        ? ChatoraiColors.darkSecondaryTextColor
+                        : ChatoraiColors.secondaryTextColor,
+                    size: ChatoraiIconSizes.sm,
+                  ),
+                  onPressed: onClear,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+            ],
+          ),
+          filled: true,
+          fillColor: isDark
+              ? ChatoraiColors.premiumSurfaceRaised
+              : ChatoraiColors.lightCard,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+            borderSide: BorderSide(
+              color: isDark
+                  ? ChatoraiColors.premiumBorderSoft
+                  : ChatoraiColors.inputBorder,
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+            borderSide: BorderSide(
+              color: isDark
+                  ? ChatoraiColors.premiumBorderSoft
+                  : ChatoraiColors.inputBorder,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+            borderSide: BorderSide(color: ChatoraiColors.orange, width: 1.4),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: ChatoraiSpacing.md,
+            vertical: ChatoraiSpacing.sm,
+          ),
+          isDense: true,
+        ),
+      ),
+    );
+  }
+}
 
 class _DeferredModelTile extends StatefulWidget {
   final String providerKey;
@@ -280,6 +359,7 @@ class _DeferredModelTile extends StatefulWidget {
   final void Function(String) onToggleFavorite;
   final void Function(ModelConfig) onInfo;
   final AppLocalizations localizations;
+  final bool isDark;
 
   const _DeferredModelTile({
     required this.providerKey,
@@ -291,6 +371,7 @@ class _DeferredModelTile extends StatefulWidget {
     required this.onToggleFavorite,
     required this.onInfo,
     required this.localizations,
+    required this.isDark,
   });
 
   @override
@@ -302,42 +383,70 @@ class _DeferredModelTileState extends State<_DeferredModelTile> {
 
   @override
   Widget build(BuildContext context) {
-    return ExpansionTile(
-      key: ValueKey('grp_${widget.providerKey}'),
-      initiallyExpanded: false,
-      leading: ProviderIcon(providerId: widget.providerKey),
-      title: Text(
-        widget.localizations.modelsProviderCountFormat(
-          widget.models.length,
-          widget.providerName,
+    return Container(
+      margin: const EdgeInsets.only(bottom: ChatoraiSpacing.md),
+      decoration: BoxDecoration(
+        color: widget.isDark
+            ? const Color(0xFF1A1A1A)
+            : ChatoraiColors.lightCard,
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+        border: Border.all(
+          color: widget.isDark
+              ? ChatoraiColors.darkInputBorder
+              : ChatoraiColors.inputBorder,
         ),
       ),
-      tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-      childrenPadding: const EdgeInsets.only(left: 8, bottom: 4),
-      onExpansionChanged: (expanded) {
-        if (expanded && !_hasBuiltGrid) {
-          setState(() => _hasBuiltGrid = true);
-        }
-      },
-      children: _hasBuiltGrid
-          ? [
-              _ModelGrid(
-                models: widget.models,
-                currentModel: widget.currentModel,
-                onSelect: widget.onSelect,
-                isFavorite: widget.isFavorite,
-                onToggleFavorite: widget.onToggleFavorite,
-                onInfo: widget.onInfo,
-              ),
-            ]
-          : [const SizedBox.shrink()],
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          key: ValueKey('grp_${widget.providerKey}'),
+          initiallyExpanded: false,
+          leading: ProviderIcon(providerId: widget.providerKey),
+          title: Text(
+            widget.localizations.modelsProviderCountFormat(
+              widget.models.length,
+              widget.providerName,
+            ),
+            style: TextStyle(
+              fontSize: ChatoraiFontSizes.base,
+              fontWeight: FontWeight.w600,
+              color: widget.isDark
+                  ? ChatoraiColors.pureWhite
+                  : ChatoraiColors.pureBlack,
+            ),
+          ),
+          tilePadding: const EdgeInsets.symmetric(
+            horizontal: ChatoraiSpacing.md,
+            vertical: ChatoraiSpacing.xs,
+          ),
+          childrenPadding: const EdgeInsets.only(
+            left: ChatoraiSpacing.md,
+            right: ChatoraiSpacing.md,
+            bottom: ChatoraiSpacing.md,
+          ),
+          onExpansionChanged: (expanded) {
+            if (expanded && !_hasBuiltGrid) {
+              setState(() => _hasBuiltGrid = true);
+            }
+          },
+          children: _hasBuiltGrid
+              ? [
+                  _ModelGrid(
+                    models: widget.models,
+                    currentModel: widget.currentModel,
+                    onSelect: widget.onSelect,
+                    isFavorite: widget.isFavorite,
+                    onToggleFavorite: widget.onToggleFavorite,
+                    onInfo: widget.onInfo,
+                    isDark: widget.isDark,
+                  ),
+                ]
+              : [const SizedBox.shrink()],
+        ),
+      ),
     );
   }
 }
-
-// ===========================================================================
-// MODEL GRID — 2-column on wide screens, single column on narrow
-// ===========================================================================
 
 class _ModelGrid extends StatelessWidget {
   final List<ModelConfig> models;
@@ -346,6 +455,7 @@ class _ModelGrid extends StatelessWidget {
   final bool Function(String) isFavorite;
   final void Function(String) onToggleFavorite;
   final void Function(ModelConfig) onInfo;
+  final bool isDark;
 
   const _ModelGrid({
     required this.models,
@@ -354,6 +464,7 @@ class _ModelGrid extends StatelessWidget {
     required this.isFavorite,
     required this.onToggleFavorite,
     required this.onInfo,
+    required this.isDark,
   });
 
   @override
@@ -367,7 +478,7 @@ class _ModelGrid extends StatelessWidget {
             children: models
                 .map(
                   (m) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: ChatoraiSpacing.sm),
                     child: ModelCardWidget(
                       model: m,
                       isSelected: currentModel == m.id,
@@ -382,10 +493,10 @@ class _ModelGrid extends StatelessWidget {
           );
         }
 
-        final cardWidth = (constraints.maxWidth - 12) / 2;
+        final cardWidth = (constraints.maxWidth - ChatoraiSpacing.md) / 2;
         return Wrap(
-          spacing: 12,
-          runSpacing: 8,
+          spacing: ChatoraiSpacing.md,
+          runSpacing: ChatoraiSpacing.sm,
           children: models
               .map(
                 (m) => SizedBox(
@@ -408,10 +519,6 @@ class _ModelGrid extends StatelessWidget {
   }
 }
 
-// ===========================================================================
-// RECENT MODELS — horizontal "stories" strip (top-6 recently/frequently used)
-// ===========================================================================
-
 class _RecentModelsSection extends StatelessWidget {
   final List<ModelConfig> models;
   final String? currentModel;
@@ -420,6 +527,7 @@ class _RecentModelsSection extends StatelessWidget {
   final void Function(String) onToggleFavorite;
   final void Function(ModelConfig) onInfo;
   final AppLocalizations localizations;
+  final bool isDark;
 
   const _RecentModelsSection({
     required this.models,
@@ -429,106 +537,201 @@ class _RecentModelsSection extends StatelessWidget {
     required this.onToggleFavorite,
     required this.onInfo,
     required this.localizations,
+    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 18, right: 8, bottom: 8, top: 4),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              localizations.recentModels,
-              textAlign: TextAlign.left,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.grey[200] : Colors.grey[800],
+          padding: const EdgeInsets.only(
+            left: ChatoraiSpacing.lg,
+            right: ChatoraiSpacing.md,
+            bottom: ChatoraiSpacing.sm,
+            top: ChatoraiSpacing.xs,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: ChatoraiColors.orange,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
+              const SizedBox(width: ChatoraiSpacing.sm),
+              Text(
+                localizations.recentModels,
+                style: TextStyle(
+                  fontSize: ChatoraiFontSizes.base,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? ChatoraiColors.pureWhite
+                      : ChatoraiColors.pureBlack,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
           ),
         ),
         SizedBox(
-          height: 76,
-          child: SingleChildScrollView(
+          height: 84,
+          child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 15),
+            padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.md),
+            itemCount: models.length,
+            itemBuilder: (context, index) {
+              final m = models[index];
+              final selected = currentModel == m.id;
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < models.length - 1 ? ChatoraiSpacing.md : 0,
+                ),
+                child: _RecentCard(
+                  model: m,
+                  selected: selected,
+                  onSelect: onSelect,
+                  isDark: isDark,
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: ChatoraiSpacing.md),
+      ],
+    );
+  }
+}
+
+class _RecentCard extends StatefulWidget {
+  final ModelConfig model;
+  final bool selected;
+  final Future<void> Function(ModelConfig) onSelect;
+  final bool isDark;
+
+  const _RecentCard({
+    required this.model,
+    required this.selected,
+    required this.onSelect,
+    required this.isDark,
+  });
+
+  @override
+  State<_RecentCard> createState() => _RecentCardState();
+}
+
+class _RecentCardState extends State<_RecentCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Container(
+        width: 240,
+        decoration: BoxDecoration(
+          gradient: widget.selected
+              ? const LinearGradient(
+                  colors: [Color(0x33FDEEDB), Color(0x22FDEEDB)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : _hovered
+              ? (widget.isDark
+                    ? const LinearGradient(
+                        colors: [Color(0xFF252525), Color(0xFF2A2A2A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : const LinearGradient(
+                        colors: [Color(0xFFF5F5F5), Color(0xFFEFEFEF)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ))
+              : widget.isDark
+              ? const LinearGradient(
+                  colors: [Color(0xFF1E1E1E), Color(0xFF252525)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : const LinearGradient(
+                  colors: [Color(0xFFFAFAFA), Color(0xFFF0F0F0)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+          border: Border.all(
+            color: widget.selected
+                ? ChatoraiColors.orange
+                : _hovered
+                ? ChatoraiColors.orange.withValues(alpha: 0.35)
+                : widget.isDark
+                ? ChatoraiColors.darkInputBorder
+                : ChatoraiColors.inputBorder,
+            width: widget.selected ? 1.4 : 1,
+          ),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+          onTap: () => widget.onSelect(widget.model),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: ChatoraiSpacing.md,
+              vertical: ChatoraiSpacing.sm,
+            ),
             child: Row(
               children: [
-                for (final m in models)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: SizedBox(
-                      width: 250,
-                      child: Material(
-                        color: currentModel == m.id
-                            ? theme.primaryColor.withAlpha(28)
-                            : (isDark ? Colors.grey[850] : Colors.grey[100]),
-                        borderRadius: BorderRadius.circular(14),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(14),
-                          onTap: () => onSelect(m),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            child: Row(
-                              children: [
-                                ProviderIcon(providerId: m.provider, size: 32),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        m.name,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: isDark
-                                              ? Colors.grey[100]
-                                              : Colors.grey[900],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        m.provider,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: isDark
-                                              ? Colors.grey[400]
-                                              : Colors.grey[600],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                ProviderIcon(providerId: widget.model.provider, size: 28),
+                const SizedBox(width: ChatoraiSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        widget.model.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: ChatoraiFontSizes.sm,
+                          fontWeight: FontWeight.w600,
+                          color: widget.selected
+                              ? ChatoraiColors.orange
+                              : widget.isDark
+                              ? ChatoraiColors.pureWhite
+                              : ChatoraiColors.pureBlack,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.model.provider,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: ChatoraiFontSizes.xs,
+                          color: widget.isDark
+                              ? ChatoraiColors.darkSecondaryTextColor
+                              : ChatoraiColors.secondaryTextColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (widget.selected)
+                  Icon(
+                    Icons.check_circle,
+                    color: ChatoraiColors.orange,
+                    size: ChatoraiIconSizes.sm,
                   ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 12),
-      ],
+      ),
     );
   }
 }

@@ -11,7 +11,9 @@ import 'package:path/path.dart' as p;
 /// (`<xdg-config>/chatorai.json`) and, on desktop, a Project tab
 /// (`<cwd>/.chatorai/chatorai.json`). Project settings override global ones.
 class ConfigScreen extends ConsumerStatefulWidget {
-  const ConfigScreen({super.key});
+  final bool embedded;
+
+  const ConfigScreen({super.key, this.embedded = false});
 
   @override
   ConsumerState<ConfigScreen> createState() => _ConfigScreenState();
@@ -86,43 +88,31 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    Widget content;
+    TabBar? tabBar;
+
     if (_loading) {
-      return Scaffold(
-        appBar: _appBar(context, l10n, isDark, bottom: null),
-        body: const Center(child: CircularProgressIndicator()),
+      content = const Center(child: CircularProgressIndicator());
+    } else if (!_supportsProjectScope) {
+      content = _ScopeConfigView(data: _global, isDark: isDark);
+    } else {
+      tabBar = TabBar(
+        indicatorColor: ChatoraiColors.orange,
+        dividerColor: Colors.transparent,
+        labelColor: isDark
+            ? ChatoraiColors.pureWhite
+            : ChatoraiColors.pureBlack,
+        unselectedLabelColor: isDark
+            ? ChatoraiColors.darkSecondaryTextColor
+            : ChatoraiColors.secondaryTextColor,
+        tabs: [
+          Tab(text: l10n.configScopeGlobal),
+          Tab(text: l10n.configScopeProject),
+        ],
       );
-    }
-
-    if (!_supportsProjectScope) {
-      return Scaffold(
-        appBar: _appBar(context, l10n, isDark, bottom: null),
-        body: _ScopeConfigView(data: _global, isDark: isDark),
-      );
-    }
-
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: _appBar(
-          context,
-          l10n,
-          isDark,
-          bottom: TabBar(
-            indicatorColor: ChatoraiColors.orange,
-            dividerColor: Colors.transparent,
-            labelColor: isDark
-                ? ChatoraiColors.pureWhite
-                : ChatoraiColors.pureBlack,
-            unselectedLabelColor: isDark
-                ? ChatoraiColors.darkSecondaryTextColor
-                : ChatoraiColors.secondaryTextColor,
-            tabs: [
-              Tab(text: l10n.configScopeGlobal),
-              Tab(text: l10n.configScopeProject),
-            ],
-          ),
-        ),
-        body: TabBarView(
+      content = DefaultTabController(
+        length: 2,
+        child: TabBarView(
           children: [
             _ScopeConfigView(data: _global, isDark: isDark),
             _ScopeConfigView(
@@ -132,6 +122,45 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
             ),
           ],
         ),
+      );
+    }
+
+    if (widget.embedded) {
+      if (tabBar == null) return content;
+      return DefaultTabController(
+        length: 2,
+        child: Column(
+          children: [
+            _tabBarContainer(tabBar: tabBar, isDark: isDark),
+            Expanded(child: content),
+          ],
+        ),
+      );
+    }
+
+    return DefaultTabController(
+      length: _supportsProjectScope ? 2 : 1,
+      child: Scaffold(
+        appBar: _appBar(context, l10n, isDark, bottom: tabBar),
+        body: content,
+      ),
+    );
+  }
+
+  Widget _tabBarContainer({required TabBar tabBar, required bool isDark}) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: isDark
+                ? ChatoraiColors.darkInputBorder
+                : ChatoraiColors.inputBorder,
+          ),
+        ),
+      ),
+      child: PreferredSize(
+        preferredSize: const Size.fromHeight(48),
+        child: tabBar,
       ),
     );
   }

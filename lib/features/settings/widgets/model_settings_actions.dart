@@ -22,7 +22,7 @@ class ModelSettingsActions extends StatelessWidget {
 
     final resetButton = OutlinedButton.icon(
       onPressed: onReset,
-      icon: const Icon(Icons.refresh),
+      icon: const Icon(Icons.refresh_rounded, size: 18),
       label: Text(localizations.resetToDefaults),
       style: OutlinedButton.styleFrom(
         foregroundColor: isDark
@@ -37,7 +37,7 @@ class ModelSettingsActions extends StatelessWidget {
 
     final applyButton = ElevatedButton.icon(
       onPressed: onApply,
-      icon: const Icon(Icons.check),
+      icon: const Icon(Icons.check_rounded, size: 18),
       label: Text(localizations.applySettings),
       style: ElevatedButton.styleFrom(
         backgroundColor: ChatoraiColors.orange,

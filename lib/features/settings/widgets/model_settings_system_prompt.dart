@@ -59,6 +59,7 @@ class ModelSettingsSystemPrompt extends ConsumerWidget {
                 color: isDark
                     ? ChatoraiColors.darkInputBorder
                     : ChatoraiColors.inputBorder,
+                width: ChatoraiBorderWidth.thinBold,
               ),
             ),
             focusedBorder: OutlineInputBorder(

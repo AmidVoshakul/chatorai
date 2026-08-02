@@ -51,14 +51,30 @@ class ModelSettingsParameterField extends StatelessWidget {
                 vertical: ChatoraiSpacing.xs,
               ),
               decoration: BoxDecoration(
-                color: ChatoraiColors.orange.withAlpha(20),
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [
+                          ChatoraiColors.orange.withAlpha(30),
+                          ChatoraiColors.orange.withAlpha(15),
+                        ]
+                      : [
+                          ChatoraiColors.orange.withAlpha(20),
+                          ChatoraiColors.orange.withAlpha(8),
+                        ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xs),
+                border: Border.all(
+                  color: ChatoraiColors.orange.withAlpha(isDark ? 60 : 40),
+                  width: 1,
+                ),
               ),
               child: Text(
                 controller.text,
                 style: TextStyle(
                   fontSize: ChatoraiFontSizes.md,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   color: ChatoraiColors.orange,
                 ),
               ),

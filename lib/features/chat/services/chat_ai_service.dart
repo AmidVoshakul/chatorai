@@ -33,7 +33,13 @@ typedef ToolErrorCallback =
     Future<void> Function(String toolCallId, String toolName, String error);
 
 typedef UsageCallback =
-    void Function(int input, int output, int cacheRead, int cacheWrite);
+    void Function(
+      int input,
+      int output,
+      int cacheRead,
+      int cacheWrite,
+      int reasoning,
+    );
 
 class ChatCompletionResponse {
   final String content;
@@ -463,6 +469,7 @@ class ChatAiService implements CompletionProvider {
                     usage?.outputTokens ?? 0,
                     usage?.inputTokenDetails?.cacheReadTokens ?? 0,
                     usage?.inputTokenDetails?.cacheWriteTokens ?? 0,
+                    usage?.outputTokenDetails?.reasoningTokens ?? 0,
                   );
                   await onCompletion(text);
                   if (_overflowDetector.isOverflow(_tokenCounter.totalTokens)) {
@@ -653,6 +660,7 @@ class ChatAiService implements CompletionProvider {
                   usage?.outputTokens ?? 0,
                   usage?.inputTokenDetails?.cacheReadTokens ?? 0,
                   usage?.inputTokenDetails?.cacheWriteTokens ?? 0,
+                  usage?.outputTokenDetails?.reasoningTokens ?? 0,
                 );
                 await onCompletion(text);
               default:

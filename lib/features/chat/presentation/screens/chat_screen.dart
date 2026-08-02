@@ -35,6 +35,7 @@ import 'package:chatorai/features/models/screens/models_screen.dart';
 import 'package:chatorai/features/sessions/presentation/widgets/sidebar_wrapper.dart';
 import 'package:chatorai/features/settings/data/models/model_settings.dart';
 import 'package:chatorai/features/settings/widgets/model_settings_sheet.dart';
+import 'package:chatorai/features/settings/widgets/settings_modal.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart'
     show
@@ -218,7 +219,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   }
 
   void _openSettings() {
-    Navigator.of(context).pushNamed('/settings');
+    final width = MediaQuery.of(context).size.width;
+    if (width >= ChatScreenConstants.mobileBreakpoint) {
+      showSettingsModal(context);
+    } else {
+      Navigator.of(context).pushNamed('/settings');
+    }
   }
 
   void _toggleSidebar() {

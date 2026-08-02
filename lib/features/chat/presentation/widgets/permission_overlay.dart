@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
@@ -228,7 +227,7 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
                         children: [
                           const _PremiumAvatar(
                             icon: Icons.auto_awesome,
-                            glow: ChatoraiColors.accent,
+                            glow: ChatoraiColors.orange,
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -257,13 +256,14 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 18),
                     Flexible(
                       child: SingleChildScrollView(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             if (req.options.isNotEmpty) ...[
-                              const SizedBox(height: 18),
+                              const SizedBox(height: 4),
                               ...req.options.map((option) {
                                 final selected = selectedOptions.contains(
                                   option.label,
@@ -542,7 +542,7 @@ const BorderRadius _premiumSheetTopRadius = BorderRadius.vertical(
   top: Radius.circular(ChatoraiBorderRadius.xl),
 );
 
-/// Frosted-glass dark panel with a metallic hairline border.
+/// Simple dark panel with a solid border (no gradient, no blur).
 class _PremiumSheetShell extends StatelessWidget {
   final Widget child;
 
@@ -551,23 +551,14 @@ class _PremiumSheetShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: ChatoraiGradients.metallic,
+      decoration: BoxDecoration(
+        color: ChatoraiColors.premiumSurface,
         borderRadius: _premiumSheetTopRadius,
-      ),
-      padding: const EdgeInsets.fromLTRB(1.4, 1.4, 1.4, 0),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(ChatoraiBorderRadius.xl - 1.4),
-        ),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            color: ChatoraiColors.premiumSurface.withValues(alpha: 0.92),
-            child: child,
-          ),
+        border: const Border(
+          top: BorderSide(color: ChatoraiColors.premiumBorderSoft, width: 1),
         ),
       ),
+      child: ClipRRect(borderRadius: _premiumSheetTopRadius, child: child),
     );
   }
 }
