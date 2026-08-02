@@ -3,7 +3,7 @@ import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/core/tools/tool_execution.dart';
-import 'package:chatorai/core/tools/tool_definition.dart';
+
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/tools/built_in/built_in_tools.dart';
 import 'package:chatorai/core/skills/skill_service.dart';
@@ -43,16 +43,6 @@ class MockToolRegistry implements ToolRegistry {
 
   @override
   ToolDef? get read => throw UnimplementedError();
-
-  @override
-  void registerDefinition(ToolDefinition definition) {
-    // no-op for tests
-  }
-
-  @override
-  Future<void> resolveAll() async {
-    // no-op for tests
-  }
 
   @override
   ToolDef? get task => throw UnimplementedError();

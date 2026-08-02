@@ -1,11 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
-import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
-import 'package:chatorai/features/chat/data/models/chat/todo_part.dart'
-    show TodoItem;
 
+/// Screen-level UI state for the chat screen.
+///
+/// Contains only flags and metadata — streaming *content* (text, reasoning,
+/// tools, tasks) lives in [SessionState.parts] via [sessionPartsProvider].
 class ChatScreenState {
   final bool isStreaming;
   final bool isSuggestionsLoading;
@@ -21,7 +20,6 @@ class ChatScreenState {
   final double retryProgress;
   final String? retryMessage;
   final int retryAttempt;
-  final List<AssistantContent> streamingParts;
   final String? streamingSessionId;
 
   const ChatScreenState({
@@ -39,7 +37,6 @@ class ChatScreenState {
     this.retryProgress = 1.0,
     this.retryMessage,
     this.retryAttempt = 0,
-    this.streamingParts = const [],
     this.streamingSessionId,
   });
 
@@ -58,9 +55,9 @@ class ChatScreenState {
     double? retryProgress,
     String? retryMessage,
     int? retryAttempt,
-    List<AssistantContent>? streamingParts,
     String? streamingSessionId,
     bool clearStreamingSessionId = false,
+    bool clearRetryMessage = false,
   }) {
     return ChatScreenState(
       isStreaming: isStreaming ?? this.isStreaming,
@@ -77,9 +74,10 @@ class ChatScreenState {
       activeHeadingIndex: activeHeadingIndex ?? this.activeHeadingIndex,
       isRetrying: isRetrying ?? this.isRetrying,
       retryProgress: retryProgress ?? this.retryProgress,
-      retryMessage: retryMessage ?? this.retryMessage,
+      retryMessage: clearRetryMessage
+          ? null
+          : retryMessage ?? this.retryMessage,
       retryAttempt: retryAttempt ?? this.retryAttempt,
-      streamingParts: streamingParts ?? this.streamingParts,
       streamingSessionId: clearStreamingSessionId
           ? null
           : streamingSessionId ?? this.streamingSessionId,
@@ -87,332 +85,37 @@ class ChatScreenState {
   }
 }
 
+/// Pure screen-level notifier for the chat screen.
+///
+/// This notifier manages **only** UI flags (streaming state, suggestions,
+/// sidebar, navigator, retry info). Streaming *content* (AssistantText,
+/// AssistantReasoning, tools, tasks) is read from [sessionPartsProvider].
+///
+/// Methods that were previously on this notifier (onChunk, onReasoning,
+/// onToolCall, onTaskStart, etc.) have been removed — they are handled
+/// by the EventBus → SessionPartsNotifier pipeline.
 class ChatScreenNotifier extends Notifier<ChatScreenState> {
-  bool _textBlockOpen = false;
-
   @override
   ChatScreenState build() => const ChatScreenState();
 
+  // ── Streaming lifecycle ───────────────────────────────────────────────
+
+  /// Marks the screen as streaming for [sessionId].
   void startStreaming(String sessionId) {
-    _textBlockOpen = false;
-    _seenToolEnds.clear();
-    state = state.copyWith(
-      isStreaming: true,
-      streamingSessionId: sessionId,
-      streamingParts: const [],
-    );
+    state = state.copyWith(isStreaming: true, streamingSessionId: sessionId);
   }
 
-  void onChunk(
-    String partId,
-    String messageId,
-    String sessionId,
-    String delta,
-  ) {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-
-    final textIdx = parts.lastIndexWhere((p) => p is AssistantText);
-    if (_textBlockOpen && textIdx >= 0) {
-      final prev = parts[textIdx] as AssistantText;
-      parts[textIdx] = AssistantText(
-        id: prev.id ?? partId,
-        sessionId: prev.sessionId ?? sessionId,
-        messageId: prev.messageId ?? messageId,
-        text: prev.text + delta,
-        synthetic: prev.synthetic,
-        ignored: prev.ignored,
-        title: prev.title,
-      );
-    } else {
-      parts.add(
-        AssistantText(
-          id: partId,
-          sessionId: sessionId,
-          messageId: messageId,
-          text: delta,
-        ),
-      );
-      _textBlockOpen = true;
-    }
-
-    state = state.copyWith(streamingParts: parts);
-  }
-
-  void onReasoning(
-    String partId,
-    String messageId,
-    String sessionId,
-    String delta,
-  ) {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-
-    final openIdx = parts.lastIndexWhere(
-      (p) => p is AssistantReasoning && p.ended == null,
-    );
-    if (openIdx >= 0) {
-      final prev = parts[openIdx] as AssistantReasoning;
-      parts[openIdx] = AssistantReasoning(
-        id: prev.id ?? partId,
-        sessionId: prev.sessionId ?? sessionId,
-        messageId: prev.messageId ?? messageId,
-        text: prev.text + delta,
-        started: prev.started,
-        ended: null,
-      );
-    } else {
-      parts.add(
-        AssistantReasoning(
-          id: partId,
-          sessionId: sessionId,
-          messageId: messageId,
-          text: delta,
-          started: DateTime.now(),
-          ended: null,
-        ),
-      );
-    }
-
-    state = state.copyWith(streamingParts: parts);
-  }
-
-  void onToolCall(
-    String partId,
-    String callId,
-    String messageId,
-    String sessionId,
-    String toolName,
-    Map<String, dynamic> input,
-  ) {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-    if (parts.any((p) => p is AssistantTool && p.callId == callId)) return;
-    parts = _interruptStreaming(parts);
-    parts.add(
-      AssistantTool(
-        id: partId,
-        sessionId: sessionId,
-        messageId: messageId,
-        callId: callId,
-        tool: toolName,
-        state: ToolState.running,
-        input: input,
-      ),
-    );
-    state = state.copyWith(streamingParts: parts);
-  }
-
-  final Set<String> _seenToolEnds = {};
-
-  void onToolEnd(String callId, String toolName, String result) {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-    if (_seenToolEnds.contains(callId)) return;
-    _seenToolEnds.add(callId);
-    final idx = parts.indexWhere(
-      (p) => p is AssistantTool && p.callId == callId,
-    );
-    if (idx >= 0) {
-      final tool = parts[idx] as AssistantTool;
-      parts[idx] = tool.copyWith(state: ToolState.completed, output: result);
-      state = state.copyWith(streamingParts: parts);
-    }
-  }
-
-  void onToolError(String callId, String error) {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-    final idx = parts.indexWhere(
-      (p) => p is AssistantTool && p.callId == callId,
-    );
-    if (idx >= 0) {
-      final tool = parts[idx] as AssistantTool;
-      parts[idx] = tool.copyWith(state: ToolState.error, output: error);
-      state = state.copyWith(streamingParts: parts);
-    }
-  }
-
-  void onQuestion(
-    String partId,
-    String messageId,
-    String sessionId,
-    String questionText,
-    List<QuestionOption> options,
-    bool multiple,
-  ) {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-    parts = _interruptStreaming(parts);
-    parts.add(
-      AssistantQuestion(
-        id: partId,
-        sessionId: sessionId,
-        messageId: messageId,
-        question: questionText,
-        options: options,
-        multiple: multiple,
-      ),
-    );
-    state = state.copyWith(streamingParts: parts);
-  }
-
-  void onQuestionEnd(String partId, String answer) {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-    final idx = parts.indexWhere(
-      (p) => p is AssistantQuestion && p.id == partId,
-    );
-    if (idx >= 0) {
-      final q = parts[idx] as AssistantQuestion;
-      parts[idx] = q.copyWith(answer: answer);
-      state = state.copyWith(streamingParts: parts);
-    }
-  }
-
-  void onTodo(
-    String partId,
-    String messageId,
-    String sessionId,
-    List<TodoItem> todos,
-  ) {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-    parts = _interruptStreaming(parts);
-    parts.add(
-      AssistantTodo(
-        id: partId,
-        sessionId: sessionId,
-        messageId: messageId,
-        todos: todos,
-      ),
-    );
-    state = state.copyWith(streamingParts: parts);
-  }
-
-  void onTaskStart(
-    String partId,
-    String messageId,
-    String sessionId,
-    String desc,
-    String agent, {
-    String? taskSessionId,
-  }) {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-    if (parts.any((p) => p is AssistantTask && p.id == partId)) {
-      return;
-    }
-    parts = _interruptStreaming(parts);
-    parts.add(
-      AssistantTask(
-        id: partId,
-        sessionId: sessionId,
-        messageId: messageId,
-        description: desc,
-        agent: agent,
-        state: ToolState.running,
-        taskSessionId: taskSessionId,
-        startedAt: DateTime.now(),
-      ),
-    );
-    state = state.copyWith(streamingParts: parts);
-  }
-
-  void onTaskToolExecuted(String partId, String toolName, String? toolTitle) {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-    final idx = parts.indexWhere((p) => p is AssistantTask && p.id == partId);
-    if (idx >= 0) {
-      final task = parts[idx] as AssistantTask;
-      // The delegated `task` tool call itself must not overwrite the live
-      // sub-agent tool title that the widget reads from the child session —
-      // otherwise the part would show a frozen "task" label. Only count it.
-      final isDelegatedTask = toolName == 'task';
-      parts[idx] = task.copyWith(
-        currentTool: isDelegatedTask ? task.currentTool : toolName,
-        currentToolTitle: isDelegatedTask ? task.currentToolTitle : toolTitle,
-        toolCallsCount: task.toolCallsCount + 1,
-      );
-      state = state.copyWith(streamingParts: parts);
-    }
-  }
-
-  /// Single source of truth for finishing a task part: sets the terminal
-  /// state, error (if any), timestamps and duration. Reused by [onTaskEnd],
-  /// [onTaskError] and [closeAllRunningTasks].
-  AssistantTask _finalizeTask(
-    AssistantTask task,
-    ToolState state, {
-    String? error,
-  }) {
-    final now = DateTime.now();
-    return task.copyWith(
-      state: state,
-      error: error,
-      endedAt: now,
-      durationMs: task.startedAt != null
-          ? now.difference(task.startedAt!).inMilliseconds
-          : null,
-    );
-  }
-
-  void onTaskEnd(String partId) {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-    final idx = parts.indexWhere((p) => p is AssistantTask && p.id == partId);
-    if (idx >= 0) {
-      final task = parts[idx] as AssistantTask;
-      parts[idx] = _finalizeTask(task, ToolState.completed);
-      state = state.copyWith(streamingParts: parts);
-    }
-  }
-
-  void onTaskSessionIdResolved(String partId, String taskSessionId) {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-    final idx = parts.indexWhere((p) => p is AssistantTask && p.id == partId);
-    if (idx >= 0) {
-      final task = parts[idx] as AssistantTask;
-      if (task.taskSessionId != taskSessionId) {
-        parts[idx] = task.copyWith(taskSessionId: taskSessionId);
-        state = state.copyWith(streamingParts: parts);
-      }
-    }
-  }
-
-  /// Marks every still-running task part as completed. Used when a stream is
-  /// cancelled or finalized so no TaskPart widget is left showing a spinner.
-  void closeAllRunningTasks() {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-    var changed = false;
-    for (var i = 0; i < parts.length; i++) {
-      final p = parts[i];
-      if (p is AssistantTask && p.state == ToolState.running) {
-        parts[i] = _finalizeTask(p, ToolState.completed);
-        changed = true;
-      }
-    }
-    if (changed) state = state.copyWith(streamingParts: parts);
-  }
-
-  void onTaskError(String partId, String error) {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-    final idx = parts.indexWhere((p) => p is AssistantTask && p.id == partId);
-    if (idx >= 0) {
-      final task = parts[idx] as AssistantTask;
-      parts[idx] = _finalizeTask(task, ToolState.error, error: error);
-      state = state.copyWith(streamingParts: parts);
-    }
-  }
-
-  List<AssistantContent> snapshotClosedStreamingParts() {
-    var parts = List<AssistantContent>.from(state.streamingParts);
-    parts = _closeOpenReasoning(parts);
-    state = state.copyWith(streamingParts: parts);
-    return List.unmodifiable(parts);
-  }
-
+  /// Clears the streaming flag and session id.
   void finalizeStreaming() {
-    _textBlockOpen = false;
-    state = state.copyWith(
-      isStreaming: false,
-      clearStreamingSessionId: true,
-      streamingParts: const [],
-    );
+    state = state.copyWith(isStreaming: false, clearStreamingSessionId: true);
   }
 
+  /// Sets the streaming flag without touching the session id.
   void setStreaming(bool isStreaming) {
     state = state.copyWith(isStreaming: isStreaming);
   }
+
+  // ── Suggestions ───────────────────────────────────────────────────────
 
   void setSuggestionsLoading(bool loading) {
     state = state.copyWith(isSuggestionsLoading: loading);
@@ -454,6 +157,8 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
     );
   }
 
+  // ── Sidebar ───────────────────────────────────────────────────────────
+
   void toggleSidebar() {
     state = state.copyWith(isSidebarCollapsed: !state.isSidebarCollapsed);
   }
@@ -463,6 +168,8 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
       state = state.copyWith(isSidebarCollapsed: collapsed);
     }
   }
+
+  // ── Navigator ─────────────────────────────────────────────────────────
 
   void toggleNavigator() {
     state = state.copyWith(isNavigatorVisible: !state.isNavigatorVisible);
@@ -488,6 +195,8 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
     state = state.copyWith(navigatorHeadings: [], activeHeadingIndex: -1);
   }
 
+  // ── Retry info ────────────────────────────────────────────────────────
+
   void setRetrying(bool retrying) {
     if (state.isRetrying != retrying) {
       state = state.copyWith(isRetrying: retrying);
@@ -509,35 +218,9 @@ class ChatScreenNotifier extends Notifier<ChatScreenState> {
       isRetrying: isRetrying,
       retryMessage: retryMessage,
       retryAttempt: retryAttempt,
+      // When the caller sets isRetrying=false without a message, clear it.
+      clearRetryMessage: retryMessage == null && !isRetrying,
     );
-  }
-
-  List<AssistantContent> _closeOpenReasoning(List<AssistantContent> parts) {
-    final idx = parts.lastIndexWhere(
-      (p) => p is AssistantReasoning && p.ended == null,
-    );
-    if (idx >= 0) {
-      final last = parts[idx] as AssistantReasoning;
-      final now = DateTime.now();
-      return [
-        ...parts.sublist(0, idx),
-        AssistantReasoning(
-          id: last.id!,
-          sessionId: last.sessionId!,
-          messageId: last.messageId!,
-          text: last.text,
-          started: last.started,
-          ended: now,
-        ),
-        ...parts.sublist(idx + 1),
-      ];
-    }
-    return parts;
-  }
-
-  List<AssistantContent> _interruptStreaming(List<AssistantContent> parts) {
-    _textBlockOpen = false;
-    return _closeOpenReasoning(parts);
   }
 }
 

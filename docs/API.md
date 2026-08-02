@@ -45,18 +45,16 @@ All providers are defined using Riverpod 3.x and can be accessed via `ref.watch(
 
 ### Core Services
 
-| Provider                     | Type                           | Description                                                     |
-| ---------------------------- | ------------------------------ | --------------------------------------------------------------- |
-| `chatAiServiceProvider`      | `Provider<ChatAiService>`      | AI completion service with tool execution loop.                 |
-| `sessionRunnerProvider`      | `Provider<SessionRunner>`      | Event-sourced session orchestrator.                             |
-| `sessionRepositoryProvider`  | `Provider<SessionRepository>`  | Session CRUD + event replay.                                    |
-| `sessionTreeProvider`        | `Provider<SessionTree>`        | Parent-child session navigation.                                |
-| `chatRepositoryProvider`     | `Provider<ChatRepository>`     | Chat persistence repository.                                    |
-| `chatStorageServiceProvider` | `Provider<ChatStorageService>` | Local storage abstraction (SharedPreferences).                  |
-| `toolRegistryProvider`       | `FutureProvider<ToolRegistry>` | Registry of all available tools (18 built-in + dynamic skills). |
-| `skillServiceProvider`       | `FutureProvider<SkillService>` | Skill management service for dynamic capabilities.              |
-| `mcpClientServiceProvider`   | `Provider<McpClientService>`   | MCP server connections for external tool integration.           |
-| `lspServiceProvider`         | `Provider<LspService>`         | LSP integration for code intelligence.                          |
+| Provider                    | Type                           | Description                                                     |
+| --------------------------- | ------------------------------ | --------------------------------------------------------------- |
+| `chatAiServiceProvider`     | `Provider<ChatAiService>`      | AI completion service with tool execution loop.                 |
+| `sessionRunnerProvider`     | `Provider<SessionRunner>`      | Event-sourced session orchestrator.                             |
+| `sessionRepositoryProvider` | `Provider<SessionRepository>`  | Session CRUD + event replay.                                    |
+| `sessionTreeProvider`       | `Provider<SessionTree>`        | Parent-child session navigation.                                |
+| `toolRegistryProvider`      | `FutureProvider<ToolRegistry>` | Registry of all available tools (18 built-in + dynamic skills). |
+| `skillServiceProvider`      | `FutureProvider<SkillService>` | Skill management service for dynamic capabilities.              |
+| `mcpClientServiceProvider`  | `Provider<McpClientService>`   | MCP server connections for external tool integration.           |
+| `lspServiceProvider`        | `Provider<LspService>`         | LSP integration for code intelligence.                          |
 
 ---
 

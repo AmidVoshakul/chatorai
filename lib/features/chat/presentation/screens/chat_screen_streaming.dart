@@ -1,9 +1,6 @@
 part of 'chat_screen.dart';
 
 extension _ChatScreenStreamingExt on _ChatScreenState {
-  String _genPartId(String suffix) =>
-      'part_${DateTime.now().microsecondsSinceEpoch}_$suffix';
-
   Future<void> _handleStreamingResponse({
     required Chat chat,
     required List<Map<String, dynamic>> messages,
@@ -18,109 +15,28 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
       '_handleStreamingResponse START: chatId=${chat.id}, model=$modelId, isContinuation=$isContinuation',
     );
     _streamCancelled = false;
-
     final sessionId = _sessionRunner?.sessionId.value ?? chat.id;
     final notifier = ref.read(chatScreenProvider.notifier);
     notifier.startStreaming(sessionId);
 
-    final StringBuffer pendingContent = StringBuffer();
-    final StringBuffer fullContent = StringBuffer();
-    final StringBuffer pendingReasoning = StringBuffer();
-    final StringBuffer fullReasoning = StringBuffer();
-    DateTime lastUpdateTime = DateTime.now();
-    const updateIntervalMs = 200;
-
     final toolInputs = <String, Map<String, dynamic>>{};
     final toolStartTimes = <String, DateTime>{};
-    final processedToolEndCalls = <String>{};
-    final resolvedChildSessions = <String, String>{};
-    final Set<String> activeTaskSessionIds = {};
-    final Map<String, String> taskToolToPart = {};
-
-    void resolveTaskChildSession(String taskPartId) {
-      if (resolvedChildSessions.containsKey(taskPartId)) return;
-      final childSessionId = ref
-          .read(currentSessionRunnerProvider.notifier)
-          .taskPartToChild[taskPartId];
-      if (childSessionId != null) {
-        notifier.onTaskSessionIdResolved(taskPartId, childSessionId);
-        resolvedChildSessions[taskPartId] = childSessionId;
-      }
-    }
-
-    String? currentMessageId;
-
-    void flushPendingToNotifier() {
-      final pendingText = pendingContent.toString();
-      final pendingReason = pendingReasoning.toString();
-      if (pendingText.isNotEmpty && currentMessageId != null) {
-        fullContent.write(pendingText);
-        notifier.onChunk(
-          _genPartId('text'),
-          currentMessageId!,
-          sessionId,
-          pendingText,
-        );
-        pendingContent.clear();
-      }
-      if (pendingReason.isNotEmpty && currentMessageId != null) {
-        fullReasoning.write(pendingReason);
-        notifier.onReasoning(
-          _genPartId('reasoning'),
-          currentMessageId!,
-          sessionId,
-          pendingReason,
-        );
-        pendingReasoning.clear();
-      }
-    }
-
-    void throttleUpdate({bool forceUpdate = false}) {
-      final now = DateTime.now();
-      final elapsed = now.difference(lastUpdateTime).inMilliseconds;
-      final shouldUpdate = forceUpdate || elapsed >= updateIntervalMs;
-      if (shouldUpdate) {
-        flushPendingToNotifier();
-        lastUpdateTime = now;
-        if (mounted &&
-            _autoScrollEnabled &&
-            ref.read(themeProvider).autoScrollDuringStreaming) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _scrollToBottom(force: false);
-          });
-        }
-      }
-    }
-
-    void scrollOnContentAdd() {
-      if (!mounted || !_autoScrollEnabled) return;
-      if (!ref.read(themeProvider).autoScrollDuringStreaming) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToBottom(force: false);
-      });
-    }
-
-    void flushPendingUpdates() {
-      flushPendingToNotifier();
-      lastUpdateTime = DateTime.now();
-      scrollOnContentAdd();
-    }
+    final fullContent = StringBuffer();
+    final questionPartIds = <String, String>{};
+    String? lastAddedQuestionText;
+    DateTime? lastAddedQuestionTime;
+    const questionDebounceMs = 500;
 
     final toolRegistry = await ref.read(toolRegistryProvider.future);
+    if (_streamCancelled) return;
     final aiService = ref.read(chatAiServiceProvider);
     final attemptMsgs = aiService.sanitizeMessages(messages);
     int? latestTokensInput;
     int? latestTokensOutput;
-    int? latestTokensCacheRead;
-    int? latestTokensCacheWrite;
     final modelContextLength = ref
         .read(modelProvider)
         .selectedModelObject
         ?.contextLength;
-
-    String? lastAddedQuestionText;
-    DateTime? lastAddedQuestionTime;
-    const questionDebounceMs = 500;
 
     final runnerSession = _sessionRunner;
     if (runnerSession == null) {
@@ -130,40 +46,56 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     }
 
     final holder = ref.read(currentSessionRunnerProvider.notifier);
-    // Resolve the TaskPart's child session id as soon as the delegated child
-    // session is created, so the widget can read the sub-agent's live tool
-    // results and render its current tool title dynamically. Route by child
-    // session id (not the single activeTaskSessionId) so concurrent tasks each
-    // get their own live header.
-    holder.onChildSessionResolved = (childSessionId) {
-      final taskPartId = holder.childToTaskPart[childSessionId];
-      if (taskPartId != null) {
-        notifier.onTaskSessionIdResolved(taskPartId, childSessionId);
-      }
-    };
     holder.onTaskStart = (taskPartId, desc, agent) {
-      if (currentMessageId == null) return;
-      notifier.onTaskStart(
-        taskPartId,
-        currentMessageId!,
-        sessionId,
-        desc,
-        agent,
+      final event = TaskPartStarted(
+        sessionId: SessionID.fromString(sessionId),
+        partId: taskPartId,
+        description: desc,
+        agent: agent,
+        timestamp: DateTime.now(),
       );
+      unawaited(runnerSession.repository.appendEvent(event));
+      runnerSession.eventBus?.emit(event);
     };
     holder.onTaskEnd = (taskPartId) {
-      if (currentMessageId == null) return;
-      notifier.onTaskEnd(taskPartId);
+      final event = TaskPartCompleted(
+        sessionId: SessionID.fromString(sessionId),
+        partId: taskPartId,
+        toolCallsCount: 0,
+        timestamp: DateTime.now(),
+      );
+      unawaited(runnerSession.repository.appendEvent(event));
+      runnerSession.eventBus?.emit(event);
     };
     holder.onChildToolEvent = (childSessionId, toolName, title) {
       final taskPartId = holder.childToTaskPart[childSessionId];
       if (taskPartId != null) {
-        // Resolve the child session id as soon as the first tool event
-        // arrives so the TaskPart can read live tool calls from the child
-        // session (mirrors opencode, which sources the tool list from the
-        // child session rather than from the parent task tool).
-        notifier.onTaskSessionIdResolved(taskPartId, childSessionId);
-        notifier.onTaskToolExecuted(taskPartId, toolName, title);
+        final sessionAsyncState = ref.read(sessionPartsProvider(sessionId));
+        final sessionState = sessionAsyncState.value;
+        final taskIdx = sessionState?.parts.indexWhere(
+          (p) => p is AssistantTask && p.id == taskPartId,
+        );
+        if (taskIdx != null && taskIdx >= 0 && sessionState != null) {
+          final parts = List<AssistantContent>.from(sessionState.parts);
+          final task = parts[taskIdx] as AssistantTask;
+          final isDelegatedTask = toolName == 'task';
+          parts[taskIdx] = task.copyWith(
+            currentTool: isDelegatedTask ? task.currentTool : toolName,
+            currentToolTitle: isDelegatedTask ? task.currentToolTitle : title,
+            toolCallsCount: task.toolCallsCount + 1,
+          );
+          final event = MessageUpdated(
+            sessionId: SessionID.fromString(sessionId),
+            messageId: task.messageId ?? '',
+            content: null,
+            reasoning: null,
+            model: null,
+            error: null,
+            timestamp: DateTime.now(),
+          );
+          unawaited(runnerSession.repository.appendEvent(event));
+          runnerSession.eventBus?.emit(event);
+        }
       }
     };
 
@@ -181,6 +113,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         aiService: aiService,
         model: modelId,
       );
+      if (_streamCancelled) return;
       if (compactedApiMessages.isNotEmpty) {
         attemptMsgs.clear();
         attemptMsgs.addAll(compactedApiMessages);
@@ -227,17 +160,6 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         sessionId: sessionId,
         tools: toolRegistry.toSDKTools(),
         onRetry: (info) {
-          flushPendingUpdates();
-          notifier.setRetryInfo(
-            isRetrying: true,
-            retryMessage: info.message,
-            retryAttempt: info.attempt,
-          );
-          if (activeTaskSessionIds.isNotEmpty) {
-            final id = activeTaskSessionIds.last;
-            notifier.onTaskError(id, info.message);
-            unawaited(runnerSession.onTaskError(id, info.message));
-          }
           final partialText = fullContent.toString();
           if (partialText.isNotEmpty) {
             if (attemptMsgs.isNotEmpty &&
@@ -246,28 +168,22 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             }
             attemptMsgs.add({'role': 'assistant', 'content': partialText});
           }
+          notifier.setRetryInfo(
+            isRetrying: true,
+            retryMessage: info.message,
+            retryAttempt: info.attempt,
+          );
         },
         onUsage: (input, output, cacheRead, cacheWrite) {
           latestTokensInput = input;
           latestTokensOutput = output;
-          latestTokensCacheRead = cacheRead;
-          latestTokensCacheWrite = cacheWrite;
         },
         onToolStart: (toolCallId, toolName, input) async {
           toolInputs[toolCallId] = input;
           toolStartTimes[toolCallId] = DateTime.now();
 
-          currentMessageId ??= 'msg_${DateTime.now().microsecondsSinceEpoch}';
-          flushPendingUpdates();
-
           if (toolName == 'question') {
             final questionText = input['question'] as String? ?? '';
-            final options =
-                (input['options'] as List?)
-                    ?.map(QuestionOption.fromJson)
-                    .toList() ??
-                const [];
-            final multiple = input['multiple'] as bool? ?? false;
 
             final now = DateTime.now();
             final isDuplicate =
@@ -277,122 +193,59 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
                     questionDebounceMs;
 
             if (!isDuplicate) {
-              final qPartId = 'question_${now.microsecondsSinceEpoch}';
-              notifier.onQuestion(
-                qPartId,
-                currentMessageId!,
-                sessionId,
-                questionText,
-                options,
-                multiple,
-              );
               lastAddedQuestionText = questionText;
               lastAddedQuestionTime = now;
+              final options =
+                  (input['options'] as List?)
+                      ?.map(QuestionOption.fromJson)
+                      .toList() ??
+                  const [];
+              final multiple = input['multiple'] as bool? ?? false;
+              final qPartId = 'question_${now.microsecondsSinceEpoch}';
+              final event = QuestionPartStarted(
+                sessionId: SessionID.fromString(sessionId),
+                partId: qPartId,
+                questionText: questionText,
+                options: options,
+                multiple: multiple,
+                timestamp: now,
+              );
+              unawaited(runnerSession.repository.appendEvent(event));
+              runnerSession.eventBus?.emit(event);
+              questionPartIds[toolCallId] = qPartId;
               LogTags.chatScreen.logInfo(
-                'onToolStart(question): added QuestionPart "$questionText"',
-              );
-            }
-          } else {
-            final partId = _genPartId(toolCallId);
-            if (toolName != 'task' &&
-                toolName != 'task_container' &&
-                activeTaskSessionIds.isEmpty) {
-              notifier.onToolCall(
-                partId,
-                toolCallId,
-                currentMessageId!,
-                sessionId,
-                toolName,
-                input,
-              );
-            }
-
-            if (toolName == 'task') {
-              final description = input['description'] as String? ?? '';
-              final subagentType =
-                  input['subagent_type'] as String? ?? 'general';
-              final agent = AgentRegistry().get(subagentType);
-              final agentName = agent?.name ?? subagentType;
-              final taskId = input['task_id'] as String?;
-              final taskPartId = taskId ?? toolCallId;
-
-              notifier.onTaskStart(
-                taskPartId,
-                currentMessageId!,
-                sessionId,
-                description,
-                agentName,
-              );
-              activeTaskSessionIds.add(taskPartId);
-              taskToolToPart[toolCallId] = taskPartId;
-            } else if (activeTaskSessionIds.isNotEmpty) {
-              final toolTitle =
-                  input['command'] as String? ??
-                  input['query'] as String? ??
-                  input['filePath'] as String? ??
-                  input['path'] as String?;
-              notifier.onTaskToolExecuted(
-                activeTaskSessionIds.last,
-                toolName,
-                toolTitle,
+                'onToolStart(question): emitted QuestionPartStarted "$questionText"',
               );
             }
           }
 
-          scrollOnContentAdd();
           unawaited(runnerSession.onToolStart(toolCallId, toolName, input));
         },
         onToolEnd: (toolCallId, toolName, result) async {
-          if (!processedToolEndCalls.add(toolCallId)) return;
           final resultStr = result.toString();
 
-          if (toolName != 'question') {
-            notifier.onToolEnd(toolCallId, toolName, resultStr);
-          }
-
-          if (toolName == 'task') {
-            final id =
-                taskToolToPart.remove(toolCallId) ??
-                activeTaskSessionIds.firstOrNull;
-            if (id != null) {
-              activeTaskSessionIds.remove(id);
-              resolveTaskChildSession(id);
-              notifier.onTaskEnd(id);
-            }
-          } else if (activeTaskSessionIds.isNotEmpty) {
-            final toolInput = toolInputs[toolCallId];
-            final title = toolInput != null
-                ? (toolInput['command'] as String? ??
-                      toolInput['query'] as String? ??
-                      toolInput['filePath'] as String? ??
-                      toolInput['path'] as String?)
-                : null;
-            notifier.onTaskToolExecuted(
-              activeTaskSessionIds.last,
-              toolName,
-              title,
-            );
-          }
-
           if (toolName == 'question') {
-            final parts = ref.read(chatScreenProvider).streamingParts;
-            final openQuestion = parts
-                .whereType<AssistantQuestion>()
-                .where((p) => p.answer == null)
-                .lastOrNull;
-            if (openQuestion != null) {
-              notifier.onQuestionEnd(openQuestion.id!, resultStr);
+            final partId = questionPartIds.remove(toolCallId);
+            if (partId != null) {
+              final answerEvent = QuestionPartAnswered(
+                sessionId: SessionID.fromString(sessionId),
+                partId: partId,
+                answer: resultStr,
+                timestamp: DateTime.now(),
+              );
+              unawaited(runnerSession.repository.appendEvent(answerEvent));
+              runnerSession.eventBus?.emit(answerEvent);
             }
             LogTags.chatScreen.logInfo(
               'onToolEnd(question): answer="$resultStr"',
             );
           }
 
-          scrollOnContentAdd();
           final startTime = toolStartTimes.remove(toolCallId);
           final durationMs = startTime != null
               ? DateTime.now().difference(startTime).inMilliseconds
               : 0;
+
           unawaited(
             runnerSession.onToolEnd(
               toolCallId,
@@ -418,20 +271,11 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             );
           }
 
-          notifier.onToolError(toolCallId, errorStr);
-
-          if (activeTaskSessionIds.isNotEmpty) {
-            final id = activeTaskSessionIds.last;
-            resolveTaskChildSession(id);
-            notifier.onTaskError(id, errorStr);
-            unawaited(runnerSession.onTaskError(id, errorStr));
-          }
-
-          scrollOnContentAdd();
           final startTime = toolStartTimes.remove(toolCallId);
           final durationMs = startTime != null
               ? DateTime.now().difference(startTime).inMilliseconds
               : 0;
+
           unawaited(
             runnerSession.onToolError(
               toolCallId,
@@ -444,30 +288,21 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         },
         onChunk: (content) async {
           if (content.isEmpty) return;
-          currentMessageId ??= 'msg_${DateTime.now().microsecondsSinceEpoch}';
-          pendingContent.write(content);
-          unawaited(runnerSession.onChunk(content));
-          throttleUpdate();
+          fullContent.write(content);
+          await runnerSession.onChunk(content);
         },
         onReasoning: (reasoning) async {
           if (reasoning.isEmpty) return;
-          currentMessageId ??= 'msg_${DateTime.now().microsecondsSinceEpoch}';
-          pendingReasoning.write(reasoning);
-          unawaited(runnerSession.onReasoning(reasoning));
-          throttleUpdate();
+          await runnerSession.onReasoning(reasoning);
         },
         maxSteps: maxSteps,
         onCompletion: (sdkText) async {
-          flushPendingUpdates();
           if (!mounted || _streamCancelled) return;
-          if (activeTaskSessionIds.isNotEmpty) {
-            final ids = List<String>.from(activeTaskSessionIds);
-            activeTaskSessionIds.clear();
-            for (final id in ids) {
-              resolveTaskChildSession(id);
-              notifier.onTaskEnd(id);
-              unawaited(runnerSession.onTaskEnd(id));
-            }
+          final currentSessionId = ref
+              .read(chatScreenProvider)
+              .streamingSessionId;
+          if (currentSessionId != null && currentSessionId != sessionId) {
+            return;
           }
           notifier.setRetryInfo(
             isRetrying: false,
@@ -475,27 +310,31 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             retryAttempt: 0,
           );
 
-          final accumulatedText = fullContent.toString();
-          final accumulatedReasoning = fullReasoning.toString();
-          unawaited(
-            runnerSession.onCompletion(
-              content: accumulatedText.isNotEmpty ? accumulatedText : sdkText,
-              reasoning: accumulatedReasoning.isNotEmpty
-                  ? accumulatedReasoning
-                  : null,
-              model: modelId,
-              tokensInput: latestTokensInput ?? 0,
-              tokensOutput: latestTokensOutput ?? 0,
-              tokensCacheRead: latestTokensCacheRead ?? 0,
-              tokensCacheWrite: latestTokensCacheWrite ?? 0,
-            ),
+          // Close open parts via the runner session and get the final
+          // SessionState with all parts.  This avoids a race with the
+          // async sessionPartsProvider stream.
+          final finalState = await runnerSession.onCompletion(
+            content: sdkText,
+            model: modelId,
+            tokensInput: latestTokensInput ?? 0,
+            tokensOutput: latestTokensOutput ?? 0,
           );
-
-          final streamingParts = ref.read(chatScreenProvider).streamingParts;
+          // Only keep parts belonging to the current message — every part
+          // (AssistantText, AssistantTool, etc.) carries a messageId, but the
+          // session state accumulates parts across ALL messages. Without this
+          // filter the completed message would inherit old tool calls/results
+          // and concatenate previous text, making it look like the response
+          // was duplicated.
+          final currentMsgId = runnerSession.messageId;
+          final closedParts = currentMsgId != null
+              ? finalState.parts
+                    .where((p) => p.messageId == currentMsgId)
+                    .toList()
+              : finalState.parts;
 
           final textBuffer = StringBuffer();
           final reasoningBuffer = StringBuffer();
-          for (final part in streamingParts) {
+          for (final part in closedParts) {
             if (part is AssistantText) {
               textBuffer.write(part.text);
             } else if (part is AssistantReasoning) {
@@ -529,7 +368,6 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               chat.messages.last.role == MessageRole.assistant &&
               !chat.messages.last.isComplete;
 
-          final closedParts = notifier.snapshotClosedStreamingParts();
           final partsJson = closedParts.isNotEmpty
               ? assistantContentToPartMaps(closedParts)
               : null;
@@ -570,15 +408,24 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             updatedAt: DateTime.now(),
           );
           LogTags.chatScreen.logInfo(
-            'onCompletion: saving message id=${completedMessage.id}, partsCount=${streamingParts.length}',
+            'onCompletion: saving message id=${completedMessage.id}, partsCount=${closedParts.length}',
           );
           notifier.finalizeStreaming();
           ref.read(chatListProvider.notifier).updateChat(newChat);
-          holder.onChildToolEvent = null;
-          await _chatStorageService.updateMessageInChat(
-            newChat.id,
-            completedMessage.id,
-            completedMessage,
+          final streamSessionRepository = await ref.read(
+            sessionRepositoryProvider.future,
+          );
+          final streamCompletionSessionId = newChat.toSessionId();
+          await streamSessionRepository.appendEvent(
+            MessageUpdated(
+              sessionId: streamCompletionSessionId,
+              messageId: completedMessage.id,
+              content: completedMessage.content,
+              reasoning: completedMessage.reasoning,
+              model: completedMessage.model,
+              error: completedMessage.isError ? completedMessage.content : null,
+              timestamp: completedMessage.timestamp,
+            ),
           );
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _chatInputFocusNode.unfocus();
@@ -587,18 +434,13 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
         },
       );
     } catch (e) {
-      // Close any still-running task parts BEFORE finalizing the stream, so
-      // their spinners do not persist in the saved message (root cause of the
-      // "spinner never disappears on cancel" bug).
-      notifier.closeAllRunningTasks();
-      activeTaskSessionIds.clear();
+      if (_streamCancelled) return;
       notifier.finalizeStreaming();
       notifier.setRetryInfo(
         isRetrying: false,
         retryMessage: null,
         retryAttempt: 0,
       );
-      holder.onChildToolEvent = null;
       if (_streamCancelled) return;
       unawaited(runnerSession.onError(e));
       await _handleStreamingError(e);
@@ -609,6 +451,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
   }
 
   Future<void> _handleStreamingError(Object error) async {
+    if (_streamCancelled) return;
     LogTags.chatScreen.logError(
       '_handleStreamingError: type=${error.runtimeType} error=$error',
     );
@@ -626,10 +469,22 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           isComplete: true,
           isError: true,
         );
-        await _chatStorageService.updateMessageInChat(
-          chat.id,
-          errorResponseMessage.id,
-          errorResponseMessage,
+        final sessionRepository = await ref.read(
+          sessionRepositoryProvider.future,
+        );
+        final sessionId = chat.toSessionId();
+        await sessionRepository.appendEvent(
+          MessageUpdated(
+            sessionId: sessionId,
+            messageId: errorResponseMessage.id,
+            content: errorResponseMessage.content,
+            reasoning: errorResponseMessage.reasoning,
+            model: errorResponseMessage.model,
+            error: errorResponseMessage.isError
+                ? errorResponseMessage.content
+                : null,
+            timestamp: errorResponseMessage.timestamp,
+          ),
         );
         final newMessages = [
           ...chat.messages.take(chat.messages.length - 1),

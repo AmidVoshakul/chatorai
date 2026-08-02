@@ -651,5 +651,6 @@
   "toolResultRestoredSnackbar": "Файли відновлено до стану до редагування",
   "toolResultOriginalTitle": "Оригінальний вміст перед редагуванням",
   "restoreFailed": "Не вдалося відновити: {error}",
-  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } }
+  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
+  "compactingIndicator": "Стиснення..."
 }

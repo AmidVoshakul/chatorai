@@ -124,6 +124,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     required bool isContinuation,
     String? delegateAgentId,
     String? agentMention,
+    String? pendingAssistantMessageId,
   }) async {
     LogTags.chatScreen.logInfo(
       '_initiateStream: enter model=$selectedModelId isContinuation=$isContinuation',
@@ -142,13 +143,19 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       }
     }
 
-    final sessionRunner = SessionRunner(repo, toolRegistry);
+    final eventBus = ref.read(sessionEventBusProvider);
+    final sessionRunner = SessionRunner(repo, toolRegistry, eventBus: eventBus);
     final runnerSession = await sessionRunner.startInitializedSession(
       agent: agentName,
       modelRef: selectedModelId,
       sessionId: _currentSessionId != null
           ? SessionID.fromString(_currentSessionId!)
           : null,
+      // Reuse the assistant placeholder message id so `onChunk` streams into
+      // the message already appended via MessageAdded — otherwise a second
+      // assistant message with a fresh `msg_…` id is created and the chat
+      // shows duplicate bubbles after reload.
+      messageId: pendingAssistantMessageId,
     );
     LogTags.chatScreen.logInfo(
       '_initiateStream: session ready id=${runnerSession.sessionId.value}',
@@ -162,23 +169,15 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     _pushSessionToStack(isNewSession: isNewSession);
 
     if (!isContinuation) {
-      final userMessages = chat.messages
-          .where((m) => m.role == MessageRole.user)
-          .toList();
-      if (userMessages.isNotEmpty) {
-        final lastUserMsg = userMessages.last;
-        try {
-          await runnerSession.publishUserMessage(
-            content: lastUserMsg.content,
-            messageId: lastUserMsg.id,
-          );
-        } catch (e) {
-          LogTags.chatService.logError(
-            'Failed to publish user message to session core',
-            e,
-          );
-        }
-      }
+      // The user message is already persisted via MessageAdded by the caller
+      // (_handleSendMessage / _handleMessageEditAndSend / _regenerateResponse).
+      // Calling publishUserMessage here would append a SECOND MessageAdded with
+      // the same id, which the projector replays as a duplicate user bubble
+      // after restart. This block existed when the UI appended only the
+      // assistant placeholder; the user message must be added exactly once.
+      LogTags.chatScreen.logDebug(
+        '_initiateStream: user message already persisted, skipping publishUserMessage',
+      );
     }
 
     try {
@@ -237,64 +236,114 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
         _sessionRunner = null;
       }
       ref.read(currentSessionRunnerProvider.notifier).clear();
+      _currentSessionId = null;
     }
   }
 
   Future<void> _handleSendMessage(MessageData messageData) async {
     ref.read(chatScreenProvider.notifier).hideAllSuggestions();
 
-    Chat chat;
-    if (currentChat == null) {
-      _currentSessionId = null;
-      ref.read(permissionServiceProvider).clearSession();
-      chat = await ref.read(chatListProvider.notifier).createNewChat();
-      ref.read(currentChatIdProvider.notifier).setChatId(chat.id);
-    } else {
-      chat = currentChat!;
+    // Reject concurrent sends — second call cancels first, but only
+    // after the first finishes awaiting toolRegistry / compact.
+    if (_isHandlingMessage) return;
+
+    // Cancel any in-progress streaming before starting a new one.
+    // Two rapid sends each wait for toolRegistry (30s+), then both
+    // create a SessionRunner and stream on the same session.
+    if (_sessionRunner != null || ref.read(chatScreenProvider).isStreaming) {
+      _streamCancelled = true;
+      ref.read(chatAiServiceProvider).cancelAllRequests();
+      ref.read(permissionServiceProvider).cancelAllPendingRequests();
+      ref.read(currentSessionRunnerProvider.notifier).cancelAllChildren();
+      _sessionRunner = null;
+      ref.read(chatScreenProvider.notifier).finalizeStreaming();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      _streamCancelled = false;
     }
 
-    final userMessage = _createUserMessage(
-      messageData.text,
-      base64Data: messageData.base64Data,
-      imageType: messageData.imageType,
-      attachedDocPath: messageData.attachedDocPath,
-    );
-    await _chatStorageService.addMessageToChat(chat.id, userMessage);
-    var streamChat = await _chatStorageService.getChat(chat.id);
-    if (streamChat == null) return;
+    _isHandlingMessage = true;
+    try {
+      Chat chat;
+      if (currentChat == null) {
+        _currentSessionId = null;
+        ref.read(permissionServiceProvider).clearSession();
+        chat = await ref.read(chatListProvider.notifier).createNewChat();
+        ref.read(currentChatIdProvider.notifier).setChatId(chat.id);
+      } else {
+        chat = currentChat!;
+      }
 
-    final agentName =
-        AgentRegistry().get(messageData.delegateAgentId ?? '')?.name ??
-        ref.read(currentAgentProvider).name;
-    // For subagent mentions, keep the current agent (LLM will call task tool)
-    final assistantAgentName = messageData.agentMention != null
-        ? ref.read(currentAgentProvider).name
-        : agentName;
-    final assistantMessage = _createAssistantMessage(agent: assistantAgentName);
-    await _chatStorageService.addMessageToChat(streamChat.id, assistantMessage);
-    streamChat = await _chatStorageService.getChat(streamChat.id) ?? streamChat;
-    ref.read(chatListProvider.notifier).updateChat(streamChat);
+      final userMessage = _createUserMessage(
+        messageData.text,
+        base64Data: messageData.base64Data,
+        imageType: messageData.imageType,
+        attachedDocPath: messageData.attachedDocPath,
+      );
+      final sessionRepository = await ref.read(
+        sessionRepositoryProvider.future,
+      );
+      final sessionId = chat.toSessionId();
+      await sessionRepository.appendEvent(
+        MessageAdded(
+          sessionId: sessionId,
+          messageId: userMessage.id,
+          role: userMessage.role.name,
+          content: userMessage.content,
+          timestamp: userMessage.timestamp,
+        ),
+      );
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _autoScrollEnabled = true;
-      _scrollToBottom(force: true);
-    });
+      // Append the user message to the in-memory chat immediately: it must be
+      // visible in the UI and included in _buildApiMessages (LLM context).
+      // Previously the message was persisted but never added to the chat, so
+      // it disappeared from the UI and the model never saw it.
+      final streamChat = chat.copyWith(
+        messages: [...chat.messages, userMessage],
+        updatedAt: DateTime.now(),
+      );
+      // Show the user message in the UI immediately (before the assistant
+      // placeholder is appended by _startAssistantTurn).
+      ref.read(chatListProvider.notifier).updateChat(streamChat);
 
-    final messages = _buildApiMessages(
-      streamChat,
-      delegateAgentId: messageData.delegateAgentId,
-      agentMention: messageData.agentMention,
-    );
-    LogTags.chatScreen.logInfo(
-      '_handleSendMessage: sending to LLM messages=${messages.length} agentMention=${messageData.agentMention ?? "none"}',
-    );
-    await _initiateStream(
-      chat: streamChat,
-      messages: messages,
-      isContinuation: false,
-      delegateAgentId: messageData.delegateAgentId,
-      agentMention: messageData.agentMention,
-    );
+      // Generate the session title in the background — it performs a separate
+      // LLM call (up to ~14s) and must NOT block the start of the response
+      // stream. _autoGenerateTitleIfNeeded updates the chat list itself.
+      if (mounted && streamChat.isDefaultTitle) {
+        unawaited(_autoGenerateTitleIfNeeded(streamChat));
+      }
+
+      final agentName =
+          AgentRegistry().get(messageData.delegateAgentId ?? '')?.name ??
+          ref.read(currentAgentProvider).name;
+      // For subagent mentions, keep the current agent (LLM will call task tool)
+      final assistantAgentName = messageData.agentMention != null
+          ? ref.read(currentAgentProvider).name
+          : agentName;
+      final messages = _buildApiMessages(
+        streamChat,
+        delegateAgentId: messageData.delegateAgentId,
+        agentMention: messageData.agentMention,
+      );
+      LogTags.chatScreen.logInfo(
+        '_handleSendMessage: sending to LLM messages=${messages.length} agentMention=${messageData.agentMention ?? "none"}',
+      );
+      // Appends the assistant placeholder, updates the chat list and starts
+      // streaming into that exact message id (no duplicate bubbles on reload).
+      await _startAssistantTurn(
+        chat: streamChat,
+        sessionId: sessionId.value,
+        agentName: assistantAgentName,
+        delegateAgentId: messageData.delegateAgentId,
+        agentMention: messageData.agentMention,
+        buildMessages: (withPlaceholder) => _buildApiMessages(
+          withPlaceholder,
+          delegateAgentId: messageData.delegateAgentId,
+          agentMention: messageData.agentMention,
+        ),
+      );
+    } finally {
+      _isHandlingMessage = false;
+    }
   }
 
   /// Push the current session onto the navigation stack.
@@ -346,10 +395,18 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       timestamp: DateTime.now(),
     );
 
-    await _chatStorageService.updateMessageInChat(
-      chat.id,
-      updatedMessage.id,
-      updatedMessage,
+    final sessionRepository = await ref.read(sessionRepositoryProvider.future);
+    final sessionId = chat.toSessionId();
+    await sessionRepository.appendEvent(
+      MessageUpdated(
+        sessionId: sessionId,
+        messageId: updatedMessage.id,
+        content: updatedMessage.content,
+        reasoning: updatedMessage.reasoning,
+        model: updatedMessage.model,
+        error: updatedMessage.isError ? updatedMessage.content : null,
+        timestamp: updatedMessage.timestamp,
+      ),
     );
 
     // Update provider
@@ -418,7 +475,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     final permissionService = ref.read(permissionServiceProvider);
     permissionService.cancelAllPendingRequests();
 
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+    ref.read(currentSessionRunnerProvider.notifier).cancelAllChildren();
+
+    await Future<void>.delayed(const Duration(milliseconds: 100));
 
     final chat = currentChat;
     if (chat == null || chat.messages.isEmpty) {
@@ -429,9 +488,17 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       return;
     }
 
-    final notifier = ref.read(chatScreenProvider.notifier);
-    notifier.closeAllRunningTasks();
-    final closedParts = notifier.snapshotClosedStreamingParts();
+    final sessionId = ref.read(chatScreenProvider).streamingSessionId;
+    final List<AssistantContent> closedParts;
+    if (sessionId != null) {
+      final sessionAsyncState = ref.read(sessionPartsProvider(sessionId));
+      final sessionState = sessionAsyncState.value;
+      closedParts = sessionState != null
+          ? List<AssistantContent>.from(sessionState.parts)
+          : const [];
+    } else {
+      closedParts = const [];
+    }
 
     final content = closedParts
         .whereType<AssistantText>()
@@ -495,24 +562,45 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       updatedAt: DateTime.now(),
     );
     ref.read(chatListProvider.notifier).updateChat(newChat);
+    final sessionRepository = await ref.read(sessionRepositoryProvider.future);
+    final completionSessionId = newChat.toSessionId();
     if (lastMessage.role == MessageRole.assistant && !lastMessage.isComplete) {
-      await _chatStorageService.updateMessageInChat(
-        newChat.id,
-        lastMessage.id,
-        completedMessage,
+      await sessionRepository.appendEvent(
+        MessageUpdated(
+          sessionId: completionSessionId,
+          messageId: completedMessage.id,
+          content: completedMessage.content,
+          reasoning: completedMessage.reasoning,
+          model: completedMessage.model,
+          error: completedMessage.isError ? completedMessage.content : null,
+          timestamp: completedMessage.timestamp,
+        ),
       );
     } else {
-      await _chatStorageService.addMessageToChat(newChat.id, completedMessage);
+      await sessionRepository.appendEvent(
+        MessageAdded(
+          sessionId: completionSessionId,
+          messageId: completedMessage.id,
+          role: completedMessage.role.name,
+          content: completedMessage.content,
+          timestamp: completedMessage.timestamp,
+        ),
+      );
     }
 
-    notifier.finalizeStreaming();
+    ref.read(chatScreenProvider.notifier).finalizeStreaming();
   }
 
   void _refreshChatMessages() async {
     FocusScope.of(context).unfocus();
     if (currentChat != null) {
-      final updatedChat = await _chatStorageService.getChat(currentChat!.id);
-      if (updatedChat != null) {
+      final sessionRepository = await ref.read(
+        sessionRepositoryProvider.future,
+      );
+      final sessionId = currentChat!.toSessionId();
+      final state = await sessionRepository.loadSession(sessionId);
+      if (state != null) {
+        final updatedChat = sessionStateToChat(state);
         ref.read(chatListProvider.notifier).updateChat(updatedChat);
         ref.read(chatScreenProvider.notifier).hideSuggestions();
         if (updatedChat.messages.isEmpty) {

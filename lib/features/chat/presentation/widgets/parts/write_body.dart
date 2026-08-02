@@ -70,7 +70,7 @@ class WriteBody extends StatelessWidget {
           _buildHeader(theme, iconData, title),
           if (lines.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.only(left: 8, right: 8, bottom: 10),
               child: _WriteContent(lines: lines),
             ),
           if (diagnosticsByLine.isNotEmpty)

@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
-import 'package:chatorai/features/models/data/models/model_card_model.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,9 +11,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 final _logger = LogTags.settings;
 
 class ModelState {
-  final List<ChatModel> availableModels;
+  final List<ModelConfig> availableModels;
   final String selectedModelId;
-  final ChatModel? selectedModelObject;
+  final ModelConfig? selectedModelObject;
   final List<String> favoriteModelIds;
   final Map<String, int> usageCounts;
   final Map<String, int> lastUsed;
@@ -34,13 +33,13 @@ class ModelState {
     this.isLoading = true,
   });
 
-  List<ChatModel> get favoriteModels => availableModels
+  List<ModelConfig> get favoriteModels => availableModels
       .where((model) => favoriteModelIds.contains(model.id))
       .toList();
 
   /// Top-6 recently/frequently used models, merged by usage count (desc),
   /// then by last-used timestamp (desc). Only models still available are kept.
-  List<ChatModel> get recentModels {
+  List<ModelConfig> get recentModels {
     final scored = availableModels.where((m) {
       final count = usageCounts[m.id] ?? 0;
       final used = lastUsed[m.id] ?? 0;
@@ -60,9 +59,9 @@ class ModelState {
   }
 
   ModelState copyWith({
-    List<ChatModel>? availableModels,
+    List<ModelConfig>? availableModels,
     String? selectedModelId,
-    ChatModel? selectedModelObject,
+    ModelConfig? selectedModelObject,
     List<String>? favoriteModelIds,
     Map<String, int>? usageCounts,
     Map<String, int>? lastUsed,
@@ -201,9 +200,7 @@ class ModelNotifier extends Notifier<ModelState> {
         return visible;
       }
 
-      var availableModels = visibleModels(
-        catalog,
-      ).map(ChatModel.fromModelConfig).toList();
+      var availableModels = visibleModels(catalog).toList();
 
       /// Only fetch from API if:
       /// 1. Cache is completely empty, OR
@@ -218,13 +215,11 @@ class ModelNotifier extends Notifier<ModelState> {
             await catalog.discoverModels(prov.id, forceRefresh: forceRefresh);
           } catch (_) {}
         }
-        availableModels = visibleModels(
-          catalog,
-        ).map(ChatModel.fromModelConfig).toList();
+        availableModels = visibleModels(catalog).toList();
       }
 
       String selectedModelId = state.selectedModelId;
-      ChatModel? selectedModelObject;
+      ModelConfig? selectedModelObject;
 
       if (selectedModelId.isEmpty) {
         String? catalogSelectedId;
@@ -252,9 +247,9 @@ class ModelNotifier extends Notifier<ModelState> {
         } catch (_) {
           final allModels = catalog.getAllModelsRaw();
           try {
-            selectedModelObject = allModels
-                .map(ChatModel.fromModelConfig)
-                .firstWhere((model) => model.id == selectedModelId);
+            selectedModelObject = allModels.firstWhere(
+              (model) => model.id == selectedModelId,
+            );
           } catch (_) {
             selectedModelObject = null;
           }
@@ -291,7 +286,7 @@ class ModelNotifier extends Notifier<ModelState> {
   Future<void> setSelectedModel(String modelId) async {
     if (state.selectedModelId == modelId) return;
 
-    ChatModel? modelObject;
+    ModelConfig? modelObject;
     var selectedId = modelId;
 
     if (state.availableModels.isEmpty) {
@@ -319,7 +314,7 @@ class ModelNotifier extends Notifier<ModelState> {
     await _saveSettings();
   }
 
-  ChatModel? getModelById(String modelId) {
+  ModelConfig? getModelById(String modelId) {
     try {
       return state.availableModels.firstWhere((model) => model.id == modelId);
     } catch (e) {

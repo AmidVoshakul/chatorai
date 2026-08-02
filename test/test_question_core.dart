@@ -817,7 +817,7 @@ void main() {
       }
 
       // Clear rate limit history
-      service.clearRateLimitHistory();
+      service.clearSession();
 
       // Now questions should work without rate limit issues
       final fresh = service.askQuestion(

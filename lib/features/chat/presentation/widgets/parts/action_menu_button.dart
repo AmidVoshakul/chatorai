@@ -1,4 +1,4 @@
-import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
+import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/utils/message_utils.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +8,7 @@ class ActionMenuButton extends StatelessWidget {
   final String? content;
   final String chatId;
   final String messageId;
-  final ChatStorageService chatStorageService;
+  final SessionRepository sessionRepository;
   final VoidCallback? onEdit;
   final VoidCallback? onMessageDeleted;
   final VoidCallback? onMessageRegenerate;
@@ -23,7 +23,7 @@ class ActionMenuButton extends StatelessWidget {
     this.content,
     required this.chatId,
     required this.messageId,
-    required this.chatStorageService,
+    required this.sessionRepository,
     this.onEdit,
     this.onMessageDeleted,
     this.onMessageRegenerate,
@@ -162,7 +162,7 @@ class ActionMenuButton extends StatelessWidget {
         final deleted = await MessageUtils.deleteMessage(
           chatId: chatId,
           messageId: messageId,
-          chatStorageService: chatStorageService,
+          sessionRepository: sessionRepository,
           context: context,
         );
         if (deleted) onMessageDeleted?.call();
@@ -171,7 +171,7 @@ class ActionMenuButton extends StatelessWidget {
         await MessageUtils.regenerateMessage(
           chatId: chatId,
           messageId: messageId,
-          chatStorageService: chatStorageService,
+          sessionRepository: sessionRepository,
           onRegenerate: () => onMessageRegenerate?.call(),
         );
         break;

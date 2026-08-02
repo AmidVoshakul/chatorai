@@ -236,6 +236,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    listenForSkillChanges();
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context)!;
     final isMobile = InputWidgetBuilders.isMobileLayout(context);

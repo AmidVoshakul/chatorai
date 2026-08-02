@@ -1,8 +1,12 @@
 import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/core/llm/model_resolver.dart';
+import 'package:chatorai/core/session/events.dart';
+import 'package:chatorai/core/session/session_db_provider.dart'
+    show sessionRepositoryProvider;
+import 'package:chatorai/core/session/session_id.dart';
+import 'package:chatorai/features/chat/data/models/chat/message_converter.dart'
+    show sessionStateToChat;
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/chat/data/providers/chat_repository.dart';
-import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/services/chat_ai_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,10 +32,6 @@ final retryMessageProvider = StreamProvider.autoDispose<String>((ref) {
 // ===========================================================================
 // SERVICE PROVIDERS
 // ===========================================================================
-
-final chatStorageServiceProvider = Provider<ChatStorageService>((ref) {
-  return ChatStorageService();
-});
 
 final chatAiServiceProvider = Provider<ChatAiService>((ref) {
   final catalogAsync = ref.watch(catalogInitializationProvider);
@@ -60,11 +60,6 @@ final chatAiServiceProvider = Provider<ChatAiService>((ref) {
   return service!;
 });
 
-final chatRepositoryProvider = Provider<ChatRepository>((ref) {
-  final storageService = ref.watch(chatStorageServiceProvider);
-  return ChatRepository(storageService: storageService);
-});
-
 // ===========================================================================
 // CHAT LIST PROVIDER
 // ===========================================================================
@@ -85,17 +80,16 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
 
   @override
   AsyncValue<List<Chat>> build() {
-    final repository = ref.watch(chatRepositoryProvider);
     // Only start loading if we haven't loaded yet
     if (!_hasLoadedOnce) {
-      _loadFuture = _loadChats(repository);
+      _loadFuture = _loadChats();
       return const AsyncValue.loading();
     }
     // Return current state if already loaded
     return state;
   }
 
-  Future<void> _loadChats(ChatRepository repository) async {
+  Future<void> _loadChats() async {
     // If already loading, wait for the existing load to complete
     if (_isLoadingChats && _loadFuture != null) {
       await _loadFuture;
@@ -108,10 +102,41 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
 
     _isLoadingChats = true;
     try {
-      final chats = await repository.getChats();
+      final repository = await ref.read(sessionRepositoryProvider.future);
+      if (!ref.mounted) return;
+      // Clean up any orphan sessions (empty title + zero messages) that
+      // may have been created by the duplicate-session bug in prior runs.
+      final orphans = await repository.cleanupOrphanSessions();
+      if (!ref.mounted) return;
+      if (orphans > 0) {
+        LogTags.chatService.logWarning('Cleaned up $orphans orphan sessions');
+      }
+      final sessions = await repository.findAll();
+      if (!ref.mounted) return;
+      final primarySessions = sessions
+          .where((s) => s.parentId == null)
+          .toList();
+      final chats = <Chat>[];
+      for (final meta in primarySessions) {
+        final sessionId = SessionID.fromString(meta.id.value);
+        // Replay the full event stream so assistant messages carry their
+        // parts (tool calls, skill content, reasoning, …). `findAll()` only
+        // returns metadata and `getSessionMessages` reads the derived
+        // messages table, so without replay tool results would be missing
+        // from assistant bubbles after an app restart.
+        final state = await repository.loadSession(sessionId) ?? meta;
+        if (state.messages.isEmpty) {
+          // Brand-new session without any messages yet.
+          chats.add(sessionStateToChat(meta));
+        } else {
+          chats.add(sessionStateToChat(state));
+        }
+      }
+      chats.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
       state = AsyncValue.data(chats);
       _hasLoadedOnce = true;
     } catch (e, st) {
+      if (!ref.mounted) return;
       state = AsyncValue.error(e, st);
     } finally {
       _isLoadingChats = false;
@@ -123,20 +148,22 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
     if (forceReload) {
       _hasLoadedOnce = false;
     }
-    final repository = ref.read(chatRepositoryProvider);
-    await _loadChats(repository);
+    await _loadChats();
   }
 
   Future<Chat> createNewChat() async {
     // Wait for initial load to complete if not already loaded
     // This prevents race condition where new chat gets overwritten
     if (!_hasLoadedOnce) {
-      final repository = ref.read(chatRepositoryProvider);
-      await _loadChats(repository);
+      await _loadChats();
     }
 
-    final repository = ref.read(chatRepositoryProvider);
-    final newChat = await repository.createNewChat();
+    final repository = await ref.read(sessionRepositoryProvider.future);
+    final sessionState = await repository.createSession(
+      title: '',
+      agent: 'general',
+    );
+    final newChat = sessionStateToChat(sessionState);
 
     // Get current state AFTER load completes
     final currentState = state;
@@ -155,16 +182,24 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
   }
 
   Future<void> deleteChat(String chatId) async {
-    final repository = ref.read(chatRepositoryProvider);
-    await repository.deleteChat(chatId);
+    final repository = await ref.read(sessionRepositoryProvider.future);
+    final sessionId = SessionID.fromString(chatId);
+    await repository.deleteSession(sessionId);
     state.whenData((chats) {
       state = AsyncValue.data(chats.where((c) => c.id != chatId).toList());
     });
   }
 
   Future<void> renameChat(String chatId, String newTitle) async {
-    final repository = ref.read(chatRepositoryProvider);
-    await repository.renameChat(chatId, newTitle);
+    final repository = await ref.read(sessionRepositoryProvider.future);
+    final sessionId = SessionID.fromString(chatId);
+    await repository.appendEvent(
+      SessionTitleUpdated(
+        sessionId: sessionId,
+        title: newTitle,
+        timestamp: DateTime.now(),
+      ),
+    );
     state.whenData((chats) {
       state = AsyncValue.data(
         chats.map((c) {
@@ -180,26 +215,19 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
   void updateChat(Chat updatedChat) {
     final currentState = state;
 
-    // Handle case where state has value
     if (currentState.hasValue) {
       final chats = currentState.value!;
       final index = chats.indexWhere((c) => c.id == updatedChat.id);
-      if (index != -1) {
+      if (index >= 0) {
         final newChats = List<Chat>.from(chats);
         newChats[index] = updatedChat;
         state = AsyncValue.data(newChats);
-        // Persist to storage
-        ref.read(chatRepositoryProvider).updateChat(updatedChat);
+      } else {
+        state = AsyncValue.data([updatedChat, ...chats]);
       }
-    }
-    // Handle case where state is loading - store update for later
-    else if (currentState.isLoading) {
-      // Queue the update by creating a new state with the updated chat
-      // This ensures the update is not lost
+    } else if (currentState.isLoading) {
       state = AsyncValue.data([updatedChat]);
-    }
-    // Handle case where state has error - start fresh with updated chat
-    else if (currentState.hasError) {
+    } else if (currentState.hasError) {
       state = AsyncValue.data([updatedChat]);
     }
   }

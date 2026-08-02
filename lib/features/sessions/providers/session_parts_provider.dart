@@ -1,47 +1,88 @@
+import 'dart:async';
+
+import 'package:chatorai/core/session/event_bus.dart';
+import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/projector.dart' show projectEvent;
-import 'package:chatorai/core/session/session_id.dart';
-import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/core/session/session_db_provider.dart'
     show sessionRepositoryProvider;
+import 'package:chatorai/core/session/session_id.dart';
+import 'package:chatorai/core/session/session_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:math';
 
-/// Reactive stream of session parts (live streaming) for a session.
+/// Notifier that provides reactive [SessionState] for a session.
 ///
-/// This is the unified provider for both parent and child sessions.
-/// It watches the event store and projects events into SessionState,
-/// giving live streaming updates to all UI subscribers.
-final sessionPartsProvider = StreamProvider.family<SessionState, String>((
-  ref,
-  sessionIdRaw,
-) async* {
-  final repo = await ref.read(sessionRepositoryProvider.future);
-  final sid = SessionID.fromString(sessionIdRaw);
+/// Loads initial state from the SQLite event store, then subscribes to the
+/// in-memory [SessionEventBus] for live streaming updates.  This gives UI
+/// widgets real-time access to streaming parts without polling the database.
+///
+/// Use via:
+/// ```dart
+/// final asyncState = ref.watch(sessionPartsProvider(sessionId));
+/// final state = asyncState.value; // SessionState
+/// final parts = state.parts;      // List<AssistantContent>
+/// ```
+class SessionPartsNotifier extends StreamNotifier<SessionState> {
+  /// The raw session id string (e.g. `"ses_abc123"`).
+  final String sessionId;
 
-  var state = SessionState(
-    id: sid,
-    createdAt: DateTime.now(),
-    updatedAt: DateTime.now(),
-  );
-  var lastSeq = 0;
+  /// Creates a notifier for the given [sessionId].
+  SessionPartsNotifier(this.sessionId);
 
-  final allEvents = await repo.eventStore.getEvents(sid);
-  for (final event in allEvents) {
-    state = projectEvent(state, event);
-    lastSeq = max(lastSeq, event.sequence);
-  }
-  yield state;
+  @override
+  Stream<SessionState> build() async* {
+    // 1. Subscribe to EventBus BEFORE any await to avoid losing events
+    //    emitted during the async initialization below. A single-subscription
+    //    StreamController buffers events internally even without a listener,
+    //    so reasoning/text deltas emitted during DB loading are preserved.
+    final eventBus = ref.read(sessionEventBusProvider);
+    final sid = SessionID.fromString(sessionId);
 
-  // Cursor-based tail: only events appended after the initial snapshot are
-  // re-fetched/deserialized per emit, not the whole event history.
-  await for (final batch in repo.eventStore.streamEventsSince(sid, lastSeq)) {
-    final newEvents = batch.where((e) => e.sequence > lastSeq).toList();
-    if (newEvents.isEmpty) continue;
+    final eventController = StreamController<SessionEvent>();
+    final busSub = eventBus.forSession(sid).listen(eventController.add);
 
-    for (final event in newEvents) {
-      state = projectEvent(state, event);
-      lastSeq = max(lastSeq, event.sequence);
+    try {
+      // 2. Now it's safe to do async initialization — any events emitted
+      //    during these awaits are buffered in eventController.
+      final repo = await ref.read(sessionRepositoryProvider.future);
+
+      var state = SessionState(
+        id: sid,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      final allEvents = await repo.eventStore.getEvents(sid);
+      for (final event in allEvents) {
+        state = projectEvent(state, event);
+      }
+
+      // 3. Yield the initial state (reconstructed from the event store).
+      yield state;
+
+      // 4. Process live events — drains any events that were buffered
+      //    during step 2, then handles all subsequent events in real time.
+      await for (final event in eventController.stream) {
+        state = projectEvent(state, event);
+        yield state;
+      }
+    } finally {
+      busSub.cancel();
+      await eventController.close();
     }
-    yield state;
   }
-});
+}
+
+/// Unified streaming provider for both parent and child sessions.
+///
+/// Yields [AsyncValue<SessionState>] — watch via:
+/// ```dart
+/// ref.watch(sessionPartsProvider(sessionId))
+/// ```
+///
+/// For synchronous access to the current notifier (and its internal state):
+/// ```dart
+/// ref.read(sessionPartsProvider(sessionId).notifier)
+/// ```
+final sessionPartsProvider =
+    StreamNotifierProvider.family<SessionPartsNotifier, SessionState, String>(
+      (sessionId) => SessionPartsNotifier(sessionId),
+    );

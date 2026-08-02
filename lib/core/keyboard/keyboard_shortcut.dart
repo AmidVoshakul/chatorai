@@ -27,8 +27,16 @@ class KeyActivator {
 
   const KeyActivator.arrowUp() : this._(key: LogicalKeyboardKey.arrowUp);
 
+  const KeyActivator.home() : this._(key: LogicalKeyboardKey.home);
+
+  const KeyActivator.end() : this._(key: LogicalKeyboardKey.end);
+
   const KeyActivator.ctrlTab()
     : this._(key: LogicalKeyboardKey.tab, ctrl: true);
+
+  /// Generic `Ctrl+<key>` combo, e.g. `KeyActivator.ctrlKey(LogicalKeyboardKey.keyB)`.
+  const KeyActivator.ctrlKey(LogicalKeyboardKey key)
+    : this._(key: key, ctrl: true);
 
   bool matches(KeyEvent event) {
     if (event is! KeyDownEvent) return false;

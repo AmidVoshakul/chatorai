@@ -38,7 +38,7 @@ class TruncationOptions {
 ///    when truncation occurs, so it can be inspected later with Read.
 ///  - Periodic cleanup of files older than 7 days.
 class TruncationService {
-  // Legacy midpoint cut limit (character count, used by truncate()).
+  // Legacy midpoint cut limit still used by built-in tools.
   static const _maxOutputChars = 50000;
 
   // New structured truncation defaults (UTF-8 byte count, used by compute()).
@@ -175,7 +175,7 @@ class TruncationService {
     return result;
   }
 
-  /// Midpoint cut with line-count sentinel (legacy).
+  /// Midpoint cut with line-count sentinel (legacy compatibility).
   ///
   /// Returns original text unchanged when it fits within [_maxOutputChars].
   String truncate(String output) {

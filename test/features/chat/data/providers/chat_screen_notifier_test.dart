@@ -9,14 +9,12 @@ import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
         AssistantTask;
 import 'package:chatorai/features/chat/data/models/chat/message_part.dart'
     show ToolState;
-import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart'
+import 'package:chatorai/features/chat/data/models/chat/message_converter.dart'
     show assistantContentToPartMaps;
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart'
-    show QuestionOption;
 import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
 
 void main() {
-  group('ChatScreenNotifier startStreaming / finalizeStreaming', () {
+  group('ChatScreenNotifier streaming session id', () {
     late ProviderContainer container;
 
     setUp(() {
@@ -25,269 +23,192 @@ void main() {
 
     tearDown(() => container.dispose());
 
-    test('initial state is empty and not streaming', () {
+    test('initial state is not streaming and has no session id', () {
       final state = container.read(chatScreenProvider);
       expect(state.isStreaming, isFalse);
-      expect(state.streamingParts, isEmpty);
       expect(state.streamingSessionId, isNull);
     });
 
-    test('startStreaming initializes session and clears parts', () {
+    test('startStreaming sets isStreaming and session id', () {
       container.read(chatScreenProvider.notifier).startStreaming('ses_abc');
       final state = container.read(chatScreenProvider);
       expect(state.isStreaming, isTrue);
       expect(state.streamingSessionId, 'ses_abc');
-      expect(state.streamingParts, isEmpty);
     });
 
-    test('finalizeStreaming sets ended on open AssistantReasoning', () {
+    test('finalizeStreaming clears streaming state', () {
       final n = container.read(chatScreenProvider.notifier);
       n.startStreaming('ses_abc');
-      n.onReasoning('p1', 'm1', 'ses_abc', 'thinking step 1');
-      n.onReasoning('p1', 'm1', 'ses_abc', 'step 2');
-
-      final before = container
-          .read(chatScreenProvider)
-          .streamingParts
-          .whereType<AssistantReasoning>()
-          .first;
-      expect(
-        before.ended,
-        isNull,
-        reason: 'still streaming -> ended must be null',
-      );
-
       n.finalizeStreaming();
 
-      final after = container.read(chatScreenProvider);
-      expect(after.isStreaming, isFalse);
-      expect(after.streamingSessionId, isNull);
-      expect(
-        after.streamingParts,
-        isEmpty,
-        reason: 'finalizeStreaming clears all parts to const []',
-      );
-      // The reasoning that was open BEFORE finalize is gone, but in a real flow
-      // the caller serializes parts BEFORE clearing (see Bug fixes 1.1 + 1.2).
-      // We assert the cleanup behavior here in isolation.
+      final state = container.read(chatScreenProvider);
+      expect(state.isStreaming, isFalse);
+      expect(state.streamingSessionId, isNull);
     });
-
-    test(
-      'finalizeStreaming with already-closed parts is a no-op for parts list',
-      () {
-        final n = container.read(chatScreenProvider.notifier);
-        n.startStreaming('ses_abc');
-        // Use onToolCall which closes open parts via _closeOpenStreamingParts
-        n.onReasoning('p1', 'm1', 'ses_abc', 'r1');
-        n.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'shell', {'cmd': 'ls'});
-
-        n.finalizeStreaming();
-        final state = container.read(chatScreenProvider);
-        expect(state.streamingParts, isEmpty);
-      },
-    );
   });
 
-  group('ChatScreenNotifier natural block separation (Bug 6 fix)', () {
+  group('ChatScreenState — screen-level fields', () {
     late ProviderContainer container;
-    late ChatScreenNotifier notifier;
 
     setUp(() {
       container = ProviderContainer();
-      notifier = container.read(chatScreenProvider.notifier);
-      notifier.startStreaming('ses_abc');
     });
 
     tearDown(() => container.dispose());
 
-    test('two consecutive onReasoning calls merge into ONE part', () {
-      notifier.onReasoning('p1', 'm1', 'ses_abc', 'Hello ');
-      notifier.onReasoning('p1', 'm1', 'ses_abc', 'world');
-
-      final reasonings = container
-          .read(chatScreenProvider)
-          .streamingParts
-          .whereType<AssistantReasoning>()
-          .toList();
-      expect(
-        reasonings.length,
-        1,
-        reason: 'consecutive reasoning deltas must be one block',
-      );
-      expect(reasonings.single.text, 'Hello world');
+    test('initial state has default values', () {
+      final state = container.read(chatScreenProvider);
+      expect(state.isStreaming, false);
+      expect(state.isSuggestionsLoading, false);
+      expect(state.showSuggestions, false);
+      expect(state.showWelcomeSuggestions, false);
+      expect(state.continuationSuggestions, isEmpty);
+      expect(state.welcomeSuggestions, isEmpty);
+      expect(state.isSidebarCollapsed, false);
+      expect(state.isNavigatorVisible, false);
+      expect(state.navigatorHeadings, isEmpty);
+      expect(state.activeHeadingIndex, -1);
+      expect(state.isRetrying, false);
+      expect(state.retryProgress, 1.0);
+      expect(state.retryMessage, isNull);
+      expect(state.retryAttempt, 0);
     });
 
-    test('onToolCall closes open reasoning before adding a new tool', () {
-      notifier.onReasoning('p1', 'm1', 'ses_abc', 'before tool');
-      notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'shell', {
-        'cmd': 'ls',
+    test('setStreaming updates streaming state', () {
+      container.read(chatScreenProvider.notifier).setStreaming(true);
+      final state = container.read(chatScreenProvider);
+      expect(state.isStreaming, true);
+    });
+
+    test('streaming state can be toggled off', () {
+      container.read(chatScreenProvider.notifier).setStreaming(true);
+      container.read(chatScreenProvider.notifier).setStreaming(false);
+      final state = container.read(chatScreenProvider);
+      expect(state.isStreaming, false);
+    });
+
+    group('Suggestions', () {
+      test('setSuggestionsLoading updates loading state', () {
+        container.read(chatScreenProvider.notifier).setSuggestionsLoading(true);
+        final state = container.read(chatScreenProvider);
+        expect(state.isSuggestionsLoading, true);
       });
 
-      final parts = container.read(chatScreenProvider).streamingParts;
-      final reasonings = parts.whereType<AssistantReasoning>().toList();
-      final tools = parts.whereType<AssistantTool>().toList();
-
-      expect(tools.length, 1, reason: 'tool added');
-      expect(reasonings.length, 1);
-      expect(
-        reasonings.single.ended,
-        isNotNull,
-        reason: 'reasoning must be CLOSED when tool starts — no append',
-      );
-    });
-
-    test(
-      'reasoning AFTER tool creates a NEW reasoning block (Bug 6 regression)',
-      () {
-        notifier.onReasoning('p1', 'm1', 'ses_abc', 'reasoning 1');
-        notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'shell', {
-          'cmd': 'ls',
-        });
-        notifier.onReasoning('p2', 'm1', 'ses_abc', 'reasoning 2');
-
-        final reasonings = container
-            .read(chatScreenProvider)
-            .streamingParts
-            .whereType<AssistantReasoning>()
-            .toList();
-        expect(
-          reasonings.length,
-          2,
-          reason:
-              'new reasoning after tool must be a SEPARATE widget, not append',
+      test('showContinuationSuggestions shows suggestions with content', () {
+        container.read(chatScreenProvider.notifier).showContinuationSuggestions(
+          ['suggestion 1', 'suggestion 2'],
         );
-        expect(reasonings[0].text, 'reasoning 1');
-        expect(reasonings[0].ended, isNotNull);
-        expect(reasonings[1].text, 'reasoning 2');
-        expect(reasonings[1].ended, isNull, reason: 'still streaming');
-      },
-    );
+        final state = container.read(chatScreenProvider);
+        expect(state.showSuggestions, true);
+        expect(state.continuationSuggestions, ['suggestion 1', 'suggestion 2']);
+      });
 
-    test('text AFTER tool creates a NEW text block', () {
-      notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'shell', {});
-
-      notifier.onChunk('txt1', 'm1', 'ses_abc', 'first answer ');
-      notifier.onChunk('txt1', 'm1', 'ses_abc', 'continues');
-
-      notifier.onToolCall('tc2', 'tool_2', 'm1', 'ses_abc', 'shell', {});
-
-      notifier.onChunk('txt2', 'm1', 'ses_abc', 'second answer');
-
-      final texts = container
-          .read(chatScreenProvider)
-          .streamingParts
-          .whereType<AssistantText>()
-          .toList();
-      expect(
-        texts.length,
-        2,
-        reason: 'text after tool must START a new widget, not append',
-      );
-      expect(texts[0].text, 'first answer continues');
-      expect(texts[1].text, 'second answer');
-    });
-
-    test(
-      'reasoning -> text -> reasoning -> tools -> reasoning -> text natural order',
-      () {
-        notifier.onReasoning('r1', 'm1', 'ses_abc', 'thought 1');
-        notifier.onChunk('t1', 'm1', 'ses_abc', 'answer 1');
-        notifier.onReasoning('r2', 'm1', 'ses_abc', 'thought 2');
-        notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'shell', {});
-        notifier.onToolCall('tc2', 'tool_2', 'm1', 'ses_abc', 'shell', {});
-        notifier.onToolCall('tc3', 'tool_3', 'm1', 'ses_abc', 'shell', {});
-        notifier.onReasoning('r3', 'm1', 'ses_abc', 'thought 3');
-        notifier.onChunk('t2', 'm1', 'ses_abc', 'answer 2');
-
-        final parts = container.read(chatScreenProvider).streamingParts;
-        final types = parts.map((p) => p.runtimeType.toString()).toList();
-
-        expect(
-          types,
-          [
-            'AssistantReasoning',
-            'AssistantText',
-            'AssistantTool',
-            'AssistantTool',
-            'AssistantTool',
-            'AssistantReasoning',
-            'AssistantText',
-          ],
-          reason:
-              'must follow natural provider event order, no merging across tool/question/task',
+      test('hideSuggestions hides suggestions', () {
+        container.read(chatScreenProvider.notifier).showContinuationSuggestions(
+          ['test'],
         );
-      },
-    );
+        container.read(chatScreenProvider.notifier).hideSuggestions();
+        final state = container.read(chatScreenProvider);
+        expect(state.showSuggestions, false);
+        expect(state.continuationSuggestions, isEmpty);
+      });
 
-    test('onTaskStart closes open text/reasoning', () {
-      notifier.onReasoning('r1', 'm1', 'ses_abc', 'pre-task reasoning');
-      notifier.onTaskStart('task_1', 'm1', 'ses_abc', 'explore', 'Explore');
+      test('showWelcomeSuggestions shows welcome suggestions', () {
+        container.read(chatScreenProvider.notifier).showWelcomeSuggestions([
+          'welcome 1',
+        ]);
+        final state = container.read(chatScreenProvider);
+        expect(state.showWelcomeSuggestions, true);
+        expect(state.welcomeSuggestions, ['welcome 1']);
+        expect(state.showSuggestions, false);
+      });
 
-      final parts = container.read(chatScreenProvider).streamingParts;
-      final reasonings = parts.whereType<AssistantReasoning>().toList();
-      final tasks = parts.whereType<AssistantTask>().toList();
+      test('hideWelcomeSuggestions hides welcome suggestions', () {
+        container.read(chatScreenProvider.notifier).showWelcomeSuggestions([
+          'test',
+        ]);
+        container.read(chatScreenProvider.notifier).hideWelcomeSuggestions();
+        final state = container.read(chatScreenProvider);
+        expect(state.showWelcomeSuggestions, false);
+        expect(state.welcomeSuggestions, isEmpty);
+      });
 
-      expect(tasks.length, 1);
-      expect(reasonings.single.ended, isNotNull);
+      test('hideAllSuggestions hides all suggestions', () {
+        container.read(chatScreenProvider.notifier).showContinuationSuggestions(
+          ['a'],
+        );
+        container.read(chatScreenProvider.notifier).showWelcomeSuggestions([
+          'b',
+        ]);
+        container.read(chatScreenProvider.notifier).hideAllSuggestions();
+        final state = container.read(chatScreenProvider);
+        expect(state.showSuggestions, false);
+        expect(state.showWelcomeSuggestions, false);
+        expect(state.continuationSuggestions, isEmpty);
+        expect(state.welcomeSuggestions, isEmpty);
+      });
     });
 
-    test('onTaskStart dedup — duplicate partId is ignored', () {
-      notifier.onTaskStart('task_1', 'm1', 'ses_abc', 'explore', 'Explore');
-      notifier.onTaskStart('task_1', 'm1', 'ses_abc', 'explore', 'Explore');
+    group('Sidebar', () {
+      test('toggleSidebar toggles collapsed state', () {
+        container.read(chatScreenProvider.notifier).toggleSidebar();
+        expect(container.read(chatScreenProvider).isSidebarCollapsed, true);
+        container.read(chatScreenProvider.notifier).toggleSidebar();
+        expect(container.read(chatScreenProvider).isSidebarCollapsed, false);
+      });
 
-      final parts = container.read(chatScreenProvider).streamingParts;
-      final tasks = parts.whereType<AssistantTask>().toList();
-
-      expect(
-        tasks.length,
-        1,
-        reason: 'calling onTaskStart twice with same partId must not duplicate',
-      );
+      test('setSidebarCollapsed sets state idempotently', () {
+        container.read(chatScreenProvider.notifier).setSidebarCollapsed(true);
+        expect(container.read(chatScreenProvider).isSidebarCollapsed, true);
+        // Calling again with same value does not error
+        container.read(chatScreenProvider.notifier).setSidebarCollapsed(true);
+        expect(container.read(chatScreenProvider).isSidebarCollapsed, true);
+      });
     });
 
-    test('onQuestion closes open text/reasoning', () {
-      notifier.onReasoning('r1', 'm1', 'ses_abc', 'pre-question reasoning');
-      notifier.onReasoning('r1', 'm1', 'ses_abc', ' more');
-      notifier.onQuestion('q1', 'm1', 'ses_abc', 'Pick one', const [
-        QuestionOption(label: 'A'),
-        QuestionOption(label: 'B'),
-      ], false);
-
-      final reasonings = container
-          .read(chatScreenProvider)
-          .streamingParts
-          .whereType<AssistantReasoning>()
-          .toList();
-      expect(reasonings.length, 1);
-      expect(
-        reasonings.single.ended,
-        isNotNull,
-        reason: 'reasoning must close before question is presented',
-      );
+    group('Navigator', () {
+      test('toggleNavigator toggles navigator visibility', () {
+        container.read(chatScreenProvider.notifier).toggleNavigator();
+        expect(container.read(chatScreenProvider).isNavigatorVisible, true);
+        container.read(chatScreenProvider.notifier).toggleNavigator();
+        expect(container.read(chatScreenProvider).isNavigatorVisible, false);
+      });
     });
 
-    test('onTodo closes open text/reasoning', () {
-      notifier.onReasoning('r1', 'm1', 'ses_abc', 'pre-todo');
-      notifier.onChunk('t1', 'm1', 'ses_abc', 'pre-todo text');
-      notifier.onTodo('todo1', 'm1', 'ses_abc', const []);
+    group('Retry info', () {
+      test('setRetryInfo updates retry state', () {
+        container
+            .read(chatScreenProvider.notifier)
+            .setRetryInfo(
+              isRetrying: true,
+              retryMessage: 'Error occurred',
+              retryAttempt: 2,
+            );
+        final state = container.read(chatScreenProvider);
+        expect(state.isRetrying, true);
+        expect(state.retryMessage, 'Error occurred');
+        expect(state.retryAttempt, 2);
+      });
 
-      final parts = container.read(chatScreenProvider).streamingParts;
-      expect(parts.whereType<AssistantReasoning>().single.ended, isNotNull);
+      test('setRetryInfo resets retry attempt and clears isRetrying', () {
+        container
+            .read(chatScreenProvider.notifier)
+            .setRetryInfo(
+              isRetrying: true,
+              retryMessage: 'Error',
+              retryAttempt: 1,
+            );
+        container
+            .read(chatScreenProvider.notifier)
+            .setRetryInfo(isRetrying: false, retryAttempt: 0);
+        final state = container.read(chatScreenProvider);
+        expect(state.isRetrying, false);
+        expect(state.retryAttempt, 0);
+      });
     });
   });
 
-  group('ChatScreenNotifier assistantContentToPartMaps — JSON schema fix', () {
-    late ProviderContainer container;
-    late ChatScreenNotifier notifier;
-
-    setUp(() {
-      container = ProviderContainer();
-      notifier = container.read(chatScreenProvider.notifier);
-      notifier.startStreaming('ses_abc');
-    });
-
-    tearDown(() => container.dispose());
-
+  group('assistantContentToPartMaps — JSON schema', () {
     test('reasoning serializes with content (not text) for round-trip', () {
       final closedReasoning = AssistantReasoning(
         id: 'p1',
@@ -370,147 +291,38 @@ void main() {
     });
 
     test('final message round-trip preserves all part types', () {
-      // Simulate a full natural flow ending in saved message
-      notifier.onReasoning('r1', 'm1', 'ses_abc', 'thought');
-      notifier.onChunk('t1', 'm1', 'ses_abc', 'answer');
-      notifier.onToolCall('tc1', 'tool_1', 'm1', 'ses_abc', 'shell', {
-        'cmd': 'ls',
-      });
+      final parts = <AssistantContent>[
+        AssistantReasoning(
+          id: 'r1',
+          sessionId: 'ses_abc',
+          messageId: 'm1',
+          text: 'thought',
+          started: DateTime.now().subtract(const Duration(seconds: 3)),
+          ended: DateTime.now(),
+        ),
+        AssistantText(
+          id: 't1',
+          sessionId: 'ses_abc',
+          messageId: 'm1',
+          text: 'answer',
+        ),
+        AssistantTool(
+          id: 'tc1',
+          sessionId: 'ses_abc',
+          messageId: 'm1',
+          callId: 'tc_1',
+          tool: 'shell',
+          state: ToolState.completed,
+          input: {'cmd': 'ls'},
+          output: 'file.txt',
+        ),
+      ];
 
-      // Capture parts BEFORE finalizeStreaming cleared them (Bug fix: should
-      // already have reasoning/text closed due to onToolCall closing logic)
-      final parts = container.read(chatScreenProvider).streamingParts;
-
-      final reasoningsBefore = parts.whereType<AssistantReasoning>().toList();
-      expect(reasoningsBefore.length, 1);
-      expect(reasoningsBefore.first.ended, isNotNull);
-
-      final toolsBefore = parts.whereType<AssistantTool>().toList();
-      expect(toolsBefore.length, 1);
-      expect(toolsBefore.first.state, ToolState.running);
-
-      // Now serialize and verify schema
       final json = assistantContentToPartMaps(parts);
       expect(json.length, 3, reason: '3 parts: reasoning, text, tool');
       expect(json[0]['type'], 'reasoning');
       expect(json[1]['type'], 'text');
       expect(json[2]['type'], 'tool_result');
-    });
-  });
-
-  group('ChatScreenSessionId — Bug 5 fix (child session isolation)', () {
-    late ProviderContainer container;
-
-    setUp(() => container = ProviderContainer());
-    tearDown(() => container.dispose());
-
-    test(
-      'streamingSessionId is set on startStreaming and cleared on finalize',
-      () {
-        final n = container.read(chatScreenProvider.notifier);
-        n.startStreaming('ses_parent');
-        expect(
-          container.read(chatScreenProvider).streamingSessionId,
-          'ses_parent',
-        );
-
-        n.finalizeStreaming();
-        expect(container.read(chatScreenProvider).streamingSessionId, isNull);
-      },
-    );
-
-    test('two sessions cannot share streaming state — starting a new session '
-        'must produce its own sessionId', () {
-      final n = container.read(chatScreenProvider.notifier);
-      n.startStreaming('ses_parent');
-      n.onReasoning('r1', 'm1', 'ses_parent', 'parent thought');
-
-      // Simulate: user opens child session via SessionContextWindow — but
-      // the global chatScreenProvider shouldn't leak parent streaming data
-      // into the child view. The widget-side fix (Phase 3) makes child
-      // sessions skip watching this provider entirely.
-      // Here we just verify the provider has a single source-of-truth sessionId.
-      expect(
-        container.read(chatScreenProvider).streamingSessionId,
-        'ses_parent',
-      );
-    });
-  });
-
-  group('ChatScreenNotifier task routing (concurrent tasks)', () {
-    late ProviderContainer container;
-
-    setUp(() => container = ProviderContainer());
-    tearDown(() => container.dispose());
-
-    test(
-      'onTaskSessionIdResolved fills taskSessionId for two concurrent tasks',
-      () {
-        final n = container.read(chatScreenProvider.notifier);
-        n.startStreaming('ses_parent');
-        n.onTaskStart('part_a', 'm1', 'ses_parent', 'task A', 'General');
-        n.onTaskStart('part_b', 'm1', 'ses_parent', 'task B', 'General');
-
-        // Child sessions resolve independently (map-routed, not single var).
-        n.onTaskSessionIdResolved('part_a', 'child_a');
-        n.onTaskSessionIdResolved('part_b', 'child_b');
-
-        final parts = container
-            .read(chatScreenProvider)
-            .streamingParts
-            .whereType<AssistantTask>();
-        final a = parts.firstWhere((p) => p.id == 'part_a');
-        final b = parts.firstWhere((p) => p.id == 'part_b');
-        expect(a.taskSessionId, 'child_a');
-        expect(b.taskSessionId, 'child_b');
-      },
-    );
-
-    test('onTaskSessionIdResolved is idempotent and overwrites stale id', () {
-      final n = container.read(chatScreenProvider.notifier);
-      n.startStreaming('ses_parent');
-      n.onTaskStart('part_a', 'm1', 'ses_parent', 'task A', 'General');
-      n.onTaskSessionIdResolved('part_a', 'stale_child');
-      n.onTaskSessionIdResolved('part_a', 'real_child');
-
-      final a = container
-          .read(chatScreenProvider)
-          .streamingParts
-          .whereType<AssistantTask>()
-          .firstWhere((p) => p.id == 'part_a');
-      expect(a.taskSessionId, 'real_child');
-    });
-
-    test('closeAllRunningTasks marks running task parts completed', () {
-      final n = container.read(chatScreenProvider.notifier);
-      n.startStreaming('ses_parent');
-      n.onTaskStart('part_a', 'm1', 'ses_parent', 'task A', 'General');
-      n.onTaskStart('part_b', 'm1', 'ses_parent', 'task B', 'General');
-
-      n.closeAllRunningTasks();
-
-      final parts = container
-          .read(chatScreenProvider)
-          .streamingParts
-          .whereType<AssistantTask>();
-      expect(parts.every((p) => p.state == ToolState.completed), isTrue);
-    });
-
-    test('closeAllRunningTasks leaves non-running parts untouched', () {
-      final n = container.read(chatScreenProvider.notifier);
-      n.startStreaming('ses_parent');
-      n.onTaskStart('part_a', 'm1', 'ses_parent', 'task A', 'General');
-      n.onTaskEnd('part_a');
-
-      n.closeAllRunningTasks();
-
-      final a = container
-          .read(chatScreenProvider)
-          .streamingParts
-          .whereType<AssistantTask>()
-          .firstWhere((p) => p.id == 'part_a');
-      expect(a.state, ToolState.completed);
-      expect(a.endedAt, isNotNull);
     });
   });
 }

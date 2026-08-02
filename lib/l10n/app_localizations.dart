@@ -3945,6 +3945,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restore failed: {error}'**
   String restoreFailed(String error);
+
+  /// No description provided for @compactingIndicator.
+  ///
+  /// In en, this message translates to:
+  /// **'Compacting...'**
+  String get compactingIndicator;
 }
 
 class _AppLocalizationsDelegate

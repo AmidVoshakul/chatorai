@@ -10,19 +10,30 @@ import 'package:flutter_test/flutter_test.dart';
 /// Fake that records installs and reflects them in its state so the
 /// Marketplace "Installed" badge can be asserted.
 class _FakeMarketNotifier extends McpManagementNotifier {
-  final Map<String, McpServerConfig> _servers = {};
+  final Map<String, McpServerConfig> _globalServers = {};
+  final Map<String, McpServerConfig> _projectServers = {};
   String? lastAddedName;
   McpServerConfig? lastAddedConfig;
 
   @override
-  Future<McpManagementState> build() async =>
-      McpManagementState(servers: Map.from(_servers));
+  Future<McpManagementState> build() async => McpManagementState(
+    globalServers: Map.from(_globalServers),
+    projectServers: Map.from(_projectServers),
+  );
 
   @override
-  Future<void> addServer(String name, McpServerConfig config) async {
+  Future<void> addServer(
+    String name,
+    McpServerConfig config, {
+    McpScope scope = McpScope.global,
+  }) async {
     lastAddedName = name;
     lastAddedConfig = config;
-    _servers[name] = config;
+    if (scope == McpScope.project) {
+      _projectServers[name] = config;
+    } else {
+      _globalServers[name] = config;
+    }
   }
 }
 
@@ -85,7 +96,9 @@ void main() {
       tester,
     ) async {
       await pumpMarketplace(tester);
-      final installButton = find.widgetWithText(FilledButton, 'Install').first;
+      final installButton = find
+          .widgetWithText(OutlinedButton, 'Install')
+          .first;
       await tester.tap(installButton);
       // Allow the install + snackbar to mount; the success snackbar uses a
       // 6s timer, so flush it before the test tears down.

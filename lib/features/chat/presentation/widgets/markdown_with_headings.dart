@@ -103,7 +103,7 @@ class HeadingBuilder extends MarkdownElementBuilder {
     );
 
     return Container(
-      key: ValueKey('heading_${messageId}_${level}_$text'),
+      key: UniqueKey(),
       padding: paddingForLevel(level),
       child: Text(text, style: preferredStyle),
     );

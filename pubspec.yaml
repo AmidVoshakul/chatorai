@@ -35,10 +35,10 @@ dependencies:
   permission_handler: ^12.0.1
   package_info_plus: ^9.0.0
   ai_sdk_dart: ^1.2.0
-  ai_sdk_openai: ^1.1.0
-  ai_sdk_provider: ^1.1.0
-  ai_sdk_anthropic: ^1.1.0
-  ai_sdk_google: ^1.1.0
+  ai_sdk_openai_compatible: ^1.2.0
+  ai_sdk_provider: ^1.2.0
+  ai_sdk_anthropic: ^1.2.0
+  ai_sdk_google: ^1.2.0
   retry: ^3.1.2
   flutter_secure_storage: ^10.3.1
   html: ^0.15.6
@@ -92,6 +92,7 @@ flutter:
     - assets/skills/agents-md/
     - assets/skills/architect-review/
     - assets/skills/backend-architect/
+    - assets/skills/brainstorming/
     - assets/skills/clean-code/
     - assets/skills/code-reviewer/
     - assets/skills/commit/
@@ -157,12 +158,10 @@ flutter:
     - assets/skills/pentest-checklist/
     - assets/skills/semgrep-rule-creator/
     - assets/skills/secrets-management/
-    - assets/skills/readme/
     - assets/skills/copy-editing/
     - assets/skills/blog-writing-guide/
     - assets/skills/documentation-templates/
     - assets/skills/docs-architect/
-    - assets/skills/design-md/
     - assets/skills/scientific-writing/
     - assets/skills/citation-management/
     - assets/skills/copywriting/

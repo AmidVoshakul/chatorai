@@ -664,5 +664,6 @@
   "toolResultRestoredSnackbar": "Files restored to before-edit state",
   "toolResultOriginalTitle": "Original content before edit",
   "restoreFailed": "Restore failed: {error}",
-  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } }
+  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
+  "compactingIndicator": "Compacting..."
 }

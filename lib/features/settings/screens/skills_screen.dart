@@ -264,6 +264,13 @@ class _SkillsScreenState extends ConsumerState<SkillsScreen> {
       ),
     ];
 
+    // Collapse to icon-only when the bar is too narrow to show every label
+    // comfortably (roughly < 120px per tab). Computed via MediaQuery instead
+    // of a LayoutBuilder: nesting a TabBar inside a LayoutBuilder inside
+    // AppBar.bottom triggers a Flutter framework error
+    // ("A _RenderLayoutBuilder was mutated in performLayout").
+    final iconOnly = MediaQuery.sizeOf(context).width < tabSpecs.length * 120;
+
     final views = <Widget>[
       _ScopeView(
         scope: SkillsScope.global,
@@ -308,22 +315,15 @@ class _SkillsScreenState extends ConsumerState<SkillsScreen> {
                   bottom: BorderSide(color: hairlineColor(isDark)),
                 ),
               ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  // Collapse to icon-only when the bar is too narrow to show
-                  // every label comfortably (roughly < 120px per tab).
-                  final iconOnly = constraints.maxWidth < tabSpecs.length * 120;
-                  return TabBar(
-                    indicatorColor: ChatoraiColors.orange,
-                    dividerColor: Colors.transparent,
-                    labelColor: titleColor(isDark),
-                    unselectedLabelColor: subtleColor(isDark),
-                    tabs: [
-                      for (final spec in tabSpecs)
-                        _ScopeTab(spec: spec, iconOnly: iconOnly),
-                    ],
-                  );
-                },
+              child: TabBar(
+                indicatorColor: ChatoraiColors.orange,
+                dividerColor: Colors.transparent,
+                labelColor: titleColor(isDark),
+                unselectedLabelColor: subtleColor(isDark),
+                tabs: [
+                  for (final spec in tabSpecs)
+                    _ScopeTab(spec: spec, iconOnly: iconOnly),
+                ],
               ),
             ),
           ),

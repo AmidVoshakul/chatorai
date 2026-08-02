@@ -2030,4 +2030,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String restoreFailed(String error) {
     return '復元に失敗しました：$error';
   }
+
+  @override
+  String get compactingIndicator => '圧縮中...';
 }

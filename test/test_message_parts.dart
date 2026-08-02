@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_message_export.dart';
+import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 
@@ -168,91 +169,6 @@ void main() {
       final restored = ReasoningPart.fromJson(original.toJson());
       expect(restored.content, original.content);
       expect(restored.title, original.title);
-    });
-  });
-
-  // ── ToolCallPart ───────────────────────────────────────────
-
-  group('ToolCallPart', () {
-    test('creates with required fields', () {
-      final created = DateTime(2025, 1, 1, 12, 0);
-      final part = ToolCallPart(
-        toolCallId: 'call-123',
-        toolName: 'shell',
-        input: const {'command': 'echo hello'},
-        createdAt: created,
-      );
-      expect(part.toolCallId, 'call-123');
-      expect(part.toolName, 'shell');
-      expect(part.input, {'command': 'echo hello'});
-      expect(part.createdAt, created);
-    });
-
-    test('copyWith updates toolName', () {
-      final created = DateTime(2025, 1, 1);
-      final part = ToolCallPart(
-        toolCallId: 'id',
-        toolName: 'shell',
-        input: const {},
-        createdAt: created,
-      );
-      final updated = part.copyWith(toolName: 'read');
-      expect(updated.toolName, 'read');
-      expect(updated.toolCallId, 'id'); // unchanged
-    });
-
-    test('toJson serializes createdAt as ISO8601', () {
-      final created = DateTime(2025, 6, 15, 10, 30);
-      final part = ToolCallPart(
-        toolCallId: 'id',
-        toolName: 'grep',
-        input: const {'pattern': 'test'},
-        createdAt: created,
-      );
-      final json = part.toJson();
-      expect(json['type'], 'tool_call');
-      expect(json['toolCallId'], 'id');
-      expect(json['toolName'], 'grep');
-      expect(json['createdAt'], created.toIso8601String());
-    });
-
-    test('fromJson parses ISO8601 createdAt', () {
-      final created = DateTime(2025, 6, 15, 10, 30);
-      final json = {
-        'type': 'tool_call',
-        'toolCallId': 'id',
-        'toolName': 'grep',
-        'input': {'pattern': 'test'},
-        'createdAt': created.toIso8601String(),
-      };
-      final part = ToolCallPart.fromJson(json);
-      expect(part.createdAt, created);
-    });
-
-    test('fromJson defaults input to empty map', () {
-      final json = {
-        'type': 'tool_call',
-        'toolCallId': 'id',
-        'toolName': 'read',
-        'createdAt': DateTime.now().toIso8601String(),
-      };
-      final part = ToolCallPart.fromJson(json);
-      expect(part.input, {});
-    });
-
-    test('roundtrip serialization', () {
-      final created = DateTime(2025, 3, 15, 8, 0);
-      final original = ToolCallPart(
-        toolCallId: 'tc-1',
-        toolName: 'write',
-        input: const {'path': 'file.txt', 'content': 'hello'},
-        createdAt: created,
-      );
-      final restored = ToolCallPart.fromJson(original.toJson());
-      expect(restored.toolCallId, original.toolCallId);
-      expect(restored.toolName, original.toolName);
-      expect(restored.input, original.input);
-      expect(restored.createdAt, original.createdAt);
     });
   });
 
@@ -488,12 +404,14 @@ void main() {
       const part = QuestionPart(
         question: 'Choose one',
         options: [
-          const QuestionOption(label: 'Option A', description: null),
-          const QuestionOption(label: 'Option B', description: null),
+          QuestionOption(label: 'Option A', description: null),
+          QuestionOption(label: 'Option B', description: null),
         ],
         answer: 'Option A',
       );
-      expect(part.options, ['Option A', 'Option B']);
+      expect(part.options.length, 2);
+      expect(part.options[0].label, 'Option A');
+      expect(part.options[1].label, 'Option B');
       expect(part.answer, 'Option A');
     });
 
@@ -507,7 +425,7 @@ void main() {
     test('copyWith updates options', () {
       const part = QuestionPart(
         question: 'Q',
-        options: [const QuestionOption(label: 'old', description: null)],
+        options: [QuestionOption(label: 'old', description: null)],
       );
       final updated = part.copyWith(
         options: const [
@@ -515,18 +433,17 @@ void main() {
           QuestionOption(label: 'new2', description: null),
         ],
       );
-      expect(updated.options, [
-        const QuestionOption(label: 'new1', description: null),
-        QuestionOption(label: 'new2', description: null),
-      ]);
+      expect(updated.options.length, 2);
+      expect(updated.options[0].label, 'new1');
+      expect(updated.options[1].label, 'new2');
     });
 
     test('toJson roundtrip', () {
       const original = QuestionPart(
         question: 'Proceed?',
         options: [
-          const QuestionOption(label: 'Yes', description: null),
-          const QuestionOption(label: 'No', description: null),
+          QuestionOption(label: 'Yes', description: null),
+          QuestionOption(label: 'No', description: null),
         ],
         answer: 'Yes',
       );
@@ -534,7 +451,14 @@ void main() {
       expect(json['type'], 'question');
       final restored = QuestionPart.fromJson(json);
       expect(restored.question, original.question);
-      expect(restored.options, original.options);
+      expect(restored.options.length, original.options.length);
+      for (var i = 0; i < restored.options.length; i++) {
+        expect(restored.options[i].label, original.options[i].label);
+        expect(
+          restored.options[i].description,
+          original.options[i].description,
+        );
+      }
       expect(restored.answer, original.answer);
     });
 
@@ -697,35 +621,21 @@ void main() {
 
   group('MessagePart sealed class', () {
     test('all parts are MessagePart subtypes', () {
-      // Note: ToolCallPart uses non-const DateTime, so we build the list differently
-      final toolCall = ToolCallPart(
-        toolCallId: 'id',
-        toolName: 'shell',
-        input: const {},
-        createdAt: DateTime(2025),
-      );
       final parts = <MessagePart>[
         const TextPart(content: 'text'),
         const ReasoningPart(content: 'reasoning'),
-        toolCall,
         const ToolResultPart(toolCallId: 'id', toolName: 'shell'),
         const TaskPart(description: 'task', agent: 'agent'),
         const QuestionPart(question: 'q'),
         const TodoPart(todos: []),
       ];
-      expect(parts.length, 7); // 7 part types (ToolCallPart included above)
+      expect(parts.length, 6);
     });
 
     test('toJson on each part produces type discriminator', () {
       final parts = <MessagePart>[
         const TextPart(content: 'text'),
         const ReasoningPart(content: 'reasoning'),
-        ToolCallPart(
-          toolCallId: 'id',
-          toolName: 'shell',
-          input: const {},
-          createdAt: DateTime(2025),
-        ),
         const ToolResultPart(toolCallId: 'id', toolName: 'shell'),
         const TaskPart(description: 'task', agent: 'agent'),
         const QuestionPart(question: 'q'),
@@ -735,7 +645,6 @@ void main() {
       expect(types, {
         'text',
         'reasoning',
-        'tool_call',
         'tool_result',
         'task',
         'question',

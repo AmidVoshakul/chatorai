@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_message_export.dart';
+import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/features/chat/presentation/widgets/bubbles/assistant_bubble.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 
 /// Widget tests for the ChatMessageBubble component and its sub-widgets.
@@ -150,26 +152,19 @@ void main() {
   group('MessagePart type switching', () {
     test('can verify all part types exist', () {
       // MessagePart is abstract (not sealed across files), so we verify
-      // all 7 subtypes exist and are assignable to MessagePart.
+      // all 6 subtypes exist and are assignable to MessagePart.
       final parts = <MessagePart>[
         const TextPart(content: 'text'),
         const ReasoningPart(content: 'reasoning'),
-        ToolCallPart(
-          toolCallId: 'id',
-          toolName: 'shell',
-          input: const {},
-          createdAt: DateTime(2025),
-        ),
         const ToolResultPart(toolCallId: 'id', toolName: 'shell'),
         const TaskPart(description: 'task', agent: 'agent'),
         const QuestionPart(question: 'q'),
         const TodoPart(todos: []),
       ];
 
-      expect(parts, hasLength(7));
+      expect(parts, hasLength(6));
       expect(parts.whereType<TextPart>().length, 1);
       expect(parts.whereType<ReasoningPart>().length, 1);
-      expect(parts.whereType<ToolCallPart>().length, 1);
       expect(parts.whereType<ToolResultPart>().length, 1);
       expect(parts.whereType<TaskPart>().length, 1);
       expect(parts.whereType<QuestionPart>().length, 1);
@@ -666,6 +661,64 @@ void main() {
       expect(find.text('Go deeper'), findsOneWidget);
       expect(find.text('Explain'), findsOneWidget);
       expect(find.byType(Chip), findsNWidgets(3));
+    });
+  });
+
+  group('assistantVisibleParts filtering', () {
+    test('hides raw JSON tool result for the question tool', () {
+      const parts = [
+        TextPart(content: 'Hello'),
+        QuestionPart(question: 'Proceed?', answer: '{"output":"yes"}'),
+        ToolResultPart(
+          toolCallId: 'q1',
+          toolName: 'question',
+          result: '{"output":"yes","metadata":{}}',
+          state: ToolState.completed,
+        ),
+        ToolResultPart(
+          toolCallId: 'r1',
+          toolName: 'read',
+          result: 'file content',
+          state: ToolState.completed,
+        ),
+      ];
+
+      final visible = assistantVisibleParts(parts, reasoningEnabled: true);
+
+      expect(visible.whereType<QuestionPart>(), hasLength(1));
+      expect(visible.whereType<TextPart>(), hasLength(1));
+      final toolResults = visible.whereType<ToolResultPart>().toList();
+      expect(toolResults, hasLength(1));
+      expect(toolResults.single.toolName, 'read');
+    });
+
+    test('keeps tool results for tools other than question', () {
+      const parts = [
+        ToolResultPart(
+          toolCallId: 'g1',
+          toolName: 'grep',
+          result: 'match',
+          state: ToolState.completed,
+        ),
+      ];
+
+      final visible = assistantVisibleParts(parts, reasoningEnabled: true);
+
+      expect(visible, hasLength(1));
+      expect(visible.single, isA<ToolResultPart>());
+    });
+
+    test('hides synthetic parts and hidden reasoning', () {
+      const parts = [
+        TextPart(content: 'visible'),
+        TextPart(content: 'synthetic', synthetic: true),
+        ReasoningPart(content: 'thinking'),
+      ];
+
+      final visible = assistantVisibleParts(parts, reasoningEnabled: false);
+
+      expect(visible, hasLength(1));
+      expect((visible.single as TextPart).content, 'visible');
     });
   });
 }

@@ -2118,4 +2118,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String restoreFailed(String error) {
     return 'Не вдалося відновити: $error';
   }
+
+  @override
+  String get compactingIndicator => 'Стиснення...';
 }

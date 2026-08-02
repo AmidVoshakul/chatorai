@@ -7,6 +7,7 @@ import 'package:chatorai/core/skills/skill_parser.dart';
 import 'package:chatorai/core/skills/skill_providers.dart';
 import 'package:chatorai/core/skills/skill_writer.dart';
 import 'package:chatorai/core/skills/url_source.dart';
+import 'package:chatorai/core/tools/tool_registry_provider.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -70,8 +71,9 @@ class SkillsManagementState {
 /// scope's paths *separately* so skills can be attributed to a tab and
 /// classified as managed (editable/deletable) vs read-only.
 ///
-/// Every mutation re-runs [_reload] then invalidates [skillServiceProvider] so
-/// a running chat picks up the change without a restart.
+/// Every mutation re-runs [_reload] then invalidates [skillServiceProvider]
+/// and [toolRegistryProvider] so a running chat picks up the change without a
+/// restart.
 class SkillsManagementNotifier extends AsyncNotifier<SkillsManagementState> {
   SkillWriter _writer = SkillWriter();
 
@@ -351,6 +353,10 @@ class SkillsManagementNotifier extends AsyncNotifier<SkillsManagementState> {
     await mutation();
     state = AsyncValue.data(await _reload());
     ref.invalidate(skillServiceProvider);
+    // Rebuild the live tool registry so the running chat's `skill` tool
+    // description and the agent see the new/removed skills immediately,
+    // without an app restart (same pattern as MCP changes).
+    ref.invalidate(toolRegistryProvider);
   }
 
   Future<String> _globalRoot() async =>

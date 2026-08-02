@@ -90,6 +90,22 @@ class _ChildSessionScreenState extends ConsumerState<ChildSessionScreen> {
     Navigator.pop(context);
   }
 
+  void _scrollToChatStart() {
+    if (_messageScrollController.hasClients &&
+        _messageScrollController.position.hasContentDimensions) {
+      _messageScrollController.jumpTo(0);
+    }
+  }
+
+  void _scrollToChatEnd() {
+    if (_messageScrollController.hasClients &&
+        _messageScrollController.position.hasContentDimensions) {
+      _messageScrollController.jumpTo(
+        _messageScrollController.position.maxScrollExtent,
+      );
+    }
+  }
+
   void _onTaskTap(String? taskSessionId) {
     if (taskSessionId == null || taskSessionId.isEmpty) return;
     ref
@@ -176,6 +192,8 @@ class _ChildSessionScreenState extends ConsumerState<ChildSessionScreen> {
             AppShortcuts.navigateToNextSibling(
               () => _navigateToSibling(1, cycle: false),
             ),
+          AppShortcuts.scrollToChatStart(_scrollToChatStart),
+          AppShortcuts.scrollToChatEnd(_scrollToChatEnd),
         ],
         child: body,
       ),

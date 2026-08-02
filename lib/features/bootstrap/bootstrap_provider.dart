@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:chatorai/core/agents/agent_registry.dart';
@@ -6,7 +7,7 @@ import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/config/instructions_resolver.dart';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/llm/catalog_providers.dart';
-import 'package:chatorai/core/tools/tool_output_persistence.dart';
+import 'package:chatorai/core/tools/tool_registry_provider.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/attachment_input_handler.dart'
     show AttachmentCleanup;
 import 'package:chatorai/shared/utils/logger.dart';
@@ -58,6 +59,22 @@ final appBootstrapProvider = FutureProvider<void>((ref) async {
   // сбое подключения.
   await ref.watch(catalogInitializationProvider.future);
 
-  ToolOutputPersistence.instance.initialize();
+  // Pre-warm the tool registry (built-in tools, skills, LSP, MCP) during the
+  // splash screen so the first user message doesn't pay the ~0.5–1s
+  // registration cost on top of LLM latency. Errors are tolerated — the
+  // registry is also loaded lazily inside _initiateStream if this fails.
+  unawaited(
+    ref
+        .read(toolRegistryProvider.future)
+        .then<void>(
+          (_) {},
+          onError: (Object e, StackTrace st) {
+            LogTags.config.logWarning(
+              'toolRegistry prewarm failed (will retry lazily): $e',
+            );
+          },
+        ),
+  );
+
   AttachmentCleanup().initialize();
 });

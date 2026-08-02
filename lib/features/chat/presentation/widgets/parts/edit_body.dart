@@ -38,17 +38,20 @@ class EditBody extends StatelessWidget {
   Widget build(BuildContext context) {
     var patch = '';
     if (part.result != null && part.result!.isNotEmpty) {
-      try {
-        final parsed = jsonDecode(part.result!) as Map<String, dynamic>;
-        final p = parsed['patch'] as String?;
-        if (p != null && p.isNotEmpty) {
-          patch = p;
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          LogTags.chatService.logWarning(
-            '[EditBody] failed to parse tool result: $e',
-          );
+      final jsonStr = _leadingJsonObject(part.result!);
+      if (jsonStr != null) {
+        try {
+          final parsed = jsonDecode(jsonStr) as Map<String, dynamic>;
+          final p = parsed['patch'] as String?;
+          if (p != null && p.isNotEmpty) {
+            patch = p;
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            LogTags.chatService.logWarning(
+              '[EditBody] failed to parse tool result: $e',
+            );
+          }
         }
       }
     }
@@ -94,5 +97,41 @@ class EditBody extends StatelessWidget {
     } catch (_) {
       return null;
     }
+  }
+
+  static String? _leadingJsonObject(String text) {
+    final start = text.indexOf('{');
+    if (start < 0) return null;
+    var depth = 0;
+    var inString = false;
+    var escaped = false;
+    for (var i = start; i < text.length; i++) {
+      final c = text[i];
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+        if (c == '\\') {
+          escaped = true;
+          continue;
+        }
+        if (c == '"') inString = false;
+        continue;
+      }
+      if (c == '"') {
+        inString = true;
+        continue;
+      }
+      if (c == '{') {
+        depth++;
+        continue;
+      }
+      if (c == '}') {
+        depth--;
+        if (depth == 0) return text.substring(start, i + 1);
+      }
+    }
+    return null;
   }
 }

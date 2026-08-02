@@ -1,11 +1,11 @@
-import 'package:chatorai/features/models/data/models/model_card_model.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart' show ChatoraiColors;
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 class ModelDetailsDialogWidget extends StatelessWidget {
-  final ChatModel model;
+  final ModelConfig model;
 
   const ModelDetailsDialogWidget({super.key, required this.model});
 
@@ -27,7 +27,7 @@ class ModelDetailsDialogWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            model.name,
+            model.displayName,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -58,7 +58,7 @@ class ModelDetailsDialogWidget extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           MarkdownBody(
-            data: model.description,
+            data: model.description ?? '',
             styleSheet: MarkdownStyleSheet(
               p: Theme.of(
                 context,
@@ -79,10 +79,10 @@ class ModelDetailsDialogWidget extends StatelessWidget {
           _buildDetailRow(
             context,
             localizations.provider,
-            model.provider ?? '',
+            model.providerId,
             Icons.account_circle,
           ),
-          if (model.provider != null)
+          if (model.providerId.isNotEmpty)
             _buildDetailRow(
               context,
               localizations.context,
@@ -250,7 +250,7 @@ class ModelDetailsDialogWidget extends StatelessWidget {
   }
 }
 
-void showModelDetailsDialog(BuildContext context, ChatModel model) {
+void showModelDetailsDialog(BuildContext context, ModelConfig model) {
   showDialog(
     context: context,
     builder: (BuildContext context) => ModelDetailsDialogWidget(model: model),

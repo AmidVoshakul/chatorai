@@ -1,4 +1,4 @@
-import 'package:chatorai/features/models/data/models/model_card_model.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/features/models/providers/model_provider.dart';
 import 'package:chatorai/features/models/providers/models_provider.dart';
 import 'package:chatorai/features/models/widgets/model_card_widget.dart';
@@ -14,7 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // ===========================================================================
 
 class ModelsScreen extends ConsumerStatefulWidget {
-  final Function(String, ChatModel?)? onModelSelected;
+  final Function(String, ModelConfig?)? onModelSelected;
   final String? currentModel;
 
   const ModelsScreen({super.key, this.onModelSelected, this.currentModel});
@@ -212,9 +212,9 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
 
   Widget _buildGroupedList(BuildContext context, ModelsScreenState state) {
     final localizations = AppLocalizations.of(context)!;
-    final grouped = <String, List<ChatModel>>{};
+    final grouped = <String, List<ModelConfig>>{};
     for (final m in state.filteredModels) {
-      (grouped[m.provider ?? ''] ??= []).add(m);
+      (grouped[m.providerId] ??= []).add(m);
     }
     final sorted = grouped.entries.toList()
       ..sort((a, b) => _providerName(a.key).compareTo(_providerName(b.key)));
@@ -273,12 +273,12 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
 class _DeferredModelTile extends StatefulWidget {
   final String providerKey;
   final String providerName;
-  final List<ChatModel> models;
+  final List<ModelConfig> models;
   final String? currentModel;
-  final Future<void> Function(ChatModel) onSelect;
+  final Future<void> Function(ModelConfig) onSelect;
   final bool Function(String) isFavorite;
   final void Function(String) onToggleFavorite;
-  final void Function(ChatModel) onInfo;
+  final void Function(ModelConfig) onInfo;
   final AppLocalizations localizations;
 
   const _DeferredModelTile({
@@ -340,12 +340,12 @@ class _DeferredModelTileState extends State<_DeferredModelTile> {
 // ===========================================================================
 
 class _ModelGrid extends StatelessWidget {
-  final List<ChatModel> models;
+  final List<ModelConfig> models;
   final String? currentModel;
-  final Future<void> Function(ChatModel) onSelect;
+  final Future<void> Function(ModelConfig) onSelect;
   final bool Function(String) isFavorite;
   final void Function(String) onToggleFavorite;
-  final void Function(ChatModel) onInfo;
+  final void Function(ModelConfig) onInfo;
 
   const _ModelGrid({
     required this.models,
@@ -413,12 +413,12 @@ class _ModelGrid extends StatelessWidget {
 // ===========================================================================
 
 class _RecentModelsSection extends StatelessWidget {
-  final List<ChatModel> models;
+  final List<ModelConfig> models;
   final String? currentModel;
-  final Future<void> Function(ChatModel) onSelect;
+  final Future<void> Function(ModelConfig) onSelect;
   final bool Function(String) isFavorite;
   final void Function(String) onToggleFavorite;
-  final void Function(ChatModel) onInfo;
+  final void Function(ModelConfig) onInfo;
   final AppLocalizations localizations;
 
   const _RecentModelsSection({
@@ -481,10 +481,7 @@ class _RecentModelsSection extends StatelessWidget {
                             ),
                             child: Row(
                               children: [
-                                ProviderIcon(
-                                  providerId: m.provider ?? '',
-                                  size: 32,
-                                ),
+                                ProviderIcon(providerId: m.provider, size: 32),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
@@ -506,7 +503,7 @@ class _RecentModelsSection extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        m.provider ?? '',
+                                        m.provider,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(

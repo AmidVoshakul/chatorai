@@ -1,7 +1,9 @@
+import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
 import 'package:chatorai/features/chat/data/models/chat/tool_result_part.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class ShellBody extends StatefulWidget {
   final ThemeData theme;
@@ -42,6 +44,7 @@ class _ShellBodyState extends State<ShellBody> {
     final isDark = w.theme.brightness == Brightness.dark;
     final terminal = w.theme.colorScheme.dim;
     final muted = w.theme.colorScheme.muted;
+    final isRunning = w.part.state == ToolState.running;
     const pad = 12.0;
     final wasTruncated =
         originalResult.isNotEmpty &&
@@ -57,14 +60,24 @@ class _ShellBodyState extends State<ShellBody> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  r'$ ',
-                  style: ChatoraiFontSizes.mono(
-                    ChatoraiFontSizes.md,
-                    weight: FontWeight.w300,
-                    color: w.isError ? w.theme.colorScheme.error : terminal,
+                if (isRunning)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: SpinKitCircle(size: 14, color: muted),
+                    ),
+                  )
+                else
+                  Text(
+                    r'$ ',
+                    style: ChatoraiFontSizes.mono(
+                      ChatoraiFontSizes.md,
+                      weight: FontWeight.w300,
+                      color: w.isError ? w.theme.colorScheme.error : terminal,
+                    ),
                   ),
-                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(

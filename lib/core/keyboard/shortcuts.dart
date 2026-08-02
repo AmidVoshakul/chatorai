@@ -1,4 +1,5 @@
 import 'package:chatorai/core/keyboard/keyboard_shortcut.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Central shortcut definitions.
@@ -62,6 +63,60 @@ class AppShortcuts {
       id: 'cycle_primary_agent',
       description: 'Cycle primary agent (Ctrl+Tab)',
       activator: const KeyActivator.ctrlTab(),
+      onExecute: (_, _) => onExecute(),
+    );
+  }
+
+  static KeyboardShortcut toggleSidebar(void Function() onExecute) {
+    return KeyboardShortcut(
+      id: 'toggle_sidebar',
+      description: 'Toggle sidebar (Ctrl+B)',
+      activator: const KeyActivator.ctrlKey(LogicalKeyboardKey.keyB),
+      onExecute: (_, _) => onExecute(),
+    );
+  }
+
+  static KeyboardShortcut newChat(void Function() onExecute) {
+    return KeyboardShortcut(
+      id: 'new_chat',
+      description: 'New chat (Ctrl+N)',
+      activator: const KeyActivator.ctrlKey(LogicalKeyboardKey.keyN),
+      onExecute: (_, _) => onExecute(),
+    );
+  }
+
+  static KeyboardShortcut openModelSelector(void Function() onExecute) {
+    return KeyboardShortcut(
+      id: 'open_model_selector',
+      description: 'Open model selector (Ctrl+M)',
+      activator: const KeyActivator.ctrlKey(LogicalKeyboardKey.keyM),
+      onExecute: (_, _) => onExecute(),
+    );
+  }
+
+  static KeyboardShortcut openSettings(void Function() onExecute) {
+    return KeyboardShortcut(
+      id: 'open_settings',
+      description: 'Open settings (Ctrl+P)',
+      activator: const KeyActivator.ctrlKey(LogicalKeyboardKey.keyP),
+      onExecute: (_, _) => onExecute(),
+    );
+  }
+
+  static KeyboardShortcut scrollToChatStart(void Function() onExecute) {
+    return KeyboardShortcut(
+      id: 'scroll_to_chat_start',
+      description: 'Scroll chat to the top (Home)',
+      activator: const KeyActivator.home(),
+      onExecute: (_, _) => onExecute(),
+    );
+  }
+
+  static KeyboardShortcut scrollToChatEnd(void Function() onExecute) {
+    return KeyboardShortcut(
+      id: 'scroll_to_chat_end',
+      description: 'Scroll chat to the bottom (End)',
+      activator: const KeyActivator.end(),
       onExecute: (_, _) => onExecute(),
     );
   }

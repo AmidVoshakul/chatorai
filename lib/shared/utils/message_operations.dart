@@ -1,15 +1,17 @@
-import 'package:flutter/material.dart';
-import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
+import 'package:chatorai/core/session/events.dart';
+import 'package:chatorai/core/session/session_id.dart';
+import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart'
     as chat_models;
-import 'package:chatorai/shared/utils/snackbar_utils.dart';
-import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/message_action.dart';
-import 'package:chatorai/shared/utils/message_dialogs.dart';
 import 'package:chatorai/shared/utils/message_clipboard.dart' as clipboard;
+import 'package:chatorai/shared/utils/message_dialogs.dart';
 import 'package:chatorai/shared/utils/message_edit.dart' as edit;
 import 'package:chatorai/shared/utils/message_permissions.dart' as perm;
+import 'package:chatorai/shared/utils/snackbar_utils.dart';
+import 'package:flutter/material.dart';
 
 final _logger = LogTags.message;
 
@@ -17,7 +19,7 @@ class MessageUtils {
   static Future<bool> deleteMessage({
     required String chatId,
     required String messageId,
-    required ChatStorageService chatStorageService,
+    required SessionRepository sessionRepository,
     BuildContext? context,
   }) async {
     final AppLocalizations? localizations = context != null
@@ -66,7 +68,16 @@ class MessageUtils {
         }
       }
 
-      await chatStorageService.deleteMessageFromChat(chatId, messageId);
+      final sessionId = SessionID.fromString(
+        chatId.startsWith('ses_') ? chatId : 'ses_$chatId',
+      );
+      await sessionRepository.appendEvent(
+        MessageDeleted(
+          sessionId: sessionId,
+          messageId: messageId,
+          timestamp: DateTime.now(),
+        ),
+      );
 
       if (context != null && context.mounted && localizations != null) {
         SnackbarUtils.showSuccessSnackBar(
@@ -140,12 +151,21 @@ class MessageUtils {
   static Future<bool> regenerateMessage({
     required String chatId,
     required String messageId,
-    required ChatStorageService chatStorageService,
+    required SessionRepository sessionRepository,
     required Function() onRegenerate,
     BuildContext? context,
   }) async {
     try {
-      await chatStorageService.deleteMessageFromChat(chatId, messageId);
+      final sessionId = SessionID.fromString(
+        chatId.startsWith('ses_') ? chatId : 'ses_$chatId',
+      );
+      await sessionRepository.appendEvent(
+        MessageDeleted(
+          sessionId: sessionId,
+          messageId: messageId,
+          timestamp: DateTime.now(),
+        ),
+      );
       onRegenerate();
       return true;
     } catch (e) {

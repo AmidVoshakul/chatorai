@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/models/data/models/model_card_model.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/features/chat/services/chat_ai_service.dart';
 
 /// Fake client that simulates 400 errors when maxTokens > threshold.
@@ -48,21 +48,20 @@ class FakeRetryClient {
 
 /// Minimal ThemeProvider stub for unit tests (only what the retry logic needs).
 class FakeThemeProvider {
-  final Map<String, ChatModel> _models;
+  final Map<String, ModelConfig> _models;
 
   FakeThemeProvider(this._models);
 
-  ChatModel? getModelById(String id) => _models[id];
+  ModelConfig? getModelById(String id) => _models[id];
 }
 
-/// Helper to build a fake ChatModel with a given context length.
-ChatModel fakeModel(String id, int contextLength) => ChatModel(
-  id: id,
-  name: id,
+/// Helper to build a fake ModelConfig with a given context length.
+ModelConfig fakeModel(String id, int contextLength) => ModelConfig.basic(
+  providerId: 'fake',
+  modelName: id,
+  displayName: id,
   description: 'fake',
   contextLength: contextLength,
-  provider: 'fake',
-  capabilities: ModelCapabilities.fromJson({}),
 );
 
 /// A small testable wrapper that performs the same adaptive retry logic

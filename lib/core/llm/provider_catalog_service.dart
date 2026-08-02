@@ -28,35 +28,6 @@ import 'package:chatorai/shared/utils/secure_storage_service.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Immutable state for the catalog.
-class CatalogState {
-  final List<ProviderConfig> providers;
-  final Map<String, Set<String>> selectedModelIds;
-  final Map<String, String?> apiKeyCache;
-  final bool migrated;
-
-  const CatalogState({
-    this.providers = const [],
-    this.selectedModelIds = const {},
-    this.apiKeyCache = const {},
-    this.migrated = false,
-  });
-
-  CatalogState copyWith({
-    List<ProviderConfig>? providers,
-    Map<String, Set<String>>? selectedModelIds,
-    Map<String, String?>? apiKeyCache,
-    bool? migrated,
-  }) {
-    return CatalogState(
-      providers: providers ?? this.providers,
-      selectedModelIds: selectedModelIds ?? this.selectedModelIds,
-      apiKeyCache: apiKeyCache ?? this.apiKeyCache,
-      migrated: migrated ?? this.migrated,
-    );
-  }
-}
-
 /// Prefix constants for SharedPreferences keys.
 class _PrefKeys {
   static const enabled = 'catalog_provider_enabled_';
@@ -585,11 +556,6 @@ class ProviderCatalogService {
     _selectedModelIds.remove(providerId);
     await _prefs.remove('${_PrefKeys.selectedModels}$providerId');
   }
-
-  /// Legacy compatibility: no-op for tests that expect ChangeNotifier.
-  void addListener(void Function() listener) {}
-  void removeListener(void Function() listener) {}
-  void dispose() {}
 
   /// Migrate settings from legacy SharedPreferences keys.
   Future<void> migrateFromLegacySettings() async {

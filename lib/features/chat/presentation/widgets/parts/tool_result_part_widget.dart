@@ -18,6 +18,7 @@ import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/theme/theme_extensions.dart';
 import 'package:chatorai/shared/utils/format_utils.dart';
+import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -183,24 +184,19 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
       await service.restoreByStep(sessionId, widget.part.toolCallId);
       if (mounted) {
         final loc = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        SnackbarUtils.showSuccessSnackBar(
+          context: context,
+          message:
               loc?.toolResultRestoredSnackbar ??
-                  'Files restored to before-edit state',
-            ),
-          ),
+              'Files restored to before-edit state',
         );
       }
     } catch (e) {
       if (mounted) {
         final loc = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              loc?.restoreFailed(e.toString()) ?? 'Restore failed: $e',
-            ),
-          ),
+        SnackbarUtils.showErrorSnackBar(
+          context: context,
+          message: loc?.restoreFailed(e.toString()) ?? 'Restore failed: $e',
         );
       }
     } finally {
@@ -225,6 +221,21 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
 
   void _showSnapshotDialog(List<FileSnapshot> snapshots) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cs = theme.colorScheme;
+    final hairline = isDark
+        ? ChatoraiColors.darkInputBorder
+        : ChatoraiColors.inputBorder;
+    final codeFill = isDark
+        ? ChatoraiColors.darkInputFill
+        : ChatoraiColors.inputFill;
+    final contentText = isDark
+        ? ChatoraiColors.darkTextColor
+        : ChatoraiColors.lightTextColor;
+    final subtleText = isDark
+        ? ChatoraiColors.darkSecondaryTextColor
+        : ChatoraiColors.secondaryTextColor;
+
     showDialog(
       context: context,
       builder: (ctx) {
@@ -234,73 +245,101 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
           child: Container(
             width: double.maxFinite,
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.7,
+              maxHeight: MediaQuery.of(ctx).size.height * 0.7,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(
+                    ChatoraiSpacing.lg,
+                    ChatoraiSpacing.lg,
+                    ChatoraiSpacing.sm,
+                    ChatoraiSpacing.md,
+                  ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.history,
-                        size: 16,
-                        color: theme.colorScheme.muted,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        loc!.toolResultOriginalTitle,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.muted,
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: cs.primary.withValues(
+                            alpha: isDark ? 0.18 : 0.12,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            ChatoraiBorderRadius.sm,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.history,
+                          size: ChatoraiIconSizes.md,
+                          color: cs.primary,
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: ChatoraiSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          loc!.toolResultOriginalTitle,
+                          style: theme.textTheme.titleLarge,
+                        ),
+                      ),
                       IconButton(
-                        icon: const Icon(Icons.close, size: 16),
+                        icon: const Icon(
+                          Icons.close,
+                          size: ChatoraiIconSizes.md,
+                        ),
                         onPressed: () => Navigator.of(ctx).pop(),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        color: theme.colorScheme.muted,
+                        color: subtleText,
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.all(ChatoraiSpacing.xs),
                       ),
                     ],
                   ),
                 ),
-                const Divider(height: 1),
+                Container(height: 1, color: hairline),
                 Flexible(
                   child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(
+                      ChatoraiSpacing.lg,
+                      ChatoraiSpacing.md,
+                      ChatoraiSpacing.lg,
+                      ChatoraiSpacing.lg,
+                    ),
                     itemCount: snapshots.length,
                     itemBuilder: (_, i) {
                       final snap = snapshots[i];
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.only(
+                          bottom: ChatoraiSpacing.md,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               snap.filePath,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.primary,
+                              style: ChatoraiFontSizes.mono(
+                                ChatoraiFontSizes.sm,
+                                color: cs.muted,
+                                weight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: ChatoraiSpacing.sm),
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(ChatoraiSpacing.md),
                               decoration: BoxDecoration(
-                                color:
-                                    theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(4),
+                                color: codeFill,
+                                borderRadius: BorderRadius.circular(
+                                  ChatoraiBorderRadius.sm,
+                                ),
+                                border: Border.all(color: hairline, width: 1),
                               ),
                               child: SelectableText(
                                 snap.content,
                                 style: ChatoraiFontSizes.mono(
                                   ChatoraiFontSizes.sm,
-                                  color: theme.colorScheme.onSurface,
+                                  color: contentText,
+                                  height: 1.5,
                                 ),
                               ),
                             ),
@@ -344,7 +383,7 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
     if (isShell && !isNoBodyTool) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 1),
-        child: _buildShellContent(theme, isError, isRunning, part, canExpand),
+        child: _buildShellContent(theme, isError, part, canExpand),
       );
     }
 
@@ -453,7 +492,6 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
   Widget _buildShellContent(
     ThemeData theme,
     bool isError,
-    bool isRunning,
     ToolResultPart part,
     bool canExpand,
   ) {
@@ -461,19 +499,9 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       color: isDark ? Colors.black26 : Colors.white38,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-            child: _buildHeader(theme, isError, isRunning, false, part, false),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
-            child: _buildBody(theme, isError, part, canExpand),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: _buildBody(theme, isError, part, canExpand),
       ),
     );
   }

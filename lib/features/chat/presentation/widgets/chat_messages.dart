@@ -2,19 +2,22 @@ import 'package:chatorai/core/agents/agent_provider.dart';
 import 'package:chatorai/core/constants/chat_messages_constants.dart';
 import 'package:chatorai/core/llm/catalog_providers.dart'
     show providerCatalogServiceProvider;
+import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
-import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart'
     show MessageData;
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages_suggestions.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages_waiting_animation.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/chat_message_bubble.dart';
 import 'package:chatorai/providers.dart'
-    show chatScreenProvider, themeProvider, modelSettingsProvider;
+    show
+        chatScreenProvider,
+        themeProvider,
+        modelSettingsProvider,
+        sessionPartsProvider;
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:flutter/foundation.dart'
@@ -26,7 +29,7 @@ final _logger = LogTags.chatService;
 
 class ChatMessages extends ConsumerStatefulWidget {
   final Chat? chat;
-  final ChatStorageService chatStorageService;
+  final SessionRepository sessionRepository;
   final String? selectedModel;
   final Function(MessageData) onSendMessage;
   final Function() onMessageDeleted;
@@ -61,7 +64,7 @@ class ChatMessages extends ConsumerStatefulWidget {
 
   const ChatMessages({
     super.key,
-    required this.chatStorageService,
+    required this.sessionRepository,
     this.chat,
     this.selectedModel,
     required this.onSendMessage,
@@ -216,6 +219,61 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
         : const ClampingScrollPhysics();
   }
 
+  List<MessagePart> _streamingMessageParts(
+    List<AssistantContent> streamingParts, {
+    required List<Message> messages,
+  }) {
+    if (streamingParts.isEmpty) return const [];
+    // Only parts of the CURRENT streaming message may appear in the
+    // streaming bubble: the last assistant message that is still
+    // incomplete. Keying off `streamingParts.last` alone leaks the parts
+    // of the previously completed response into the bubble right after a
+    // new send — the old answer briefly shows up and then "switches" to
+    // the new one when its first deltas arrive.
+    final currentAssistant =
+        messages.isNotEmpty &&
+            messages.last.role == MessageRole.assistant &&
+            !messages.last.isComplete
+        ? messages.last
+        : null;
+    if (currentAssistant == null) return const [];
+    final filteredParts = streamingParts
+        .where((p) => p.messageId == currentAssistant.id)
+        .toList();
+    return filteredParts
+        .map(assistantContentToMessagePart)
+        .where((p) => !(p is TextPart && p.content.isEmpty && p.isStreaming))
+        .toList();
+  }
+
+  bool _showStreamingBubble({
+    required List<MessagePart> streamingMessageParts,
+    required bool streamingIsActive,
+    required List<Message> messages,
+  }) {
+    return streamingMessageParts.isNotEmpty &&
+        streamingIsActive &&
+        !(messages.isNotEmpty &&
+            messages.last.role == MessageRole.assistant &&
+            messages.last.isComplete);
+  }
+
+  AssistantMessage _buildStreamingAssistantMessage({
+    required List<Message> messages,
+    required List<MessagePart> streamingMessageParts,
+    required bool streamingIsActive,
+  }) {
+    final lastMessage = messages.isNotEmpty ? messages.last : null;
+    return AssistantMessage(
+      id: lastMessage?.id ?? 'streaming',
+      parts: streamingMessageParts,
+      model: _resolveModelDisplayName(lastMessage?.model),
+      isStreaming: streamingIsActive,
+      timestamp: lastMessage?.timestamp ?? DateTime.now(),
+      contextLength: lastMessage?.contextLength,
+    );
+  }
+
   void scrollToHeading(String messageId) {
     final messageIndex =
         widget.chat?.messages.indexWhere((m) => m.id == messageId) ?? -1;
@@ -228,44 +286,36 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     }
   }
 
-  void _toggleNavigator() {
-    if (widget.onToggleNavigator != null) {
-      widget.onToggleNavigator!();
-    }
-  }
-
-  void toggleNavigator() {
-    _toggleNavigator();
-  }
-
   void sendMessage(MessageData messageData) {
     widget.onSendMessage(messageData);
-  }
-
-  void selectModel(String modelId) {
-    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    final streamingParts = widget.isActiveSession
-        ? ref.watch(chatScreenProvider.select((s) => s.streamingParts))
+    final streamingSessionId = ref.watch(
+      chatScreenProvider.select((s) => s.streamingSessionId),
+    );
+    final streamingParts = streamingSessionId != null
+        ? (ref.watch(sessionPartsProvider(streamingSessionId)).value?.parts ??
+              const <AssistantContent>[])
         : const <AssistantContent>[];
     final streamingIsActive = widget.isActiveSession
         ? ref.watch(chatScreenProvider.select((s) => s.isStreaming))
         : false;
 
-    final List<MessagePart> streamingMessageParts = streamingParts
-        .map(assistantContentToMessagePart)
-        .where((p) => !(p is TextPart && p.content.isEmpty && p.isStreaming))
-        .toList();
+    final messages = _visibleMessages;
+    final List<MessagePart> streamingMessageParts = _streamingMessageParts(
+      streamingParts,
+      messages: messages,
+    );
 
     final currentAgent = ref.watch(currentAgentProvider);
 
     final isWaitingForStream =
         streamingIsActive && streamingMessageParts.isEmpty;
+
     final hasReasoningOnly =
         streamingIsActive &&
         streamingMessageParts.isNotEmpty &&
@@ -273,7 +323,6 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
 
     final theme = Theme.of(context);
 
-    final messages = _visibleMessages;
     final hasMessages = messages.isNotEmpty;
     final hasAssistantMessage =
         hasMessages && messages.last.role == MessageRole.assistant;
@@ -291,13 +340,16 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
       return total;
     }
 
-    final lastMessageIsComplete =
-        hasAssistantMessage && messages.last.isComplete;
+    final showStreamingBubble = _showStreamingBubble(
+      streamingMessageParts: streamingMessageParts,
+      streamingIsActive: streamingIsActive,
+      messages: messages,
+    );
 
-    final showStreamingBubble =
-        streamingMessageParts.isNotEmpty &&
-        streamingIsActive &&
-        !lastMessageIsComplete;
+    final modelSettings = ref.watch(modelSettingsProvider);
+    final expandReasoningByDefault = ref
+        .watch(themeProvider)
+        .expandReasoningByDefault;
 
     final shouldShowWaitingAnimation =
         (isWaitingForStream || hasReasoningOnly) &&
@@ -373,8 +425,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                             )
                           : chatMsg;
                       final reasoningEnabled = originalModelId != null
-                          ? (ref
-                                    .read(modelSettingsProvider)
+                          ? (modelSettings
                                     .settingsCache[originalModelId]
                                     ?.reasoningEnabled ??
                                 true)
@@ -384,7 +435,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                         message: resolvedMsg,
                         chatId: widget.chat!.id,
                         messageId: message.id,
-                        chatStorageService: widget.chatStorageService,
+                        sessionRepository: widget.sessionRepository,
                         agentName: widget.agentName ?? agentNameForMessage,
                         onContinuationSelected:
                             message.role == MessageRole.assistant
@@ -403,9 +454,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                             : null,
                         contextLength: message.contextLength,
                         onTaskTap: widget.onTaskTap,
-                        expandReasoningByDefault: ref
-                            .read(themeProvider)
-                            .expandReasoningByDefault,
+                        expandReasoningByDefault: expandReasoningByDefault,
                         reasoningEnabled: reasoningEnabled,
                       );
                     }
@@ -418,6 +467,11 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                         final lastMessage = messages.isNotEmpty
                             ? messages.last
                             : null;
+                        final message = _buildStreamingAssistantMessage(
+                          messages: messages,
+                          streamingMessageParts: streamingMessageParts,
+                          streamingIsActive: streamingIsActive,
+                        );
                         final agentNameForStream =
                             lastMessage?.agent ??
                             widget.agentName ??
@@ -425,29 +479,17 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: ChatMessageBubble(
-                            message: AssistantMessage(
-                              id: lastMessage?.id ?? 'streaming',
-                              parts: streamingMessageParts,
-                              model: _resolveModelDisplayName(
-                                lastMessage?.model,
-                              ),
-                              isStreaming: streamingIsActive,
-                              timestamp:
-                                  lastMessage?.timestamp ?? DateTime.now(),
-                              contextLength: lastMessage?.contextLength,
-                            ),
+                            key: const ValueKey('streaming-bubble'),
+                            message: message,
                             chatId: widget.chat?.id ?? '',
                             messageId: lastMessage?.id ?? 'streaming',
-                            chatStorageService: widget.chatStorageService,
+                            sessionRepository: widget.sessionRepository,
                             agentName: agentNameForStream,
                             onTaskTap: widget.onTaskTap,
-                            expandReasoningByDefault: ref
-                                .read(themeProvider)
-                                .expandReasoningByDefault,
-                            reasoningEnabled: lastMessage?.model != null
-                                ? (ref
-                                          .read(modelSettingsProvider)
-                                          .settingsCache[lastMessage!.model]
+                            expandReasoningByDefault: expandReasoningByDefault,
+                            reasoningEnabled: message.model != null
+                                ? (modelSettings
+                                          .settingsCache[message.model]
                                           ?.reasoningEnabled ??
                                       true)
                                 : true,

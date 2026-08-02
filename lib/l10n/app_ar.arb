@@ -651,5 +651,6 @@
   "toolResultRestoredSnackbar": "تم استعادة الملفات إلى الحالة قبل التعديل",
   "toolResultOriginalTitle": "المحتوى الأصلي قبل التعديل",
   "restoreFailed": "فشلت الاستعادة: {error}",
-  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } }
+  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
+  "compactingIndicator": "جارِ الضغط..."
 }

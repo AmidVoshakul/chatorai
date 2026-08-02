@@ -1,8 +1,10 @@
 import 'dart:io';
+
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
-import 'package:chatorai/shared/utils/logger.dart';
+
 import 'schema.dart';
 
 part 'database.g.dart';
@@ -19,6 +21,8 @@ part 'database.g.dart';
   ],
 )
 class AppDatabase extends _$AppDatabase {
+  static bool _multipleDatabaseWarningSuppressed = false;
+
   AppDatabase(super.e);
 
   @override
@@ -78,11 +82,19 @@ class AppDatabase extends _$AppDatabase {
 
   /// Creates an in-memory database for testing.
   factory AppDatabase.inMemory() {
+    if (!_multipleDatabaseWarningSuppressed) {
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      _multipleDatabaseWarningSuppressed = true;
+    }
     return AppDatabase(NativeDatabase.memory());
   }
 
   /// Creates a file-based persistent database at [path].
   factory AppDatabase.file(String path) {
+    if (!_multipleDatabaseWarningSuppressed) {
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      _multipleDatabaseWarningSuppressed = true;
+    }
     return AppDatabase(NativeDatabase(File(path)));
   }
 }

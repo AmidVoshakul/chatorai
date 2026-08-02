@@ -2112,4 +2112,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String restoreFailed(String error) {
     return 'Не удалось восстановить: $error';
   }
+
+  @override
+  String get compactingIndicator => 'Сжатие...';
 }

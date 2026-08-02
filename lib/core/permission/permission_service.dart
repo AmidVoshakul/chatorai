@@ -469,9 +469,6 @@ class PermissionService {
     _onceApproved.clear();
     _sessionId = null;
   }
-
-  @Deprecated('Use clearSession() instead')
-  void clearRateLimitHistory() => clearSession();
 }
 
 class _PendingEntry {

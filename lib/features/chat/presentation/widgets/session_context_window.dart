@@ -1,13 +1,19 @@
+import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_state.dart' show SessionState;
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
     show AssistantContent, AssistantText;
-import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart'
+import 'package:chatorai/features/chat/data/models/chat/message_converter.dart'
     show assistantContentToPartMaps;
 import 'package:chatorai/features/chat/data/models/chat_models.dart'
     show Chat, Message, MessageRole;
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/providers.dart';
+import 'package:chatorai/providers.dart'
+    show
+        modelProvider,
+        sessionPartsProvider,
+        sessionRepositoryProvider,
+        themeProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -220,24 +226,31 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
       updatedAt: legacyMessages.last.timestamp,
     );
 
-    return ChatMessages(
-      key: ValueKey(widget.sessionId),
-      chatStorageService: ref.read(chatStorageServiceProvider),
-      chat: chat,
-      sessionId: widget.sessionId,
-      agentName: state.agent,
-      selectedModel: ref.watch(modelProvider).selectedModelId,
-      isActiveSession: false,
-      totalTokens:
-          state.tokensInput + state.tokensOutput + state.tokensReasoning,
-      onSendMessage: (messageData) {},
-      onMessageDeleted: () {},
-      onMessageEdited: (_, _) {},
-      onMessageEditAndSend: (_, _) {},
-      onContinueResponse: (_) {},
-      onRegenerateResponse: (_) {},
-      scrollController: _scrollController,
-      onTaskTap: widget.onTaskTap,
+    return FutureBuilder<SessionRepository>(
+      future: ref.read(sessionRepositoryProvider.future),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final SessionRepository sessionRepository = snapshot.data!;
+        return ChatMessages(
+          key: ValueKey(widget.sessionId),
+          sessionRepository: sessionRepository,
+          chat: chat,
+          sessionId: widget.sessionId,
+          agentName: state.agent,
+          selectedModel: ref.watch(modelProvider).selectedModelId,
+          isActiveSession: false,
+          totalTokens:
+              state.tokensInput + state.tokensOutput + state.tokensReasoning,
+          onSendMessage: (messageData) {},
+          onMessageDeleted: () {},
+          onMessageEdited: (_, _) {},
+          onMessageEditAndSend: (_, _) {},
+          onContinueResponse: (_) {},
+          onRegenerateResponse: (_) {},
+          scrollController: _scrollController,
+          onTaskTap: widget.onTaskTap,
+        );
+      },
     );
   }
 }

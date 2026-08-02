@@ -9,13 +9,16 @@
 library;
 
 import 'package:ai_sdk_anthropic/ai_sdk_anthropic.dart' as anthro;
+import 'package:ai_sdk_dart/ai_sdk_dart.dart';
 import 'package:ai_sdk_google/ai_sdk_google.dart';
-import 'package:ai_sdk_openai/ai_sdk_openai.dart';
+import 'package:ai_sdk_openai_compatible/ai_sdk_openai_compatible.dart';
 import 'package:ai_sdk_provider/ai_sdk_provider.dart';
 import 'package:chatorai/core/llm/models/auth_config.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/models/provider_config.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
+import 'package:chatorai/core/llm/reasoning_extraction_middleware.dart';
+import 'package:chatorai/core/llm/reasoning_interceptor.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 
 /// Error thrown when a model cannot be resolved.
@@ -106,10 +109,11 @@ class ModelResolver {
   /// Use [getHeadersForModel] to resolve the effective headers for a model call,
   /// which merges provider default headers, variant headers, and overrides.
   ///
-  /// NOTE: The current implementation uses `OpenAIProvider` for all providers.
-  /// This works for OpenAI-compatible APIs (OpenRouter, Groq, Ollama, etc.)
-  /// but may not support native Anthropic or Google APIs fully.
-  /// Native SDK support is planned for a future phase.
+  /// NOTE: Uses [OpenAICompatibleChatLanguageModel] for OpenAI-compatible
+  /// providers with a custom Dio factory for reasoning SSE interception,
+  /// [AnthropicProvider] for Anthropic, and [GoogleGenerativeAIProvider] for
+  /// Google. The optional [extractReasoningMiddleware] extracts
+  /// reasoning content from text deltas into native reasoning events.
   Future<LanguageModelV3> buildLanguageModel(
     ModelConfig model, {
     ModelVariant? variant,
@@ -204,9 +208,46 @@ class ModelResolver {
         return google.call(effectiveModelName);
       }
 
-      // Default: OpenAI-compatible provider
-      final openAI = OpenAIProvider(apiKey: apiKey, baseUrl: baseUrl);
-      return openAI.call(effectiveModelName);
+      // Default: OpenAI-compatible provider with reasoning support.
+      // We create OpenAICompatibleChatLanguageModel directly (rather than via
+      // OpenAIProvider.call()) so we can inject a custom Dio client factory
+      // that adds the ReasoningSseInterceptor.  This interceptor moves
+      // `reasoning` / `reasoning_content` SSE fields into the `content` field
+      // wrapped in <think> tags, which are then extracted by
+      // extractReasoningMiddleware(tagName: 'think') into native
+      // StreamTextReasoningDeltaEvent — handled by both parent and child
+      // streaming paths automatically.
+      Map<String, String> authHeaders() {
+        if (apiKey != null && apiKey.isNotEmpty) {
+          return {'Authorization': 'Bearer $apiKey'};
+        }
+        return <String, String>{};
+      }
+
+      final model = OpenAICompatibleChatLanguageModel(
+        modelId: effectiveModelName,
+        config: OpenAICompatibleConfig(
+          provider: 'openai-compatible',
+          baseUrl: baseUrl,
+          headers: authHeaders,
+          clientFactory:
+              ({
+                required String baseUrl,
+                required Map<String, String> headers,
+              }) {
+                final dio = OpenAICompatibleConfig.defaultClientFactory(
+                  baseUrl: baseUrl,
+                  headers: headers,
+                );
+                dio.interceptors.add(ReasoningSseInterceptor());
+                return dio;
+              },
+        ),
+      );
+      return wrapLanguageModel(
+        model: model,
+        middleware: [reasoningExtractionMiddleware(tagName: 'think')],
+      );
     } catch (e) {
       LogTags.network.logError(
         '[Resolver] buildLanguageModel fallback suppressed for ${provider.id}',

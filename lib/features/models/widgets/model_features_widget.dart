@@ -1,9 +1,9 @@
-import 'package:chatorai/features/models/data/models/model_card_model.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class ModelFeaturesWidget extends StatelessWidget {
-  final ChatModel model;
+  final ModelConfig model;
 
   const ModelFeaturesWidget({super.key, required this.model});
 

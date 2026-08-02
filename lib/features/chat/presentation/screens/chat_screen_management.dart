@@ -21,7 +21,7 @@ extension _ChatScreenManagementExt on _ChatScreenState {
     );
     if (chat == null) return;
     ref.read(currentChatIdProvider.notifier).setChatId(chatId);
-    if (chat.messages.isEmpty) {
+    if (chat.isDefaultTitle && chat.messages.isEmpty) {
       _showWelcomeSuggestions();
     } else {
       ref.read(chatScreenProvider.notifier).hideAllSuggestions();

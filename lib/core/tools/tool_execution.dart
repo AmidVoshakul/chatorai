@@ -40,14 +40,6 @@ class ToolExecutor {
 
   ToolExecutor(this._permissions, this._defaultRules, {this.switchAgent});
 
-  /// Bind a ToolDef to the SDK Tool type, wiring execution through this executor.
-  sdk.Tool<dynamic, dynamic> bind(
-    ToolDef def,
-    sdk.Tool<dynamic, dynamic> sdkTool,
-  ) {
-    return sdkTool;
-  }
-
   /// Core execution: cache → pending → doom-loop → permission → truncate.
   Future<Map<String, dynamic>> execute(
     ToolDef def,

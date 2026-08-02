@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_repository.dart';
@@ -119,32 +120,34 @@ void main() {
     });
 
     test(
-      'subsequent chunks do not fire additional TextStarted; deltas are batched',
+      'subsequent chunks do not fire additional TextStarted; each chunk flushes',
       () async {
         final session = await runner.startInitializedSession(agent: 'general');
 
         const part = 'abcdefghij'; // 10 chars
         for (var i = 0; i < 12; i++) {
-          await session.onChunk(
-            part,
-          ); // total 120 < threshold -> stays buffered
+          await session.onChunk(part);
         }
 
+        // Each chunk immediately flushes a TextDelta (eager flush).
         final eventsBefore = await repository.eventStore.getEvents(
           session.sessionId,
         );
-        // Still buffered: only the single TextStarted, no delta yet.
         expect(eventsBefore.whereType<TextStarted>().length, 1);
-        expect(eventsBefore.whereType<TextDelta>().length, 0);
+        expect(
+          eventsBefore.whereType<TextDelta>().length,
+          12,
+          reason: 'eager flush creates one TextDelta per chunk',
+        );
 
-        // Completing flushes all buffered chunks as a single aggregated delta.
         await session.onCompletion(content: part * 12, model: 'gpt-4');
 
         final events = await repository.eventStore.getEvents(session.sessionId);
         expect(events.whereType<TextStarted>().length, 1);
         final deltas = events.whereType<TextDelta>();
-        expect(deltas.length, 1); // 12 chunks -> 1 batched delta
-        expect(deltas.first.delta, part * 12);
+        expect(deltas.length, 12, reason: 'eager flush: 12 chunks = 12 deltas');
+        // Each delta is one chunk (10 chars)
+        expect(deltas.first.delta, part);
         expect(events.whereType<TextEnded>().single.fullText, part * 12);
       },
     );
@@ -271,6 +274,33 @@ void main() {
       final toolFailedEvents = events.whereType<ToolFailed>().toList();
       expect(toolFailedEvents.length, 1);
       expect(toolFailedEvents.first.toolCallId, 'tc_1');
+    });
+
+    test('onToolStart skips delegated tools (no ToolCalled part)', () async {
+      final session = await runner.startInitializedSession(agent: 'general');
+
+      await session.onToolStart('tc_task', 'task', {'prompt': 'do it'});
+      await session.onToolStart('tc_container', 'task_container', {
+        'tasks': [
+          {'description': 'a', 'prompt': 'b', 'subagent_type': 'general'},
+        ],
+      });
+      // Ordinary tools are still recorded.
+      await session.onToolStart('tc_shell', 'shell', {'cmd': 'ls'});
+      await session.onToolEnd('tc_container', 'task_container', 'ok');
+      await session.onToolEnd('tc_task', 'task', 'ok');
+      await session.onToolEnd('tc_shell', 'shell', 'file1');
+
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      final events = await repository.eventStore.getEvents(session.sessionId);
+      final toolCalls = events.whereType<ToolCalled>().toList();
+      expect(toolCalls.length, 1);
+      expect(toolCalls.single.toolName, 'shell');
+      // No tool parts may exist for delegated tools, only for the shell call.
+      final toolSuccesses = events.whereType<ToolSuccess>().toList();
+      expect(toolSuccesses.length, 1);
+      expect(toolSuccesses.single.toolCallId, 'tc_shell');
     });
 
     test('onToolStart/auto-close reasoning preserves event order', () async {
@@ -464,7 +494,6 @@ void main() {
 
         final futures = <Future<void>>[];
         for (var i = 0; i < 100; i++) {
-          // Very small 1-char chunks — total 100 chars stays below threshold.
           futures.add(Future(() => session.onChunk('${i % 10}')));
         }
         await Future.wait(futures);
@@ -477,10 +506,18 @@ void main() {
           reason: 'no duplicate TextStarted under concurrency',
         );
         expect(events.whereType<TextEnded>().length, 1);
-        // All 100 tokens aggregated into a single flushed delta.
+        // Eager flush: each chunk creates a TextDelta.
         final deltas = events.whereType<TextDelta>();
-        expect(deltas.length, 1);
-        expect(deltas.single.delta, contains('9'));
+        expect(
+          deltas.length,
+          100,
+          reason: 'eager flush: 100 chunks = 100 deltas',
+        );
+        expect(
+          deltas.map((d) => d.delta).join(),
+          contains('9'),
+          reason: 'all deltas concatenated contain all chars',
+        );
       },
     );
 
@@ -587,5 +624,52 @@ void main() {
 
       expect(() => session.dispose(), returnsNormally);
     });
+  });
+
+  group('SessionRunner.runTaskInChild', () {
+    late AppDatabase db;
+    late SessionRepository repository;
+    late SessionRunner runner;
+
+    setUpAll(() => AgentRegistry().init());
+
+    setUp(() {
+      db = AppDatabase.inMemory();
+      repository = SessionRepository(db);
+      runner = SessionRunner(repository, null);
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    test(
+      'emits exactly one TaskPartStarted with description and agent',
+      () async {
+        final parent = await runner.startInitializedSession(agent: 'general');
+        final holder = SessionRunnerHolder(
+          runner,
+          parentSessionId: parent.sessionId.value,
+        );
+
+        await runner.runTaskInChild(
+          parentSessionId: parent.sessionId,
+          taskPrompt: 'Do the research',
+          agent: 'general',
+          title: 'AI market revenue',
+          taskPartId: 'part_1',
+          holder: holder,
+          streamFn: (_) async {},
+        );
+
+        final events = await repository.eventStore.getEvents(parent.sessionId);
+        final started = events.whereType<TaskPartStarted>().toList();
+        expect(started.length, 1);
+        expect(started.single.partId, 'part_1');
+        expect(started.single.description, 'AI market revenue');
+        expect(started.single.agent, 'general');
+        expect(started.single.taskSessionId, isNotEmpty);
+      },
+    );
   });
 }

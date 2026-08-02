@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:chatorai/core/session/session_id.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 // ===========================================================================
 // MESSAGE ROLE ENUM
@@ -245,6 +246,12 @@ class Chat {
     required this.createdAt,
     required this.updatedAt,
   });
+
+  bool get isDefaultTitle => title.isEmpty;
+
+  SessionID toSessionId() {
+    return SessionID.fromRaw(id);
+  }
 
   Chat copyWith({
     String? id,

@@ -2061,4 +2061,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String restoreFailed(String error) {
     return 'فشلت الاستعادة: $error';
   }
+
+  @override
+  String get compactingIndicator => 'جارِ الضغط...';
 }

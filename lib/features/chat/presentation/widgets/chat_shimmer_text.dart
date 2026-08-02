@@ -1,14 +1,14 @@
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/shared/widgets/shimmer_mask.dart';
 import 'package:flutter/material.dart';
 
 // ===========================================================================
-// CHAT SHIMMER TEXT — shared shimmer using the `shimmer_text` package technique
-// (continuous left→right loop, text always visible) with a configurable weight.
-// The package itself hardcodes FontWeight.bold and exposes no weight param, so
-// the widget is implemented locally following the same approach.
+// CHAT SHIMMER TEXT — shared shimmer mask with a configurable weight/text.
+// The animation itself is delegated to [ShimmerMask] so the effect stays
+// identical across the app (same gradient, stops, repeat cadence).
 // ===========================================================================
 
-class ChatShimmerText extends StatefulWidget {
+class ChatShimmerText extends StatelessWidget {
   final String text;
   final double? textSize;
   final Color? color;
@@ -25,61 +25,15 @@ class ChatShimmerText extends StatefulWidget {
   });
 
   @override
-  State<ChatShimmerText> createState() => _ChatShimmerTextState();
-}
-
-class _ChatShimmerTextState extends State<ChatShimmerText>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _shimmerPosition;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.duration)
-      ..repeat();
-    _shimmerPosition = Tween<double>(
-      begin: -1.0,
-      end: 2.0,
-    ).animate(_controller);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final base = widget.color ?? Theme.of(context).colorScheme.primary;
-    final highlight = Color.lerp(base, Colors.white, 0.6) ?? base;
-
-    return AnimatedBuilder(
-      animation: _shimmerPosition,
-      builder: (context, child) => ShaderMask(
-        blendMode: BlendMode.srcIn,
-        shaderCallback: (rect) {
-          return LinearGradient(
-            begin: const Alignment(-1, 0),
-            end: const Alignment(1, 0),
-            colors: [base, highlight, base],
-            stops: [
-              _shimmerPosition.value - 0.2,
-              _shimmerPosition.value,
-              _shimmerPosition.value + 0.2,
-            ],
-          ).createShader(rect);
-        },
-        child: child,
-      ),
-      child: RepaintBoundary(
-        child: Text(
-          widget.text,
-          style: TextStyle(
-            fontSize: widget.textSize ?? ChatoraiFontSizes.md,
-            fontWeight: widget.fontWeight,
-          ),
+    return ShimmerMask(
+      duration: duration,
+      baseColor: color,
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: textSize ?? ChatoraiFontSizes.md,
+          fontWeight: fontWeight,
         ),
       ),
     );

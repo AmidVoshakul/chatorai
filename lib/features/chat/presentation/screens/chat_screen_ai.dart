@@ -24,31 +24,38 @@ extension _ChatScreenAiExt on _ChatScreenState {
         .sublist(messageIndex)
         .map((m) => m.id)
         .toList();
+    final sessionRepository = await ref.read(sessionRepositoryProvider.future);
+    final sessionId = chat.toSessionId();
     for (final msgId in messagesToDelete) {
-      await _chatStorageService.deleteMessageFromChat(chat.id, msgId);
+      await sessionRepository.appendEvent(
+        MessageDeleted(
+          sessionId: sessionId,
+          messageId: msgId,
+          timestamp: DateTime.now(),
+        ),
+      );
     }
 
-    final updatedMessages = chat.messages.sublist(0, messageIndex);
-    final agentName = ref.read(currentAgentProvider).name;
-    final newAssistantMessage = _createAssistantMessage(agent: agentName);
-    final chatWithPlaceholder = chat.copyWith(
-      messages: [...updatedMessages, newAssistantMessage],
+    final chatAfterDelete = chat.copyWith(
+      messages: chat.messages.sublist(0, messageIndex),
       updatedAt: DateTime.now(),
     );
 
-    _chatStorageService.addMessageToChat(chat.id, newAssistantMessage);
-    ref.read(chatListProvider.notifier).updateChat(chatWithPlaceholder);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _autoScrollEnabled = true;
-      _scrollToBottom(force: true);
-    });
+    // Auto-generate session title from the first user message when the chat
+    // still carries the localized default title.
+    if (mounted) {
+      if (chatAfterDelete.isDefaultTitle) {
+        await _autoGenerateTitleIfNeeded(chatAfterDelete);
+      }
+    }
 
-    final messages = _buildApiMessages(chatWithPlaceholder);
-    await _initiateStream(
-      chat: chatWithPlaceholder,
-      messages: messages,
-      isContinuation: false,
-      delegateAgentId: null,
+    // Appends the assistant placeholder and streams the regenerated response
+    // into the same session as the deleted messages (no duplicate session).
+    await _startAssistantTurn(
+      chat: chatAfterDelete,
+      sessionId: sessionId.value,
+      agentName: ref.read(currentAgentProvider).name,
+      buildMessages: (withPlaceholder) => _buildApiMessages(withPlaceholder),
     );
   }
 
@@ -62,39 +69,47 @@ extension _ChatScreenAiExt on _ChatScreenState {
     );
     if (lastMessage.content.isEmpty) return;
 
-    final continuationMessage = _createAssistantMessage(
-      agent: ref.read(currentAgentProvider).name,
-    );
-    await _chatStorageService.addMessageToChat(
-      currentChat!.id,
-      continuationMessage,
-    );
-    final chatFromStorage = await _chatStorageService.getChat(currentChat!.id);
-    if (chatFromStorage == null) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _autoScrollEnabled = true;
-      _scrollToBottom(force: true);
-    });
+    final sessionId = currentChat!.toSessionId();
 
-    final continuationPrompt = _buildApiMessages(chatFromStorage);
-    // Replace last assistant content with continue instruction
-    if (continuationPrompt.isNotEmpty) {
-      continuationPrompt[continuationPrompt.length - 1] = {
-        'role': 'user',
-        'content': 'Please continue your previous response.',
-      };
-    } else {
-      continuationPrompt.addAll([
-        {'role': 'user', 'content': 'Please continue your previous response.'},
-        {'role': 'assistant', 'content': lastMessage.content},
-        {'role': 'user', 'content': 'Continue from where you left off.'},
-      ]);
+    // Auto-generate session title from the first user message when the chat
+    // still carries the localized default title.
+    if (mounted) {
+      final chatToCheck = currentChat;
+      if (chatToCheck != null && chatToCheck.isDefaultTitle) {
+        await _autoGenerateTitleIfNeeded(chatToCheck);
+      }
     }
-    await _initiateStream(
+
+    final chatFromStorage = currentChat;
+    if (chatFromStorage == null) return;
+
+    // Appends the continuation placeholder and streams into it, reusing the
+    // placeholder id so no second assistant message is created on reload.
+    await _startAssistantTurn(
       chat: chatFromStorage,
-      messages: continuationPrompt,
+      sessionId: sessionId.value,
+      agentName: ref.read(currentAgentProvider).name,
       isContinuation: true,
-      delegateAgentId: null,
+      buildMessages: (withPlaceholder) {
+        final continuationPrompt = _buildApiMessages(withPlaceholder);
+        // Replace last assistant content with continue instruction
+        if (continuationPrompt.isNotEmpty) {
+          continuationPrompt[continuationPrompt.length - 1] = {
+            'role': 'user',
+            'content': 'Please continue your previous response.',
+          };
+        } else {
+          continuationPrompt.addAll([
+            {
+              'role': 'user',
+              'content': 'Please continue your previous response.',
+            },
+            {'role': 'assistant', 'content': lastMessage.content},
+            {'role': 'user', 'content': 'Continue from where you left off.'},
+          ]);
+        }
+        return continuationPrompt;
+      },
     );
   }
 }

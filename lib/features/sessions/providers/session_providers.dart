@@ -1,6 +1,3 @@
-export 'package:chatorai/core/session/session_db_provider.dart'
-    show sessionDatabaseProvider, sessionRepositoryProvider;
-
 import 'package:chatorai/core/session/session_db_provider.dart'
     show sessionRepositoryProvider;
 import 'package:chatorai/core/session/session_id.dart';
@@ -9,14 +6,8 @@ import 'package:chatorai/core/session/session_stack.dart';
 import 'package:chatorai/core/session/session_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Provides all active (non-archived) sessions sorted by [SessionState.updatedAt]
-/// descending.
-///
-/// Used by the sidebar to display the session list.
-final sessionListProvider = FutureProvider<List<SessionState>>((ref) async {
-  final repo = await ref.watch(sessionRepositoryProvider.future);
-  return repo.findAll();
-});
+export 'package:chatorai/core/session/session_db_provider.dart'
+    show sessionDatabaseProvider, sessionRepositoryProvider;
 
 /// Holds the currently active [SessionRunner] and session ID during streaming.
 ///
@@ -51,13 +42,6 @@ class _CurrentRunnerNotifier
     _holder?.activeChildSessionId = value;
   }
 
-  /// Set child tool event callback on the holder.
-  void Function(String, String, String?)? get onChildToolEvent =>
-      _holder?.onChildToolEvent;
-  set onChildToolEvent(void Function(String, String, String?)? callback) {
-    _holder?.onChildToolEvent = callback;
-  }
-
   /// Maps a child session ID to its parent task part ID (concurrent routing).
   Map<String, String> get childToTaskPart =>
       _holder?.childToTaskPart ?? const {};
@@ -73,23 +57,34 @@ class _CurrentRunnerNotifier
     _holder?.onChildSessionResolved = callback;
   }
 
-  /// Set task-start callback on the holder (creates the visible TaskPart card).
+  /// Set task-start callback on the holder.
   void Function(String, String, String)? get onTaskStart =>
       _holder?.onTaskStart;
   set onTaskStart(void Function(String, String, String)? callback) {
     _holder?.onTaskStart = callback;
   }
 
-  /// Set task-end callback on the holder (finalizes the visible TaskPart card).
+  /// Set task-end callback on the holder.
   void Function(String)? get onTaskEnd => _holder?.onTaskEnd;
   set onTaskEnd(void Function(String)? callback) {
     _holder?.onTaskEnd = callback;
+  }
+
+  /// Set child tool event callback on the holder.
+  void Function(String, String, String?)? get onChildToolEvent =>
+      _holder?.onChildToolEvent;
+  set onChildToolEvent(void Function(String, String, String?)? callback) {
+    _holder?.onChildToolEvent = callback;
   }
 
   void clear() {
     state = null;
     _holder?.runner = null;
     _holder?.parentSessionId = null;
+  }
+
+  void cancelAllChildren() {
+    _holder?.cancelAllChildren();
   }
 }
 

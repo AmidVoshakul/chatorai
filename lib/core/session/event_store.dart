@@ -5,6 +5,7 @@ import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat/todo_part.dart';
 import 'package:drift/drift.dart';
+
 import 'database.dart' as db;
 import 'events.dart';
 import 'session_id.dart';
@@ -319,11 +320,29 @@ class EventStore {
         'agent': e.agent,
         'taskSessionId': e.taskSessionId,
       },
-      TaskPartCompleted e => {'type': 'TaskPartCompleted', 'partId': e.partId},
+      TaskPartCompleted e => {
+        'type': 'TaskPartCompleted',
+        'partId': e.partId,
+        'toolCallsCount': e.toolCallsCount,
+      },
       TaskPartError e => {
         'type': 'TaskPartError',
         'partId': e.partId,
         'error': e.error,
+        'toolCallsCount': e.toolCallsCount,
+      },
+      MessageUpdated e => {
+        'type': 'MessageUpdated',
+        'messageId': e.messageId,
+        if (e.content != null) 'content': e.content,
+        if (e.reasoning != null) 'reasoning': e.reasoning,
+        if (e.model != null) 'model': e.model,
+        if (e.error != null) 'error': e.error,
+      },
+      MessageDeleted e => {'type': 'MessageDeleted', 'messageId': e.messageId},
+      SessionTitleUpdated e => {
+        'type': 'SessionTitleUpdated',
+        'title': e.title,
       },
       QuestionPartStarted e => {
         'type': 'QuestionPartStarted',
@@ -556,6 +575,7 @@ class EventStore {
       'TaskPartCompleted' => TaskPartCompleted(
         sessionId: sid,
         partId: data['partId'] as String,
+        toolCallsCount: data['toolCallsCount'] as int? ?? 0,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -563,6 +583,29 @@ class EventStore {
         sessionId: sid,
         partId: data['partId'] as String,
         error: data['error'] as String,
+        toolCallsCount: data['toolCallsCount'] as int? ?? 0,
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'MessageUpdated' => MessageUpdated(
+        sessionId: sid,
+        messageId: data['messageId'] as String,
+        content: data['content'] as String?,
+        reasoning: data['reasoning'] as String?,
+        model: data['model'] as String?,
+        error: data['error'] as String?,
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'MessageDeleted' => MessageDeleted(
+        sessionId: sid,
+        messageId: data['messageId'] as String,
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'SessionTitleUpdated' => SessionTitleUpdated(
+        sessionId: sid,
+        title: data['title'] as String,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),

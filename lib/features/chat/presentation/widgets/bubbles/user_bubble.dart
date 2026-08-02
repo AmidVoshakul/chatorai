@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/action_row.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +11,7 @@ class UserMessageBubble extends StatelessWidget {
   final UserMessage message;
   final String chatId;
   final String messageId;
-  final ChatStorageService chatStorageService;
+  final SessionRepository sessionRepository;
   final VoidCallback? onEdit;
   final VoidCallback? onMessageDeleted;
   final VoidCallback? onMessageRegenerate;
@@ -34,7 +34,7 @@ class UserMessageBubble extends StatelessWidget {
     required this.message,
     required this.chatId,
     required this.messageId,
-    required this.chatStorageService,
+    required this.sessionRepository,
     this.onEdit,
     this.onMessageDeleted,
     this.onMessageRegenerate,
@@ -141,7 +141,7 @@ class UserMessageBubble extends StatelessWidget {
               content: message.content,
               chatId: chatId,
               messageId: messageId,
-              chatStorageService: chatStorageService,
+              sessionRepository: sessionRepository,
               onEdit: onEdit,
               onMessageDeleted: onMessageDeleted,
               onMessageRegenerate: onMessageRegenerate,

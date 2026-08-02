@@ -587,7 +587,10 @@ void main() {
         await catalog.setApiKey('test-provider', 'sk-test');
 
         // Should not throw
-        expect(() => catalog.dispose(), returnsNormally);
+        expect(
+          () => catalog.setApiKey('test-provider', 'sk-test'),
+          returnsNormally,
+        );
       });
     });
 
@@ -1388,23 +1391,6 @@ void main() {
           expect(stored!.description, isNot(contains('...')));
         },
       );
-    });
-
-    group('addListener/removeListener', () {
-      test('addListener and removeListener are no-ops', () async {
-        SharedPreferences.setMockInitialValues({});
-        final prefs = await SharedPreferences.getInstance();
-        mockStorage = MockSecureStorageService();
-        catalog = ProviderCatalogService(
-          secureStorage: mockStorage,
-          prefs: prefs,
-          builtInProviders: [testProvider],
-        );
-
-        // Should not throw
-        expect(() => catalog.addListener(() {}), returnsNormally);
-        expect(() => catalog.removeListener(() {}), returnsNormally);
-      });
     });
 
     group('getAllModelsRaw', () {

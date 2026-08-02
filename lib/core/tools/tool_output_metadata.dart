@@ -88,12 +88,4 @@ extension ToolOutputMetadata on ToolOutput {
 
   bool get skillLoaded => metadata?['skill'] == true;
   String? get skillName => metadata?['name'] as String?;
-
-  // ── ToolOutputPersistence ──────────────────────────────────────────────────
-
-  String? get persistenceToolCallId => metadata?['toolCallId'] as String?;
-  String? get persistenceToolName => metadata?['toolName'] as String?;
-  String? get persistenceSessionId => metadata?['sessionId'] as String?;
-  int? get persistenceDurationMs => metadata?['durationMs'] as int?;
-  String? get persistenceStatus => metadata?['status'] as String?;
 }

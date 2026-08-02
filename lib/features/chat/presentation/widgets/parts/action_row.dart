@@ -1,5 +1,5 @@
+import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
-import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/format_time_utils.dart';
@@ -15,7 +15,7 @@ class ActionRow extends StatelessWidget {
   final String? content;
   final String chatId;
   final String messageId;
-  final ChatStorageService chatStorageService;
+  final SessionRepository sessionRepository;
   final VoidCallback? onEdit;
   final VoidCallback? onMessageDeleted;
   final VoidCallback? onMessageRegenerate;
@@ -33,7 +33,7 @@ class ActionRow extends StatelessWidget {
     this.content,
     required this.chatId,
     required this.messageId,
-    required this.chatStorageService,
+    required this.sessionRepository,
     this.onEdit,
     this.onMessageDeleted,
     this.onMessageRegenerate,
@@ -78,7 +78,7 @@ class ActionRow extends StatelessWidget {
               content: content,
               chatId: chatId,
               messageId: messageId,
-              chatStorageService: chatStorageService,
+              sessionRepository: sessionRepository,
               onEdit: onEdit,
               onMessageDeleted: onMessageDeleted,
               onMessageRegenerate: onMessageRegenerate,
@@ -131,7 +131,7 @@ class ActionRow extends StatelessWidget {
                   content: content,
                   chatId: chatId,
                   messageId: messageId,
-                  chatStorageService: chatStorageService,
+                  sessionRepository: sessionRepository,
                   onMessageDeleted: onMessageDeleted,
                   onMessageRegenerate: onMessageRegenerate,
                   onContinuationSelected: onContinuationSelected,

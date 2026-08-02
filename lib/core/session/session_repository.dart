@@ -150,14 +150,8 @@ class SessionRepository {
     return state;
   }
 
-  String _stripSesPrefix(String value) {
-    if (value.startsWith('ses_')) return value;
-    return 'ses_$value';
-  }
-
   Future<SessionState?> getSessionMetaFromId(String sessionId) async {
-    final stripped = _stripSesPrefix(sessionId);
-    return getSessionMeta(SessionID.fromString(stripped));
+    return getSessionMeta(SessionID.fromRaw(sessionId));
   }
 
   /// Returns all active (non-archived) sessions sorted by [updatedAt] descending.
@@ -259,6 +253,35 @@ class SessionRepository {
       await _eventStore.append(event);
       await projectToDb(_db, event);
     });
+  }
+
+  /// Finds sessions with an empty title and zero messages, and deletes them.
+  ///
+  /// These "orphan" sessions are created as a side effect of a bug where
+  /// [SessionRunner.startInitializedSession] creates a second session when
+  /// no session ID is passed. Call this once at startup to clean up any
+  /// such stale rows left over from previous versions.
+  ///
+  /// Returns the number of deleted sessions.
+  Future<int> cleanupOrphanSessions() async {
+    final emptyTitleRows = await (_db.select(
+      _db.sessions,
+    )..where((s) => s.title.equals(''))).get();
+
+    if (emptyTitleRows.isEmpty) return 0;
+
+    var deleted = 0;
+    for (final row in emptyTitleRows) {
+      final msgCount = await (_db.select(
+        _db.messages,
+      )..where((m) => m.sessionId.equals(row.id))).get().then((r) => r.length);
+
+      if (msgCount == 0) {
+        await deleteSession(SessionID.fromString(row.id));
+        deleted++;
+      }
+    }
+    return deleted;
   }
 
   Future<void> deleteSession(SessionID sessionId) async {
@@ -435,8 +458,7 @@ class SessionRepository {
   }
 
   Future<List<SessionState>> getChildSessionsFromId(String parentId) async {
-    final stripped = _stripSesPrefix(parentId);
-    return getChildSessions(SessionID.fromString(stripped));
+    return getChildSessions(SessionID.fromRaw(parentId));
   }
 
   Future<Map<String, int>> getAggregateUsage(SessionID sessionId) async {

@@ -2102,4 +2102,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String restoreFailed(String error) {
     return 'Restore failed: $error';
   }
+
+  @override
+  String get compactingIndicator => 'Compacting...';
 }

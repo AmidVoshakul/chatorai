@@ -13,10 +13,10 @@ packages:
     dependency: "direct main"
     description:
       name: ai_sdk_anthropic
-      sha256: "068e143464748dc7c6a7fbbe15aa25800503ad8a9b33301d84cb452a74c6b717"
+      sha256: d27d444e690cb0c394d64ea7e0660dc915ae711af96091a34298ce331f58c3db
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.2.0"
   ai_sdk_dart:
     dependency: "direct main"
     description:
@@ -29,18 +29,18 @@ packages:
     dependency: "direct main"
     description:
       name: ai_sdk_google
-      sha256: "37711fdd3a1bed5d4e6bf36cb7beda7c3294bba0f640b0613c15b36361d156b9"
+      sha256: "2f53ea252ff87d252348c9dfcd4757cea9017501e9a6bf3093f794f9b3725784"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
-  ai_sdk_openai:
+    version: "1.2.0"
+  ai_sdk_openai_compatible:
     dependency: "direct main"
     description:
-      name: ai_sdk_openai
-      sha256: "4e8fc6bc11cfbbd20900bd515062064e307c237617425d4e405bcbfaa0f1c3ee"
+      name: ai_sdk_openai_compatible
+      sha256: b3c22fd81d0d2fb4eea73aba82051e0df4b1afb0597d39426876617da10335cd
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.2.0"
   ai_sdk_provider:
     dependency: "direct main"
     description:

@@ -47,6 +47,11 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       updatedAt: event.timestamp,
     ),
 
+    SessionTitleUpdated(:final title) => state.copyWith(
+      title: title,
+      updatedAt: event.timestamp,
+    ),
+
     MessageAdded(:final messageId, :final role, :final content) =>
       state.copyWith(
         messages: [
@@ -61,6 +66,31 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
         ],
         updatedAt: event.timestamp,
       ),
+
+    MessageUpdated(
+      :final messageId,
+      :final content,
+      :final reasoning,
+      :final model,
+      :final error,
+    ) =>
+      state.copyWith(
+        messages: state.messages.map((m) {
+          if (m.id != messageId) return m;
+          return m.copyWith(
+            content: content ?? m.content,
+            reasoning: reasoning ?? m.reasoning,
+            model: model ?? m.model,
+            error: error ?? m.error,
+          );
+        }).toList(),
+        updatedAt: event.timestamp,
+      ),
+
+    MessageDeleted(:final messageId) => state.copyWith(
+      messages: state.messages.where((m) => m.id != messageId).toList(),
+      updatedAt: event.timestamp,
+    ),
 
     TextStarted(:final messageId, :final partId) => state.copyWith(
       messages: state.messages.any((m) => m.id == messageId)
@@ -109,6 +139,13 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
                 synthetic: current.synthetic,
                 ignored: current.ignored,
                 title: current.title,
+              ),
+              create: () => AssistantText(
+                id: partId,
+                sessionId: event.sessionId.value,
+                messageId: messageId,
+                text: delta,
+                synthetic: true,
               ),
             )
           : _updateLastTextPart(state.parts, messageId, delta),
@@ -196,6 +233,13 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
                   started: current.started,
                   ended: current.ended,
                 ),
+                create: () => AssistantReasoning(
+                  id: partId,
+                  sessionId: event.sessionId.value,
+                  messageId: messageId,
+                  text: delta,
+                  started: event.timestamp,
+                ),
               )
             : _updateLastReasoningPart(state.parts, messageId, delta),
         updatedAt: event.timestamp,
@@ -227,6 +271,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
                 messageId,
                 fullReasoning,
                 ended: event.timestamp,
+                append: false,
               ),
         updatedAt: event.timestamp,
       ),
@@ -460,9 +505,21 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       :final taskSessionId,
     ) =>
       state.copyWith(
-        parts: [
-          ..._closeOpenReasoning(state.parts, event.timestamp),
-          AssistantTask(
+        parts: _updatePartById<AssistantTask>(
+          _closeOpenReasoning(state.parts, event.timestamp),
+          partId,
+          (current) => AssistantTask(
+            id: current.id!,
+            sessionId: current.sessionId!,
+            messageId: current.messageId!,
+            description: description,
+            agent: agent,
+            state: ToolState.running,
+            taskSessionId: taskSessionId,
+            retryAttempt: current.retryAttempt,
+            startedAt: current.startedAt ?? event.timestamp,
+          ),
+          create: () => AssistantTask(
             id: partId,
             sessionId: event.sessionId.value,
             messageId: _lastAssistantMsgId(state),
@@ -472,11 +529,11 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
             taskSessionId: taskSessionId,
             startedAt: event.timestamp,
           ),
-        ],
+        ),
         updatedAt: event.timestamp,
       ),
 
-    TaskPartCompleted(:final partId) => state.copyWith(
+    TaskPartCompleted(:final partId, :final toolCallsCount) => state.copyWith(
       parts: _updatePartById<AssistantTask>(
         state.parts,
         partId,
@@ -492,7 +549,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
           retryAttempt: current.retryAttempt,
           currentTool: null,
           currentToolTitle: null,
-          toolCallsCount: current.toolCallsCount,
+          toolCallsCount: toolCallsCount,
           durationMs: current.durationMs,
           startedAt: current.startedAt,
           endedAt: event.timestamp,
@@ -501,30 +558,31 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       updatedAt: event.timestamp,
     ),
 
-    TaskPartError(:final partId, :final error) => state.copyWith(
-      parts: _updatePartById<AssistantTask>(
-        state.parts,
-        partId,
-        (current) => AssistantTask(
-          id: current.id!,
-          sessionId: current.sessionId!,
-          messageId: current.messageId!,
-          description: current.description,
-          agent: current.agent,
-          state: ToolState.error,
-          taskSessionId: current.taskSessionId,
-          error: error,
-          retryAttempt: current.retryAttempt,
-          currentTool: null,
-          currentToolTitle: null,
-          toolCallsCount: current.toolCallsCount,
-          durationMs: current.durationMs,
-          startedAt: current.startedAt,
-          endedAt: event.timestamp,
+    TaskPartError(:final partId, :final error, :final toolCallsCount) =>
+      state.copyWith(
+        parts: _updatePartById<AssistantTask>(
+          state.parts,
+          partId,
+          (current) => AssistantTask(
+            id: current.id!,
+            sessionId: current.sessionId!,
+            messageId: current.messageId!,
+            description: current.description,
+            agent: current.agent,
+            state: ToolState.error,
+            taskSessionId: current.taskSessionId,
+            error: error,
+            retryAttempt: current.retryAttempt,
+            currentTool: null,
+            currentToolTitle: null,
+            toolCallsCount: toolCallsCount,
+            durationMs: current.durationMs,
+            startedAt: current.startedAt,
+            endedAt: event.timestamp,
+          ),
         ),
+        updatedAt: event.timestamp,
       ),
-      updatedAt: event.timestamp,
-    ),
 
     QuestionPartStarted(:final partId, :final questionText, :final options) =>
       state.copyWith(
@@ -636,6 +694,16 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
         ),
       );
 
+    case SessionTitleUpdated(:final title):
+      await (db.update(
+        db.sessions,
+      )..where((s) => s.id.equals(event.sessionId.value))).write(
+        SessionsCompanion(
+          title: Value(title),
+          updatedAt: Value(event.timestamp),
+        ),
+      );
+
     case MessageAdded(:final messageId, :final role, :final content):
       final seq = await _existingOrNextMessageSeq(
         db,
@@ -689,6 +757,29 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
     case ReasoningEnded(:final messageId, :final fullReasoning):
       await (db.update(db.messages)..where((t) => t.id.equals(messageId)))
           .write(MessagesCompanion(reasoning: Value<String?>(fullReasoning)));
+
+    case MessageUpdated(
+      :final messageId,
+      :final content,
+      :final reasoning,
+      :final model,
+      :final error,
+    ):
+      await (db.update(
+        db.messages,
+      )..where((t) => t.id.equals(messageId))).write(
+        MessagesCompanion(
+          content: content != null ? Value(content) : const Value.absent(),
+          reasoning: reasoning != null
+              ? Value(reasoning)
+              : const Value.absent(),
+          model: model != null ? Value(model) : const Value.absent(),
+          error: error != null ? Value(error) : const Value.absent(),
+        ),
+      );
+
+    case MessageDeleted(:final messageId):
+      await (db.delete(db.messages)..where((t) => t.id.equals(messageId))).go();
 
     case ToolCalled(
       toolCallId: final toolCallId,
@@ -882,6 +973,7 @@ List<AssistantContent> _updateLastReasoningPart(
   String messageId,
   String text, {
   DateTime? ended,
+  bool append = true,
 }) {
   final idx = parts.lastIndexWhere(
     (p) =>
@@ -893,7 +985,7 @@ List<AssistantContent> _updateLastReasoningPart(
     id: existing.id!,
     sessionId: existing.sessionId!,
     messageId: existing.messageId!,
-    text: text,
+    text: append ? existing.text + text : text,
     started: existing.started,
     ended: ended,
   );
@@ -906,8 +998,6 @@ List<AssistantContent> _updateLastReasoningPart(
 /// [ended] timestamp to [now]. This prevents subsequent ReasoningDelta events
 /// from merging into a block that should be independent (e.g. separated by a
 /// tool call, question, or task).
-///
-/// Mirror of ChatScreenNotifier._closeOpenReasoning — both must stay in sync.
 List<AssistantContent> _closeOpenReasoning(
   List<AssistantContent> parts,
   DateTime now,
@@ -945,10 +1035,18 @@ String _lastAssistantMsgId(SessionState state) {
 List<AssistantContent> _updatePartById<T extends AssistantContent>(
   List<AssistantContent> parts,
   String partId,
-  T Function(T current) update,
-) {
+  T Function(T current) update, {
+  T Function()? create,
+}) {
   final idx = parts.indexWhere((p) => p.id == partId);
-  if (idx == -1) return parts;
+  if (idx == -1) {
+    if (create != null) {
+      final updated = List<AssistantContent>.from(parts);
+      updated.add(create());
+      return updated;
+    }
+    return parts;
+  }
   final updated = List<AssistantContent>.from(parts);
   updated[idx] = update(updated[idx] as T);
   return updated;

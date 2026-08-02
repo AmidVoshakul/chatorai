@@ -9,6 +9,19 @@ const Set<String> subagentDeniedTools = {
   'plan_exit',
 };
 
+/// Tools that spawn their own child sessions and are rendered in the parent
+/// chat as per-task [TaskPart] cards instead of a regular tool part.
+///
+/// The parent [SessionRunnerSession] must not record a `ToolCalled` part for
+/// these tools: the sub-tasks' progress is represented by `TaskPartStarted`
+/// events (emitted by `runTaskInChild`), and recording a tool part as well
+/// would render a redundant "header" next to the task cards.
+const Set<String> delegatedToolIds = {'task', 'task_container'};
+
+/// Whether [toolId] is a delegated tool whose result is surfaced through
+/// per-task cards rather than a tool part.
+bool isDelegatedTool(String toolId) => delegatedToolIds.contains(toolId);
+
 String normalizeSessionId(String id) {
   if (id.startsWith('ses_')) return id;
   return 'ses_$id';

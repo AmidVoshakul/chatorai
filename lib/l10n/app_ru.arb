@@ -651,5 +651,6 @@
   "toolResultRestoredSnackbar": "Файлы восстановлены до состояния перед редактированием",
   "toolResultOriginalTitle": "Исходное содержимое перед редактированием",
   "restoreFailed": "Не удалось восстановить: {error}",
-  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } }
+  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
+  "compactingIndicator": "Сжатие..."
 }

@@ -20,7 +20,6 @@ MessagePart partFromJson(Map<String, dynamic> json) {
   final type = json['type'] as String;
 
   // Normalize tool_call → tool_result for unified handling
-  // ToolCallPart is deprecated; use ToolResultPart with state field
   final normalizedType = type == 'tool_call' ? 'tool_result' : type;
 
   return switch (normalizedType) {

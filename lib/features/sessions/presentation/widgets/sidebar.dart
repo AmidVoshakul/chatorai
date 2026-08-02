@@ -1,6 +1,6 @@
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/sessions/providers/sidebar_provider.dart';
 import 'package:chatorai/features/sessions/presentation/widgets/sidebar_chat_actions_menu.dart';
+import 'package:chatorai/features/sessions/providers/sidebar_provider.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart'
     show themeProvider, languageProvider, currentChatProvider;
@@ -60,9 +60,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
 
     // Отслеживаем только необходимые данные с оптимизацией
     final filteredChats = ref.watch(filteredChatsProvider);
-    final isLoading = ref.watch(
-      chatListLoadingProvider.select((value) => value),
-    );
+    final isLoading = ref.watch(chatListLoadingProvider);
     final currentChatId = ref.watch(currentChatProvider.select((c) => c?.id));
 
     // Язык используется для форматирования даты в sidebar
@@ -313,7 +311,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
         child: Container(
           padding: const EdgeInsets.symmetric(
             horizontal: ChatoraiSpacing.lg,
-            vertical: ChatoraiSpacing.md,
+            vertical: ChatoraiSpacing.sm,
           ),
           height: ChatoraiSpacing.sidebarItemHeight,
           child: Stack(

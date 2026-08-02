@@ -1,7 +1,8 @@
 import 'dart:async';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/providers/chat_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ===========================================================================
 // STATE
@@ -66,8 +67,7 @@ final sidebarProvider = NotifierProvider<SidebarNotifier, SidebarState>(
 );
 
 final chatListLoadingProvider = Provider<bool>((ref) {
-  final chatsAsync = ref.watch(chatListProvider);
-  return chatsAsync.isLoading;
+  return ref.watch(chatListProvider).isLoading;
 });
 
 final filteredChatsProvider = Provider<List<Chat>>((ref) {

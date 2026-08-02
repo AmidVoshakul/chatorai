@@ -2021,4 +2021,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String restoreFailed(String error) {
     return '还原失败：$error';
   }
+
+  @override
+  String get compactingIndicator => '压缩中...';
 }

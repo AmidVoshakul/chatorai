@@ -1,4 +1,4 @@
-import 'package:chatorai/features/models/data/models/model_card_model.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -10,10 +10,10 @@ import 'package:chatorai/features/models/screens/models_screen.dart';
 
 class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String selectedModel;
-  final ChatModel? selectedModelObject;
+  final ModelConfig? selectedModelObject;
   final bool Function() hasHeadings;
   final VoidCallback onToggleNavigator;
-  final Function(String modelId, ChatModel? modelObject) onModelSelected;
+  final Function(String modelId, ModelConfig? modelObject) onModelSelected;
   final VoidCallback? onOpenModelSelector;
   final VoidCallback? onMenuPressed;
 

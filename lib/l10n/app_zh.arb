@@ -651,5 +651,6 @@
   "toolResultRestoredSnackbar": "文件已还原到编辑前状态",
   "toolResultOriginalTitle": "编辑前的原始内容",
   "restoreFailed": "还原失败：{error}",
-  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } }
+  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
+  "compactingIndicator": "压缩中..."
 }

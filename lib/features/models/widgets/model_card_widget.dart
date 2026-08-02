@@ -1,4 +1,4 @@
-import 'package:chatorai/features/models/data/models/model_card_model.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/features/models/widgets/model_features_widget.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart' show ChatoraiColors;
@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 // ===========================================================================
 
 class ModelCardWidget extends StatelessWidget {
-  final ChatModel model;
+  final ModelConfig model;
   final bool isSelected;
   final bool isFavorite;
   final VoidCallback onTap;
@@ -119,7 +119,7 @@ class ModelCardWidget extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                model.description,
+                model.description ?? '',
                 style: TextStyle(
                   color: Theme.of(context).textTheme.bodyMedium!.color,
                   fontSize: 14,

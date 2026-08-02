@@ -44,6 +44,7 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     required void Function() onClearAttachedFile,
   }) async {
     FocusScope.of(context).unfocus();
+    final localizations = AppLocalizations.of(context)!;
     if (textController.text.trim().isEmpty &&
         ref.read(chatInputProvider).attachedFilePath == null) {
       return;
@@ -57,8 +58,7 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
           if (mounted) {
             SnackbarUtils.showErrorSnackBar(
               context: context,
-              message:
-                  'Модель $modelId не поддерживает файлы. Удалите файл или выберите другую модель.',
+              message: localizations.modelDoesNotSupportFiles(modelId),
               icon: Icons.image_not_supported,
               duration: const Duration(seconds: 5),
             );
@@ -74,6 +74,13 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       await speechService?.stopListening();
     }
     var text = textController.text.trim();
+
+    if (text == '/new' || text.startsWith('/new ')) {
+      textController.clear();
+      onClearAttachedFile();
+      ref.read(chatInputProvider.notifier).setIsSending(false);
+      return;
+    }
 
     final resolved = await resolveText(text);
     if (resolved == null) {

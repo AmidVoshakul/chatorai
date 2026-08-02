@@ -2,26 +2,26 @@
 
 import 'dart:async';
 import 'dart:math';
-import 'package:path/path.dart' as p;
 
 import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/constants/chat_constants.dart';
 import 'package:chatorai/core/context/compaction_orchestrator.dart';
 import 'package:chatorai/core/context/compaction_service.dart';
-// import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/keyboard/shortcut_handler.dart';
 import 'package:chatorai/core/keyboard/shortcuts.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
+import 'package:chatorai/core/session/event_bus.dart';
+import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/data/models/chat/message_converter.dart'
+    show assistantContentToPartMaps, sessionStateToChat;
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
-import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart'
-    show assistantContentToPartMaps;
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/presentation/screens/child_session_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_app_bar.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart';
@@ -31,7 +31,6 @@ import 'package:chatorai/features/chat/presentation/widgets/speech_overlay.dart'
 import 'package:chatorai/features/chat/presentation/widgets/welcome_questions_data.dart';
 import 'package:chatorai/features/chat/services/continuation_suggestion_service.dart';
 import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
-import 'package:chatorai/features/models/data/models/model_card_model.dart';
 import 'package:chatorai/features/models/screens/models_screen.dart';
 import 'package:chatorai/features/sessions/presentation/widgets/sidebar_wrapper.dart';
 import 'package:chatorai/features/settings/data/models/model_settings.dart';
@@ -43,7 +42,6 @@ import 'package:chatorai/providers.dart'
         modelProvider,
         modelSettingsProvider,
         chatListProvider,
-        chatStorageServiceProvider,
         chatAiServiceProvider,
         currentChatIdProvider,
         currentChatProvider,
@@ -54,7 +52,8 @@ import 'package:chatorai/providers.dart'
         currentSessionRunnerProvider,
         sessionRepositoryProvider,
         sessionStackProvider,
-        permissionServiceProvider;
+        permissionServiceProvider,
+        sessionPartsProvider;
 import 'package:chatorai/shared/utils/chat_error_utils.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
@@ -62,6 +61,7 @@ import 'package:chatorai/shared/utils/message_utils.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
 part 'chat_screen_ai.dart';
 part 'chat_screen_build.dart';
@@ -84,7 +84,6 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen>
     with TickerProviderStateMixin {
-  late ChatStorageService _chatStorageService;
   late ScrollController _messageScrollController;
   late Future<SessionRepository> _sessionRepositoryFuture;
   SessionRunnerSession? _sessionRunner;
@@ -119,6 +118,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   String? _currentSessionId;
   bool _streamCancelled = false;
 
+  /// Guard against concurrent _handleSendMessage calls. Without this,
+  /// two rapid sends each wait for toolRegistry (30s+), then both
+  /// create a SessionRunner and stream on the same session, interleaving
+  /// events and corrupting messages.
+  bool _isHandlingMessage = false;
+
   /// Test-only accessor for auto-scroll state.
   bool get autoScrollEnabledForTest => _autoScrollEnabled;
 
@@ -135,13 +140,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   Chat? get currentChat => ref.watch(currentChatProvider);
   String get selectedModelId => ref.watch(modelProvider).selectedModelId;
-  ChatModel? get selectedModelObject =>
+  ModelConfig? get selectedModelObject =>
       ref.watch(modelProvider).selectedModelObject;
 
   @override
   void initState() {
     super.initState();
-    _chatStorageService = ref.read(chatStorageServiceProvider);
     _sessionRepositoryFuture = ref.read(sessionRepositoryProvider.future);
     _messageScrollController =
         widget.testScrollController ?? ScrollController();
@@ -215,6 +219,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   void _openSettings() {
     Navigator.of(context).pushNamed('/settings');
+  }
+
+  void _toggleSidebar() {
+    final scaffold = _scaffoldKey.currentState;
+    if (scaffold == null) return;
+    if (scaffold.isDrawerOpen) {
+      Navigator.pop(context);
+    } else {
+      FocusScope.of(context).unfocus();
+      scaffold.openDrawer();
+    }
+  }
+
+  void _scrollToChatStart() {
+    if (_messageScrollController.hasClients) {
+      _messageScrollController.jumpTo(0);
+    }
+  }
+
+  void _scrollToChatEnd() {
+    _scrollToBottom(force: true);
   }
 
   Future<void> _showContinuationSuggestions(Message message) async {
@@ -304,6 +329,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       ),
       AppShortcuts.openLatestChildSession(_navigateToLastChildSession),
       AppShortcuts.cyclePrimaryAgent(_cycleAgent),
+      AppShortcuts.toggleSidebar(_toggleSidebar),
+      AppShortcuts.newChat(() => _createNewChat()),
+      AppShortcuts.openModelSelector(_openModelSelector),
+      AppShortcuts.openSettings(_openSettings),
+      AppShortcuts.scrollToChatStart(_scrollToChatStart),
+      AppShortcuts.scrollToChatEnd(_scrollToChatEnd),
     ];
 
     return ShortcutHandler(shortcuts: shortcuts, child: screenContent);
@@ -318,14 +349,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         .activeChildSessionId;
 
     if (sessionId == null) {
-      final state = ref.read(chatScreenProvider);
-      for (int i = state.streamingParts.length - 1; i >= 0; i--) {
-        final part = state.streamingParts[i];
-        if (part is AssistantTask &&
-            part.taskSessionId != null &&
-            part.taskSessionId!.isNotEmpty) {
-          sessionId = part.taskSessionId;
-          break;
+      final streamingSessionId = ref
+          .read(chatScreenProvider)
+          .streamingSessionId;
+      if (streamingSessionId != null) {
+        final sessionAsyncState = ref.read(
+          sessionPartsProvider(streamingSessionId),
+        );
+        final sessionState = sessionAsyncState.value;
+        if (sessionState != null) {
+          for (final part in sessionState.parts.reversed) {
+            if (part is AssistantTask &&
+                part.taskSessionId != null &&
+                part.taskSessionId!.isNotEmpty) {
+              sessionId = part.taskSessionId;
+              break;
+            }
+          }
         }
       }
     }
@@ -369,5 +409,85 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
     final nextIndex = (currentIndex + 1) % primaryAgents.length;
     ref.read(currentAgentProvider.notifier).setAgent(primaryAgents[nextIndex]);
+  }
+
+  /// Generates a session title from the first user message when the chat
+  /// still carries the default (empty) title. Never throws — failures just
+  /// leave the default title in place.
+  Future<void> _autoGenerateTitleIfNeeded(Chat chat) async {
+    if (!chat.isDefaultTitle) return;
+    final userMessage = chat.messages
+        .where((m) => m.role == MessageRole.user)
+        .firstOrNull;
+    if (userMessage == null || userMessage.content.trim().isEmpty) return;
+    try {
+      final aiService = ref.read(chatAiServiceProvider);
+      final generatedTitle = await aiService.generateSessionTitle(
+        modelId: selectedModelId,
+        userMessage: userMessage.content,
+      );
+      if (generatedTitle.isNotEmpty) {
+        await ref
+            .read(chatListProvider.notifier)
+            .renameChat(chat.id, generatedTitle);
+        ref.read(currentChatIdProvider.notifier).setChatId(chat.id);
+      }
+    } catch (e, st) {
+      LogTags.chatScreen.logWarning('Title generation failed', e, st);
+    }
+  }
+
+  /// Single source of truth for starting an assistant turn: appends an
+  /// assistant placeholder message (`MessageAdded`), updates the in-memory
+  /// chat list, and starts streaming into that exact message id.
+  ///
+  /// Passing the placeholder id to [_initiateStream] is what prevents the
+  /// projector from creating a second `msg_…` assistant message (duplicate
+  /// bubbles after reload) — all four call sites (send, regenerate,
+  /// edit-and-send, continue) must go through here.
+  ///
+  /// Returns the chat including the placeholder, so callers can react to the
+  /// final state if needed.
+  Future<Chat> _startAssistantTurn({
+    required Chat chat,
+    required String sessionId,
+    required String agentName,
+    String? delegateAgentId,
+    String? agentMention,
+    bool isContinuation = false,
+    required List<Map<String, dynamic>> Function(Chat withPlaceholder)
+    buildMessages,
+  }) async {
+    final assistantMessage = _createAssistantMessage(agent: agentName);
+    final chatWithPlaceholder = chat.copyWith(
+      messages: [...chat.messages, assistantMessage],
+      updatedAt: DateTime.now(),
+    );
+    final sessionRepository = await ref.read(sessionRepositoryProvider.future);
+    await sessionRepository.appendEvent(
+      MessageAdded(
+        sessionId: SessionID.fromString(sessionId),
+        messageId: assistantMessage.id,
+        role: assistantMessage.role.name,
+        content: assistantMessage.content,
+        timestamp: assistantMessage.timestamp,
+      ),
+    );
+    ref.read(chatListProvider.notifier).updateChat(chatWithPlaceholder);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoScrollEnabled = true;
+      _scrollToBottom(force: true);
+    });
+    // Prevent _initiateStream from creating a duplicate session.
+    _currentSessionId = sessionId;
+    await _initiateStream(
+      chat: chatWithPlaceholder,
+      messages: buildMessages(chatWithPlaceholder),
+      isContinuation: isContinuation,
+      delegateAgentId: delegateAgentId,
+      agentMention: agentMention,
+      pendingAssistantMessageId: assistantMessage.id,
+    );
+    return chatWithPlaceholder;
   }
 }

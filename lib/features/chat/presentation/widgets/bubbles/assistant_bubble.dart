@@ -1,11 +1,11 @@
+import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/presentation/widgets/continuation_suggestions.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/action_row.dart';
+import 'package:chatorai/features/chat/presentation/widgets/parts/question_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/reasoning_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/task_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/text_part_widget.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/question_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/todo_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
@@ -25,7 +25,7 @@ class AssistantMessageBubble extends StatelessWidget {
   final bool expandReasoningByDefault;
   final bool reasoningEnabled;
   final void Function(String? sessionId)? onTaskTap;
-  final ChatStorageService chatStorageService;
+  final SessionRepository sessionRepository;
 
   const AssistantMessageBubble({
     super.key,
@@ -42,16 +42,15 @@ class AssistantMessageBubble extends StatelessWidget {
     this.expandReasoningByDefault = true,
     this.reasoningEnabled = true,
     this.onTaskTap,
-    required this.chatStorageService,
+    required this.sessionRepository,
   });
 
   @override
   Widget build(BuildContext context) {
-    final visibleParts = message.parts.where((p) {
-      if (p.synthetic) return false;
-      if (p is ReasoningPart && !reasoningEnabled) return false;
-      return true;
-    }).toList();
+    final visibleParts = assistantVisibleParts(
+      message.parts,
+      reasoningEnabled: reasoningEnabled,
+    );
     if (visibleParts.isEmpty) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
@@ -113,7 +112,7 @@ class AssistantMessageBubble extends StatelessWidget {
           content: textContent,
           chatId: chatId,
           messageId: messageId,
-          chatStorageService: chatStorageService,
+          sessionRepository: sessionRepository,
           onEdit: null,
           onMessageDeleted: onMessageDeleted,
           onMessageRegenerate: onMessageRegenerate,
@@ -165,4 +164,24 @@ class AssistantMessageBubble extends StatelessWidget {
       MessagePart() => const SizedBox.shrink(),
     };
   }
+}
+
+/// Filters parts that should be rendered inside the assistant bubble.
+///
+/// The `question` tool records both a [QuestionPart] (the question card with
+/// the parsed answer) and a redundant [ToolResultPart] holding the raw JSON
+/// tool response. The latter is hidden so the answer is not duplicated under
+/// the question widget.
+List<MessagePart> assistantVisibleParts(
+  List<MessagePart> parts, {
+  required bool reasoningEnabled,
+}) {
+  return parts.where((p) {
+    if (p.synthetic) return false;
+    if (p is ReasoningPart && !reasoningEnabled) return false;
+    if (p is ToolResultPart && p.toolName.toLowerCase() == 'question') {
+      return false;
+    }
+    return true;
+  }).toList();
 }

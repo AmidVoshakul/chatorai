@@ -553,6 +553,36 @@ void main() {
       expect((state.parts[0] as AssistantText).text, 'He');
       expect((state.parts[1] as AssistantReasoning).text, 'think');
     });
+
+    test('TaskPartStarted with same partId updates instead of duplicating', () {
+      var state = empty;
+      final first = TaskPartStarted(
+        sessionId: id,
+        partId: 'part_1',
+        description: '',
+        agent: '',
+        taskSessionId: 'ses_child',
+        timestamp: DateTime.now(),
+      );
+      state = projectEvent(state, first);
+      expect(state.parts.whereType<AssistantTask>().length, 1);
+
+      final second = TaskPartStarted(
+        sessionId: id,
+        partId: 'part_1',
+        description: 'AI market revenue',
+        agent: 'deepresearch',
+        taskSessionId: 'ses_child',
+        timestamp: DateTime.now(),
+      );
+      state = projectEvent(state, second);
+
+      final tasks = state.parts.whereType<AssistantTask>().toList();
+      expect(tasks.length, 1);
+      expect(tasks.single.description, 'AI market revenue');
+      expect(tasks.single.agent, 'deepresearch');
+      expect(tasks.single.state, ToolState.running);
+    });
   });
 
   group('replayEvents', () {

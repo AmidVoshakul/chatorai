@@ -1,9 +1,9 @@
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_shimmer_text.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/theme/markdown_styles.dart';
 import 'package:chatorai/shared/utils/format_utils.dart';
+import 'package:chatorai/shared/widgets/shimmer_mask.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -139,13 +139,17 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget> {
         behavior: HitTestBehavior.opaque,
         child: Row(
           children: [
-            SpinKitCircle(color: orange, size: 16),
+            SpinKitCircle(color: orange, size: 15),
             const SizedBox(width: 8),
-            ChatShimmerText(
-              text: 'Thinking',
-              color: orange,
-              textSize: ChatoraiFontSizes.sm,
-              fontWeight: FontWeight.w600,
+            ShimmerMask(
+              baseColor: orange,
+              child: Text(
+                'Thinking',
+                style: TextStyle(
+                  fontSize: ChatoraiFontSizes.sm,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),

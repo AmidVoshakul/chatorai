@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:chatorai/features/models/data/models/model_card_model.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,8 +10,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // ===========================================================================
 
 class ModelsScreenState {
-  final List<ChatModel> models;
-  final List<ChatModel> filteredModels;
+  final List<ModelConfig> models;
+  final List<ModelConfig> filteredModels;
   final bool isLoading;
   final bool showFavoritesOnly;
   final String searchQuery;
@@ -27,8 +27,8 @@ class ModelsScreenState {
   });
 
   ModelsScreenState copyWith({
-    List<ChatModel>? models,
-    List<ChatModel>? filteredModels,
+    List<ModelConfig>? models,
+    List<ModelConfig>? filteredModels,
     bool? isLoading,
     bool? showFavoritesOnly,
     String? searchQuery,
@@ -138,10 +138,10 @@ class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
     state = state.copyWith(filteredModels: filtered);
   }
 
-  List<ChatModel> _applyFilters(List<ChatModel> models) {
+  List<ModelConfig> _applyFilters(List<ModelConfig> models) {
     final modelNotifier = ref.read(modelProvider.notifier);
 
-    List<ChatModel> filtered = state.showFavoritesOnly
+    List<ModelConfig> filtered = state.showFavoritesOnly
         ? models
               .where((model) => modelNotifier.isFavoriteModel(model.id))
               .toList()
@@ -150,10 +150,10 @@ class ModelsScreenNotifier extends Notifier<ModelsScreenState> {
     if (state.searchQuery.isNotEmpty) {
       final query = state.searchQuery.toLowerCase();
       filtered = filtered.where((model) {
-        return model.name.toLowerCase().contains(query) ||
+        return model.displayName.toLowerCase().contains(query) ||
             model.id.toLowerCase().contains(query) ||
-            model.description.toLowerCase().contains(query) ||
-            (model.provider?.toLowerCase().contains(query) ?? false);
+            (model.description?.toLowerCase().contains(query) ?? false) ||
+            model.providerId.toLowerCase().contains(query);
       }).toList();
     }
 

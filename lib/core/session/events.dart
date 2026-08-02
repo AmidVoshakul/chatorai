@@ -1,7 +1,7 @@
 import 'package:chatorai/core/permission/ruleset.dart';
-
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat/todo_part.dart';
+
 import 'session_id.dart';
 
 sealed class SessionEvent {
@@ -388,10 +388,12 @@ class TaskPartStarted extends SessionEvent {
 
 class TaskPartCompleted extends SessionEvent {
   final String partId;
+  final int toolCallsCount;
 
   const TaskPartCompleted({
     required super.sessionId,
     required this.partId,
+    this.toolCallsCount = 0,
     required super.timestamp,
     super.sequence,
   });
@@ -400,11 +402,54 @@ class TaskPartCompleted extends SessionEvent {
 class TaskPartError extends SessionEvent {
   final String partId;
   final String error;
+  final int toolCallsCount;
 
   const TaskPartError({
     required super.sessionId,
     required this.partId,
     required this.error,
+    this.toolCallsCount = 0,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
+class MessageUpdated extends SessionEvent {
+  final String messageId;
+  final String? content;
+  final String? reasoning;
+  final String? model;
+  final String? error;
+
+  const MessageUpdated({
+    required super.sessionId,
+    required this.messageId,
+    this.content,
+    this.reasoning,
+    this.model,
+    this.error,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
+class MessageDeleted extends SessionEvent {
+  final String messageId;
+
+  const MessageDeleted({
+    required super.sessionId,
+    required this.messageId,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
+class SessionTitleUpdated extends SessionEvent {
+  final String title;
+
+  const SessionTitleUpdated({
+    required super.sessionId,
+    required this.title,
     required super.timestamp,
     super.sequence,
   });

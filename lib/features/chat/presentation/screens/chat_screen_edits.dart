@@ -8,10 +8,18 @@ extension _ChatScreenEditsExt on _ChatScreenState {
     if (messageIndex == -1) return;
 
     final editedMessage = messages[messageIndex].copyWith(content: newContent);
-    await _chatStorageService.updateMessageInChat(
-      currentChat!.id,
-      messageId,
-      editedMessage,
+    final sessionRepository = await ref.read(sessionRepositoryProvider.future);
+    final sessionId = currentChat!.toSessionId();
+    await sessionRepository.appendEvent(
+      MessageUpdated(
+        sessionId: sessionId,
+        messageId: messageId,
+        content: editedMessage.content,
+        reasoning: editedMessage.reasoning,
+        model: editedMessage.model,
+        error: editedMessage.isError ? editedMessage.content : null,
+        timestamp: editedMessage.timestamp,
+      ),
     );
     final updatedMessages = List<Message>.from(messages)
       ..[messageIndex] = editedMessage;
@@ -44,16 +52,27 @@ extension _ChatScreenEditsExt on _ChatScreenState {
     final editedUserMessage = messages[messageIndex].copyWith(
       content: newContent,
     );
-    await _chatStorageService.updateMessageInChat(
-      currentChat!.id,
-      messageId,
-      editedUserMessage,
+    final sessionRepository = await ref.read(sessionRepositoryProvider.future);
+    final sessionId = currentChat!.toSessionId();
+    await sessionRepository.appendEvent(
+      MessageUpdated(
+        sessionId: sessionId,
+        messageId: messageId,
+        content: editedUserMessage.content,
+        reasoning: editedUserMessage.reasoning,
+        model: editedUserMessage.model,
+        error: editedUserMessage.isError ? editedUserMessage.content : null,
+        timestamp: editedUserMessage.timestamp,
+      ),
     );
 
     for (int i = messages.length - 1; i > messageIndex; i--) {
-      await _chatStorageService.deleteMessageFromChat(
-        currentChat!.id,
-        messages[i].id,
+      await sessionRepository.appendEvent(
+        MessageDeleted(
+          sessionId: sessionId,
+          messageId: messages[i].id,
+          timestamp: DateTime.now(),
+        ),
       );
     }
 
@@ -64,30 +83,13 @@ extension _ChatScreenEditsExt on _ChatScreenState {
       updatedAt: DateTime.now(),
     );
 
-    final assistantMessage = _createAssistantMessage(
-      agent: ref.read(currentAgentProvider).name,
-    );
-    final chatWithAssistant = updatedChat.copyWith(
-      messages: [...messagesBeforeEdit, assistantMessage],
-      updatedAt: DateTime.now(),
-    );
-
-    await _chatStorageService.addMessageToChat(
-      currentChat!.id,
-      assistantMessage,
-    );
-    ref.read(chatListProvider.notifier).updateChat(chatWithAssistant);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _autoScrollEnabled = true;
-      _scrollToBottom(force: true);
-    });
-
-    final apiMessages = _buildApiMessages(chatWithAssistant);
-    await _initiateStream(
-      chat: chatWithAssistant,
-      messages: apiMessages,
-      isContinuation: false,
-      delegateAgentId: null,
+    // Appends the assistant placeholder, updates the chat list and streams
+    // into that exact message id (no duplicate bubbles on reload).
+    await _startAssistantTurn(
+      chat: updatedChat,
+      sessionId: sessionId.value,
+      agentName: ref.read(currentAgentProvider).name,
+      buildMessages: (withPlaceholder) => _buildApiMessages(withPlaceholder),
     );
 
     if (!mounted) return;

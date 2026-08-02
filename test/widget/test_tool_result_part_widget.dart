@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
@@ -130,7 +131,7 @@ void main() {
       expect(find.textContaining('[...truncated...]'), findsOneWidget);
     });
 
-    testWidgets('shell tool shows command and description', (tester) async {
+    testWidgets('shell tool shows prompt and command without header', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
           toolName: 'shell',
@@ -138,9 +139,22 @@ void main() {
           input: {'command': 'ls -la', 'description': 'List files'},
         ),
       );
-      // Command appears in both title and body, so at least one is fine
-      expect(find.textContaining(r'$ ls -la'), findsAtLeast(1));
-      expect(find.textContaining('# List files'), findsOneWidget);
+      expect(find.text(r'$ '), findsOneWidget);
+      expect(find.text('ls -la'), findsOneWidget);
+      expect(find.textContaining('shell ls -la'), findsNothing);
+    });
+
+    testWidgets('shell tool shows spinner at prompt while running', (tester) async {
+      await tester.pumpWidget(
+        createTestWidget(
+          toolName: 'shell',
+          state: ToolState.running,
+          input: {'command': 'ls -la'},
+        ),
+      );
+      expect(find.text(r'$ '), findsNothing);
+      expect(find.byType(SpinKitCircle), findsOneWidget);
+      expect(find.text('ls -la'), findsOneWidget);
     });
 
     testWidgets('read tool shows offset and limit', (tester) async {
@@ -267,7 +281,7 @@ void main() {
 +++ b/test.dart
 @@ -1,3 +1,4 @@
  line1
- -line2
+-line2
 +line2 modified
 +line2b
  line3
@@ -322,6 +336,88 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('+'), findsAtLeast(1));
       expect(find.textContaining('-'), findsAtLeast(1));
+    });
+
+    testWidgets(
+      'edit renders patch from result when LSP "no errors" text is appended',
+      (tester) async {
+        const patch = '''--- a/test.dart
++++ b/test.dart
+@@ -1,3 +1,4 @@
+ line1
+-line2
++line2 modified
++line2b
+ line3
+''';
+        final resultJson = jsonEncode({'message': 'ok', 'patch': patch});
+        await tester.pumpWidget(
+          createTestWidget(
+            toolName: 'edit',
+            state: ToolState.completed,
+            result: '$resultJson\n\nNo LSP errors detected.',
+            input: {'file_path': 'test.dart'},
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('line2 modified'), findsOneWidget);
+        expect(find.text('line2b'), findsOneWidget);
+        expect(find.text('line1'), findsAtLeast(1));
+      },
+    );
+
+    testWidgets(
+      'edit renders patch from result when LSP diagnostics block is appended',
+      (tester) async {
+        const patch = '''--- a/test.dart
++++ b/test.dart
+@@ -1,3 +1,4 @@
+ line1
+-line2
++line2 modified
++line2b
+ line3
+''';
+        final resultJson = jsonEncode({'message': 'ok', 'patch': patch});
+        final lspResult =
+            '$resultJson\n\nLSP errors detected in this file, please fix:\n'
+            '[ ERROR ] 5:10 — some error message\n';
+        await tester.pumpWidget(
+          createTestWidget(
+            toolName: 'edit',
+            state: ToolState.completed,
+            result: lspResult,
+            input: {'file_path': 'test.dart'},
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('line2 modified'), findsOneWidget);
+        expect(find.text('line2b'), findsOneWidget);
+        expect(find.textContaining('1 error'), findsOneWidget);
+      },
+    );
+
+    testWidgets('edit renders patch from pure JSON result', (tester) async {
+      const patch = '''--- a/test.dart
++++ b/test.dart
+@@ -1,3 +1,4 @@
+ line1
+-line2
++line2 modified
++line2b
+ line3
+''';
+      await tester.pumpWidget(
+        createTestWidget(
+          toolName: 'edit',
+          state: ToolState.completed,
+          result: jsonEncode({'message': 'ok', 'patch': patch}),
+          input: {'file_path': 'test.dart'},
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('line2 modified'), findsOneWidget);
+      expect(find.text('line2b'), findsOneWidget);
     });
   });
 }

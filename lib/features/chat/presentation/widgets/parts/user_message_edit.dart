@@ -1,4 +1,4 @@
-import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
+import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/action_row.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
@@ -12,7 +12,7 @@ class UserMessageEdit extends StatelessWidget {
   final String? content;
   final String chatId;
   final String messageId;
-  final ChatStorageService chatStorageService;
+  final SessionRepository sessionRepository;
   final VoidCallback? onMessageDeleted;
   final VoidCallback? onMessageRegenerate;
   final Future<void> Function(String)? onContinuationSelected;
@@ -28,7 +28,7 @@ class UserMessageEdit extends StatelessWidget {
     this.content,
     required this.chatId,
     required this.messageId,
-    required this.chatStorageService,
+    required this.sessionRepository,
     this.onMessageDeleted,
     this.onMessageRegenerate,
     this.onContinuationSelected,
@@ -121,7 +121,7 @@ class UserMessageEdit extends StatelessWidget {
           content: controller.text,
           chatId: chatId,
           messageId: messageId,
-          chatStorageService: chatStorageService,
+          sessionRepository: sessionRepository,
           onEdit: null,
           onMessageDeleted: onMessageDeleted,
           onMessageRegenerate: onMessageRegenerate,

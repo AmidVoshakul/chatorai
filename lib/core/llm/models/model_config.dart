@@ -432,4 +432,51 @@ class ModelConfig extends Equatable {
         'defaultTemperature: $defaultTemperature, '
         'capabilities: $capabilities, variants: ${variants.length})';
   }
+
+  /// Legacy compatibility for UI migration from [ChatModel].
+  bool get isFree {
+    final prompt = pricing?.inputCostPer1k;
+    final completion = pricing?.outputCostPer1k;
+    if (prompt == null && completion == null) return true;
+    return (prompt == null || prompt == 0) &&
+        (completion == null || completion == 0);
+  }
+
+  /// Legacy compatibility for UI migration from [ChatModel].
+  bool get supportsReasoning => capabilities.reasoning;
+
+  /// Legacy compatibility for UI migration from [ChatModel].
+  bool get supportsMultimodal => capabilities.multimodal;
+
+  /// Legacy compatibility for UI migration from [ChatModel].
+  String get formattedContextLength {
+    if (contextLength >= 1000000) {
+      return '${(contextLength / 1000000).toStringAsFixed(1)}M tokens';
+    } else if (contextLength >= 1000) {
+      return '${(contextLength / 1000).toStringAsFixed(0)}K tokens';
+    } else {
+      return '$contextLength tokens';
+    }
+  }
+
+  /// Legacy compatibility for UI migration from [ChatModel].
+  String? get pricingPrompt => _formatPricing(pricing?.inputCostPer1k);
+
+  /// Legacy compatibility for UI migration from [ChatModel].
+  String? get pricingCompletion => _formatPricing(pricing?.outputCostPer1k);
+
+  /// Legacy compatibility for UI migration from [ChatModel].
+  String get name => displayName;
+
+  /// Legacy compatibility for UI migration from [ChatModel].
+  String get provider => providerId;
+
+  static String? _formatPricing(double? perToken) {
+    if (perToken == null) return null;
+    final perM = perToken * 1000000;
+    if (perM == 0) return '0';
+    if (perM < 0.01) return perM.toStringAsFixed(4);
+    if (perM < 1) return perM.toStringAsFixed(3);
+    return perM.toStringAsFixed(2);
+  }
 }

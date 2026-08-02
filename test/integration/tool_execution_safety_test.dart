@@ -1,373 +1,99 @@
-import 'package:ai_sdk_dart/ai_sdk_dart.dart' show CancellationToken, ToolSet;
 import 'package:chatorai/core/agents/agent_registry.dart';
-import 'package:chatorai/core/llm/model_resolver.dart';
-import 'package:chatorai/core/llm/provider_catalog_service.dart';
+import 'package:chatorai/core/session/event_bus.dart';
+import 'package:chatorai/core/session/events.dart';
+import 'package:chatorai/core/session/projector.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/database.dart';
-import 'package:chatorai/core/tools/tool.dart';
-import 'package:chatorai/core/tools/built_in/task.dart';
-import 'package:chatorai/core/permission/permission_service.dart';
-import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/core/tools/tool_registry.dart';
+import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_part.dart'
     show ToolState;
-import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart'
-    show ChatScreenState;
-import 'package:chatorai/features/chat/services/chat_ai_service.dart';
-import 'package:chatorai/features/chat/services/chat_retry_service.dart'
-    show RichRetryInfo;
-import 'package:chatorai/shared/utils/secure_storage_service.dart';
-import 'package:mocktail/mocktail.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test/test.dart';
 
-class MockSecureStorageService extends Mock implements SecureStorageService {}
-
-class MockSharedPreferences extends Mock implements SharedPreferences {}
-
-// ============================================================================
-// NOTIFIER WRAPPER — mirrors chat_screen_notifier behavior for testing
-// ============================================================================
-
-class _TestNotifier {
-  ChatScreenState _state = const ChatScreenState();
-  final List<AssistantContent> _closedParts = [];
-
-  ChatScreenState get state => _state;
-
-  void startStreaming(String sessionId) {
-    _state = _state.copyWith(streamingSessionId: sessionId);
-  }
-
-  void finalizeStreaming() {
-    final completed = _state.streamingParts
-        .where((p) => p is! AssistantTool || p.state != ToolState.running)
-        .toList();
-    _closedParts.addAll(completed);
-    _state = _state.copyWith(
-      clearStreamingSessionId: true,
-      streamingParts: const [],
-    );
-  }
-
-  void onChunk(
-    String partId,
-    String messageId,
-    String sessionId,
-    String delta,
-  ) {
-    final currentParts = _state.streamingParts;
-    final parts = List<AssistantContent>.from(currentParts);
-    final lastIsText = parts.isNotEmpty && parts.last is AssistantText;
-    if (lastIsText) {
-      final prev = parts.last as AssistantText;
-      parts[parts.length - 1] = AssistantText(
-        id: prev.id ?? partId,
-        sessionId: prev.sessionId ?? sessionId,
-        messageId: prev.messageId ?? messageId,
-        text: prev.text + delta,
-        synthetic: prev.synthetic,
-        ignored: prev.ignored,
-        title: prev.title,
-      );
-    } else {
-      parts.add(
-        AssistantText(
-          id: partId,
-          sessionId: sessionId,
-          messageId: messageId,
-          text: delta,
-        ),
-      );
-    }
-    _state = _state.copyWith(streamingParts: parts);
-  }
-
-  void onReasoning(
-    String partId,
-    String messageId,
-    String sessionId,
-    String delta,
-  ) {
-    final currentParts = _state.streamingParts;
-    final parts = List<AssistantContent>.from(currentParts);
-    final openIdx = parts.lastIndexWhere(
-      (p) => p is AssistantReasoning && p.ended == null,
-    );
-    if (openIdx >= 0) {
-      final prev = parts[openIdx] as AssistantReasoning;
-      parts[openIdx] = AssistantReasoning(
-        id: prev.id ?? partId,
-        sessionId: prev.sessionId ?? sessionId,
-        messageId: prev.messageId ?? messageId,
-        text: prev.text + delta,
-        started: prev.started,
-        ended: null,
-      );
-    } else {
-      parts.add(
-        AssistantReasoning(
-          id: partId,
-          sessionId: sessionId,
-          messageId: messageId,
-          text: delta,
-          started: DateTime.now(),
-          ended: null,
-        ),
-      );
-    }
-    _state = _state.copyWith(streamingParts: parts);
-  }
-
-  void onToolCall(
-    String partId,
-    String callId,
-    String messageId,
-    String sessionId,
-    String toolName,
-    Map<String, dynamic> input,
-  ) {
-    final currentParts = _state.streamingParts;
-    final parts = List<AssistantContent>.from(currentParts);
-    if (parts.any((p) => p is AssistantTool && p.callId == callId)) return;
-    parts.add(
-      AssistantTool(
-        id: partId,
-        sessionId: sessionId,
-        messageId: messageId,
-        callId: callId,
-        tool: toolName,
-        state: ToolState.running,
-        input: input,
-      ),
-    );
-    _state = _state.copyWith(streamingParts: parts);
-  }
-
-  void onToolEnd(String callId, String toolName, String result) {
-    final currentParts = _state.streamingParts;
-    final parts = List<AssistantContent>.from(currentParts);
-    final toolIdx = parts.indexWhere(
-      (p) => p is AssistantTool && p.callId == callId,
-    );
-    if (toolIdx < 0) return;
-    final prev = parts[toolIdx] as AssistantTool;
-    parts[toolIdx] = AssistantTool(
-      id: prev.id ?? callId,
-      sessionId: prev.sessionId ?? '',
-      messageId: prev.messageId ?? '',
-      callId: callId,
-      tool: toolName,
-      state: ToolState.completed,
-      input: prev.input,
-      output: result,
-    );
-    _state = _state.copyWith(streamingParts: parts);
-  }
-
-  void onToolError(String callId, String toolName, String error) {
-    final currentParts = _state.streamingParts;
-    final parts = List<AssistantContent>.from(currentParts);
-    final toolIdx = parts.indexWhere(
-      (p) => p is AssistantTool && p.callId == callId,
-    );
-    if (toolIdx < 0) return;
-    final prev = parts[toolIdx] as AssistantTool;
-    parts[toolIdx] = AssistantTool(
-      id: prev.id ?? callId,
-      sessionId: prev.sessionId ?? '',
-      messageId: prev.messageId ?? '',
-      callId: callId,
-      tool: toolName,
-      state: ToolState.error,
-      input: prev.input,
-      output: error,
-    );
-    _state = _state.copyWith(streamingParts: parts);
-  }
-
-  List<AssistantContent> snapshotClosedStreamingParts() {
-    return List.unmodifiable([..._closedParts, ..._state.streamingParts]);
-  }
-
-  List<AssistantContent> snapshotCurrentStreamingParts() {
-    return List.unmodifiable(_state.streamingParts);
-  }
-
-  List<AssistantContent> snapshotClosedParts() {
-    return List.unmodifiable(_closedParts);
-  }
-}
-
-// ============================================================================
-// TEST HARNESS (for DB-backed tests)
-// ============================================================================
-
-class _DbHarness {
-  final AppDatabase db;
-  final SessionRepository repository;
-  final SessionRunner runner;
-  final SessionRunnerHolder runnerHolder;
-  final ToolRegistry toolRegistry;
-
-  _DbHarness({
-    required this.db,
-    required this.repository,
-    required this.runner,
-    required this.runnerHolder,
-    required this.toolRegistry,
-  });
-
-  ToolDef createTaskToolWithDeps() => createTaskTool(
-    chatAiService: _FakeChatAiService(),
-    toolRegistry: toolRegistry,
-    currentSessionRunner: runnerHolder,
-  );
-
-  Future<void> close() async {
-    await db.close();
-  }
-}
-
-class _FakeChatAiService extends ChatAiService {
-  _FakeChatAiService() : super(resolver: _createFakeResolver()) {
-    currentModelForTesting = 'openrouter/free';
-    currentTemperatureForTesting = 0.7;
-  }
-
-  static ModelResolver _createFakeResolver() {
-    final mockSecureStorage = MockSecureStorageService();
-    final mockPrefs = MockSharedPreferences();
-    when(() => mockPrefs.setString(any(), any())).thenAnswer((_) async => true);
-    when(() => mockPrefs.setBool(any(), any())).thenAnswer((_) async => true);
-    when(() => mockPrefs.setInt(any(), any())).thenAnswer((_) async => true);
-    when(() => mockPrefs.getString(any())).thenReturn(null);
-    when(() => mockPrefs.getBool(any())).thenReturn(null);
-    when(() => mockPrefs.getInt(any())).thenReturn(null);
-    when(() => mockPrefs.getStringList(any())).thenReturn(null);
-    final catalog = ProviderCatalogService(
-      secureStorage: mockSecureStorage,
-      prefs: mockPrefs,
-      builtInProviders: [],
-    );
-    return ModelResolver(catalog);
-  }
-
-  @override
-  Future<void> streamChatCompletion({
-    required List<Map<String, dynamic>> messages,
-    required String model,
-    required double temperature,
-    required Function(String) onChunk,
-    required Function(String) onReasoning,
-    required Function(String) onCompletion,
-    ToolSet tools = const {},
-    ToolStartCallback? onToolStart,
-    ToolEndCallback? onToolEnd,
-    ToolErrorCallback? onToolError,
-    UsageCallback? onUsage,
-    int maxSteps = 5,
-    void Function(RichRetryInfo info)? onRetry,
-    void Function(List<Map<String, dynamic>> messages)? onOverflow,
-    String? sessionId,
-  }) async {
-    onChunk('Fake subagent output');
-    onCompletion('Fake completion');
-  }
-
-  @override
-  Future<void> runChildCompletion({
-    required List<Map<String, dynamic>> messages,
-    required String model,
-    required double temperature,
-    required Function(String) onChunk,
-    required Function(String) onReasoning,
-    required Function(String) onCompletion,
-    ToolSet tools = const {},
-    ToolStartCallback? onToolStart,
-    ToolEndCallback? onToolEnd,
-    ToolErrorCallback? onToolError,
-    UsageCallback? onUsage,
-    int maxSteps = 5,
-    String? sessionId,
-    CancellationToken? abortSignal,
-  }) async {
-    onChunk('Fake subagent output');
-    onUsage?.call(10, 20, 5, 3);
-    onCompletion('Fake completion');
-  }
-}
-
-SharedPreferences _createMockPrefs() {
-  final mock = MockSharedPreferences();
-  when(() => mock.setString(any(), any())).thenAnswer((_) async => true);
-  when(() => mock.setBool(any(), any())).thenAnswer((_) async => true);
-  when(() => mock.setInt(any(), any())).thenAnswer((_) async => true);
-  when(() => mock.getString(any())).thenReturn(null);
-  when(() => mock.getBool(any())).thenReturn(null);
-  when(() => mock.getInt(any())).thenReturn(null);
-  when(() => mock.getStringList(any())).thenReturn(null);
-  return mock;
-}
-
-Future<_DbHarness> _createDbHarness() async {
+Future<
+  ({
+    AppDatabase db,
+    SessionRepository repository,
+    SessionRunner runner,
+    SessionEventBus bus,
+  })
+>
+_createHarness() async {
   final db = AppDatabase.inMemory();
   final repository = SessionRepository(db);
-  final runner = SessionRunner(repository, null);
-  final runnerHolder = SessionRunnerHolder(runner);
-  await repository.createSession(agent: 'test');
-  final ps = PermissionService();
-  ps.attachPreferences(_createMockPrefs());
-  final toolRegistry = ToolRegistry(ps, PermissionRuleset(rules: []));
-  return _DbHarness(
-    db: db,
-    repository: repository,
-    runner: runner,
-    runnerHolder: runnerHolder,
-    toolRegistry: toolRegistry,
-  );
+  final bus = SessionEventBus();
+  final runner = SessionRunner(repository, null, eventBus: bus);
+  return (db: db, repository: repository, runner: runner, bus: bus);
 }
 
-// ============================================================================
-// TESTS
-// ============================================================================
+Future<SessionState> _replay(
+  SessionRepository repository,
+  SessionID sessionId,
+) async {
+  final events = await repository.eventStore.getEvents(sessionId);
+  return replayEvents(events);
+}
 
 void main() {
   group('Tool Execution Safety', () {
-    late _TestNotifier notifier;
+    late AppDatabase db;
+    late SessionRepository repository;
+    late SessionRunner runner;
+    late SessionEventBus bus;
 
-    setUp(() {
-      notifier = _TestNotifier();
+    setUp(() async {
+      final harness = await _createHarness();
+      db = harness.db;
+      repository = harness.repository;
+      runner = harness.runner;
+      bus = harness.bus;
     });
+
+    tearDown(() async {
+      bus.dispose();
+      await db.close();
+    });
+
+    Future<SessionRunnerSession> _startSession() async {
+      final session = await runner.startInitializedSession(
+        agent: 'test',
+        modelRef: 'mock/model',
+      );
+      return session;
+    }
 
     // -----------------------------------------------------------------------
     // Test 1: Text + tool + text — все части сохраняются
     // -----------------------------------------------------------------------
-    test('streaming preserves text before and after tool execution', () {
-      notifier.startStreaming('ses_test_1');
-      notifier.onChunk('p1', 'm1', 'ses_test_1', 'Before tool. ');
-      notifier.onToolCall('pt1', 'c1', 'm1', 'ses_test_1', 'todowrite', {
-        'todos': [
-          {'content': 'A', 'status': 'pending'},
-        ],
-      });
-      notifier.onToolEnd('c1', 'todowrite', '{"ok":true}');
-      notifier.onChunk('p2', 'm1', 'ses_test_1', 'After tool.');
+    test('streaming preserves text before and after tool execution', () async {
+      final session = await _startSession();
+      final sid = session.sessionId;
 
-      final parts = notifier.snapshotClosedStreamingParts();
+      await session.onChunk('Before tool. ');
+      await session.onToolStart('c1', 'todowrite', {'cmd': 'ls'});
+      await session.onToolEnd('c1', 'todowrite', '{"ok":true}');
+      await session.onChunk('After tool.');
+      await session.onCompletion(content: 'Before tool. After tool.');
+
+      final state = await _replay(repository, sid);
       expect(
-        parts.any((p) => p is AssistantText && p.text.contains('Before tool')),
+        state.parts.whereType<AssistantText>().any(
+          (p) => p.text.contains('Before tool'),
+        ),
         isTrue,
       );
       expect(
-        parts.any((p) => p is AssistantText && p.text.contains('After tool')),
+        state.parts.whereType<AssistantText>().any(
+          (p) => p.text.contains('After tool'),
+        ),
         isTrue,
       );
       expect(
-        parts.any((p) => p is AssistantTool && p.state == ToolState.completed),
+        state.parts.whereType<AssistantTool>().any(
+          (p) => p.state == ToolState.completed,
+        ),
         isTrue,
       );
     });
@@ -375,27 +101,19 @@ void main() {
     // -----------------------------------------------------------------------
     // Test 2: Crash после успешного tool — результат не теряется
     // -----------------------------------------------------------------------
-    test('tool result survives finalize (crash simulation)', () {
-      notifier.startStreaming('ses_test_2');
-      notifier.onChunk('p1', 'm1', 'ses_test_2', 'Thinking...');
-      notifier.onToolCall('pt1', 'c1', 'm1', 'ses_test_2', 'todowrite', {
-        'todos': [
-          {'content': 'A', 'status': 'pending'},
-        ],
-      });
-      notifier.onToolEnd('c1', 'todowrite', 'Done');
+    test('tool result survives finalize (crash simulation)', () async {
+      final session = await _startSession();
+      final sid = session.sessionId;
 
-      // Simulate crash — finalize without completing pending tools
-      notifier.onToolCall('pt2', 'c2', 'm1', 'ses_test_2', 'todowrite', {
-        'todos': [
-          {'content': 'B', 'status': 'pending'},
-        ],
-      });
-      notifier.finalizeStreaming();
+      await session.onChunk('Thinking...');
+      await session.onToolStart('c1', 'todowrite', {'cmd': 'ls'});
+      await session.onToolEnd('c1', 'todowrite', 'Done');
+      await session.onToolStart('c2', 'todowrite', {'cmd': 'pwd'});
+      await session.onError(Exception('crash'));
 
-      final closed = notifier.snapshotClosedParts();
+      final state = await _replay(repository, sid);
       expect(
-        closed.any(
+        state.parts.any(
           (p) =>
               p is AssistantTool &&
               p.callId == 'c1' &&
@@ -405,53 +123,33 @@ void main() {
         reason: 'completed tool survives crash',
       );
       expect(
-        closed.any((p) => p is AssistantText && p.text.contains('Thinking')),
+        state.parts.any(
+          (p) => p is AssistantText && p.text.contains('Thinking'),
+        ),
         isTrue,
         reason: 'text survives crash',
-      );
-      expect(
-        closed.any((p) => p is AssistantTool && p.callId == 'c2'),
-        isFalse,
-        reason: 'incomplete tool is cleared by finalize',
-      );
-      expect(
-        notifier.snapshotCurrentStreamingParts(),
-        isEmpty,
-        reason: 'streaming state is empty after finalize',
       );
     });
 
     // -----------------------------------------------------------------------
     // Test 3: 3+ параллельных tool — все появляются
     // -----------------------------------------------------------------------
-    test('parallel tool calls all appear in parts', () {
-      notifier.startStreaming('ses_test_3');
-      notifier.onToolCall('pa', 'ca', 'm1', 'ses_test_3', 'todowrite', {
-        'todos': [
-          {'content': 'A', 'status': 'pending'},
-        ],
-      });
-      notifier.onToolCall('pb', 'cb', 'm1', 'ses_test_3', 'todowrite', {
-        'todos': [
-          {'content': 'B', 'status': 'pending'},
-        ],
-      });
-      notifier.onToolCall('pc', 'cc', 'm1', 'ses_test_3', 'todowrite', {
-        'todos': [
-          {'content': 'C', 'status': 'pending'},
-        ],
-      });
+    test('parallel tool calls all appear in parts', () async {
+      final session = await _startSession();
+      final sid = session.sessionId;
 
-      var parts = notifier.snapshotClosedStreamingParts();
-      expect(parts.whereType<AssistantTool>().length, equals(3));
+      await session.onToolStart('ca', 'todowrite', {});
+      await session.onToolEnd('ca', 'todowrite', 'A');
+      await session.onToolStart('cb', 'todowrite', {});
+      await session.onToolEnd('cb', 'todowrite', 'B');
+      await session.onToolStart('cc', 'todowrite', {});
+      await session.onToolEnd('cc', 'todowrite', 'C');
+      await session.onCompletion(content: 'done');
 
-      notifier.onToolEnd('cb', 'todowrite', 'B');
-      notifier.onToolEnd('ca', 'todowrite', 'A');
-      notifier.onToolEnd('cc', 'todowrite', 'C');
-
-      parts = notifier.snapshotClosedStreamingParts();
+      final state = await _replay(repository, sid);
+      expect(state.parts.whereType<AssistantTool>().length, equals(3));
       expect(
-        parts.whereType<AssistantTool>().every(
+        state.parts.whereType<AssistantTool>().every(
           (t) => t.state == ToolState.completed,
         ),
         isTrue,
@@ -461,21 +159,20 @@ void main() {
     // -----------------------------------------------------------------------
     // Test 4: Порядок частей не меняется от порядка onToolEnd
     // -----------------------------------------------------------------------
-    test('part order reflects start order, not completion order', () {
-      notifier.startStreaming('ses_test_4');
-      notifier.onToolCall('pa', 'ca', 'm1', 'ses_test_4', 'todowrite', {});
-      notifier.onToolCall('pb', 'cb', 'm1', 'ses_test_4', 'todowrite', {});
-      notifier.onToolCall('pc', 'cc', 'm1', 'ses_test_4', 'todowrite', {});
+    test('part order reflects start order, not completion order', () async {
+      final session = await _startSession();
+      final sid = session.sessionId;
 
-      // Complete in reverse order
-      notifier.onToolEnd('cc', 'todowrite', 'C');
-      notifier.onToolEnd('cb', 'todowrite', 'B');
-      notifier.onToolEnd('ca', 'todowrite', 'A');
+      await session.onToolStart('ca', 'todowrite', {});
+      await session.onToolStart('cb', 'todowrite', {});
+      await session.onToolStart('cc', 'todowrite', {});
+      await session.onToolEnd('cc', 'todowrite', 'C');
+      await session.onToolEnd('cb', 'todowrite', 'B');
+      await session.onToolEnd('ca', 'todowrite', 'A');
+      await session.onCompletion(content: 'done');
 
-      final tools = notifier
-          .snapshotClosedStreamingParts()
-          .whereType<AssistantTool>()
-          .toList();
+      final state = await _replay(repository, sid);
+      final tools = state.parts.whereType<AssistantTool>().toList();
       expect(tools[0].callId, 'ca');
       expect(tools[1].callId, 'cb');
       expect(tools[2].callId, 'cc');
@@ -484,82 +181,88 @@ void main() {
     // -----------------------------------------------------------------------
     // Test 5: Повторный запуск после сбоя — новая сессия
     // -----------------------------------------------------------------------
-    test('new session after finalized streaming starts clean', () {
-      // Session 1
-      notifier.startStreaming('ses_a');
-      notifier.onChunk('p1', 'm1', 'ses_a', 'Message 1');
-      notifier.onToolCall('pt1', 'c1', 'm1', 'ses_a', 'todowrite', {});
-      notifier.onToolEnd('c1', 'todowrite', 'OK');
-      notifier.finalizeStreaming();
+    test('new session after finalized streaming starts clean', () async {
+      final sessionA = await _startSession();
+      final sidA = sessionA.sessionId;
 
-      final s1closed = notifier.snapshotClosedParts();
+      await sessionA.onChunk('Message 1');
+      await sessionA.onToolStart('c1', 'todowrite', {});
+      await sessionA.onToolEnd('c1', 'todowrite', 'OK');
+      await sessionA.onCompletion(content: 'Message 1');
+
+      final stateA = await _replay(repository, sidA);
       expect(
-        s1closed.length,
+        stateA.parts.length,
         greaterThan(0),
         reason: 'closed parts from ses_a survive',
       );
-      expect(
-        notifier.snapshotCurrentStreamingParts(),
-        isEmpty,
-        reason: 'streaming state is cleared',
-      );
 
-      // Session 2
-      notifier.startStreaming('ses_b');
-      notifier.onChunk('p2', 'm2', 'ses_b', 'Message 2');
-      notifier.onToolCall('pt2', 'c2', 'm2', 'ses_b', 'todowrite', {});
-      notifier.onToolEnd('c2', 'todowrite', 'OK');
+      final sessionB = await _startSession();
+      final sidB = sessionB.sessionId;
 
-      final s2streaming = notifier.snapshotCurrentStreamingParts();
+      await sessionB.onChunk('Message 2');
+      await sessionB.onToolStart('c2', 'todowrite', {});
+      await sessionB.onToolEnd('c2', 'todowrite', 'OK');
+      await sessionB.onCompletion(content: 'Message 2');
+
+      final stateB = await _replay(repository, sidB);
       expect(
-        s2streaming.any(
-          (p) => p is AssistantText && p.text.contains('Message 2'),
+        stateB.parts.whereType<AssistantText>().any(
+          (p) => p.text.contains('Message 2'),
         ),
         isTrue,
         reason: 'new session has its own text',
-      );
-      expect(
-        s2streaming.whereType<AssistantTool>().every(
-          (t) => t.sessionId == 'ses_b',
-        ),
-        isTrue,
-        reason: 'all tools belong to new session',
       );
     });
 
     // -----------------------------------------------------------------------
     // Test 6: Чередование текст → тул → текст → тул
     // -----------------------------------------------------------------------
-    test('interleaved text and tools maintain correct part types order', () {
-      notifier.startStreaming('ses_test_6');
-      notifier.onChunk('pt1', 'm1', 'ses_test_6', 'Text 1\n');
-      notifier.onToolCall('ptl1', 'c1', 'm1', 'ses_test_6', 'todowrite', {});
-      notifier.onToolEnd('c1', 'todowrite', 'R1');
-      notifier.onChunk('pt2', 'm1', 'ses_test_6', 'Text 2\n');
-      notifier.onToolCall('ptl2', 'c2', 'm1', 'ses_test_6', 'todowrite', {});
-      notifier.onToolEnd('c2', 'todowrite', 'R2');
-      notifier.onChunk('pt3', 'm1', 'ses_test_6', 'Text 3\n');
+    test(
+      'interleaved text and tools maintain correct part types order',
+      () async {
+        final session = await _startSession();
+        final sid = session.sessionId;
 
-      final parts = notifier.snapshotClosedStreamingParts();
-      expect(parts.length, equals(5));
-      expect(parts[0], isA<AssistantText>());
-      expect(parts[1], isA<AssistantTool>());
-      expect(parts[2], isA<AssistantText>());
-      expect(parts[3], isA<AssistantTool>());
-      expect(parts[4], isA<AssistantText>());
-    });
+        await session.onChunk('Text 1\n');
+        await session.onToolStart('c1', 'todowrite', {});
+        await session.onToolEnd('c1', 'todowrite', 'R1');
+        await session.onChunk('Text 2\n');
+        await session.onToolStart('c2', 'todowrite', {});
+        await session.onToolEnd('c2', 'todowrite', 'R2');
+        await session.onChunk('Text 3\n');
+        await session.onCompletion(content: 'Text 1\nText 2\nText 3\n');
+
+        final state = await _replay(repository, sid);
+        expect(state.parts.length, equals(5));
+        expect(state.parts[0], isA<AssistantText>());
+        expect(state.parts[1], isA<AssistantTool>());
+        expect(state.parts[2], isA<AssistantText>());
+        expect(state.parts[3], isA<AssistantTool>());
+        expect(state.parts[4], isA<AssistantText>());
+      },
+    );
 
     // -----------------------------------------------------------------------
     // Test 7: Пустой результат тула не ломает состояние
     // -----------------------------------------------------------------------
-    test('empty tool result produces valid part', () {
-      notifier.startStreaming('ses_test_7');
-      notifier.onToolCall('pt1', 'c1', 'm1', 'ses_test_7', 'todowrite', {});
-      notifier.onToolEnd('c1', 'todowrite', '');
-      final parts = notifier.snapshotClosedStreamingParts();
-      expect(parts.any((p) => p is AssistantTool && p.callId == 'c1'), isTrue);
+    test('empty tool result produces valid part', () async {
+      final session = await _startSession();
+      final sid = session.sessionId;
+
+      await session.onToolStart('c1', 'todowrite', {});
+      await session.onToolEnd('c1', 'todowrite', '');
+      await session.onCompletion(content: '');
+
+      final state = await _replay(repository, sid);
       expect(
-        parts.any((p) => p is AssistantTool && p.state == ToolState.completed),
+        state.parts.whereType<AssistantTool>().any((p) => p.callId == 'c1'),
+        isTrue,
+      );
+      expect(
+        state.parts.whereType<AssistantTool>().any(
+          (p) => p.state == ToolState.completed,
+        ),
         isTrue,
       );
     });
@@ -567,37 +270,43 @@ void main() {
     // -----------------------------------------------------------------------
     // Test 8: Дубликат toolCallId игнорируется
     // -----------------------------------------------------------------------
-    test('duplicate tool call ID is ignored', () {
-      notifier.startStreaming('ses_test_8');
-      notifier.onToolCall('pt1', 'c1', 'm1', 'ses_test_8', 'todowrite', {});
-      notifier.onToolCall('pt1', 'c1', 'm1', 'ses_test_8', 'todowrite', {});
-      final tools = notifier
-          .snapshotClosedStreamingParts()
-          .whereType<AssistantTool>()
-          .toList();
-      expect(tools.length, equals(1));
+    test('duplicate tool call ID is ignored', () async {
+      final session = await _startSession();
+      final sid = session.sessionId;
+
+      await session.onToolStart('c1', 'todowrite', {});
+      await session.onToolStart('c1', 'todowrite', {});
+      await session.onCompletion(content: '');
+
+      final state = await _replay(repository, sid);
+      expect(state.parts.whereType<AssistantTool>().length, equals(1));
     });
 
     // -----------------------------------------------------------------------
     // Test 9: Tool error не теряет части
     // -----------------------------------------------------------------------
-    test('tool error preserves text and previous tool results', () {
-      notifier.startStreaming('ses_test_9');
-      notifier.onChunk('p1', 'm1', 'ses_test_9', 'Working...');
-      notifier.onToolCall('pt1', 'c1', 'm1', 'ses_test_9', 'todowrite', {});
-      notifier.onToolEnd('c1', 'todowrite', 'OK');
-      notifier.onToolCall('pt2', 'c2', 'm1', 'ses_test_9', 'todowrite', {});
-      notifier.onToolError('c2', 'todowrite', 'Error!');
-      notifier.onChunk('p2', 'm1', 'ses_test_9', 'Done.');
+    test('tool error preserves text and previous tool results', () async {
+      final session = await _startSession();
+      final sid = session.sessionId;
 
-      final parts = notifier.snapshotClosedStreamingParts();
+      await session.onChunk('Working...');
+      await session.onToolStart('c1', 'todowrite', {});
+      await session.onToolEnd('c1', 'todowrite', 'OK');
+      await session.onToolStart('c2', 'todowrite', {});
+      await session.onToolError('c2', 'todowrite', 'Error!');
+      await session.onChunk('Done.');
+      await session.onCompletion(content: 'Working...Done.');
+
+      final state = await _replay(repository, sid);
       expect(
-        parts.any((p) => p is AssistantText && p.text.contains('Working')),
+        state.parts.any(
+          (p) => p is AssistantText && p.text.contains('Working'),
+        ),
         isTrue,
         reason: 'text before error survives',
       );
       expect(
-        parts.any(
+        state.parts.any(
           (p) =>
               p is AssistantTool &&
               p.callId == 'c1' &&
@@ -607,7 +316,7 @@ void main() {
         reason: 'completed tool survives',
       );
       expect(
-        parts.any(
+        state.parts.any(
           (p) =>
               p is AssistantTool &&
               p.callId == 'c2' &&
@@ -621,22 +330,18 @@ void main() {
     // -----------------------------------------------------------------------
     // Test 10: 10 последовательных инструментов
     // -----------------------------------------------------------------------
-    test('10 sequential tools all appear with correct state', () {
-      notifier.startStreaming('ses_test_10');
+    test('10 sequential tools all appear with correct state', () async {
+      final session = await _startSession();
+      final sid = session.sessionId;
+
       for (int i = 0; i < 10; i++) {
-        notifier.onToolCall('p$i', 'c$i', 'm1', 'ses_test_10', 'todowrite', {
-          'todos': [
-            {'content': '$i', 'status': 'pending'},
-          ],
-        });
+        await session.onToolStart('c$i', 'todowrite', {});
+        await session.onToolEnd('c$i', 'todowrite', 'R$i');
       }
-      for (int i = 0; i < 10; i++) {
-        notifier.onToolEnd('c$i', 'todowrite', 'R$i');
-      }
-      final tools = notifier
-          .snapshotClosedStreamingParts()
-          .whereType<AssistantTool>()
-          .toList();
+      await session.onCompletion(content: '');
+
+      final state = await _replay(repository, sid);
+      final tools = state.parts.whereType<AssistantTool>().toList();
       expect(tools.length, equals(10));
       expect(tools.every((t) => t.state == ToolState.completed), isTrue);
     });
@@ -644,86 +349,195 @@ void main() {
     // -----------------------------------------------------------------------
     // Test 11: Reasoning + tool + text последовательность
     // -----------------------------------------------------------------------
-    test('reasoning block before and after tool execution', () {
-      notifier.startStreaming('ses_test_11');
-      notifier.onReasoning('pr1', 'm1', 'ses_test_11', 'Thinking step 1...\n');
-      notifier.onToolCall('pt1', 'c1', 'm1', 'ses_test_11', 'todowrite', {});
-      notifier.onToolEnd('c1', 'todowrite', 'Result');
-      notifier.onReasoning('pr2', 'm1', 'ses_test_11', 'Thinking step 2...\n');
-      notifier.onChunk('ptx', 'm1', 'ses_test_11', 'Final answer.');
+    test('reasoning block before and after tool execution', () async {
+      final session = await _startSession();
+      final sid = session.sessionId;
 
-      final parts = notifier.snapshotClosedStreamingParts();
+      await session.onReasoning('Thinking step 1...\n');
+      await session.onToolStart('c1', 'todowrite', {});
+      await session.onToolEnd('c1', 'todowrite', 'Result');
+      await session.onReasoning('Thinking step 2...\n');
+      await session.onChunk('Final answer.');
+      await session.onCompletion(content: 'Final answer.');
+
+      final state = await _replay(repository, sid);
       expect(
-        parts.any((p) => p is AssistantReasoning),
+        state.parts.whereType<AssistantReasoning>().isNotEmpty,
         isTrue,
         reason: 'reasoning parts exist',
       );
       expect(
-        parts.any((p) => p is AssistantText && p.text.contains('Final answer')),
+        state.parts.whereType<AssistantText>().any(
+          (p) => p.text.contains('Final answer'),
+        ),
         isTrue,
         reason: 'final text exists',
       );
     });
 
     // -----------------------------------------------------------------------
-    // Test 12: Task creates child session with session_id in output
+    // Test 12: runTaskInChild creates AssistantTask in parent session
     // -----------------------------------------------------------------------
-    test('task tool child session returns valid result', () async {
-      // Minimal tool definition that returns a TaskChildResult-like structure
-      // without relying on the full DB-backed SessionRunner.
-      final harness = await _createDbHarness();
+    test('runTaskInChild emits task parts in parent session', () async {
       await AgentRegistry().init();
-      final childId = SessionID.create();
-      final taskTool = ToolDef(
-        id: 'task_test',
-        description: 'test',
-        inputSchema: {},
-        execute: (params, ctx) async {
-          return ToolOutput(
-            'Task completed state="completed" session_id=${childId.value}\n\nTask output: done',
-          );
-        },
+
+      final parentSession = await runner.startInitializedSession(
+        agent: 'test',
+        modelRef: 'mock/model',
+      );
+      final parentId = parentSession.sessionId;
+
+      Future<void> streamFn(SessionRunnerSession child) async {
+        await child.onChunk('child output');
+      }
+
+      final result = await runner.runTaskInChild(
+        parentSessionId: parentId,
+        taskPrompt: 'do something',
+        streamFn: streamFn,
+        taskPartId: 'task-12',
       );
 
-      final output = await taskTool.execute(
-        {},
-        ToolContext(
-          toolCallId: 'test-12',
-          sessionId: 'ses_test_12',
-          abortSignal: null,
-          ask:
-              ({
-                required permission,
-                required patterns,
-                metadata,
-                always,
-              }) async {},
-          askQuestion:
-              ({
-                required question,
-                options = const [],
-                multiple = false,
-              }) async => '',
-        ),
-      );
-
+      final state = await _replay(repository, parentId);
+      final taskParts = state.parts.whereType<AssistantTask>().toList();
       expect(
-        output.metadata?['error'],
-        isNull,
-        reason: 'task tool should succeed',
+        taskParts.length,
+        equals(1),
+        reason: 'parent session got one task part',
       );
       expect(
-        output.output,
-        contains('session_id='),
-        reason: 'task output has session reference',
+        taskParts.first.state,
+        ToolState.completed,
+        reason: 'task completed',
       );
-      expect(
-        output.output,
-        contains('state="completed"'),
-        reason: 'task completed successfully',
-      );
-
-      await harness.close();
+      expect(taskParts.first.taskSessionId, result.sessionId.value);
     });
+
+    // -----------------------------------------------------------------------
+    // Test 13: runTaskInChild correctly counts tool calls
+    // -----------------------------------------------------------------------
+    test('runTaskInChild counts tool calls in child session', () async {
+      await AgentRegistry().init();
+
+      final parentSession = await runner.startInitializedSession(
+        agent: 'test',
+        modelRef: 'mock/model',
+      );
+      final parentId = parentSession.sessionId;
+
+      Future<void> streamFn(SessionRunnerSession child) async {
+        await child.onToolStart('c1', 'web_search', {'q': 'hello'});
+        await child.onToolEnd('c1', 'web_search', 'world');
+        await child.onToolStart('c2', 'webfetch', {'url': 'test'});
+        await child.onToolEnd('c2', 'webfetch', 'content');
+        await child.onToolStart('c3', 'todowrite', {'cmd': 'ls'});
+        await child.onToolEnd('c3', 'todowrite', 'files');
+        await child.onCompletion(content: 'done');
+      }
+
+      final result = await runner.runTaskInChild(
+        parentSessionId: parentId,
+        taskPrompt: 'do something',
+        streamFn: streamFn,
+        taskPartId: 'task-tools-13',
+      );
+
+      // Verify child session has 3 AssistantTool parts
+      final childState = await repository.loadSession(result.sessionId);
+      expect(childState, isNotNull);
+      final childTools = childState!.parts.whereType<AssistantTool>().toList();
+      expect(
+        childTools.length,
+        equals(3),
+        reason: 'child session should have 3 tool parts',
+      );
+
+      // Verify parent session AssistantTask has toolCallsCount = 3
+      // by replaying all events (simulates load from DB)
+      final parentState = await _replay(repository, parentId);
+      final taskParts = parentState.parts.whereType<AssistantTask>().toList();
+      expect(
+        taskParts.length,
+        equals(1),
+        reason: 'parent session got one task part',
+      );
+      expect(
+        taskParts.first.toolCallsCount,
+        equals(3),
+        reason: 'toolCallsCount should be 3 (matching the 3 tools in child)',
+      );
+
+      // Verify the same via loadSession (uses state cache)
+      final loadedParent = await repository.loadSession(parentId);
+      final loadedTasks = loadedParent!.parts
+          .whereType<AssistantTask>()
+          .toList();
+      expect(loadedTasks.length, equals(1));
+      expect(loadedTasks.first.toolCallsCount, equals(3));
+    });
+
+    // -----------------------------------------------------------------------
+    // Test 14: Serialization round-trip preserves toolCallsCount
+    // -----------------------------------------------------------------------
+    test(
+      'TaskPartCompleted serialization round-trip preserves toolCallsCount',
+      () async {
+        await AgentRegistry().init();
+
+        final parentSession = await runner.startInitializedSession(
+          agent: 'test',
+          modelRef: 'mock/model',
+        );
+        final parentId = parentSession.sessionId;
+
+        // Emulate what runTaskInChild does: count tools, emit TaskPartCompleted
+        Future<void> streamFn(SessionRunnerSession child) async {
+          await child.onToolStart('t1', 'web_search', {'q': 'a'});
+          await child.onToolEnd('t1', 'web_search', 'res1');
+          await child.onToolStart('t2', 'web_search', {'q': 'b'});
+          await child.onToolEnd('t2', 'web_search', 'res2');
+          await child.onToolStart('t3', 'web_search', {'q': 'c'});
+          await child.onToolEnd('t3', 'web_search', 'res3');
+          await child.onToolStart('t4', 'web_search', {'q': 'd'});
+          await child.onToolEnd('t4', 'web_search', 'res4');
+          await child.onToolStart('t5', 'web_search', {'q': 'e'});
+          await child.onToolEnd('t5', 'web_search', 'res5');
+          await child.onCompletion(content: 'done');
+        }
+
+        final result = await runner.runTaskInChild(
+          parentSessionId: parentId,
+          taskPrompt: 'do something',
+          streamFn: streamFn,
+          taskPartId: 'task-roundtrip-14',
+        );
+
+        // Load events from database and verify TaskPartCompleted has toolCallsCount
+        final parentEvents = await repository.eventStore.getEvents(parentId);
+        final tpcEvents = parentEvents.whereType<TaskPartCompleted>().toList();
+        expect(
+          tpcEvents.length,
+          equals(1),
+          reason: 'should have exactly one TaskPartCompleted event',
+        );
+        expect(
+          tpcEvents.first.toolCallsCount,
+          equals(5),
+          reason: 'TaskPartCompleted event should carry toolCallsCount=5',
+        );
+
+        // Now simulate DB reload by replaying events from scratch
+        final replayed = replayEvents(parentEvents);
+        final replayedTasks = replayed.parts
+            .whereType<AssistantTask>()
+            .toList();
+        expect(replayedTasks.length, equals(1));
+        expect(
+          replayedTasks.first.toolCallsCount,
+          equals(5),
+          reason: 'After full replay, toolCallsCount must still be 5',
+        );
+      },
+    );
   });
 }

@@ -1,5 +1,5 @@
+import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/features/chat/data/repositories/chat_storage_service.dart';
 import 'package:chatorai/features/chat/presentation/widgets/bubbles/assistant_bubble.dart';
 import 'package:chatorai/features/chat/presentation/widgets/bubbles/system_bubble.dart';
 import 'package:chatorai/features/chat/presentation/widgets/bubbles/user_bubble.dart';
@@ -14,7 +14,7 @@ class ChatMessageBubble extends StatefulWidget {
   final ChatMessage message;
   final String chatId;
   final String messageId;
-  final ChatStorageService chatStorageService;
+  final SessionRepository sessionRepository;
   final String? agentName;
   final Future<void> Function(String)? onContinuationSelected;
   final VoidCallback? onMessageDeleted;
@@ -34,7 +34,7 @@ class ChatMessageBubble extends StatefulWidget {
     required this.message,
     required this.chatId,
     required this.messageId,
-    required this.chatStorageService,
+    required this.sessionRepository,
     this.agentName,
     this.onContinuationSelected,
     this.onMessageDeleted,
@@ -125,7 +125,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         content: _getMessageContent(),
         chatId: widget.chatId,
         messageId: widget.messageId,
-        chatStorageService: widget.chatStorageService,
+        sessionRepository: widget.sessionRepository,
         onMessageDeleted: widget.onMessageDeleted,
         onMessageRegenerate: widget.onMessageRegenerate,
         onContinuationSelected: widget.onContinuationSelected,
@@ -138,7 +138,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         message: m,
         chatId: widget.chatId,
         messageId: widget.messageId,
-        chatStorageService: widget.chatStorageService,
+        sessionRepository: widget.sessionRepository,
         onEdit: _startEditing,
         onMessageDeleted: widget.onMessageDeleted,
         onMessageRegenerate: widget.onMessageRegenerate,
@@ -161,7 +161,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         expandReasoningByDefault: widget.expandReasoningByDefault,
         reasoningEnabled: widget.reasoningEnabled,
         onTaskTap: widget.onTaskTap,
-        chatStorageService: widget.chatStorageService,
+        sessionRepository: widget.sessionRepository,
       ),
       SystemMessage m => SystemMessageBubble(message: m),
       ErrorMessage m => _errorBubble(m, context),

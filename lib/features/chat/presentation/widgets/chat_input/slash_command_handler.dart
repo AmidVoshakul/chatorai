@@ -6,6 +6,9 @@ import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/permission/permission_provider.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
+// Session repository
+import 'package:chatorai/core/session/events.dart';
+import 'package:chatorai/core/session/session_db_provider.dart';
 // Skills
 import 'package:chatorai/core/skills/skill_info.dart';
 import 'package:chatorai/core/skills/skill_providers.dart'
@@ -79,6 +82,19 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
   void initState() {
     super.initState();
     _loadSkillService();
+  }
+
+  /// Must be called from `build()` (Riverpod forbids `ref.listen` in
+  /// `initState`). Re-fetches skills when the service is rebuilt (e.g. after
+  /// a marketplace install/uninstall invalidates [skillServiceProvider]), so
+  /// `/skills` shows fresh data without an app restart.
+  void listenForSkillChanges() {
+    ref.listen<AsyncValue<SkillService>>(skillServiceProvider, (prev, next) {
+      if (prev == null || !next.hasValue) return;
+      _skillService = next.value;
+      _allSkills = [];
+      _allowedSkillNames.clear();
+    });
   }
 
   Future<void> _loadSkillService() async {
@@ -272,6 +288,17 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     final slashIndex = beforeCursor.lastIndexOf('/');
     if (slashIndex == -1) return;
     final afterCursor = text.substring(cursorPos);
+
+    hideCommandPopup();
+
+    if (cmd.name == '/new') {
+      textController.clear();
+      final newChat = await ref.read(chatListProvider.notifier).createNewChat();
+      ref.read(currentChatIdProvider.notifier).setChatId(newChat.id);
+      ref.read(permissionServiceProvider).clearSession();
+      return;
+    }
+
     final newText =
         '${beforeCursor.substring(0, slashIndex)}${cmd.name} $afterCursor';
     textController.value = TextEditingValue(
@@ -280,8 +307,6 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
         offset: slashIndex + cmd.name.length + 1,
       ),
     );
-
-    hideCommandPopup();
 
     // If command is /skills, trigger skills popup
     if (cmd.name == '/skills') {
@@ -570,10 +595,10 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
   /// Insert skill content into chat history without triggering AI response.
   Future<void> insertSkillMessage(SkillInfo skill, String content) async {
     debugPrint('[SlashCommandHandler] Inserting skill: ${skill.name}');
-    final storage = ref.read(chatStorageServiceProvider);
     final chatIdNotifier = ref.read(currentChatIdProvider.notifier);
     final chatListNotifier = ref.read(chatListProvider.notifier);
     final modelId = ref.read(modelProvider).selectedModelId;
+    final sessionRepository = await ref.read(sessionRepositoryProvider.future);
 
     final chat = ref.read(currentChatProvider);
     Message message;
@@ -588,7 +613,16 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
         isComplete: true,
         model: modelId,
       );
-      await storage.addMessageToChat(newChat.id, message);
+      final sessionId = newChat.toSessionId();
+      await sessionRepository.appendEvent(
+        MessageAdded(
+          sessionId: sessionId,
+          messageId: message.id,
+          role: message.role.name,
+          content: message.content,
+          timestamp: message.timestamp,
+        ),
+      );
       final updatedChat = newChat.copyWith(
         messages: [message],
         updatedAt: DateTime.now(),
@@ -603,7 +637,16 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
         isComplete: true,
         model: modelId,
       );
-      await storage.addMessageToChat(chat.id, message);
+      final sessionId = chat.toSessionId();
+      await sessionRepository.appendEvent(
+        MessageAdded(
+          sessionId: sessionId,
+          messageId: message.id,
+          role: message.role.name,
+          content: message.content,
+          timestamp: message.timestamp,
+        ),
+      );
       final updatedChat = chat.copyWith(
         messages: [...chat.messages, message],
         updatedAt: DateTime.now(),

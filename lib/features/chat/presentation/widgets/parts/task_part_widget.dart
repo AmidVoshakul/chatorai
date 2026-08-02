@@ -4,6 +4,7 @@ import 'package:chatorai/features/chat/presentation/widgets/parts/tool_title.dar
 import 'package:chatorai/features/sessions/providers/session_providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/format_utils.dart';
+import 'package:chatorai/shared/widgets/shimmer_mask.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -21,16 +22,31 @@ final _taskHoverProvider = NotifierProvider<_TaskHoverState, Map<String, bool>>(
   _TaskHoverState.new,
 );
 
-class TaskPartWidget extends ConsumerWidget {
+class TaskPartWidget extends ConsumerStatefulWidget {
   final TaskPart part;
   final VoidCallback? onTap;
 
   const TaskPartWidget({super.key, required this.part, this.onTap});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TaskPartWidget> createState() => _TaskPartWidgetState();
+}
+
+class _TaskPartWidgetState extends ConsumerState<TaskPartWidget> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final part = this.part;
+    final part = widget.part;
     final isRunning = part.status == TaskStatus.running;
     final isCompleted = part.status == TaskStatus.completed;
     final hasError = part.error != null && part.error!.isNotEmpty;
@@ -76,7 +92,7 @@ class TaskPartWidget extends ConsumerWidget {
       onExit: (_) => ref.read(_taskHoverProvider.notifier).set(hoverKey, false),
       cursor: SystemMouseCursors.click,
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 2),
@@ -99,28 +115,43 @@ class TaskPartWidget extends ConsumerWidget {
                     _statusIcon(theme, isRunning: isRunning),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        '${part.agent} Task — ${part.description}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      child: isRunning
+                          ? ShimmerMask(
+                              duration: const Duration(milliseconds: 1500),
+                              child: Text(
+                                '${part.agent} Task — ${part.description}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )
+                          : Text(
+                              '${part.agent} Task — ${part.description}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                     ),
                   ],
                 ),
                 if (isRunning && currentTool != null && currentTool.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(left: 24, top: 2),
-                    child: Text(
-                      '  ↳ ${currentToolTitle ?? _capitalize(currentTool)}'
-                          .trim(),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontSize: ChatoraiFontSizes.xs,
+                    child: ShimmerMask(
+                      duration: const Duration(milliseconds: 1500),
+                      child: Text(
+                        '  ↳ ${currentToolTitle ?? _capitalize(currentTool)}'
+                            .trim(),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: ChatoraiFontSizes.xs,
+                        ),
+                        softWrap: true,
+                        overflow: TextOverflow.visible,
                       ),
-                      softWrap: true,
-                      overflow: TextOverflow.visible,
                     ),
                   ),
                 if (isRunning && hasError)
@@ -171,11 +202,12 @@ class TaskPartWidget extends ConsumerWidget {
   }
 
   Widget _statusIcon(ThemeData theme, {required bool isRunning}) {
+    final part = widget.part;
     if (isRunning) {
       return SizedBox(
         width: 16,
         height: 16,
-        child: SpinKitCircle(size: 16, color: theme.colorScheme.onSurface),
+        child: SpinKitCircle(size: 15, color: theme.colorScheme.onSurface),
       );
     }
 
@@ -194,7 +226,7 @@ class TaskPartWidget extends ConsumerWidget {
         return SizedBox(
           width: 16,
           height: 16,
-          child: SpinKitCircle(size: 16, color: theme.colorScheme.onSurface),
+          child: SpinKitCircle(size: 15, color: theme.colorScheme.onSurface),
         );
     }
   }

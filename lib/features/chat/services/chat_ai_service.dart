@@ -14,6 +14,10 @@ import 'package:dio/dio.dart';
 import 'chat_cancellation.dart';
 import 'chat_retry_service.dart';
 
+bool isGenerationStillValid(int generation, int currentGeneration) {
+  return generation == currentGeneration;
+}
+
 // Tool event callbacks surfaced to the chat UI layer.
 typedef ToolStartCallback =
     Future<void> Function(
@@ -155,6 +159,14 @@ class ChatAiService implements CompletionProvider {
     // no-op; kept for compatibility
   }
 
+  void _completeStopCompleter() {
+    final stopCompleter = _stopCompleter;
+    _stopCompleter = null;
+    if (stopCompleter != null && !stopCompleter.isCompleted) {
+      stopCompleter.complete();
+    }
+  }
+
   Future<void> _handleStreamToolResult({
     required String prefix,
     required LanguageModelV3ToolResultPart toolResult,
@@ -275,11 +287,11 @@ class ChatAiService implements CompletionProvider {
     }
 
     _isRunning = true;
-    _stopCompleter = Completer<void>();
+    final requestStopCompleter = Completer<void>();
+    _stopCompleter = requestStopCompleter;
     _currentModel = model;
     _currentTemperature = temperature;
-    final gen = _generation + 1;
-    cancelAllRequests();
+    final gen = ++_generation;
 
     // ── Build LanguageModel once (before retry loop) ──────────────────────
     ModelConfig? resolvedConfig;
@@ -302,7 +314,7 @@ class ChatAiService implements CompletionProvider {
         e,
       );
       _isRunning = false;
-      _stopCompleter?.complete();
+      _completeStopCompleter();
       rethrow;
     }
 
@@ -315,6 +327,7 @@ class ChatAiService implements CompletionProvider {
       await _retryService.execute(
         ({void Function()? onChunkReceived}) async {
           final seenToolResults = <String>{};
+          var completionHandled = false;
           LogTags.chatService.logDebug(
             'streamChatCompletion: calling streamText device=…',
           );
@@ -332,6 +345,7 @@ class ChatAiService implements CompletionProvider {
                 ? null
                 : {'sessionId': sessionId, 'agentId': 'main'},
             onInputAvailable: (event) async {
+              if (!isGenerationStillValid(gen, _generation)) return;
               final rawInput = event.input;
               final inputMap = rawInput is Map<String, dynamic>
                   ? rawInput
@@ -352,14 +366,9 @@ class ChatAiService implements CompletionProvider {
               Object error,
               StackTrace stack,
             ) {
-              // ai_sdk_dart wraps transport failures (incl. DioException)
-              // as AiApiCallError before they escape the internal streams, so
-              // they reach our await-for. Swallow here so they never reach the
-              // zone handler. The corresponding StreamTextErrorEvent data event
-              // carries the same error and drives the retry.
               if (error is DioException || error is AiApiCallError) {
                 LogTags.chatService.logDebug(
-                  'stream handleError swallowed transport error',
+                  'streamChatCompletion: stream handleError swallowed transport error',
                 );
                 return;
               }
@@ -367,14 +376,17 @@ class ChatAiService implements CompletionProvider {
             })) {
               switch (event) {
                 case StreamTextTextDeltaEvent(:final delta):
+                  if (!isGenerationStillValid(gen, _generation)) return;
                   onChunkReceived?.call();
                   await onChunk(delta);
                 case StreamTextReasoningDeltaEvent(:final delta):
+                  if (!isGenerationStillValid(gen, _generation)) return;
                   await onReasoning(delta);
                 case StreamTextToolResultEvent(
                   :final toolResult,
                   :final preliminary,
                 ):
+                  if (!isGenerationStillValid(gen, _generation)) return;
                   await _handleStreamToolResult(
                     prefix: 'streamChatCompletion',
                     toolResult: toolResult,
@@ -387,6 +399,7 @@ class ChatAiService implements CompletionProvider {
                   :final toolName,
                   :final error,
                 ):
+                  if (!isGenerationStillValid(gen, _generation)) return;
                   if (!seenToolResults.contains(toolCallId)) {
                     seenToolResults.add(toolCallId);
                     await onToolError?.call(
@@ -429,6 +442,7 @@ class ChatAiService implements CompletionProvider {
                     error,
                   );
                   if (error is AiNoSuchToolError) {
+                    if (!isGenerationStillValid(gen, _generation)) return;
                     final toolName = _extractToolName(error.message);
                     final syntheticCallId =
                         'hallucinated_${DateTime.now().microsecondsSinceEpoch}';
@@ -437,6 +451,9 @@ class ChatAiService implements CompletionProvider {
                   }
                   throw error;
                 case StreamTextFinishEvent(:final text, :final usage):
+                  if (completionHandled) return;
+                  if (!isGenerationStillValid(gen, _generation)) return;
+                  completionHandled = true;
                   _tokenCounter.recordUsage(
                     promptTokens: usage?.inputTokens,
                     completionTokens: usage?.outputTokens,
@@ -447,7 +464,7 @@ class ChatAiService implements CompletionProvider {
                     usage?.inputTokenDetails?.cacheReadTokens ?? 0,
                     usage?.inputTokenDetails?.cacheWriteTokens ?? 0,
                   );
-                  onCompletion(text);
+                  await onCompletion(text);
                   if (_overflowDetector.isOverflow(_tokenCounter.totalTokens)) {
                     onOverflow?.call(messages);
                   }
@@ -487,8 +504,12 @@ class ChatAiService implements CompletionProvider {
 
       rethrow;
     } finally {
-      _isRunning = false;
-      _stopCompleter?.complete();
+      if (gen == _generation) {
+        _isRunning = false;
+      }
+      if (identical(_stopCompleter, requestStopCompleter)) {
+        _completeStopCompleter();
+      }
       _stopProgressTimer();
     }
   }
@@ -704,6 +725,106 @@ class ChatAiService implements CompletionProvider {
   }
 
   // ===========================================================================
+  // TITLE GENERATION
+  // ===========================================================================
+
+  /// Generates a concise session title from the first user message.
+  ///
+  /// Falls back to a truncated version of the user message when the model
+  /// yields no usable title. This is a best-effort, fire-and-forget operation
+  /// and must never throw.
+  Future<String> generateSessionTitle({
+    required String modelId,
+    required String userMessage,
+  }) async {
+    try {
+      final text = await generateCompletion(
+        messages: [
+          {
+            'role': 'user',
+            'content':
+                'Generate a short conversation title (max 60 characters) for this user message. '
+                'Reply with ONLY the title: no markdown, no quotes, no numbering, no explanations.\n'
+                'User message: $userMessage',
+          },
+        ],
+        model: modelId,
+        temperature: 0.5,
+      );
+      final cleaned = _cleanSessionTitle(text);
+      if (cleaned.isNotEmpty) return cleaned;
+    } catch (_) {
+      // Fall through to the user-message fallback.
+    }
+    return _truncateTitle(userMessage);
+  }
+
+  /// Truncates a title to at most 60 characters, keeping whole words.
+  String _truncateTitle(String title) {
+    final trimmed = title.trim();
+    if (trimmed.length <= 60) return trimmed;
+    final cut = trimmed.substring(0, 57);
+    final lastSpace = cut.lastIndexOf(' ');
+    return lastSpace > 0 ? '${cut.substring(0, lastSpace)}...' : '$cut...';
+  }
+
+  /// Strips markdown formatting, template boilerplate and option lists from the
+  /// model's title response, keeping only the first meaningful line.
+  String _cleanSessionTitle(String text) {
+    final withoutThink = text.replaceAll(
+      RegExp(r'<think>[\s\S]*?<\/think>\s*'),
+      '',
+    );
+
+    // Normalize bullet/numbered lists and markdown headings into plain lines.
+    final lines = withoutThink
+        .split('\n')
+        .map((line) {
+          var l = line.trim();
+          // Strip leading markdown heading markers and list bullets.
+          l = l.replaceFirst(RegExp(r'^#{1,6}\s*'), '');
+          l = l.replaceFirst(RegExp(r'^[-*+]\s+'), '');
+          l = l.replaceFirst(RegExp(r'^\d+[\.\)]\s*'), '');
+          // Strip common wrappers ("Title:", "Here are some options:", etc.).
+          l = l.replaceFirst(
+            RegExp(
+              r'^(title|conversation title|chat title):\s*',
+              caseSensitive: false,
+            ),
+            '',
+          );
+          return l;
+        })
+        .where((line) => line.isNotEmpty)
+        .toList();
+
+    if (lines.isEmpty) return '';
+
+    // Prefer the first non-template line: skip placeholder-looking lines that
+    // describe the prompt itself (e.g. "Primary Versatile Title (works across
+    // most use cases, ...)"-style boilerplate).
+    String? picked;
+    for (final line in lines) {
+      final lower = line.toLowerCase();
+      final isBoilerplate =
+          lower.contains('versatile title') ||
+          lower.contains('primary title') ||
+          lower.contains('here are') ||
+          lower.contains('some options') ||
+          lower.contains('title options') ||
+          lower.contains('works across most') ||
+          lower.startsWith('example') ||
+          lower.contains('use cases') && lower.length > 40;
+      if (isBoilerplate) continue;
+      picked = line;
+      break;
+    }
+    final cleaned = (picked ?? lines.first).trim();
+    if (cleaned.isEmpty) return '';
+    return _truncateTitle(cleaned);
+  }
+
+  // ===========================================================================
   // UTILITIES
   // ===========================================================================
   List<Map<String, dynamic>> sanitizeMessages(
@@ -735,6 +856,12 @@ class ChatAiService implements CompletionProvider {
     _retryService.cancelRetry();
     _cancellation.cancel();
   }
+
+  /// The current active cancellation token.
+  CancellationToken get currentToken => _cancellation.token;
+
+  /// Whether the current token has been cancelled.
+  bool get isCancelled => _cancellation.isCancelled;
 
   /// Dispose resources.
   void dispose() {
