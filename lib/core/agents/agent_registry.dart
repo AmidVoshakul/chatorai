@@ -103,6 +103,11 @@ final Map<String, AgentDefinition> builtInAgents = {
           action: PermissionAction.allow,
         ),
         PermissionRule(
+          permission: 'shell',
+          pattern: '*',
+          action: PermissionAction.ask,
+        ),
+        PermissionRule(
           permission: 'plan_enter',
           pattern: '*',
           action: PermissionAction.deny,
@@ -354,6 +359,11 @@ Complete the user's search request efficiently and report your findings clearly.
           permission: '*',
           pattern: '*',
           action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'shell',
+          pattern: '*',
+          action: PermissionAction.ask,
         ),
         PermissionRule(
           permission: 'todowrite',

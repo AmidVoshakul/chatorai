@@ -99,6 +99,14 @@ class ChatoraiColors {
   static const Color orangeLight = Color(0xFFFFC04C);
   static const Color orangeDark = Color(0xFFCC8400);
 
+  // Premium dark sheet (permission / question bottom sheets)
+  static const Color premiumSurface = Color(0xFF151515);
+  static const Color premiumSurfaceRaised = Color(0xFF222222);
+  static const Color premiumBorder = Color(0xFF3D3D3D);
+  static const Color premiumBorderSoft = Color(0xFF2C2C2C);
+  static const Color premiumText = Color(0xFFECECEC);
+  static const Color premiumTextMuted = Color(0xFF9C9C9C);
+
   // Input Container
   static const Color inputContainerLight = Color(0xFFFFFFFF);
   static const Color inputContainerDark = Color(0xFF1A1A1A);
@@ -343,6 +351,36 @@ class ChatoraiShadows {
       offset: const Offset(0, 8),
     ),
   ];
+}
+
+// ===============================================================
+// GRADIENTS
+// ===============================================================
+class ChatoraiGradients {
+  /// Brand accent (primary CTA buttons, icon avatars).
+  static const LinearGradient accent = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      ChatoraiColors.orangeLight,
+      ChatoraiColors.orange,
+      ChatoraiColors.orangeDark,
+    ],
+  );
+
+  /// Metallic hairline for sheet edges and handles.
+  static const LinearGradient metallic = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF5C5C5C), Color(0xFF1B1B1B)],
+  );
+
+  /// Light metallic highlight for selected items on dark sheets.
+  static const LinearGradient selection = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [Color(0xFF4A4A4A), Color(0xFF2A2A2A)],
+  );
 }
 
 // ===============================================================

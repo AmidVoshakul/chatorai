@@ -100,7 +100,7 @@ class PermissionRuleset {
         const PermissionRule(
           permission: 'shell',
           pattern: '*',
-          action: PermissionAction.allow,
+          action: PermissionAction.ask,
         ),
         const PermissionRule(
           permission: 'edit',

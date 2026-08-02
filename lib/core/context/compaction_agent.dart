@@ -77,30 +77,30 @@ class CompactionAgent {
 $prevBlock## Goal
 - Summarize the following conversation context concisely.
 
-## Constraints & Preferences
+### Constraints & Preferences
 - (none)
 
-## Progress
-### Done
+### Progress
+#### Done
 - (extract from context)
-### In Progress
+#### In Progress
 - (extract from context)
-### Blocked
-- (extract from context)
-
-## Key Decisions
+#### Blocked
 - (extract from context)
 
-## Next Steps
+### Key Decisions
 - (extract from context)
 
-## Critical Context
+### Next Steps
 - (extract from context)
 
-## Relevant Files
+### Critical Context
 - (extract from context)
 
-## Raw conversation to summarize:
+### Relevant Files
+- (extract from context)
+
+### Raw conversation to summarize:
 $headText
 ''';
 

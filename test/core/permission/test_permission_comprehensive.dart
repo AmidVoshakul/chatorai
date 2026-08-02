@@ -322,12 +322,12 @@ void main() {
       expect(envRule.action, equals(PermissionAction.allow));
     });
 
-    test('shell is allowed by default', () {
+    test('shell is ask by default (dangerous commands require approval)', () {
       final defaults = PermissionRuleset.defaults();
       final shellRule = defaults.rules.firstWhere(
         (r) => r.permission == 'shell',
       );
-      expect(shellRule.action, equals(PermissionAction.allow));
+      expect(shellRule.action, equals(PermissionAction.ask));
     });
 
     test('edit is ask by default', () {

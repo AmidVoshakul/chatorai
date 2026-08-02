@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:test/test.dart';
+import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
@@ -73,8 +74,50 @@ void main() {
           patterns: ['ls -la'],
           metadata: {'sessionId': 's1'},
         );
-        // Must complete without throwing and without requiring another reply.
-        await service.ask(req2, ruleset);
+        // Must NOT throw PermissionDeniedError (rate-limit on a different
+        // pattern must not trigger after a once grant). Shell now asks by
+        // default, so it blocks until a reply.
+        final f2 = service.ask(req2, ruleset);
+        await Future.delayed(Duration.zero);
+        service.reply('req-once-2', PermissionReply.once);
+        await f2;
+      },
+    );
+
+    test(
+      'shell rm with defaults + build agent rules emits PermissionRequest',
+      () async {
+        // Regression: shell was silently allowed for the default `build` agent
+        // because `*:* allow` (agent rule) matched after the `shell:* ask`
+        // default. The build agent's rules must now include an explicit
+        // `shell:* ask` override so dangerous commands ask before execution.
+        final registry = AgentRegistry();
+        await registry.init();
+        final buildRules = registry.get('build')!.permissions;
+        final effective = PermissionRuleset(
+          rules: [...ruleset.rules, ...buildRules.rules],
+        );
+
+        final req = PermissionRequest(
+          id: 'req-shell-rm',
+          toolName: 'shell',
+          permission: 'shell',
+          patterns: ['rm -rf build/'],
+          metadata: {'sessionId': 's1'},
+        );
+
+        final emitted = <PermissionRequest>[];
+        service.onAsked.listen(emitted.add);
+
+        final future = service.ask(req, effective);
+        await Future.delayed(Duration.zero);
+
+        expect(emitted, hasLength(1));
+        expect(emitted.first.permission, equals('shell'));
+        expect(emitted.first.patterns, contains('rm -rf build/'));
+
+        service.reply('req-shell-rm', PermissionReply.once);
+        await future;
       },
     );
 
