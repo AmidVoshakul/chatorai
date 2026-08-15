@@ -2,7 +2,7 @@ name: chatorai
 description: "ChatORAI - AI Chat Application"
 publish_to: "none"
 
-version: 0.1.1
+version: 0.1.2
 
 environment:
   sdk: ^3.11.0
@@ -30,7 +30,6 @@ dependencies:
   path: ^1.9.1
   connectivity_plus: ^7.0.0
   share_plus: ^10.1.4
-  flutter_dotenv: ^6.0.0
   file_picker: ^10.3.10
   permission_handler: ^12.0.1
   package_info_plus: ^9.0.0
@@ -39,7 +38,6 @@ dependencies:
   ai_sdk_provider: ^1.2.0
   ai_sdk_anthropic: ^1.2.0
   ai_sdk_google: ^1.2.0
-  retry: ^3.1.2
   flutter_secure_storage: ^10.3.1
   html: ^0.15.6
   glob: ^2.1.2

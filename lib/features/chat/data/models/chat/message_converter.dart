@@ -78,6 +78,7 @@ ChatMessage messageToChatMessage(Message message) {
         parts: parts,
         model: message.model,
         agent: message.agent,
+        isCompactionSummary: message.isCompactionSummary,
         timestamp: timestamp,
         tokensInput: message.tokensInput,
         tokensOutput: message.tokensOutput,
@@ -276,12 +277,20 @@ Chat sessionStateToChat(
             _sessionMessageToMessage(sessionMsg, partsByMessage[sessionMsg.id]),
       )
       .toList();
+  final compactedContext = state.compactedContext
+      ?.where((m) => m.role != session_state.MessageRole.tool)
+      .map(
+        (sessionMsg) =>
+            _sessionMessageToMessage(sessionMsg, partsByMessage[sessionMsg.id]),
+      )
+      .toList();
   return Chat(
     id: state.id.value,
     title: state.title,
     messages: chatMessages,
     createdAt: state.createdAt,
     updatedAt: state.updatedAt,
+    compactedContext: compactedContext,
   );
 }
 
@@ -300,7 +309,8 @@ Message _sessionMessageToMessage(
     timestamp: sessionMsg.createdAt,
     model: sessionMsg.model,
     reasoning: sessionMsg.reasoning,
-    agent: null,
+    agent: sessionMsg.agent,
+    isCompactionSummary: sessionMsg.isCompactionSummary,
     isComplete: true,
     isError: isError,
     partsJson: partsJson,

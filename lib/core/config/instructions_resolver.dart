@@ -1,22 +1,22 @@
 import 'dart:io';
 
+import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:glob/glob.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
-import 'package:chatorai/shared/utils/xdg_paths.dart';
 
 /// Filenames auto-discovered by walking upward from cwd to project root
-/// (mirrors opencode's `AGENTS.md` / `CLAUDE.md` behaviour).
+/// (mirrors `AGENTS.md` / `CLAUDE.md` behaviour).
 const List<String> _kInstructionFilenames = ['AGENTS.md', 'CLAUDE.md'];
 
 /// Only `AGENTS.md` is editable in-app; other auto-detected files (e.g.
-/// `CLAUDE.md`) are shown read-only, matching opencode's `ConfigRules`.
+/// `CLAUDE.md`) are shown read-only.
 const String _kEditableFilename = 'AGENTS.md';
 
 /// Metadata describing an auto-detected instruction file, surfaced to the GUI
 /// so it can render one card per file without re-resolving the whole prompt.
 ///
-/// Mirrors opencode's `ConfigRules.read` shape (`name`, `path`, `exists`,
+/// Mirrors `ConfigRules.read` shape (`name`, `path`, `exists`,
 /// `editable`) plus [isGlobal] to distinguish the user-level `AGENTS.md` from
 /// project-level ones.
 class DiscoveredInstructionFile {
@@ -109,7 +109,7 @@ class InstructionsResolver {
     final blocks = <String>[];
     final seen = <String>{};
 
-    // 1. Global AGENTS.md from ~/.config/chatorai/ (always, like opencode).
+    // 1. Global AGENTS.md from ~/.config/chatorai/ .
     final globalBlock = await _loadGlobalAgents();
     if (globalBlock != null) {
       final resolved = p.canonicalize(globalBlock.path);
@@ -218,7 +218,7 @@ class InstructionsResolver {
 
   /// Walks upward from [start] toward the filesystem root, collecting every
   /// `AGENTS.md` / `CLAUDE.md` found. Returns paths from project root toward
-  /// [start] (opencode order: project-level first, closest-to-cwd last).
+  /// [start] (order: project-level first, closest-to-cwd last).
   List<String> _discoverInstructionFiles(Directory start) {
     var dir = start;
     final candidates = <String>[];
@@ -236,9 +236,9 @@ class InstructionsResolver {
     }
 
     // Reverse: closest-to-cwd first matches existing _findUp order for
-    // explicit entries, but opencode injects project-level first. We
+    // explicit entries, but  injects project-level first. We
     // reverse so the closest file ends up at the *end* of the list (lower
-    // priority when deduplicating), matching opencode's "project root
+    // priority when deduplicating), matching "project root
     // dominates" semantics.
     return candidates.reversed.toList();
   }
@@ -268,7 +268,7 @@ class InstructionsResolver {
     final expanded = _expandHome(entry);
 
     if (p.isAbsolute(expanded)) {
-      // Glob by basename inside its own directory (opencode behaviour).
+      // Glob by basename inside its own directory.
       // The user explicitly provided an absolute path, so it is trusted.
       final dir = p.dirname(expanded);
       final base = p.basename(expanded);
@@ -321,7 +321,7 @@ class InstructionsResolver {
       final candidate = p.join(dir.path, filename);
       if (File(candidate).existsSync()) {
         results.add(candidate);
-        break; // First (closest) match wins, like opencode.
+        break; // First (closest) match wins.
       }
       final parent = dir.parent;
       if (parent.path == dir.path) break;

@@ -1143,7 +1143,7 @@ void main() {
 
     group('canonicalId model naming', () {
       test(
-        'modelName already containing providerId is double-prefixed (OpenCode convention)',
+        'modelName already containing providerId is double-prefixed',
         () async {
           SharedPreferences.setMockInitialValues({});
           final prefs = await SharedPreferences.getInstance();

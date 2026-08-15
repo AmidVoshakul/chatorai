@@ -299,6 +299,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         _scrollToBottom(force: true, offset: topPadding + kToolbarHeight + 8);
       },
       onOpenModelSettings: _openModelSettings,
+      onCompact: () async {
+        final chat = ref.read(currentChatProvider);
+        if (chat == null || chat.messages.isEmpty) return;
+        await runCompaction(chat);
+      },
     );
 
     Widget baseLayout = _isMobile

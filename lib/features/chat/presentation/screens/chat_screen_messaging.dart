@@ -1,6 +1,67 @@
 part of 'chat_screen.dart';
 
 extension _ChatScreenMessagingExt on _ChatScreenState {
+  Future<List<Map<String, dynamic>>> _applyCompaction(
+    List<Map<String, dynamic>> apiMessages,
+    Chat chat,
+  ) async {
+    final modelId = ref.read(modelProvider).selectedModelId;
+    if (modelId.isEmpty) return apiMessages;
+    final compactionConfig = ref.read(compactionConfigProvider);
+    final compactionService = CompactionService.fromConfig(compactionConfig);
+    final aiService = ref.read(chatAiServiceProvider);
+    final compacted = await compactionService.compact(
+      messages: apiMessages,
+      aiService: aiService,
+      model: modelId,
+    );
+    if (compacted.isEmpty) return apiMessages;
+    final repo = await _sessionRepositoryFuture;
+    final orchestrator = CompactionOrchestrator(
+      repo,
+      completionProvider: aiService,
+    );
+    final updatedState = await orchestrator.compactSessionFromResult(
+      SessionID.fromString(chat.id),
+      compacted,
+      model: modelId,
+    );
+    if (updatedState != null) {
+      final canonicalChat = sessionStateToChat(updatedState);
+      ref.read(chatListProvider.notifier).updateChat(canonicalChat);
+      // `compactedContext` is tail-only (summary lives in `messages`). Re-inject
+      // the single summary from `chat.messages` so the model context is
+      // `[summary, ...tail]` without duplicating the summary.
+      return _compactedApiMessagesWithSummary(chat, canonicalChat);
+    }
+    final updatedMessages = compacted.map((m) {
+      final roleName = m['role'] as String? ?? 'system';
+      final content = m['content'] as String? ?? '';
+      return Message(
+        role: MessageRole.values.firstWhere(
+          (r) => r.name == roleName,
+          orElse: () => MessageRole.system,
+        ),
+        content: content,
+        timestamp: DateTime.now(),
+        isComplete: true,
+        agent: m['agent'] as String?,
+        isCompactionSummary: m['isCompactionSummary'] == true,
+      );
+    }).toList();
+    final updatedChat = chat.copyWith(
+      messages: updatedMessages,
+      updatedAt: DateTime.now(),
+    );
+    ref.read(chatListProvider.notifier).updateChat(updatedChat);
+    return compacted;
+  }
+
+  Future<void> runCompaction(Chat chat) async {
+    final apiMessages = _buildApiMessages(chat);
+    await _applyCompaction(apiMessages, chat);
+  }
+
   /// Builds unified system message chain from agent prompt + user system prompt.
   /// Returns empty list if no prompts, otherwise single system message.
   List<Map<String, dynamic>> _buildSystemChain({
@@ -48,13 +109,28 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     String? delegateAgentId,
     String? agentMention,
   }) {
+    // `compactedContext` is tail-only (summary lives in `messages` as a single
+    // source of truth). Re-inject the summary from `messages` so the model
+    // context is `[summary, ...tail]` — mirroring how assembles the
+    // context per call rather than duplicating the summary in storage.
+    final compactedSummary = chat.compactedContext != null
+        ? _findSummaryMessage(chat.messages)
+        : null;
+    final sourceMessages = [
+      ?compactedSummary,
+      ...(chat.compactedContext ?? chat.messages),
+    ];
     const int maxHistoryMessages = 20;
-    final recentMessages = chat.messages.length > maxHistoryMessages
-        ? chat.messages.sublist(chat.messages.length - maxHistoryMessages)
-        : chat.messages;
+    final recentMessages = sourceMessages.length > maxHistoryMessages
+        ? sourceMessages.sublist(sourceMessages.length - maxHistoryMessages)
+        : sourceMessages;
 
     final messages = recentMessages.where((m) => !m.isError).map((msg) {
-      final result = <String, dynamic>{'role': msg.role.name};
+      final result = <String, dynamic>{
+        'role': msg.role.name,
+        'isCompactionSummary': msg.isCompactionSummary,
+      };
+      if (msg.agent != null) result['agent'] = msg.agent;
 
       var content = msg.content;
       if (msg.attachedDocPath != null) {
@@ -116,6 +192,48 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     }
 
     return messages;
+  }
+
+  /// Finds the compaction summary message (if any) in the visible [messages]
+  /// history. The summary is the single source of truth for the model context;
+  /// it is never duplicated into [Chat.compactedContext].
+  Message? _findSummaryMessage(List<Message> messages) {
+    for (var i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].isCompactionSummary) return messages[i];
+    }
+    return null;
+  }
+
+  /// Builds the pre-send model message list from a compacted [canonicalChat].
+  ///
+  /// `canonicalChat.compactedContext` is tail-only, so the summary is re-injected
+  /// from the original [chat.messages] (single source of truth). Returns the
+  /// unchanged [fallback] when there is no compacted context.
+  List<Map<String, dynamic>> _compactedApiMessagesWithSummary(
+    Chat chat,
+    Chat canonicalChat,
+  ) {
+    final compacted = canonicalChat.compactedContext;
+    if (compacted == null || compacted.isEmpty) return [];
+    final summary = _findSummaryMessage(chat.messages);
+    final result = <Map<String, dynamic>>[];
+    if (summary != null) {
+      result.add({
+        'role': summary.role.name,
+        'content': summary.content,
+        if (summary.agent != null) 'agent': summary.agent,
+        'isCompactionSummary': true,
+      });
+    }
+    for (final m in compacted) {
+      result.add({
+        'role': m.role.name,
+        'content': m.content,
+        if (m.agent != null) 'agent': m.agent,
+        if (m.isCompactionSummary) 'isCompactionSummary': true,
+      });
+    }
+    return result;
   }
 
   Future<void> _initiateStream({

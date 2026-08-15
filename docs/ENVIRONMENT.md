@@ -256,11 +256,9 @@ dependencies:
   flutter_spinkit: ^5.2.2
   connectivity_plus: ^7.0.0
   share_plus: ^10.1.4
-  flutter_dotenv: ^6.0.0
   file_picker: ^10.3.10
   permission_handler: ^12.0.1
   package_info_plus: ^9.0.0
-  retry: ^3.1.2
   html: ^0.15.6
   command_shield: ^1.1.0
   nocterm: ^0.8.0

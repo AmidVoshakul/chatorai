@@ -2105,4 +2105,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get compactingIndicator => 'Compacting...';
+
+  @override
+  String get compactionAgentName => 'Compaction';
 }

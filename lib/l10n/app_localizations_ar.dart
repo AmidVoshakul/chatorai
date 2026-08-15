@@ -2064,4 +2064,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get compactingIndicator => 'جارِ الضغط...';
+
+  @override
+  String get compactionAgentName => 'ضغط';
 }

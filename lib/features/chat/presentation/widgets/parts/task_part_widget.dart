@@ -53,14 +53,14 @@ class _TaskPartWidgetState extends ConsumerState<TaskPartWidget> {
     final hoverKey = part.sessionId ?? '${part.agent}:${part.description}';
     final isHovered = ref.watch(_taskHoverProvider)[hoverKey] ?? false;
 
-    // Live current tool: source it from the child session (like opencode,
+    // Live current tool: source it from the child session (
     // which reads tool parts directly from the delegated session) so the
     // header updates in place as the subagent runs different tools.
     String? liveCurrentTool;
     String? liveCurrentTitle;
     // `part.sessionId` is resolved to the delegated child session id (see
     // session_to_chat_converter), so we can read the sub-agent's live tool
-    // results directly from that session — like opencode, which sources tool
+    // results directly from that session — which sources tool
     // parts from the delegated session. The header then updates in place with
     // the sub-agent's current tool, e.g.
     // "Read test/test_task_abort.dart [offset=148, limit=45]", rendered
@@ -207,7 +207,7 @@ class _TaskPartWidgetState extends ConsumerState<TaskPartWidget> {
       return SizedBox(
         width: 16,
         height: 16,
-        child: SpinKitCircle(size: 15, color: theme.colorScheme.onSurface),
+        child: SpinKitCubeGrid(size: 15, color: theme.colorScheme.onSurface),
       );
     }
 
@@ -226,7 +226,7 @@ class _TaskPartWidgetState extends ConsumerState<TaskPartWidget> {
         return SizedBox(
           width: 16,
           height: 16,
-          child: SpinKitCircle(size: 15, color: theme.colorScheme.onSurface),
+          child: SpinKitCubeGrid(size: 15, color: theme.colorScheme.onSurface),
         );
     }
   }

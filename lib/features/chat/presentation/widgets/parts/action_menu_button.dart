@@ -14,6 +14,7 @@ class ActionMenuButton extends StatelessWidget {
   final VoidCallback? onMessageRegenerate;
   final Future<void> Function(String)? onContinuationSelected;
   final bool isLastMessage;
+  final bool isCompactionSummary;
   final ThemeData theme;
   final AppLocalizations localizations;
 
@@ -29,6 +30,7 @@ class ActionMenuButton extends StatelessWidget {
     this.onMessageRegenerate,
     this.onContinuationSelected,
     this.isLastMessage = false,
+    this.isCompactionSummary = false,
     required this.theme,
     required this.localizations,
   });
@@ -96,17 +98,19 @@ class ActionMenuButton extends StatelessWidget {
             ],
           ),
         ),
-        PopupMenuItem(
-          value: 'regenerate',
-          child: Row(
-            children: [
-              Icon(Icons.refresh, size: 18),
-              const SizedBox(width: 8),
-              Text(localizations.regenerate),
-            ],
+        if (!isCompactionSummary)
+          PopupMenuItem(
+            value: 'regenerate',
+            child: Row(
+              children: [
+                Icon(Icons.refresh, size: 18),
+                const SizedBox(width: 8),
+                Text(localizations.regenerate),
+              ],
+            ),
           ),
-        ),
-        if (isLastMessage &&
+        if (!isCompactionSummary &&
+            isLastMessage &&
             content != null &&
             content!.isNotEmpty &&
             (content!.endsWith('...') || content!.split(' ').length > 30))

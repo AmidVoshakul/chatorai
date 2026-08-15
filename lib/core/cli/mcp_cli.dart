@@ -2,6 +2,8 @@
 
 import 'dart:io';
 
+// ANSI styling helpers for a premium CLI render (shared with other commands).
+import 'package:chatorai/core/cli/cli_style.dart' as style;
 import 'package:chatorai/core/cli/mcp_tui.dart';
 import 'package:chatorai/core/config/config_loader.dart';
 import 'package:chatorai/core/config/config_manager.dart';
@@ -11,9 +13,6 @@ import 'package:chatorai/core/mcp/mcp_client_service.dart';
 import 'package:chatorai/core/mcp/mcp_config.dart';
 import 'package:chatorai/core/mcp/mcp_types.dart';
 import 'package:mcp_dart/mcp_dart.dart';
-
-// ANSI styling helpers for a premium CLI render (shared with other commands).
-import 'package:chatorai/core/cli/cli_style.dart' as style;
 
 const _cReset = style.CliStyle.reset;
 const _cGray = style.CliStyle.gray;
@@ -40,7 +39,7 @@ Future<void> runMcp(List<String> args, {String? configPath}) async {
   final sub = args.isEmpty ? 'tui' : args.first;
   final subArgs = args.skip(1).toList();
   // By default the MCP SDK diagnostics are silenced so `list` stays scriptable.
-  // `--print-log` (opencode-style) re-enables full transport/protocol logging.
+  // `--print-log` re-enables full transport/protocol logging.
   final printLog = subArgs.contains('--print-log');
   if (!printLog) silenceMcpLogs();
 

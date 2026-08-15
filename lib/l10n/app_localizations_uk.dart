@@ -2121,4 +2121,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get compactingIndicator => 'Стиснення...';
+
+  @override
+  String get compactionAgentName => 'Стиснення';
 }

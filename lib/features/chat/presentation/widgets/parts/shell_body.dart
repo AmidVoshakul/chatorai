@@ -66,7 +66,7 @@ class _ShellBodyState extends State<ShellBody> {
                     child: SizedBox(
                       width: 14,
                       height: 14,
-                      child: SpinKitCircle(size: 14, color: muted),
+                      child: SpinKitCubeGrid(size: 14, color: muted),
                     ),
                   )
                 else

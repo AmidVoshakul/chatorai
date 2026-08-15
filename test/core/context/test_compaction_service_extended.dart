@@ -1,9 +1,12 @@
+import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/context/compaction_service.dart';
 import 'package:chatorai/core/context/completion_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class FakeCompletionProvider implements CompletionProvider {
-  const FakeCompletionProvider({this.fakeSummary = '📋 Summary generated.'});
+  const FakeCompletionProvider({
+    this.fakeSummary = '## Goal\n- Summary generated.',
+  });
 
   final String fakeSummary;
 
@@ -13,6 +16,25 @@ class FakeCompletionProvider implements CompletionProvider {
     required String model,
     required double temperature,
   }) async {
+    return fakeSummary;
+  }
+}
+
+class RecordingCompletionProvider implements CompletionProvider {
+  RecordingCompletionProvider({this.fakeSummary = '## Goal\n- New summary.'});
+
+  final String fakeSummary;
+  int callCount = 0;
+  List<Map<String, dynamic>> lastMessages = [];
+
+  @override
+  Future<String> generateCompletion({
+    required List<Map<String, dynamic>> messages,
+    required String model,
+    required double temperature,
+  }) async {
+    callCount++;
+    lastMessages = List.of(messages);
     return fakeSummary;
   }
 }
@@ -33,7 +55,68 @@ void main() {
       expect(result, equals(messages));
     });
 
-    test('compacts head into system summary and preserves tail', () async {
+    test('strips ephemeral system prompts in early return', () async {
+      final service = const CompactionService();
+      final messages = [
+        {'role': 'system', 'content': 'Agent prompt'},
+        {'role': 'user', 'content': 'Hi'},
+        {'role': 'assistant', 'content': 'Hello'},
+      ];
+      final result = await service.compact(
+        messages: messages,
+        aiService: const FakeCompletionProvider(),
+        model: 'test',
+      );
+      expect(result, [
+        {'role': 'user', 'content': 'Hi'},
+        {'role': 'assistant', 'content': 'Hello'},
+      ]);
+    });
+
+    test('preserves ## Goal compaction summary in early return', () async {
+      final service = const CompactionService();
+      final messages = [
+        {'role': 'system', 'content': '## Goal\n- Previous summary'},
+        {'role': 'user', 'content': 'Hi'},
+      ];
+      final result = await service.compact(
+        messages: messages,
+        aiService: const FakeCompletionProvider(),
+        model: 'test',
+      );
+      expect(result, equals(messages));
+    });
+
+    test('strips ephemeral system prompts from tail in success path', () async {
+      final service = const CompactionService();
+      final messages = [
+        {'role': 'user', 'content': 'Msg 0'},
+        {'role': 'assistant', 'content': 'Msg 1'},
+        {'role': 'user', 'content': 'Msg 2'},
+        {'role': 'assistant', 'content': 'Msg 3'},
+        {'role': 'system', 'content': 'Agent prompt'},
+        {'role': 'user', 'content': 'Msg 4'},
+        {'role': 'assistant', 'content': 'Msg 5'},
+      ];
+      final result = await service.compact(
+        messages: messages,
+        aiService: const FakeCompletionProvider(),
+        model: 'test',
+      );
+      // summary + last 2 pairs (Msg 2..Msg 5); the ephemeral system prompt
+      // inside the tail must be dropped.
+      expect(result.length, 5);
+      expect(result[0]['role'], 'assistant');
+      expect(result[0]['isCompactionSummary'], isTrue);
+      expect(result[0]['agent'], 'compaction');
+      expect(result[0]['content'], contains('Summary generated'));
+      expect(result[1]['content'], 'Msg 2');
+      expect(result[4]['content'], 'Msg 5');
+      expect(result.where((m) => m['role'] == 'system').length, 0);
+      expect(result.where((m) => m['isCompactionSummary'] == true).length, 1);
+    });
+
+    test('compacts head into assistant summary and preserves tail', () async {
       final service = const CompactionService();
       final messages = List.generate(6, (i) {
         final role = i.isEven ? 'user' : 'assistant';
@@ -44,318 +127,173 @@ void main() {
         aiService: const FakeCompletionProvider(),
         model: 'test',
       );
-      expect(result.length, 5); // system + 4 tail
-      expect(result[0]['role'], 'system');
+      expect(result.length, 5);
+      expect(result[0]['role'], 'assistant');
+      expect(result[0]['isCompactionSummary'], isTrue);
+      expect(result[0]['agent'], 'compaction');
       expect(result[0]['content'], contains('Summary generated'));
       expect(result[1]['content'], 'Msg 2');
       expect(result[4]['content'], 'Msg 5');
     });
 
-    test('replayLastUserMessage appends last user message when missing', () async {
+    test('compact with small tailTurns trims tail correctly', () async {
       final service = const CompactionService(tailTurns: 1);
-      final messages = [
-        {'role': 'user', 'content': 'Old user'},
-        {'role': 'assistant', 'content': 'Old assistant'},
-        {'role': 'user', 'content': 'Middle user'},
-        {'role': 'assistant', 'content': 'Middle assistant'},
-        {'role': 'user', 'content': 'Latest user'},
-        {'role': 'assistant', 'content': 'Latest assistant'},
-      ];
+      final messages = List.generate(8, (i) {
+        final role = i.isEven ? 'user' : 'assistant';
+        return {'role': role, 'content': 'Msg $i'};
+      });
       final result = await service.compact(
         messages: messages,
         aiService: const FakeCompletionProvider(),
         model: 'test',
-        replayLastUserMessage: true,
       );
-      // tailTurns=1 => last 2 messages kept: user "Latest user", assistant "Latest assistant"
-      // The last user message is already in the tail, so replay doesn't add a duplicate
-      expect(result.length, 3); // system + 2 tail
-      expect(result[0]['role'], 'system');
-      expect(result[1]['role'], 'user');
-      expect(result[1]['content'], 'Latest user');
-      expect(result[2]['role'], 'assistant');
+      expect(result.length, lessThan(8));
+      expect(result.first['role'], 'assistant');
+      expect(result.first['isCompactionSummary'], isTrue);
     });
 
-    test(
-      'replayLastUserMessage appends last user message when it is in head',
-      () async {
-        final service = const CompactionService(tailTurns: 1);
-        final messages = [
-          {'role': 'user', 'content': 'Old user'},
-          {'role': 'assistant', 'content': 'Old assistant'},
-          {'role': 'user', 'content': 'Middle user'},
-          {'role': 'assistant', 'content': 'Middle assistant'},
-          {'role': 'user', 'content': 'Latest user'},
-          {'role': 'assistant', 'content': 'Latest assistant'},
-        ];
-        final result = await service.compact(
-          messages: messages,
-          aiService: const FakeCompletionProvider(),
-          model: 'test',
-          replayLastUserMessage: true,
-        );
-        // tailTurns=1 => last 2 messages kept: user "Latest user", assistant "Latest assistant"
-        // The last user message is already in the tail, so replay doesn't add a duplicate
-        expect(result.length, 3); // system + 2 tail
-        expect(result[0]['role'], 'system');
-        expect(result[1]['content'], 'Latest user');
-        expect(result[2]['content'], 'Latest assistant');
-      },
-    );
-
-    test(
-      'replayLastUserMessage does not duplicate existing user message',
-      () async {
-        final service = const CompactionService(tailTurns: 1);
-        final messages = [
-          {'role': 'user', 'content': 'User 1'},
-          {'role': 'assistant', 'content': 'Assistant 1'},
-          {'role': 'user', 'content': 'User 2'},
-          {'role': 'assistant', 'content': 'Assistant 2'},
-          {'role': 'user', 'content': 'User 3'},
-          {'role': 'assistant', 'content': 'Assistant 3'},
-        ];
-        final result = await service.compact(
-          messages: messages,
-          aiService: const FakeCompletionProvider(),
-          model: 'test',
-          replayLastUserMessage: true,
-        );
-        final userMessages = result.where((m) => m['role'] == 'user').toList();
-        // tailTurns=1 keeps last 2 messages: user "User 3", assistant "Assistant 3"
-        // Last user message is already in tail, no duplicate
-        expect(userMessages.length, 1);
-        expect(userMessages.first['content'], 'User 3');
-      },
-    );
-
-    test('replayLastUserMessage handles empty messages', () async {
+    test('strips system prompts from head before summarizing', () async {
       final service = const CompactionService();
+      final provider = RecordingCompletionProvider();
+      // tailTurns=2 keeps the last 4 user/assistant messages as the tail, so
+      // the head is [2 system prompts + 3 user/assistant pairs] — the prompts
+      // must be stripped before the LLM sees the head.
+      final messages = [
+        {'role': 'system', 'content': 'Agent prompt'},
+        {'role': 'system', 'content': 'User system prompt'},
+        {'role': 'user', 'content': 'Msg 0'},
+        {'role': 'assistant', 'content': 'Msg 1'},
+        {'role': 'user', 'content': 'Msg 2'},
+        {'role': 'assistant', 'content': 'Msg 3'},
+        {'role': 'user', 'content': 'Msg 4'},
+        {'role': 'assistant', 'content': 'Msg 5'},
+        {'role': 'user', 'content': 'Msg 6'},
+        {'role': 'assistant', 'content': 'Msg 7'},
+      ];
       final result = await service.compact(
-        messages: const [],
-        aiService: const FakeCompletionProvider(),
+        messages: messages,
+        aiService: provider,
         model: 'test',
-        replayLastUserMessage: true,
       );
-      expect(result, isEmpty);
+      expect(provider.callCount, 1);
+      final headText =
+          provider.lastMessages.firstWhere(
+                (m) => m['role'] == 'user',
+              )['content']
+              as String;
+      expect(headText, isNot(contains('Agent prompt')));
+      expect(headText, isNot(contains('User system prompt')));
+      expect(headText, contains('[user]: Msg 0'));
+      expect(headText, contains('[assistant]: Msg 1'));
+      expect(result.first['isCompactionSummary'], isTrue);
     });
 
     test(
-      'replayLastUserMessage returns original when no user message exists',
+      'returns stripped messages without LLM when head is only system prompts',
       () async {
         final service = const CompactionService();
+        final provider = RecordingCompletionProvider();
         final messages = [
-          {'role': 'assistant', 'content': 'Only assistant'},
+          {'role': 'system', 'content': 'Agent prompt 1'},
+          {'role': 'system', 'content': 'Agent prompt 2'},
+          {'role': 'system', 'content': 'Agent prompt 3'},
+          {'role': 'system', 'content': 'Agent prompt 4'},
         ];
         final result = await service.compact(
           messages: messages,
-          aiService: const FakeCompletionProvider(),
+          aiService: provider,
           model: 'test',
-          replayLastUserMessage: true,
         );
-        expect(result.length, 1);
-        expect(result[0]['role'], 'assistant');
+        expect(provider.callCount, 0);
+        expect(result, isEmpty);
       },
     );
 
-    test(
-      'truncateMedia replaces image attachment with placeholder via compact',
-      () async {
-        final service = const CompactionService(tailTurns: 1);
-        final messages = [
-          {'role': 'user', 'content': 'Old'},
-          {'role': 'assistant', 'content': 'Old assistant'},
-          {
-            'role': 'user',
-            'content': 'Latest with image',
-            'imageData': 'data',
-            'imageType': 'image/png',
-            'attachedDocName': 'screenshot.png',
-            'files': const [],
-          },
-          {'role': 'assistant', 'content': 'Latest assistant'},
-        ];
-        final result = await service.compact(
-          messages: messages,
-          aiService: const FakeCompletionProvider(),
-          model: 'test',
-          truncateMedia: true,
-        );
-        expect(result.length, 3);
-        final userMsg = result.firstWhere((m) => m['role'] == 'user');
-        expect(
-          userMsg['content'],
-          contains('[Attached image/png: screenshot.png]'),
-        );
-      },
-    );
-
-    test('truncateMedia replaces document attachment via compact', () async {
-      final service = const CompactionService(tailTurns: 1);
+    test('finds previous summary by isCompactionSummary flag', () async {
+      final service = const CompactionService();
+      final provider = RecordingCompletionProvider();
       final messages = [
-        {'role': 'user', 'content': 'Old'},
-        {'role': 'assistant', 'content': 'Old assistant'},
+        {'role': 'user', 'content': 'Msg 0'},
+        {'role': 'assistant', 'content': 'Msg 1'},
+        {'role': 'user', 'content': 'Msg 2'},
+        {'role': 'assistant', 'content': 'Msg 3'},
         {
-          'role': 'user',
-          'content': 'Latest with doc',
-          'files': const [],
-          'attachedDocPath': '/path/to/file.pdf',
-          'attachedDocName': 'file.pdf',
+          'role': 'assistant',
+          'content': '## Goal\n- Old summary.',
+          'isCompactionSummary': true,
+          'agent': 'compaction',
         },
-        {'role': 'assistant', 'content': 'Latest assistant'},
+        {'role': 'user', 'content': 'Msg 4'},
+        {'role': 'assistant', 'content': 'Msg 5'},
       ];
       final result = await service.compact(
         messages: messages,
-        aiService: const FakeCompletionProvider(),
+        aiService: provider,
         model: 'test',
-        truncateMedia: true,
       );
-      final userMsg = result.firstWhere((m) => m['role'] == 'user');
-      expect(userMsg['content'], contains('[Attached document: file.pdf]'));
+      expect(provider.callCount, 1);
+      final headText =
+          provider.lastMessages.firstWhere(
+                (m) => m['role'] == 'user',
+              )['content']
+              as String;
+      expect(headText, contains('<previous-summary>'));
+      expect(headText, contains('Old summary.'));
+      expect(result.first['isCompactionSummary'], isTrue);
     });
 
-    test('truncateMedia replaces file attachments via compact', () async {
-      final service = const CompactionService(tailTurns: 1);
+    test('prune clears old tool outputs when pruneEnabled is true', () async {
+      final service = const CompactionService(
+        tailTurns: 2,
+        pruneProtectTokens: 10,
+        pruneEnabled: true,
+      );
       final messages = [
-        {'role': 'user', 'content': 'Old'},
+        {'role': 'user', 'content': 'Hi'},
+        {'role': 'assistant', 'content': 'Hello'},
+        {'role': 'user', 'content': 'Old user'},
         {'role': 'assistant', 'content': 'Old assistant'},
-        {
-          'role': 'user',
-          'content': 'Latest with files',
-          'files': ['file1.txt', 'file2.pdf'],
-        },
-        {'role': 'assistant', 'content': 'Latest assistant'},
+        {'role': 'tool', 'content': 'A' * 100},
+        {'role': 'assistant', 'content': 'Done'},
       ];
       final result = await service.compact(
         messages: messages,
         aiService: const FakeCompletionProvider(),
         model: 'test',
-        truncateMedia: true,
       );
-      final userMsg = result.firstWhere((m) => m['role'] == 'user');
-      expect(userMsg['content'], contains('[Attached file: file1.txt]'));
-      expect(userMsg['content'], contains('[Attached file: file2.pdf]'));
+      final toolMsg = result.firstWhere((m) => m['role'] == 'tool');
+      expect(toolMsg['content'], '[Old tool result content cleared]');
     });
 
-    test('truncateMedia preserves non-user messages', () async {
-      final service = const CompactionService(tailTurns: 1);
+    test('prune is skipped when pruneEnabled is false', () async {
+      final service = const CompactionService(
+        tailTurns: 2,
+        pruneProtectTokens: 10,
+        pruneEnabled: false,
+      );
       final messages = [
-        {'role': 'assistant', 'content': 'Assistant msg'},
-        {'role': 'user', 'content': 'User msg'},
+        {'role': 'user', 'content': 'Hi'},
+        {'role': 'assistant', 'content': 'Hello'},
+        {'role': 'user', 'content': 'Old user'},
+        {'role': 'assistant', 'content': 'Old assistant'},
+        {'role': 'tool', 'content': 'A' * 100},
+        {'role': 'assistant', 'content': 'Done'},
       ];
       final result = await service.compact(
         messages: messages,
         aiService: const FakeCompletionProvider(),
         model: 'test',
-        truncateMedia: true,
       );
-      final assistantMsg = result.firstWhere((m) => m['role'] == 'assistant');
-      expect(assistantMsg['content'], 'Assistant msg');
+      final toolMsg = result.firstWhere((m) => m['role'] == 'tool');
+      expect(toolMsg['content'], 'A' * 100);
     });
 
-    test(
-      'truncateMedia leaves plain user message unchanged via compact',
-      () async {
-        final service = const CompactionService(tailTurns: 1);
-        final messages = [
-          {'role': 'user', 'content': 'Plain text'},
-          {'role': 'assistant', 'content': 'Response'},
-        ];
-        final result = await service.compact(
-          messages: messages,
-          aiService: const FakeCompletionProvider(),
-          model: 'test',
-          truncateMedia: true,
-        );
-        final userMsg = result.firstWhere((m) => m['role'] == 'user');
-        expect(userMsg['content'], 'Plain text');
-      },
-    );
-
-    test(
-      'compact with truncateMedia replaces attachments before summarization',
-      () async {
-        final service = const CompactionService(tailTurns: 1);
-        final messages = [
-          {'role': 'user', 'content': 'Old'},
-          {'role': 'assistant', 'content': 'Old assistant'},
-          {
-            'role': 'user',
-            'content': 'Latest with image',
-            'imageData': 'data',
-            'imageType': 'image/jpeg',
-            'attachedDocName': 'pic.jpg',
-            'files': const [],
-          },
-          {'role': 'assistant', 'content': 'Latest assistant'},
-        ];
-        final result = await service.compact(
-          messages: messages,
-          aiService: const FakeCompletionProvider(),
-          model: 'test',
-          truncateMedia: true,
-          replayLastUserMessage: true,
-        );
-        expect(result.length, 3);
-        expect(result[0]['role'], 'system');
-        expect(result[1]['role'], 'user');
-        expect(
-          result[1]['content'],
-          contains('[Attached image/jpeg: pic.jpg]'),
-        );
-        expect(result[2]['role'], 'assistant');
-        expect(result[2]['content'], 'Latest assistant');
-      },
-    );
-
-    test(
-      'compact preserves original messages when truncateMedia is false',
-      () async {
-        final service = const CompactionService(tailTurns: 1);
-        final messages = [
-          {'role': 'user', 'content': 'Old user'},
-          {'role': 'assistant', 'content': 'Old assistant'},
-          {
-            'role': 'user',
-            'content': 'With image',
-            'imageData': 'data',
-            'imageType': 'image/png',
-            'attachedDocName': 'img.png',
-            'files': const [],
-          },
-          {'role': 'assistant', 'content': 'Response'},
-        ];
-        final result = await service.compact(
-          messages: messages,
-          aiService: const FakeCompletionProvider(),
-          model: 'test',
-          truncateMedia: false,
-        );
-        expect(result[0]['role'], 'system');
-        expect(result[1]['content'], 'With image');
-        expect(result[1]['content'], isNot(contains('[Attached')));
-      },
-    );
-
-    test(
-      'compact with small preserveRecentTokens trims tail correctly',
-      () async {
-        final service = const CompactionService(
-          tailTurns: 4,
-          preserveRecentTokens: 5,
-        );
-        final messages = List.generate(8, (i) {
-          final role = i.isEven ? 'user' : 'assistant';
-          return {'role': role, 'content': 'Msg $i'};
-        });
-        final result = await service.compact(
-          messages: messages,
-          aiService: const FakeCompletionProvider(),
-          model: 'test',
-        );
-        expect(result.length, lessThan(8));
-        expect(result.first['role'], 'system');
-      },
-    );
+    test('fromConfig reads tailTurns from config', () async {
+      final service = CompactionService.fromConfig(
+        const CompactionConfig(tailTurns: 3, prune: true),
+      );
+      expect(service.tailTurns, 3);
+      expect(service.pruneEnabled, isTrue);
+    });
   });
 }

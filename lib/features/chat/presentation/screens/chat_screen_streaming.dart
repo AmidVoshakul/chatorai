@@ -105,49 +105,43 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     final estimatedTokens = aiService.estimatePromptTokens(attemptMsgs);
     final projectedTotal = estimatedTokens;
     final compactionConfig = ref.watch(compactionConfigProvider);
-    if (projectedTotal >= aiService.overflowDetector.usable &&
+    if (compactionConfig.auto &&
+        projectedTotal >= aiService.overflowDetector.usable &&
         attemptMsgs.length > 4) {
       LogTags.chatScreen.logInfo(
         'Pre-send compaction triggered for $sessionId',
       );
-      final compactionService = CompactionService.fromConfig(compactionConfig);
-      final compactedApiMessages = await compactionService.compact(
-        messages: attemptMsgs,
-        aiService: aiService,
-        model: modelId,
-      );
+      // Capture the ephemeral system prompt chain (agent prompt, user system
+      // prompt, project instructions) injected by `_buildApiMessages` so it
+      // can be re-applied after compaction — system prompts are passed
+      // separately from conversation messages and are never consumed by
+      // compaction.
+      final compactedApiMessages = await _applyCompaction(attemptMsgs, chat);
       if (_streamCancelled) return;
-      if (compactedApiMessages.isNotEmpty) {
-        attemptMsgs.clear();
-        attemptMsgs.addAll(compactedApiMessages);
-        final chatMessages = compactedApiMessages.map((m) {
-          final roleName = m['role'] as String? ?? 'system';
-          final content = m['content'] as String? ?? '';
-          return Message(
-            role: MessageRole.values.firstWhere(
-              (r) => r.name == roleName,
-              orElse: () => MessageRole.system,
-            ),
-            content: content,
-            timestamp: DateTime.now(),
-            isComplete: true,
-          );
-        }).toList();
-        final newChat = chat.copyWith(
-          messages: chatMessages,
-          updatedAt: DateTime.now(),
+      // _applyCompaction returns the original list when no compaction occurs,
+      // so identity check here is sufficient to detect a real compaction.
+      if (compactedApiMessages != attemptMsgs) {
+        attemptMsgs
+          ..clear()
+          ..addAll(compactedApiMessages);
+        // Compaction strips the ephemeral system prompt chain (agent prompt,
+        // user system prompt, project instructions). Re-inject it at the head
+        // of the context, mirroring how `_buildApiMessages` assembles the
+        // system chain per API call. System prompts are never persisted in the
+        // compacted history and must be re-applied on every model request.
+        final currentAgent = ref.read(currentAgentProvider);
+        final settings = ref.read(modelSettingsProvider).activeSettings;
+        final instructionBlocks =
+            ref.read(resolvedInstructionsProvider).value ?? const [];
+        final systemChain = _buildSystemChain(
+          agent: currentAgent,
+          userSystemPrompt: settings?.systemPrompt,
+          instructionBlocks: instructionBlocks,
         );
-        ref.read(chatListProvider.notifier).updateChat(newChat);
+        for (final sys in systemChain) {
+          attemptMsgs.insert(0, sys);
+        }
       }
-      unawaited(() async {
-        final repo = await _sessionRepositoryFuture;
-        final orchestrator = CompactionOrchestrator(
-          repo,
-          completionProvider: aiService,
-          compactionConfig: compactionConfig,
-        );
-        await orchestrator.compactSession(SessionID.fromString(sessionId));
-      }());
     }
     try {
       if (modelContextLength != null) {
@@ -316,6 +310,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             retryAttempt: 0,
           );
 
+          final currentChat = ref.read(currentChatProvider) ?? chat;
+
           // Close open parts via the runner session and get the final
           // SessionState with all parts.  This avoids a race with the
           // async sessionPartsProvider stream.
@@ -373,9 +369,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           );
 
           final lastIsIncomplete =
-              chat.messages.isNotEmpty &&
-              chat.messages.last.role == MessageRole.assistant &&
-              !chat.messages.last.isComplete;
+              currentChat.messages.isNotEmpty &&
+              currentChat.messages.last.role == MessageRole.assistant &&
+              !currentChat.messages.last.isComplete;
 
           final partsJson = closedParts.isNotEmpty
               ? assistantContentToPartMaps(closedParts)
@@ -384,7 +380,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           Message completedMessage;
           List<Message> newMessages;
           if (lastIsIncomplete) {
-            final lastMsg = chat.messages.last;
+            final lastMsg = currentChat.messages.last;
             completedMessage = lastMsg.copyWith(
               content: content,
               reasoning: reasoning,
@@ -396,8 +392,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               contextLength: modelContextLength ?? lastMsg.contextLength,
             );
             newMessages = [
-              for (int i = 0; i < chat.messages.length - 1; i++)
-                chat.messages[i],
+              for (int i = 0; i < currentChat.messages.length - 1; i++)
+                currentChat.messages[i],
               completedMessage,
             ];
           } else {
@@ -412,9 +408,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               contextLength: modelContextLength,
               agent: activeAgent,
             );
-            newMessages = [...chat.messages, completedMessage];
+            newMessages = [...currentChat.messages, completedMessage];
           }
-          final newChat = chat.copyWith(
+          final newChat = currentChat.copyWith(
             messages: newMessages,
             updatedAt: DateTime.now(),
           );

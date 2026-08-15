@@ -315,10 +315,14 @@ class CompactionStarted extends SessionEvent {
 
 class CompactionEnded extends SessionEvent {
   final String summary;
+  final String? tailStartId;
+  final List<Map<String, dynamic>>? compactedContext;
 
   const CompactionEnded({
     required super.sessionId,
     required this.summary,
+    this.tailStartId,
+    this.compactedContext,
     required super.timestamp,
     super.sequence,
   });

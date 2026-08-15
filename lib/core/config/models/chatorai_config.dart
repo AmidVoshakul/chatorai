@@ -241,36 +241,40 @@ class ChatOrAIConfig {
 /// Mirrors fields:
 /// - `auto` — enable automatic pre-send overflow compaction
 /// - `prune` — enable post-compaction tool-output pruning
-/// - `keep.tokens` — minimum recent tokens to preserve verbatim
 /// - `buffer` — reserved tokens for the next model response
+/// - `tail_turns` — number of recent user–assistant pairs to keep verbatim
+///
+/// Note: the legacy `keep.tokens` key is still accepted on read for backward
+/// compatibility (see [fromJson]) but is no longer stored or used.
 class CompactionConfig {
   final bool auto;
   final bool prune;
-  final int keepTokens;
   final int buffer;
+  final int tailTurns;
 
   const CompactionConfig({
     this.auto = true,
     this.prune = false,
-    this.keepTokens = 8000,
     this.buffer = 20000,
+    this.tailTurns = 2,
   });
 
   factory CompactionConfig.fromJson(Map<String, dynamic> json) {
-    final keep = json['keep'] as Map<String, dynamic>? ?? {};
     return CompactionConfig(
       auto: json['auto'] as bool? ?? true,
       prune: json['prune'] as bool? ?? false,
-      keepTokens: keep['tokens'] as int? ?? 8000,
+      // `keep.tokens` is retained only for backward compatibility; the value
+      // is intentionally ignored (dead config).
       buffer: json['buffer'] as int? ?? 20000,
+      tailTurns: json['tail_turns'] as int? ?? 2,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'auto': auto,
     'prune': prune,
-    'keep': {'tokens': keepTokens},
     'buffer': buffer,
+    'tail_turns': tailTurns,
   };
 }
 

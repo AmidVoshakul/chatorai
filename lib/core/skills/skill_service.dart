@@ -4,11 +4,11 @@ import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/skills/skill_file_watcher.dart';
 import 'package:chatorai/core/skills/skill_info.dart';
 import 'package:chatorai/core/skills/skill_source.dart';
-import 'package:flutter/foundation.dart';
 
 import 'skill_cache.dart';
 import 'skill_discovery.dart';
 import 'skill_plugin.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 
 /// Central service for skill discovery, caching, and retrieval.
 ///
@@ -83,7 +83,7 @@ class SkillService {
           allowed.add(skill);
         }
       } catch (e) {
-        debugPrint(
+        LogTags.skills.logWarning(
           '[SkillService] Permission check failed for skill ${skill.name}: $e',
         );
       }

@@ -652,5 +652,6 @@
   "toolResultOriginalTitle": "المحتوى الأصلي قبل التعديل",
   "restoreFailed": "فشلت الاستعادة: {error}",
   "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
-  "compactingIndicator": "جارِ الضغط..."
+  "compactingIndicator": "جارِ الضغط...",
+  "compactionAgentName": "ضغط"
 }

@@ -25,6 +25,7 @@ class ActionRow extends StatelessWidget {
   final String? agentName;
   final String? model;
   final DateTime? timestamp;
+  final bool isCompactionSummary;
 
   const ActionRow({
     super.key,
@@ -43,6 +44,7 @@ class ActionRow extends StatelessWidget {
     this.agentName,
     this.model,
     this.timestamp,
+    this.isCompactionSummary = false,
   });
 
   @override

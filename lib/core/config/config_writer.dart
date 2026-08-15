@@ -13,7 +13,7 @@ import 'package:path/path.dart' as p;
 /// Unlike [ConfigLoader] (which only reads + deep-merges the global and
 /// project layers), this writer mutates a **single concrete file** so the
 /// project overlay semantics are preserved: a write to the project file wins
-/// over the global one at read time, exactly as opencode does.
+/// over the global one at read time.
 ///
 /// Validation mirrors [ConfigManager]: every write is checked against
 /// [chatoraiSchema] before being committed. On validation failure the original

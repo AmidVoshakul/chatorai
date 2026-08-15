@@ -5,9 +5,9 @@ import 'package:chatorai/core/skills/skill_error.dart';
 import 'package:chatorai/core/skills/skill_file_watcher.dart';
 import 'package:chatorai/core/skills/skill_info.dart';
 import 'package:chatorai/core/skills/skill_source.dart';
-import 'package:flutter/foundation.dart';
 
 import 'skill_cache.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 
 /// Orchestrates skill discovery from multiple sources with caching and file watching.
 ///
@@ -54,7 +54,9 @@ class SkillDiscovery {
           allSkills.addAll(skills);
         } on SkillError catch (e) {
           // Log and continue; return whatever we have
-          debugPrint('[SkillDiscovery] Error from source "$source": $e');
+          LogTags.skills.logDebug(
+            '[SkillDiscovery] Error from source "$source": $e',
+          );
         }
       }
     }
@@ -95,7 +97,9 @@ class SkillDiscovery {
           }
         }
       } on SkillError catch (e) {
-        debugPrint('[SkillDiscovery] Initial discovery failed for $source: $e');
+        LogTags.skills.logDebug(
+          '[SkillDiscovery] Initial discovery failed for $source: $e',
+        );
       }
     }
   }

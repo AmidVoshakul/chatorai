@@ -79,6 +79,7 @@ const Map<String, dynamic> chatoraiSchema = {
           },
         },
         'buffer': {'type': 'integer', 'minimum': 0},
+        'tail_turns': {'type': 'integer', 'minimum': 1},
       },
     },
     'formatter': {
@@ -146,7 +147,7 @@ const Map<String, dynamic> chatoraiSchema = {
       'type': 'object',
       'description':
           'MCP server declarations. Servers may be listed directly under '
-          '"mcp" (opencode-style flat layout) or nested under "mcp.servers".',
+          '"mcp" or nested under "mcp.servers".',
       'properties': {
         'default_timeout': {'type': 'integer'},
         'defaultTimeout': {'type': 'integer'},

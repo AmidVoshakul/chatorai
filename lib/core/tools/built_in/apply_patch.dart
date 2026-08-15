@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:dartdiff/dartdiff.dart';
 import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/core/tools/tool.dart';
@@ -12,6 +11,7 @@ import 'package:chatorai/core/format/format_service.dart';
 import 'package:chatorai/core/session/file_snapshot_service.dart';
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
 import 'package:path/path.dart' as p;
+import 'package:chatorai/shared/utils/logger.dart';
 
 enum PatchOpType { add, update, delete }
 
@@ -311,11 +311,9 @@ Future<ToolOutput> _executeEnvelope(
       try {
         await formatService.applyFix(frPath);
       } catch (e) {
-        if (kDebugMode) {
-          debugPrint(
-            '[apply_patch] formatService.applyFix failed for $frPath: $e',
-          );
-        }
+        LogTags.format.logWarning(
+          '[apply_patch] formatService.applyFix failed for $frPath: $e',
+        );
       }
     }
   }
@@ -436,9 +434,9 @@ Future<ToolOutput> _executeSingleFile(
     try {
       await formatService.applyFix(safePath);
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[apply_patch] formatService.applyFix failed: $e');
-      }
+      LogTags.format.logWarning(
+        '[apply_patch] formatService.applyFix failed: $e',
+      );
     }
   }
 

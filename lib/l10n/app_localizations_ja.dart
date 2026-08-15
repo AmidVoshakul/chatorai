@@ -2033,4 +2033,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get compactingIndicator => '圧縮中...';
+
+  @override
+  String get compactionAgentName => '圧縮';
 }

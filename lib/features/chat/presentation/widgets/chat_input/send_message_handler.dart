@@ -14,6 +14,7 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   SpeechToTextService? get speechService;
   bool Function(String)? get checkModelSupportsImages;
   VoidCallback? get onOpenModelSettings;
+  Future<void> Function()? get onCompact;
 
   /// Override to transform/resolve text before sending.
   /// Return null to cancel normal send (e.g. skill with no args).
@@ -76,6 +77,14 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
     var text = textController.text.trim();
 
     if (text == '/new' || text.startsWith('/new ')) {
+      textController.clear();
+      onClearAttachedFile();
+      ref.read(chatInputProvider.notifier).setIsSending(false);
+      return;
+    }
+
+    if (text == '/compact' || text.startsWith('/compact ')) {
+      await onCompact?.call();
       textController.clear();
       onClearAttachedFile();
       ref.read(chatInputProvider.notifier).setIsSending(false);

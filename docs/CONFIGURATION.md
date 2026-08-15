@@ -233,7 +233,7 @@ Configures LSP (Language Server Protocol) diagnostics support. ChatORAI ships wi
 | `rust`       | Rust                    | `.rs`                                                  | —                                           |
 | `csharp`     | C#                      | `.cs`, `.csx`                                          | —                                           |
 | `yaml`       | YAML                    | `.yaml`, `.yml`                                        | `npm install -g yaml-language-server`       |
-| `shell`      | Shell / Bash             | `.sh`, `.bash`, `.zsh`, `.ksh`                         | `npm install -g bash-language-server`       |
+| `shell`      | Shell / Bash            | `.sh`, `.bash`, `.zsh`, `.ksh`                         | `npm install -g bash-language-server`       |
 | `clangd`     | C/C++                   | `.c`, `.cpp`, `.cc`, `.cxx`, `.c++`, `.h`, `.hpp`, ... | —                                           |
 | `lua`        | Lua                     | `.lua`                                                 | —                                           |
 | `markdown`   | Markdown                | `.md`, `.markdown`                                     | `npm install -g marksman`                   |
@@ -382,8 +382,7 @@ Global tool visibility overrides. Glob patterns map to `true` (allow),
 
 ### `instructions`
 
-A list of instruction files or URLs merged into the system prompt (like
-opencode). Each entry is one of:
+A list of instruction files or URLs merged into the system prompt. Each entry is one of:
 
 - A **relative glob** resolved from the project root, e.g. `.chatorai/instructions/*.md`
 - A **filename** searched upward from the project root, e.g. `AGENTS.md`

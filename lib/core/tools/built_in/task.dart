@@ -14,7 +14,7 @@ ToolDef createTaskTool({
   ToolRegistry? toolRegistry,
   SessionRunnerHolder? currentSessionRunner,
 }) {
-  final delegatableAgents = AgentRegistry().getDelegatableAgents();
+  final delegatableAgents = AgentRegistry().getSubagents();
   final agentTypes = delegatableAgents.map((a) => a.id).toList();
   final agentDescription = agentTypes.join(', ');
 

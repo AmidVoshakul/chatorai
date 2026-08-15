@@ -10,9 +10,11 @@ import 'package:chatorai/core/llm/model_resolver.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:dio/dio.dart';
+import 'package:uuid/uuid.dart';
 
 import 'chat_cancellation.dart';
 import 'chat_retry_service.dart';
+import 'tool_call_tracker.dart';
 
 bool isGenerationStillValid(int generation, int currentGeneration) {
   return generation == currentGeneration;
@@ -179,6 +181,8 @@ class ChatAiService implements CompletionProvider {
     required bool preliminary,
     required Set<String> seenToolResults,
     required Future<void> Function(String, String, String)? onToolEnd,
+    ToolCallTracker? toolTracker,
+    String? toolCallId,
   }) async {
     LogTags.chatService.logDebug(
       '$prefix: ToolResultEvent tool=${toolResult.toolName} '
@@ -186,6 +190,7 @@ class ChatAiService implements CompletionProvider {
     );
     if (!preliminary && !seenToolResults.contains(toolResult.toolCallId)) {
       seenToolResults.add(toolResult.toolCallId);
+      toolTracker?.markEnded(toolCallId ?? toolResult.toolCallId);
       final outputText = switch (toolResult.output) {
         ToolResultOutputText(:final text) => text,
         ToolResultOutputContent(:final parts) =>
@@ -207,6 +212,38 @@ class ChatAiService implements CompletionProvider {
         'tool=${toolResult.toolName} callId=${toolResult.toolCallId}',
       );
     }
+  }
+
+  // ===========================================================================
+  // DANGLING TOOL FINALIZATION
+  // ===========================================================================
+
+  /// Emits a terminal [onToolError] for every tool that received `onToolStart`
+  /// but never a terminal `onToolEnd`/`onToolError`.
+  ///
+  /// This restores the invariant broken by the underlying `ai_sdk_dart`
+  /// `streamText` step loop, which executes a step's tool calls sequentially
+  /// and rethrows when one throws — leaving sibling calls after it unexecuted
+  /// and without any terminal event. Without this, those tools stay in
+  /// `ToolState.running` forever (infinite spinner in the UI).
+  void _finalizeDanglingTools(
+    ToolCallTracker tracker,
+    ToolErrorCallback? onToolError,
+  ) {
+    if (!tracker.hasDangling) return;
+    tracker.finalizeDangling((toolCallId, toolName) {
+      LogTags.chatService.logWarning(
+        'finalizeDanglingTools: tool $toolName ($toolCallId) never '
+        'received a terminal event — marking as aborted',
+      );
+      unawaited(
+        onToolError?.call(
+          toolCallId,
+          toolName,
+          'Tool execution aborted before completion.',
+        ),
+      );
+    });
   }
 
   // ===========================================================================
@@ -250,6 +287,34 @@ class ChatAiService implements CompletionProvider {
                 }
               }
             }
+          case 'tool_result':
+            final rawToolCallId =
+                part['tool_call_id'] as String? ?? part['tool_callId'] as String?;
+            final toolName =
+                part['tool_name'] as String? ??
+                part['toolName'] as String? ??
+                '';
+            // A missing tool_call_id must NOT collapse to '' — downstream dedup
+            // keys tool results by `toolCallId` (seenToolResults Set), so '' would
+            // merge every result without an id into a single entry and drop the
+            // rest. Generate a unique id instead so each result is preserved.
+            final toolCallId = rawToolCallId != null && rawToolCallId.isNotEmpty
+                ? rawToolCallId
+                : const Uuid().v4();
+            if (rawToolCallId == null || rawToolCallId.isEmpty) {
+              LogTags.chatService.logWarning(
+                'tool_result without tool_call_id — generated unique id '
+                '$toolCallId (toolName=$toolName)',
+              );
+            }
+            final text = part['text'] as String? ?? '';
+            parts.add(
+              LanguageModelV3ToolResultPart(
+                toolCallId: toolCallId,
+                toolName: toolName,
+                output: ToolResultOutputText(text),
+              ),
+            );
           default:
             break;
         }
@@ -298,6 +363,7 @@ class ChatAiService implements CompletionProvider {
     _currentModel = model;
     _currentTemperature = temperature;
     final gen = ++_generation;
+    final toolTracker = ToolCallTracker();
 
     // ── Build LanguageModel once (before retry loop) ──────────────────────
     ModelConfig? resolvedConfig;
@@ -356,6 +422,11 @@ class ChatAiService implements CompletionProvider {
               final inputMap = rawInput is Map<String, dynamic>
                   ? rawInput
                   : <String, dynamic>{'raw': rawInput};
+              toolTracker.markStarted(
+                event.toolCallId,
+                event.toolName,
+                DateTime.now(),
+              );
               await onToolStart?.call(
                 event.toolCallId,
                 event.toolName,
@@ -399,6 +470,8 @@ class ChatAiService implements CompletionProvider {
                     preliminary: preliminary,
                     seenToolResults: seenToolResults,
                     onToolEnd: onToolEnd,
+                    toolTracker: toolTracker,
+                    toolCallId: toolResult.toolCallId,
                   );
                 case StreamTextToolErrorEvent(
                   :final toolCallId,
@@ -408,6 +481,7 @@ class ChatAiService implements CompletionProvider {
                   if (!isGenerationStillValid(gen, _generation)) return;
                   if (!seenToolResults.contains(toolCallId)) {
                     seenToolResults.add(toolCallId);
+                    toolTracker.markErrored(toolCallId);
                     await onToolError?.call(
                       toolCallId,
                       toolName,
@@ -460,6 +534,7 @@ class ChatAiService implements CompletionProvider {
                   if (completionHandled) return;
                   if (!isGenerationStillValid(gen, _generation)) return;
                   completionHandled = true;
+                  _finalizeDanglingTools(toolTracker, onToolError);
                   _tokenCounter.recordUsage(
                     promptTokens: usage?.inputTokens,
                     completionTokens: usage?.outputTokens,
@@ -486,6 +561,9 @@ class ChatAiService implements CompletionProvider {
               e,
               s,
             );
+            if (isGenerationStillValid(gen, _generation)) {
+              _finalizeDanglingTools(toolTracker, onToolError);
+            }
             rethrow;
           }
           return null;
@@ -499,6 +577,10 @@ class ChatAiService implements CompletionProvider {
         e,
         s,
       );
+
+      if (isGenerationStillValid(gen, _generation)) {
+        _finalizeDanglingTools(toolTracker, onToolError);
+      }
 
       // Route context overflow to compaction instead of failing silently
       final classified = ErrorClassifier().classify(e);
@@ -572,6 +654,7 @@ class ChatAiService implements CompletionProvider {
     try {
       await _retryService.execute(({void Function()? onChunkReceived}) async {
         final seenToolResults = <String>{};
+        final toolTracker = ToolCallTracker();
         LogTags.chatService.logDebug(
           'runChildCompletion: calling streamText device=…',
         );
@@ -593,6 +676,11 @@ class ChatAiService implements CompletionProvider {
             final inputMap = rawInput is Map<String, dynamic>
                 ? rawInput
                 : <String, dynamic>{'raw': rawInput};
+            toolTracker.markStarted(
+              event.toolCallId,
+              event.toolName,
+              DateTime.now(),
+            );
             onToolStart?.call(event.toolCallId, event.toolName, inputMap);
           },
         );
@@ -624,6 +712,8 @@ class ChatAiService implements CompletionProvider {
                   preliminary: preliminary,
                   seenToolResults: seenToolResults,
                   onToolEnd: onToolEnd,
+                  toolTracker: toolTracker,
+                  toolCallId: toolResult.toolCallId,
                 );
               case StreamTextToolErrorEvent(
                 :final toolCallId,
@@ -632,6 +722,7 @@ class ChatAiService implements CompletionProvider {
               ):
                 if (!seenToolResults.contains(toolCallId)) {
                   seenToolResults.add(toolCallId);
+                  toolTracker.markErrored(toolCallId);
                   await onToolError?.call(
                     toolCallId,
                     toolName,
@@ -655,6 +746,7 @@ class ChatAiService implements CompletionProvider {
                   throw error;
                 }
               case StreamTextFinishEvent(:final text, :final usage):
+                _finalizeDanglingTools(toolTracker, onToolError);
                 onUsage?.call(
                   usage?.inputTokens ?? 0,
                   usage?.outputTokens ?? 0,
@@ -668,6 +760,7 @@ class ChatAiService implements CompletionProvider {
             }
           }
         } catch (_) {
+          _finalizeDanglingTools(toolTracker, onToolError);
           rethrow;
         }
       });

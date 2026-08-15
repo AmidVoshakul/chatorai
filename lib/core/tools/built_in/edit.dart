@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:dartdiff/dartdiff.dart';
 import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/core/tools/tool.dart';
@@ -12,6 +11,7 @@ import 'package:chatorai/core/lsp/lsp_service.dart';
 import 'package:chatorai/core/tools/lsp_diagnostics_format.dart';
 import 'package:chatorai/core/format/format_service.dart';
 import 'package:chatorai/core/session/file_snapshot_service.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 
 String _generatePatch(String oldText, String newText) {
   if (oldText == newText) return '';
@@ -248,9 +248,7 @@ ToolDef createEditTool({
         try {
           await formatService.applyFix(safePath);
         } catch (e) {
-          if (kDebugMode) {
-            debugPrint('[edit] formatService.applyFix failed: $e');
-          }
+          LogTags.format.logWarning('[edit] formatService.applyFix failed: $e');
         }
       }
 

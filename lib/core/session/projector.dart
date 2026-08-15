@@ -1,9 +1,11 @@
 import 'dart:convert';
 
+import 'package:chatorai/core/context/token_counter.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
 import 'database.dart' hide ToolResult;
 import 'events.dart';
@@ -467,7 +469,18 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
 
     CompactionStarted _ => state,
 
-    CompactionEnded _ => state.copyWith(updatedAt: event.timestamp),
+    CompactionEnded(
+      :final summary,
+      :final tailStartId,
+      :final compactedContext,
+    ) =>
+      _projectCompactionEnded(
+        state,
+        event,
+        summary,
+        tailStartId,
+        compactedContext,
+      ),
 
     ChildSessionCreated _ => state.copyWith(updatedAt: event.timestamp),
 
@@ -923,6 +936,23 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
           .write(SessionsCompanion(updatedAt: Value(event.timestamp)));
       break;
 
+    case CompactionEnded(:final summary):
+      final seq = await _nextMessageSeq(db, event.sessionId);
+      await db
+          .into(db.messages)
+          .insert(
+            MessagesCompanion.insert(
+              id: 'cmp_${const Uuid().v4()}',
+              sessionId: event.sessionId.value,
+              seq: seq,
+              role: 'assistant',
+              content: Value<String>(summary),
+              createdAt: event.timestamp,
+            ),
+            mode: InsertMode.insertOrReplace,
+          );
+      break;
+
     default:
       break;
   }
@@ -1189,4 +1219,83 @@ Map<String, dynamic>? _serializePermission(PermissionRuleset? pr) {
         )
         .toList(),
   };
+}
+
+SessionState _projectCompactionEnded(
+  SessionState state,
+  SessionEvent event,
+  String summary,
+  String? tailStartId,
+  List<Map<String, dynamic>>? compactedContext,
+) {
+  final messages = List<SessionMessage>.from(state.messages);
+  if (tailStartId != null) {
+    final idx = messages.indexWhere((m) => m.id == tailStartId);
+    if (idx >= 0) {
+      messages[idx] = messages[idx].copyWith(isCompactionTrigger: true);
+    }
+  }
+  final summaryMessage = SessionMessage(
+    // Deterministic id derived from the event
+    // MessageID.ascending()) so replay is idempotent and partsByMessage[id]
+    // stays stable across session reloads.
+    id: 'cmp_${event.sessionId.value}_${event.sequence}',
+    role: MessageRole.assistant,
+    content: summary,
+    seq: messages.length + 1,
+    isCompactionSummary: true,
+    agent: 'compaction',
+    createdAt: event.timestamp,
+  );
+  final contextMessages = <SessionMessage>[];
+  // The summary is a single source of truth stored in `messages` (above). The
+  // compacted context fed to the model is the tail only (everything after the
+  // summary), so the summary is never duplicated between the two collections.
+  // `_buildApiMessages`/`_applyCompaction` re-inject the summary from `messages`
+  // into the model context per request.
+  if (compactedContext != null && compactedContext.length > 1) {
+    final tail = compactedContext.sublist(1);
+    for (var i = 0; i < tail.length; i++) {
+      final m = tail[i];
+      final roleStr = m['role'] as String? ?? 'system';
+      final role = MessageRole.values.firstWhere(
+        (r) => r.name == roleStr,
+        orElse: () => MessageRole.system,
+      );
+      contextMessages.add(
+        SessionMessage(
+          id: 'cmp_ctx_${event.sequence}_$i',
+          role: role,
+          content: m['content'] ?? '',
+          seq: messages.length + 2 + i,
+          agent: m['agent'] as String?,
+          isCompactionSummary: m['isCompactionSummary'] == true,
+          createdAt: event.timestamp,
+        ),
+      );
+    }
+  }
+
+  // After compaction the token accounting must reflect the *compacted* context,
+  // not the full visible history (old messages stay visible but no longer count
+  // toward the session token total —  where the summary
+  // message replaces the old head). Estimate the compacted-context token count
+  // and reset the running session totals to it so the token counter UI drops to
+  // the compressed size. `SessionMessage` carries no per-message token fields,
+  // so only the session-level totals are adjusted here.
+  var estimatedTokens = TokenCounter.estimate(summary);
+  for (final m in compactedContext ?? const []) {
+    estimatedTokens += TokenCounter.estimate(m['content']?.toString() ?? '');
+  }
+
+  return state.copyWith(
+    messages: [...messages, summaryMessage],
+    compactedContext: contextMessages,
+    tokensInput: estimatedTokens,
+    tokensOutput: 0,
+    tokensReasoning: 0,
+    tokensCacheRead: 0,
+    tokensCacheWrite: 0,
+    updatedAt: event.timestamp,
+  );
 }

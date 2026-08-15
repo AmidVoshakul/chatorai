@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:path/path.dart' as p;
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
 
@@ -12,6 +11,7 @@ import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/core/tools/lsp_diagnostics_format.dart';
 import 'package:chatorai/core/format/format_service.dart';
 import 'package:chatorai/core/session/file_snapshot_service.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 
 ToolDef createWriteTool({
   LspService? lspService,
@@ -123,9 +123,9 @@ ToolDef createWriteTool({
         try {
           await formatService.applyFix(safePath);
         } catch (e) {
-          if (kDebugMode) {
-            debugPrint('[write] formatService.applyFix failed: $e');
-          }
+          LogTags.format.logWarning(
+            '[write] formatService.applyFix failed: $e',
+          );
         }
       }
 

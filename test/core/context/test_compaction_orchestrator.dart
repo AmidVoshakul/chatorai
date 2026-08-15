@@ -1,7 +1,5 @@
-import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/context/completion_provider.dart';
 import 'package:chatorai/core/context/compaction_orchestrator.dart';
-import 'package:chatorai/core/context/compaction_service.dart';
 import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
@@ -33,7 +31,6 @@ void main() {
     late SessionID sessionId;
 
     setUp(() async {
-      await AgentRegistry().init();
       db = AppDatabase.inMemory();
       repository = SessionRepository(db);
       sessionId = SessionID.create();
@@ -56,7 +53,6 @@ void main() {
           completionProvider: fakeAi,
         );
 
-        // Add a user message as the trigger for compaction
         await repository.appendEvent(
           MessageAdded(
             sessionId: sessionId,
@@ -68,7 +64,12 @@ void main() {
         );
 
         final compactedMessages = <Map<String, dynamic>>[
-          {'role': 'system', 'content': '## Goal\n- Pre-compacted summary.'},
+          {
+            'role': 'assistant',
+            'content': '## Goal\n- Pre-compacted summary.',
+            'isCompactionSummary': true,
+            'agent': 'compaction',
+          },
           {'role': 'user', 'content': 'latest message'},
         ];
 
@@ -77,7 +78,6 @@ void main() {
           compactedMessages,
           model: 'test-model',
           tailStartId: 'user_trigger',
-          retainedIds: const ['latest_msg_id'],
         );
 
         expect(result, isNotNull);
@@ -89,8 +89,13 @@ void main() {
         expect(result.messages[1].role, MessageRole.assistant);
         expect(result.messages[1].content, contains('Pre-compacted summary'));
         expect(result.messages[1].agent, 'compaction');
+        // `compactedContext` is tail-only (summary lives in `messages` as the
+        // single source of truth), so it holds just the tail element.
         expect(result.compactedContext, isNotNull);
-        expect(result.compactedContext!.length, 2);
+        expect(result.compactedContext!.length, 1);
+        expect(result.compactedContext![0].role, MessageRole.user);
+        expect(result.compactedContext![0].content, 'latest message');
+        expect(result.compactedContext![0].isCompactionSummary, isFalse);
         expect(fakeAi.callCount, 0);
       });
 
@@ -105,13 +110,75 @@ void main() {
         final result = await orchestrator.compactSessionFromResult(
           nonExistentId,
           [
-            {'role': 'system', 'content': 'summary'},
+            {
+              'role': 'assistant',
+              'content': 'summary',
+              'isCompactionSummary': true,
+            },
           ],
           model: 'test-model',
         );
 
         expect(result, isNull);
         expect(fakeAi.callCount, 0);
+      });
+
+      test('preserves old messages alongside compaction summary', () async {
+        final fakeAi = FakeCompletionProvider();
+        final orchestrator = CompactionOrchestrator(
+          repository,
+          completionProvider: fakeAi,
+        );
+
+        await repository.appendEvent(
+          MessageAdded(
+            sessionId: sessionId,
+            messageId: 'msg_1',
+            role: 'user',
+            content: 'Hello',
+            timestamp: DateTime.now(),
+          ),
+        );
+        await repository.appendEvent(
+          MessageAdded(
+            sessionId: sessionId,
+            messageId: 'msg_2',
+            role: 'assistant',
+            content: 'Hi there!',
+            timestamp: DateTime.now(),
+          ),
+        );
+
+        final compactedMessages = <Map<String, dynamic>>[
+          {
+            'role': 'assistant',
+            'content': '## Goal\n- Summary.',
+            'isCompactionSummary': true,
+            'agent': 'compaction',
+          },
+          {'role': 'user', 'content': 'latest'},
+        ];
+
+        final result = await orchestrator.compactSessionFromResult(
+          sessionId,
+          compactedMessages,
+          model: 'test-model',
+          tailStartId: 'msg_2',
+        );
+
+        expect(result, isNotNull);
+        expect(result!.messages.length, greaterThan(2));
+        expect(result.messages.any((m) => m.id == 'msg_1'), isTrue);
+        expect(
+          result.messages.any((m) => m.id == 'msg_2' && m.isCompactionTrigger),
+          isTrue,
+        );
+        expect(result.messages.any((m) => m.isCompactionSummary), isTrue);
+        // `compactedContext` is tail-only (summary lives in `messages`).
+        expect(result.compactedContext!.length, 1);
+        expect(result.compactedContext![0].role, MessageRole.user);
+        expect(result.compactedContext![0].content, 'latest');
+        expect(result.compactedContext![0].isCompactionSummary, isFalse);
       });
     });
 
@@ -123,7 +190,6 @@ void main() {
           completionProvider: fakeAi,
         );
 
-        // Add enough messages to trigger compaction (need > tailTurns*2 = 4 messages)
         await repository.appendEvent(
           MessageAdded(
             sessionId: sessionId,
@@ -187,6 +253,9 @@ void main() {
         expect(result, isNotNull);
         expect(fakeAi.callCount, 1);
         expect(result!.messages.isNotEmpty, true);
+        expect(result.messages.any((m) => m.isCompactionSummary), isTrue);
+        expect(result.compactedContext, isNotNull);
+        expect(result.compactedContext!.isNotEmpty, true);
       });
     });
   });

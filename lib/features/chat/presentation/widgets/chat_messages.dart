@@ -12,6 +12,7 @@ import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart'
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages_suggestions.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages_waiting_animation.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/chat_message_bubble.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart'
     show
         chatScreenProvider,
@@ -414,7 +415,11 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
 
                       final chatMsg = messageToChatMessage(message);
                       final agentNameForMessage = (chatMsg is AssistantMessage)
-                          ? (chatMsg.agent ?? currentAgent.name)
+                          ? (chatMsg.isCompactionSummary
+                                ? AppLocalizations.of(
+                                    context,
+                                  )!.compactionAgentName
+                                : (chatMsg.agent ?? currentAgent.name))
                           : currentAgent.name;
                       final originalModelId = (chatMsg is AssistantMessage)
                           ? chatMsg.model

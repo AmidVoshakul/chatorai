@@ -41,7 +41,7 @@ class ConfigValidationError extends ConfigError {
 /// The two layers are deep-merged: keys present in the project config
 /// override the global ones, while keys absent in the project config are
 /// inherited from the global config. This mirrors the convention used by
-/// tools like opencode (global base + project overlay with deep merge).
+/// tools (global base + project overlay with deep merge).
 ///
 /// If neither file exists, an empty config object `{}` is returned.
 class ConfigLoader {
@@ -95,7 +95,7 @@ class ConfigLoader {
   ///
   /// Nested maps are merged key-by-key; lists are concatenated with duplicates
   /// removed (so a project config *adds* to the global config's arrays — e.g.
-  /// `instructions` and `skills.paths` accumulate like opencode); every other
+  /// `instructions` and `skills.paths` accumulate); every other
   /// value (scalars) is taken from [overlay] when present, otherwise from
   /// [base]. Thus the overlay layer (project config) has precedence without
   /// discarding the base layer's (global config) unrelated keys.

@@ -34,6 +34,7 @@ class ChatInput extends ConsumerStatefulWidget {
   final Function(String)? onRecognizedText;
   final VoidCallback? onMessageAdded;
   final VoidCallback? onOpenModelSettings;
+  final Future<void> Function()? onCompact;
 
   const ChatInput({
     super.key,
@@ -48,6 +49,7 @@ class ChatInput extends ConsumerStatefulWidget {
     this.onRecognizedText,
     this.onMessageAdded,
     this.onOpenModelSettings,
+    this.onCompact,
   });
 
   @override
@@ -92,6 +94,9 @@ class _ChatInputState extends ConsumerState<ChatInput>
 
   @override
   VoidCallback? get onOpenModelSettings => widget.onOpenModelSettings;
+
+  @override
+  Future<void> Function()? get onCompact => widget.onCompact;
 
   @override
   void Function(SpeechUiState, String)? get onSpeechStateChanged =>

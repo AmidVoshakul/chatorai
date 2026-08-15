@@ -294,7 +294,12 @@ class EventStore {
         'error': e.error,
       },
       CompactionStarted _ => {'type': 'CompactionStarted'},
-      CompactionEnded e => {'type': 'CompactionEnded', 'summary': e.summary},
+      CompactionEnded e => {
+        'type': 'CompactionEnded',
+        'summary': e.summary,
+        'tailStartId': e.tailStartId,
+        'compactedContext': e.compactedContext,
+      },
       ChildSessionCreated e => {
         'type': 'ChildSessionCreated',
         'parentSessionId': e.parentSessionId.value,
@@ -534,6 +539,9 @@ class EventStore {
       'CompactionEnded' => CompactionEnded(
         sessionId: sid,
         summary: data['summary'] as String,
+        tailStartId: data['tailStartId'] as String?,
+        compactedContext: (data['compactedContext'] as List<dynamic>?)
+            ?.cast<Map<String, dynamic>>(),
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),

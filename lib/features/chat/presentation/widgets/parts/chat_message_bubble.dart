@@ -152,6 +152,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         chatId: widget.chatId,
         messageId: widget.messageId,
         agentName: widget.agentName,
+        isCompactionSummary: m.isCompactionSummary,
         isLastMessage: widget.isLastMessage,
         onContinuationSelected: widget.onContinuationSelected,
         onMessageDeleted: widget.onMessageDeleted,

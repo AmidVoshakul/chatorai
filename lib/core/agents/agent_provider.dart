@@ -51,15 +51,7 @@ class CurrentAgentNotifier extends Notifier<AgentDefinition> {
   }
 
   AgentDefinition _getDefaultBuildAgent() {
-    return const AgentDefinition(
-      id: 'build',
-      name: 'Build',
-      description: 'Default agent. Executes tools with standard permissions.',
-      mode: AgentMode.primary,
-      hidden: false,
-      systemPrompt:
-          'You are the build agent. Execute tasks using available tools.',
-    );
+    return builtInAgents['build']!;
   }
 }
 

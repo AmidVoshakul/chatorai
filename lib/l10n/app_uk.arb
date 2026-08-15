@@ -652,5 +652,6 @@
   "toolResultOriginalTitle": "Оригінальний вміст перед редагуванням",
   "restoreFailed": "Не вдалося відновити: {error}",
   "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
-  "compactingIndicator": "Стиснення..."
+  "compactingIndicator": "Стиснення...",
+  "compactionAgentName": "Стиснення"
 }

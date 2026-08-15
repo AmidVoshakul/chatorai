@@ -1,18 +1,18 @@
 import 'message_part.dart';
-import 'text_part.dart';
-import 'reasoning_part.dart';
-import 'tool_result_part.dart';
-import 'task_part.dart';
 import 'question_part.dart';
+import 'reasoning_part.dart';
+import 'task_part.dart';
+import 'text_part.dart';
 import 'todo_part.dart';
+import 'tool_result_part.dart';
 
 export 'message_part.dart';
-export 'text_part.dart';
-export 'reasoning_part.dart';
-export 'tool_result_part.dart';
-export 'task_part.dart';
 export 'question_part.dart';
+export 'reasoning_part.dart';
+export 'task_part.dart';
+export 'text_part.dart';
 export 'todo_part.dart';
+export 'tool_result_part.dart';
 
 // ── Part deserialization helper ──────────────────────────────
 
@@ -101,6 +101,7 @@ class AssistantMessage extends ChatMessage {
   final int? tokensReasoning;
   final int? contextLength;
   final String? agent;
+  final bool isCompactionSummary;
 
   const AssistantMessage({
     required super.id,
@@ -114,6 +115,7 @@ class AssistantMessage extends ChatMessage {
     required super.timestamp,
     this.contextLength,
     this.agent,
+    this.isCompactionSummary = false,
   });
 
   AssistantMessage copyWith({
@@ -126,6 +128,7 @@ class AssistantMessage extends ChatMessage {
     int? tokensReasoning,
     int? contextLength,
     String? agent,
+    bool? isCompactionSummary,
   }) {
     return AssistantMessage(
       id: id,
@@ -140,6 +143,7 @@ class AssistantMessage extends ChatMessage {
       tokensReasoning: tokensReasoning ?? this.tokensReasoning,
       contextLength: contextLength ?? this.contextLength,
       agent: agent ?? this.agent,
+      isCompactionSummary: isCompactionSummary ?? this.isCompactionSummary,
     );
   }
 
@@ -157,6 +161,7 @@ class AssistantMessage extends ChatMessage {
     'tokensReasoning': tokensReasoning,
     'contextLength': contextLength,
     'agent': agent,
+    'isCompactionSummary': isCompactionSummary,
   };
 
   factory AssistantMessage.fromJson(Map<String, dynamic> json) {
@@ -177,6 +182,7 @@ class AssistantMessage extends ChatMessage {
       tokensReasoning: json['tokensReasoning'] as int?,
       contextLength: json['contextLength'] as int?,
       agent: json['agent'] as String?,
+      isCompactionSummary: json['isCompactionSummary'] as bool? ?? false,
     );
   }
 }

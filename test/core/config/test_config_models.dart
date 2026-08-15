@@ -45,7 +45,6 @@ void main() {
       expect(config.compaction, isNotNull);
       expect(config.compaction!.auto, isTrue);
       expect(config.compaction!.prune, isTrue);
-      expect(config.compaction!.keepTokens, equals(10000));
       expect(config.compaction!.buffer, equals(30000));
     });
 
@@ -138,7 +137,6 @@ void main() {
         compaction: const CompactionConfig(
           auto: true,
           prune: false,
-          keepTokens: 8000,
           buffer: 20000,
         ),
       );
@@ -155,7 +153,6 @@ void main() {
       expect(restored.keybinding?['session_child_next'], equals('ctrl+right'));
       expect(restored.skills?.paths, equals(['/skills']));
       expect(restored.compaction?.auto, isTrue);
-      expect(restored.compaction?.keepTokens, equals(8000));
     });
 
     test('omits null fields from toJson', () {
@@ -175,7 +172,6 @@ void main() {
       const config = CompactionConfig();
       expect(config.auto, isTrue);
       expect(config.prune, isFalse);
-      expect(config.keepTokens, equals(8000));
       expect(config.buffer, equals(20000));
     });
 
@@ -190,7 +186,7 @@ void main() {
       final config = CompactionConfig.fromJson(json);
       expect(config.auto, isFalse);
       expect(config.prune, isTrue);
-      expect(config.keepTokens, equals(5000));
+      // Legacy `keep.tokens` is accepted for backward compatibility but ignored.
       expect(config.buffer, equals(15000));
     });
 
@@ -198,7 +194,6 @@ void main() {
       final config = CompactionConfig.fromJson({});
       expect(config.auto, isTrue);
       expect(config.prune, isFalse);
-      expect(config.keepTokens, equals(8000));
       expect(config.buffer, equals(20000));
     });
 
@@ -206,7 +201,6 @@ void main() {
       const original = CompactionConfig(
         auto: false,
         prune: true,
-        keepTokens: 12000,
         buffer: 25000,
       );
       final json = original.toJson();
@@ -214,17 +208,17 @@ void main() {
 
       expect(restored.auto, equals(original.auto));
       expect(restored.prune, equals(original.prune));
-      expect(restored.keepTokens, equals(original.keepTokens));
       expect(restored.buffer, equals(original.buffer));
     });
 
     test('toJson produces correct structure', () {
-      const config = CompactionConfig(keepTokens: 9999);
+      const config = CompactionConfig();
       final json = config.toJson();
 
       expect(json['auto'], isTrue);
       expect(json['prune'], isFalse);
-      expect(json['keep'], equals({'tokens': 9999}));
+      // Legacy `keep.tokens` is no longer written.
+      expect(json.containsKey('keep'), isFalse);
       expect(json['buffer'], equals(20000));
     });
   });

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Shortens an absolute path against the user's home directory, mirroring
-/// opencode's `abbreviateHome`: home becomes `~`, paths inside home become
+///  `abbreviateHome`: home becomes `~`, paths inside home become
 /// `~/relative`, everything else is returned unchanged.
 String shortenPath(String path, [String? home]) {
   home ??= Platform.isWindows

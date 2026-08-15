@@ -2115,4 +2115,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get compactingIndicator => 'Сжатие...';
+
+  @override
+  String get compactionAgentName => 'Сжатие';
 }

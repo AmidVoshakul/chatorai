@@ -73,20 +73,6 @@ class AgentDefinition {
   }
 }
 
-extension AgentDefinitionX on AgentDefinition {
-  bool isVisibleTo(AgentMode caller) {
-    if (hidden) return false;
-    if (mode == AgentMode.subagent) return true;
-    if (caller == AgentMode.primary) {
-      return mode == AgentMode.subagent || mode == AgentMode.primary;
-    }
-    if (caller == AgentMode.subagent || caller == AgentMode.all) {
-      return mode == AgentMode.subagent;
-    }
-    return false;
-  }
-}
-
 final Map<String, AgentDefinition> builtInAgents = {
   'build': const AgentDefinition(
     id: 'build',
@@ -679,18 +665,6 @@ class AgentRegistry {
   List<AgentDefinition> getVisibleAgents() {
     if (!_initialized) return [];
     return _agents.values.where((a) => !a.hidden).toList();
-  }
-
-  List<AgentDefinition> getDelegatableAgents() {
-    if (!_initialized) return [];
-    return _agents.values
-        .where((a) => a.mode == AgentMode.subagent && !a.hidden)
-        .toList();
-  }
-
-  List<String> getAllIds() {
-    if (!_initialized) return [];
-    return _agents.keys.toList();
   }
 
   static Future<Map<String, AgentDefinition>> _loadCustomAgents() async {

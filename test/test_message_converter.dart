@@ -1,10 +1,64 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:chatorai/core/session/session_id.dart';
+import 'package:chatorai/core/session/session_state.dart' as session_state;
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 
 void main() {
   group('message_converter', () {
+    test('converts compaction summary assistant message with flag', () {
+      final legacy = Message(
+        role: MessageRole.assistant,
+        content: '## Goal\n- Summary.',
+        timestamp: DateTime(2025, 6, 1),
+        isComplete: true,
+        agent: 'compaction',
+        isCompactionSummary: true,
+      );
+
+      final converted = messageToChatMessage(legacy) as AssistantMessage;
+
+      expect(converted.agent, 'compaction');
+      expect(converted.isCompactionSummary, isTrue);
+      expect(converted.parts, isNotEmpty);
+    });
+
+    test('sessionStateToChat preserves agent and isCompactionSummary', () {
+      final state = session_state.SessionState(
+        id: SessionID.create(),
+        title: 'Test',
+        createdAt: DateTime(2025, 6, 1),
+        updatedAt: DateTime(2025, 6, 1),
+        messages: [
+          session_state.SessionMessage(
+            id: 'msg_1',
+            role: session_state.MessageRole.user,
+            content: 'Hello',
+            seq: 1,
+            createdAt: DateTime(2025, 6, 1),
+          ),
+          session_state.SessionMessage(
+            id: 'cmp_1',
+            role: session_state.MessageRole.assistant,
+            content: '## Goal\n- Summary.',
+            seq: 2,
+            isCompactionSummary: true,
+            agent: 'compaction',
+            createdAt: DateTime(2025, 6, 1),
+          ),
+        ],
+      );
+
+      final chat = sessionStateToChat(state);
+
+      expect(chat.messages.length, 2);
+      final summary = chat.messages[1];
+      expect(summary.role, MessageRole.assistant);
+      expect(summary.agent, 'compaction');
+      expect(summary.isCompactionSummary, isTrue);
+    });
+
     test('converts user message with imageData and imageType', () {
       final legacy = Message(
         role: MessageRole.user,

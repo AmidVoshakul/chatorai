@@ -652,5 +652,6 @@
   "toolResultOriginalTitle": "編集前の元のコンテンツ",
   "restoreFailed": "復元に失敗しました：{error}",
   "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
-  "compactingIndicator": "圧縮中..."
+  "compactingIndicator": "圧縮中...",
+  "compactionAgentName": "圧縮"
 }

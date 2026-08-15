@@ -4,7 +4,7 @@ import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:path/path.dart' as p;
 
 /// Directories the model is permitted to read even though they live outside the
-/// project root. Mirrors opencode's `readonlyExternalDirectory` allow-rule for
+/// project root. Mirrors `readonlyExternalDirectory` allow-rule for
 /// its managed `tool-output` directory: the model may read back truncated tool
 /// output, but no other external location is reachable.
 List<String>? _cachedManagedReadRoots;

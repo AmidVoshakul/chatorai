@@ -154,12 +154,17 @@ class BackgroundCompactionService {
         completionProvider: completionProvider,
       );
 
-      final updatedState = await orchestrator.compactSession(sessionId);
+      final updatedState = await orchestrator.compactSession(
+        sessionId,
+        model: modelId,
+      );
 
       if (updatedState != null) {
-        final result = updatedState.messages.isNotEmpty
-            ? updatedState.messages.first.content
-            : '';
+        // The summary lives as a single source of truth in `messages`
+        // (isCompactionSummary). `compactedContext` is now tail-only, so read
+        // the summary text from `messages` rather than `compactedContext[0]`.
+        final summaryMsg = updatedState.messages.where((m) => m.isCompactionSummary).lastOrNull;
+        final result = summaryMsg?.content ?? '';
         LogTags.chatScreen.logInfo(
           'Background compaction completed for $sessionId: ${result.length} chars',
         );

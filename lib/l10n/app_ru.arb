@@ -652,5 +652,6 @@
   "toolResultOriginalTitle": "Исходное содержимое перед редактированием",
   "restoreFailed": "Не удалось восстановить: {error}",
   "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
-  "compactingIndicator": "Сжатие..."
+  "compactingIndicator": "Сжатие...",
+  "compactionAgentName": "Сжатие"
 }

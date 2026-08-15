@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
 class ModelSettingsActions extends StatelessWidget {
   final bool isMobile;
@@ -22,7 +22,6 @@ class ModelSettingsActions extends StatelessWidget {
 
     final resetButton = OutlinedButton.icon(
       onPressed: onReset,
-      icon: const Icon(Icons.refresh_rounded, size: 18),
       label: Text(localizations.resetToDefaults),
       style: OutlinedButton.styleFrom(
         foregroundColor: isDark
@@ -37,7 +36,6 @@ class ModelSettingsActions extends StatelessWidget {
 
     final applyButton = ElevatedButton.icon(
       onPressed: onApply,
-      icon: const Icon(Icons.check_rounded, size: 18),
       label: Text(localizations.applySettings),
       style: ElevatedButton.styleFrom(
         backgroundColor: ChatoraiColors.orange,

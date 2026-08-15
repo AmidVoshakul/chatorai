@@ -51,7 +51,8 @@ class ConfigInitializer {
     "auto": true,
     "prune": false,
     "keep": {"tokens": 8000},
-    "buffer": 20000
+    "buffer": 20000,
+    "tail_turns": 2
   },
   "skills": {
     "paths": [],

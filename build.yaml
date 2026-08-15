@@ -10,6 +10,3 @@ targets:
           include:
             - lib/features/chat/data/models/chat/assistant_content.dart
             - lib/core/session/session_state.dart
-    options:
-      exclude:
-        - test/**

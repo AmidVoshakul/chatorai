@@ -2024,4 +2024,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get compactingIndicator => '压缩中...';
+
+  @override
+  String get compactionAgentName => '压缩';
 }

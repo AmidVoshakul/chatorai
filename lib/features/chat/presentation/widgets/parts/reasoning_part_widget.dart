@@ -139,7 +139,7 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget> {
         behavior: HitTestBehavior.opaque,
         child: Row(
           children: [
-            SpinKitCircle(color: orange, size: 15),
+            SpinKitCubeGrid(color: orange, size: 15),
             const SizedBox(width: 8),
             ShimmerMask(
               baseColor: orange,

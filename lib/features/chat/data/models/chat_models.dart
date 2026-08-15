@@ -62,6 +62,8 @@ class Message {
   final List<Map<String, dynamic>>?
   partsJson; // Serialized MessageParts (tool calls, etc.)
   final String? agent; // Agent name who responded (for assistant messages)
+  final bool
+  isCompactionSummary; // True for compaction summaries (agent 'compaction')
   final bool synthetic;
 
   Message({
@@ -82,6 +84,7 @@ class Message {
     this.contextLength,
     this.partsJson,
     this.agent,
+    this.isCompactionSummary = false,
     this.synthetic = false,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
@@ -107,6 +110,7 @@ class Message {
     int? contextLength,
     List<Map<String, dynamic>>? partsJson,
     String? agent,
+    bool? isCompactionSummary,
     bool? synthetic,
   }) {
     return Message(
@@ -127,6 +131,7 @@ class Message {
       contextLength: contextLength ?? this.contextLength,
       partsJson: partsJson ?? this.partsJson,
       agent: agent ?? this.agent,
+      isCompactionSummary: isCompactionSummary ?? this.isCompactionSummary,
       synthetic: synthetic ?? this.synthetic,
     );
   }
@@ -144,6 +149,7 @@ class Message {
         other.isError == isError &&
         other.model == model &&
         other.agent == agent &&
+        other.isCompactionSummary == isCompactionSummary &&
         other.synthetic == synthetic &&
         other.tokensInput == tokensInput &&
         other.tokensOutput == tokensOutput &&
@@ -161,6 +167,7 @@ class Message {
       isError,
       model,
       agent,
+      isCompactionSummary,
       synthetic,
       tokensInput,
       tokensOutput,
@@ -191,6 +198,7 @@ class Message {
       'contextLength': contextLength,
       'partsJson': partsJson,
       'agent': agent,
+      'isCompactionSummary': isCompactionSummary,
       'synthetic': synthetic,
     };
 
@@ -223,6 +231,7 @@ class Message {
           ? (json['partsJson'] as List<dynamic>).cast<Map<String, dynamic>>()
           : null,
       agent: json['agent'] as String?,
+      isCompactionSummary: json['isCompactionSummary'] as bool? ?? false,
       synthetic: json['synthetic'] as bool? ?? false,
     );
   }
@@ -238,6 +247,7 @@ class Chat {
   final List<Message> messages;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final List<Message>? compactedContext;
 
   Chat({
     required this.id,
@@ -245,6 +255,7 @@ class Chat {
     required this.messages,
     required this.createdAt,
     required this.updatedAt,
+    this.compactedContext,
   });
 
   bool get isDefaultTitle => title.isEmpty;
@@ -259,6 +270,7 @@ class Chat {
     List<Message>? messages,
     DateTime? createdAt,
     DateTime? updatedAt,
+    List<Message>? compactedContext,
   }) {
     return Chat(
       id: id ?? this.id,
@@ -266,6 +278,7 @@ class Chat {
       messages: messages ?? this.messages,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      compactedContext: compactedContext ?? this.compactedContext,
     );
   }
 
@@ -276,6 +289,10 @@ class Chat {
       'messages': messages.map((message) => message.toJson()).toList(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      if (compactedContext != null)
+        'compactedContext': compactedContext!
+            .map((message) => message.toJson())
+            .toList(),
     };
   }
 
@@ -288,6 +305,9 @@ class Chat {
           .toList(),
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
+      compactedContext: (json['compactedContext'] as List<dynamic>?)
+          ?.map((message) => Message.fromJson(message))
+          .toList(),
     );
   }
 
@@ -300,7 +320,8 @@ class Chat {
         other.title == title &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt &&
-        listEquals(other.messages, messages);
+        listEquals(other.messages, messages) &&
+        listEquals(other.compactedContext, compactedContext);
   }
 
   @override
@@ -309,6 +330,7 @@ class Chat {
         title.hashCode ^
         createdAt.hashCode ^
         updatedAt.hashCode ^
-        Object.hashAll(messages);
+        Object.hashAll(messages) ^
+        Object.hashAll(compactedContext ?? const []);
   }
 }

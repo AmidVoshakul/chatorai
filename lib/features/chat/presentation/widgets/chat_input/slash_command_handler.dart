@@ -22,6 +22,7 @@ import 'package:chatorai/features/models/providers/model_provider.dart'
     show modelProvider;
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -76,6 +77,7 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
   GlobalKey get textFieldKey;
   ScrollController get commandScrollController;
   ScrollController get skillsScrollController;
+  Future<void> Function()? get onCompact;
   // ref is inherited from ConsumerState
 
   @override
@@ -102,21 +104,23 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     try {
       final service = await ref.read(skillServiceProvider.future);
       _skillService = service;
-      debugPrint('[SlashCommandHandler] SkillService loaded');
+      LogTags.chat.logDebug('[SlashCommandHandler] SkillService loaded');
     } catch (e) {
-      debugPrint('[SlashCommandHandler] Failed to load SkillService: $e');
+      LogTags.chat.logDebug(
+        '[SlashCommandHandler] Failed to load SkillService: $e',
+      );
     }
   }
 
   void _detectSlashCommand() {
     final text = textController.text;
     final cursorPos = textController.selection.baseOffset;
-    debugPrint(
+    LogTags.chat.logDebug(
       '[SlashCommandHandler] _detectSlashCommand: text="$text", cursor=$cursorPos',
     );
 
     if (cursorPos < 0) {
-      debugPrint('[SlashCommandHandler] cursor < 0, hiding popups');
+      LogTags.chat.logDebug('[SlashCommandHandler] cursor < 0, hiding popups');
       hideCommandPopup();
       hideSkillsPopup();
       return;
@@ -124,7 +128,7 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     final beforeCursor = text.substring(0, cursorPos);
     final slashIndex = beforeCursor.lastIndexOf('/');
     if (slashIndex != 0) {
-      debugPrint(
+      LogTags.chat.logDebug(
         '[SlashCommandHandler] slash not at start of input, hiding popups',
       );
       hideCommandPopup();
@@ -133,13 +137,13 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     }
     final afterSlash = beforeCursor.substring(slashIndex + 1);
     final command = afterSlash.split(' ').first;
-    debugPrint(
+    LogTags.chat.logDebug(
       '[SlashCommandHandler] afterSlash="$afterSlash", command="$command"',
     );
 
     if (command.isEmpty) {
       // Just "/" or "/ " → show command palette
-      debugPrint('[SlashCommandHandler] showing command palette');
+      LogTags.chat.logDebug('[SlashCommandHandler] showing command palette');
       _commandQuery = afterSlash;
       _selectedCommandIndex = 0;
       showCommandPopup();
@@ -158,7 +162,7 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
         // Exact match found
         if (exactCmd.name == '/skills') {
           // Exact /skills → show skills popup with optional filter
-          debugPrint(
+          LogTags.chat.logDebug(
             '[SlashCommandHandler] exact /skills matched, showing skills popup',
           );
           _slashQuery = afterSlash.length > 6 ? afterSlash.substring(7) : '';
@@ -166,7 +170,7 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
           hideCommandPopup();
         } else {
           // Other exact command → show command palette (filtered to this command)
-          debugPrint(
+          LogTags.chat.logDebug(
             '[SlashCommandHandler] exact command ${exactCmd.name} matched, showing command palette',
           );
           _commandQuery = afterSlash;
@@ -185,17 +189,19 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
               descLower.contains(queryLower);
         }).toList();
 
-        debugPrint(
+        LogTags.chat.logDebug(
           '[SlashCommandHandler] partialMatches: ${partialMatches.map((c) => c.name).toList()}',
         );
 
         if (partialMatches.isEmpty) {
-          debugPrint('[SlashCommandHandler] no matches, hiding popups');
+          LogTags.chat.logDebug(
+            '[SlashCommandHandler] no matches, hiding popups',
+          );
           hideCommandPopup();
           hideSkillsPopup();
         } else {
           // Show command palette with partial matches
-          debugPrint(
+          LogTags.chat.logDebug(
             '[SlashCommandHandler] showing command palette (partial matches)',
           );
           _commandQuery = afterSlash;
@@ -291,6 +297,12 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
 
     hideCommandPopup();
 
+    if (cmd.name == '/compact') {
+      await onCompact?.call();
+      textController.clear();
+      return;
+    }
+
     if (cmd.name == '/new') {
       textController.clear();
       final newChat = await ref.read(chatListProvider.notifier).createNewChat();
@@ -344,7 +356,7 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     }
 
     if (_allSkills.isEmpty) {
-      debugPrint(
+      LogTags.chat.logDebug(
         '[SlashCommandHandler] Loading skills for agent: ${currentAgent.id}',
       );
       final allSkills = await _skillService!.listAll();
@@ -353,7 +365,7 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
       );
       _allowedSkillNames = allowedSkills.map((s) => s.name).toSet();
       _allSkills = allSkills;
-      debugPrint(
+      LogTags.chat.logDebug(
         '[SlashCommandHandler] Loaded ${allSkills.length} skills (${allowedSkills.length} allowed)',
       );
       if (!mounted) return;
@@ -442,7 +454,7 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
   Future<void> selectCurrentSkill(SkillInfo skill) async {
     final isAllowed = _allowedSkillNames.contains(skill.name);
     if (!isAllowed) {
-      debugPrint(
+      LogTags.chat.logDebug(
         '[SlashCommandHandler] Skill ${skill.name} requires permission, requesting...',
       );
       try {
@@ -463,11 +475,11 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
 
         await permissionService.ask(request, ruleset);
         _allowedSkillNames.add(skill.name);
-        debugPrint(
+        LogTags.chat.logDebug(
           '[SlashCommandHandler] Permission granted for skill ${skill.name}',
         );
       } on PermissionDeniedError catch (e) {
-        debugPrint(
+        LogTags.chat.logDebug(
           '[SlashCommandHandler] Permission denied for skill ${skill.name}: $e',
         );
         if (mounted) {
@@ -479,12 +491,12 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
         }
         return;
       } on PermissionRejectedError catch (e) {
-        debugPrint(
+        LogTags.chat.logDebug(
           '[SlashCommandHandler] Permission rejected for skill ${skill.name}: $e',
         );
         return;
       } catch (e) {
-        debugPrint(
+        LogTags.chat.logDebug(
           '[SlashCommandHandler] Error requesting permission for skill ${skill.name}: $e',
         );
         return;
@@ -594,7 +606,9 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
 
   /// Insert skill content into chat history without triggering AI response.
   Future<void> insertSkillMessage(SkillInfo skill, String content) async {
-    debugPrint('[SlashCommandHandler] Inserting skill: ${skill.name}');
+    LogTags.chat.logDebug(
+      '[SlashCommandHandler] Inserting skill: ${skill.name}',
+    );
     final chatIdNotifier = ref.read(currentChatIdProvider.notifier);
     final chatListNotifier = ref.read(chatListProvider.notifier);
     final modelId = ref.read(modelProvider).selectedModelId;
@@ -654,7 +668,9 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
       chatListNotifier.updateChat(updatedChat);
     }
 
-    debugPrint('[SlashCommandHandler] Skill inserted: ${skill.name}');
+    LogTags.chat.logDebug(
+      '[SlashCommandHandler] Skill inserted: ${skill.name}',
+    );
     onMessageAdded?.call();
 
     if (mounted) {

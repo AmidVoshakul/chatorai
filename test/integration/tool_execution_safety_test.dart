@@ -539,5 +539,44 @@ void main() {
         );
       },
     );
+
+    // -----------------------------------------------------------------------
+    // Test 15: параллельные тулы — обрыв шага не оставляет висящих в running
+    // -----------------------------------------------------------------------
+    test(
+      'dangling tool calls are finalized so none stays in running state',
+      () async {
+        final session = await _startSession();
+        final sid = session.sessionId;
+
+        // Имитация SDK-шага: все 3 тула стартуют (onToolStart уже сработал
+        // во время парсинга потока), затем 2-й падает и прерывает цикл
+        // выполнения — 1-й и 3-й никогда не получают терминального события.
+        await session.onToolStart('c1', 'todowrite', {});
+        await session.onToolStart('c2', 'todowrite', {});
+        await session.onToolStart('c3', 'todowrite', {});
+
+        // Сервис (chat_ai_service) теперь дофинализирует висящие тулы
+        // через onToolError. Имитируем именно это поведение.
+        await session.onToolError('c2', 'todowrite', 'Tool failed');
+        await session.onToolError('c1', 'todowrite', 'Aborted');
+        await session.onToolError('c3', 'todowrite', 'Aborted');
+        await session.onCompletion(content: 'done');
+
+        final state = await _replay(repository, sid);
+        final tools = state.parts.whereType<AssistantTool>().toList();
+        expect(tools.length, equals(3));
+        expect(
+          tools.any((t) => t.state == ToolState.running),
+          isFalse,
+          reason: 'no tool must remain stuck in running after step abort',
+        );
+        expect(
+          tools.where((t) => t.state == ToolState.error).length,
+          equals(3),
+          reason: 'all aborted/errored tools must be marked error (red)',
+        );
+      },
+    );
   });
 }

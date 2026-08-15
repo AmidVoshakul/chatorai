@@ -8,6 +8,7 @@ import 'package:chatorai/features/chat/presentation/widgets/parts/task_part_widg
 import 'package:chatorai/features/chat/presentation/widgets/parts/text_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/todo_part_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -16,6 +17,7 @@ class AssistantMessageBubble extends StatelessWidget {
   final String chatId;
   final String messageId;
   final String? agentName;
+  final bool isCompactionSummary;
   final bool isLastMessage;
   final Future<void> Function(String)? onContinuationSelected;
   final VoidCallback? onMessageDeleted;
@@ -33,6 +35,7 @@ class AssistantMessageBubble extends StatelessWidget {
     required this.chatId,
     required this.messageId,
     this.agentName,
+    this.isCompactionSummary = false,
     this.isLastMessage = false,
     this.onContinuationSelected,
     this.onMessageDeleted,
@@ -47,13 +50,14 @@ class AssistantMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context)!;
     final visibleParts = assistantVisibleParts(
       message.parts,
       reasoningEnabled: reasoningEnabled,
     );
     if (visibleParts.isEmpty) return const SizedBox.shrink();
 
-    final theme = Theme.of(context);
     final textContent = visibleParts
         .whereType<TextPart>()
         .map((p) => p.content)
@@ -85,6 +89,39 @@ class AssistantMessageBubble extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (isCompactionSummary)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 1,
+                    color: theme.dividerColor.withValues(alpha: 0.3),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Text(
+                    localizations.compactionAgentName,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.textTheme.bodySmall?.color?.withValues(
+                        alpha: 0.5,
+                      ),
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: 1,
+                    color: theme.dividerColor.withValues(alpha: 0.3),
+                  ),
+                ),
+              ],
+            ),
+          ),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(
@@ -120,6 +157,7 @@ class AssistantMessageBubble extends StatelessWidget {
           cumulativeTokens: cumulativeTokens,
           contextLength: contextLength,
           agentName: agentName,
+          isCompactionSummary: isCompactionSummary,
           model: message.model,
           timestamp: message.timestamp,
         ),

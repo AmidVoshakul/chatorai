@@ -5,10 +5,10 @@ import 'package:chatorai/core/mcp/mcp_config.dart';
 import 'package:chatorai/core/mcp/mcp_marketplace_catalog.dart';
 import 'package:chatorai/core/mcp/mcp_status_provider.dart';
 import 'package:chatorai/core/mcp/mcp_types.dart';
+import 'package:chatorai/features/models/widgets/mcp_server_icon.dart';
 import 'package:chatorai/features/settings/providers/mcp_management_provider.dart';
 import 'package:chatorai/features/settings/screens/mcp_add_server_helpers.dart';
 import 'package:chatorai/features/settings/widgets/premium_blocks.dart';
-import 'package:chatorai/features/models/widgets/mcp_server_icon.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
@@ -753,10 +753,10 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                     ),
                   );
                   if (confirm == true && dialogContext.mounted) {
+                    Navigator.pop(dialogContext);
                     await ref
                         .read(mcpManagementProvider.notifier)
                         .removeServer(name);
-                    Navigator.pop(dialogContext);
                   }
                 },
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -815,7 +815,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
       if (_isRefreshing)
         const Padding(
           padding: EdgeInsets.all(12),
-          child: SpinKitCircle(color: ChatoraiColors.orange, size: 22),
+          child: SpinKitCubeGrid(color: ChatoraiColors.orange, size: 22),
         )
       else
         IconButton(

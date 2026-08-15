@@ -5,7 +5,7 @@ import 'package:chatorai/core/llm/models/auth_config.dart';
 import 'package:chatorai/core/llm/models/provider_config.dart';
 
 /// OpenRouter — unified API gateway (200+ models, single key).
-ProviderConfig openrouterProvider() => ProviderConfig.basic(
+ProviderConfig openrouterProvider() => ProviderConfig.full(
   id: 'openrouter',
   name: 'OpenRouter',
   description:
@@ -15,4 +15,8 @@ ProviderConfig openrouterProvider() => ProviderConfig.basic(
   auth: AuthConfig.apiKey(apiKey: ''),
   sdk: 'openai-compatible',
   enabled: true,
+  defaultHeaders: const {
+    'HTTP-Referer': 'https://github.com/AmidVoshakul/chatorai',
+    'X-OpenRouter-Title': 'ChatORAI',
+  },
 );

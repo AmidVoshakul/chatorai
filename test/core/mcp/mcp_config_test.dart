@@ -564,8 +564,8 @@ void main() {
       expect(config.servers.containsKey('good-remote'), true);
     });
 
-    group('OpenCode-compatible command format', () {
-      test('fromJson accepts command as array (OpenCode format)', () {
+    group('Chatorai-compatible command format', () {
+      test('fromJson accepts command as array', () {
         final json = {
           'type': 'local',
           'command': ['/home/amid/.local/bin/uvx', 'sequential-thinking-mcp'],

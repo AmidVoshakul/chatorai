@@ -3951,6 +3951,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Compacting...'**
   String get compactingIndicator;
+
+  /// No description provided for @compactionAgentName.
+  ///
+  /// In en, this message translates to:
+  /// **'Compaction'**
+  String get compactionAgentName;
 }
 
 class _AppLocalizationsDelegate
