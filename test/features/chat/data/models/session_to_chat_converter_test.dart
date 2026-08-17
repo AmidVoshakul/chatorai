@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:chatorai/core/session/session_id.dart';
+import 'package:chatorai/core/session/session_state.dart' as session_state;
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
     show
         AssistantReasoning,
@@ -8,6 +10,7 @@ import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
         AssistantQuestion,
         AssistantTodo,
         AssistantFile;
+import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_part.dart'
     show ToolState;
 import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
@@ -388,6 +391,44 @@ void main() {
       expect(filtered, hasLength(2));
       expect(filtered.whereType<AssistantTool>(), hasLength(1));
       expect(filtered.whereType<AssistantTask>(), hasLength(1));
+    });
+  });
+
+  group('sessionStateToChat', () {
+    test('converts per-message tokens from StepEnded replay', () {
+      final now = DateTime.now();
+      final state = session_state.SessionState(
+        id: SessionID.fromString('ses_1'),
+        createdAt: now,
+        updatedAt: now,
+        messages: [
+          session_state.SessionMessage(
+            id: 'u1',
+            role: session_state.MessageRole.user,
+            content: 'hi',
+            seq: 1,
+            createdAt: now,
+          ),
+          session_state.SessionMessage(
+            id: 'a1',
+            role: session_state.MessageRole.assistant,
+            content: 'answer',
+            seq: 2,
+            createdAt: now,
+            tokensInput: 100,
+            tokensOutput: 50,
+            tokensReasoning: 10,
+          ),
+        ],
+      );
+
+      final chat = sessionStateToChat(state);
+      final assistant = chat.messages.firstWhere(
+        (m) => m.role == MessageRole.assistant,
+      );
+      expect(assistant.tokensInput, 100);
+      expect(assistant.tokensOutput, 50);
+      expect(assistant.tokensReasoning, 10);
     });
   });
 }

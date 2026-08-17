@@ -4122,12 +4122,25 @@ class $ChatSnapshotsTable extends ChatSnapshots
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _schemaVersionMeta = const VerificationMeta(
+    'schemaVersion',
+  );
+  @override
+  late final GeneratedColumn<int> schemaVersion = GeneratedColumn<int>(
+    'schema_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     sessionId,
     eventsCount,
     chatJson,
     updatedAt,
+    schemaVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4176,6 +4189,15 @@ class $ChatSnapshotsTable extends ChatSnapshots
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('schema_version')) {
+      context.handle(
+        _schemaVersionMeta,
+        schemaVersion.isAcceptableOrUnknown(
+          data['schema_version']!,
+          _schemaVersionMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -4201,6 +4223,10 @@ class $ChatSnapshotsTable extends ChatSnapshots
         DriftSqlType.int,
         data['${effectivePrefix}updated_at'],
       )!,
+      schemaVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}schema_version'],
+      )!,
     );
   }
 
@@ -4215,11 +4241,13 @@ class ChatSnapshot extends DataClass implements Insertable<ChatSnapshot> {
   final int eventsCount;
   final String chatJson;
   final int updatedAt;
+  final int schemaVersion;
   const ChatSnapshot({
     required this.sessionId,
     required this.eventsCount,
     required this.chatJson,
     required this.updatedAt,
+    required this.schemaVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4228,6 +4256,7 @@ class ChatSnapshot extends DataClass implements Insertable<ChatSnapshot> {
     map['events_count'] = Variable<int>(eventsCount);
     map['chat_json'] = Variable<String>(chatJson);
     map['updated_at'] = Variable<int>(updatedAt);
+    map['schema_version'] = Variable<int>(schemaVersion);
     return map;
   }
 
@@ -4237,6 +4266,7 @@ class ChatSnapshot extends DataClass implements Insertable<ChatSnapshot> {
       eventsCount: Value(eventsCount),
       chatJson: Value(chatJson),
       updatedAt: Value(updatedAt),
+      schemaVersion: Value(schemaVersion),
     );
   }
 
@@ -4250,6 +4280,7 @@ class ChatSnapshot extends DataClass implements Insertable<ChatSnapshot> {
       eventsCount: serializer.fromJson<int>(json['eventsCount']),
       chatJson: serializer.fromJson<String>(json['chatJson']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
     );
   }
   @override
@@ -4260,6 +4291,7 @@ class ChatSnapshot extends DataClass implements Insertable<ChatSnapshot> {
       'eventsCount': serializer.toJson<int>(eventsCount),
       'chatJson': serializer.toJson<String>(chatJson),
       'updatedAt': serializer.toJson<int>(updatedAt),
+      'schemaVersion': serializer.toJson<int>(schemaVersion),
     };
   }
 
@@ -4268,11 +4300,13 @@ class ChatSnapshot extends DataClass implements Insertable<ChatSnapshot> {
     int? eventsCount,
     String? chatJson,
     int? updatedAt,
+    int? schemaVersion,
   }) => ChatSnapshot(
     sessionId: sessionId ?? this.sessionId,
     eventsCount: eventsCount ?? this.eventsCount,
     chatJson: chatJson ?? this.chatJson,
     updatedAt: updatedAt ?? this.updatedAt,
+    schemaVersion: schemaVersion ?? this.schemaVersion,
   );
   ChatSnapshot copyWithCompanion(ChatSnapshotsCompanion data) {
     return ChatSnapshot(
@@ -4282,6 +4316,9 @@ class ChatSnapshot extends DataClass implements Insertable<ChatSnapshot> {
           : this.eventsCount,
       chatJson: data.chatJson.present ? data.chatJson.value : this.chatJson,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      schemaVersion: data.schemaVersion.present
+          ? data.schemaVersion.value
+          : this.schemaVersion,
     );
   }
 
@@ -4291,13 +4328,15 @@ class ChatSnapshot extends DataClass implements Insertable<ChatSnapshot> {
           ..write('sessionId: $sessionId, ')
           ..write('eventsCount: $eventsCount, ')
           ..write('chatJson: $chatJson, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('schemaVersion: $schemaVersion')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(sessionId, eventsCount, chatJson, updatedAt);
+  int get hashCode =>
+      Object.hash(sessionId, eventsCount, chatJson, updatedAt, schemaVersion);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -4305,7 +4344,8 @@ class ChatSnapshot extends DataClass implements Insertable<ChatSnapshot> {
           other.sessionId == this.sessionId &&
           other.eventsCount == this.eventsCount &&
           other.chatJson == this.chatJson &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.schemaVersion == this.schemaVersion);
 }
 
 class ChatSnapshotsCompanion extends UpdateCompanion<ChatSnapshot> {
@@ -4313,12 +4353,14 @@ class ChatSnapshotsCompanion extends UpdateCompanion<ChatSnapshot> {
   final Value<int> eventsCount;
   final Value<String> chatJson;
   final Value<int> updatedAt;
+  final Value<int> schemaVersion;
   final Value<int> rowid;
   const ChatSnapshotsCompanion({
     this.sessionId = const Value.absent(),
     this.eventsCount = const Value.absent(),
     this.chatJson = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.schemaVersion = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ChatSnapshotsCompanion.insert({
@@ -4326,6 +4368,7 @@ class ChatSnapshotsCompanion extends UpdateCompanion<ChatSnapshot> {
     required int eventsCount,
     required String chatJson,
     required int updatedAt,
+    this.schemaVersion = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : sessionId = Value(sessionId),
        eventsCount = Value(eventsCount),
@@ -4336,6 +4379,7 @@ class ChatSnapshotsCompanion extends UpdateCompanion<ChatSnapshot> {
     Expression<int>? eventsCount,
     Expression<String>? chatJson,
     Expression<int>? updatedAt,
+    Expression<int>? schemaVersion,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4343,6 +4387,7 @@ class ChatSnapshotsCompanion extends UpdateCompanion<ChatSnapshot> {
       if (eventsCount != null) 'events_count': eventsCount,
       if (chatJson != null) 'chat_json': chatJson,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (schemaVersion != null) 'schema_version': schemaVersion,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4352,6 +4397,7 @@ class ChatSnapshotsCompanion extends UpdateCompanion<ChatSnapshot> {
     Value<int>? eventsCount,
     Value<String>? chatJson,
     Value<int>? updatedAt,
+    Value<int>? schemaVersion,
     Value<int>? rowid,
   }) {
     return ChatSnapshotsCompanion(
@@ -4359,6 +4405,7 @@ class ChatSnapshotsCompanion extends UpdateCompanion<ChatSnapshot> {
       eventsCount: eventsCount ?? this.eventsCount,
       chatJson: chatJson ?? this.chatJson,
       updatedAt: updatedAt ?? this.updatedAt,
+      schemaVersion: schemaVersion ?? this.schemaVersion,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4378,6 +4425,9 @@ class ChatSnapshotsCompanion extends UpdateCompanion<ChatSnapshot> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<int>(updatedAt.value);
     }
+    if (schemaVersion.present) {
+      map['schema_version'] = Variable<int>(schemaVersion.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4391,6 +4441,7 @@ class ChatSnapshotsCompanion extends UpdateCompanion<ChatSnapshot> {
           ..write('eventsCount: $eventsCount, ')
           ..write('chatJson: $chatJson, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('schemaVersion: $schemaVersion, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6477,6 +6528,7 @@ typedef $$ChatSnapshotsTableCreateCompanionBuilder =
       required int eventsCount,
       required String chatJson,
       required int updatedAt,
+      Value<int> schemaVersion,
       Value<int> rowid,
     });
 typedef $$ChatSnapshotsTableUpdateCompanionBuilder =
@@ -6485,6 +6537,7 @@ typedef $$ChatSnapshotsTableUpdateCompanionBuilder =
       Value<int> eventsCount,
       Value<String> chatJson,
       Value<int> updatedAt,
+      Value<int> schemaVersion,
       Value<int> rowid,
     });
 
@@ -6514,6 +6567,11 @@ class $$ChatSnapshotsTableFilterComposer
 
   ColumnFilters<int> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6546,6 +6604,11 @@ class $$ChatSnapshotsTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ChatSnapshotsTableAnnotationComposer
@@ -6570,6 +6633,11 @@ class $$ChatSnapshotsTableAnnotationComposer
 
   GeneratedColumn<int> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => column,
+  );
 }
 
 class $$ChatSnapshotsTableTableManager
@@ -6607,12 +6675,14 @@ class $$ChatSnapshotsTableTableManager
                 Value<int> eventsCount = const Value.absent(),
                 Value<String> chatJson = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
+                Value<int> schemaVersion = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ChatSnapshotsCompanion(
                 sessionId: sessionId,
                 eventsCount: eventsCount,
                 chatJson: chatJson,
                 updatedAt: updatedAt,
+                schemaVersion: schemaVersion,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6621,12 +6691,14 @@ class $$ChatSnapshotsTableTableManager
                 required int eventsCount,
                 required String chatJson,
                 required int updatedAt,
+                Value<int> schemaVersion = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ChatSnapshotsCompanion.insert(
                 sessionId: sessionId,
                 eventsCount: eventsCount,
                 chatJson: chatJson,
                 updatedAt: updatedAt,
+                schemaVersion: schemaVersion,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

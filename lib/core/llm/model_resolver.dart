@@ -120,6 +120,7 @@ class ModelResolver {
     String? overrideApiKey,
     String? overrideBaseUrl,
     Map<String, String>? overrideHeaders,
+    void Function(Map<String, dynamic> usageJson)? onUsageJson,
   }) async {
     final provider = getProviderForModel(model.id);
     // For config-driven providers the key lives in the JSON (auth.apiKey),
@@ -239,7 +240,7 @@ class ModelResolver {
                   baseUrl: baseUrl,
                   headers: headers,
                 );
-                dio.interceptors.add(ReasoningSseInterceptor());
+                dio.interceptors.add(ReasoningSseInterceptor(onUsageJson: onUsageJson));
                 return dio;
               },
         ),

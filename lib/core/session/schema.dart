@@ -121,6 +121,7 @@ class ChatSnapshots extends Table {
   IntColumn get eventsCount => integer()();
   TextColumn get chatJson => text()();
   IntColumn get updatedAt => integer()();
+  IntColumn get schemaVersion => integer().withDefault(const Constant(0))();
 
   @override
   Set<Column> get primaryKey => {sessionId};

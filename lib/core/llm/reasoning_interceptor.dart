@@ -11,6 +11,13 @@ import 'package:dio/dio.dart';
 /// Without this interceptor the SDK drops non-standard delta fields and
 /// streaming reasoning is never visible in the UI.
 class ReasoningSseInterceptor extends Interceptor {
+  ReasoningSseInterceptor({this.onUsageJson});
+
+  /// Called with the raw `usage` object from the final SSE chunk when the
+  /// provider reports one (the SDK's usage model strips provider-specific
+  /// details such as cache tokens).
+  final void Function(Map<String, dynamic> usage)? onUsageJson;
+
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     if (response.data is ResponseBody) {
@@ -98,6 +105,10 @@ class ReasoningSseInterceptor extends Interceptor {
           continue;
         }
         final json = decoded;
+        final usage = json['usage'];
+        if (usage is Map<String, dynamic>) {
+          onUsageJson?.call(usage);
+        }
         final modified = _injectIntoContent(json);
         result.add(modified == null ? line : 'data: ${jsonEncode(modified)}');
       } on FormatException {

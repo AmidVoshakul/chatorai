@@ -283,6 +283,11 @@ void main() {
         expect(readBack!.length, 1);
         expect(readBack.single is UserMessage, isTrue);
         expect((readBack.single as UserMessage).content, 'snapshot test');
+
+        // Verify the snapshot carries the current schema version.
+        final row = await (db.select(db.chatSnapshots)
+              ..where((s) => s.sessionId.equals(sid.value))).getSingle();
+        expect(row.schemaVersion, 1);
       });
 
       test(
@@ -320,6 +325,42 @@ void main() {
               content: 'v2',
               timestamp: now,
             ),
+          );
+
+          final readBack = await repository.readChatSnapshot(sid);
+          expect(readBack, isNull);
+        },
+      );
+
+      test(
+        'readChatSnapshot returns null when snapshot schema version is stale',
+        () async {
+          final sid = SessionID.create();
+          final now = DateTime.now();
+
+          await repository.appendEvent(
+            SessionCreated(sessionId: sid, agent: 'general', timestamp: now),
+          );
+          await repository.appendEvent(
+            MessageAdded(
+              sessionId: sid,
+              messageId: 'm1',
+              role: 'user',
+              content: 'v1',
+              timestamp: now,
+            ),
+          );
+
+          final state = await repository.loadSessionState(sid);
+          final chat = sessionStateToChat(state);
+          await repository.writeChatSnapshot(
+            sid,
+            chat.messages.map((m) => messageToChatMessage(m)).toList(),
+          );
+
+          // Manually downgrade schema version to simulate stale snapshot.
+          await db.customStatement(
+            "UPDATE chat_snapshots SET schema_version = 0 WHERE session_id = '${sid.value}'",
           );
 
           final readBack = await repository.readChatSnapshot(sid);

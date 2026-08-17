@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:ai_sdk_dart/ai_sdk_dart.dart';
 import 'package:ai_sdk_provider/ai_sdk_provider.dart';
@@ -8,6 +9,7 @@ import 'package:chatorai/core/context/token_counter.dart';
 import 'package:chatorai/core/error/error_classifier.dart';
 import 'package:chatorai/core/llm/model_resolver.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
+import 'package:chatorai/core/llm/usage_cache_mapper.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:dio/dio.dart';
 import 'package:uuid/uuid.dart';
@@ -371,6 +373,7 @@ class ChatAiService implements CompletionProvider {
     ModelConfig? resolvedConfig;
     late LanguageModelV3 lm;
     Map<String, String> activeHeaders = _headers;
+    Map<String, dynamic>? capturedUsageJson;
 
     try {
       resolvedConfig = _resolver.resolve(model);
@@ -378,7 +381,10 @@ class ChatAiService implements CompletionProvider {
         resolvedConfig,
         overrideHeaders: _headers,
       );
-      lm = await _resolver.buildLanguageModel(resolvedConfig);
+      lm = await _resolver.buildLanguageModel(
+        resolvedConfig,
+        onUsageJson: (usage) => capturedUsageJson = usage,
+      );
       LogTags.chatService.logDebug(
         'streamChatCompletion: catalog model ${resolvedConfig.id}',
       );
@@ -539,15 +545,25 @@ class ChatAiService implements CompletionProvider {
                   if (!isGenerationStillValid(gen, _generation)) return;
                   completionHandled = true;
                   _finalizeDanglingTools(toolTracker, onToolError);
+                  final cache = capturedUsageJson != null
+                      ? extractCacheTokens(capturedUsageJson!)
+                      : const UsageCacheTokens();
+                  LogTags.chatService.logDebug(
+                    'streamChatCompletion: raw usage=${jsonEncode(capturedUsageJson ?? const <String, dynamic>{})}',
+                  );
                   _tokenCounter.recordUsage(
                     promptTokens: usage?.inputTokens,
                     completionTokens: usage?.outputTokens,
+                    cacheReadTokens:
+                        usage?.inputTokenDetails?.cacheReadTokens ?? cache.read,
+                    cacheWriteTokens:
+                        usage?.inputTokenDetails?.cacheWriteTokens ?? cache.write,
                   );
                   onUsage?.call(
                     usage?.inputTokens ?? 0,
                     usage?.outputTokens ?? 0,
-                    usage?.inputTokenDetails?.cacheReadTokens ?? 0,
-                    usage?.inputTokenDetails?.cacheWriteTokens ?? 0,
+                    usage?.inputTokenDetails?.cacheReadTokens ?? cache.read,
+                    usage?.inputTokenDetails?.cacheWriteTokens ?? cache.write,
                     usage?.outputTokenDetails?.reasoningTokens ?? 0,
                   );
                   await onCompletion(text);
@@ -640,6 +656,7 @@ class ChatAiService implements CompletionProvider {
     ModelConfig? resolvedConfig;
     late LanguageModelV3 lm;
     Map<String, String> activeHeaders = _headers;
+    Map<String, dynamic>? capturedUsageJson;
 
     try {
       resolvedConfig = _resolver.resolve(model);
@@ -647,7 +664,10 @@ class ChatAiService implements CompletionProvider {
         resolvedConfig,
         overrideHeaders: _headers,
       );
-      lm = await _resolver.buildLanguageModel(resolvedConfig);
+      lm = await _resolver.buildLanguageModel(
+        resolvedConfig,
+        onUsageJson: (usage) => capturedUsageJson = usage,
+      );
     } catch (e) {
       rethrow;
     }
@@ -755,11 +775,17 @@ class ChatAiService implements CompletionProvider {
                 break;
               case StreamTextFinishEvent(:final text, :final usage):
                 _finalizeDanglingTools(toolTracker, onToolError);
+                final cache = capturedUsageJson != null
+                    ? extractCacheTokens(capturedUsageJson!)
+                    : const UsageCacheTokens();
+                LogTags.chatService.logDebug(
+                  'runChildCompletion: raw usage=${jsonEncode(capturedUsageJson ?? const <String, dynamic>{})}',
+                );
                 onUsage?.call(
                   usage?.inputTokens ?? 0,
                   usage?.outputTokens ?? 0,
-                  usage?.inputTokenDetails?.cacheReadTokens ?? 0,
-                  usage?.inputTokenDetails?.cacheWriteTokens ?? 0,
+                  usage?.inputTokenDetails?.cacheReadTokens ?? cache.read,
+                  usage?.inputTokenDetails?.cacheWriteTokens ?? cache.write,
                   usage?.outputTokenDetails?.reasoningTokens ?? 0,
                 );
                 await onCompletion(text);

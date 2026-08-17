@@ -664,7 +664,6 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
         reasoning: reasoning.isNotEmpty ? reasoning : null,
         isComplete: true,
         partsJson: partsJson,
-        tokensInput: aiService.tokenCounter.totalTokens,
         contextLength: ref
             .read(modelProvider)
             .selectedModelObject
@@ -680,7 +679,6 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
         reasoning: reasoning.isNotEmpty ? reasoning : null,
         isComplete: true,
         partsJson: partsJson,
-        tokensInput: aiService.tokenCounter.totalTokens,
         contextLength: ref
             .read(modelProvider)
             .selectedModelObject

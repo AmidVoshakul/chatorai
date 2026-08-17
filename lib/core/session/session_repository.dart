@@ -19,6 +19,7 @@ import 'session_tree.dart';
 class SessionRepository {
   static const _stateCacheLimit = 200;
   static const _stateCacheTtl = Duration(hours: 24);
+  static const int kChatSnapshotSchemaVersion = 1;
   final AppDatabase _db;
   final EventStore _eventStore;
   final LinkedHashMap<SessionID, SessionState> _stateCache =
@@ -574,6 +575,7 @@ class SessionRepository {
     )..where((s) => s.sessionId.equals(sessionId.value))).getSingleOrNull();
     if (row == null) return null;
     if (row.eventsCount != eventCount) return null;
+    if (row.schemaVersion != kChatSnapshotSchemaVersion) return null;
     return decodeChatSnapshot(row.chatJson);
   }
 
@@ -594,6 +596,7 @@ class SessionRepository {
             eventsCount: eventCount,
             chatJson: encodeChatSnapshot(messages),
             updatedAt: now,
+            schemaVersion: const Value(kChatSnapshotSchemaVersion),
           ),
           mode: InsertMode.insertOrReplace,
         );

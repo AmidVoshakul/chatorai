@@ -230,6 +230,122 @@ void main() {
       expect(state.tokensReasoning, 30);
     });
 
+    test('StepEnded projects tokens onto last assistant message', () {
+      var state = projectEvent(
+        empty,
+        MessageAdded(
+          sessionId: id,
+          messageId: 'u1',
+          role: 'user',
+          content: 'hi',
+          timestamp: DateTime.now(),
+        ),
+      );
+      state = projectEvent(
+        state,
+        MessageAdded(
+          sessionId: id,
+          messageId: 'a1',
+          role: 'assistant',
+          content: 'answer',
+          timestamp: DateTime.now(),
+        ),
+      );
+      state = projectEvent(
+        state,
+        StepEnded(
+          sessionId: id,
+          stepNumber: 1,
+          tokensInput: 100,
+          tokensOutput: 50,
+          tokensReasoning: 10,
+          timestamp: DateTime.now(),
+        ),
+      );
+
+      expect(state.tokensInput, 100);
+      expect(state.tokensOutput, 50);
+      expect(state.tokensReasoning, 10);
+      final assistant = state.messages.lastWhere((m) => m.role == MessageRole.assistant);
+      expect(assistant.tokensInput, 100);
+      expect(assistant.tokensOutput, 50);
+      expect(assistant.tokensReasoning, 10);
+    });
+
+    test('StepEnded accumulates tokens per message across multiple steps', () {
+      var state = projectEvent(
+        empty,
+        MessageAdded(
+          sessionId: id,
+          messageId: 'a1',
+          role: 'assistant',
+          content: 'first',
+          timestamp: DateTime.now(),
+        ),
+      );
+      state = projectEvent(
+        state,
+        StepEnded(
+          sessionId: id,
+          stepNumber: 1,
+          tokensInput: 100,
+          tokensOutput: 50,
+          tokensReasoning: 10,
+          timestamp: DateTime.now(),
+        ),
+      );
+      state = projectEvent(
+        state,
+        StepEnded(
+          sessionId: id,
+          stepNumber: 2,
+          tokensInput: 200,
+          tokensOutput: 100,
+          tokensReasoning: 20,
+          timestamp: DateTime.now(),
+        ),
+      );
+
+      expect(state.tokensInput, 300);
+      expect(state.tokensOutput, 150);
+      expect(state.tokensReasoning, 30);
+      final assistant = state.messages.lastWhere((m) => m.role == MessageRole.assistant);
+      expect(assistant.tokensInput, 300);
+      expect(assistant.tokensOutput, 150);
+      expect(assistant.tokensReasoning, 30);
+    });
+
+    test('StepEnded with only user messages keeps session totals', () {
+      var state = projectEvent(
+        empty,
+        MessageAdded(
+          sessionId: id,
+          messageId: 'u1',
+          role: 'user',
+          content: 'hi',
+          timestamp: DateTime.now(),
+        ),
+      );
+      state = projectEvent(
+        state,
+        StepEnded(
+          sessionId: id,
+          stepNumber: 1,
+          tokensInput: 100,
+          tokensOutput: 50,
+          tokensReasoning: 10,
+          timestamp: DateTime.now(),
+        ),
+      );
+
+      expect(state.tokensInput, 100);
+      expect(state.tokensOutput, 50);
+      expect(state.tokensReasoning, 10);
+      expect(state.messages.every((m) => m.tokensInput == null), isTrue);
+      expect(state.messages.every((m) => m.tokensOutput == null), isTrue);
+      expect(state.messages.every((m) => m.tokensReasoning == null), isTrue);
+    });
+
     test('SessionArchived sets archivedAt', () {
       final state = projectEvent(
         empty,

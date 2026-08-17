@@ -430,13 +430,14 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       :final tokensCacheRead,
       :final tokensCacheWrite,
     ) =>
-      state.copyWith(
-        tokensInput: state.tokensInput + tokensInput,
-        tokensOutput: state.tokensOutput + tokensOutput,
-        tokensReasoning: state.tokensReasoning + tokensReasoning,
-        tokensCacheRead: state.tokensCacheRead + tokensCacheRead,
-        tokensCacheWrite: state.tokensCacheWrite + tokensCacheWrite,
-        updatedAt: event.timestamp,
+      _applyStepEnded(
+        state,
+        event,
+        tokensInput: tokensInput,
+        tokensOutput: tokensOutput,
+        tokensReasoning: tokensReasoning,
+        tokensCacheRead: tokensCacheRead,
+        tokensCacheWrite: tokensCacheWrite,
       ),
 
     StepFailed _ => state.copyWith(updatedAt: event.timestamp),
@@ -862,36 +863,6 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
           updatedAt: Constant(event.timestamp),
         ),
       );
-
-      // Persist per-message token counters on the last assistant message so
-      // they survive restarts and are visible in the UI token summary.
-      final lastAssistantRow =
-          await (db.select(db.messages)
-                ..where((m) => m.sessionId.equals(event.sessionId.value))
-                ..where((m) => m.role.equals('assistant'))
-                ..orderBy([
-                  (m) =>
-                      OrderingTerm(expression: m.seq, mode: OrderingMode.desc),
-                ])
-                ..limit(1))
-              .getSingleOrNull();
-      if (lastAssistantRow != null) {
-        await (db.update(
-          db.messages,
-        )..where((m) => m.id.equals(lastAssistantRow.id))).write(
-          MessagesCompanion.custom(
-            tokensInput: CustomExpression<int>(
-              'COALESCE(tokens_input, 0) + $tokensInput',
-            ),
-            tokensOutput: CustomExpression<int>(
-              'COALESCE(tokens_output, 0) + $tokensOutput',
-            ),
-            tokensReasoning: CustomExpression<int>(
-              'COALESCE(tokens_reasoning, 0) + $tokensReasoning',
-            ),
-          ),
-        );
-      }
 
     case ChildSessionCreated(
       childSessionId: _,
@@ -1448,5 +1419,37 @@ SessionState _projectCompactionEnded(
     tokensCacheRead: 0,
     tokensCacheWrite: 0,
     updatedAt: event.timestamp,
+  );
+}
+
+SessionState _applyStepEnded(
+  SessionState state,
+  StepEnded event, {
+  required int tokensInput,
+  required int tokensOutput,
+  required int tokensReasoning,
+  required int tokensCacheRead,
+  required int tokensCacheWrite,
+}) {
+  final messages = List<SessionMessage>.from(state.messages);
+  final lastAssistantIdx = messages.lastIndexWhere(
+    (m) => m.role == MessageRole.assistant,
+  );
+  if (lastAssistantIdx >= 0) {
+    final current = messages[lastAssistantIdx];
+    messages[lastAssistantIdx] = current.copyWith(
+      tokensInput: (current.tokensInput ?? 0) + tokensInput,
+      tokensOutput: (current.tokensOutput ?? 0) + tokensOutput,
+      tokensReasoning: (current.tokensReasoning ?? 0) + tokensReasoning,
+    );
+  }
+  return state.copyWith(
+    tokensInput: state.tokensInput + tokensInput,
+    tokensOutput: state.tokensOutput + tokensOutput,
+    tokensReasoning: state.tokensReasoning + tokensReasoning,
+    tokensCacheRead: state.tokensCacheRead + tokensCacheRead,
+    tokensCacheWrite: state.tokensCacheWrite + tokensCacheWrite,
+    updatedAt: event.timestamp,
+    messages: messages,
   );
 }

@@ -19,6 +19,9 @@ SessionMessage _$SessionMessageFromJson(Map<String, dynamic> json) =>
       isCompactionTrigger: json['isCompactionTrigger'] as bool? ?? false,
       isCompactionSummary: json['isCompactionSummary'] as bool? ?? false,
       agent: json['agent'] as String?,
+      tokensInput: (json['tokensInput'] as num?)?.toInt(),
+      tokensOutput: (json['tokensOutput'] as num?)?.toInt(),
+      tokensReasoning: (json['tokensReasoning'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$SessionMessageToJson(SessionMessage instance) =>
@@ -34,6 +37,9 @@ Map<String, dynamic> _$SessionMessageToJson(SessionMessage instance) =>
       'isCompactionTrigger': instance.isCompactionTrigger,
       'isCompactionSummary': instance.isCompactionSummary,
       'agent': instance.agent,
+      'tokensInput': instance.tokensInput,
+      'tokensOutput': instance.tokensOutput,
+      'tokensReasoning': instance.tokensReasoning,
     };
 
 const _$MessageRoleEnumMap = {

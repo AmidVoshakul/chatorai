@@ -9,7 +9,7 @@ import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart'
-    hide MessageRole;
+    as chat_models;
 import 'package:chatorai/features/chat/data/providers/chat_providers.dart';
 import 'package:chatorai/features/sessions/providers/sidebar_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,8 +18,8 @@ import 'package:mocktail/mocktail.dart';
 
 class MockSessionRepository extends Mock implements SessionRepository {}
 
-Chat _chat(String id, {String title = ''}) {
-  return Chat(
+chat_models.Chat _chat(String id, {String title = ''}) {
+  return chat_models.Chat(
     id: id,
     title: title,
     messages: const [],
@@ -841,6 +841,65 @@ void main() {
 
         snap = await repository.readChatSnapshot(session.id);
         expect(snap, isNull);
+      });
+
+      test('ensureChatLoaded preserves per-message tokens from StepEnded',
+          () async {
+        final dbInstance = db.AppDatabase.inMemory();
+        final repository = SessionRepository(dbInstance);
+        addTearDown(dbInstance.close);
+
+        final session = await repository.createSession(
+          title: 'Token Session',
+          agent: 'general',
+        );
+        await repository.appendEvent(
+          MessageAdded(
+            sessionId: session.id,
+            messageId: 'm1',
+            role: 'user',
+            content: 'hi',
+            timestamp: DateTime.now(),
+          ),
+        );
+        await repository.appendEvent(
+          MessageAdded(
+            sessionId: session.id,
+            messageId: 'a1',
+            role: 'assistant',
+            content: 'answer',
+            timestamp: DateTime.now(),
+          ),
+        );
+        await repository.appendEvent(
+          StepEnded(
+            sessionId: session.id,
+            stepNumber: 1,
+            tokensInput: 100,
+            tokensOutput: 50,
+            tokensReasoning: 10,
+            timestamp: DateTime.now(),
+          ),
+        );
+
+        final container = ProviderContainer(
+          overrides: [
+            sessionRepositoryProvider.overrideWith((ref) async => repository),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await waitForLoad(container);
+        final notifier = container.read(chatListProvider.notifier);
+        final loaded = await notifier.ensureChatLoaded(session.id.value);
+        expect(loaded, isNotNull);
+        expect(loaded!.messages, hasLength(2));
+        final assistant = loaded.messages.firstWhere(
+          (m) => m.role == chat_models.MessageRole.assistant,
+        );
+        expect(assistant.tokensInput, 100);
+        expect(assistant.tokensOutput, 50);
+        expect(assistant.tokensReasoning, 10);
       });
     });
   });
