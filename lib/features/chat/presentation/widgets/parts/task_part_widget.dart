@@ -207,7 +207,7 @@ class _TaskPartWidgetState extends ConsumerState<TaskPartWidget> {
       return SizedBox(
         width: 16,
         height: 16,
-        child: SpinKitCubeGrid(size: 15, color: theme.colorScheme.onSurface),
+        child: SpinKitCircle(size: 15, color: theme.colorScheme.onSurface),
       );
     }
 
@@ -226,7 +226,7 @@ class _TaskPartWidgetState extends ConsumerState<TaskPartWidget> {
         return SizedBox(
           width: 16,
           height: 16,
-          child: SpinKitCubeGrid(size: 15, color: theme.colorScheme.onSurface),
+          child: SpinKitCircle(size: 15, color: theme.colorScheme.onSurface),
         );
     }
   }

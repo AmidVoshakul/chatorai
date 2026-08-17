@@ -6,10 +6,8 @@ import 'package:chatorai/l10n/app_localizations.dart';
 /// This file contains a curated list of popular questions that users can start with.
 /// Questions are loaded from localization files for multi-language support.
 class WelcomeQuestionsData {
-  /// Get all available welcome questions using localization
-  static List<String> getAllQuestions(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
+  /// Build the full list of welcome questions from an [AppLocalizations] instance.
+  static List<String> getAllQuestionsForLocale(AppLocalizations l10n) {
     return [
       l10n.welcomeQuestion1,
       l10n.welcomeQuestion2,
@@ -114,18 +112,29 @@ class WelcomeQuestionsData {
     ];
   }
 
-  /// Get a random subset of questions
+  /// Get all available welcome questions using localization.
+  static List<String> getAllQuestions(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return getAllQuestionsForLocale(l10n);
+  }
+
+  /// Get a random subset of questions for a given [AppLocalizations] instance.
+  static List<String> getRandomQuestionsForLocale(
+    AppLocalizations l10n, {
+    int count = 4,
+  }) {
+    final all = getAllQuestionsForLocale(l10n);
+    if (count >= all.length) return all;
+    final shuffled = List<String>.from(all)..shuffle();
+    return shuffled.take(count).toList();
+  }
+
+  /// Get a random subset of questions using the current [BuildContext].
   static List<String> getRandomQuestions(
     BuildContext context, {
     int count = 4,
   }) {
-    final allQuestions = getAllQuestions(context);
-    if (count >= allQuestions.length) {
-      return allQuestions;
-    }
-
-    // Create a copy to avoid modifying the original
-    final shuffled = List<String>.from(allQuestions)..shuffle();
-    return shuffled.take(count).toList();
+    final l10n = AppLocalizations.of(context)!;
+    return getRandomQuestionsForLocale(l10n, count: count);
   }
 }

@@ -33,6 +33,17 @@ MessagePart partFromJson(Map<String, dynamic> json) {
   };
 }
 
+ChatMessage chatMessageFromJson(Map<String, dynamic> json) {
+  final type = json['type'] as String? ?? 'unknown';
+  return switch (type) {
+    'user' => UserMessage.fromJson(json),
+    'assistant' => AssistantMessage.fromJson(json),
+    'system' => SystemMessage.fromJson(json),
+    'error' => ErrorMessage.fromJson(json),
+    _ => throw ArgumentError('Unknown ChatMessage type: $type'),
+  };
+}
+
 // ── ChatMessage sealed hierarchy ─────────────────────────────
 
 // Note: Using `abstract` instead of `sealed` to allow subclasses

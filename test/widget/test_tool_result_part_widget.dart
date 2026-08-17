@@ -157,7 +157,7 @@ void main() {
         ),
       );
       expect(find.text(r'$ '), findsNothing);
-      expect(find.byType(SpinKitCubeGrid), findsOneWidget);
+      expect(find.byType(SpinKitCircle), findsOneWidget);
       expect(find.text('ls -la'), findsOneWidget);
     });
 

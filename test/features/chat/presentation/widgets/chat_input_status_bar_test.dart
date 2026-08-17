@@ -266,13 +266,13 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(SpinKitCubeGrid), findsOneWidget);
+      expect(find.byType(SpinKitCircle), findsOneWidget);
       expect(find.textContaining('mcp:'), findsNothing);
 
       completer.complete({'alpha': McpServerStatus.connected()});
       await tester.pumpAndSettle();
 
-      expect(find.byType(SpinKitCubeGrid), findsNothing);
+      expect(find.byType(SpinKitCircle), findsNothing);
       expect(find.textContaining('mcp: 1/1'), findsOneWidget);
     });
   });

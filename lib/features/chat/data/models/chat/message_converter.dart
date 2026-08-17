@@ -55,7 +55,7 @@ ChatMessage messageToChatMessage(Message message) {
       List<MessagePart> parts;
       if (message.partsJson != null && message.partsJson!.isNotEmpty) {
         parts = message.partsJson!.map((j) => partFromJson(j)).toList();
-        final hasText = parts.any((p) => p is TextPart);
+        final hasText = parts.any((p) => p is TextPart && p.content.isNotEmpty);
         final hasReasoning = parts.any((p) => p is ReasoningPart);
         if (!hasText && content.isNotEmpty) {
           parts.add(TextPart(content: content));
@@ -315,6 +315,9 @@ Message _sessionMessageToMessage(
     isError: isError,
     partsJson: partsJson,
     synthetic: false,
+    tokensInput: sessionMsg.tokensInput,
+    tokensOutput: sessionMsg.tokensOutput,
+    tokensReasoning: sessionMsg.tokensReasoning,
   );
 }
 

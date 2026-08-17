@@ -135,7 +135,9 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     _logger.logInfo(
       '[ChatMessages] ScrollController initialized: ${_scrollController.hashCode}',
     );
-    _updateHeadings();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _updateHeadings();
+    });
   }
 
   @override
@@ -185,13 +187,15 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
 
     HeadingAnchorRegistry().clear();
 
+    final parseStopwatch = Stopwatch()..start();
     _headings = MarkdownParserWithKeys.parseAllMessagesHeadings(
       messages,
       existingHeadings: _headings.isNotEmpty ? _headings : null,
     );
+    parseStopwatch.stop();
 
     _logger.logInfo(
-      '[ChatMessages] Updated headings: ${_headings.length} total',
+      '[ChatMessages] Updated headings: ${_headings.length} total, messages=${messages.length}, parse=${parseStopwatch.elapsedMilliseconds}ms',
     );
 
     if (widget.onHeadingsUpdated != null) {

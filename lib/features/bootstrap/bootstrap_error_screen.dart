@@ -5,7 +5,7 @@ import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Экран ошибки, показываемый если [`appBootstrapProvider`] упал
+/// Экран ошибки, показываемый если [`appBootstrapFastProvider`] упал
 /// (жёсткий сбой инициализации, например `AgentRegistry.init`
 /// или загрузка каталога).
 class BootstrapErrorScreen extends ConsumerWidget {
@@ -44,10 +44,10 @@ class BootstrapErrorScreen extends ConsumerWidget {
               FilledButton.icon(
                 onPressed: () {
                   // Сбрасываем и вышестоящие провайдеры, иначе
-                  // appBootstrapProvider упадёт мгновенно с той же ошибкой.
+                  // appBootstrapFastProvider упадёт мгновенно с той же ошибкой.
                   ref.invalidate(catalogInitializationProvider);
                   ref.invalidate(configProvider);
-                  ref.invalidate(appBootstrapProvider);
+                  ref.invalidate(appBootstrapFastProvider);
                 },
                 icon: const Icon(Icons.refresh),
                 label: Text(l10n.retry),

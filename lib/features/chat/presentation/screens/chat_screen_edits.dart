@@ -3,6 +3,20 @@ part of 'chat_screen.dart';
 extension _ChatScreenEditsExt on _ChatScreenState {
   Future<void> _handleMessageEdited(String messageId, String newContent) async {
     if (currentChat == null) return;
+
+    // If streaming is in progress, cancel it so the edit is not later
+    // overwritten by the stream's completion.
+    if (_sessionRunner != null || ref.read(chatScreenProvider).isStreaming) {
+      _streamCancelled = true;
+      ref.read(chatAiServiceProvider).cancelAllRequests();
+      ref.read(permissionServiceProvider).cancelAllPendingRequests();
+      ref.read(currentSessionRunnerProvider.notifier).cancelAllChildren();
+      _sessionRunner = null;
+      ref.read(chatScreenProvider.notifier).finalizeStreaming();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      _streamCancelled = false;
+    }
+
     final messages = currentChat!.messages;
     final messageIndex = messages.indexWhere((m) => m.id == messageId);
     if (messageIndex == -1) return;
@@ -44,6 +58,18 @@ extension _ChatScreenEditsExt on _ChatScreenState {
   ) async {
     if (currentChat == null) return;
     ref.read(chatScreenProvider.notifier).hideSuggestions();
+
+    // Cancel any in-progress streaming before starting a new turn.
+    if (_sessionRunner != null || ref.read(chatScreenProvider).isStreaming) {
+      _streamCancelled = true;
+      ref.read(chatAiServiceProvider).cancelAllRequests();
+      ref.read(permissionServiceProvider).cancelAllPendingRequests();
+      ref.read(currentSessionRunnerProvider.notifier).cancelAllChildren();
+      _sessionRunner = null;
+      ref.read(chatScreenProvider.notifier).finalizeStreaming();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      _streamCancelled = false;
+    }
 
     final messages = currentChat!.messages;
     final messageIndex = messages.indexWhere((m) => m.id == messageId);

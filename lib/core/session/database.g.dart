@@ -1349,6 +1349,42 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _tokensInputMeta = const VerificationMeta(
+    'tokensInput',
+  );
+  @override
+  late final GeneratedColumn<int> tokensInput = GeneratedColumn<int>(
+    'tokens_input',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _tokensOutputMeta = const VerificationMeta(
+    'tokensOutput',
+  );
+  @override
+  late final GeneratedColumn<int> tokensOutput = GeneratedColumn<int>(
+    'tokens_output',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _tokensReasoningMeta = const VerificationMeta(
+    'tokensReasoning',
+  );
+  @override
+  late final GeneratedColumn<int> tokensReasoning = GeneratedColumn<int>(
+    'tokens_reasoning',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1370,6 +1406,9 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     model,
     reasoning,
     error,
+    tokensInput,
+    tokensOutput,
+    tokensReasoning,
     createdAt,
   ];
   @override
@@ -1437,6 +1476,33 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         error.isAcceptableOrUnknown(data['error']!, _errorMeta),
       );
     }
+    if (data.containsKey('tokens_input')) {
+      context.handle(
+        _tokensInputMeta,
+        tokensInput.isAcceptableOrUnknown(
+          data['tokens_input']!,
+          _tokensInputMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tokens_output')) {
+      context.handle(
+        _tokensOutputMeta,
+        tokensOutput.isAcceptableOrUnknown(
+          data['tokens_output']!,
+          _tokensOutputMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tokens_reasoning')) {
+      context.handle(
+        _tokensReasoningMeta,
+        tokensReasoning.isAcceptableOrUnknown(
+          data['tokens_reasoning']!,
+          _tokensReasoningMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1486,6 +1552,18 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         DriftSqlType.string,
         data['${effectivePrefix}error'],
       ),
+      tokensInput: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_input'],
+      )!,
+      tokensOutput: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_output'],
+      )!,
+      tokensReasoning: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_reasoning'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1508,6 +1586,9 @@ class Message extends DataClass implements Insertable<Message> {
   final String? model;
   final String? reasoning;
   final String? error;
+  final int tokensInput;
+  final int tokensOutput;
+  final int tokensReasoning;
   final DateTime createdAt;
   const Message({
     required this.id,
@@ -1518,6 +1599,9 @@ class Message extends DataClass implements Insertable<Message> {
     this.model,
     this.reasoning,
     this.error,
+    required this.tokensInput,
+    required this.tokensOutput,
+    required this.tokensReasoning,
     required this.createdAt,
   });
   @override
@@ -1537,6 +1621,9 @@ class Message extends DataClass implements Insertable<Message> {
     if (!nullToAbsent || error != null) {
       map['error'] = Variable<String>(error);
     }
+    map['tokens_input'] = Variable<int>(tokensInput);
+    map['tokens_output'] = Variable<int>(tokensOutput);
+    map['tokens_reasoning'] = Variable<int>(tokensReasoning);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -1557,6 +1644,9 @@ class Message extends DataClass implements Insertable<Message> {
       error: error == null && nullToAbsent
           ? const Value.absent()
           : Value(error),
+      tokensInput: Value(tokensInput),
+      tokensOutput: Value(tokensOutput),
+      tokensReasoning: Value(tokensReasoning),
       createdAt: Value(createdAt),
     );
   }
@@ -1575,6 +1665,9 @@ class Message extends DataClass implements Insertable<Message> {
       model: serializer.fromJson<String?>(json['model']),
       reasoning: serializer.fromJson<String?>(json['reasoning']),
       error: serializer.fromJson<String?>(json['error']),
+      tokensInput: serializer.fromJson<int>(json['tokensInput']),
+      tokensOutput: serializer.fromJson<int>(json['tokensOutput']),
+      tokensReasoning: serializer.fromJson<int>(json['tokensReasoning']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -1590,6 +1683,9 @@ class Message extends DataClass implements Insertable<Message> {
       'model': serializer.toJson<String?>(model),
       'reasoning': serializer.toJson<String?>(reasoning),
       'error': serializer.toJson<String?>(error),
+      'tokensInput': serializer.toJson<int>(tokensInput),
+      'tokensOutput': serializer.toJson<int>(tokensOutput),
+      'tokensReasoning': serializer.toJson<int>(tokensReasoning),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -1603,6 +1699,9 @@ class Message extends DataClass implements Insertable<Message> {
     Value<String?> model = const Value.absent(),
     Value<String?> reasoning = const Value.absent(),
     Value<String?> error = const Value.absent(),
+    int? tokensInput,
+    int? tokensOutput,
+    int? tokensReasoning,
     DateTime? createdAt,
   }) => Message(
     id: id ?? this.id,
@@ -1613,6 +1712,9 @@ class Message extends DataClass implements Insertable<Message> {
     model: model.present ? model.value : this.model,
     reasoning: reasoning.present ? reasoning.value : this.reasoning,
     error: error.present ? error.value : this.error,
+    tokensInput: tokensInput ?? this.tokensInput,
+    tokensOutput: tokensOutput ?? this.tokensOutput,
+    tokensReasoning: tokensReasoning ?? this.tokensReasoning,
     createdAt: createdAt ?? this.createdAt,
   );
   Message copyWithCompanion(MessagesCompanion data) {
@@ -1625,6 +1727,15 @@ class Message extends DataClass implements Insertable<Message> {
       model: data.model.present ? data.model.value : this.model,
       reasoning: data.reasoning.present ? data.reasoning.value : this.reasoning,
       error: data.error.present ? data.error.value : this.error,
+      tokensInput: data.tokensInput.present
+          ? data.tokensInput.value
+          : this.tokensInput,
+      tokensOutput: data.tokensOutput.present
+          ? data.tokensOutput.value
+          : this.tokensOutput,
+      tokensReasoning: data.tokensReasoning.present
+          ? data.tokensReasoning.value
+          : this.tokensReasoning,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1640,6 +1751,9 @@ class Message extends DataClass implements Insertable<Message> {
           ..write('model: $model, ')
           ..write('reasoning: $reasoning, ')
           ..write('error: $error, ')
+          ..write('tokensInput: $tokensInput, ')
+          ..write('tokensOutput: $tokensOutput, ')
+          ..write('tokensReasoning: $tokensReasoning, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -1655,6 +1769,9 @@ class Message extends DataClass implements Insertable<Message> {
     model,
     reasoning,
     error,
+    tokensInput,
+    tokensOutput,
+    tokensReasoning,
     createdAt,
   );
   @override
@@ -1669,6 +1786,9 @@ class Message extends DataClass implements Insertable<Message> {
           other.model == this.model &&
           other.reasoning == this.reasoning &&
           other.error == this.error &&
+          other.tokensInput == this.tokensInput &&
+          other.tokensOutput == this.tokensOutput &&
+          other.tokensReasoning == this.tokensReasoning &&
           other.createdAt == this.createdAt);
 }
 
@@ -1681,6 +1801,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   final Value<String?> model;
   final Value<String?> reasoning;
   final Value<String?> error;
+  final Value<int> tokensInput;
+  final Value<int> tokensOutput;
+  final Value<int> tokensReasoning;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const MessagesCompanion({
@@ -1692,6 +1815,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.model = const Value.absent(),
     this.reasoning = const Value.absent(),
     this.error = const Value.absent(),
+    this.tokensInput = const Value.absent(),
+    this.tokensOutput = const Value.absent(),
+    this.tokensReasoning = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1704,6 +1830,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.model = const Value.absent(),
     this.reasoning = const Value.absent(),
     this.error = const Value.absent(),
+    this.tokensInput = const Value.absent(),
+    this.tokensOutput = const Value.absent(),
+    this.tokensReasoning = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1720,6 +1849,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Expression<String>? model,
     Expression<String>? reasoning,
     Expression<String>? error,
+    Expression<int>? tokensInput,
+    Expression<int>? tokensOutput,
+    Expression<int>? tokensReasoning,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -1732,6 +1864,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       if (model != null) 'model': model,
       if (reasoning != null) 'reasoning': reasoning,
       if (error != null) 'error': error,
+      if (tokensInput != null) 'tokens_input': tokensInput,
+      if (tokensOutput != null) 'tokens_output': tokensOutput,
+      if (tokensReasoning != null) 'tokens_reasoning': tokensReasoning,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1746,6 +1881,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Value<String?>? model,
     Value<String?>? reasoning,
     Value<String?>? error,
+    Value<int>? tokensInput,
+    Value<int>? tokensOutput,
+    Value<int>? tokensReasoning,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -1758,6 +1896,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       model: model ?? this.model,
       reasoning: reasoning ?? this.reasoning,
       error: error ?? this.error,
+      tokensInput: tokensInput ?? this.tokensInput,
+      tokensOutput: tokensOutput ?? this.tokensOutput,
+      tokensReasoning: tokensReasoning ?? this.tokensReasoning,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1790,6 +1931,15 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     if (error.present) {
       map['error'] = Variable<String>(error.value);
     }
+    if (tokensInput.present) {
+      map['tokens_input'] = Variable<int>(tokensInput.value);
+    }
+    if (tokensOutput.present) {
+      map['tokens_output'] = Variable<int>(tokensOutput.value);
+    }
+    if (tokensReasoning.present) {
+      map['tokens_reasoning'] = Variable<int>(tokensReasoning.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1810,6 +1960,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
           ..write('model: $model, ')
           ..write('reasoning: $reasoning, ')
           ..write('error: $error, ')
+          ..write('tokensInput: $tokensInput, ')
+          ..write('tokensOutput: $tokensOutput, ')
+          ..write('tokensReasoning: $tokensReasoning, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3919,6 +4072,331 @@ class FileSnapshotsCompanion extends UpdateCompanion<FileSnapshot> {
   }
 }
 
+class $ChatSnapshotsTable extends ChatSnapshots
+    with TableInfo<$ChatSnapshotsTable, ChatSnapshot> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChatSnapshotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eventsCountMeta = const VerificationMeta(
+    'eventsCount',
+  );
+  @override
+  late final GeneratedColumn<int> eventsCount = GeneratedColumn<int>(
+    'events_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _chatJsonMeta = const VerificationMeta(
+    'chatJson',
+  );
+  @override
+  late final GeneratedColumn<String> chatJson = GeneratedColumn<String>(
+    'chat_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sessionId,
+    eventsCount,
+    chatJson,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'chat_snapshots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ChatSnapshot> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('events_count')) {
+      context.handle(
+        _eventsCountMeta,
+        eventsCount.isAcceptableOrUnknown(
+          data['events_count']!,
+          _eventsCountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_eventsCountMeta);
+    }
+    if (data.containsKey('chat_json')) {
+      context.handle(
+        _chatJsonMeta,
+        chatJson.isAcceptableOrUnknown(data['chat_json']!, _chatJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chatJsonMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sessionId};
+  @override
+  ChatSnapshot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ChatSnapshot(
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      eventsCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}events_count'],
+      )!,
+      chatJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chat_json'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ChatSnapshotsTable createAlias(String alias) {
+    return $ChatSnapshotsTable(attachedDatabase, alias);
+  }
+}
+
+class ChatSnapshot extends DataClass implements Insertable<ChatSnapshot> {
+  final String sessionId;
+  final int eventsCount;
+  final String chatJson;
+  final int updatedAt;
+  const ChatSnapshot({
+    required this.sessionId,
+    required this.eventsCount,
+    required this.chatJson,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['session_id'] = Variable<String>(sessionId);
+    map['events_count'] = Variable<int>(eventsCount);
+    map['chat_json'] = Variable<String>(chatJson);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  ChatSnapshotsCompanion toCompanion(bool nullToAbsent) {
+    return ChatSnapshotsCompanion(
+      sessionId: Value(sessionId),
+      eventsCount: Value(eventsCount),
+      chatJson: Value(chatJson),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ChatSnapshot.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ChatSnapshot(
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      eventsCount: serializer.fromJson<int>(json['eventsCount']),
+      chatJson: serializer.fromJson<String>(json['chatJson']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sessionId': serializer.toJson<String>(sessionId),
+      'eventsCount': serializer.toJson<int>(eventsCount),
+      'chatJson': serializer.toJson<String>(chatJson),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  ChatSnapshot copyWith({
+    String? sessionId,
+    int? eventsCount,
+    String? chatJson,
+    int? updatedAt,
+  }) => ChatSnapshot(
+    sessionId: sessionId ?? this.sessionId,
+    eventsCount: eventsCount ?? this.eventsCount,
+    chatJson: chatJson ?? this.chatJson,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ChatSnapshot copyWithCompanion(ChatSnapshotsCompanion data) {
+    return ChatSnapshot(
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      eventsCount: data.eventsCount.present
+          ? data.eventsCount.value
+          : this.eventsCount,
+      chatJson: data.chatJson.present ? data.chatJson.value : this.chatJson,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatSnapshot(')
+          ..write('sessionId: $sessionId, ')
+          ..write('eventsCount: $eventsCount, ')
+          ..write('chatJson: $chatJson, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(sessionId, eventsCount, chatJson, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ChatSnapshot &&
+          other.sessionId == this.sessionId &&
+          other.eventsCount == this.eventsCount &&
+          other.chatJson == this.chatJson &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ChatSnapshotsCompanion extends UpdateCompanion<ChatSnapshot> {
+  final Value<String> sessionId;
+  final Value<int> eventsCount;
+  final Value<String> chatJson;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const ChatSnapshotsCompanion({
+    this.sessionId = const Value.absent(),
+    this.eventsCount = const Value.absent(),
+    this.chatJson = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ChatSnapshotsCompanion.insert({
+    required String sessionId,
+    required int eventsCount,
+    required String chatJson,
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : sessionId = Value(sessionId),
+       eventsCount = Value(eventsCount),
+       chatJson = Value(chatJson),
+       updatedAt = Value(updatedAt);
+  static Insertable<ChatSnapshot> custom({
+    Expression<String>? sessionId,
+    Expression<int>? eventsCount,
+    Expression<String>? chatJson,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sessionId != null) 'session_id': sessionId,
+      if (eventsCount != null) 'events_count': eventsCount,
+      if (chatJson != null) 'chat_json': chatJson,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ChatSnapshotsCompanion copyWith({
+    Value<String>? sessionId,
+    Value<int>? eventsCount,
+    Value<String>? chatJson,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ChatSnapshotsCompanion(
+      sessionId: sessionId ?? this.sessionId,
+      eventsCount: eventsCount ?? this.eventsCount,
+      chatJson: chatJson ?? this.chatJson,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (eventsCount.present) {
+      map['events_count'] = Variable<int>(eventsCount.value);
+    }
+    if (chatJson.present) {
+      map['chat_json'] = Variable<String>(chatJson.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatSnapshotsCompanion(')
+          ..write('sessionId: $sessionId, ')
+          ..write('eventsCount: $eventsCount, ')
+          ..write('chatJson: $chatJson, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3931,6 +4409,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $FileSnapshotsTable fileSnapshots = $FileSnapshotsTable(this);
+  late final $ChatSnapshotsTable chatSnapshots = $ChatSnapshotsTable(this);
   late final Index idxEventsSessionSeq = Index(
     'idx_events_session_seq',
     'CREATE INDEX idx_events_session_seq ON events (session_id, sequence)',
@@ -3959,6 +4438,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_file_snapshots_session_step_created',
     'CREATE INDEX idx_file_snapshots_session_step_created ON file_snapshots (session_id, step_id, created_at)',
   );
+  late final Index idxChatSnapshotsSession = Index(
+    'idx_chat_snapshots_session',
+    'CREATE INDEX idx_chat_snapshots_session ON chat_snapshots (session_id)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3971,6 +4454,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     contextEpochs,
     sessionSnapshots,
     fileSnapshots,
+    chatSnapshots,
     idxEventsSessionSeq,
     idxMessagesSessionSeq,
     idxToolResultsSession,
@@ -3978,6 +4462,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxSessionSnapshotsSession,
     idxFileSnapshotsSession,
     idxFileSnapshotsSessionStepCreated,
+    idxChatSnapshotsSession,
   ];
 }
 
@@ -4596,6 +5081,9 @@ typedef $$MessagesTableCreateCompanionBuilder =
       Value<String?> model,
       Value<String?> reasoning,
       Value<String?> error,
+      Value<int> tokensInput,
+      Value<int> tokensOutput,
+      Value<int> tokensReasoning,
       required DateTime createdAt,
       Value<int> rowid,
     });
@@ -4609,6 +5097,9 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<String?> model,
       Value<String?> reasoning,
       Value<String?> error,
+      Value<int> tokensInput,
+      Value<int> tokensOutput,
+      Value<int> tokensReasoning,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -4659,6 +5150,21 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<String> get error => $composableBuilder(
     column: $table.error,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensInput => $composableBuilder(
+    column: $table.tokensInput,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensOutput => $composableBuilder(
+    column: $table.tokensOutput,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensReasoning => $composableBuilder(
+    column: $table.tokensReasoning,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4717,6 +5223,21 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get tokensInput => $composableBuilder(
+    column: $table.tokensInput,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokensOutput => $composableBuilder(
+    column: $table.tokensOutput,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokensReasoning => $composableBuilder(
+    column: $table.tokensReasoning,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -4755,6 +5276,21 @@ class $$MessagesTableAnnotationComposer
 
   GeneratedColumn<String> get error =>
       $composableBuilder(column: $table.error, builder: (column) => column);
+
+  GeneratedColumn<int> get tokensInput => $composableBuilder(
+    column: $table.tokensInput,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tokensOutput => $composableBuilder(
+    column: $table.tokensOutput,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tokensReasoning => $composableBuilder(
+    column: $table.tokensReasoning,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -4796,6 +5332,9 @@ class $$MessagesTableTableManager
                 Value<String?> model = const Value.absent(),
                 Value<String?> reasoning = const Value.absent(),
                 Value<String?> error = const Value.absent(),
+                Value<int> tokensInput = const Value.absent(),
+                Value<int> tokensOutput = const Value.absent(),
+                Value<int> tokensReasoning = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MessagesCompanion(
@@ -4807,6 +5346,9 @@ class $$MessagesTableTableManager
                 model: model,
                 reasoning: reasoning,
                 error: error,
+                tokensInput: tokensInput,
+                tokensOutput: tokensOutput,
+                tokensReasoning: tokensReasoning,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -4820,6 +5362,9 @@ class $$MessagesTableTableManager
                 Value<String?> model = const Value.absent(),
                 Value<String?> reasoning = const Value.absent(),
                 Value<String?> error = const Value.absent(),
+                Value<int> tokensInput = const Value.absent(),
+                Value<int> tokensOutput = const Value.absent(),
+                Value<int> tokensReasoning = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
               }) => MessagesCompanion.insert(
@@ -4831,6 +5376,9 @@ class $$MessagesTableTableManager
                 model: model,
                 reasoning: reasoning,
                 error: error,
+                tokensInput: tokensInput,
+                tokensOutput: tokensOutput,
+                tokensReasoning: tokensReasoning,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -5923,6 +6471,189 @@ typedef $$FileSnapshotsTableProcessedTableManager =
       FileSnapshot,
       PrefetchHooks Function()
     >;
+typedef $$ChatSnapshotsTableCreateCompanionBuilder =
+    ChatSnapshotsCompanion Function({
+      required String sessionId,
+      required int eventsCount,
+      required String chatJson,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ChatSnapshotsTableUpdateCompanionBuilder =
+    ChatSnapshotsCompanion Function({
+      Value<String> sessionId,
+      Value<int> eventsCount,
+      Value<String> chatJson,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$ChatSnapshotsTableFilterComposer
+    extends Composer<_$AppDatabase, $ChatSnapshotsTable> {
+  $$ChatSnapshotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get eventsCount => $composableBuilder(
+    column: $table.eventsCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chatJson => $composableBuilder(
+    column: $table.chatJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ChatSnapshotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ChatSnapshotsTable> {
+  $$ChatSnapshotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get eventsCount => $composableBuilder(
+    column: $table.eventsCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chatJson => $composableBuilder(
+    column: $table.chatJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ChatSnapshotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ChatSnapshotsTable> {
+  $$ChatSnapshotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<int> get eventsCount => $composableBuilder(
+    column: $table.eventsCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get chatJson =>
+      $composableBuilder(column: $table.chatJson, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$ChatSnapshotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ChatSnapshotsTable,
+          ChatSnapshot,
+          $$ChatSnapshotsTableFilterComposer,
+          $$ChatSnapshotsTableOrderingComposer,
+          $$ChatSnapshotsTableAnnotationComposer,
+          $$ChatSnapshotsTableCreateCompanionBuilder,
+          $$ChatSnapshotsTableUpdateCompanionBuilder,
+          (
+            ChatSnapshot,
+            BaseReferences<_$AppDatabase, $ChatSnapshotsTable, ChatSnapshot>,
+          ),
+          ChatSnapshot,
+          PrefetchHooks Function()
+        > {
+  $$ChatSnapshotsTableTableManager(_$AppDatabase db, $ChatSnapshotsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ChatSnapshotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ChatSnapshotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ChatSnapshotsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sessionId = const Value.absent(),
+                Value<int> eventsCount = const Value.absent(),
+                Value<String> chatJson = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ChatSnapshotsCompanion(
+                sessionId: sessionId,
+                eventsCount: eventsCount,
+                chatJson: chatJson,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sessionId,
+                required int eventsCount,
+                required String chatJson,
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ChatSnapshotsCompanion.insert(
+                sessionId: sessionId,
+                eventsCount: eventsCount,
+                chatJson: chatJson,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ChatSnapshotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ChatSnapshotsTable,
+      ChatSnapshot,
+      $$ChatSnapshotsTableFilterComposer,
+      $$ChatSnapshotsTableOrderingComposer,
+      $$ChatSnapshotsTableAnnotationComposer,
+      $$ChatSnapshotsTableCreateCompanionBuilder,
+      $$ChatSnapshotsTableUpdateCompanionBuilder,
+      (
+        ChatSnapshot,
+        BaseReferences<_$AppDatabase, $ChatSnapshotsTable, ChatSnapshot>,
+      ),
+      ChatSnapshot,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5941,4 +6672,6 @@ class $AppDatabaseManager {
       $$SessionSnapshotsTableTableManager(_db, _db.sessionSnapshots);
   $$FileSnapshotsTableTableManager get fileSnapshots =>
       $$FileSnapshotsTableTableManager(_db, _db.fileSnapshots);
+  $$ChatSnapshotsTableTableManager get chatSnapshots =>
+      $$ChatSnapshotsTableTableManager(_db, _db.chatSnapshots);
 }

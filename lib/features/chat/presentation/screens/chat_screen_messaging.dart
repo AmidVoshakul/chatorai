@@ -340,7 +340,7 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       LogTags.chatScreen.logError('_initiateStream: streaming error $e');
       ref.read(chatScreenProvider.notifier).setStreaming(false);
       try {
-        await _handleStreamingError(e);
+        await _handleStreamingError(e, _currentSessionId ?? chat.id);
       } catch (e2) {
         LogTags.chatService.logError(
           '_handleStreamingError threw after main exception',
@@ -388,7 +388,13 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
         chat = await ref.read(chatListProvider.notifier).createNewChat();
         ref.read(currentChatIdProvider.notifier).setChatId(chat.id);
       } else {
-        chat = currentChat!;
+        final chatId = currentChat!.id;
+        final loaded = await ref
+            .read(chatListProvider.notifier)
+            .ensureChatLoaded(chatId);
+        final current = ref.read(currentChatProvider);
+        if (current == null || current.id != chatId) return;
+        chat = loaded ?? current;
       }
 
       final userMessage = _createUserMessage(
@@ -618,15 +624,25 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       closedParts = const [];
     }
 
-    final content = closedParts
+    final lastMessage = chat.messages.last;
+    final targetMessageId = lastMessage.role == MessageRole.assistant && !lastMessage.isComplete
+        ? lastMessage.id
+        : closedParts.isEmpty
+            ? null
+            : closedParts.last.messageId;
+    final messageParts = targetMessageId != null
+        ? filterPartsByMessage(closedParts, targetMessageId)
+        : closedParts;
+
+    final content = messageParts
         .whereType<AssistantText>()
         .map((p) => p.text)
         .join();
-    final reasoning = closedParts
+    final reasoning = messageParts
         .whereType<AssistantReasoning>()
         .map((p) => p.text)
         .join();
-    final toolParts = closedParts
+    final toolParts = messageParts
         .where(
           (p) =>
               p is AssistantTool ||
@@ -639,7 +655,6 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
         ? assistantContentToPartMaps(toolParts)
         : null;
 
-    final lastMessage = chat.messages.last;
     Message completedMessage;
     List<Message> newMessages;
 
@@ -712,19 +727,14 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
   void _refreshChatMessages() async {
     FocusScope.of(context).unfocus();
     if (currentChat != null) {
-      final sessionRepository = await ref.read(
-        sessionRepositoryProvider.future,
-      );
-      final sessionId = currentChat!.toSessionId();
-      final state = await sessionRepository.loadSession(sessionId);
-      if (state != null) {
-        final updatedChat = sessionStateToChat(state);
-        ref.read(chatListProvider.notifier).updateChat(updatedChat);
-        ref.read(chatScreenProvider.notifier).hideSuggestions();
-        if (updatedChat.messages.isEmpty) {
-          ref.read(chatScreenProvider.notifier).hideAllSuggestions();
-          _showWelcomeSuggestions();
-        }
+      final updatedChat = await ref
+          .read(chatListProvider.notifier)
+          .ensureChatLoaded(currentChat!.id, forceRefresh: true);
+      if (updatedChat == null || !mounted) return;
+      ref.read(chatScreenProvider.notifier).hideSuggestions();
+      if (updatedChat.messages.isEmpty) {
+        ref.read(chatScreenProvider.notifier).hideAllSuggestions();
+        _showWelcomeSuggestions();
       }
     }
   }

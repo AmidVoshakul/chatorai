@@ -12,6 +12,51 @@ import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
+List<MessagePart> _groupConsecutiveParts(List<MessagePart> parts) {
+  if (parts.isEmpty) return parts;
+
+  final grouped = <MessagePart>[];
+  MessagePart? current;
+
+  for (final part in parts) {
+    if (current == null) {
+      current = part;
+      continue;
+    }
+
+    if (part is ReasoningPart && current is ReasoningPart) {
+      final durationMs = (current.durationMs != null && part.durationMs != null)
+          ? current.durationMs! + part.durationMs!
+          : null;
+      current = ReasoningPart(
+        content: '${current.content}\n${part.content}',
+        title: current.title ?? part.title,
+        isStreaming: current.isStreaming || part.isStreaming,
+        startedAt: current.startedAt,
+        durationMs: durationMs,
+        isExpanded: current.isExpanded,
+        synthetic: current.synthetic,
+      );
+      continue;
+    }
+
+    if (part is TextPart && current is TextPart) {
+      current = TextPart(
+        content: '${current.content}\n${part.content}',
+        isStreaming: current.isStreaming || part.isStreaming,
+        synthetic: current.synthetic,
+      );
+      continue;
+    }
+
+    grouped.add(current);
+    current = part;
+  }
+
+  if (current != null) grouped.add(current);
+  return grouped;
+}
+
 class AssistantMessageBubble extends StatelessWidget {
   final AssistantMessage message;
   final String chatId;
@@ -63,17 +108,19 @@ class AssistantMessageBubble extends StatelessWidget {
         .map((p) => p.content)
         .join('\n');
 
-    List<Widget> groupedParts = [];
-    for (final part in visibleParts) {
+    final mergedParts = _groupConsecutiveParts(visibleParts);
+
+    List<Widget> widgetParts = [];
+    for (final part in mergedParts) {
       if (part is ReasoningPart) {
-        groupedParts.add(
+        widgetParts.add(
           ReasoningPartWidget(
             part: part,
             expandByDefault: expandReasoningByDefault,
           ),
         );
       } else {
-        groupedParts.add(
+        widgetParts.add(
           _buildPart(
             part,
             context,
@@ -140,7 +187,7 @@ class AssistantMessageBubble extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: groupedParts,
+            children: widgetParts,
           ),
         ),
         ActionRow(

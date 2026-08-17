@@ -4,6 +4,7 @@ import 'package:chatorai/core/context/token_counter.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
+import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
@@ -91,6 +92,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
 
     MessageDeleted(:final messageId) => state.copyWith(
       messages: state.messages.where((m) => m.id != messageId).toList(),
+      parts: state.parts.where((p) => p.messageId != messageId).toList(),
       updatedAt: event.timestamp,
     ),
 
@@ -108,7 +110,10 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
               ),
             ],
       parts: [
-        ..._closeOpenReasoning(state.parts, event.timestamp),
+        ..._closeOpenText(
+          _closeOpenReasoning(state.parts, event.timestamp),
+          event.timestamp,
+        ),
         AssistantText(
           id:
               partId ??
@@ -171,7 +176,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
                   sessionId: current.sessionId!,
                   messageId: current.messageId!,
                   text: current.text,
-                  synthetic: current.synthetic,
+                  synthetic: false,
                   ignored: current.ignored,
                   title: current.title,
                 ),
@@ -183,7 +188,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
                     sessionId: p.sessionId!,
                     messageId: p.messageId!,
                     text: p.text,
-                    synthetic: p.synthetic,
+                    synthetic: false,
                     ignored: p.ignored,
                     title: p.title,
                   );
@@ -227,14 +232,21 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
             ? _updatePartById<AssistantReasoning>(
                 state.parts,
                 partId,
-                (current) => AssistantReasoning(
-                  id: current.id!,
-                  sessionId: current.sessionId!,
-                  messageId: current.messageId!,
-                  text: current.text + delta,
-                  started: current.started,
-                  ended: current.ended,
-                ),
+                (current) {
+                  // Defensive: ignore deltas for a reasoning part that has
+                  // already been closed by ReasoningEnded. This prevents a
+                  // post-Ended delta from reopening or mutating the finished
+                  // thought block.
+                  if (current.ended != null) return current;
+                  return AssistantReasoning(
+                    id: current.id!,
+                    sessionId: current.sessionId!,
+                    messageId: current.messageId!,
+                    text: current.text + delta,
+                    started: current.started,
+                    ended: current.ended,
+                  );
+                },
                 create: () => AssistantReasoning(
                   id: partId,
                   sessionId: event.sessionId.value,
@@ -290,45 +302,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       input: final input,
       partId: final partId,
     ) =>
-      state.copyWith(
-        messages: [
-          ...state.messages,
-          SessionMessage(
-            id: toolCallId,
-            role: MessageRole.tool,
-            content: jsonEncode(input),
-            seq: state.messages.length + 1,
-            createdAt: event.timestamp,
-          ),
-        ],
-        toolResults: [
-          ...state.toolResults,
-          ToolResult(
-            id: toolCallId,
-            toolName: toolName,
-            input: input,
-            outputText: '',
-            durationMs: 0,
-            status: 'running',
-            createdAt: event.timestamp,
-          ),
-        ],
-        parts: [
-          ..._closeOpenReasoning(state.parts, event.timestamp),
-          AssistantTool(
-            id:
-                partId ??
-                'part_${event.timestamp.millisecondsSinceEpoch}_$toolCallId',
-            sessionId: event.sessionId.value,
-            messageId: _lastAssistantMsgId(state),
-            callId: toolCallId,
-            tool: toolName,
-            state: ToolState.running,
-            input: input,
-          ),
-        ],
-        updatedAt: event.timestamp,
-      ),
+      _projectToolCalled(state, event, toolCallId, toolName, input, partId),
 
     ToolSuccess(
       :final toolCallId,
@@ -517,33 +491,13 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       :final agent,
       :final taskSessionId,
     ) =>
-      state.copyWith(
-        parts: _updatePartById<AssistantTask>(
-          _closeOpenReasoning(state.parts, event.timestamp),
-          partId,
-          (current) => AssistantTask(
-            id: current.id!,
-            sessionId: current.sessionId!,
-            messageId: current.messageId!,
-            description: description,
-            agent: agent,
-            state: ToolState.running,
-            taskSessionId: taskSessionId,
-            retryAttempt: current.retryAttempt,
-            startedAt: current.startedAt ?? event.timestamp,
-          ),
-          create: () => AssistantTask(
-            id: partId,
-            sessionId: event.sessionId.value,
-            messageId: _lastAssistantMsgId(state),
-            description: description,
-            agent: agent,
-            state: ToolState.running,
-            taskSessionId: taskSessionId,
-            startedAt: event.timestamp,
-          ),
-        ),
-        updatedAt: event.timestamp,
+      _projectTaskPartStarted(
+        state,
+        event,
+        partId,
+        description,
+        agent,
+        taskSessionId,
       ),
 
     TaskPartCompleted(:final partId, :final toolCallsCount) => state.copyWith(
@@ -598,19 +552,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       ),
 
     QuestionPartStarted(:final partId, :final questionText, :final options) =>
-      state.copyWith(
-        parts: [
-          ..._closeOpenReasoning(state.parts, event.timestamp),
-          AssistantQuestion(
-            id: partId,
-            sessionId: event.sessionId.value,
-            messageId: _lastAssistantMsgId(state),
-            question: questionText,
-            options: options,
-          ),
-        ],
-        updatedAt: event.timestamp,
-      ),
+      _projectQuestionPartStarted(state, event, partId, questionText, options),
 
     QuestionPartAnswered(:final partId, :final answer) => state.copyWith(
       parts: _updatePartById<AssistantQuestion>(
@@ -630,7 +572,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
 
     TodoPartStarted(:final partId, :final todos) => state.copyWith(
       parts: [
-        ..._closeOpenReasoning(state.parts, event.timestamp),
+        ...state.parts,
         AssistantTodo(
           id: partId,
           sessionId: event.sessionId.value,
@@ -921,6 +863,36 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
         ),
       );
 
+      // Persist per-message token counters on the last assistant message so
+      // they survive restarts and are visible in the UI token summary.
+      final lastAssistantRow =
+          await (db.select(db.messages)
+                ..where((m) => m.sessionId.equals(event.sessionId.value))
+                ..where((m) => m.role.equals('assistant'))
+                ..orderBy([
+                  (m) =>
+                      OrderingTerm(expression: m.seq, mode: OrderingMode.desc),
+                ])
+                ..limit(1))
+              .getSingleOrNull();
+      if (lastAssistantRow != null) {
+        await (db.update(
+          db.messages,
+        )..where((m) => m.id.equals(lastAssistantRow.id))).write(
+          MessagesCompanion.custom(
+            tokensInput: CustomExpression<int>(
+              'COALESCE(tokens_input, 0) + $tokensInput',
+            ),
+            tokensOutput: CustomExpression<int>(
+              'COALESCE(tokens_output, 0) + $tokensOutput',
+            ),
+            tokensReasoning: CustomExpression<int>(
+              'COALESCE(tokens_reasoning, 0) + $tokensReasoning',
+            ),
+          ),
+        );
+      }
+
     case ChildSessionCreated(
       childSessionId: _,
       parentSessionId: _,
@@ -1051,6 +1023,32 @@ List<AssistantContent> _closeOpenReasoning(
   ];
 }
 
+/// Closes the last open AssistantText (synthetic == true) by setting its
+/// [synthetic] flag to false. This prevents subsequent text parts from being
+/// merged into a block that should be independent (e.g. separated by a tool
+/// call, question, or task).
+List<AssistantContent> _closeOpenText(
+  List<AssistantContent> parts,
+  DateTime now,
+) {
+  final idx = parts.lastIndexWhere((p) => p is AssistantText && p.synthetic);
+  if (idx == -1) return parts;
+  final existing = parts[idx] as AssistantText;
+  return [
+    ...parts.sublist(0, idx),
+    AssistantText(
+      id: existing.id!,
+      sessionId: existing.sessionId!,
+      messageId: existing.messageId!,
+      text: existing.text,
+      synthetic: false,
+      ignored: existing.ignored,
+      title: existing.title,
+    ),
+    ...parts.sublist(idx + 1),
+  ];
+}
+
 /// Finds the last assistant message ID from [state].
 /// Used to associate tool calls with the assistant message that generated them.
 String _lastAssistantMsgId(SessionState state) {
@@ -1104,7 +1102,160 @@ List<AssistantContent> _updateLastTextPart(
   return [...parts.sublist(0, idx), updated, ...parts.sublist(idx + 1)];
 }
 
-/// Updates a tool part in the parts list by [toolCallId].
+SessionState _projectToolCalled(
+  SessionState state,
+  SessionEvent event,
+  String toolCallId,
+  String toolName,
+  Map<String, dynamic> input,
+  String? partId,
+) {
+  final assistantMsgId = _lastAssistantMsgId(state);
+  final messages = [
+    ...state.messages,
+    if (assistantMsgId.isEmpty)
+      SessionMessage(
+        id: 'msg_${event.timestamp.millisecondsSinceEpoch}',
+        role: MessageRole.assistant,
+        content: '',
+        seq: state.messages.length + 1,
+        createdAt: event.timestamp,
+      ),
+    SessionMessage(
+      id: toolCallId,
+      role: MessageRole.tool,
+      content: jsonEncode(input),
+      seq: state.messages.length + (assistantMsgId.isEmpty ? 2 : 1),
+      createdAt: event.timestamp,
+    ),
+  ];
+  final effectiveMsgId = assistantMsgId.isEmpty
+      ? messages[messages.length - 2].id
+      : assistantMsgId;
+  return state.copyWith(
+    messages: messages,
+    toolResults: [
+      ...state.toolResults,
+      ToolResult(
+        id: toolCallId,
+        toolName: toolName,
+        input: input,
+        outputText: '',
+        durationMs: 0,
+        status: 'running',
+        createdAt: event.timestamp,
+      ),
+    ],
+    parts: [
+      ...state.parts,
+      AssistantTool(
+        id:
+            partId ??
+            'part_${event.timestamp.millisecondsSinceEpoch}_$toolCallId',
+        sessionId: event.sessionId.value,
+        messageId: effectiveMsgId,
+        callId: toolCallId,
+        tool: toolName,
+        state: ToolState.running,
+        input: input,
+      ),
+    ],
+    updatedAt: event.timestamp,
+  );
+}
+
+SessionState _projectTaskPartStarted(
+  SessionState state,
+  SessionEvent event,
+  String partId,
+  String description,
+  String agent,
+  String? taskSessionId,
+) {
+  final assistantMsgId = _lastAssistantMsgId(state);
+  final messages = [
+    ...state.messages,
+    if (assistantMsgId.isEmpty)
+      SessionMessage(
+        id: 'msg_${event.timestamp.millisecondsSinceEpoch}',
+        role: MessageRole.assistant,
+        content: '',
+        seq: state.messages.length + 1,
+        createdAt: event.timestamp,
+      ),
+  ];
+  final effectiveMsgId = assistantMsgId.isEmpty
+      ? messages.last.id
+      : assistantMsgId;
+  return state.copyWith(
+    messages: messages,
+    parts: _updatePartById<AssistantTask>(
+      state.parts,
+      partId,
+      (current) => AssistantTask(
+        id: current.id!,
+        sessionId: current.sessionId!,
+        messageId: current.messageId!,
+        description: description,
+        agent: agent,
+        state: ToolState.running,
+        taskSessionId: taskSessionId,
+        retryAttempt: current.retryAttempt,
+        startedAt: current.startedAt ?? event.timestamp,
+      ),
+      create: () => AssistantTask(
+        id: partId,
+        sessionId: event.sessionId.value,
+        messageId: effectiveMsgId,
+        description: description,
+        agent: agent,
+        state: ToolState.running,
+        taskSessionId: taskSessionId,
+        startedAt: event.timestamp,
+      ),
+    ),
+    updatedAt: event.timestamp,
+  );
+}
+
+SessionState _projectQuestionPartStarted(
+  SessionState state,
+  SessionEvent event,
+  String partId,
+  String questionText,
+  List<QuestionOption> options,
+) {
+  final assistantMsgId = _lastAssistantMsgId(state);
+  final messages = [
+    ...state.messages,
+    if (assistantMsgId.isEmpty)
+      SessionMessage(
+        id: 'msg_${event.timestamp.millisecondsSinceEpoch}',
+        role: MessageRole.assistant,
+        content: '',
+        seq: state.messages.length + 1,
+        createdAt: event.timestamp,
+      ),
+  ];
+  final effectiveMsgId = assistantMsgId.isEmpty
+      ? messages.last.id
+      : assistantMsgId;
+  return state.copyWith(
+    messages: messages,
+    parts: [
+      ...state.parts,
+      AssistantQuestion(
+        id: partId,
+        sessionId: event.sessionId.value,
+        messageId: effectiveMsgId,
+        question: questionText,
+        options: options,
+      ),
+    ],
+    updatedAt: event.timestamp,
+  );
+}
+
 /// Sets [state] and adds optional [outputText].
 List<AssistantContent> _updateToolPart(
   List<AssistantContent> parts,

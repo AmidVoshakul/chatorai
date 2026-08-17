@@ -328,4 +328,66 @@ void main() {
       // AssistantReasoning currently tracks streaming state via AssistantReasoning.ended.
     });
   });
+
+  group('filterPartsByMessage', () {
+    test('returns only parts belonging to the target messageId', () {
+      final parts = [
+        AssistantText(id: 't1', sessionId: 's1', messageId: 'm1', text: 'hello'),
+        AssistantReasoning(
+          id: 'r1',
+          sessionId: 's1',
+          messageId: 'm1',
+          text: 'thinking',
+          started: DateTime.now(),
+        ),
+        AssistantText(id: 't2', sessionId: 's1', messageId: 'm2', text: 'other'),
+      ];
+
+      final filtered = filterPartsByMessage(parts, 'm1');
+
+      expect(filtered, hasLength(2));
+      expect(filtered.whereType<AssistantText>(), hasLength(1));
+      expect(filtered.whereType<AssistantReasoning>(), hasLength(1));
+    });
+
+    test('returns empty list when no parts match the messageId', () {
+      final parts = [
+        AssistantText(id: 't1', sessionId: 's1', messageId: 'm1', text: 'hello'),
+      ];
+
+      final filtered = filterPartsByMessage(parts, 'm2');
+
+      expect(filtered, isEmpty);
+    });
+
+    test('includes tools and other part types for the target message', () {
+      final parts = [
+        AssistantTool(
+          id: 'tc1',
+          sessionId: 's1',
+          messageId: 'm1',
+          callId: 'c1',
+          tool: 'shell',
+          state: ToolState.completed,
+          input: {},
+          output: 'out',
+        ),
+        AssistantTask(
+          id: 'task1',
+          sessionId: 's1',
+          messageId: 'm1',
+          description: 'do',
+          agent: 'a',
+          state: ToolState.running,
+        ),
+        AssistantText(id: 't1', sessionId: 's1', messageId: 'm2', text: 'other'),
+      ];
+
+      final filtered = filterPartsByMessage(parts, 'm1');
+
+      expect(filtered, hasLength(2));
+      expect(filtered.whereType<AssistantTool>(), hasLength(1));
+      expect(filtered.whereType<AssistantTask>(), hasLength(1));
+    });
+  });
 }

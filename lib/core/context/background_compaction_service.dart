@@ -163,7 +163,9 @@ class BackgroundCompactionService {
         // The summary lives as a single source of truth in `messages`
         // (isCompactionSummary). `compactedContext` is now tail-only, so read
         // the summary text from `messages` rather than `compactedContext[0]`.
-        final summaryMsg = updatedState.messages.where((m) => m.isCompactionSummary).lastOrNull;
+        final summaryMsg = updatedState.messages
+            .where((m) => m.isCompactionSummary)
+            .lastOrNull;
         final result = summaryMsg?.content ?? '';
         LogTags.chatScreen.logInfo(
           'Background compaction completed for $sessionId: ${result.length} chars',

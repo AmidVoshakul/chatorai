@@ -1,9 +1,27 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Probes a single host for reachability inside a separate isolate.
+///
+/// `InternetAddress.lookup` can block the calling event loop on some Android
+/// configurations when DNS hangs (observed ~17s stalls). Running it in an
+/// isolate keeps the UI/main isolate responsive so the first frame (and the
+/// Welcome questions) paints immediately instead of after the lookup resolves.
+Future<bool> _probeHost(String host) async {
+  try {
+    final result = await InternetAddress.lookup(
+      host,
+    ).timeout(const Duration(seconds: 3));
+    return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+  } on Object {
+    return false;
+  }
+}
 
 final _logger = LogTags.network;
 
@@ -58,13 +76,13 @@ class NetworkNotifier extends Notifier<NetworkState> {
     _checkInitialConnection();
     _checkTimer = Timer.periodic(
       const Duration(seconds: 30),
-      (_) => _checkConnection(),
+      (_) => _refineConnection(),
     );
   }
 
   Future<void> _checkInitialConnection() async {
     _logger.logInfo('Checking initial connection');
-    await _checkConnection();
+    await _refineConnection();
   }
 
   void _onConnectivityChanged(List<ConnectivityResult> results) {
@@ -77,37 +95,35 @@ class NetworkNotifier extends Notifier<NetworkState> {
           result == ConnectivityResult.other,
     );
     if (hasConnectivity) {
-      _checkConnection();
+      // Surface connectivity immediately from the platform (no DNS probe) so
+      // the UI never waits on a potentially-hanging lookup. The DNS-based
+      // `_checkConnection` still runs in the background to refine the status,
+      // but it can no longer block the first frame / Welcome questions.
+      _updateStatus(NetworkStatus.connected);
+      _refineConnection();
     } else {
       _updateStatus(NetworkStatus.disconnected);
     }
   }
 
-  Future<void> _checkConnection() async {
+  /// DNS-based reachability refinement. Runs the (potentially slow)
+  /// `InternetAddress.lookup` inside a separate isolate so a hanging DNS
+  /// resolver on the device cannot stall the main isolate / UI thread.
+  Future<void> _refineConnection() async {
     try {
       final hosts = ['google.com', 'cloudflare.com', 'openrouter.ai'];
-      for (final host in hosts) {
-        if (await _canReachHost(host)) {
-          _updateStatus(NetworkStatus.connected);
-          return;
-        }
+      final results = await Future.wait(
+        hosts.map((h) => Isolate.run(() => _probeHost(h))),
+        eagerError: false,
+      );
+      if (results.any((r) => r)) {
+        _updateStatus(NetworkStatus.connected);
+      } else {
+        _updateStatus(NetworkStatus.disconnected);
       }
-      _updateStatus(NetworkStatus.disconnected);
     } catch (e) {
       _logger.logError('Error checking connection: $e');
-      _updateStatus(NetworkStatus.disconnected);
-    }
-  }
-
-  Future<bool> _canReachHost(String host) async {
-    try {
-      final result = await InternetAddress.lookup(
-        host,
-      ).timeout(const Duration(seconds: 5));
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } catch (e) {
-      _logger.logDebug('Cannot reach host $host: $e');
-      return false;
+      // Leave the connectivity-based status intact on probe failure.
     }
   }
 
@@ -137,7 +153,7 @@ class NetworkNotifier extends Notifier<NetworkState> {
   }
 
   Future<void> checkConnection() async {
-    await _checkConnection();
+    await _refineConnection();
   }
 }
 

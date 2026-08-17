@@ -295,6 +295,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           if (reasoning.isEmpty) return;
           await runnerSession.onReasoning(reasoning);
         },
+        onReasoningEnd: () => runnerSession.onReasoningEnd(),
         maxSteps: maxSteps,
         onCompletion: (sdkText) async {
           if (!mounted || _streamCancelled) return;
@@ -310,7 +311,14 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             retryAttempt: 0,
           );
 
-          final currentChat = ref.read(currentChatProvider) ?? chat;
+          final streamedChat =
+              ref
+                  .read(chatListProvider)
+                  .whenOrNull(
+                    data: (chats) =>
+                        chats.where((c) => c.id == sessionId).firstOrNull,
+                  ) ??
+              chat;
 
           // Close open parts via the runner session and get the final
           // SessionState with all parts.  This avoids a race with the
@@ -369,9 +377,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           );
 
           final lastIsIncomplete =
-              currentChat.messages.isNotEmpty &&
-              currentChat.messages.last.role == MessageRole.assistant &&
-              !currentChat.messages.last.isComplete;
+              streamedChat.messages.isNotEmpty &&
+              streamedChat.messages.last.role == MessageRole.assistant &&
+              !streamedChat.messages.last.isComplete;
 
           final partsJson = closedParts.isNotEmpty
               ? assistantContentToPartMaps(closedParts)
@@ -380,7 +388,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           Message completedMessage;
           List<Message> newMessages;
           if (lastIsIncomplete) {
-            final lastMsg = currentChat.messages.last;
+            final lastMsg = streamedChat.messages.last;
             completedMessage = lastMsg.copyWith(
               content: content,
               reasoning: reasoning,
@@ -392,8 +400,8 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               contextLength: modelContextLength ?? lastMsg.contextLength,
             );
             newMessages = [
-              for (int i = 0; i < currentChat.messages.length - 1; i++)
-                currentChat.messages[i],
+              for (int i = 0; i < streamedChat.messages.length - 1; i++)
+                streamedChat.messages[i],
               completedMessage,
             ];
           } else {
@@ -408,9 +416,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               contextLength: modelContextLength,
               agent: activeAgent,
             );
-            newMessages = [...currentChat.messages, completedMessage];
+            newMessages = [...streamedChat.messages, completedMessage];
           }
-          final newChat = currentChat.copyWith(
+          final newChat = streamedChat.copyWith(
             messages: newMessages,
             updatedAt: DateTime.now(),
           );
@@ -450,21 +458,29 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
       );
       if (_streamCancelled) return;
       unawaited(runnerSession.onError(e));
-      await _handleStreamingError(e);
+      await _handleStreamingError(e, sessionId);
     } finally {
       toolInputs.clear();
       toolStartTimes.clear();
     }
   }
 
-  Future<void> _handleStreamingError(Object error) async {
+  Future<void> _handleStreamingError(Object error, String sessionId) async {
     if (_streamCancelled) return;
     LogTags.chatScreen.logError(
       '_handleStreamingError: type=${error.runtimeType} error=$error',
     );
     final errorMessage = ChatErrorUtils.formatError(error);
     final errorPrefix = '⚠️ $errorMessage';
-    final chat = currentChat;
+    final streamedChat =
+        ref
+            .read(chatListProvider)
+            .whenOrNull(
+              data: (chats) =>
+                  chats.where((c) => c.id == sessionId).firstOrNull,
+            ) ??
+        currentChat;
+    final chat = streamedChat;
     if (chat != null && chat.messages.isNotEmpty) {
       final lastMessage = chat.messages.last;
       if (lastMessage.role == MessageRole.assistant) {

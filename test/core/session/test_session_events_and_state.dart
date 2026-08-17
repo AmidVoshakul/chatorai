@@ -202,58 +202,62 @@ void main() {
       expect(ended.summary, equals('Conversation about X'));
     });
 
-    test('CompactionEnded resets session token totals to compacted context size', () {
-      final now = DateTime.now();
-      final state = SessionState(
-        id: testSid,
-        title: 'Test',
-        tokensInput: 5000,
-        tokensOutput: 2000,
-        tokensReasoning: 500,
-        messages: [
-          SessionMessage(
-            id: 'm1',
-            role: MessageRole.user,
-            content: 'old message one',
-            seq: 1,
-            createdAt: DateTime(2024),
-          ),
-          SessionMessage(
-            id: 'm2',
-            role: MessageRole.assistant,
-            content: 'old message two',
-            seq: 2,
-            createdAt: DateTime(2024),
-          ),
-        ],
-        createdAt: now,
-        updatedAt: now,
-      );
-      final event = CompactionEnded(
-        sessionId: testSid,
-        summary: 'Summary of the conversation',
-        compactedContext: [
-          {'role': 'assistant', 'content': 'Summary of the conversation', 'isCompactionSummary': true},
-          {'role': 'user', 'content': 'latest message after compaction'},
-        ],
-        timestamp: now,
-      );
+    test(
+      'CompactionEnded resets session token totals to compacted context size',
+      () {
+        final now = DateTime.now();
+        final state = SessionState(
+          id: testSid,
+          title: 'Test',
+          tokensInput: 5000,
+          tokensOutput: 2000,
+          tokensReasoning: 500,
+          messages: [
+            SessionMessage(
+              id: 'm1',
+              role: MessageRole.user,
+              content: 'old message one',
+              seq: 1,
+              createdAt: DateTime(2024),
+            ),
+            SessionMessage(
+              id: 'm2',
+              role: MessageRole.assistant,
+              content: 'old message two',
+              seq: 2,
+              createdAt: DateTime(2024),
+            ),
+          ],
+          createdAt: now,
+          updatedAt: now,
+        );
+        final event = CompactionEnded(
+          sessionId: testSid,
+          summary: 'Summary of the conversation',
+          compactedContext: [
+            {
+              'role': 'assistant',
+              'content': 'Summary of the conversation',
+              'isCompactionSummary': true,
+            },
+            {'role': 'user', 'content': 'latest message after compaction'},
+          ],
+          timestamp: now,
+        );
 
-      final result = projectEvent(state, event);
+        final result = projectEvent(state, event);
 
-      // Old running totals must be cleared and replaced with the estimated
-      // compacted-context size (summary + tail), so the token counter reflects
-      // the compressed context rather than the full history.
-      expect(result.tokensInput, greaterThan(0));
-      expect(result.tokensInput, lessThan(state.tokensInput));
-      expect(result.tokensOutput, equals(0));
-      expect(result.tokensReasoning, equals(0));
-      // Summary message is added to the visible history.
-      expect(
-        result.messages.any((m) => m.isCompactionSummary),
-        isTrue,
-      );
-    });
+        // Old running totals must be cleared and replaced with the estimated
+        // compacted-context size (summary + tail), so the token counter reflects
+        // the compressed context rather than the full history.
+        expect(result.tokensInput, greaterThan(0));
+        expect(result.tokensInput, lessThan(state.tokensInput));
+        expect(result.tokensOutput, equals(0));
+        expect(result.tokensReasoning, equals(0));
+        // Summary message is added to the visible history.
+        expect(result.messages.any((m) => m.isCompactionSummary), isTrue);
+      },
+    );
 
     test('ChildSessionCreated', () {
       final event = ChildSessionCreated(

@@ -18,6 +18,7 @@ part 'database.g.dart';
     ContextEpochs,
     SessionSnapshots,
     FileSnapshots,
+    ChatSnapshots,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -26,7 +27,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration {
@@ -76,6 +77,14 @@ class AppDatabase extends _$AppDatabase {
         if (from < 6) {
           await mgr.createTable(fileSnapshots);
         }
+        if (from < 7) {
+          await mgr.createTable(chatSnapshots);
+        }
+        if (from < 8) {
+          await mgr.addColumn(messages, messages.tokensInput as dynamic);
+          await mgr.addColumn(messages, messages.tokensOutput as dynamic);
+          await mgr.addColumn(messages, messages.tokensReasoning as dynamic);
+        }
       },
     );
   }
@@ -110,7 +119,7 @@ Future<AppDatabase> createFileDatabase({required String dataDir}) async {
   LogTags.session.logInfo('createFileDatabase: dir ensured');
   final dbPath = p.join(dataDir, 'chatorai_sessions.sqlite');
   LogTags.session.logInfo('createFileDatabase: opening dbPath=$dbPath');
-  final db = AppDatabase.file(dbPath);
+  final db = AppDatabase(NativeDatabase.createInBackground(File(dbPath)));
   LogTags.session.logInfo('createFileDatabase: done');
   return db;
 }

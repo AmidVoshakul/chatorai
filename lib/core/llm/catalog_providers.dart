@@ -25,18 +25,78 @@ final secureStorageServiceProvider = Provider<SecureStorageService>((ref) {
   return SecureStorageService();
 });
 
-/// FutureProvider for async initialization of the catalog.
-/// This is the primary provider — consumers should use .when() to handle states.
-final catalogInitializationProvider = FutureProvider<ProviderCatalogService>((
-  ref,
-) async {
-  final prefs = await SharedPreferences.getInstance();
-  final secureStorage = ref.watch(secureStorageServiceProvider);
-  final service = ProviderCatalogService(
+/// Shared catalog service instance, available synchronously from the first
+/// frame. Construction is cheap (built-in providers only); the heavy
+/// `preloadApiKeys` I/O happens later in [catalogInitializationProvider] and must
+/// NOT block the UI (see bootstrap split into fast/heavy providers).
+///
+/// The bootstrap has already awaited `SharedPreferences.getInstance()` and stored
+/// it in [PreferencesHolder] before any widget reads this provider, so the
+/// instance is built without an async Provider. The service is a single shared
+/// instance: [catalogInitializationProvider] warms (preloads keys onto) exactly
+/// this object, so key-dependent UI sees the same instance once ready.
+ProviderCatalogService? _catalogServiceInstance;
+
+/// Holds the already-loaded [SharedPreferences] (set by the bootstrap) so the
+/// catalog service can be constructed synchronously. Providers cannot await, so
+/// this bridges the async bootstrap result into the synchronous provider.
+class PreferencesHolder {
+  static SharedPreferences? prefs;
+}
+
+/// Constructs (once) and returns the shared [ProviderCatalogService] instance.
+///
+/// Cheap: only built-in providers are loaded. The heavy `preloadApiKeys` runs
+/// later in [catalogInitializationProvider]. [prefs] must be the already-loaded
+/// [SharedPreferences] (the bootstrap awaits `SharedPreferences.getInstance()`
+/// and passes it here). Safe to call from bootstrap before any widget reads
+/// [catalogServiceProvider].
+ProviderCatalogService ensureCatalogService(
+  SharedPreferences prefs,
+  SecureStorageService secureStorage,
+) {
+  _catalogServiceInstance ??= ProviderCatalogService(
     secureStorage: secureStorage,
     prefs: prefs,
     builtInProviders: builtInProviders(),
   );
+  return _catalogServiceInstance!;
+}
+
+/// Synchronous provider exposing the catalog service.
+///
+/// Unlike the previous throwing implementation, this never throws while the
+/// catalog is still warming — built-in models are usable immediately, and
+/// `getApiKeySync` simply returns null until [catalogInitializationProvider]
+/// finishes preloading. This lets [ChatScreen] (and the Welcome widget) mount on
+/// the first frame instead of waiting for the full async init to complete.
+///
+/// The bootstrap (fast provider) always constructs the instance before the
+/// first frame, so [_catalogServiceInstance] is non-null here. The fallback only
+/// triggers if a consumer is reached first, in which case [PreferencesHolder.prefs]
+/// is already set by the bootstrap.
+final catalogServiceProvider = Provider<ProviderCatalogService>((ref) {
+  final existing = _catalogServiceInstance;
+  if (existing != null) return existing;
+  final prefs = PreferencesHolder.prefs;
+  if (prefs == null) {
+    throw StateError(
+      'catalogServiceProvider: SharedPreferences not initialized. '
+      'Complete appBootstrapFastProvider before reading the catalog service.',
+    );
+  }
+  return ensureCatalogService(prefs, ref.watch(secureStorageServiceProvider));
+});
+
+/// FutureProvider that warms the catalog: migrates legacy settings, preloads
+/// API keys (~40 providers, the slow part), and applies chatorai.json providers.
+///
+/// This is intentionally NOT awaited on the UI render path — it runs in the
+/// background while the chat (and Welcome suggestions) are already visible.
+final catalogInitializationProvider = FutureProvider<ProviderCatalogService>((
+  ref,
+) async {
+  final service = ref.watch(catalogServiceProvider);
   await service.migrateFromLegacySettings();
   await service.preloadApiKeys();
 
@@ -50,16 +110,15 @@ final catalogInitializationProvider = FutureProvider<ProviderCatalogService>((
   return service;
 });
 
-/// Synchronous provider that returns the initialized catalog.
-/// Throws during loading — consumers should use `catalogInitializationProvider`
-/// directly for async access, or handle the error state.
+/// Synchronous provider that returns the catalog service.
+///
+/// Replaces the old implementation that threw [StateError] while loading. It now
+/// returns the shared instance immediately (built-in models work before keys are
+/// preloaded), so [ChatMessages] and other synchronous consumers never crash the
+/// first frame. Use [catalogInitializationProvider] only where warmed key state
+/// is required (e.g. settings screens listing configured providers).
 final providerCatalogServiceProvider = Provider<ProviderCatalogService>((ref) {
-  final asyncValue = ref.watch(catalogInitializationProvider);
-  return asyncValue.when(
-    data: (service) => service,
-    loading: () => throw StateError('Catalog not yet initialized'),
-    error: (e, st) => throw StateError('Catalog initialization failed: $e'),
-  );
+  return ref.watch(catalogServiceProvider);
 });
 
 // =============================================================================

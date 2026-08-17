@@ -815,7 +815,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
       if (_isRefreshing)
         const Padding(
           padding: EdgeInsets.all(12),
-          child: SpinKitCubeGrid(color: ChatoraiColors.orange, size: 22),
+          child: SpinKitCircle(color: ChatoraiColors.orange, size: 22),
         )
       else
         IconButton(

@@ -7,7 +7,10 @@ import 'package:chatorai/core/session/session_db_provider.dart'
     show sessionRepositoryProvider;
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_state.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final _logger = LogTags.session;
 
 /// Notifier that provides reactive [SessionState] for a session.
 ///
@@ -50,10 +53,17 @@ class SessionPartsNotifier extends StreamNotifier<SessionState> {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
+      final readStopwatch = Stopwatch()..start();
       final allEvents = await repo.eventStore.getEvents(sid);
+      readStopwatch.stop();
+      final replayStopwatch = Stopwatch()..start();
       for (final event in allEvents) {
         state = projectEvent(state, event);
       }
+      replayStopwatch.stop();
+      _logger.logDebug(
+        '[SessionParts] session=$sessionId events=${allEvents.length} read=${readStopwatch.elapsedMilliseconds}ms replay=${replayStopwatch.elapsedMilliseconds}ms',
+      );
 
       // 3. Yield the initial state (reconstructed from the event store).
       yield state;

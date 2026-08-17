@@ -698,8 +698,10 @@ class ProviderCatalogService {
                 .toList();
             _providers[i] = _providers[i].copyWith(models: sanitized);
           }
-        } catch (_) {
-          // ignore bad cache
+        } catch (e) {
+          LogTags.settings.logWarning(
+            '[Catalog] _loadFromPrefs: failed to load cached models for ${prov.id}: $e',
+          );
         }
       }
 
@@ -709,15 +711,17 @@ class ProviderCatalogService {
       );
       if (selectedIds != null && selectedIds.isNotEmpty) {
         _selectedModelIds[prov.id] = selectedIds.toSet();
-        LogTags.settings.logInfo(
-          '[Catalog] _loadFromPrefs: loaded ${selectedIds.length} selected models for ${prov.id}: [${selectedIds.join(',')}]',
-        );
-      } else {
-        LogTags.settings.logInfo(
-          '[Catalog] _loadFromPrefs: NO selected models for ${prov.id} (raw=${selectedIds?.length ?? 0})',
-        );
       }
     }
+
+    // Summarize selected-model coverage in a single debug log instead of
+    // per-provider info logs (which produced ~40 log lines on every startup).
+    final withSelection = _selectedModelIds.keys.length;
+    final withoutSelection = _providers.length - withSelection;
+    LogTags.settings.logDebug(
+      '[Catalog] _loadFromPrefs: selected models loaded for $withSelection providers, '
+      '$withoutSelection without selection (total=${_providers.length})',
+    );
 
     // Load discovery timestamps
     for (final prov in _providers) {

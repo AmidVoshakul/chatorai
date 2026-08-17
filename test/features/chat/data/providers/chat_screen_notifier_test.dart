@@ -61,9 +61,9 @@ void main() {
       expect(state.isStreaming, false);
       expect(state.isSuggestionsLoading, false);
       expect(state.showSuggestions, false);
-      expect(state.showWelcomeSuggestions, false);
+      expect(state.showWelcomeSuggestions, true);
       expect(state.continuationSuggestions, isEmpty);
-      expect(state.welcomeSuggestions, isEmpty);
+      expect(state.welcomeSuggestions, isNotEmpty);
       expect(state.isSidebarCollapsed, false);
       expect(state.isNavigatorVisible, false);
       expect(state.navigatorHeadings, isEmpty);

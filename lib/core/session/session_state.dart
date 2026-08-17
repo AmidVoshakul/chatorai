@@ -49,6 +49,9 @@ class SessionMessage extends Equatable {
   final bool isCompactionTrigger;
   final bool isCompactionSummary;
   final String? agent;
+  final int? tokensInput;
+  final int? tokensOutput;
+  final int? tokensReasoning;
 
   const SessionMessage({
     required this.id,
@@ -62,6 +65,9 @@ class SessionMessage extends Equatable {
     this.isCompactionTrigger = false,
     this.isCompactionSummary = false,
     this.agent,
+    this.tokensInput,
+    this.tokensOutput,
+    this.tokensReasoning,
   });
 
   factory SessionMessage.fromJson(Map<String, dynamic> json) =>
@@ -81,6 +87,9 @@ class SessionMessage extends Equatable {
     bool? isCompactionTrigger,
     bool? isCompactionSummary,
     String? agent,
+    int? tokensInput,
+    int? tokensOutput,
+    int? tokensReasoning,
   }) {
     return SessionMessage(
       id: id ?? this.id,
@@ -94,6 +103,9 @@ class SessionMessage extends Equatable {
       isCompactionTrigger: isCompactionTrigger ?? this.isCompactionTrigger,
       isCompactionSummary: isCompactionSummary ?? this.isCompactionSummary,
       agent: agent ?? this.agent,
+      tokensInput: tokensInput ?? this.tokensInput,
+      tokensOutput: tokensOutput ?? this.tokensOutput,
+      tokensReasoning: tokensReasoning ?? this.tokensReasoning,
     );
   }
 
@@ -110,6 +122,9 @@ class SessionMessage extends Equatable {
     isCompactionTrigger,
     isCompactionSummary,
     agent,
+    tokensInput,
+    tokensOutput,
+    tokensReasoning,
   ];
 }
 

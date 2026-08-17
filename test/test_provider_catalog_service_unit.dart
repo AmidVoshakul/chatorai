@@ -52,7 +52,6 @@ ProviderConfig _testProvider(String id) {
 /// Creates a test model config.
 ModelConfig _testModel(String providerId, String name) {
   return ModelConfig.basic(
-    id: '$providerId/$name',
     providerId: providerId,
     modelName: name,
     displayName: name,
@@ -169,26 +168,28 @@ void main() {
       expect(found!.modelName, equals('gpt-4o'));
     });
 
-    test('returns model by provider:model format (legacy)', () async {
-      final prefs = await SharedPreferences.getInstance();
-      final model = _testModel('anthropic', 'claude-3-opus');
-      final provider = ProviderConfig.basic(
-        id: 'anthropic',
-        name: 'Anthropic',
-        baseUrl: 'https://api.anthropic.com',
-        models: [model],
-      );
+    test(
+      'returns null for legacy provider:model format (only / supported)',
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        final model = _testModel('anthropic', 'claude-3-opus');
+        final provider = ProviderConfig.basic(
+          id: 'anthropic',
+          name: 'Anthropic',
+          baseUrl: 'https://api.anthropic.com',
+          models: [model],
+        );
 
-      catalog = ProviderCatalogService(
-        secureStorage: secureStorage,
-        prefs: prefs,
-        builtInProviders: [provider],
-      );
+        catalog = ProviderCatalogService(
+          secureStorage: secureStorage,
+          prefs: prefs,
+          builtInProviders: [provider],
+        );
 
-      final found = catalog.getModel('anthropic:claude-3-opus');
-      expect(found, isNotNull);
-      expect(found!.modelName, equals('claude-3-opus'));
-    });
+        final found = catalog.getModel('anthropic:claude-3-opus');
+        expect(found, isNull);
+      },
+    );
 
     test('returns null for non-existent model', () async {
       final prefs = await SharedPreferences.getInstance();

@@ -1,5 +1,23 @@
 part of 'chat_screen.dart';
 
+class _ChatMessagesLoadingPlaceholder extends StatelessWidget {
+  const _ChatMessagesLoadingPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      color: theme.scaffoldBackgroundColor,
+      alignment: Alignment.center,
+      child: const SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(strokeWidth: 2.5),
+      ),
+    );
+  }
+}
+
 extension _ChatScreenBuildExt on _ChatScreenState {
   Widget _buildSidebarDrawer({required double width}) {
     final chatListState = ref.watch(chatListProvider);
@@ -21,7 +39,7 @@ extension _ChatScreenBuildExt on _ChatScreenState {
           width: width,
           onToggleSidebar: () => Navigator.pop(context),
           onChatSelect: (chatId) {
-            _selectChat(chatId);
+            unawaited(_selectChat(chatId));
             Navigator.of(context).pop();
           },
           onChatDelete: _deleteChat,
@@ -56,7 +74,31 @@ extension _ChatScreenBuildExt on _ChatScreenState {
     final chatMessages = FutureBuilder<SessionRepository>(
       future: _sessionRepositoryFuture,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const SizedBox.shrink();
+        // Show Welcome questions immediately, without waiting for the session
+        // repository (history) to load. The repository only backs message
+        // history/tooling — the welcome layer needs none of it, so gating it
+        // behind the future produced a black chat until startup settled.
+        if (!snapshot.hasData) {
+          if (showWelcomeSuggestions && welcomeSuggestions.isNotEmpty) {
+            final theme = Theme.of(context);
+            return Container(
+              color: theme.scaffoldBackgroundColor,
+              child: Center(
+                child: ChatMessagesWelcomeSuggestions(
+                  suggestions: welcomeSuggestions,
+                  parentContext: context,
+                  onSuggestionTap: (suggestion) {
+                    _handleSendMessage(MessageData(text: suggestion));
+                  },
+                  onClose: () => ref
+                      .read(chatScreenProvider.notifier)
+                      .hideWelcomeSuggestions(),
+                ),
+              ),
+            );
+          }
+          return const _ChatMessagesLoadingPlaceholder();
+        }
         final sessionRepository = snapshot.data!;
         return ChatMessages(
           key: _chatMessagesKey,

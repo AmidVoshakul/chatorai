@@ -8,18 +8,16 @@ extension _ChatScreenManagementExt on _ChatScreenState {
     _showWelcomeSuggestions();
   }
 
-  void _selectChat(String chatId) {
-    final chatListAsync = ref.read(chatListProvider);
-    final chat = chatListAsync.whenOrNull(
-      data: (chats) {
-        try {
-          return chats.firstWhere((c) => c.id == chatId);
-        } catch (_) {
-          return null;
-        }
-      },
-    );
-    if (chat == null) return;
+  Future<void> _selectChat(String chatId) async {
+    _pendingSelectChatId = chatId;
+    final chat = await ref
+        .read(chatListProvider.notifier)
+        .ensureChatLoaded(chatId);
+    if (chat == null || !mounted || _pendingSelectChatId != chatId) {
+      _pendingSelectChatId = null;
+      return;
+    }
+    _pendingSelectChatId = null;
     ref.read(currentChatIdProvider.notifier).setChatId(chatId);
     if (chat.isDefaultTitle && chat.messages.isEmpty) {
       _showWelcomeSuggestions();

@@ -41,6 +41,9 @@ class Messages extends Table {
   TextColumn? get model => text().nullable()();
   TextColumn? get reasoning => text().nullable()();
   TextColumn? get error => text().nullable()();
+  IntColumn get tokensInput => integer().withDefault(const Constant(0))();
+  IntColumn get tokensOutput => integer().withDefault(const Constant(0))();
+  IntColumn get tokensReasoning => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime()();
 
   @override
@@ -110,4 +113,15 @@ class SessionSnapshots extends Table {
 
   @override
   Set<Column> get primaryKey => {id};
+}
+
+@TableIndex(name: 'idx_chat_snapshots_session', columns: {#sessionId})
+class ChatSnapshots extends Table {
+  TextColumn get sessionId => text()();
+  IntColumn get eventsCount => integer()();
+  TextColumn get chatJson => text()();
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {sessionId};
 }

@@ -7,6 +7,8 @@ import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_db_provider.dart';
 import 'package:chatorai/core/session/session_state.dart';
+import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
 import 'package:chatorai/features/sessions/providers/session_parts_provider.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
     show AssistantText;
@@ -247,6 +249,113 @@ void main() {
         // Provider for sidB should still be empty (only SessionCreated).
         final lastB = valuesB.last;
         expect(lastB.requireValue.parts.whereType<AssistantText>(), isEmpty);
+      });
+    });
+
+    group('chat snapshot cache (repository)', () {
+      test('write then read returns messages when counts match', () async {
+        final sid = SessionID.create();
+        final now = DateTime.now();
+
+        await repository.appendEvent(
+          SessionCreated(sessionId: sid, agent: 'general', timestamp: now),
+        );
+        await repository.appendEvent(
+          MessageAdded(
+            sessionId: sid,
+            messageId: 'm1',
+            role: 'user',
+            content: 'snapshot test',
+            timestamp: now,
+          ),
+        );
+
+        // Build messages via repository state.
+        final state = await repository.loadSessionState(sid);
+        final chat = sessionStateToChat(state);
+        final chatMessages = chat.messages
+            .map((m) => messageToChatMessage(m))
+            .toList();
+        await repository.writeChatSnapshot(sid, chatMessages);
+
+        final readBack = await repository.readChatSnapshot(sid);
+        expect(readBack, isNotNull);
+        expect(readBack!.length, 1);
+        expect(readBack.single is UserMessage, isTrue);
+        expect((readBack.single as UserMessage).content, 'snapshot test');
+      });
+
+      test(
+        'readChatSnapshot returns null when events_count mismatches',
+        () async {
+          final sid = SessionID.create();
+          final now = DateTime.now();
+
+          await repository.appendEvent(
+            SessionCreated(sessionId: sid, agent: 'general', timestamp: now),
+          );
+          await repository.appendEvent(
+            MessageAdded(
+              sessionId: sid,
+              messageId: 'm1',
+              role: 'user',
+              content: 'v1',
+              timestamp: now,
+            ),
+          );
+
+          final state = await repository.loadSessionState(sid);
+          final chat = sessionStateToChat(state);
+          await repository.writeChatSnapshot(
+            sid,
+            chat.messages.map((m) => messageToChatMessage(m)).toList(),
+          );
+
+          // Add another event after snapshot.
+          await repository.appendEvent(
+            MessageAdded(
+              sessionId: sid,
+              messageId: 'm2',
+              role: 'user',
+              content: 'v2',
+              timestamp: now,
+            ),
+          );
+
+          final readBack = await repository.readChatSnapshot(sid);
+          expect(readBack, isNull);
+        },
+      );
+
+      test('deleteSession removes snapshot', () async {
+        final sid = SessionID.create();
+        final now = DateTime.now();
+
+        await repository.appendEvent(
+          SessionCreated(sessionId: sid, agent: 'general', timestamp: now),
+        );
+        await repository.appendEvent(
+          MessageAdded(
+            sessionId: sid,
+            messageId: 'm1',
+            role: 'user',
+            content: 'delete me',
+            timestamp: now,
+          ),
+        );
+
+        final state = await repository.loadSessionState(sid);
+        final chat = sessionStateToChat(state);
+        await repository.writeChatSnapshot(
+          sid,
+          chat.messages.map((m) => messageToChatMessage(m)).toList(),
+        );
+
+        expect(await repository.readChatSnapshot(sid), isNotNull);
+
+        await repository.deleteSession(sid);
+
+        expect(await repository.readChatSnapshot(sid), isNull);
       });
     });
   });

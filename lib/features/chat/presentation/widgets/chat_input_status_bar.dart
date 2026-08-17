@@ -143,7 +143,7 @@ class ChatInputStatusBar extends ConsumerWidget {
                 SizedBox(
                   width: 12,
                   height: 12,
-                  child: SpinKitCubeGrid(size: 12, color: ChatoraiColors.gray),
+                  child: SpinKitCircle(size: 12, color: ChatoraiColors.gray),
                 ),
                 const SizedBox(width: ChatoraiSpacing.xs),
                 const Text(

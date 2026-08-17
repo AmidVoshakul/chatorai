@@ -4,8 +4,8 @@ import 'dart:ui' show PlatformDispatcher;
 
 import 'package:chatorai/core/cli/cwd_override.dart';
 import 'package:chatorai/core/cli/cli_commands.dart';
+import 'package:chatorai/features/bootstrap/app_loading_screen.dart';
 import 'package:chatorai/features/bootstrap/bootstrap_error_screen.dart';
-import 'package:chatorai/features/bootstrap/splash_screen.dart';
 import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/permission_overlay.dart';
 import 'package:chatorai/features/settings/screens/settings_screen.dart';
@@ -19,8 +19,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pdfrx/pdfrx.dart';
-import 'package:chatorai/core/tools/document_extractor_service.dart';
 
 // ===========================================================================
 // MAIN ENTRY POINT
@@ -33,14 +31,6 @@ Future<void> main(List<String> args) async {
     if (await runCliIfRequested(cwdResult.remainingArgs)) exit(0);
 
     WidgetsFlutterBinding.ensureInitialized();
-    try {
-      pdfrxFlutterInitialize();
-      await DocumentExtractorService.initPdfRx();
-    } on Exception catch (_) {
-      LogTags.skills.logWarning(
-        'pdfrx: PDFium unavailable — PDF image rendering disabled',
-      );
-    }
 
     LogConfig.enabled = true;
     LogConfig.minimumLevel = LogLevel.debug;
@@ -86,7 +76,7 @@ class ChatoraiApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final languageState = ref.watch(languageProvider);
     final themeState = ref.watch(themeProvider);
-    final bootstrap = ref.watch(appBootstrapProvider);
+    final bootstrap = ref.watch(appBootstrapFastProvider);
     final theme = themeState.getTheme();
     final locale = Locale(languageState.selectedLanguage);
 
@@ -116,7 +106,7 @@ class ChatoraiApp extends ConsumerWidget {
       theme: theme,
       debugShowCheckedModeBanner: false,
       home: bootstrap.when(
-        loading: () => const SplashScreen(),
+        loading: () => const AppLoadingScreen(),
         error: (e, _) => const BootstrapErrorScreen(),
         data: (_) => const PermissionOverlay(
           child: NetworkAwareWidget(child: ChatScreen()),

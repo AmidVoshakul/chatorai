@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/data/models/chat/chat_snapshot_codec.dart';
 import 'package:drift/drift.dart';
 
 import 'database.dart' as db show ToolResult;
@@ -127,6 +129,11 @@ class SessionRepository {
     final events = await _eventStore.getEvents(sessionId);
     if (events.isEmpty) return null;
     return replayEvents(events);
+  }
+
+  /// Batch raw event rows for many sessions in a single query (no decode).
+  Future<List<Event>> getEventRowsForSessions(List<SessionID> sessionIds) {
+    return _eventStore.getEventRowsForSessions(sessionIds);
   }
 
   Future<SessionState?> getSessionMeta(SessionID sessionId) async {
@@ -295,6 +302,9 @@ class SessionRepository {
       await (_db.delete(
         _db.contextEpochs,
       )..where((c) => c.sessionId.equals(sessionId.value))).go();
+      await (_db.delete(
+        _db.chatSnapshots,
+      )..where((s) => s.sessionId.equals(sessionId.value))).go();
       await _eventStore.deleteSessionEvents(sessionId);
       await (_db.delete(
         _db.sessions,
@@ -530,6 +540,9 @@ class SessionRepository {
       reasoning: row.reasoning,
       error: row.error,
       createdAt: row.createdAt,
+      tokensInput: row.tokensInput,
+      tokensOutput: row.tokensOutput,
+      tokensReasoning: row.tokensReasoning,
     );
   }
 
@@ -548,6 +561,42 @@ class SessionRepository {
   Future<SessionState> loadSessionState(SessionID sessionId) async {
     final events = await _eventStore.getEvents(sessionId);
     return replayEvents(events);
+  }
+
+  /// Loads a cached chat snapshot for [sessionId] if it exists and is still
+  /// valid (its `events_count` matches the current number of events in the
+  /// store). Returns `null` when there is no snapshot or it is stale, signaling
+  /// the caller to replay events from scratch.
+  Future<List<ChatMessage>?> readChatSnapshot(SessionID sessionId) async {
+    final eventCount = await _eventStore.countEventsForSession(sessionId);
+    final row = await (_db.select(
+      _db.chatSnapshots,
+    )..where((s) => s.sessionId.equals(sessionId.value))).getSingleOrNull();
+    if (row == null) return null;
+    if (row.eventsCount != eventCount) return null;
+    return decodeChatSnapshot(row.chatJson);
+  }
+
+  /// Writes (upserts) a chat snapshot for [sessionId] with the current event
+  /// count, so that subsequent loads can short-circuit when the history has
+  /// not changed.
+  Future<void> writeChatSnapshot(
+    SessionID sessionId,
+    List<ChatMessage> messages,
+  ) async {
+    final eventCount = await _eventStore.countEventsForSession(sessionId);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await _db
+        .into(_db.chatSnapshots)
+        .insert(
+          ChatSnapshotsCompanion.insert(
+            sessionId: sessionId.value,
+            eventsCount: eventCount,
+            chatJson: encodeChatSnapshot(messages),
+            updatedAt: now,
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
   }
 
   SessionState _rowToState(Session row) {

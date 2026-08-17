@@ -95,7 +95,9 @@ void main() {
         containsAll([
           'shell',
           'read',
-          'document_extract',
+          'document_extract_pdf',
+          'document_extract_docx',
+          'document_extract_xlsx',
           'glob',
           'grep',
           'edit',

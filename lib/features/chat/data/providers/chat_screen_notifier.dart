@@ -1,4 +1,8 @@
+import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/providers.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/features/chat/presentation/widgets/welcome_questions_data.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
 
 /// Screen-level UI state for the chat screen.
@@ -96,7 +100,18 @@ class ChatScreenState {
 /// by the EventBus → SessionPartsNotifier pipeline.
 class ChatScreenNotifier extends Notifier<ChatScreenState> {
   @override
-  ChatScreenState build() => const ChatScreenState();
+  ChatScreenState build() {
+    // Seed welcome questions on the first build so the very first frame shows
+    // them (no post-frame dependency). Refresh later is handled by ChatScreen.
+    final language = ref.watch(languageProvider).selectedLanguage;
+    final questions = WelcomeQuestionsData.getRandomQuestionsForLocale(
+      lookupAppLocalizations(Locale(language)),
+    );
+    return ChatScreenState(
+      welcomeSuggestions: questions,
+      showWelcomeSuggestions: questions.isNotEmpty,
+    );
+  }
 
   // ── Streaming lifecycle ───────────────────────────────────────────────
 

@@ -80,7 +80,7 @@ class EventStore {
               ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
             .get();
 
-    return rows.map<SessionEvent>(_deserialize).toList();
+    return rows.map<SessionEvent>(EventStore.deserializeEvent).toList();
   }
 
   /// Returns all events for the given [sessionIds] in a single query, ordered
@@ -95,7 +95,20 @@ class EventStore {
               ..where((e) => e.sessionId.isIn(sessionIds.map((s) => s.value)))
               ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
             .get();
-    return rows.map<SessionEvent>(_deserialize).toList();
+    return rows.map<SessionEvent>(EventStore.deserializeEvent).toList();
+  }
+
+  /// Returns all raw event rows for the given [sessionIds] in a single query,
+  /// ordered by [sequence]. No deserialization — callers can decode off the
+  /// main isolate (e.g. inside `Isolate.run`).
+  Future<List<db.Event>> getEventRowsForSessions(
+    List<SessionID> sessionIds,
+  ) async {
+    if (sessionIds.isEmpty) return const [];
+    final query = _db.select(_db.events)
+      ..where((e) => e.sessionId.isIn(sessionIds.map((s) => s.value)));
+    query.orderBy([(e) => OrderingTerm(expression: e.sequence)]);
+    return query.get();
   }
 
   /// Stream events for a session — emits the full ordered list on every
@@ -105,7 +118,10 @@ class EventStore {
           ..where((e) => e.sessionId.equals(sessionId.value))
           ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
         .watch()
-        .map((rows) => rows.map<SessionEvent>(_deserialize).toList());
+        .map(
+          (rows) =>
+              rows.map<SessionEvent>(EventStore.deserializeEvent).toList(),
+        );
   }
 
   /// Same as [streamEvents] but filters out ephemeral delta events
@@ -135,7 +151,10 @@ class EventStore {
           ..where((e) => e.sequence.isBiggerThanValue(afterSeq))
           ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
         .watch()
-        .map((rows) => rows.map<SessionEvent>(_deserialize).toList());
+        .map(
+          (rows) =>
+              rows.map<SessionEvent>(EventStore.deserializeEvent).toList(),
+        );
   }
 
   /// Returns all durable (non-delta) events for a session ordered by sequence.
@@ -177,6 +196,16 @@ class EventStore {
             .get();
 
     return rows.isEmpty ? 0 : rows.first.sequence;
+  }
+
+  /// Returns the number of events for [sessionId].
+  Future<int> countEventsForSession(SessionID sessionId) async {
+    final count =
+        await (_db.selectOnly(_db.events)
+              ..where(_db.events.sessionId.equals(sessionId.value))
+              ..addColumns([_db.events.id.count()]))
+            .getSingle();
+    return count.read(_db.events.id.count()) ?? 0;
   }
 
   /// Delete all events belonging to [sessionId].
@@ -369,7 +398,7 @@ class EventStore {
     };
   }
 
-  SessionEvent _deserialize(db.Event row) {
+  static SessionEvent deserializeEvent(db.Event row) {
     final data = jsonDecode(row.eventData) as Map<String, dynamic>;
     final type = data['type'] as String;
 
@@ -685,7 +714,7 @@ class EventStore {
     };
   }
 
-  PermissionRuleset? _deserializePermission(Map<String, dynamic>? data) {
+  static PermissionRuleset? _deserializePermission(Map<String, dynamic>? data) {
     if (data == null) return null;
     return PermissionRuleset(
       rules:

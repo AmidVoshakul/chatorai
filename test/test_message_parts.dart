@@ -1111,4 +1111,45 @@ void main() {
       expect(converted.timestamp, ts);
     });
   });
+
+  // ── messageToChatMessage defensive fallback ──────────────────
+
+  group('messageToChatMessage content fallback', () {
+    test('keeps non-empty content when text parts are empty', () {
+      final msg = Message(
+        id: 'm1',
+        role: MessageRole.assistant,
+        content: 'real answer',
+        timestamp: DateTime.now(),
+        partsJson: [
+          {'type': 'text', 'content': '', 'isStreaming': true},
+        ],
+      );
+      final converted = messageToChatMessage(msg) as AssistantMessage;
+      final text = converted.parts
+          .whereType<TextPart>()
+          .map((p) => p.content)
+          .join();
+      expect(text, 'real answer');
+    });
+
+    test('does not duplicate content when text part is non-empty', () {
+      final msg = Message(
+        id: 'm1',
+        role: MessageRole.assistant,
+        content: 'real answer',
+        timestamp: DateTime.now(),
+        partsJson: [
+          {'type': 'text', 'content': 'real answer', 'isStreaming': false},
+        ],
+      );
+      final converted = messageToChatMessage(msg) as AssistantMessage;
+      final text = converted.parts
+          .whereType<TextPart>()
+          .map((p) => p.content)
+          .join();
+      expect(text, 'real answer');
+      expect(converted.parts.whereType<TextPart>().length, 1);
+    });
+  });
 }

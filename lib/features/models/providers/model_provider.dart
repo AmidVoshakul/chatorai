@@ -183,7 +183,7 @@ class ModelNotifier extends Notifier<ModelState> {
         '[ModelNotifier] Loading models from catalog… forceRefresh=$forceRefresh',
       );
 
-      final catalog = await ref.read(catalogInitializationProvider.future);
+      final catalog = ref.read(catalogServiceProvider);
 
       List<ModelConfig> visibleModels(ProviderCatalogService cat) {
         final allModels = cat.getAllModels();

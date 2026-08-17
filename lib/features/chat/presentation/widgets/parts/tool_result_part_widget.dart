@@ -444,7 +444,7 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
     final spinner = SizedBox(
       width: 15,
       height: 15,
-      child: SpinKitCubeGrid(size: 15, color: theme.colorScheme.muted),
+      child: SpinKitCircle(size: 15, color: theme.colorScheme.muted),
     );
 
     final icon = ToolIcon(

@@ -196,6 +196,7 @@ class SessionRunner {
     String? modelRef,
     String? title,
     String? parentSessionId,
+    Duration toolCardGrace = const Duration(milliseconds: 1500),
   }) {
     final sessionId = SessionID.create();
     // Note: Event persisted later via initialize() for backward compatibility.
@@ -211,6 +212,7 @@ class SessionRunner {
           : null,
       toolRegistry: toolRegistry,
       eventBus: eventBus,
+      toolCardGrace: toolCardGrace,
     );
   }
 
@@ -231,6 +233,7 @@ class SessionRunner {
     String? parentSessionId,
     SessionID? sessionId,
     String? messageId,
+    Duration toolCardGrace = const Duration(milliseconds: 1500),
   }) async {
     if (sessionId != null) {
       return SessionRunnerSession.forExisting(
@@ -239,6 +242,7 @@ class SessionRunner {
         toolRegistry: toolRegistry,
         eventBus: eventBus,
         initialMessageId: messageId,
+        toolCardGrace: toolCardGrace,
       );
     }
     final session = startSession(
@@ -246,6 +250,7 @@ class SessionRunner {
       modelRef: modelRef,
       title: title,
       parentSessionId: parentSessionId,
+      toolCardGrace: toolCardGrace,
     );
     await session.initialize(agent: agent, modelRef: modelRef, title: title);
     return session;
@@ -441,6 +446,18 @@ class SessionRunnerSession {
 
   final Map<String, String> _toolPartIds = {};
   final Set<String> _startedToolCalls = {};
+  final Set<String> _completedToolCalls = {};
+
+  /// Tool calls awaiting display until the reasoning section that preceded
+  /// them has fully streamed (its late "tail" deltas). Kept in call order.
+  final List<({String callId, String toolName, Map<String, dynamic> input, String partId})> _pendingToolCalls = [];
+
+  /// Grace period: the deferred tool card is emitted once reasoning has been
+  /// silent for this long. Injectable for deterministic tests.
+  final Duration _toolCardGrace;
+
+  /// Timer backing [_toolCardGrace].
+  Timer? _toolCardTimer;
 
   final SessionEventBus? eventBus;
 
@@ -465,10 +482,12 @@ class SessionRunnerSession {
     this.toolRegistry,
     this.immediate = false,
     this.eventBus,
+    Duration toolCardGrace = const Duration(milliseconds: 1500),
   }) : _agent = agent,
        _modelRef = modelRef,
        _title = title,
        _parentId = parentId,
+       _toolCardGrace = toolCardGrace,
        initialized = false;
 
   /// Creates a session runner for an already-existing session (e.g. created by [SessionRepository.createChildSession]).
@@ -486,10 +505,12 @@ class SessionRunnerSession {
     this.immediate = false,
     this.eventBus,
     String? initialMessageId,
+    Duration toolCardGrace = const Duration(milliseconds: 1500),
   }) : _agent = null,
        _modelRef = null,
        _title = null,
        _parentId = null,
+       _toolCardGrace = toolCardGrace,
        initialized = true,
        messageId = initialMessageId;
 
@@ -521,7 +542,7 @@ class SessionRunnerSession {
     if (!initialized || _finalized || content.isEmpty) return;
     if (_openTextPartId == null) {
       messageId ??= _genMessageId();
-      await _closeReasoningIfOpen();
+      await _flushPendingToolCallsAndCloseReasoning();
       _openTextPartId = _genPartId('text');
       final event = TextStarted(
         sessionId: sessionId,
@@ -557,6 +578,20 @@ class SessionRunnerSession {
     _pendingReasoning.write(content);
     _fullReasoning.write(content);
     await _flushReasoningDeltas();
+    if (_pendingToolCalls.isNotEmpty) {
+      _toolCardTimer?.cancel();
+      _toolCardTimer = Timer(
+        _toolCardGrace,
+        () => _lock.synchronized(_flushPendingToolCallsAndCloseReasoning),
+      );
+    }
+  });
+
+  Future<void> onReasoningEnd() => _lock.synchronized(() async {
+    if (!initialized) return;
+    if (_openReasoningPartId != null && _pendingToolCalls.isEmpty) {
+      await _closeReasoningIfOpen();
+    }
   });
 
   /// Flush buffered text deltas to the event store as a single batched event.
@@ -599,6 +634,33 @@ class SessionRunnerSession {
     eventBus?.emit(event);
   }
 
+  /// Flush any pending deferred tool cards and close the open reasoning part
+  /// (if any). Must only be called from within a [_lock.synchronized] section.
+  Future<void> _flushPendingToolCallsAndCloseReasoning() async {
+    if (_pendingToolCalls.isEmpty) {
+      await _closeReasoningIfOpen();
+      return;
+    }
+    if (_openReasoningPartId != null) {
+      await _closeReasoningIfOpen();
+    }
+    for (final entry in _pendingToolCalls) {
+      final event = ToolCalled(
+        sessionId: sessionId,
+        toolCallId: entry.callId,
+        toolName: entry.toolName,
+        input: entry.input,
+        partId: entry.partId,
+        timestamp: DateTime.now(),
+      );
+      await repository.appendEvent(event);
+      eventBus?.emit(event);
+    }
+    _pendingToolCalls.clear();
+    _toolCardTimer?.cancel();
+    _toolCardTimer = null;
+  }
+
   Future<void> onToolStart(
     String toolCallId,
     String toolName,
@@ -613,19 +675,27 @@ class SessionRunnerSession {
     if (!_startedToolCalls.add(toolCallId)) return;
     final partId = _genPartId(toolCallId);
     _toolPartIds[toolCallId] = partId;
-    await _closeReasoningIfOpen();
     await _flushTextDeltas();
     _openTextPartId = null;
-    final event = ToolCalled(
-      sessionId: sessionId,
-      toolCallId: toolCallId,
-      toolName: toolName,
-      input: input,
-      partId: partId,
-      timestamp: DateTime.now(),
-    );
-    await repository.appendEvent(event);
-    eventBus?.emit(event);
+    if (_openReasoningPartId != null) {
+      _pendingToolCalls.add((callId: toolCallId, toolName: toolName, input: input, partId: partId));
+      _toolCardTimer?.cancel();
+      _toolCardTimer = Timer(
+        _toolCardGrace,
+        () => _lock.synchronized(_flushPendingToolCallsAndCloseReasoning),
+      );
+    } else {
+      final event = ToolCalled(
+        sessionId: sessionId,
+        toolCallId: toolCallId,
+        toolName: toolName,
+        input: input,
+        partId: partId,
+        timestamp: DateTime.now(),
+      );
+      await repository.appendEvent(event);
+      eventBus?.emit(event);
+    }
   });
 
   Future<void> onToolEnd(
@@ -638,6 +708,10 @@ class SessionRunnerSession {
     if (!initialized) return;
     final partId = _toolPartIds[toolCallId];
     if (partId == null) return;
+    _completedToolCalls.add(toolCallId);
+    if (_pendingToolCalls.any((e) => e.callId == toolCallId)) {
+      await _flushPendingToolCallsAndCloseReasoning();
+    }
     final event = ToolSuccess(
       sessionId: sessionId,
       toolCallId: toolCallId,
@@ -649,6 +723,10 @@ class SessionRunnerSession {
     );
     await repository.appendEvent(event);
     eventBus?.emit(event);
+    if (_pendingToolCalls.isEmpty) {
+      _toolCardTimer?.cancel();
+      _toolCardTimer = null;
+    }
   });
 
   Future<void> onToolError(
@@ -659,8 +737,27 @@ class SessionRunnerSession {
     Map<String, dynamic>? input,
   }) => _lock.synchronized(() async {
     if (!initialized) return;
-    final partId = _toolPartIds[toolCallId];
-    if (partId == null) return;
+    var partId = _toolPartIds[toolCallId];
+    if (partId == null) {
+      // Defensive: create the part so the error is visible in the UI.
+      if (!_startedToolCalls.add(toolCallId)) return;
+      partId = _genPartId(toolCallId);
+      _toolPartIds[toolCallId] = partId;
+      final calledEvent = ToolCalled(
+        sessionId: sessionId,
+        toolCallId: toolCallId,
+        toolName: toolName,
+        input: input ?? const {},
+        partId: partId,
+        timestamp: DateTime.now(),
+      );
+      await repository.appendEvent(calledEvent);
+      eventBus?.emit(calledEvent);
+    }
+    _completedToolCalls.add(toolCallId);
+    if (_pendingToolCalls.any((e) => e.callId == toolCallId)) {
+      await _flushPendingToolCallsAndCloseReasoning();
+    }
     final event = ToolFailed(
       sessionId: sessionId,
       toolCallId: toolCallId,
@@ -672,6 +769,10 @@ class SessionRunnerSession {
     );
     await repository.appendEvent(event);
     eventBus?.emit(event);
+    if (_pendingToolCalls.isEmpty) {
+      _toolCardTimer?.cancel();
+      _toolCardTimer = null;
+    }
   });
 
   /// Closes an open reasoning part. Must only be called from within a
@@ -693,6 +794,29 @@ class SessionRunnerSession {
     _fullReasoning.clear();
   }
 
+  /// Emits `ToolFailed` for every tool call that was started but never
+  /// completed. Must only be called from within a [_lock.synchronized] section.
+  Future<void> _finalizeRunningTools() async {
+    final now = DateTime.now();
+    for (final entry in _toolPartIds.entries) {
+      final callId = entry.key;
+      if (_completedToolCalls.contains(callId)) continue;
+      final partId = entry.value;
+      final event = ToolFailed(
+        sessionId: sessionId,
+        toolCallId: callId,
+        error: 'Tool execution aborted before completion.',
+        partId: partId,
+        timestamp: now,
+      );
+      await repository.appendEvent(event);
+      eventBus?.emit(event);
+    }
+    _toolPartIds.clear();
+    _completedToolCalls.clear();
+    _startedToolCalls.clear();
+  }
+
   Future<SessionState> onCompletion({
     required String content,
     String? reasoning,
@@ -711,6 +835,8 @@ class SessionRunnerSession {
     }
     _finalized = true;
     final now = DateTime.now();
+
+    await _flushPendingToolCallsAndCloseReasoning();
 
     // Flush any buffered streaming deltas before finalizing.
     await _flushTextDeltas();
@@ -751,6 +877,8 @@ class SessionRunnerSession {
       _fullReasoning.clear();
     }
 
+    await _finalizeRunningTools();
+
     final stepEvent = StepEnded(
       sessionId: sessionId,
       stepNumber: 1,
@@ -776,6 +904,9 @@ class SessionRunnerSession {
     if (_finalized) return;
     _finalized = true;
     final now = DateTime.now();
+
+    await _flushPendingToolCallsAndCloseReasoning();
+
     await _flushTextDeltas();
     if (_openTextPartId != null && messageId != null) {
       final event = TextEnded(
@@ -804,6 +935,9 @@ class SessionRunnerSession {
       _openReasoningPartId = null;
       _fullReasoning.clear();
     }
+
+    await _finalizeRunningTools();
+
     final stepEvent = StepFailed(
       sessionId: sessionId,
       stepNumber: 1,
@@ -883,12 +1017,17 @@ class SessionRunnerSession {
   void dispose() {
     _finalized = true;
     _startedToolCalls.clear();
+    _completedToolCalls.clear();
+    _toolPartIds.clear();
     _openTextPartId = null;
     _openReasoningPartId = null;
     _pendingText.clear();
     _pendingReasoning.clear();
     _fullText.clear();
     _fullReasoning.clear();
+    _pendingToolCalls.clear();
+    _toolCardTimer?.cancel();
+    _toolCardTimer = null;
     toolRegistry?.pruneSession(sessionId.value);
   }
 }

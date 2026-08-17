@@ -142,9 +142,10 @@ void main() {
         ),
       );
 
-      expect(state.messages.length, 1);
-      expect(state.messages.first.role, MessageRole.tool);
-      expect(state.messages.first.content, contains('ls'));
+      expect(state.messages.length, 2);
+      expect(state.messages.first.role, MessageRole.assistant);
+      expect(state.messages.last.role, MessageRole.tool);
+      expect(state.messages.last.content, contains('ls'));
     });
 
     test('ToolSuccess updates message and adds ToolResult', () {
@@ -168,8 +169,8 @@ void main() {
         ),
       );
 
-      expect(state.messages.length, 1);
-      expect(state.messages.first.content, 'result');
+      expect(state.messages.length, 2);
+      expect(state.messages.last.content, 'result');
       expect(state.toolResults.length, 1);
       expect(state.toolResults.first.status, 'success');
     });
@@ -195,7 +196,8 @@ void main() {
         ),
       );
 
-      expect(state.messages.first.error, 'Command failed');
+      expect(state.messages.length, 2);
+      expect(state.messages.last.error, 'Command failed');
       expect(state.toolResults.first.status, 'error');
     });
 
@@ -554,6 +556,49 @@ void main() {
       expect((state.parts[1] as AssistantReasoning).text, 'think');
     });
 
+    test('ReasoningEnded on already closed part replaces text and preserves ended', () {
+      final now = DateTime.now();
+      final partId = 'part_reasoning_1';
+      final events = [
+        SessionCreated(sessionId: id, timestamp: now),
+        ReasoningStarted(
+          sessionId: id,
+          messageId: 'a1',
+          partId: partId,
+          timestamp: now,
+        ),
+        ReasoningDelta(
+          sessionId: id,
+          messageId: 'a1',
+          partId: partId,
+          delta: 'partial',
+          timestamp: now,
+        ),
+        ReasoningEnded(
+          sessionId: id,
+          messageId: 'a1',
+          partId: partId,
+          fullReasoning: 'partial',
+          timestamp: now,
+        ),
+        // Second ReasoningEnded for the same part (merge case).
+        ReasoningEnded(
+          sessionId: id,
+          messageId: 'a1',
+          partId: partId,
+          fullReasoning: 'partial merged',
+          timestamp: now,
+        ),
+      ];
+
+      final state = replayEvents(events);
+
+      expect(state.parts.length, 1);
+      expect(state.parts.first, isA<AssistantReasoning>());
+      expect((state.parts.first as AssistantReasoning).text, 'partial merged');
+      expect((state.parts.first as AssistantReasoning).ended, isNotNull);
+    });
+
     test('TaskPartStarted with same partId updates instead of duplicating', () {
       var state = empty;
       final first = TaskPartStarted(
@@ -630,7 +675,10 @@ void main() {
 
       expect(state.title, 'Test');
       expect(state.agent, 'explore');
-      expect(state.messages.length, 2);
+      expect(state.messages.length, 3);
+      expect(state.messages[0].role, MessageRole.user);
+      expect(state.messages[1].role, MessageRole.assistant);
+      expect(state.messages[2].role, MessageRole.tool);
       expect(state.toolResults.length, 1);
       expect(state.tokensInput, 100);
       expect(state.tokensOutput, 50);
@@ -655,6 +703,631 @@ void main() {
 
       expect(state1.messages.length, state2.messages.length);
       expect(state1.messages.first.content, state2.messages.first.content);
+    });
+
+    test('TextEnded marks the text part finalized (synthetic=false)', () {
+      final sid = SessionID.fromString('ses_synth');
+      final state = replayEvents([
+        TextStarted(sessionId: sid, messageId: 'm1', timestamp: DateTime.now()),
+        TextDelta(
+          sessionId: sid,
+          messageId: 'm1',
+          delta: 'hi',
+          timestamp: DateTime.now(),
+        ),
+        TextEnded(
+          sessionId: sid,
+          messageId: 'm1',
+          fullText: 'hi',
+          timestamp: DateTime.now(),
+        ),
+      ]);
+      final part = state.parts.whereType<AssistantText>().single;
+      expect(part.synthetic, isFalse);
+      expect(part.text, 'hi');
+    });
+
+    test(
+      'TextStarted after unclosed synthetic text closes previous synthetic text',
+      () {
+        final sid = SessionID.fromString('ses_synth');
+        final state = replayEvents([
+          TextStarted(
+            sessionId: sid,
+            messageId: 'm1',
+            timestamp: DateTime.now(),
+          ),
+          TextDelta(
+            sessionId: sid,
+            messageId: 'm1',
+            delta: 'first',
+            timestamp: DateTime.now(),
+          ),
+          // Simulate a new TextStarted without an explicit TextEnded for the first.
+          TextStarted(
+            sessionId: sid,
+            messageId: 'm1',
+            timestamp: DateTime.now(),
+          ),
+        ]);
+        final texts = state.parts.whereType<AssistantText>().toList();
+        expect(texts.length, 2);
+        // The first text part must no longer be synthetic (closed by the second start).
+        expect(texts[0].synthetic, isFalse);
+        expect(texts[0].text, 'first');
+        // The second text part is the new open one.
+        expect(texts[1].synthetic, isTrue);
+        expect(texts[1].text, '');
+      },
+    );
+
+    test('ToolCalled without prior assistant message creates one', () {
+      final id = SessionID.create();
+      final now = DateTime.now();
+      final empty = SessionState(id: id, createdAt: now, updatedAt: now);
+      final state = projectEvent(
+        empty,
+        ToolCalled(
+          sessionId: id,
+          toolCallId: 'tc_1',
+          toolName: 'shell',
+          input: {'cmd': 'ls'},
+          timestamp: now,
+        ),
+      );
+
+      expect(state.messages.length, 2);
+      expect(state.messages.first.role, MessageRole.assistant);
+      expect(state.messages.first.content, '');
+      expect(state.messages.last.role, MessageRole.tool);
+      final toolParts = state.parts.whereType<AssistantTool>().toList();
+      expect(toolParts.length, 1);
+      expect(toolParts.single.messageId, state.messages.first.id);
+      expect(toolParts.single.messageId, isNot(''));
+    });
+
+    test('TaskPartStarted without prior assistant message creates one', () {
+      final id = SessionID.create();
+      final now = DateTime.now();
+      final empty = SessionState(id: id, createdAt: now, updatedAt: now);
+      final state = projectEvent(
+        empty,
+        TaskPartStarted(
+          sessionId: id,
+          partId: 'part_1',
+          description: 'Test task',
+          agent: 'general',
+          taskSessionId: 'ses_child',
+          timestamp: now,
+        ),
+      );
+
+      expect(state.messages.length, 1);
+      expect(state.messages.first.role, MessageRole.assistant);
+      expect(state.messages.first.content, '');
+      final taskParts = state.parts.whereType<AssistantTask>().toList();
+      expect(taskParts.length, 1);
+      expect(taskParts.single.messageId, state.messages.first.id);
+      expect(taskParts.single.messageId, isNot(''));
+    });
+  });
+
+  group('reasoning stays open across non-reasoning events', () {
+    late SessionID id;
+    late SessionState empty;
+
+    setUp(() {
+      id = SessionID.create();
+      final created = SessionCreated(sessionId: id, timestamp: DateTime.now());
+      empty = SessionState(
+        id: id,
+        createdAt: created.timestamp,
+        updatedAt: created.timestamp,
+      );
+    });
+
+    test('ToolCalled does not close open reasoning', () {
+      final now = DateTime.now();
+      var state = projectEvent(
+        empty,
+        ReasoningStarted(sessionId: id, messageId: 'a1', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        ReasoningDelta(
+          sessionId: id,
+          messageId: 'a1',
+          delta: 'thinking',
+          timestamp: now,
+        ),
+      );
+      state = projectEvent(
+        state,
+        ToolCalled(
+          sessionId: id,
+          toolCallId: 'tc1',
+          toolName: 'shell',
+          input: {'cmd': 'ls'},
+          timestamp: now,
+        ),
+      );
+
+      final openReasoning = state.parts
+          .whereType<AssistantReasoning>()
+          .where((r) => r.ended == null)
+          .toList();
+      expect(openReasoning, hasLength(1));
+      expect(openReasoning.single.text, 'thinking');
+    });
+
+    test('ToolInputStarted does not close open reasoning', () {
+      final now = DateTime.now();
+      var state = projectEvent(
+        empty,
+        ReasoningStarted(sessionId: id, messageId: 'a1', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        ReasoningDelta(
+          sessionId: id,
+          messageId: 'a1',
+          delta: 'thinking',
+          timestamp: now,
+        ),
+      );
+      state = projectEvent(
+        state,
+        ToolInputStarted(sessionId: id, toolCallId: 'tc1', timestamp: now),
+      );
+
+      final openReasoning = state.parts
+          .whereType<AssistantReasoning>()
+          .where((r) => r.ended == null)
+          .toList();
+      expect(openReasoning, hasLength(1));
+    });
+
+    test('TodoPartStarted does not close open reasoning', () {
+      final now = DateTime.now();
+      var state = projectEvent(
+        empty,
+        ReasoningStarted(sessionId: id, messageId: 'a1', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        ReasoningDelta(
+          sessionId: id,
+          messageId: 'a1',
+          delta: 'thinking',
+          timestamp: now,
+        ),
+      );
+      state = projectEvent(
+        state,
+        TodoPartStarted(
+          sessionId: id,
+          partId: 'todo1',
+          todos: const [],
+          timestamp: now,
+        ),
+      );
+
+      final openReasoning = state.parts
+          .whereType<AssistantReasoning>()
+          .where((r) => r.ended == null)
+          .toList();
+      expect(openReasoning, hasLength(1));
+    });
+
+    test('TaskPartStarted does not close open reasoning', () {
+      final now = DateTime.now();
+      var state = projectEvent(
+        empty,
+        ReasoningStarted(sessionId: id, messageId: 'a1', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        ReasoningDelta(
+          sessionId: id,
+          messageId: 'a1',
+          delta: 'thinking',
+          timestamp: now,
+        ),
+      );
+      state = projectEvent(
+        state,
+        TaskPartStarted(
+          sessionId: id,
+          partId: 'task1',
+          description: 'task',
+          agent: 'general',
+          taskSessionId: 'ses_child',
+          timestamp: now,
+        ),
+      );
+
+      final openReasoning = state.parts
+          .whereType<AssistantReasoning>()
+          .where((r) => r.ended == null)
+          .toList();
+      expect(openReasoning, hasLength(1));
+    });
+
+    test('QuestionPartStarted does not close open reasoning', () {
+      final now = DateTime.now();
+      var state = projectEvent(
+        empty,
+        ReasoningStarted(sessionId: id, messageId: 'a1', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        ReasoningDelta(
+          sessionId: id,
+          messageId: 'a1',
+          delta: 'thinking',
+          timestamp: now,
+        ),
+      );
+      state = projectEvent(
+        state,
+        QuestionPartStarted(
+          sessionId: id,
+          partId: 'q1',
+          questionText: 'Proceed?',
+          options: const [],
+          timestamp: now,
+        ),
+      );
+
+      final openReasoning = state.parts
+          .whereType<AssistantReasoning>()
+          .where((r) => r.ended == null)
+          .toList();
+      expect(openReasoning, hasLength(1));
+    });
+
+    test('ReasoningEnded closes the open reasoning part', () {
+      final now = DateTime.now();
+      var state = projectEvent(
+        empty,
+        ReasoningStarted(sessionId: id, messageId: 'a1', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        ReasoningDelta(
+          sessionId: id,
+          messageId: 'a1',
+          delta: 'thinking',
+          timestamp: now,
+        ),
+      );
+      state = projectEvent(
+        state,
+        ReasoningEnded(
+          sessionId: id,
+          messageId: 'a1',
+          fullReasoning: 'thinking',
+          timestamp: now,
+        ),
+      );
+
+      final closedReasoning = state.parts
+          .whereType<AssistantReasoning>()
+          .where((r) => r.ended != null)
+          .toList();
+      expect(closedReasoning, hasLength(1));
+      expect(closedReasoning.single.text, 'thinking');
+    });
+
+    test('TextStarted closes open reasoning before starting text', () {
+      final now = DateTime.now();
+      var state = projectEvent(
+        empty,
+        ReasoningStarted(sessionId: id, messageId: 'a1', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        ReasoningDelta(
+          sessionId: id,
+          messageId: 'a1',
+          delta: 'thinking',
+          timestamp: now,
+        ),
+      );
+      state = projectEvent(
+        state,
+        TextStarted(sessionId: id, messageId: 'a1', timestamp: now),
+      );
+
+      final closedReasoning = state.parts
+          .whereType<AssistantReasoning>()
+          .where((r) => r.ended != null)
+          .toList();
+      expect(closedReasoning, hasLength(1));
+      final openText = state.parts.whereType<AssistantText>().toList();
+      expect(openText, hasLength(1));
+    });
+
+    test(
+      'ReasoningDelta after ToolCalled continues the same reasoning part',
+      () {
+        final now = DateTime.now();
+        var state = projectEvent(
+          empty,
+          ReasoningStarted(sessionId: id, messageId: 'a1', timestamp: now),
+        );
+        state = projectEvent(
+          state,
+          ReasoningDelta(
+            sessionId: id,
+            messageId: 'a1',
+            delta: 'before tool',
+            timestamp: now,
+          ),
+        );
+        state = projectEvent(
+          state,
+          ToolCalled(
+            sessionId: id,
+            toolCallId: 'tc1',
+            toolName: 'shell',
+            input: {'cmd': 'ls'},
+            timestamp: now,
+          ),
+        );
+        state = projectEvent(
+          state,
+          ReasoningDelta(
+            sessionId: id,
+            messageId: 'a1',
+            delta: ' after tool',
+            timestamp: now,
+          ),
+        );
+
+        final reasoningParts = state.parts
+            .whereType<AssistantReasoning>()
+            .toList();
+        expect(reasoningParts, hasLength(1));
+        expect(reasoningParts.single.text, 'before tool after tool');
+        expect(reasoningParts.single.ended, isNull);
+      },
+    );
+
+    test('ReasoningDelta after ReasoningEnded with same partId is ignored', () {
+      final now = DateTime.now();
+      var state = projectEvent(
+        empty,
+        ReasoningStarted(sessionId: id, messageId: 'a1', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        ReasoningDelta(
+          sessionId: id,
+          messageId: 'a1',
+          delta: 'thought',
+          timestamp: now,
+        ),
+      );
+      state = projectEvent(
+        state,
+        ReasoningEnded(
+          sessionId: id,
+          messageId: 'a1',
+          fullReasoning: 'thought',
+          timestamp: now,
+        ),
+      );
+      state = projectEvent(
+        state,
+        ReasoningDelta(
+          sessionId: id,
+          messageId: 'a1',
+          partId: state.parts.whereType<AssistantReasoning>().last.id,
+          delta: ' late delta',
+          timestamp: now,
+        ),
+      );
+
+      final reasoningParts = state.parts
+          .whereType<AssistantReasoning>()
+          .toList();
+      expect(reasoningParts, hasLength(1));
+      expect(reasoningParts.single.text, 'thought');
+      expect(reasoningParts.single.ended, isNotNull);
+    });
+  });
+
+  group('MessageDeleted', () {
+    late SessionID id;
+    late SessionState empty;
+
+    setUp(() {
+      id = SessionID.create();
+      final created = SessionCreated(sessionId: id, timestamp: DateTime.now());
+      empty = SessionState(
+        id: id,
+        createdAt: created.timestamp,
+        updatedAt: created.timestamp,
+      );
+    });
+
+    test('removes the deleted message from state.messages', () {
+      var state = empty;
+      state = projectEvent(
+        state,
+        MessageAdded(
+          sessionId: id,
+          messageId: 'm1',
+          role: 'user',
+          content: 'Hello',
+          timestamp: DateTime.now(),
+        ),
+      );
+      state = projectEvent(
+        state,
+        MessageAdded(
+          sessionId: id,
+          messageId: 'm2',
+          role: 'assistant',
+          content: 'Hi',
+          timestamp: DateTime.now(),
+        ),
+      );
+
+      expect(state.messages, hasLength(2));
+
+      state = projectEvent(
+        state,
+        MessageDeleted(
+          sessionId: id,
+          messageId: 'm1',
+          timestamp: DateTime.now(),
+        ),
+      );
+
+      expect(state.messages, hasLength(1));
+      expect(state.messages.first.id, 'm2');
+    });
+
+    test('removes parts belonging to the deleted message from state.parts', () {
+      final now = DateTime.now();
+      var state = projectEvent(
+        empty,
+        MessageAdded(
+          sessionId: id,
+          messageId: 'm1',
+          role: 'user',
+          content: 'Hello',
+          timestamp: now,
+        ),
+      );
+      state = projectEvent(
+        state,
+        TextStarted(sessionId: id, messageId: 'a1', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        TextDelta(sessionId: id, messageId: 'a1', delta: 'Hi', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        ReasoningStarted(sessionId: id, messageId: 'a1', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        ReasoningDelta(
+          sessionId: id,
+          messageId: 'a1',
+          delta: 'thinking',
+          timestamp: now,
+        ),
+      );
+
+      // Parts for a1 exist
+      expect(state.parts.where((p) => p.messageId == 'a1'), isNotEmpty);
+
+      state = projectEvent(
+        state,
+        MessageDeleted(
+          sessionId: id,
+          messageId: 'a1',
+          timestamp: now,
+        ),
+      );
+
+      // Parts for a1 are removed
+      expect(state.parts.where((p) => p.messageId == 'a1'), isEmpty);
+      // Parts for other messages (if any) remain
+    });
+
+    test('leaves parts of other messages intact after deleting one message', () {
+      final now = DateTime.now();
+      var state = projectEvent(
+        empty,
+        MessageAdded(
+          sessionId: id,
+          messageId: 'm1',
+          role: 'user',
+          content: 'Hello',
+          timestamp: now,
+        ),
+      );
+      state = projectEvent(
+        state,
+        TextStarted(sessionId: id, messageId: 'a1', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        TextDelta(sessionId: id, messageId: 'a1', delta: 'Hi', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        MessageAdded(
+          sessionId: id,
+          messageId: 'a2',
+          role: 'assistant',
+          content: 'Bye',
+          timestamp: now,
+        ),
+      );
+      state = projectEvent(
+        state,
+        TextStarted(sessionId: id, messageId: 'a2', timestamp: now),
+      );
+      state = projectEvent(
+        state,
+        TextDelta(sessionId: id, messageId: 'a2', delta: 'Bye', timestamp: now),
+      );
+
+      expect(state.parts.where((p) => p.messageId == 'a1'), hasLength(1));
+      expect(state.parts.where((p) => p.messageId == 'a2'), hasLength(1));
+
+      state = projectEvent(
+        state,
+        MessageDeleted(
+          sessionId: id,
+          messageId: 'a1',
+          timestamp: now,
+        ),
+      );
+
+      expect(state.parts.where((p) => p.messageId == 'a1'), isEmpty);
+      expect(state.parts.where((p) => p.messageId == 'a2'), hasLength(1));
+    });
+
+    test('MessageDeleted is idempotent when parts are already absent', () {
+      final now = DateTime.now();
+      var state = projectEvent(
+        empty,
+        MessageAdded(
+          sessionId: id,
+          messageId: 'm1',
+          role: 'user',
+          content: 'Hello',
+          timestamp: now,
+        ),
+      );
+
+      state = projectEvent(
+        state,
+        MessageDeleted(
+          sessionId: id,
+          messageId: 'm1',
+          timestamp: now,
+        ),
+      );
+      state = projectEvent(
+        state,
+        MessageDeleted(
+          sessionId: id,
+          messageId: 'm1',
+          timestamp: now,
+        ),
+      );
+
+      expect(state.messages, isEmpty);
+      expect(state.parts, isEmpty);
     });
   });
 }

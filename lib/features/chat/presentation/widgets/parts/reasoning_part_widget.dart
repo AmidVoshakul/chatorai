@@ -27,8 +27,6 @@ class ReasoningPartWidget extends StatefulWidget {
 class _ReasoningPartWidgetState extends State<ReasoningPartWidget> {
   late bool _isExpanded;
 
-  Duration? _thoughtDuration;
-
   String? _lastContent;
   Widget? _cachedContent;
   String? _lastThemeKey;
@@ -42,13 +40,6 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget> {
   @override
   void didUpdateWidget(ReasoningPartWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!widget.part.isStreaming &&
-        oldWidget.part.isStreaming &&
-        widget.part.startedAt != null &&
-        _thoughtDuration == null) {
-      _thoughtDuration = DateTime.now().difference(widget.part.startedAt!);
-    }
-
     if (oldWidget.expandByDefault != widget.expandByDefault) {
       setState(() => _isExpanded = widget.expandByDefault);
     }
@@ -125,7 +116,9 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget> {
     if (widget.part.durationMs != null) {
       return formatDurationMs(widget.part.durationMs!);
     }
-    if (_thoughtDuration != null) return formatDuration(_thoughtDuration!);
+    if (!widget.part.isStreaming && widget.part.startedAt != null) {
+      return formatDuration(DateTime.now().difference(widget.part.startedAt!));
+    }
     return null;
   }
 
@@ -139,7 +132,7 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget> {
         behavior: HitTestBehavior.opaque,
         child: Row(
           children: [
-            SpinKitCubeGrid(color: orange, size: 15),
+            SpinKitCircle(color: orange, size: 15),
             const SizedBox(width: 8),
             ShimmerMask(
               baseColor: orange,

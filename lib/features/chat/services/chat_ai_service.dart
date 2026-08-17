@@ -289,7 +289,8 @@ class ChatAiService implements CompletionProvider {
             }
           case 'tool_result':
             final rawToolCallId =
-                part['tool_call_id'] as String? ?? part['tool_callId'] as String?;
+                part['tool_call_id'] as String? ??
+                part['tool_callId'] as String?;
             final toolName =
                 part['tool_name'] as String? ??
                 part['toolName'] as String? ??
@@ -340,6 +341,7 @@ class ChatAiService implements CompletionProvider {
     required double temperature,
     required Future<void> Function(String) onChunk,
     required Future<void> Function(String) onReasoning,
+    Future<void> Function()? onReasoningEnd,
     required Future<void> Function(String) onCompletion,
     ToolSet tools = const {},
     ToolStartCallback? onToolStart,
@@ -491,6 +493,8 @@ class ChatAiService implements CompletionProvider {
                 case StreamTextReasoningStartEvent():
                   break;
                 case StreamTextReasoningEndEvent():
+                  if (!isGenerationStillValid(gen, _generation)) return;
+                  await onReasoningEnd?.call();
                   break;
                 case StreamTextTextStartEvent():
                   break;
@@ -618,6 +622,7 @@ class ChatAiService implements CompletionProvider {
     required double temperature,
     required Future<void> Function(String) onChunk,
     required Future<void> Function(String) onReasoning,
+    Future<void> Function()? onReasoningEnd,
     required Future<void> Function(String) onCompletion,
     ToolSet tools = const {},
     ToolStartCallback? onToolStart,
@@ -745,6 +750,9 @@ class ChatAiService implements CompletionProvider {
                 } else {
                   throw error;
                 }
+              case StreamTextReasoningEndEvent():
+                await onReasoningEnd?.call();
+                break;
               case StreamTextFinishEvent(:final text, :final usage):
                 _finalizeDanglingTools(toolTracker, onToolError);
                 onUsage?.call(

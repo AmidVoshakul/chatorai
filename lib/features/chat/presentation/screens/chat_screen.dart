@@ -19,13 +19,14 @@ import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_converter.dart'
-    show assistantContentToPartMaps, sessionStateToChat;
+    show assistantContentToPartMaps, filterPartsByMessage, sessionStateToChat;
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/presentation/screens/child_session_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_app_bar.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_messages_suggestions.dart';
 import 'package:chatorai/features/chat/presentation/widgets/markdown_navigator_sidebar.dart';
 import 'package:chatorai/features/chat/presentation/widgets/speech_overlay.dart';
 import 'package:chatorai/features/chat/presentation/widgets/welcome_questions_data.dart';
@@ -124,6 +125,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   /// create a SessionRunner and stream on the same session, interleaving
   /// events and corrupting messages.
   bool _isHandlingMessage = false;
+
+  /// Tracks the latest requested chat id during an in-flight `_selectChat`
+  /// so a stale load cannot overwrite a newer selection.
+  String? _pendingSelectChatId;
 
   /// Test-only accessor for auto-scroll state.
   bool get autoScrollEnabledForTest => _autoScrollEnabled;

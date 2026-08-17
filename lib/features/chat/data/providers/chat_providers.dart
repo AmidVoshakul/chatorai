@@ -1,11 +1,17 @@
+import 'dart:isolate';
+
 import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/core/llm/model_resolver.dart';
+import 'package:chatorai/core/session/database.dart' as db;
+import 'package:chatorai/core/session/event_store.dart';
 import 'package:chatorai/core/session/events.dart';
+import 'package:chatorai/core/session/projector.dart';
 import 'package:chatorai/core/session/session_db_provider.dart'
     show sessionRepositoryProvider;
 import 'package:chatorai/core/session/session_id.dart';
+import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_converter.dart'
-    show sessionStateToChat;
+    show sessionStateToChat, messageToChatMessage;
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/services/chat_ai_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
@@ -34,30 +40,25 @@ final retryMessageProvider = StreamProvider.autoDispose<String>((ref) {
 // ===========================================================================
 
 final chatAiServiceProvider = Provider<ChatAiService>((ref) {
-  final catalogAsync = ref.watch(catalogInitializationProvider);
+  // The synchronous catalog is available from the first frame (built-in models
+  // work before API keys are preloaded), so this must NOT throw while the
+  // catalog is still warming — otherwise the early-mounted ChatScreen would
+  // crash/loop.
+  //
+  // Deliberately NOT watching catalogInitializationProvider: the catalog is a
+  // single shared instance that warms in place (preloadApiKeys fills its key
+  // cache), and ModelResolver reads keys via the async getApiKey() at request
+  // time (with a secure-storage fallback). Rebuilding this provider when the
+  // warm future settles would dispose() the previous service — cancelling the
+  // in-flight abort token and aborting a request already streaming on it
+  // (the mid-stream disposal race). The service is therefore built once and
+  // stays stable across warm completion.
+  final catalog = ref.watch(providerCatalogServiceProvider);
 
-  ChatAiService? service;
-
-  catalogAsync.when(
-    data: (catalog) {
-      final resolver = ModelResolver(catalog);
-      service = ChatAiService(resolver: resolver);
-    },
-    loading: () {
-      // Will be null — consumers must handle
-    },
-    error: (err, _) {
-      LogTags.chatService.logWarning('Catalog failed to load: $err');
-    },
-  );
-
-  // If catalog not ready, throw — UI should handle loading state
-  if (service == null) {
-    throw StateError('Catalog not yet initialized');
-  }
-
-  ref.onDispose(() => service!.dispose());
-  return service!;
+  final resolver = ModelResolver(catalog);
+  final service = ChatAiService(resolver: resolver);
+  ref.onDispose(() => service.dispose());
+  return service;
 });
 
 // ===========================================================================
@@ -77,6 +78,9 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
   bool _isLoadingChats = false;
   bool _hasLoadedOnce = false;
   Future<void>? _loadFuture;
+  final Set<String> _loadedDetailIds = {};
+  final Map<String, Future<Chat?>> _detailLoads = {};
+  final Map<String, int> _detailGenerations = {};
 
   @override
   AsyncValue<List<Chat>> build() {
@@ -116,22 +120,7 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
       final primarySessions = sessions
           .where((s) => s.parentId == null)
           .toList();
-      final chats = <Chat>[];
-      for (final meta in primarySessions) {
-        final sessionId = SessionID.fromString(meta.id.value);
-        // Replay the full event stream so assistant messages carry their
-        // parts (tool calls, skill content, reasoning, …). `findAll()` only
-        // returns metadata and `getSessionMessages` reads the derived
-        // messages table, so without replay tool results would be missing
-        // from assistant bubbles after an app restart.
-        final state = await repository.loadSession(sessionId) ?? meta;
-        if (state.messages.isEmpty) {
-          // Brand-new session without any messages yet.
-          chats.add(sessionStateToChat(meta));
-        } else {
-          chats.add(sessionStateToChat(state));
-        }
-      }
+      final chats = primarySessions.map(sessionStateToChat).toList();
       chats.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
       state = AsyncValue.data(chats);
       _hasLoadedOnce = true;
@@ -147,6 +136,8 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
   Future<void> loadChats({bool forceReload = false}) async {
     if (forceReload) {
       _hasLoadedOnce = false;
+      _loadedDetailIds.clear();
+      _detailLoads.clear();
     }
     await _loadChats();
   }
@@ -164,6 +155,7 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
       agent: 'general',
     );
     final newChat = sessionStateToChat(sessionState);
+    _loadedDetailIds.add(newChat.id);
 
     // Get current state AFTER load completes
     final currentState = state;
@@ -185,6 +177,9 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
     final repository = await ref.read(sessionRepositoryProvider.future);
     final sessionId = SessionID.fromString(chatId);
     await repository.deleteSession(sessionId);
+    _loadedDetailIds.remove(chatId);
+    _detailLoads.remove(chatId);
+    _detailGenerations.remove(chatId);
     state.whenData((chats) {
       state = AsyncValue.data(chats.where((c) => c.id != chatId).toList());
     });
@@ -230,6 +225,208 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
     } else if (currentState.hasError) {
       state = AsyncValue.data([updatedChat]);
     }
+  }
+
+  static const int _inlineBuildThreshold = 2000;
+
+  /// Returns `true` when the chat should be built on the main isolate instead
+  /// of being dispatched to a background isolate. Small histories are cheaper
+  /// to decode synchronously than the isolate spin-up cost.
+  static bool shouldBuildInline(int rowCount) =>
+      rowCount <= _inlineBuildThreshold;
+
+  /// Pure, isolate-safe: decodes durable event rows, replays them into a
+  /// [SessionState], and converts to a full [Chat]. Falls back to the
+  /// metadata [Chat] when the session has no messages. Row order is guaranteed
+  /// by the SQL query; no local sort is required.
+  static Chat _buildChatFromEventRows(List<db.Event> rows, Chat metadata) {
+    if (rows.isEmpty) return metadata;
+    final events = rows.map(EventStore.deserializeEvent).toList();
+    final state = replayEvents(events);
+    if (state.messages.isEmpty) return metadata;
+    return sessionStateToChat(state);
+  }
+
+  /// Lazily loads full message history for a single chat, replacing the
+  /// metadata-only entry in the list. Single-flight: concurrent calls for the
+  /// same [chatId] share one in-flight future.
+  Future<Chat?> ensureChatLoaded(String chatId, {bool forceRefresh = false}) {
+    if (forceRefresh) {
+      _loadedDetailIds.remove(chatId);
+      _detailLoads.remove(chatId);
+      _detailGenerations[chatId] = (_detailGenerations[chatId] ?? 0) + 1;
+    }
+    final inFlight = _detailLoads[chatId];
+    if (inFlight != null) return inFlight;
+    final future = _ensureChatLoadedInner(chatId, forceRefresh: forceRefresh);
+    _detailLoads[chatId] = future;
+    future.whenComplete(() => _detailLoads.remove(chatId));
+    return future;
+  }
+
+  Future<Chat?> _ensureChatLoadedInner(
+    String chatId, {
+    bool forceRefresh = false,
+  }) async {
+    final current = state.whenOrNull(
+      data: (chats) {
+        try {
+          return chats.firstWhere((c) => c.id == chatId);
+        } catch (_) {
+          return null;
+        }
+      },
+    );
+    if (current == null) return null;
+    if (!forceRefresh &&
+        (_loadedDetailIds.contains(chatId) || current.messages.isNotEmpty)) {
+      return current;
+    }
+    final expectedGeneration = _detailGenerations[chatId] ?? 0;
+    final repository = await ref.read(sessionRepositoryProvider.future);
+    final sessionId = SessionID.fromString(chatId);
+
+    // Try snapshot cache first (unless forceRefresh bypasses it).
+    if (!forceRefresh) {
+      final snapshotStopwatch = Stopwatch()..start();
+      final snapshotMessages = await repository.readChatSnapshot(sessionId);
+      snapshotStopwatch.stop();
+      if (snapshotMessages != null) {
+        LogTags.chatService.logDebug(
+          '[ChatList] snapshot chat=$chatId messages=${snapshotMessages.length} read=${snapshotStopwatch.elapsedMilliseconds}ms',
+        );
+        final chat = _chatFromSnapshotMessages(
+          chatId,
+          snapshotMessages,
+          current,
+        );
+        if (!ref.mounted) return null;
+        if ((_detailGenerations[chatId] ?? 0) != expectedGeneration) {
+          return null;
+        }
+        final stillExists = state.whenOrNull(
+          data: (chats) => chats.any((c) => c.id == chatId),
+        );
+        if (stillExists != true) return null;
+        _loadedDetailIds.add(chatId);
+        updateChat(chat);
+        return chat;
+      }
+    }
+
+    final queryStopwatch = Stopwatch()..start();
+    final rows = await repository.getEventRowsForSessions([sessionId]);
+    queryStopwatch.stop();
+    LogTags.chatService.logDebug(
+      '[ChatList] query chat=$chatId rows=${rows.length} query=${queryStopwatch.elapsedMilliseconds}ms',
+    );
+    if (!ref.mounted) return null;
+    final buildStopwatch = Stopwatch()..start();
+    final Chat chat;
+    if (shouldBuildInline(rows.length)) {
+      chat = _buildChatFromEventRows(rows, current);
+      buildStopwatch.stop();
+      LogTags.chatService.logDebug(
+        '[ChatList] build chat=$chatId build=${buildStopwatch.elapsedMilliseconds}ms mode=inline',
+      );
+    } else {
+      chat = await Isolate.run(() => _buildChatFromEventRows(rows, current));
+      buildStopwatch.stop();
+      LogTags.chatService.logDebug(
+        '[ChatList] build chat=$chatId build=${buildStopwatch.elapsedMilliseconds}ms mode=isolate',
+      );
+    }
+    LogTags.chatService.logDebug(
+      '[ChatList] total chat=$chatId total=${queryStopwatch.elapsedMilliseconds + buildStopwatch.elapsedMilliseconds}ms',
+    );
+    if (!ref.mounted) return null;
+    if ((_detailGenerations[chatId] ?? 0) != expectedGeneration) return null;
+    final stillExists = state.whenOrNull(
+      data: (chats) => chats.any((c) => c.id == chatId),
+    );
+    if (stillExists != true) return null;
+    _loadedDetailIds.add(chatId);
+    updateChat(chat);
+
+    // Write snapshot after successful build (best-effort, do not fail the load).
+    try {
+      final snapshotMessages = chat.messages.map(messageToChatMessage).toList();
+      await repository.writeChatSnapshot(sessionId, snapshotMessages);
+    } catch (_) {
+      // Snapshot write failure is non-fatal; the next load will replay events.
+    }
+
+    return chat;
+  }
+
+  static Chat _chatFromSnapshotMessages(
+    String chatId,
+    List<ChatMessage> snapshotMessages,
+    Chat metadata,
+  ) {
+    if (snapshotMessages.isEmpty) return metadata;
+    final messages = snapshotMessages.map(_chatMessageToMessage).toList();
+    return Chat(
+      id: chatId,
+      title: metadata.title,
+      messages: messages,
+      createdAt: metadata.createdAt,
+      updatedAt: metadata.updatedAt,
+      compactedContext: metadata.compactedContext,
+    );
+  }
+
+  static Message _chatMessageToMessage(ChatMessage cm) {
+    if (cm is UserMessage) {
+      return Message(
+        id: cm.id,
+        role: MessageRole.user,
+        content: cm.content,
+        timestamp: cm.timestamp,
+        imageData: cm.imageData,
+        imageType: cm.imageType,
+        attachedDocPath: cm.attachedDocPath,
+        isComplete: true,
+      );
+    }
+    if (cm is AssistantMessage) {
+      return Message(
+        id: cm.id,
+        role: MessageRole.assistant,
+        content: cm.parts
+            .whereType<TextPart>()
+            .map((p) => p.content)
+            .join('\n'),
+        timestamp: cm.timestamp,
+        model: cm.model,
+        isComplete: true,
+        isCompactionSummary: cm.isCompactionSummary,
+        partsJson: cm.parts.map((p) => p.toJson()).toList(),
+        tokensInput: cm.tokensInput,
+        tokensOutput: cm.tokensOutput,
+        tokensReasoning: cm.tokensReasoning,
+        contextLength: cm.contextLength,
+        agent: cm.agent,
+      );
+    }
+    if (cm is SystemMessage) {
+      return Message(
+        id: cm.id,
+        role: MessageRole.system,
+        content: cm.content,
+        timestamp: cm.timestamp,
+        isComplete: true,
+      );
+    }
+    // ErrorMessage or unknown fallback.
+    return Message(
+      id: cm.id,
+      role: MessageRole.assistant,
+      content: cm is ErrorMessage ? cm.content : 'Unknown',
+      timestamp: cm.timestamp,
+      isComplete: true,
+      isError: true,
+    );
   }
 }
 

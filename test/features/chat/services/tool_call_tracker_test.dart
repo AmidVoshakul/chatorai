@@ -27,8 +27,11 @@ void main() {
       final errors = <(String, String)>[];
       tracker.finalizeDangling((id, name) => errors.add((id, name)));
 
-      expect(errors, equals([('c1', 'shell')]),
-          reason: 'only c1 was started and never finalized');
+      expect(
+        errors,
+        equals([('c1', 'shell')]),
+        reason: 'only c1 was started and never finalized',
+      );
     });
 
     test('finalizeDangling is idempotent — cleared after finalize', () {

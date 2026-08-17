@@ -247,6 +247,7 @@ ToolDef createTaskContainerTool({
                 },
                 onChunk: child.onChunk,
                 onReasoning: child.onReasoning,
+                onReasoningEnd: child.onReasoningEnd,
                 onToolStart: (toolCallId, toolName, input) async {
                   await child.onToolStart(toolCallId, toolName, input);
                   final title =
