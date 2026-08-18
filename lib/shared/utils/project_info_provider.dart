@@ -24,6 +24,11 @@ final workingDirProvider = Provider<String>((ref) {
   return shortenPath(Directory.current.path);
 });
 
+/// The raw absolute path of the current working directory.
+final absoluteWorkingDirProvider = Provider<String>((ref) {
+  return Directory.current.path;
+});
+
 /// The current git branch of the working directory, or `null` when not in a
 /// git repository or git is unavailable.
 final gitBranchProvider = FutureProvider<String?>((ref) async {

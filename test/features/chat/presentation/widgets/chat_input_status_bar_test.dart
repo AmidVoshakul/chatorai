@@ -11,30 +11,19 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Set<Color> _spanColors(WidgetTester tester) {
-  final richText = tester.widget<RichText>(find.byType(RichText).first);
+  final texts = tester
+      .widgetList<Text>(
+        find.descendant(
+          of: find.byType(ChatInputStatusBar),
+          matching: find.byType(Text),
+        ),
+      )
+      .toList();
   final colors = <Color>{};
-  void visit(InlineSpan span) {
-    if (span is TextSpan && span.style?.color != null) {
-      colors.add(span.style!.color!);
-    }
-    if (span is WidgetSpan) {
-      Widget? child = span.child;
-      if (child is Tooltip) child = child.child;
-      if (child is Text && child.style?.color != null) {
-        colors.add(child.style!.color!);
-      }
-    }
-    if (span is TextSpan) {
-      final children = span.children;
-      if (children != null) {
-        for (final child in children) {
-          visit(child);
-        }
-      }
-    }
+  for (final text in texts) {
+    final color = text.style?.color;
+    if (color != null) colors.add(color);
   }
-
-  visit(richText.text);
   return colors;
 }
 
@@ -44,6 +33,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
             gitBranchProvider.overrideWith((_) async => 'main'),
             mcpStatusesProvider.overrideWith(
               (_) async => {'s1': McpServerStatus.connected()},
@@ -56,8 +46,7 @@ void main() {
 
       expect(find.textContaining('MCP: 1/1'), findsOneWidget);
       expect(find.textContaining('⎇ main'), findsOneWidget);
-      final richText = tester.widget<RichText>(find.byType(RichText).first);
-      expect(richText.text.toPlainText(), isNotEmpty);
+      expect(find.text('chatorai'), findsOneWidget);
     });
 
     testWidgets('hides mcp segment when no servers configured', (tester) async {
@@ -176,7 +165,9 @@ void main() {
 
     // Returns the list of per-server row RichTexts from the tooltip message.
     List<RichText> _tooltipRows(WidgetTester tester) {
-      final tooltip = tester.widget<Tooltip>(find.byType(Tooltip));
+      final tooltip = tester
+          .widgetList<Tooltip>(find.byType(Tooltip))
+          .firstWhere((t) => t.richMessage != null);
       final message = tooltip.richMessage as TextSpan;
       return message.children!
           .whereType<WidgetSpan>()
@@ -274,6 +265,111 @@ void main() {
 
       expect(find.byType(SpinKitCircle), findsNothing);
       expect(find.textContaining('MCP: 1/1'), findsOneWidget);
+    });
+
+    testWidgets('path chip shows only the directory name', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+            absoluteWorkingDirProvider
+                .overrideWithValue('/home/user/work/chatorai'),
+            gitBranchProvider.overrideWith((_) async => null),
+            mcpStatusesProvider.overrideWith((_) async => {}),
+          ],
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('chatorai'), findsOneWidget);
+      expect(find.text('/home/user/work/chatorai'), findsNothing);
+    });
+
+    testWidgets('path chip tooltip shows full absolute path', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+            absoluteWorkingDirProvider
+                .overrideWithValue('/home/user/work/chatorai'),
+            gitBranchProvider.overrideWith((_) async => null),
+            mcpStatusesProvider.overrideWith((_) async => {}),
+          ],
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final tooltips = tester.widgetList<Tooltip>(find.byType(Tooltip));
+      expect(
+        tooltips.any((t) => t.message == '/home/user/work/chatorai'),
+        isTrue,
+      );
+    });
+
+    testWidgets('chips have a subtle hairline outline', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+            gitBranchProvider.overrideWith((_) async => 'main'),
+            mcpStatusesProvider.overrideWith(
+              (_) async => {'s1': McpServerStatus.connected()},
+            ),
+          ],
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final chips = tester
+          .widgetList<Container>(
+            find.descendant(
+              of: find.byType(ChatInputStatusBar),
+              matching: find.byType(Container),
+            ),
+          )
+          .where(
+            (c) =>
+                c.decoration is BoxDecoration &&
+                (c.decoration as BoxDecoration).border != null,
+          )
+          .toList();
+
+      expect(chips.length, equals(3));
+      for (final chip in chips) {
+        final border = (chip.decoration as BoxDecoration).border!;
+        expect(border.top.width, ChatoraiBorderWidth.thin);
+        expect(border.top.color.opacity, lessThan(1.0));
+      }
+    });
+
+    testWidgets('mcp chip text is rendered inside a decorated container', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+            gitBranchProvider.overrideWith((_) async => 'main'),
+            mcpStatusesProvider.overrideWith(
+              (_) async => {'s1': McpServerStatus.connected()},
+            ),
+          ],
+          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final mcpText = find.text('MCP: 1/1');
+      expect(mcpText, findsOneWidget);
+
+      final container = tester.widget<Container>(
+        find.ancestor(of: mcpText, matching: find.byType(Container)).first,
+      );
+      final decoration = container.decoration as BoxDecoration;
+      expect(decoration.border, isNotNull);
     });
   });
 }
