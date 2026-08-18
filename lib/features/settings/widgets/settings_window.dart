@@ -6,6 +6,8 @@ import 'package:chatorai/features/settings/screens/provider_settings_dialogs.dar
 import 'package:chatorai/features/settings/screens/skills_screen.dart';
 import 'package:chatorai/features/settings/screens/stats_screen.dart';
 import 'package:chatorai/features/settings/widgets/settings_about_section.dart';
+import 'package:chatorai/features/settings/widgets/settings_appearance_section.dart';
+import 'package:chatorai/features/settings/widgets/settings_accessibility_section.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -178,6 +180,22 @@ class _SettingsWindowState extends State<SettingsWindow> {
       icon: Icons.auto_awesome_outlined,
       label: (_) => l10n.skillsTitle,
       builder: (_) => const SkillsScreen(embedded: true),
+    ),
+    _SettingsCategorySpec(
+      icon: Icons.palette_outlined,
+      label: (_) => l10n.appearance,
+      builder: (_) => const SingleChildScrollView(
+        padding: EdgeInsets.all(ChatoraiSpacing.lg),
+        child: SettingsAppearanceSection(showHeader: false),
+      ),
+    ),
+    _SettingsCategorySpec(
+      icon: Icons.accessibility_new,
+      label: (_) => l10n.accessibility,
+      builder: (_) => const SingleChildScrollView(
+        padding: EdgeInsets.all(ChatoraiSpacing.lg),
+        child: SettingsAccessibilitySection(showHeader: false),
+      ),
     ),
     _SettingsCategorySpec(
       icon: Icons.info,

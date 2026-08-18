@@ -7,6 +7,32 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('KeyActivator', () {
+    test('escape activator matches a bare KeyDown', () {
+      const activator = KeyActivator.escape();
+
+      expect(
+        activator.matches(
+          const KeyDownEvent(
+            physicalKey: PhysicalKeyboardKey.escape,
+            logicalKey: LogicalKeyboardKey.escape,
+            timeStamp: Duration.zero,
+          ),
+        ),
+        isTrue,
+      );
+      // Key-up events never match.
+      expect(
+        activator.matches(
+          const KeyUpEvent(
+            physicalKey: PhysicalKeyboardKey.escape,
+            logicalKey: LogicalKeyboardKey.escape,
+            timeStamp: Duration.zero,
+          ),
+        ),
+        isFalse,
+      );
+    });
+
     test('ctrlKey activator requires Ctrl held to match', () {
       const activator = KeyActivator.ctrlKey(LogicalKeyboardKey.keyB);
 

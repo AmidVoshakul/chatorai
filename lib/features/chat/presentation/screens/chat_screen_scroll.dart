@@ -42,6 +42,18 @@ extension _ChatScreenScrollExt on _ChatScreenState {
     }
   }
 
+  void _maybeAutoScrollDuringStreaming() {
+    if (!mounted) return;
+    if (!ref.read(themeProvider).autoScrollDuringStreaming) return;
+    if (!_autoScrollEnabled) return;
+    if (!_messageScrollController.hasClients) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _scrollToBottom(force: false);
+    });
+  }
+
   void _handleHeadingSync() {
     final now = DateTime.now();
     if (_lastScrollUpdate != null &&

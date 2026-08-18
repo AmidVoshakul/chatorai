@@ -18,6 +18,8 @@ class KeyActivator {
   const KeyActivator.escapeDoublePress()
     : this._(key: LogicalKeyboardKey.escape, doublePress: true);
 
+  const KeyActivator.escape() : this._(key: LogicalKeyboardKey.escape);
+
   const KeyActivator.ctrlDown()
     : this._(key: LogicalKeyboardKey.arrowDown, ctrl: true);
 

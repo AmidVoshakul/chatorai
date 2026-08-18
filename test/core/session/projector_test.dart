@@ -266,7 +266,9 @@ void main() {
       expect(state.tokensInput, 100);
       expect(state.tokensOutput, 50);
       expect(state.tokensReasoning, 10);
-      final assistant = state.messages.lastWhere((m) => m.role == MessageRole.assistant);
+      final assistant = state.messages.lastWhere(
+        (m) => m.role == MessageRole.assistant,
+      );
       expect(assistant.tokensInput, 100);
       expect(assistant.tokensOutput, 50);
       expect(assistant.tokensReasoning, 10);
@@ -309,7 +311,9 @@ void main() {
       expect(state.tokensInput, 300);
       expect(state.tokensOutput, 150);
       expect(state.tokensReasoning, 30);
-      final assistant = state.messages.lastWhere((m) => m.role == MessageRole.assistant);
+      final assistant = state.messages.lastWhere(
+        (m) => m.role == MessageRole.assistant,
+      );
       expect(assistant.tokensInput, 300);
       expect(assistant.tokensOutput, 150);
       expect(assistant.tokensReasoning, 30);
@@ -672,48 +676,54 @@ void main() {
       expect((state.parts[1] as AssistantReasoning).text, 'think');
     });
 
-    test('ReasoningEnded on already closed part replaces text and preserves ended', () {
-      final now = DateTime.now();
-      final partId = 'part_reasoning_1';
-      final events = [
-        SessionCreated(sessionId: id, timestamp: now),
-        ReasoningStarted(
-          sessionId: id,
-          messageId: 'a1',
-          partId: partId,
-          timestamp: now,
-        ),
-        ReasoningDelta(
-          sessionId: id,
-          messageId: 'a1',
-          partId: partId,
-          delta: 'partial',
-          timestamp: now,
-        ),
-        ReasoningEnded(
-          sessionId: id,
-          messageId: 'a1',
-          partId: partId,
-          fullReasoning: 'partial',
-          timestamp: now,
-        ),
-        // Second ReasoningEnded for the same part (merge case).
-        ReasoningEnded(
-          sessionId: id,
-          messageId: 'a1',
-          partId: partId,
-          fullReasoning: 'partial merged',
-          timestamp: now,
-        ),
-      ];
+    test(
+      'ReasoningEnded on already closed part replaces text and preserves ended',
+      () {
+        final now = DateTime.now();
+        final partId = 'part_reasoning_1';
+        final events = [
+          SessionCreated(sessionId: id, timestamp: now),
+          ReasoningStarted(
+            sessionId: id,
+            messageId: 'a1',
+            partId: partId,
+            timestamp: now,
+          ),
+          ReasoningDelta(
+            sessionId: id,
+            messageId: 'a1',
+            partId: partId,
+            delta: 'partial',
+            timestamp: now,
+          ),
+          ReasoningEnded(
+            sessionId: id,
+            messageId: 'a1',
+            partId: partId,
+            fullReasoning: 'partial',
+            timestamp: now,
+          ),
+          // Second ReasoningEnded for the same part (merge case).
+          ReasoningEnded(
+            sessionId: id,
+            messageId: 'a1',
+            partId: partId,
+            fullReasoning: 'partial merged',
+            timestamp: now,
+          ),
+        ];
 
-      final state = replayEvents(events);
+        final state = replayEvents(events);
 
-      expect(state.parts.length, 1);
-      expect(state.parts.first, isA<AssistantReasoning>());
-      expect((state.parts.first as AssistantReasoning).text, 'partial merged');
-      expect((state.parts.first as AssistantReasoning).ended, isNotNull);
-    });
+        expect(state.parts.length, 1);
+        expect(state.parts.first, isA<AssistantReasoning>());
+        expect(
+          (state.parts.first as AssistantReasoning).text,
+          'partial merged',
+        );
+        expect((state.parts.first as AssistantReasoning).ended, isNotNull);
+      },
+    );
 
     test('TaskPartStarted with same partId updates instead of duplicating', () {
       var state = empty;
@@ -1345,11 +1355,7 @@ void main() {
 
       state = projectEvent(
         state,
-        MessageDeleted(
-          sessionId: id,
-          messageId: 'a1',
-          timestamp: now,
-        ),
+        MessageDeleted(sessionId: id, messageId: 'a1', timestamp: now),
       );
 
       // Parts for a1 are removed
@@ -1357,60 +1363,69 @@ void main() {
       // Parts for other messages (if any) remain
     });
 
-    test('leaves parts of other messages intact after deleting one message', () {
-      final now = DateTime.now();
-      var state = projectEvent(
-        empty,
-        MessageAdded(
-          sessionId: id,
-          messageId: 'm1',
-          role: 'user',
-          content: 'Hello',
-          timestamp: now,
-        ),
-      );
-      state = projectEvent(
-        state,
-        TextStarted(sessionId: id, messageId: 'a1', timestamp: now),
-      );
-      state = projectEvent(
-        state,
-        TextDelta(sessionId: id, messageId: 'a1', delta: 'Hi', timestamp: now),
-      );
-      state = projectEvent(
-        state,
-        MessageAdded(
-          sessionId: id,
-          messageId: 'a2',
-          role: 'assistant',
-          content: 'Bye',
-          timestamp: now,
-        ),
-      );
-      state = projectEvent(
-        state,
-        TextStarted(sessionId: id, messageId: 'a2', timestamp: now),
-      );
-      state = projectEvent(
-        state,
-        TextDelta(sessionId: id, messageId: 'a2', delta: 'Bye', timestamp: now),
-      );
+    test(
+      'leaves parts of other messages intact after deleting one message',
+      () {
+        final now = DateTime.now();
+        var state = projectEvent(
+          empty,
+          MessageAdded(
+            sessionId: id,
+            messageId: 'm1',
+            role: 'user',
+            content: 'Hello',
+            timestamp: now,
+          ),
+        );
+        state = projectEvent(
+          state,
+          TextStarted(sessionId: id, messageId: 'a1', timestamp: now),
+        );
+        state = projectEvent(
+          state,
+          TextDelta(
+            sessionId: id,
+            messageId: 'a1',
+            delta: 'Hi',
+            timestamp: now,
+          ),
+        );
+        state = projectEvent(
+          state,
+          MessageAdded(
+            sessionId: id,
+            messageId: 'a2',
+            role: 'assistant',
+            content: 'Bye',
+            timestamp: now,
+          ),
+        );
+        state = projectEvent(
+          state,
+          TextStarted(sessionId: id, messageId: 'a2', timestamp: now),
+        );
+        state = projectEvent(
+          state,
+          TextDelta(
+            sessionId: id,
+            messageId: 'a2',
+            delta: 'Bye',
+            timestamp: now,
+          ),
+        );
 
-      expect(state.parts.where((p) => p.messageId == 'a1'), hasLength(1));
-      expect(state.parts.where((p) => p.messageId == 'a2'), hasLength(1));
+        expect(state.parts.where((p) => p.messageId == 'a1'), hasLength(1));
+        expect(state.parts.where((p) => p.messageId == 'a2'), hasLength(1));
 
-      state = projectEvent(
-        state,
-        MessageDeleted(
-          sessionId: id,
-          messageId: 'a1',
-          timestamp: now,
-        ),
-      );
+        state = projectEvent(
+          state,
+          MessageDeleted(sessionId: id, messageId: 'a1', timestamp: now),
+        );
 
-      expect(state.parts.where((p) => p.messageId == 'a1'), isEmpty);
-      expect(state.parts.where((p) => p.messageId == 'a2'), hasLength(1));
-    });
+        expect(state.parts.where((p) => p.messageId == 'a1'), isEmpty);
+        expect(state.parts.where((p) => p.messageId == 'a2'), hasLength(1));
+      },
+    );
 
     test('MessageDeleted is idempotent when parts are already absent', () {
       final now = DateTime.now();
@@ -1427,19 +1442,11 @@ void main() {
 
       state = projectEvent(
         state,
-        MessageDeleted(
-          sessionId: id,
-          messageId: 'm1',
-          timestamp: now,
-        ),
+        MessageDeleted(sessionId: id, messageId: 'm1', timestamp: now),
       );
       state = projectEvent(
         state,
-        MessageDeleted(
-          sessionId: id,
-          messageId: 'm1',
-          timestamp: now,
-        ),
+        MessageDeleted(sessionId: id, messageId: 'm1', timestamp: now),
       );
 
       expect(state.messages, isEmpty);

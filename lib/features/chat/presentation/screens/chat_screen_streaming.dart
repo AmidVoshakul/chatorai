@@ -220,6 +220,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           }
 
           unawaited(runnerSession.onToolStart(toolCallId, toolName, input));
+          _maybeAutoScrollDuringStreaming();
         },
         onToolEnd: (toolCallId, toolName, result) async {
           final resultStr = result.toString();
@@ -255,6 +256,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               input: toolInputs.remove(toolCallId),
             ),
           );
+          _maybeAutoScrollDuringStreaming();
         },
         onToolError: (toolCallId, toolName, error) async {
           final errorStr = error.toString();
@@ -290,10 +292,12 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
           if (content.isEmpty) return;
           fullContent.write(content);
           await runnerSession.onChunk(content);
+          _maybeAutoScrollDuringStreaming();
         },
         onReasoning: (reasoning) async {
           if (reasoning.isEmpty) return;
           await runnerSession.onReasoning(reasoning);
+          _maybeAutoScrollDuringStreaming();
         },
         onReasoningEnd: () => runnerSession.onReasoningEnd(),
         maxSteps: maxSteps,
@@ -446,6 +450,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             _chatInputFocusNode.unfocus();
           });
           _showContinuationSuggestions(completedMessage);
+          _maybeAutoScrollDuringStreaming();
         },
       );
     } catch (e) {

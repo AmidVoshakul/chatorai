@@ -843,64 +843,66 @@ void main() {
         expect(snap, isNull);
       });
 
-      test('ensureChatLoaded preserves per-message tokens from StepEnded',
-          () async {
-        final dbInstance = db.AppDatabase.inMemory();
-        final repository = SessionRepository(dbInstance);
-        addTearDown(dbInstance.close);
+      test(
+        'ensureChatLoaded preserves per-message tokens from StepEnded',
+        () async {
+          final dbInstance = db.AppDatabase.inMemory();
+          final repository = SessionRepository(dbInstance);
+          addTearDown(dbInstance.close);
 
-        final session = await repository.createSession(
-          title: 'Token Session',
-          agent: 'general',
-        );
-        await repository.appendEvent(
-          MessageAdded(
-            sessionId: session.id,
-            messageId: 'm1',
-            role: 'user',
-            content: 'hi',
-            timestamp: DateTime.now(),
-          ),
-        );
-        await repository.appendEvent(
-          MessageAdded(
-            sessionId: session.id,
-            messageId: 'a1',
-            role: 'assistant',
-            content: 'answer',
-            timestamp: DateTime.now(),
-          ),
-        );
-        await repository.appendEvent(
-          StepEnded(
-            sessionId: session.id,
-            stepNumber: 1,
-            tokensInput: 100,
-            tokensOutput: 50,
-            tokensReasoning: 10,
-            timestamp: DateTime.now(),
-          ),
-        );
+          final session = await repository.createSession(
+            title: 'Token Session',
+            agent: 'general',
+          );
+          await repository.appendEvent(
+            MessageAdded(
+              sessionId: session.id,
+              messageId: 'm1',
+              role: 'user',
+              content: 'hi',
+              timestamp: DateTime.now(),
+            ),
+          );
+          await repository.appendEvent(
+            MessageAdded(
+              sessionId: session.id,
+              messageId: 'a1',
+              role: 'assistant',
+              content: 'answer',
+              timestamp: DateTime.now(),
+            ),
+          );
+          await repository.appendEvent(
+            StepEnded(
+              sessionId: session.id,
+              stepNumber: 1,
+              tokensInput: 100,
+              tokensOutput: 50,
+              tokensReasoning: 10,
+              timestamp: DateTime.now(),
+            ),
+          );
 
-        final container = ProviderContainer(
-          overrides: [
-            sessionRepositoryProvider.overrideWith((ref) async => repository),
-          ],
-        );
-        addTearDown(container.dispose);
+          final container = ProviderContainer(
+            overrides: [
+              sessionRepositoryProvider.overrideWith((ref) async => repository),
+            ],
+          );
+          addTearDown(container.dispose);
 
-        await waitForLoad(container);
-        final notifier = container.read(chatListProvider.notifier);
-        final loaded = await notifier.ensureChatLoaded(session.id.value);
-        expect(loaded, isNotNull);
-        expect(loaded!.messages, hasLength(2));
-        final assistant = loaded.messages.firstWhere(
-          (m) => m.role == chat_models.MessageRole.assistant,
-        );
-        expect(assistant.tokensInput, 100);
-        expect(assistant.tokensOutput, 50);
-        expect(assistant.tokensReasoning, 10);
-      });
+          await waitForLoad(container);
+          final notifier = container.read(chatListProvider.notifier);
+          final loaded = await notifier.ensureChatLoaded(session.id.value);
+          expect(loaded, isNotNull);
+          expect(loaded!.messages, hasLength(2));
+          final assistant = loaded.messages.firstWhere(
+            (m) => m.role == chat_models.MessageRole.assistant,
+          );
+          expect(assistant.tokensInput, 100);
+          expect(assistant.tokensOutput, 50);
+          expect(assistant.tokensReasoning, 10);
+        },
+      );
     });
   });
 }

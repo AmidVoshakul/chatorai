@@ -298,16 +298,23 @@ class EventStore {
         'toolCallId': e.toolCallId,
         'toolName': e.toolName,
         'input': e.input,
+        if (e.partId != null) 'partId': e.partId,
       },
       ToolSuccess e => {
         'type': 'ToolSuccess',
         'toolCallId': e.toolCallId,
         'outputText': e.outputText,
+        if (e.input != null) 'input': e.input,
+        if (e.partId != null) 'partId': e.partId,
+        if (e.durationMs != 0) 'durationMs': e.durationMs,
       },
       ToolFailed e => {
         'type': 'ToolFailed',
         'toolCallId': e.toolCallId,
         'error': e.error,
+        if (e.input != null) 'input': e.input,
+        if (e.partId != null) 'partId': e.partId,
+        if (e.durationMs != 0) 'durationMs': e.durationMs,
       },
       StepStarted e => {'type': 'StepStarted', 'stepNumber': e.stepNumber},
       StepEnded e => {
@@ -525,6 +532,10 @@ class EventStore {
         toolCallId: data['toolCallId'] as String,
         outputText: data['outputText'] as String,
         partId: data['partId'] as String?,
+        input: data['input'] is Map
+            ? Map<String, dynamic>.from(data['input'] as Map)
+            : null,
+        durationMs: data['durationMs'] as int? ?? 0,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -533,6 +544,10 @@ class EventStore {
         toolCallId: data['toolCallId'] as String,
         error: data['error'] as String,
         partId: data['partId'] as String?,
+        input: data['input'] is Map
+            ? Map<String, dynamic>.from(data['input'] as Map)
+            : null,
+        durationMs: data['durationMs'] as int? ?? 0,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),

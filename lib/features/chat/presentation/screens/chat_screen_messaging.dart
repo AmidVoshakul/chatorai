@@ -625,11 +625,12 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     }
 
     final lastMessage = chat.messages.last;
-    final targetMessageId = lastMessage.role == MessageRole.assistant && !lastMessage.isComplete
+    final targetMessageId =
+        lastMessage.role == MessageRole.assistant && !lastMessage.isComplete
         ? lastMessage.id
         : closedParts.isEmpty
-            ? null
-            : closedParts.last.messageId;
+        ? null
+        : closedParts.last.messageId;
     final messageParts = targetMessageId != null
         ? filterPartsByMessage(closedParts, targetMessageId)
         : closedParts;
@@ -642,17 +643,11 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
         .whereType<AssistantReasoning>()
         .map((p) => p.text)
         .join();
-    final toolParts = messageParts
-        .where(
-          (p) =>
-              p is AssistantTool ||
-              p is AssistantTask ||
-              p is AssistantQuestion ||
-              p is AssistantTodo,
-        )
-        .toList();
-    final partsJson = toolParts.isNotEmpty
-        ? assistantContentToPartMaps(toolParts)
+    // Persist ALL parts (reasoning, tools, text) in their original order so
+    // the completed message keeps separate reasoning blocks (pre-tool and
+    // post-tool thoughts must not collapse into one merged block).
+    final partsJson = messageParts.isNotEmpty
+        ? assistantContentToPartMaps(messageParts)
         : null;
 
     Message completedMessage;

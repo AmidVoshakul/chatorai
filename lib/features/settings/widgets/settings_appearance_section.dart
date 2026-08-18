@@ -16,7 +16,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Rendered both in the narrow `SettingsScreen` page and in the desktop
 /// settings window content pane.
 class SettingsAppearanceSection extends ConsumerWidget {
-  const SettingsAppearanceSection({super.key});
+  const SettingsAppearanceSection({super.key, this.showHeader = true});
+
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,8 +29,10 @@ class SettingsAppearanceSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SettingsSectionHeader(title: localizations.appearance),
-        const SizedBox(height: ChatoraiSpacing.lg),
+        if (showHeader) ...[
+          SettingsSectionHeader(title: localizations.appearance),
+          const SizedBox(height: ChatoraiSpacing.lg),
+        ],
         SettingsSelectionCard(
           context: context,
           icon: Icons.palette,

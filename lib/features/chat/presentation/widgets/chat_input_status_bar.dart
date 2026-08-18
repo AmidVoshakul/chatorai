@@ -124,7 +124,7 @@ class ChatInputStatusBar extends ConsumerWidget {
             preferBelow: false,
             richMessage: tooltipMessage,
             child: Text(
-              '   mcp: $connected/${statuses.length}',
+              '   MCP: $connected/${statuses.length}',
               style: TextStyle(color: mcpColor(statuses), fontSize: 12),
             ),
           ),
@@ -147,7 +147,7 @@ class ChatInputStatusBar extends ConsumerWidget {
                 ),
                 const SizedBox(width: ChatoraiSpacing.xs),
                 const Text(
-                  'mcp…',
+                  'MCP…',
                   style: TextStyle(color: ChatoraiColors.gray, fontSize: 12),
                 ),
               ],

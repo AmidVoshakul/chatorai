@@ -398,50 +398,53 @@ class _DeferredModelTileState extends State<_DeferredModelTile> {
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          key: ValueKey('grp_${widget.providerKey}'),
-          initiallyExpanded: false,
-          leading: ProviderIcon(providerId: widget.providerKey),
-          title: Text(
-            widget.localizations.modelsProviderCountFormat(
-              widget.models.length,
-              widget.providerName,
+        child: Material(
+          color: Colors.transparent,
+          child: ExpansionTile(
+            key: ValueKey('grp_${widget.providerKey}'),
+            initiallyExpanded: false,
+            leading: ProviderIcon(providerId: widget.providerKey),
+            title: Text(
+              widget.localizations.modelsProviderCountFormat(
+                widget.models.length,
+                widget.providerName,
+              ),
+              style: TextStyle(
+                fontSize: ChatoraiFontSizes.base,
+                fontWeight: FontWeight.w600,
+                color: widget.isDark
+                    ? ChatoraiColors.pureWhite
+                    : ChatoraiColors.pureBlack,
+              ),
             ),
-            style: TextStyle(
-              fontSize: ChatoraiFontSizes.base,
-              fontWeight: FontWeight.w600,
-              color: widget.isDark
-                  ? ChatoraiColors.pureWhite
-                  : ChatoraiColors.pureBlack,
+            tilePadding: const EdgeInsets.symmetric(
+              horizontal: ChatoraiSpacing.md,
+              vertical: ChatoraiSpacing.xs,
             ),
+            childrenPadding: const EdgeInsets.only(
+              left: ChatoraiSpacing.md,
+              right: ChatoraiSpacing.md,
+              bottom: ChatoraiSpacing.md,
+            ),
+            onExpansionChanged: (expanded) {
+              if (expanded && !_hasBuiltGrid) {
+                setState(() => _hasBuiltGrid = true);
+              }
+            },
+            children: _hasBuiltGrid
+                ? [
+                    _ModelGrid(
+                      models: widget.models,
+                      currentModel: widget.currentModel,
+                      onSelect: widget.onSelect,
+                      isFavorite: widget.isFavorite,
+                      onToggleFavorite: widget.onToggleFavorite,
+                      onInfo: widget.onInfo,
+                      isDark: widget.isDark,
+                    ),
+                  ]
+                : [const SizedBox.shrink()],
           ),
-          tilePadding: const EdgeInsets.symmetric(
-            horizontal: ChatoraiSpacing.md,
-            vertical: ChatoraiSpacing.xs,
-          ),
-          childrenPadding: const EdgeInsets.only(
-            left: ChatoraiSpacing.md,
-            right: ChatoraiSpacing.md,
-            bottom: ChatoraiSpacing.md,
-          ),
-          onExpansionChanged: (expanded) {
-            if (expanded && !_hasBuiltGrid) {
-              setState(() => _hasBuiltGrid = true);
-            }
-          },
-          children: _hasBuiltGrid
-              ? [
-                  _ModelGrid(
-                    models: widget.models,
-                    currentModel: widget.currentModel,
-                    onSelect: widget.onSelect,
-                    isFavorite: widget.isFavorite,
-                    onToggleFavorite: widget.onToggleFavorite,
-                    onInfo: widget.onInfo,
-                    isDark: widget.isDark,
-                  ),
-                ]
-              : [const SizedBox.shrink()],
         ),
       ),
     );

@@ -734,80 +734,92 @@ void main() {
   });
 
   group('AssistantMessageBubble consecutive part merging', () {
-    testWidgets('two consecutive ReasoningParts render as one ReasoningPartWidget', (tester) async {
-      final message = AssistantMessage(
-        id: 'a1',
-        parts: const [
-          ReasoningPart(content: 'thought A', isStreaming: false),
-          ReasoningPart(content: 'thought B', isStreaming: false),
-        ],
-        timestamp: DateTime.now(),
-      );
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            chatScreenProvider.overrideWith(() => ChatScreenNotifier()),
+    testWidgets(
+      'two consecutive ReasoningParts render as one ReasoningPartWidget',
+      (tester) async {
+        final message = AssistantMessage(
+          id: 'a1',
+          parts: const [
+            ReasoningPart(content: 'thought A', isStreaming: false),
+            ReasoningPart(content: 'thought B', isStreaming: false),
           ],
-          child: MaterialApp(
-            theme: AppTheme.lightTheme,
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: Scaffold(
-              body: AssistantMessageBubble(
-                message: message,
-                chatId: 'c1',
-                messageId: 'a1',
-                reasoningEnabled: true,
-                expandReasoningByDefault: true,
-                sessionRepository: MockSessionRepository(),
+          timestamp: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              chatScreenProvider.overrideWith(() => ChatScreenNotifier()),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(
+                body: AssistantMessageBubble(
+                  message: message,
+                  chatId: 'c1',
+                  messageId: 'a1',
+                  reasoningEnabled: true,
+                  expandReasoningByDefault: true,
+                  sessionRepository: MockSessionRepository(),
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.byType(ReasoningPartWidget), findsOneWidget);
-    });
+        expect(find.byType(ReasoningPartWidget), findsOneWidget);
+      },
+    );
 
-    testWidgets('two ReasoningParts separated by ToolResultPart render as two widgets', (tester) async {
-      final message = AssistantMessage(
-        id: 'a1',
-        parts: const [
-          ReasoningPart(content: 'thought A', isStreaming: false),
-          ToolResultPart(toolCallId: 't1', toolName: 'shell', state: ToolState.completed),
-          ReasoningPart(content: 'thought B', isStreaming: false),
-        ],
-        timestamp: DateTime.now(),
-      );
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            chatScreenProvider.overrideWith(() => ChatScreenNotifier()),
+    testWidgets(
+      'two ReasoningParts separated by ToolResultPart render as two widgets',
+      (tester) async {
+        final message = AssistantMessage(
+          id: 'a1',
+          parts: const [
+            ReasoningPart(content: 'thought A', isStreaming: false),
+            ToolResultPart(
+              toolCallId: 't1',
+              toolName: 'shell',
+              state: ToolState.completed,
+            ),
+            ReasoningPart(content: 'thought B', isStreaming: false),
           ],
-          child: MaterialApp(
-            theme: AppTheme.lightTheme,
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: Scaffold(
-              body: AssistantMessageBubble(
-                message: message,
-                chatId: 'c1',
-                messageId: 'a1',
-                reasoningEnabled: true,
-                expandReasoningByDefault: true,
-                sessionRepository: MockSessionRepository(),
+          timestamp: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              chatScreenProvider.overrideWith(() => ChatScreenNotifier()),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(
+                body: AssistantMessageBubble(
+                  message: message,
+                  chatId: 'c1',
+                  messageId: 'a1',
+                  reasoningEnabled: true,
+                  expandReasoningByDefault: true,
+                  sessionRepository: MockSessionRepository(),
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.byType(ReasoningPartWidget), findsNWidgets(2));
-    });
+        expect(find.byType(ReasoningPartWidget), findsNWidgets(2));
+      },
+    );
 
-    testWidgets('two consecutive TextParts render as one TextPartWidget', (tester) async {
+    testWidgets('two consecutive TextParts render as one TextPartWidget', (
+      tester,
+    ) async {
       final message = AssistantMessage(
         id: 'a1',
         parts: const [
@@ -843,41 +855,44 @@ void main() {
       expect(find.byType(TextPartWidget), findsOneWidget);
     });
 
-    testWidgets('closed reasoning run shows Thought header without spinner while text streams', (tester) async {
-      final message = AssistantMessage(
-        id: 'a1',
-        parts: const [
-          ReasoningPart(content: 'done thinking', isStreaming: false),
-          TextPart(content: 'answer', isStreaming: true),
-        ],
-        timestamp: DateTime.now(),
-      );
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            chatScreenProvider.overrideWith(() => ChatScreenNotifier()),
+    testWidgets(
+      'closed reasoning run shows Thought header without spinner while text streams',
+      (tester) async {
+        final message = AssistantMessage(
+          id: 'a1',
+          parts: const [
+            ReasoningPart(content: 'done thinking', isStreaming: false),
+            TextPart(content: 'answer', isStreaming: true),
           ],
-          child: MaterialApp(
-            theme: AppTheme.lightTheme,
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: Scaffold(
-              body: AssistantMessageBubble(
-                message: message,
-                chatId: 'c1',
-                messageId: 'a1',
-                reasoningEnabled: true,
-                expandReasoningByDefault: true,
-                sessionRepository: MockSessionRepository(),
+          timestamp: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              chatScreenProvider.overrideWith(() => ChatScreenNotifier()),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(
+                body: AssistantMessageBubble(
+                  message: message,
+                  chatId: 'c1',
+                  messageId: 'a1',
+                  reasoningEnabled: true,
+                  expandReasoningByDefault: true,
+                  sessionRepository: MockSessionRepository(),
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Thought:'), findsOneWidget);
-      expect(find.byType(SpinKitCircle), findsNothing);
-    });
+        expect(find.text('Thought:'), findsOneWidget);
+        expect(find.byType(SpinKitCircle), findsNothing);
+      },
+    );
   });
 }

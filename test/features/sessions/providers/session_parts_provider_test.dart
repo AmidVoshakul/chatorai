@@ -285,8 +285,9 @@ void main() {
         expect((readBack.single as UserMessage).content, 'snapshot test');
 
         // Verify the snapshot carries the current schema version.
-        final row = await (db.select(db.chatSnapshots)
-              ..where((s) => s.sessionId.equals(sid.value))).getSingle();
+        final row = await (db.select(
+          db.chatSnapshots,
+        )..where((s) => s.sessionId.equals(sid.value))).getSingle();
         expect(row.schemaVersion, 1);
       });
 

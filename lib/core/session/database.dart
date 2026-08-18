@@ -86,7 +86,10 @@ class AppDatabase extends _$AppDatabase {
           await mgr.addColumn(messages, messages.tokensReasoning as dynamic);
         }
         if (from < 9) {
-          await mgr.addColumn(chatSnapshots, chatSnapshots.schemaVersion as dynamic);
+          await mgr.addColumn(
+            chatSnapshots,
+            chatSnapshots.schemaVersion as dynamic,
+          );
         }
       },
     );

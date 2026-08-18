@@ -69,7 +69,7 @@ class ToolExecutor {
         'inputMap=$inputMap',
       );
     }
-    final ctx = options.experimentalContext;
+    final ctx = options.runtimeContext;
     final rawSessionId = ctx != null ? ctx['sessionId'] as String? : null;
     final sessionId = (rawSessionId == null || rawSessionId.isEmpty)
         ? null
@@ -291,7 +291,7 @@ class ToolExecutor {
       if (signal is sdk.CancellationToken) return signal;
     } catch (_) {}
     try {
-      final ctx = (options as dynamic).experimentalContext;
+      final ctx = (options as dynamic).runtimeContext;
       if (ctx is Map) {
         final signal = ctx['abortSignal'];
         if (signal is sdk.CancellationToken) return signal;

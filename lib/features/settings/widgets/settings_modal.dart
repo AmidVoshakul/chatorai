@@ -1,3 +1,5 @@
+import 'package:chatorai/core/keyboard/shortcut_handler.dart';
+import 'package:chatorai/core/keyboard/shortcuts.dart';
 import 'package:chatorai/features/settings/widgets/settings_window.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -52,7 +54,13 @@ class _SettingsModalWindow extends StatelessWidget {
               borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xl),
               child: Material(
                 color: palette.surface,
-                child: const SettingsWindow(),
+                child: ShortcutHandler(
+                  autofocus: true,
+                  shortcuts: [
+                    AppShortcuts.closeDialog(() => Navigator.pop(context)),
+                  ],
+                  child: const SettingsWindow(),
+                ),
               ),
             ),
           ),

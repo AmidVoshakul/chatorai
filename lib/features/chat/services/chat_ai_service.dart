@@ -179,7 +179,7 @@ class ChatAiService implements CompletionProvider {
 
   Future<void> _handleStreamToolResult({
     required String prefix,
-    required LanguageModelV3ToolResultPart toolResult,
+    required LanguageModelV4ToolResultPart toolResult,
     required bool preliminary,
     required Set<String> seenToolResults,
     required Future<void> Function(String, String, String)? onToolEnd,
@@ -209,7 +209,11 @@ class ChatAiService implements CompletionProvider {
       );
     } else if (!preliminary &&
         seenToolResults.contains(toolResult.toolCallId)) {
-      LogTags.chatService.logWarning(
+      // The SDK can emit the same non-preliminary tool result twice
+      // (e.g. once from the raw stream part and once from tool execution).
+      // Dedup is already handled by `seenToolResults`; log at debug to avoid
+      // noise in production logs.
+      LogTags.chatService.logDebug(
         '$prefix: duplicate ToolResultEvent '
         'tool=${toolResult.toolName} callId=${toolResult.toolCallId}',
       );
@@ -267,14 +271,14 @@ class ChatAiService implements CompletionProvider {
       return ModelMessage(role: role, content: content);
     }
     if (content is List) {
-      final parts = <LanguageModelV3ContentPart>[];
+      final parts = <LanguageModelV4ContentPart>[];
       for (final part in content) {
         if (part is! Map) continue;
         switch (part['type'] as String?) {
           case 'text':
             final text = part['text'] as String?;
             if (text != null && text.isNotEmpty) {
-              parts.add(LanguageModelV3TextPart(text: text));
+              parts.add(LanguageModelV4TextPart(text: text));
             }
           case 'image_url':
             final imageUrl = part['image_url'];
@@ -284,7 +288,7 @@ class ChatAiService implements CompletionProvider {
                 final uri = Uri.tryParse(url);
                 if (uri != null) {
                   parts.add(
-                    LanguageModelV3ImagePart(image: DataContentUrl(uri)),
+                    LanguageModelV4ImagePart(image: DataContentUrl(uri)),
                   );
                 }
               }
@@ -312,7 +316,7 @@ class ChatAiService implements CompletionProvider {
             }
             final text = part['text'] as String? ?? '';
             parts.add(
-              LanguageModelV3ToolResultPart(
+              LanguageModelV4ToolResultPart(
                 toolCallId: toolCallId,
                 toolName: toolName,
                 output: ToolResultOutputText(text),
@@ -371,9 +375,8 @@ class ChatAiService implements CompletionProvider {
 
     // ── Build LanguageModel once (before retry loop) ──────────────────────
     ModelConfig? resolvedConfig;
-    late LanguageModelV3 lm;
+    late LanguageModelV4 lm;
     Map<String, String> activeHeaders = _headers;
-    Map<String, dynamic>? capturedUsageJson;
 
     try {
       resolvedConfig = _resolver.resolve(model);
@@ -381,10 +384,7 @@ class ChatAiService implements CompletionProvider {
         resolvedConfig,
         overrideHeaders: _headers,
       );
-      lm = await _resolver.buildLanguageModel(
-        resolvedConfig,
-        onUsageJson: (usage) => capturedUsageJson = usage,
-      );
+      lm = await _resolver.buildLanguageModel(resolvedConfig);
       LogTags.chatService.logDebug(
         'streamChatCompletion: catalog model ${resolvedConfig.id}',
       );
@@ -421,7 +421,8 @@ class ChatAiService implements CompletionProvider {
             abortSignal: _cancellation.token,
             tools: tools,
             maxSteps: maxSteps,
-            experimentalContext: sessionId == null
+            includeRawChunks: true,
+            runtimeContext: sessionId == null
                 ? null
                 : {'sessionId': sessionId, 'agentId': 'main'},
             onInputAvailable: (event) async {
@@ -447,6 +448,7 @@ class ChatAiService implements CompletionProvider {
           );
 
           try {
+            final capturedRawUsage = <String, dynamic>{};
             await for (final event in result.fullStream.handleError((
               Object error,
               StackTrace stack,
@@ -524,7 +526,13 @@ class ChatAiService implements CompletionProvider {
                   break;
                 case StreamTextFinishStepEvent():
                   break;
-                case StreamTextRawEvent():
+                case StreamTextRawEvent(:final rawValue):
+                  if (rawValue is Map<String, dynamic> &&
+                      rawValue['usage'] is Map) {
+                    capturedRawUsage
+                      ..clear()
+                      ..addAll(rawValue['usage'] as Map<String, dynamic>);
+                  }
                   break;
                 case StreamTextErrorEvent(:final error):
                   LogTags.chatService.logError(
@@ -545,26 +553,22 @@ class ChatAiService implements CompletionProvider {
                   if (!isGenerationStillValid(gen, _generation)) return;
                   completionHandled = true;
                   _finalizeDanglingTools(toolTracker, onToolError);
-                  final cache = capturedUsageJson != null
-                      ? extractCacheTokens(capturedUsageJson!)
-                      : const UsageCacheTokens();
+                  final resolved = resolveUsage(usage, capturedRawUsage);
                   LogTags.chatService.logDebug(
-                    'streamChatCompletion: raw usage=${jsonEncode(capturedUsageJson ?? const <String, dynamic>{})}',
+                    'streamChatCompletion: raw usage=${jsonEncode(capturedRawUsage.isNotEmpty ? capturedRawUsage : const <String, dynamic>{})}',
                   );
                   _tokenCounter.recordUsage(
-                    promptTokens: usage?.inputTokens,
-                    completionTokens: usage?.outputTokens,
-                    cacheReadTokens:
-                        usage?.inputTokenDetails?.cacheReadTokens ?? cache.read,
-                    cacheWriteTokens:
-                        usage?.inputTokenDetails?.cacheWriteTokens ?? cache.write,
+                    promptTokens: resolved['inputTotal'],
+                    completionTokens: resolved['outputTotal'],
+                    cacheReadTokens: resolved['cacheRead'],
+                    cacheWriteTokens: resolved['cacheWrite'],
                   );
                   onUsage?.call(
-                    usage?.inputTokens ?? 0,
-                    usage?.outputTokens ?? 0,
-                    usage?.inputTokenDetails?.cacheReadTokens ?? cache.read,
-                    usage?.inputTokenDetails?.cacheWriteTokens ?? cache.write,
-                    usage?.outputTokenDetails?.reasoningTokens ?? 0,
+                    resolved['inputTotal'] ?? 0,
+                    resolved['outputTotal'] ?? 0,
+                    resolved['cacheRead'] ?? 0,
+                    resolved['cacheWrite'] ?? 0,
+                    resolved['reasoning'] ?? 0,
                   );
                   await onCompletion(text);
                   if (_overflowDetector.isOverflow(_tokenCounter.totalTokens)) {
@@ -654,9 +658,8 @@ class ChatAiService implements CompletionProvider {
     // Falls back to the shared service token otherwise.
     final effectiveAbort = abortSignal ?? _cancellation.token;
     ModelConfig? resolvedConfig;
-    late LanguageModelV3 lm;
+    late LanguageModelV4 lm;
     Map<String, String> activeHeaders = _headers;
-    Map<String, dynamic>? capturedUsageJson;
 
     try {
       resolvedConfig = _resolver.resolve(model);
@@ -664,10 +667,7 @@ class ChatAiService implements CompletionProvider {
         resolvedConfig,
         overrideHeaders: _headers,
       );
-      lm = await _resolver.buildLanguageModel(
-        resolvedConfig,
-        onUsageJson: (usage) => capturedUsageJson = usage,
-      );
+      lm = await _resolver.buildLanguageModel(resolvedConfig);
     } catch (e) {
       rethrow;
     }
@@ -693,7 +693,8 @@ class ChatAiService implements CompletionProvider {
           abortSignal: effectiveAbort,
           tools: tools,
           maxSteps: maxSteps,
-          experimentalContext: sessionId == null
+          includeRawChunks: true,
+          runtimeContext: sessionId == null
               ? null
               : {'sessionId': sessionId, 'agentId': 'subagent'},
           onInputAvailable: (event) {
@@ -714,6 +715,7 @@ class ChatAiService implements CompletionProvider {
         );
 
         try {
+          final capturedRawUsage = <String, dynamic>{};
           await for (final event in result.fullStream.handleError((
             Object error,
             StackTrace stack,
@@ -773,20 +775,26 @@ class ChatAiService implements CompletionProvider {
               case StreamTextReasoningEndEvent():
                 await onReasoningEnd?.call();
                 break;
+              case StreamTextRawEvent(:final rawValue):
+                if (rawValue is Map<String, dynamic> &&
+                    rawValue['usage'] is Map) {
+                  capturedRawUsage
+                    ..clear()
+                    ..addAll(rawValue['usage'] as Map<String, dynamic>);
+                }
+                break;
               case StreamTextFinishEvent(:final text, :final usage):
                 _finalizeDanglingTools(toolTracker, onToolError);
-                final cache = capturedUsageJson != null
-                    ? extractCacheTokens(capturedUsageJson!)
-                    : const UsageCacheTokens();
+                final resolved = resolveUsage(usage, capturedRawUsage);
                 LogTags.chatService.logDebug(
-                  'runChildCompletion: raw usage=${jsonEncode(capturedUsageJson ?? const <String, dynamic>{})}',
+                  'runChildCompletion: raw usage=${jsonEncode(capturedRawUsage.isNotEmpty ? capturedRawUsage : const <String, dynamic>{})}',
                 );
                 onUsage?.call(
-                  usage?.inputTokens ?? 0,
-                  usage?.outputTokens ?? 0,
-                  usage?.inputTokenDetails?.cacheReadTokens ?? cache.read,
-                  usage?.inputTokenDetails?.cacheWriteTokens ?? cache.write,
-                  usage?.outputTokenDetails?.reasoningTokens ?? 0,
+                  resolved['inputTotal'] ?? 0,
+                  resolved['outputTotal'] ?? 0,
+                  resolved['cacheRead'] ?? 0,
+                  resolved['cacheWrite'] ?? 0,
+                  resolved['reasoning'] ?? 0,
                 );
                 await onCompletion(text);
               default:
@@ -816,7 +824,7 @@ class ChatAiService implements CompletionProvider {
 
     // ── Build LanguageModel once (before retry loop) ──────────────────────
     ModelConfig? resolvedConfig;
-    late LanguageModelV3 lm;
+    late LanguageModelV4 lm;
     Map<String, String> activeHeaders = _headers;
 
     try {
@@ -1002,6 +1010,40 @@ class ChatAiService implements CompletionProvider {
   void dispose() {
     _cancellation.cancel();
     _retryService.dispose();
+  }
+
+  /// Resolves usage values from the finish event, preferring captured raw
+  /// usage (from `StreamPartRaw` with `includeRawChunks: true`) over the
+  /// SDK-bucketed `usage` on the finish event.
+  ///
+  /// Returns a map with keys: `inputTotal`, `outputTotal`, `cacheRead`,
+  /// `cacheWrite`, `reasoning`.
+  Map<String, int> resolveUsage(
+    LanguageModelV4Usage? usage,
+    Map<String, dynamic>? capturedRawUsage,
+  ) {
+    final raw = capturedRawUsage;
+    if (raw != null && raw.isNotEmpty) {
+      final rawData = extractUsageRawData(raw);
+      return {
+        'inputTotal': rawData.inputTotal,
+        'outputTotal': rawData.outputTotal,
+        'cacheRead': rawData.cacheRead,
+        'cacheWrite': rawData.cacheWrite,
+        'reasoning': rawData.reasoning,
+      };
+    }
+    final cache = usage != null
+        ? extractCacheTokens(usage.raw)
+        : const UsageCacheTokens();
+    return {
+      'inputTotal': usage?.inputTokens.total ?? 0,
+      'outputTotal': usage?.outputTokens.total ?? 0,
+      'cacheRead': usage?.inputTokens.cacheRead ?? cache.read,
+      'cacheWrite': usage?.inputTokens.cacheWrite ?? cache.write,
+      'reasoning':
+          usage?.outputTokens.reasoning ?? extractReasoningTokens(usage?.raw),
+    };
   }
 
   /// Resolves provider-declared defaults from `chatorai.json` for a model call.

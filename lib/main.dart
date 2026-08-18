@@ -6,6 +6,7 @@ import 'package:chatorai/core/cli/cwd_override.dart';
 import 'package:chatorai/core/cli/cli_commands.dart';
 import 'package:chatorai/features/bootstrap/app_loading_screen.dart';
 import 'package:chatorai/features/bootstrap/bootstrap_error_screen.dart';
+import 'package:chatorai/core/keyboard/global_shortcut_handler.dart';
 import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
 import 'package:chatorai/features/chat/presentation/widgets/permission_overlay.dart';
 import 'package:chatorai/features/settings/screens/settings_screen.dart';
@@ -23,6 +24,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // ===========================================================================
 // MAIN ENTRY POINT
 // ===========================================================================
+
+final _navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main(List<String> args) async {
   final cwdResult = detectCwdOverride(args);
@@ -88,6 +91,7 @@ class ChatoraiApp extends ConsumerWidget {
 
     return MaterialApp(
       title: 'ChatORAI',
+      navigatorKey: _navigatorKey,
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -127,11 +131,17 @@ class ChatoraiApp extends ConsumerWidget {
         if (languageState.isRTL) {
           return Directionality(
             textDirection: TextDirection.rtl,
-            child: child!,
+            child: GlobalShortcutHandler(
+              navigatorKey: _navigatorKey,
+              child: child!,
+            ),
           );
         }
 
-        return child!;
+        return GlobalShortcutHandler(
+          navigatorKey: _navigatorKey,
+          child: child!,
+        );
       },
     );
   }

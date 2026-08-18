@@ -450,7 +450,15 @@ class SessionRunnerSession {
 
   /// Tool calls awaiting display until the reasoning section that preceded
   /// them has fully streamed (its late "tail" deltas). Kept in call order.
-  final List<({String callId, String toolName, Map<String, dynamic> input, String partId})> _pendingToolCalls = [];
+  final List<
+    ({
+      String callId,
+      String toolName,
+      Map<String, dynamic> input,
+      String partId,
+    })
+  >
+  _pendingToolCalls = [];
 
   /// Grace period: the deferred tool card is emitted once reasoning has been
   /// silent for this long. Injectable for deterministic tests.
@@ -661,6 +669,25 @@ class SessionRunnerSession {
     _toolCardTimer = null;
   }
 
+  /// Closes an open reasoning part. Must only be called from within a
+  /// [_lock.synchronized] section.
+  Future<void> _closeReasoningIfOpen() async {
+    if (_openReasoningPartId == null || messageId == null) return;
+    await _flushReasoningDeltas();
+    final event = ReasoningEnded(
+      sessionId: sessionId,
+      messageId: messageId!,
+      fullReasoning: _fullReasoning.toString(),
+      partId: _openReasoningPartId!,
+      timestamp: DateTime.now(),
+    );
+    await repository.appendEvent(event);
+    eventBus?.emit(event);
+    _openReasoningPartId = null;
+    _pendingReasoning.clear();
+    _fullReasoning.clear();
+  }
+
   Future<void> onToolStart(
     String toolCallId,
     String toolName,
@@ -678,7 +705,12 @@ class SessionRunnerSession {
     await _flushTextDeltas();
     _openTextPartId = null;
     if (_openReasoningPartId != null) {
-      _pendingToolCalls.add((callId: toolCallId, toolName: toolName, input: input, partId: partId));
+      _pendingToolCalls.add((
+        callId: toolCallId,
+        toolName: toolName,
+        input: input,
+        partId: partId,
+      ));
       _toolCardTimer?.cancel();
       _toolCardTimer = Timer(
         _toolCardGrace,
@@ -774,25 +806,6 @@ class SessionRunnerSession {
       _toolCardTimer = null;
     }
   });
-
-  /// Closes an open reasoning part. Must only be called from within a
-  /// [_lock.synchronized] section.
-  Future<void> _closeReasoningIfOpen() async {
-    if (_openReasoningPartId == null || messageId == null) return;
-    await _flushReasoningDeltas();
-    final event = ReasoningEnded(
-      sessionId: sessionId,
-      messageId: messageId!,
-      fullReasoning: _fullReasoning.toString(),
-      partId: _openReasoningPartId!,
-      timestamp: DateTime.now(),
-    );
-    await repository.appendEvent(event);
-    eventBus?.emit(event);
-    _openReasoningPartId = null;
-    _pendingReasoning.clear();
-    _fullReasoning.clear();
-  }
 
   /// Emits `ToolFailed` for every tool call that was started but never
   /// completed. Must only be called from within a [_lock.synchronized] section.

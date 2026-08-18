@@ -13,42 +13,42 @@ packages:
     dependency: "direct main"
     description:
       name: ai_sdk_anthropic
-      sha256: d27d444e690cb0c394d64ea7e0660dc915ae711af96091a34298ce331f58c3db
+      sha256: "9ac7e17b77fc20ded41e89e7aae4c3029738a2fc37963400ea01f6fc69b79652"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.0"
+    version: "2.0.0"
   ai_sdk_dart:
     dependency: "direct main"
     description:
       name: ai_sdk_dart
-      sha256: e8c3930c8fc38bbe8d35c26d4426d01c423db4f12c28059cfaf2eb0826bdeb43
+      sha256: a0e76f035f985cf49dc3269766c1e4419f6e8e3149a9e020af4e0f654e1d6e91
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.0"
+    version: "2.0.0"
   ai_sdk_google:
     dependency: "direct main"
     description:
       name: ai_sdk_google
-      sha256: "2f53ea252ff87d252348c9dfcd4757cea9017501e9a6bf3093f794f9b3725784"
+      sha256: ed26784f5918482983056613b0d2b9dbf9c17233e8bbfd28a82f9f352f30b7d2
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.0"
+    version: "2.0.0"
   ai_sdk_openai_compatible:
     dependency: "direct main"
     description:
       name: ai_sdk_openai_compatible
-      sha256: b3c22fd81d0d2fb4eea73aba82051e0df4b1afb0597d39426876617da10335cd
+      sha256: "53b5f128789de9283780f7061ea476131ef4569bc35f8e7ad06ad18a33bbb993"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.0"
+    version: "2.0.0"
   ai_sdk_provider:
     dependency: "direct main"
     description:
       name: ai_sdk_provider
-      sha256: "5ba291d5de3028c8449892243d7fcf6796fed69840522d2768e31131f6b63c2b"
+      sha256: "37b351b47ba29faa659d6e1cccc4588619497f5d91600976878499cb088a09fe"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.0"
+    version: "2.0.0"
   analyzer:
     dependency: transitive
     description:

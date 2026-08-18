@@ -10,7 +10,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // ACCESSIBILITY SETTINGS SECTION
 // ===========================================================================
 class SettingsAccessibilitySection extends ConsumerWidget {
-  const SettingsAccessibilitySection({super.key});
+  const SettingsAccessibilitySection({super.key, this.showHeader = true});
+
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,8 +22,10 @@ class SettingsAccessibilitySection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SettingsSectionHeader(title: localizations.accessibility),
-        const SizedBox(height: ChatoraiSpacing.lg),
+        if (showHeader) ...[
+          SettingsSectionHeader(title: localizations.accessibility),
+          const SizedBox(height: ChatoraiSpacing.lg),
+        ],
         SettingsToggleTile(
           context: context,
           title: localizations.wideScreenMode,

@@ -335,7 +335,12 @@ void main() {
   group('filterPartsByMessage', () {
     test('returns only parts belonging to the target messageId', () {
       final parts = [
-        AssistantText(id: 't1', sessionId: 's1', messageId: 'm1', text: 'hello'),
+        AssistantText(
+          id: 't1',
+          sessionId: 's1',
+          messageId: 'm1',
+          text: 'hello',
+        ),
         AssistantReasoning(
           id: 'r1',
           sessionId: 's1',
@@ -343,7 +348,12 @@ void main() {
           text: 'thinking',
           started: DateTime.now(),
         ),
-        AssistantText(id: 't2', sessionId: 's1', messageId: 'm2', text: 'other'),
+        AssistantText(
+          id: 't2',
+          sessionId: 's1',
+          messageId: 'm2',
+          text: 'other',
+        ),
       ];
 
       final filtered = filterPartsByMessage(parts, 'm1');
@@ -355,7 +365,12 @@ void main() {
 
     test('returns empty list when no parts match the messageId', () {
       final parts = [
-        AssistantText(id: 't1', sessionId: 's1', messageId: 'm1', text: 'hello'),
+        AssistantText(
+          id: 't1',
+          sessionId: 's1',
+          messageId: 'm1',
+          text: 'hello',
+        ),
       ];
 
       final filtered = filterPartsByMessage(parts, 'm2');
@@ -383,7 +398,12 @@ void main() {
           agent: 'a',
           state: ToolState.running,
         ),
-        AssistantText(id: 't1', sessionId: 's1', messageId: 'm2', text: 'other'),
+        AssistantText(
+          id: 't1',
+          sessionId: 's1',
+          messageId: 'm2',
+          text: 'other',
+        ),
       ];
 
       final filtered = filterPartsByMessage(parts, 'm1');

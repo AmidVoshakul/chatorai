@@ -54,7 +54,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('mcp: 1/1'), findsOneWidget);
+      expect(find.textContaining('MCP: 1/1'), findsOneWidget);
       expect(find.textContaining('⎇ main'), findsOneWidget);
       final richText = tester.widget<RichText>(find.byType(RichText).first);
       expect(richText.text.toPlainText(), isNotEmpty);
@@ -72,7 +72,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('mcp:'), findsNothing);
+      expect(find.textContaining('MCP:'), findsNothing);
     });
 
     testWidgets('hides branch segment when not in a git repo', (tester) async {
@@ -267,13 +267,13 @@ void main() {
       await tester.pump();
 
       expect(find.byType(SpinKitCircle), findsOneWidget);
-      expect(find.textContaining('mcp:'), findsNothing);
+      expect(find.textContaining('MCP:'), findsNothing);
 
       completer.complete({'alpha': McpServerStatus.connected()});
       await tester.pumpAndSettle();
 
       expect(find.byType(SpinKitCircle), findsNothing);
-      expect(find.textContaining('mcp: 1/1'), findsOneWidget);
+      expect(find.textContaining('MCP: 1/1'), findsOneWidget);
     });
   });
 }

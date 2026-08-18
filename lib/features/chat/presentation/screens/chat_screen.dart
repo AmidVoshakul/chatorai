@@ -55,7 +55,8 @@ import 'package:chatorai/providers.dart'
         sessionRepositoryProvider,
         sessionStackProvider,
         permissionServiceProvider,
-        sessionPartsProvider;
+        sessionPartsProvider,
+        scaffoldKeyProvider;
 import 'package:chatorai/shared/utils/chat_error_utils.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
@@ -92,7 +93,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   final GlobalKey<ChatMessagesState> _chatMessagesKey =
       GlobalKey<ChatMessagesState>();
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late final GlobalKey<ScaffoldState> _scaffoldKey;
 
   DateTime? _lastScrollUpdate;
   static const _scrollThrottleDuration = Duration(milliseconds: 16);
@@ -158,6 +159,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _messageScrollController.addListener(_handleScroll);
     _messageScrollController.addListener(_handleHeadingSync);
     _chatInputFocusNode = FocusNode();
+    _scaffoldKey = ref.read(scaffoldKeyProvider);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showWelcomeSuggestions();
@@ -229,17 +231,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       showSettingsModal(context);
     } else {
       Navigator.of(context).pushNamed('/settings');
-    }
-  }
-
-  void _toggleSidebar() {
-    final scaffold = _scaffoldKey.currentState;
-    if (scaffold == null) return;
-    if (scaffold.isDrawerOpen) {
-      Navigator.pop(context);
-    } else {
-      FocusScope.of(context).unfocus();
-      scaffold.openDrawer();
     }
   }
 
@@ -339,92 +330,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         : baseLayout;
 
     final shortcuts = [
-      AppShortcuts.cancelStreaming(
-        _stopStreaming,
-        isActive: (r) => r.read(chatScreenProvider).isStreaming,
-      ),
-      AppShortcuts.openLatestChildSession(_navigateToLastChildSession),
-      AppShortcuts.cyclePrimaryAgent(_cycleAgent),
-      AppShortcuts.toggleSidebar(_toggleSidebar),
-      AppShortcuts.newChat(() => _createNewChat()),
-      AppShortcuts.openModelSelector(_openModelSelector),
-      AppShortcuts.openSettings(_openSettings),
       AppShortcuts.scrollToChatStart(_scrollToChatStart),
       AppShortcuts.scrollToChatEnd(_scrollToChatEnd),
     ];
 
     return ShortcutHandler(shortcuts: shortcuts, child: screenContent);
-  }
-
-  void _navigateToLastChildSession() {
-    String? sessionId;
-
-    // Check active child session first (during streaming)
-    sessionId = ref
-        .read(currentSessionRunnerProvider.notifier)
-        .activeChildSessionId;
-
-    if (sessionId == null) {
-      final streamingSessionId = ref
-          .read(chatScreenProvider)
-          .streamingSessionId;
-      if (streamingSessionId != null) {
-        final sessionAsyncState = ref.read(
-          sessionPartsProvider(streamingSessionId),
-        );
-        final sessionState = sessionAsyncState.value;
-        if (sessionState != null) {
-          for (final part in sessionState.parts.reversed) {
-            if (part is AssistantTask &&
-                part.taskSessionId != null &&
-                part.taskSessionId!.isNotEmpty) {
-              sessionId = part.taskSessionId;
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    if (sessionId == null) {
-      final chat = currentChat;
-      if (chat == null) return;
-      for (final msg in chat.messages.reversed) {
-        if (msg.partsJson == null) continue;
-        for (final partJson in msg.partsJson!.reversed) {
-          if (partJson['type'] == 'task') {
-            final sid = partJson['sessionId'] as String?;
-            if (sid != null && sid.isNotEmpty) {
-              sessionId = sid;
-              break;
-            }
-          }
-        }
-        if (sessionId != null) break;
-      }
-    }
-
-    if (sessionId != null) {
-      ref
-          .read(sessionStackProvider.notifier)
-          .push(SessionID.fromString(sessionId));
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => ChildSessionScreen(sessionId: sessionId!),
-        ),
-      );
-    }
-  }
-
-  void _cycleAgent() {
-    final primaryAgents = AgentRegistry().getPrimaryAgents();
-    if (primaryAgents.length <= 1) return;
-    final currentAgent = ref.read(currentAgentProvider);
-    final currentIndex = primaryAgents.indexWhere(
-      (a) => a.id == currentAgent.id,
-    );
-    final nextIndex = (currentIndex + 1) % primaryAgents.length;
-    ref.read(currentAgentProvider.notifier).setAgent(primaryAgents[nextIndex]);
   }
 
   /// Generates a session title from the first user message when the chat

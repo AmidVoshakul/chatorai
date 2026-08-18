@@ -22,6 +22,15 @@ class AppShortcuts {
     );
   }
 
+  static KeyboardShortcut closeDialog(void Function() onExecute) {
+    return KeyboardShortcut(
+      id: 'close_dialog',
+      description: 'Close dialog (Escape)',
+      activator: const KeyActivator.escape(),
+      onExecute: (_, _) => onExecute(),
+    );
+  }
+
   static KeyboardShortcut openLatestChildSession(void Function() onExecute) {
     return KeyboardShortcut(
       id: 'open_latest_child',

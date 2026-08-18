@@ -237,32 +237,30 @@ void main() {
       await db.close();
     });
 
-    test('onToolStart defers tool card when reasoning is open', () async {
-      final session = await runner.startInitializedSession(
-        agent: 'general',
-        toolCardGrace: const Duration(milliseconds: 50),
-      );
+    test(
+      'tool card is deferred while reasoning is open and flushed by the grace timer',
+      () async {
+        final session = await runner.startInitializedSession(
+          agent: 'general',
+          toolCardGrace: Duration.zero,
+        );
 
-      session.onReasoning('Thinking...');
-      await session.onToolStart('tc_1', 'shell', {'cmd': 'ls'});
+        session.onReasoning('Thinking...');
+        await session.onToolStart('tc_1', 'shell', {'cmd': 'ls'});
 
-      // Before grace period: no ToolCalled yet, reasoning still open.
-      await Future.delayed(const Duration(milliseconds: 10));
-      final eventsBefore = await repository.eventStore.getEvents(session.sessionId);
-      expect(eventsBefore.whereType<ToolCalled>().length, 0);
-      expect(eventsBefore.whereType<ReasoningEnded>().length, 0);
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      // After grace period: reasoning closes, then ToolCalled appears.
-      await Future.delayed(const Duration(milliseconds: 100));
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.whereType<ReasoningEnded>().length, 1);
-      expect(events.whereType<ReasoningStarted>().length, 1);
-      expect(events.whereType<ToolCalled>().length, 1);
-      // Verify order: ReasoningEnded BEFORE ToolCalled.
-      final reasoningEndedIndex = events.indexWhere((e) => e is ReasoningEnded);
-      final toolCalledIndex = events.indexWhere((e) => e is ToolCalled);
-      expect(reasoningEndedIndex, lessThan(toolCalledIndex));
-    });
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        expect(events.whereType<ToolCalled>().length, 1);
+        expect(events.whereType<ReasoningEnded>().length, 1);
+        // Verify order: ReasoningEnded BEFORE ToolCalled.
+        final reasoningEndedIndex = events.indexWhere(
+          (e) => e is ReasoningEnded,
+        );
+        final toolCalledIndex = events.indexWhere((e) => e is ToolCalled);
+        expect(reasoningEndedIndex, lessThan(toolCalledIndex));
+      },
+    );
 
     test('onToolEnd appends ToolSuccess event', () async {
       final session = await runner.startInitializedSession(agent: 'general');
@@ -467,10 +465,7 @@ void main() {
     });
 
     test('multi-step: reasoning, tool, reasoning in correct order', () async {
-      final session = await runner.startInitializedSession(
-        agent: 'general',
-        toolCardGrace: const Duration(milliseconds: 50),
-      );
+      final session = await runner.startInitializedSession(agent: 'general');
 
       session.onReasoning('First thought');
       await session.onReasoningEnd();
@@ -547,60 +542,58 @@ void main() {
 
     // --- New Design F tests ---
 
-    test('deferred tool card: tail streams live, then card appears after grace',
-        () async {
-      final session = await runner.startInitializedSession(
-        agent: 'general',
-        toolCardGrace: const Duration(milliseconds: 50),
-      );
+    test(
+      'post-tool reasoning appends to the SAME part; card flushed after grace',
+      () async {
+        final session = await runner.startInitializedSession(
+          agent: 'general',
+          toolCardGrace: Duration.zero,
+        );
 
-      session.onReasoning('A');
-      await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
-      session.onReasoning('B');
-      session.onReasoning('C');
+        session.onReasoning('A');
+        await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
+        session.onReasoning('B');
+        session.onReasoning('C');
 
-      // Before grace: same reasoning part, no ToolCalled.
-      await Future.delayed(const Duration(milliseconds: 20));
-      var events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.whereType<ReasoningStarted>().length, 1);
-      expect(events.whereType<ToolCalled>().length, 0);
-      final partId = events.whereType<ReasoningStarted>().single.partId;
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      // After grace: ReasoningEnded on same partId, then ToolCalled.
-      await Future.delayed(const Duration(milliseconds: 100));
-      events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.whereType<ReasoningEnded>().length, 1);
-      expect(events.whereType<ReasoningEnded>().single.partId, partId);
-      expect(events.whereType<ReasoningEnded>().single.fullReasoning, 'ABC');
-      expect(events.whereType<ToolCalled>().length, 1);
-      final toolCalledIndex = events.indexWhere((e) => e is ToolCalled);
-      final reasoningEndedIndex = events.indexWhere((e) => e is ReasoningEnded);
-      expect(reasoningEndedIndex, lessThan(toolCalledIndex));
-    });
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        // The thought is NOT torn: A+B+C live in ONE reasoning part.
+        expect(events.whereType<ReasoningStarted>().length, 1);
+        expect(events.whereType<ReasoningEnded>().length, 1);
+        expect(events.whereType<ToolCalled>().length, 1);
+        final firstEnded = events.whereType<ReasoningEnded>().single;
+        expect(firstEnded.fullReasoning, 'ABC');
+        // ToolCalled appears after the ReasoningEnded.
+        final reasoningEndedIndex = events.indexWhere(
+          (e) => e is ReasoningEnded,
+        );
+        final toolCalledIndex = events.indexWhere((e) => e is ToolCalled);
+        expect(reasoningEndedIndex, lessThan(toolCalledIndex));
+      },
+    );
 
-    test('tool card is not emitted immediately when reasoning is open', () async {
-      final session = await runner.startInitializedSession(
-        agent: 'general',
-        toolCardGrace: const Duration(milliseconds: 100),
-      );
+    test(
+      'tool card is NOT emitted while reasoning stays open (deferred)',
+      () async {
+        final session = await runner.startInitializedSession(agent: 'general');
 
-      session.onReasoning('Thinking...');
-      await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
+        session.onReasoning('Thinking...');
+        await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
 
-      await Future.delayed(const Duration(milliseconds: 30));
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.whereType<ToolCalled>().length, 0);
-      expect(events.whereType<ReasoningEnded>().length, 0);
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      session.dispose();
-    });
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        expect(events.whereType<ToolCalled>().length, 0);
+        expect(events.whereType<ReasoningEnded>().length, 0);
 
-    test('force-path: onToolEnd before grace emits ToolCalled then ToolSuccess',
-        () async {
-      final session = await runner.startInitializedSession(
-        agent: 'general',
-        toolCardGrace: const Duration(milliseconds: 200),
-      );
+        // Finalize so the pending grace timer is cancelled before tearDown.
+        await session.onCompletion(content: 'done', model: 'gpt-4');
+      },
+    );
+
+    test('onToolEnd emits ToolCalled then ToolSuccess in order', () async {
+      final session = await runner.startInitializedSession(agent: 'general');
 
       session.onReasoning('A');
       await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
@@ -620,11 +613,8 @@ void main() {
       expect(toolCalledIndex, lessThan(toolSuccessIndex));
     });
 
-    test('two waves: deferred cards in correct order', () async {
-      final session = await runner.startInitializedSession(
-        agent: 'general',
-        toolCardGrace: const Duration(milliseconds: 50),
-      );
+    test('two waves: reasoning, tool, reasoning in correct order', () async {
+      final session = await runner.startInitializedSession(agent: 'general');
 
       // Wave 1
       session.onReasoning('A1');
@@ -638,7 +628,7 @@ void main() {
       session.onReasoning('B2');
       await session.onToolEnd('tc2', 'shell', '/home');
 
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       final events = await repository.eventStore.getEvents(session.sessionId);
       final reasoningStarted = events.whereType<ReasoningStarted>().toList();
@@ -655,83 +645,83 @@ void main() {
       expect(toolCalled[1].toolCallId, 'tc2');
     });
 
-    test('tool without preceding thought emits ToolCalled immediately', () async {
+    test(
+      'tool without preceding thought emits ToolCalled immediately',
+      () async {
+        final session = await runner.startInitializedSession(agent: 'general');
+
+        await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
+        await session.onToolEnd('tc1', 'shell', 'file1');
+
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        final toolCalled = events.whereType<ToolCalled>().toList();
+        expect(toolCalled.length, 1);
+        expect(toolCalled.single.toolCallId, 'tc1');
+        expect(events.whereType<ReasoningStarted>().length, 0);
+      },
+    );
+
+    test(
+      'onChunk with open reasoning emits cards before TextStarted',
+      () async {
+        final session = await runner.startInitializedSession(agent: 'general');
+
+        session.onReasoning('A');
+        await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
+        await session.onChunk('Answer' + 'x' * 1100);
+
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        final types = events.map((e) => e.runtimeType).toList();
+        // ReasoningEnded (closed by tool start) appears BEFORE TextStarted.
+        final reasoningEndedIndex = types.indexOf(ReasoningEnded);
+        final textStartedIndex = types.indexOf(TextStarted);
+        expect(reasoningEndedIndex, lessThan(textStartedIndex));
+        final reasoningEnded = events.whereType<ReasoningEnded>().single;
+        expect(reasoningEnded.fullReasoning, 'A');
+        expect(events.whereType<ReasoningStarted>().length, 1);
+        expect(events.whereType<TextStarted>().length, 1);
+        expect(events.whereType<ToolCalled>().length, 1);
+      },
+    );
+
+    test(
+      'onCompletion with open reasoning emits cards before StepEnded',
+      () async {
+        final session = await runner.startInitializedSession(agent: 'general');
+
+        session.onReasoning('A');
+        await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
+        await session.onCompletion(
+          content: 'Answer',
+          model: 'gpt-4',
+          tokensInput: 10,
+          tokensOutput: 5,
+        );
+
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        final reasoningEnded = events.whereType<ReasoningEnded>().toList();
+        expect(reasoningEnded.length, 1);
+        expect(reasoningEnded.single.fullReasoning, 'A');
+        final toolCalled = events.whereType<ToolCalled>().toList();
+        expect(toolCalled.length, 1);
+        final stepEnded = events.whereType<StepEnded>().toList();
+        expect(stepEnded.length, 1);
+        // ToolCalled must appear before StepEnded.
+        expect(
+          events.indexOf(toolCalled.single) < events.indexOf(stepEnded.single),
+          isTrue,
+        );
+      },
+    );
+
+    test('onToolError emits ToolCalled before ToolFailed', () async {
       final session = await runner.startInitializedSession(agent: 'general');
-
-      await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
-      await session.onToolEnd('tc1', 'shell', 'file1');
-
-      await Future.delayed(const Duration(milliseconds: 50));
-
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      final toolCalled = events.whereType<ToolCalled>().toList();
-      expect(toolCalled.length, 1);
-      expect(toolCalled.single.toolCallId, 'tc1');
-      expect(events.whereType<ReasoningStarted>().length, 0);
-    });
-
-    test('onChunk with pending deferred cards emits cards before TextStarted',
-        () async {
-      final session = await runner.startInitializedSession(
-        agent: 'general',
-        toolCardGrace: const Duration(milliseconds: 100),
-      );
-
-      session.onReasoning('A');
-      await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
-      await session.onChunk('Answer' + 'x' * 1100);
-
-      await Future.delayed(const Duration(milliseconds: 50));
-
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      final types = events.map((e) => e.runtimeType).toList();
-      // ReasoningEnded (closed by text start) appears BEFORE TextStarted.
-      final reasoningEndedIndex = types.indexOf(ReasoningEnded);
-      final textStartedIndex = types.indexOf(TextStarted);
-      expect(reasoningEndedIndex, lessThan(textStartedIndex));
-      final reasoningEnded = events.whereType<ReasoningEnded>().single;
-      expect(reasoningEnded.fullReasoning, 'A');
-      expect(events.whereType<ReasoningStarted>().length, 1);
-      expect(events.whereType<TextStarted>().length, 1);
-      expect(events.whereType<ToolCalled>().length, 1);
-    });
-
-    test('onCompletion with pending deferred emits cards before StepEnded',
-        () async {
-      final session = await runner.startInitializedSession(
-        agent: 'general',
-        toolCardGrace: const Duration(milliseconds: 50),
-      );
-
-      session.onReasoning('A');
-      await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
-      await session.onCompletion(
-        content: 'Answer',
-        model: 'gpt-4',
-        tokensInput: 10,
-        tokensOutput: 5,
-      );
-
-      await Future.delayed(const Duration(milliseconds: 50));
-
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      final reasoningEnded = events.whereType<ReasoningEnded>().toList();
-      expect(reasoningEnded.length, 1);
-      expect(reasoningEnded.single.fullReasoning, 'A');
-      final toolCalled = events.whereType<ToolCalled>().toList();
-      expect(toolCalled.length, 1);
-      final stepEnded = events.whereType<StepEnded>().toList();
-      expect(stepEnded.length, 1);
-      // ToolCalled must appear before StepEnded.
-      expect(events.indexOf(toolCalled.single) < events.indexOf(stepEnded.single),
-          isTrue);
-    });
-
-    test('onToolError force-path: ToolCalled before ToolFailed', () async {
-      final session = await runner.startInitializedSession(
-        agent: 'general',
-        toolCardGrace: const Duration(milliseconds: 200),
-      );
 
       session.onReasoning('A');
       await session.onToolStart('tc1', 'shell', {'cmd': 'fail'});
@@ -748,41 +738,137 @@ void main() {
       expect(toolCalledIndex, lessThan(toolFailedIndex));
     });
 
-    test('parallel wave: both cards deferred, emitted in call order', () async {
-      final session = await runner.startInitializedSession(
-        agent: 'general',
-        toolCardGrace: const Duration(milliseconds: 50),
-      );
+    test(
+      'parallel wave: both cards flushed in call order after grace',
+      () async {
+        final session = await runner.startInitializedSession(
+          agent: 'general',
+          toolCardGrace: Duration.zero,
+        );
 
-      session.onReasoning('A');
-      await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
-      await session.onToolStart('tc2', 'shell', {'cmd': 'pwd'});
-      session.onReasoning('B');
+        session.onReasoning('A');
+        await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
+        await session.onToolStart('tc2', 'shell', {'cmd': 'pwd'});
+        session.onReasoning('B');
 
-      await Future.delayed(const Duration(milliseconds: 100));
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      final events = await repository.eventStore.getEvents(session.sessionId);
-      expect(events.whereType<ReasoningEnded>().length, 1);
-      expect(events.whereType<ReasoningEnded>().single.fullReasoning, 'AB');
-      final toolCalled = events.whereType<ToolCalled>().toList();
-      expect(toolCalled.length, 2);
-      expect(toolCalled[0].toolCallId, 'tc1');
-      expect(toolCalled[1].toolCallId, 'tc2');
-    });
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        expect(events.whereType<ReasoningEnded>().length, 1);
+        expect(events.whereType<ReasoningEnded>().single.fullReasoning, 'AB');
+        final toolCalled = events.whereType<ToolCalled>().toList();
+        expect(toolCalled.length, 2);
+        expect(toolCalled[0].toolCallId, 'tc1');
+        expect(toolCalled[1].toolCallId, 'tc2');
+        // Thought closes before the cards appear.
+        final reasoningEndedIndex = events.indexWhere(
+          (e) => e is ReasoningEnded,
+        );
+        final firstToolCalledIndex = events.indexWhere((e) => e is ToolCalled);
+        expect(reasoningEndedIndex, lessThan(firstToolCalledIndex));
+      },
+    );
 
-    test('flush pending with empty list and open reasoning only closes reasoning',
-        () async {
+    test('open reasoning is closed when text starts', () async {
       final session = await runner.startInitializedSession(agent: 'general');
 
       session.onReasoning('A');
-      await session.onReasoningEnd();
+      await session.onChunk('Answer' + 'x' * 1100);
 
       await Future.delayed(const Duration(milliseconds: 50));
 
       final events = await repository.eventStore.getEvents(session.sessionId);
       expect(events.whereType<ReasoningEnded>().length, 1);
       expect(events.whereType<ToolCalled>().length, 0);
+      expect(events.whereType<TextStarted>().length, 1);
     });
+
+    test(
+      'reasoning → tool → reasoning in one step: two separate reasoning parts with ToolCalled cards between them, no merge',
+      () async {
+        final session = await runner.startInitializedSession(agent: 'general');
+
+        session.onReasoning('Before tool');
+        await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
+        await session.onToolEnd('tc1', 'shell', 'file1');
+        session.onReasoning('After tool');
+        await session.onReasoningEnd();
+
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        final reasoningStarted = events.whereType<ReasoningStarted>().toList();
+        expect(reasoningStarted.length, 2);
+        final reasoningEnded = events.whereType<ReasoningEnded>().toList();
+        expect(reasoningEnded.length, 2);
+        // R1 contains only pre-tool deltas.
+        expect(reasoningEnded[0].fullReasoning, 'Before tool');
+        // R2 contains only post-tool deltas.
+        expect(reasoningEnded[1].fullReasoning, 'After tool');
+        // Part IDs differ.
+        expect(reasoningStarted[0].partId, isNot(reasoningStarted[1].partId));
+        expect(reasoningEnded[0].partId, reasoningStarted[0].partId);
+        expect(reasoningEnded[1].partId, reasoningStarted[1].partId);
+        // ToolCalled appears between the two reasoning blocks.
+        final toolCalled = events.whereType<ToolCalled>().toList();
+        expect(toolCalled.length, 1);
+        final types = events.map((e) => e.runtimeType).toList();
+        expect(types, const [
+          SessionCreated,
+          ReasoningStarted,
+          ReasoningDelta,
+          ReasoningEnded,
+          ToolCalled,
+          ToolSuccess,
+          ReasoningStarted,
+          ReasoningDelta,
+          ReasoningEnded,
+        ]);
+      },
+    );
+
+    test('post-tool reasoning deltas open a new reasoning part', () async {
+      final session = await runner.startInitializedSession(agent: 'general');
+
+      session.onReasoning('Before');
+      await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
+      await session.onToolEnd('tc1', 'shell', 'file1');
+      session.onReasoning('After');
+
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      final events = await repository.eventStore.getEvents(session.sessionId);
+      final reasoningStarted = events.whereType<ReasoningStarted>().toList();
+      expect(reasoningStarted.length, 2);
+      expect(reasoningStarted[0].partId, isNot(reasoningStarted[1].partId));
+    });
+
+    test(
+      'multiple tools in a group: cards emitted in call order right after the thought part closes',
+      () async {
+        final session = await runner.startInitializedSession(agent: 'general');
+
+        session.onReasoning('Thinking...');
+        await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
+        await session.onToolStart('tc2', 'shell', {'cmd': 'pwd'});
+        await session.onToolEnd('tc1', 'shell', 'file1');
+        await session.onToolEnd('tc2', 'shell', '/home');
+
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        final events = await repository.eventStore.getEvents(session.sessionId);
+        final toolCalled = events.whereType<ToolCalled>().toList();
+        expect(toolCalled.length, 2);
+        expect(toolCalled[0].toolCallId, 'tc1');
+        expect(toolCalled[1].toolCallId, 'tc2');
+        // Reasoning is closed before the first ToolCalled.
+        final reasoningEndedIndex = events.indexWhere(
+          (e) => e is ReasoningEnded,
+        );
+        final firstToolCalledIndex = events.indexWhere((e) => e is ToolCalled);
+        expect(reasoningEndedIndex, lessThan(firstToolCalledIndex));
+      },
+    );
   });
 
   group('SessionRunnerSession.onCompletion', () {
@@ -1103,7 +1189,7 @@ void main() {
         reason: 'sequence numbers must be unique',
       );
       expect(sequences, [
-        for (var i = 1; i <= sequences.length; i++) i
+        for (var i = 1; i <= sequences.length; i++) i,
       ], reason: 'sequence numbers must be contiguous');
     });
   });

@@ -29,3 +29,11 @@ export 'package:chatorai/features/settings/providers/model_settings_provider.dar
 export 'package:chatorai/shared/theme/theme_provider.dart';
 // Feature: Bootstrap (startup initialization)
 export 'package:chatorai/features/bootstrap/bootstrap_provider.dart';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// Chat screen scaffold key provider for global shortcuts
+final scaffoldKeyProvider = Provider<GlobalKey<ScaffoldState>>(
+  (ref) => GlobalKey<ScaffoldState>(),
+);
