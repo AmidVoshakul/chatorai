@@ -15,11 +15,13 @@ import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/widgets/network_aware_widget.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ===========================================================================
 // MAIN ENTRY POINT
@@ -59,13 +61,21 @@ Future<void> main(List<String> args) async {
   }
 
   if (cwdResult.hasOverride) {
-    IOOverrides.runZoned(
-      run,
-      getCurrentDirectory: () => Directory(cwdResult.path!),
-    );
+    workspaceRuntimeCurrent = Directory(cwdResult.path!);
   } else {
-    await run();
+    WidgetsFlutterBinding.ensureInitialized();
+    final initial = await resolveInitialWorkspace(
+      cliPath: null,
+      readLastUsed: () async => (await SharedPreferences.getInstance())
+          .getString(lastWorkspacePrefsKey),
+    );
+    workspaceRuntimeCurrent = Directory(initial);
   }
+
+  await IOOverrides.runZoned(
+    run,
+    getCurrentDirectory: () => workspaceRuntimeCurrent,
+  );
 }
 
 // ===========================================================================

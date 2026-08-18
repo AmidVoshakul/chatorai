@@ -114,3 +114,10 @@ final sessionStackProvider =
     NotifierProvider<SessionStackNotifier, SessionStackState>(
       SessionStackNotifier.new,
     );
+
+/// Parent sessions belonging to a workspace directory, newest first.
+final sessionsByDirectoryProvider = FutureProvider.autoDispose
+    .family<List<SessionState>, String>((ref, directory) async {
+      final repo = await ref.read(sessionRepositoryProvider.future);
+      return repo.findSessionsByDirectory(directory);
+    });

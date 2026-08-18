@@ -539,6 +539,17 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _directoryMeta = const VerificationMeta(
+    'directory',
+  );
+  @override
+  late final GeneratedColumn<String> directory = GeneratedColumn<String>(
+    'directory',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -586,6 +597,7 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     tokensCacheRead,
     tokensCacheWrite,
     permissionRules,
+    directory,
     createdAt,
     updatedAt,
     archivedAt,
@@ -691,6 +703,12 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
         ),
       );
     }
+    if (data.containsKey('directory')) {
+      context.handle(
+        _directoryMeta,
+        directory.isAcceptableOrUnknown(data['directory']!, _directoryMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -770,6 +788,10 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
         DriftSqlType.string,
         data['${effectivePrefix}permission_rules'],
       ),
+      directory: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}directory'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -804,6 +826,7 @@ class Session extends DataClass implements Insertable<Session> {
   final int tokensCacheRead;
   final int tokensCacheWrite;
   final String? permissionRules;
+  final String? directory;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? archivedAt;
@@ -820,6 +843,7 @@ class Session extends DataClass implements Insertable<Session> {
     required this.tokensCacheRead,
     required this.tokensCacheWrite,
     this.permissionRules,
+    this.directory,
     required this.createdAt,
     required this.updatedAt,
     this.archivedAt,
@@ -844,6 +868,9 @@ class Session extends DataClass implements Insertable<Session> {
     map['tokens_cache_write'] = Variable<int>(tokensCacheWrite);
     if (!nullToAbsent || permissionRules != null) {
       map['permission_rules'] = Variable<String>(permissionRules);
+    }
+    if (!nullToAbsent || directory != null) {
+      map['directory'] = Variable<String>(directory);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -873,6 +900,9 @@ class Session extends DataClass implements Insertable<Session> {
       permissionRules: permissionRules == null && nullToAbsent
           ? const Value.absent()
           : Value(permissionRules),
+      directory: directory == null && nullToAbsent
+          ? const Value.absent()
+          : Value(directory),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       archivedAt: archivedAt == null && nullToAbsent
@@ -899,6 +929,7 @@ class Session extends DataClass implements Insertable<Session> {
       tokensCacheRead: serializer.fromJson<int>(json['tokensCacheRead']),
       tokensCacheWrite: serializer.fromJson<int>(json['tokensCacheWrite']),
       permissionRules: serializer.fromJson<String?>(json['permissionRules']),
+      directory: serializer.fromJson<String?>(json['directory']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       archivedAt: serializer.fromJson<DateTime?>(json['archivedAt']),
@@ -920,6 +951,7 @@ class Session extends DataClass implements Insertable<Session> {
       'tokensCacheRead': serializer.toJson<int>(tokensCacheRead),
       'tokensCacheWrite': serializer.toJson<int>(tokensCacheWrite),
       'permissionRules': serializer.toJson<String?>(permissionRules),
+      'directory': serializer.toJson<String?>(directory),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'archivedAt': serializer.toJson<DateTime?>(archivedAt),
@@ -939,6 +971,7 @@ class Session extends DataClass implements Insertable<Session> {
     int? tokensCacheRead,
     int? tokensCacheWrite,
     Value<String?> permissionRules = const Value.absent(),
+    Value<String?> directory = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> archivedAt = const Value.absent(),
@@ -957,6 +990,7 @@ class Session extends DataClass implements Insertable<Session> {
     permissionRules: permissionRules.present
         ? permissionRules.value
         : this.permissionRules,
+    directory: directory.present ? directory.value : this.directory,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     archivedAt: archivedAt.present ? archivedAt.value : this.archivedAt,
@@ -987,6 +1021,7 @@ class Session extends DataClass implements Insertable<Session> {
       permissionRules: data.permissionRules.present
           ? data.permissionRules.value
           : this.permissionRules,
+      directory: data.directory.present ? data.directory.value : this.directory,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       archivedAt: data.archivedAt.present
@@ -1010,6 +1045,7 @@ class Session extends DataClass implements Insertable<Session> {
           ..write('tokensCacheRead: $tokensCacheRead, ')
           ..write('tokensCacheWrite: $tokensCacheWrite, ')
           ..write('permissionRules: $permissionRules, ')
+          ..write('directory: $directory, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('archivedAt: $archivedAt')
@@ -1031,6 +1067,7 @@ class Session extends DataClass implements Insertable<Session> {
     tokensCacheRead,
     tokensCacheWrite,
     permissionRules,
+    directory,
     createdAt,
     updatedAt,
     archivedAt,
@@ -1051,6 +1088,7 @@ class Session extends DataClass implements Insertable<Session> {
           other.tokensCacheRead == this.tokensCacheRead &&
           other.tokensCacheWrite == this.tokensCacheWrite &&
           other.permissionRules == this.permissionRules &&
+          other.directory == this.directory &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.archivedAt == this.archivedAt);
@@ -1069,6 +1107,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
   final Value<int> tokensCacheRead;
   final Value<int> tokensCacheWrite;
   final Value<String?> permissionRules;
+  final Value<String?> directory;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> archivedAt;
@@ -1086,6 +1125,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.tokensCacheRead = const Value.absent(),
     this.tokensCacheWrite = const Value.absent(),
     this.permissionRules = const Value.absent(),
+    this.directory = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.archivedAt = const Value.absent(),
@@ -1104,6 +1144,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.tokensCacheRead = const Value.absent(),
     this.tokensCacheWrite = const Value.absent(),
     this.permissionRules = const Value.absent(),
+    this.directory = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.archivedAt = const Value.absent(),
@@ -1124,6 +1165,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     Expression<int>? tokensCacheRead,
     Expression<int>? tokensCacheWrite,
     Expression<String>? permissionRules,
+    Expression<String>? directory,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? archivedAt,
@@ -1142,6 +1184,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       if (tokensCacheRead != null) 'tokens_cache_read': tokensCacheRead,
       if (tokensCacheWrite != null) 'tokens_cache_write': tokensCacheWrite,
       if (permissionRules != null) 'permission_rules': permissionRules,
+      if (directory != null) 'directory': directory,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (archivedAt != null) 'archived_at': archivedAt,
@@ -1162,6 +1205,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     Value<int>? tokensCacheRead,
     Value<int>? tokensCacheWrite,
     Value<String?>? permissionRules,
+    Value<String?>? directory,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? archivedAt,
@@ -1180,6 +1224,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       tokensCacheRead: tokensCacheRead ?? this.tokensCacheRead,
       tokensCacheWrite: tokensCacheWrite ?? this.tokensCacheWrite,
       permissionRules: permissionRules ?? this.permissionRules,
+      directory: directory ?? this.directory,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       archivedAt: archivedAt ?? this.archivedAt,
@@ -1226,6 +1271,9 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     if (permissionRules.present) {
       map['permission_rules'] = Variable<String>(permissionRules.value);
     }
+    if (directory.present) {
+      map['directory'] = Variable<String>(directory.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1256,6 +1304,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
           ..write('tokensCacheRead: $tokensCacheRead, ')
           ..write('tokensCacheWrite: $tokensCacheWrite, ')
           ..write('permissionRules: $permissionRules, ')
+          ..write('directory: $directory, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('archivedAt: $archivedAt, ')
@@ -4738,6 +4787,7 @@ typedef $$SessionsTableCreateCompanionBuilder =
       Value<int> tokensCacheRead,
       Value<int> tokensCacheWrite,
       Value<String?> permissionRules,
+      Value<String?> directory,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<DateTime?> archivedAt,
@@ -4757,6 +4807,7 @@ typedef $$SessionsTableUpdateCompanionBuilder =
       Value<int> tokensCacheRead,
       Value<int> tokensCacheWrite,
       Value<String?> permissionRules,
+      Value<String?> directory,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> archivedAt,
@@ -4829,6 +4880,11 @@ class $$SessionsTableFilterComposer
 
   ColumnFilters<String> get permissionRules => $composableBuilder(
     column: $table.permissionRules,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get directory => $composableBuilder(
+    column: $table.directory,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4917,6 +4973,11 @@ class $$SessionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get directory => $composableBuilder(
+    column: $table.directory,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -4990,6 +5051,9 @@ class $$SessionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get directory =>
+      $composableBuilder(column: $table.directory, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -5042,6 +5106,7 @@ class $$SessionsTableTableManager
                 Value<int> tokensCacheRead = const Value.absent(),
                 Value<int> tokensCacheWrite = const Value.absent(),
                 Value<String?> permissionRules = const Value.absent(),
+                Value<String?> directory = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> archivedAt = const Value.absent(),
@@ -5059,6 +5124,7 @@ class $$SessionsTableTableManager
                 tokensCacheRead: tokensCacheRead,
                 tokensCacheWrite: tokensCacheWrite,
                 permissionRules: permissionRules,
+                directory: directory,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 archivedAt: archivedAt,
@@ -5078,6 +5144,7 @@ class $$SessionsTableTableManager
                 Value<int> tokensCacheRead = const Value.absent(),
                 Value<int> tokensCacheWrite = const Value.absent(),
                 Value<String?> permissionRules = const Value.absent(),
+                Value<String?> directory = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<DateTime?> archivedAt = const Value.absent(),
@@ -5095,6 +5162,7 @@ class $$SessionsTableTableManager
                 tokensCacheRead: tokensCacheRead,
                 tokensCacheWrite: tokensCacheWrite,
                 permissionRules: permissionRules,
+                directory: directory,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 archivedAt: archivedAt,

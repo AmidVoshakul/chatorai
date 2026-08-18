@@ -228,6 +228,7 @@ class EventStore {
         'agent': e.agent,
         'modelRef': e.modelRef,
         'permission': _serializePermission(e.permission),
+        'directory': e.directory,
       },
       SessionArchived _ => {'type': 'SessionArchived'},
       SessionAgentSwitched e => {
@@ -423,6 +424,7 @@ class EventStore {
         permission: _deserializePermission(
           data['permission'] as Map<String, dynamic>?,
         ),
+        directory: data['directory'] as String?,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),

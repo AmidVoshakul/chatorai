@@ -653,5 +653,19 @@
   "restoreFailed": "Не вдалося відновити: {error}",
   "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
   "compactingIndicator": "Стиснення...",
-  "compactionAgentName": "Стиснення"
+  "compactionAgentName": "Стиснення",
+  "workspaces": "Робочі директорії",
+  "directoryTitle": "Каталог",
+  "searchDirectories": "Пошук каталогів",
+  "addDirectory": "Додати директорію",
+  "removeDirectory": "Видалити директорію",
+  "noWorkspacesFound": "Директорії не знайдено",
+  "switchWorkspaceTitle": "Перемкнути робочу директорію",
+  "currentSessionWillBeStopped": "Поточна сесія буде зупинена.",
+  "continueText": "Продовжити",
+  "changeWorkingDirectory": "Змінити поточну директорію",
+  "sessionsTitle": "Сесії",
+  "noSessions": "Сесій поки немає",
+  "searchSessions": "Пошук сесій",
+  "newSession": "Нова сесія"
 }

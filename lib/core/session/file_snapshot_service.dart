@@ -8,10 +8,13 @@ import 'package:chatorai/core/tools/filesystem_boundary.dart';
 
 class FileSnapshotService {
   final AppDatabase _db;
-  final FilesystemBoundary _boundary;
+  final FilesystemBoundary? _boundaryOverride;
 
   FileSnapshotService(this._db, {FilesystemBoundary? boundary})
-    : _boundary = boundary ?? FilesystemBoundary(workspace: Directory.current);
+    : _boundaryOverride = boundary;
+
+  FilesystemBoundary get _boundary =>
+      _boundaryOverride ?? FilesystemBoundary(workspace: Directory.current);
 
   Future<FileSnapshot> capture({
     required String sessionId,

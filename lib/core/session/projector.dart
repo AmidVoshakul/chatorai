@@ -23,6 +23,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       :final agent,
       :final modelRef,
       :final permission,
+      :final directory,
     ) =>
       SessionState(
         id: sessionId,
@@ -31,6 +32,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
         agent: agent,
         modelRef: modelRef,
         permission: permission,
+        directory: directory,
         createdAt: event.timestamp,
         updatedAt: event.timestamp,
       ),
@@ -598,6 +600,7 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
       :final agent,
       :final modelRef,
       :final permission,
+      :final directory,
     ):
       await db
           .into(db.sessions)
@@ -614,6 +617,9 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
                   : const Value.absent(),
               permissionRules: permission != null
                   ? Value<String?>(jsonEncode(_serializePermission(permission)))
+                  : const Value.absent(),
+              directory: directory != null
+                  ? Value<String?>(directory)
                   : const Value.absent(),
               createdAt: event.timestamp,
               updatedAt: event.timestamp,

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/core/mcp/mcp_status_provider.dart';
 import 'package:chatorai/core/mcp/mcp_types.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input_status_bar.dart';
@@ -39,7 +40,10 @@ void main() {
               (_) async => {'s1': McpServerStatus.connected()},
             ),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -56,7 +60,10 @@ void main() {
             gitBranchProvider.overrideWith((_) async => 'main'),
             mcpStatusesProvider.overrideWith((_) async => {}),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -73,7 +80,10 @@ void main() {
               (_) async => {'s1': McpServerStatus.connected()},
             ),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -93,13 +103,19 @@ void main() {
               },
             ),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
       final colors = _spanColors(tester);
-      expect(colors, contains(ChatoraiColors.error));
+      expect(
+        colors,
+        contains(ChatoraiColors.error.withValues(alpha: ChatoraiOpacity.low)),
+      );
       expect(colors, isNot(contains(ChatoraiColors.success)));
     });
 
@@ -112,12 +128,18 @@ void main() {
               (_) async => {'s1': McpServerStatus.needsAuth()},
             ),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(_spanColors(tester), contains(ChatoraiColors.error));
+      expect(
+        _spanColors(tester),
+        contains(ChatoraiColors.error.withValues(alpha: ChatoraiOpacity.low)),
+      );
     });
 
     testWidgets('mcp segment is green when a server is connected', (
@@ -131,13 +153,19 @@ void main() {
               (_) async => {'s1': McpServerStatus.connected()},
             ),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
       final colors = _spanColors(tester);
-      expect(colors, contains(ChatoraiColors.success));
+      expect(
+        colors,
+        contains(ChatoraiColors.success.withValues(alpha: ChatoraiOpacity.low)),
+      );
       expect(colors, isNot(contains(ChatoraiColors.error)));
     });
 
@@ -152,7 +180,10 @@ void main() {
               (_) async => {'s1': McpServerStatus.disabled()},
             ),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -203,7 +234,10 @@ void main() {
               },
             ),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -231,7 +265,10 @@ void main() {
               (_) async => {'alpha': McpServerStatus.connected()},
             ),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -252,7 +289,10 @@ void main() {
             gitBranchProvider.overrideWith((_) async => null),
             mcpStatusesProvider.overrideWith((_) => completer.future),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pump();
@@ -272,12 +312,16 @@ void main() {
         ProviderScope(
           overrides: [
             workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
-            absoluteWorkingDirProvider
-                .overrideWithValue('/home/user/work/chatorai'),
+            absoluteWorkingDirProvider.overrideWithValue(
+              '/home/user/work/chatorai',
+            ),
             gitBranchProvider.overrideWith((_) async => null),
             mcpStatusesProvider.overrideWith((_) async => {}),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -286,24 +330,32 @@ void main() {
       expect(find.text('/home/user/work/chatorai'), findsNothing);
     });
 
-    testWidgets('path chip tooltip shows full absolute path', (tester) async {
+    testWidgets('path chip tooltip shows changeWorkingDirectory', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
-            absoluteWorkingDirProvider
-                .overrideWithValue('/home/user/work/chatorai'),
+            absoluteWorkingDirProvider.overrideWithValue(
+              '/home/user/work/chatorai',
+            ),
             gitBranchProvider.overrideWith((_) async => null),
             mcpStatusesProvider.overrideWith((_) async => {}),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
+      final context = tester.element(find.byType(ChatInputStatusBar));
+      final l10n = AppLocalizations.of(context);
       final tooltips = tester.widgetList<Tooltip>(find.byType(Tooltip));
       expect(
-        tooltips.any((t) => t.message == '/home/user/work/chatorai'),
+        tooltips.any((t) => t.message == l10n?.changeWorkingDirectory),
         isTrue,
       );
     });
@@ -318,7 +370,10 @@ void main() {
               (_) async => {'s1': McpServerStatus.connected()},
             ),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -357,7 +412,10 @@ void main() {
               (_) async => {'s1': McpServerStatus.connected()},
             ),
           ],
-          child: const MaterialApp(home: Scaffold(body: ChatInputStatusBar())),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -370,6 +428,152 @@ void main() {
       );
       final decoration = container.decoration as BoxDecoration;
       expect(decoration.border, isNotNull);
+    });
+
+    group('compact chip metrics', () {
+      testWidgets('path chip has compact padding and small font', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => null),
+              mcpStatusesProvider.overrideWith((_) async => {}),
+            ],
+            child: MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final pathChip = tester.widget<Container>(
+          find
+              .descendant(
+                of: find.byType(ChatInputStatusBar),
+                matching: find.byType(Container),
+              )
+              .first,
+        );
+        final decoration = pathChip.decoration as BoxDecoration;
+        final border = decoration.border!;
+        expect(border.top.width, ChatoraiBorderWidth.thin);
+
+        final text = tester.widget<Text>(
+          find
+              .descendant(
+                of: find.byType(ChatInputStatusBar),
+                matching: find.byType(Text),
+              )
+              .first,
+        );
+        expect(text.style?.fontSize, ChatoraiFontSizes.sm);
+      });
+
+      testWidgets('path chip tooltip shows changeWorkingDirectory', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => null),
+              mcpStatusesProvider.overrideWith((_) async => {}),
+            ],
+            child: MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final tooltips = tester.widgetList<Tooltip>(find.byType(Tooltip));
+        final pathTooltip = tooltips.firstWhere(
+          (t) => t.message != null && t.message is String,
+        );
+        expect(pathTooltip.message, 'Change current directory');
+      });
+
+      testWidgets('branch chip truncates with max width 140', (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith(
+                (_) async => 'very-long-branch-name-that-should-truncate',
+              ),
+              mcpStatusesProvider.overrideWith((_) async => {}),
+            ],
+            child: MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final branchText = tester.widget<Text>(find.textContaining('⎇'));
+        expect(branchText.overflow, TextOverflow.ellipsis);
+
+        final constrained = tester.widget<ConstrainedBox>(
+          find
+              .ancestor(
+                of: find.textContaining('⎇'),
+                matching: find.byType(ConstrainedBox),
+              )
+              .first,
+        );
+        expect(constrained.constraints.maxWidth, 140);
+      });
+
+      testWidgets('mcp chip dims connected color to low alpha', (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => null),
+              mcpStatusesProvider.overrideWith(
+                (_) async => {'s1': McpServerStatus.connected()},
+              ),
+            ],
+            child: MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final mcpText = tester.widget<Text>(find.text('MCP: 1/1'));
+        final color = mcpText.style!.color!;
+        expect(color.a, closeTo(0.5, 0.01));
+      });
+
+      testWidgets('mcp chip stays fully opaque when gray', (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => null),
+              mcpStatusesProvider.overrideWith(
+                (_) async => {'s1': McpServerStatus.disabled()},
+              ),
+            ],
+            child: MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final mcpText = tester.widget<Text>(find.text('MCP: 0/1'));
+        final color = mcpText.style!.color!;
+        expect(color.a, 1.0);
+      });
     });
   });
 }

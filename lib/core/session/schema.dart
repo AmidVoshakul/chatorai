@@ -23,6 +23,7 @@ class Sessions extends Table {
   IntColumn get tokensCacheRead => integer().withDefault(const Constant(0))();
   IntColumn get tokensCacheWrite => integer().withDefault(const Constant(0))();
   TextColumn? get permissionRules => text().nullable()();
+  TextColumn? get directory => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn? get archivedAt => dateTime().nullable()();

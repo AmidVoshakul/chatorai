@@ -2108,4 +2108,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get compactionAgentName => 'Compaction';
+
+  @override
+  String get workspaces => 'Workspaces';
+
+  @override
+  String get directoryTitle => 'Directory';
+
+  @override
+  String get searchDirectories => 'Search directories';
+
+  @override
+  String get addDirectory => 'Add directory';
+
+  @override
+  String get removeDirectory => 'Remove directory';
+
+  @override
+  String get noWorkspacesFound => 'No directories found';
+
+  @override
+  String get switchWorkspaceTitle => 'Switch workspace';
+
+  @override
+  String get currentSessionWillBeStopped =>
+      'The current session will be stopped.';
+
+  @override
+  String get continueText => 'Continue';
+
+  @override
+  String get changeWorkingDirectory => 'Change current directory';
+
+  @override
+  String get sessionsTitle => 'Sessions';
+
+  @override
+  String get noSessions => 'No sessions yet';
+
+  @override
+  String get searchSessions => 'Search sessions';
+
+  @override
+  String get newSession => 'New session';
 }

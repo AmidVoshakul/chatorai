@@ -653,5 +653,19 @@
   "restoreFailed": "復元に失敗しました：{error}",
   "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
   "compactingIndicator": "圧縮中...",
-  "compactionAgentName": "圧縮"
+  "compactionAgentName": "圧縮",
+  "workspaces": "ワークスペース",
+  "directoryTitle": "ディレクトリ",
+  "searchDirectories": "ディレクトリを検索",
+  "addDirectory": "ディレクトリを追加",
+  "removeDirectory": "ディレクトリを削除",
+  "noWorkspacesFound": "ディレクトリが見つかりません",
+  "switchWorkspaceTitle": "ワークスペースを切り替え",
+  "currentSessionWillBeStopped": "現在のセッションは停止されます。",
+  "continueText": "続行",
+  "changeWorkingDirectory": "現在のディレクトリを変更",
+  "sessionsTitle": "セッション",
+  "noSessions": "セッションはまだありません",
+  "searchSessions": "セッションを検索",
+  "newSession": "新しいセッション"
 }

@@ -237,6 +237,8 @@ class SessionState extends Equatable {
 
   final List<SessionMessage>? compactedContext;
 
+  final String? directory;
+
   final DateTime createdAt;
 
   final DateTime updatedAt;
@@ -260,6 +262,7 @@ class SessionState extends Equatable {
     this.toolResults = const [],
     this.parts = const [],
     this.compactedContext,
+    this.directory,
     required this.createdAt,
     required this.updatedAt,
     this.archivedAt,
@@ -287,6 +290,7 @@ class SessionState extends Equatable {
     List<ToolResult>? toolResults,
     List<AssistantContent>? parts,
     List<SessionMessage>? compactedContext,
+    String? directory,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? archivedAt,
@@ -312,6 +316,7 @@ class SessionState extends Equatable {
       toolResults: toolResults ?? this.toolResults,
       parts: parts ?? this.parts,
       compactedContext: compactedContext ?? this.compactedContext,
+      directory: directory ?? this.directory,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       archivedAt: clearArchivedAt ? null : (archivedAt ?? this.archivedAt),
@@ -402,6 +407,7 @@ class SessionState extends Equatable {
     toolResults,
     parts,
     compactedContext,
+    directory,
     createdAt,
     updatedAt,
     archivedAt,

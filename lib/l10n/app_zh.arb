@@ -653,5 +653,19 @@
   "restoreFailed": "还原失败：{error}",
   "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
   "compactingIndicator": "压缩中...",
-  "compactionAgentName": "压缩"
+  "compactionAgentName": "压缩",
+  "workspaces": "工作区",
+  "directoryTitle": "目录",
+  "searchDirectories": "搜索目录",
+  "addDirectory": "添加目录",
+  "removeDirectory": "删除目录",
+  "noWorkspacesFound": "未找到目录",
+  "switchWorkspaceTitle": "切换工作区",
+  "currentSessionWillBeStopped": "当前会话将被停止。",
+  "continueText": "继续",
+  "changeWorkingDirectory": "切换当前目录",
+  "sessionsTitle": "会话",
+  "noSessions": "暂无会话",
+  "searchSessions": "搜索会话",
+  "newSession": "新会话"
 }

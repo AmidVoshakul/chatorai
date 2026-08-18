@@ -22,6 +22,7 @@ class SessionCreated extends SessionEvent {
   final String agent;
   final String? modelRef;
   final PermissionRuleset? permission;
+  final String? directory;
 
   const SessionCreated({
     required super.sessionId,
@@ -30,6 +31,7 @@ class SessionCreated extends SessionEvent {
     this.agent = 'general',
     this.modelRef,
     this.permission,
+    this.directory,
     required super.timestamp,
     super.sequence,
   });

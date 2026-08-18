@@ -653,5 +653,19 @@
   "restoreFailed": "فشلت الاستعادة: {error}",
   "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
   "compactingIndicator": "جارِ الضغط...",
-  "compactionAgentName": "ضغط"
+  "compactionAgentName": "ضغط",
+  "workspaces": "مساحات العمل",
+  "directoryTitle": "الدليل",
+  "searchDirectories": "البحث في الدلائل",
+  "addDirectory": "إضافة دليل",
+  "removeDirectory": "إزالة دليل",
+  "noWorkspacesFound": "لم يتم العثور على أدلة",
+  "switchWorkspaceTitle": "تبديل مساحة العمل",
+  "currentSessionWillBeStopped": "سيتم إيقاف الجلسة الحالية.",
+  "continueText": "متابعة",
+  "changeWorkingDirectory": "تغيير الدليل الحالي",
+  "sessionsTitle": "الجلسات",
+  "noSessions": "لا توجد جلسات بعد",
+  "searchSessions": "البحث في الجلسات",
+  "newSession": "جلسة جديدة"
 }

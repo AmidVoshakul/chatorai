@@ -2067,4 +2067,46 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get compactionAgentName => 'ضغط';
+
+  @override
+  String get workspaces => 'مساحات العمل';
+
+  @override
+  String get directoryTitle => 'الدليل';
+
+  @override
+  String get searchDirectories => 'البحث في الدلائل';
+
+  @override
+  String get addDirectory => 'إضافة دليل';
+
+  @override
+  String get removeDirectory => 'إزالة دليل';
+
+  @override
+  String get noWorkspacesFound => 'لم يتم العثور على أدلة';
+
+  @override
+  String get switchWorkspaceTitle => 'تبديل مساحة العمل';
+
+  @override
+  String get currentSessionWillBeStopped => 'سيتم إيقاف الجلسة الحالية.';
+
+  @override
+  String get continueText => 'متابعة';
+
+  @override
+  String get changeWorkingDirectory => 'تغيير الدليل الحالي';
+
+  @override
+  String get sessionsTitle => 'الجلسات';
+
+  @override
+  String get noSessions => 'لا توجد جلسات بعد';
+
+  @override
+  String get searchSessions => 'البحث في الجلسات';
+
+  @override
+  String get newSession => 'جلسة جديدة';
 }

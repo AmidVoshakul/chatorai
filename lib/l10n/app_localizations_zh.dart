@@ -2027,4 +2027,46 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get compactionAgentName => '压缩';
+
+  @override
+  String get workspaces => '工作区';
+
+  @override
+  String get directoryTitle => '目录';
+
+  @override
+  String get searchDirectories => '搜索目录';
+
+  @override
+  String get addDirectory => '添加目录';
+
+  @override
+  String get removeDirectory => '删除目录';
+
+  @override
+  String get noWorkspacesFound => '未找到目录';
+
+  @override
+  String get switchWorkspaceTitle => '切换工作区';
+
+  @override
+  String get currentSessionWillBeStopped => '当前会话将被停止。';
+
+  @override
+  String get continueText => '继续';
+
+  @override
+  String get changeWorkingDirectory => '切换当前目录';
+
+  @override
+  String get sessionsTitle => '会话';
+
+  @override
+  String get noSessions => '暂无会话';
+
+  @override
+  String get searchSessions => '搜索会话';
+
+  @override
+  String get newSession => '新会话';
 }

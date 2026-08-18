@@ -27,7 +27,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration {
@@ -90,6 +90,9 @@ class AppDatabase extends _$AppDatabase {
             chatSnapshots,
             chatSnapshots.schemaVersion as dynamic,
           );
+        }
+        if (from < 10) {
+          await mgr.addColumn(sessions, sessions.directory as dynamic);
         }
       },
     );

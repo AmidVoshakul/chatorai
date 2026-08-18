@@ -7,6 +7,7 @@ import 'package:chatorai/core/permission/permission_provider.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/shared/widgets/premium_sheet.dart';
 
 /// Bridges [PermissionService.onAsked] → UI dialog.
 class PermissionOverlay extends ConsumerStatefulWidget {
@@ -62,7 +63,7 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
       useSafeArea: true,
       builder: (ctx) {
         final theme = Theme.of(ctx);
-        return _PremiumSheetShell(
+        return PremiumSheetShell(
           child: Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(ctx).viewInsets.bottom,
@@ -72,14 +73,14 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 12),
-                const Center(child: _PremiumHandle()),
+                const Center(child: PremiumHandle()),
                 const SizedBox(height: 18),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const _PremiumAvatar(
+                      const PremiumAvatar(
                         icon: Icons.shield_outlined,
                         glow: ChatoraiColors.orange,
                       ),
@@ -97,7 +98,7 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            _premiumSectionLabel(
+                            premiumSectionLabel(
                               ctx,
                               l10n.permissionDialogPatterns,
                             ),
@@ -131,21 +132,21 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                   child: Row(
                     children: [
-                      _premiumGhostButton(
+                      premiumGhostButton(
                         context: ctx,
                         onPressed: () =>
                             Navigator.pop(ctx, PermissionReply.reject),
                         child: Text(l10n.permissionReject),
                       ),
                       const Spacer(),
-                      _premiumTonalButton(
+                      premiumTonalButton(
                         context: ctx,
                         onPressed: () =>
                             Navigator.pop(ctx, PermissionReply.once),
                         child: Text(l10n.permissionOnce),
                       ),
                       const SizedBox(width: 10),
-                      _premiumPrimaryButton(
+                      premiumPrimaryButton(
                         context: ctx,
                         onPressed: () =>
                             Navigator.pop(ctx, PermissionReply.always),
@@ -208,7 +209,7 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             final theme = Theme.of(context);
-            return _PremiumSheetShell(
+            return PremiumSheetShell(
               child: Padding(
                 padding: EdgeInsets.only(
                   bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -218,14 +219,14 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 12),
-                    const Center(child: _PremiumHandle()),
+                    const Center(child: PremiumHandle()),
                     const SizedBox(height: 18),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const _PremiumAvatar(
+                          const PremiumAvatar(
                             icon: Icons.auto_awesome,
                             glow: ChatoraiColors.orange,
                           ),
@@ -468,13 +469,13 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                       child: Row(
                         children: [
-                          _premiumGhostButton(
+                          premiumGhostButton(
                             context: ctx,
                             onPressed: () => Navigator.pop(ctx, ''),
                             child: Text(localizations.skip),
                           ),
                           const Spacer(),
-                          _premiumPrimaryButton(
+                          premiumPrimaryButton(
                             context: ctx,
                             onPressed: () {
                               if (_customController.text.trim().isNotEmpty) {
@@ -531,103 +532,9 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
 }
 
 // ===========================================================================
-// PREMIUM PERMISSION SHEET PRIMITIVES
+// PREMIUM COMMAND CHIP (permission-only primitive, kept local)
 // ===========================================================================
-//
-// Shared visual building blocks for the permission and question bottom sheets.
-// All colors and gradients come from the design system in
-// `app_theme.dart` (`ChatoraiColors.premium*`, `ChatoraiGradients`).
 
-const BorderRadius _premiumSheetTopRadius = BorderRadius.vertical(
-  top: Radius.circular(ChatoraiBorderRadius.xl),
-);
-
-/// Simple dark panel with a solid border (no gradient, no blur).
-class _PremiumSheetShell extends StatelessWidget {
-  final Widget child;
-
-  const _PremiumSheetShell({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: ChatoraiColors.premiumSurface,
-        borderRadius: _premiumSheetTopRadius,
-        border: const Border(
-          top: BorderSide(color: ChatoraiColors.premiumBorderSoft, width: 1),
-        ),
-      ),
-      child: ClipRRect(borderRadius: _premiumSheetTopRadius, child: child),
-    );
-  }
-}
-
-/// Metallic pill handle.
-class _PremiumHandle extends StatelessWidget {
-  const _PremiumHandle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 5,
-      decoration: BoxDecoration(
-        gradient: ChatoraiGradients.metallic,
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.full),
-        boxShadow: [
-          BoxShadow(
-            color: ChatoraiColors.pureBlack.withValues(alpha: 0.3),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Circular icon badge with a brand accent gradient and a soft glow.
-class _PremiumAvatar extends StatelessWidget {
-  final IconData icon;
-  final Color glow;
-
-  const _PremiumAvatar({required this.icon, required this.glow});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 46,
-      height: 46,
-      decoration: BoxDecoration(
-        gradient: ChatoraiGradients.accent,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: glow.withValues(alpha: 0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Icon(icon, color: ChatoraiColors.pureWhite, size: 22),
-    );
-  }
-}
-
-/// Small-caps section label.
-Widget _premiumSectionLabel(BuildContext context, String text) {
-  return Text(
-    text.toUpperCase(),
-    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-      letterSpacing: 1.6,
-      fontWeight: FontWeight.w700,
-      color: ChatoraiColors.premiumTextMuted,
-    ),
-  );
-}
-
-/// Terminal-style chip for a single permission pattern.
 class _PremiumCommandChip extends StatelessWidget {
   final String command;
 
@@ -660,87 +567,4 @@ class _PremiumCommandChip extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Pill button with a brand accent gradient background and a soft glow.
-Widget _premiumPrimaryButton({
-  required BuildContext context,
-  required VoidCallback onPressed,
-  required Widget child,
-}) {
-  return DecoratedBox(
-    decoration: BoxDecoration(
-      gradient: ChatoraiGradients.accent,
-      borderRadius: BorderRadius.circular(ChatoraiBorderRadius.full),
-      boxShadow: [
-        BoxShadow(
-          color: ChatoraiColors.orange.withValues(alpha: 0.4),
-          blurRadius: 14,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    child: FilledButton(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        backgroundColor: Colors.transparent,
-        foregroundColor: ChatoraiColors.pureWhite,
-        shadowColor: Colors.transparent,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.full),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-        textStyle: const TextStyle(
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.2,
-        ),
-      ),
-      child: child,
-    ),
-  );
-}
-
-/// Dark tonal pill button for secondary actions.
-Widget _premiumTonalButton({
-  required BuildContext context,
-  required VoidCallback onPressed,
-  required Widget child,
-}) {
-  return FilledButton.tonal(
-    onPressed: onPressed,
-    style: FilledButton.styleFrom(
-      backgroundColor: ChatoraiColors.premiumSurfaceRaised,
-      foregroundColor: ChatoraiColors.premiumText,
-      shadowColor: Colors.transparent,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.full),
-      ),
-      side: BorderSide(color: ChatoraiColors.premiumBorderSoft),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      textStyle: const TextStyle(fontWeight: FontWeight.w600),
-    ),
-    child: child,
-  );
-}
-
-/// Quiet ghost button for dismissive actions.
-Widget _premiumGhostButton({
-  required BuildContext context,
-  required VoidCallback onPressed,
-  required Widget child,
-}) {
-  return TextButton(
-    onPressed: onPressed,
-    style: TextButton.styleFrom(
-      foregroundColor: ChatoraiColors.premiumTextMuted,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      textStyle: const TextStyle(
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.2,
-      ),
-    ),
-    child: child,
-  );
 }

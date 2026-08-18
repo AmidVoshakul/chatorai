@@ -2124,4 +2124,46 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get compactionAgentName => 'Стиснення';
+
+  @override
+  String get workspaces => 'Робочі директорії';
+
+  @override
+  String get directoryTitle => 'Каталог';
+
+  @override
+  String get searchDirectories => 'Пошук каталогів';
+
+  @override
+  String get addDirectory => 'Додати директорію';
+
+  @override
+  String get removeDirectory => 'Видалити директорію';
+
+  @override
+  String get noWorkspacesFound => 'Директорії не знайдено';
+
+  @override
+  String get switchWorkspaceTitle => 'Перемкнути робочу директорію';
+
+  @override
+  String get currentSessionWillBeStopped => 'Поточна сесія буде зупинена.';
+
+  @override
+  String get continueText => 'Продовжити';
+
+  @override
+  String get changeWorkingDirectory => 'Змінити поточну директорію';
+
+  @override
+  String get sessionsTitle => 'Сесії';
+
+  @override
+  String get noSessions => 'Сесій поки немає';
+
+  @override
+  String get searchSessions => 'Пошук сесій';
+
+  @override
+  String get newSession => 'Нова сесія';
 }

@@ -15,6 +15,7 @@ import 'package:chatorai/features/chat/data/models/chat/message_converter.dart'
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/services/chat_ai_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ===========================================================================
@@ -142,7 +143,7 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
     await _loadChats();
   }
 
-  Future<Chat> createNewChat() async {
+  Future<Chat> createNewChat({String? directory}) async {
     // Wait for initial load to complete if not already loaded
     // This prevents race condition where new chat gets overwritten
     if (!_hasLoadedOnce) {
@@ -153,6 +154,7 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
     final sessionState = await repository.createSession(
       title: '',
       agent: 'general',
+      directory: directory ?? workspaceRuntimeCurrent.path,
     );
     final newChat = sessionStateToChat(sessionState);
     _loadedDetailIds.add(newChat.id);

@@ -653,5 +653,19 @@
   "restoreFailed": "Не удалось восстановить: {error}",
   "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
   "compactingIndicator": "Сжатие...",
-  "compactionAgentName": "Сжатие"
+  "compactionAgentName": "Сжатие",
+  "workspaces": "Рабочие директории",
+  "directoryTitle": "Каталог",
+  "searchDirectories": "Поиск каталогов",
+  "addDirectory": "Добавить директорию",
+  "removeDirectory": "Удалить директорию",
+  "noWorkspacesFound": "Директории не найдены",
+  "switchWorkspaceTitle": "Переключить рабочую директорию",
+  "currentSessionWillBeStopped": "Текущая сессия будет остановлена.",
+  "continueText": "Продолжить",
+  "changeWorkingDirectory": "Сменить текущую директорию",
+  "sessionsTitle": "Сессии",
+  "noSessions": "Сессий пока нет",
+  "searchSessions": "Поиск сессий",
+  "newSession": "Новая сессия"
 }

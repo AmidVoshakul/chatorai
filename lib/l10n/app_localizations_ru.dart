@@ -2118,4 +2118,46 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get compactionAgentName => 'Сжатие';
+
+  @override
+  String get workspaces => 'Рабочие директории';
+
+  @override
+  String get directoryTitle => 'Каталог';
+
+  @override
+  String get searchDirectories => 'Поиск каталогов';
+
+  @override
+  String get addDirectory => 'Добавить директорию';
+
+  @override
+  String get removeDirectory => 'Удалить директорию';
+
+  @override
+  String get noWorkspacesFound => 'Директории не найдены';
+
+  @override
+  String get switchWorkspaceTitle => 'Переключить рабочую директорию';
+
+  @override
+  String get currentSessionWillBeStopped => 'Текущая сессия будет остановлена.';
+
+  @override
+  String get continueText => 'Продолжить';
+
+  @override
+  String get changeWorkingDirectory => 'Сменить текущую директорию';
+
+  @override
+  String get sessionsTitle => 'Сессии';
+
+  @override
+  String get noSessions => 'Сессий пока нет';
+
+  @override
+  String get searchSessions => 'Поиск сессий';
+
+  @override
+  String get newSession => 'Новая сессия';
 }

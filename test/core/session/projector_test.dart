@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/core/session/events.dart';
@@ -38,6 +39,31 @@ void main() {
       expect(state.modelRef, 'gpt-4');
       expect(state.messages, isEmpty);
       expect(state.toolResults, isEmpty);
+    });
+
+    test('SessionCreated carries directory', () {
+      final created = SessionCreated(
+        sessionId: id,
+        title: 'Test',
+        agent: 'explore',
+        directory: '/tmp/workspace',
+        timestamp: DateTime.now(),
+      );
+      final state = projectEvent(empty, created);
+
+      expect(state.directory, '/tmp/workspace');
+    });
+
+    test('SessionCreated without directory yields null directory', () {
+      final created = SessionCreated(
+        sessionId: id,
+        title: 'Test',
+        agent: 'explore',
+        timestamp: DateTime.now(),
+      );
+      final state = projectEvent(empty, created);
+
+      expect(state.directory, isNull);
     });
 
     test('MessageAdded appends message', () {
@@ -1452,5 +1478,53 @@ void main() {
       expect(state.messages, isEmpty);
       expect(state.parts, isEmpty);
     });
+  });
+
+  group('projectToDb', () {
+    test('SessionCreated writes directory into sessions row', () async {
+      final db = AppDatabase.inMemory();
+      addTearDown(db.close);
+
+      final sid = SessionID.create();
+      final now = DateTime.now();
+      final event = SessionCreated(
+        sessionId: sid,
+        title: 'Dir Test',
+        agent: 'general',
+        directory: '/tmp/workspace',
+        timestamp: now,
+      );
+
+      await projectToDb(db, event);
+
+      final row = await (db.select(
+        db.sessions,
+      )..where((s) => s.id.equals(sid.value))).getSingle();
+      expect(row.directory, '/tmp/workspace');
+    });
+
+    test(
+      'SessionCreated without directory writes null into sessions row',
+      () async {
+        final db = AppDatabase.inMemory();
+        addTearDown(db.close);
+
+        final sid = SessionID.create();
+        final now = DateTime.now();
+        final event = SessionCreated(
+          sessionId: sid,
+          title: 'No Dir',
+          agent: 'general',
+          timestamp: now,
+        );
+
+        await projectToDb(db, event);
+
+        final row = await (db.select(
+          db.sessions,
+        )..where((s) => s.id.equals(sid.value))).getSingle();
+        expect(row.directory, isNull);
+      },
+    );
   });
 }

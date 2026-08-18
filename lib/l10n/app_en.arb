@@ -666,5 +666,19 @@
   "restoreFailed": "Restore failed: {error}",
   "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
   "compactingIndicator": "Compacting...",
-  "compactionAgentName": "Compaction"
+  "compactionAgentName": "Compaction",
+  "workspaces": "Workspaces",
+  "directoryTitle": "Directory",
+  "searchDirectories": "Search directories",
+  "addDirectory": "Add directory",
+  "removeDirectory": "Remove directory",
+  "noWorkspacesFound": "No directories found",
+  "switchWorkspaceTitle": "Switch workspace",
+  "currentSessionWillBeStopped": "The current session will be stopped.",
+  "continueText": "Continue",
+  "changeWorkingDirectory": "Change current directory",
+  "sessionsTitle": "Sessions",
+  "noSessions": "No sessions yet",
+  "searchSessions": "Search sessions",
+  "newSession": "New session"
 }

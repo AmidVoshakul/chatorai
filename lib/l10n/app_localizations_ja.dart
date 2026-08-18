@@ -2036,4 +2036,46 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get compactionAgentName => '圧縮';
+
+  @override
+  String get workspaces => 'ワークスペース';
+
+  @override
+  String get directoryTitle => 'ディレクトリ';
+
+  @override
+  String get searchDirectories => 'ディレクトリを検索';
+
+  @override
+  String get addDirectory => 'ディレクトリを追加';
+
+  @override
+  String get removeDirectory => 'ディレクトリを削除';
+
+  @override
+  String get noWorkspacesFound => 'ディレクトリが見つかりません';
+
+  @override
+  String get switchWorkspaceTitle => 'ワークスペースを切り替え';
+
+  @override
+  String get currentSessionWillBeStopped => '現在のセッションは停止されます。';
+
+  @override
+  String get continueText => '続行';
+
+  @override
+  String get changeWorkingDirectory => '現在のディレクトリを変更';
+
+  @override
+  String get sessionsTitle => 'セッション';
+
+  @override
+  String get noSessions => 'セッションはまだありません';
+
+  @override
+  String get searchSessions => 'セッションを検索';
+
+  @override
+  String get newSession => '新しいセッション';
 }

@@ -13,6 +13,7 @@ import 'package:chatorai/features/chat/presentation/widgets/welcome_questions_da
 import 'package:chatorai/features/models/screens/models_screen.dart';
 import 'package:chatorai/features/settings/widgets/settings_modal.dart';
 import 'package:chatorai/features/sessions/providers/session_providers.dart';
+import 'package:chatorai/features/chat/presentation/providers/chat_stream_actions.dart';
 import 'package:chatorai/providers.dart'
     show
         chatScreenProvider,
@@ -56,8 +57,7 @@ class GlobalShortcutHandler extends ConsumerWidget {
 
   VoidCallback _stopStreaming(WidgetRef ref) {
     return () {
-      ref.read(chatScreenProvider.notifier).finalizeStreaming();
-      ref.read(currentSessionRunnerProvider.notifier).cancelAllChildren();
+      stopActiveStreaming(ref);
     };
   }
 

@@ -3957,6 +3957,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Compaction'**
   String get compactionAgentName;
+
+  /// No description provided for @workspaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspaces'**
+  String get workspaces;
+
+  /// No description provided for @directoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory'**
+  String get directoryTitle;
+
+  /// No description provided for @searchDirectories.
+  ///
+  /// In en, this message translates to:
+  /// **'Search directories'**
+  String get searchDirectories;
+
+  /// No description provided for @addDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add directory'**
+  String get addDirectory;
+
+  /// No description provided for @removeDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove directory'**
+  String get removeDirectory;
+
+  /// No description provided for @noWorkspacesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No directories found'**
+  String get noWorkspacesFound;
+
+  /// No description provided for @switchWorkspaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch workspace'**
+  String get switchWorkspaceTitle;
+
+  /// No description provided for @currentSessionWillBeStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'The current session will be stopped.'**
+  String get currentSessionWillBeStopped;
+
+  /// No description provided for @continueText.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueText;
+
+  /// No description provided for @changeWorkingDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Change current directory'**
+  String get changeWorkingDirectory;
+
+  /// No description provided for @sessionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get sessionsTitle;
+
+  /// No description provided for @noSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'No sessions yet'**
+  String get noSessions;
+
+  /// No description provided for @searchSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Search sessions'**
+  String get searchSessions;
+
+  /// No description provided for @newSession.
+  ///
+  /// In en, this message translates to:
+  /// **'New session'**
+  String get newSession;
 }
 
 class _AppLocalizationsDelegate

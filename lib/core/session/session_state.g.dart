@@ -100,6 +100,7 @@ SessionState _$SessionStateFromJson(Map<String, dynamic> json) => SessionState(
   compactedContext: (json['compactedContext'] as List<dynamic>?)
       ?.map((e) => SessionMessage.fromJson(e as Map<String, dynamic>))
       .toList(),
+  directory: json['directory'] as String?,
   createdAt: DateTime.parse(json['createdAt'] as String),
   updatedAt: DateTime.parse(json['updatedAt'] as String),
   archivedAt: json['archivedAt'] == null
@@ -124,6 +125,7 @@ Map<String, dynamic> _$SessionStateToJson(SessionState instance) =>
       'messages': instance.messages,
       'toolResults': instance.toolResults,
       'compactedContext': instance.compactedContext,
+      'directory': instance.directory,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
       'archivedAt': instance.archivedAt?.toIso8601String(),

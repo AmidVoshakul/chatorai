@@ -1,11 +1,13 @@
 import 'package:chatorai/core/mcp/mcp_status_provider.dart';
 import 'package:chatorai/core/mcp/mcp_types.dart';
+import 'package:chatorai/features/chat/presentation/widgets/workspace_dialog.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/project_info_provider.dart';
-import 'package:path/path.dart' as p;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:path/path.dart' as p;
 
 /// Compact status line rendered beneath the chat input:
 /// `<cwd>  ⎇ <branch>   mcp: <connected>/<total>`.
@@ -53,8 +55,10 @@ class ChatInputStatusBar extends ConsumerWidget {
   }
 
   static TextSpan _tooltipMessage(Map<String, McpServerStatus> statuses) {
-    final tooltipStyle =
-        TextStyle(color: ChatoraiColors.gray, fontSize: ChatoraiFontSizes.md);
+    final tooltipStyle = TextStyle(
+      color: ChatoraiColors.gray,
+      fontSize: ChatoraiFontSizes.md,
+    );
     return TextSpan(
       children: [
         for (final entry in statuses.entries) ...[
@@ -100,6 +104,9 @@ class ChatInputStatusBar extends ConsumerWidget {
         .where((s) => s.status == McpConnectionStatus.connected)
         .length;
     final color = mcpColor(statuses);
+    final labelColor = color == ChatoraiColors.gray
+        ? color
+        : color.withValues(alpha: ChatoraiOpacity.low);
 
     return Tooltip(
       preferBelow: false,
@@ -107,7 +114,7 @@ class ChatInputStatusBar extends ConsumerWidget {
       child: _StatusChip(
         icon: null,
         label: 'MCP: $connected/${statuses.length}',
-        color: color,
+        color: labelColor,
       ),
     );
   }
@@ -117,7 +124,7 @@ class ChatInputStatusBar extends ConsumerWidget {
       icon: SizedBox(
         width: 12,
         height: 12,
-        child: SpinKitCircle(size: 12, color: ChatoraiColors.gray),
+        child: SpinKitCircle(size: 10, color: ChatoraiColors.gray),
       ),
       label: 'MCP…',
       color: ChatoraiColors.gray,
@@ -126,26 +133,32 @@ class ChatInputStatusBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final dir = ref.watch(workingDirProvider);
     final branch = ref.watch(gitBranchProvider).value;
-    final statuses = ref.watch(mcpStatusesProvider).value;
-    final palette = ChatoraiSettingsWindow.of(context);
+    final mcpAsync = ref.watch(mcpStatusesProvider);
+    final statuses = mcpAsync.value;
 
     final chips = <Widget>[];
 
     // Path chip
     chips.add(
       Tooltip(
-        message: ref.watch(absoluteWorkingDirProvider),
+        message: l10n.changeWorkingDirectory,
         preferBelow: false,
-        child: _StatusChip(
-          icon: Icon(
-            Icons.folder_outlined,
-            size: ChatoraiIconSizes.xs,
-            color: palette.textMuted,
+        child: InkWell(
+          onTap: () => showWorkspaceDialog(context, ref),
+          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+          hoverColor: ChatoraiColors.black05,
+          child: _StatusChip(
+            icon: Icon(
+              Icons.folder_outlined,
+              size: ChatoraiIconSizes.xxs,
+              color: ChatoraiColors.gray,
+            ),
+            label: p.basename(dir),
+            color: ChatoraiColors.gray,
           ),
-          label: p.basename(dir),
-          color: palette.textMuted,
         ),
       ),
     );
@@ -156,7 +169,8 @@ class ChatInputStatusBar extends ConsumerWidget {
         _StatusChip(
           icon: null,
           label: '⎇ $branch',
-          color: palette.textMuted,
+          color: ChatoraiColors.gray,
+          maxLabelWidth: 140,
         ),
       );
     }
@@ -164,11 +178,8 @@ class ChatInputStatusBar extends ConsumerWidget {
     // MCP chip
     if (statuses != null && statuses.isNotEmpty) {
       chips.add(_buildMcpChip(context, statuses));
-    } else {
-      final loading = ref.watch(mcpStatusesProvider).isLoading;
-      if (loading) {
-        chips.add(_buildLoadingChip());
-      }
+    } else if (mcpAsync.isLoading) {
+      chips.add(_buildLoadingChip());
     }
 
     return Padding(
@@ -177,11 +188,7 @@ class ChatInputStatusBar extends ConsumerWidget {
         left: ChatoraiSpacing.lg,
         right: ChatoraiSpacing.lg,
       ),
-      child: Wrap(
-        spacing: ChatoraiSpacing.sm,
-        runSpacing: 4,
-        children: chips,
-      ),
+      child: Wrap(spacing: ChatoraiSpacing.xs, runSpacing: 2, children: chips),
     );
   }
 }
@@ -193,41 +200,53 @@ class _StatusChip extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.color,
+    this.maxLabelWidth,
   });
 
   final Widget? icon;
   final String label;
   final Color color;
+  final double? maxLabelWidth;
 
   @override
   Widget build(BuildContext context) {
     final palette = ChatoraiSettingsWindow.of(context);
+    Widget textChild = Text(
+      label,
+      style: TextStyle(color: color, fontSize: ChatoraiFontSizes.sm),
+    );
+    if (maxLabelWidth != null) {
+      textChild = ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxLabelWidth!),
+        child: Text(
+          label,
+          style: TextStyle(color: color, fontSize: ChatoraiFontSizes.sm),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+      );
+    }
+
     final child = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (icon != null) ...[
-          icon!,
-          const SizedBox(width: ChatoraiSpacing.xs),
-        ],
-        Text(
-          label,
-          style: TextStyle(color: color, fontSize: ChatoraiFontSizes.md),
-        ),
+        if (icon != null) ...[icon!, const SizedBox(width: ChatoraiSpacing.xs)],
+        textChild,
       ],
     );
 
     return Container(
       decoration: BoxDecoration(
         color: palette.surface.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xs),
         border: Border.all(
           color: palette.border.withValues(alpha: 0.55),
           width: ChatoraiBorderWidth.thin,
         ),
       ),
       padding: const EdgeInsets.symmetric(
-        horizontal: ChatoraiSpacing.sm,
-        vertical: 3,
+        horizontal: ChatoraiSpacing.xs,
+        vertical: 2,
       ),
       child: child,
     );

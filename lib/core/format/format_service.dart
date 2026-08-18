@@ -200,6 +200,7 @@ class FormatService {
       exec,
       args,
       environment: environment,
+      workingDirectory: Directory.current.path,
       runInShell: Platform.isWindows,
     ).timeout(
       const Duration(seconds: 30),

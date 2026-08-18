@@ -93,6 +93,7 @@ class SessionRepository {
     String agent = 'general',
     String? modelRef,
     PermissionRuleset? permission,
+    String? directory,
   }) async {
     final sessionId = id ?? SessionID.create();
     final event = SessionCreated(
@@ -102,6 +103,7 @@ class SessionRepository {
       agent: agent,
       modelRef: modelRef,
       permission: permission,
+      directory: directory,
       timestamp: DateTime.now(),
     );
 
@@ -117,6 +119,7 @@ class SessionRepository {
       agent: agent,
       modelRef: modelRef,
       permission: permission,
+      directory: directory,
       createdAt: event.timestamp,
       updatedAt: event.timestamp,
     );
@@ -167,6 +170,23 @@ class SessionRepository {
     final rows =
         await (_db.select(_db.sessions)
               ..where((s) => s.archivedAt.isNull())
+              ..orderBy([
+                (s) => OrderingTerm(
+                  expression: s.updatedAt,
+                  mode: OrderingMode.desc,
+                ),
+              ]))
+            .get();
+    return rows.map(_rowToState).toList();
+  }
+
+  /// Parent (root) sessions created in [directory], newest first.
+  Future<List<SessionState>> findSessionsByDirectory(String directory) async {
+    final rows =
+        await (_db.select(_db.sessions)
+              ..where(
+                (s) => s.parentId.isNull() & s.directory.equals(directory),
+              )
               ..orderBy([
                 (s) => OrderingTerm(
                   expression: s.updatedAt,
@@ -368,6 +388,7 @@ class SessionRepository {
     final effectiveTitle =
         title ??
         (parentState != null ? '${parentState.title} Sub-task' : 'Sub-task');
+    final effectiveDirectory = parentState?.directory;
 
     // Derive permissions from parent unless explicitly overridden
     final childPermission =
@@ -384,6 +405,7 @@ class SessionRepository {
       agent: effectiveAgent,
       modelRef: effectiveModelRef,
       permission: childPermission,
+      directory: effectiveDirectory,
       timestamp: now,
     );
     await _db.transaction(() async {
@@ -411,6 +433,7 @@ class SessionRepository {
       agent: effectiveAgent,
       modelRef: effectiveModelRef,
       permission: childPermission,
+      directory: effectiveDirectory,
       createdAt: now,
       updatedAt: now,
     );
@@ -619,6 +642,7 @@ class SessionRepository {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       archivedAt: row.archivedAt,
+      directory: row.directory,
     );
   }
 }
