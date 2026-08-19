@@ -74,8 +74,7 @@ class McpClientService {
       final name = entry.key;
       final serverConfig = entry.value;
       final hasClient = _clients.containsKey(name);
-      final drifted =
-          hasClient && previousConfigs[name] != serverConfig;
+      final drifted = hasClient && previousConfigs[name] != serverConfig;
 
       if (serverConfig.enabled && !hasClient) {
         await connect(name);

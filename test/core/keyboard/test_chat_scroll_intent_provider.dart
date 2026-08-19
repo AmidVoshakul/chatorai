@@ -120,7 +120,8 @@ class _ScrollListenerHarness extends ConsumerStatefulWidget {
       _ScrollListenerHarnessState();
 }
 
-class _ScrollListenerHarnessState extends ConsumerState<_ScrollListenerHarness> {
+class _ScrollListenerHarnessState
+    extends ConsumerState<_ScrollListenerHarness> {
   @override
   Widget build(BuildContext context) {
     listenChatScrollIntent(ref, widget.controller);
@@ -128,10 +129,8 @@ class _ScrollListenerHarnessState extends ConsumerState<_ScrollListenerHarness> 
       home: ListView.builder(
         controller: widget.controller,
         itemCount: 200,
-        itemBuilder: (context, index) => SizedBox(
-          height: 40,
-          child: Text('Item $index'),
-        ),
+        itemBuilder: (context, index) =>
+            SizedBox(height: 40, child: Text('Item $index')),
       ),
     );
   }

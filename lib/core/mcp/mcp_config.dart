@@ -68,13 +68,8 @@ class McpOAuthConfig {
           redirectUri == other.redirectUri;
 
   @override
-  int get hashCode => Object.hash(
-    clientId,
-    clientSecret,
-    scope,
-    callbackPort,
-    redirectUri,
-  );
+  int get hashCode =>
+      Object.hash(clientId, clientSecret, scope, callbackPort, redirectUri);
 }
 
 /// Configuration for a single MCP server (local stdio or remote HTTP/SSE).

@@ -30,36 +30,19 @@ class _TextPartWidgetState extends State<TextPartWidget> {
   String? _lastContent;
   String? _lastThemeKey;
 
-  /// Rendered children for everything rendered so far (the "prefix").
-  /// Kept as a flat list: on each streaming append we add ONE tail widget
-  /// to this same list, so the widget tree never nests and no content is lost.
-  List<Widget>? _prefixChildren;
+  /// Memoized widget tree for the last rendered content, so unrelated
+  /// rebuilds (scroll, parent state changes) don't re-parse markdown.
+  Widget? _cachedColumn;
 
   /// Cache of finalized block widgets (keyed by stable signature).
   /// Only non-trailing blocks are cached, so the entry set stays bounded.
   final Map<String, Widget> _blockCache = {};
 
   @override
-  void didUpdateWidget(covariant TextPartWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final newContent = widget.part.content;
-    final oldContent = oldWidget.part.content;
-    if (newContent == oldContent) return;
-    // Only a pure append keeps the incremental prefix cache valid. If the
-    // content shrank, changed mid-string (edit/regeneration), or is a fresh
-    // part for a different message, the cache must be rebuilt from scratch.
-    final isAppend =
-        oldContent.isNotEmpty &&
-        newContent.length > oldContent.length &&
-        newContent.startsWith(oldContent);
-    if (!isAppend) {
-      _resetCache();
-    }
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Markdown styling is derived from the theme; invalidate the memoized
+    // content when the brightness changes so it re-parses with fresh styles.
     final themeKey = Theme.of(context).brightness.toString();
     if (_lastThemeKey != themeKey) {
       _lastThemeKey = themeKey;
@@ -69,7 +52,7 @@ class _TextPartWidgetState extends State<TextPartWidget> {
 
   void _resetCache() {
     _lastContent = null;
-    _prefixChildren = null;
+    _cachedColumn = null;
     _blockCache.clear();
   }
 
@@ -85,70 +68,22 @@ class _TextPartWidgetState extends State<TextPartWidget> {
       return const SizedBox(height: 16);
     }
 
-    // Identical content → reuse the rendered prefix verbatim (cheap).
-    if (_lastContent == part.content && _prefixChildren != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: _prefixChildren!,
-      );
+    // Identical content → reuse the rendered tree verbatim (cheap).
+    if (_lastContent == part.content && _cachedColumn != null) {
+      return _cachedColumn!;
     }
-
-    final prev = _lastContent;
     _lastContent = part.content;
 
-    // Fast streaming path: content grew only by appending plain text that
-    // cannot start a new markdown construct. Reuse the already-rendered
-    // prefix (flat list) and append just the new tail as plain text.
-    if (prev != null &&
-        part.content.length > prev.length &&
-        part.content.startsWith(prev) &&
-        _prefixChildren != null) {
-      final tail = part.content.substring(prev.length);
-      if (_isPlainTextTail(tail)) {
-        _prefixChildren!.add(RepaintBoundary(child: Text(tail)));
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: _prefixChildren!,
-        );
-      }
-    }
-
-    // Full (re)build — happens on block-boundary changes or completion.
-    // Non-trailing blocks are pulled from the cache, so only the still-growing
-    // trailing block is actually re-parsed.
+    // Full (re)build — happens on every content change (streaming append,
+    // block-boundary transitions, or completion). Non-trailing blocks are
+    // pulled from the cache, so only the still-growing trailing block is
+    // actually re-parsed.
     final widgets = _buildCustomMarkdownContent(context);
-    _prefixChildren = List<Widget>.from(widgets);
-    return Column(
+    _cachedColumn = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: _prefixChildren!,
+      children: widgets,
     );
-  }
-
-  /// True only when [tail] is plain text that cannot open a markdown block
-  /// or inline construct at its start. Conservative on purpose: if unsure,
-  /// we fall back to a full markdown re-parse (still cheap via block cache).
-  bool _isPlainTextTail(String tail) {
-    if (tail.isEmpty) return false;
-    // A newline could begin a new block (heading/list/quote/table), so the
-    // tail must be a single, unbroken line of plain prose.
-    if (tail.contains('\n')) return false;
-    // Scan the whole tail: any of these characters can open or appear inside a
-    // markdown construct mid-stream (code fence, heading, table pipe), so we
-    // must fall back to a full re-parse rather than risk mis-rendering it as
-    // plain text.
-    for (final char in tail.characters) {
-      if (char == '`' || char == '#' || char == '|') return false;
-    }
-    final first = tail.characters.first;
-    const markdownStarters = {'*', '_', '-', '+', '>', '[', '!'};
-    if (markdownStarters.contains(first)) return false;
-    // Ordered list "1. "
-    if (tail.length >= 2 &&
-        tail.characters.first == '1' &&
-        tail.characters.elementAt(1) == '.') {
-      return false;
-    }
-    return true;
+    return _cachedColumn!;
   }
 
   List<_Block> _parseBlocks(List<String> lines) {
