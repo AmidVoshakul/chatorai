@@ -1902,6 +1902,77 @@ void main() {
         expect(result, equals(dirB.path));
         expect(container.read(currentChatIdProvider), equals('ses_b1'));
       });
+
+      testWidgets(
+        'barrier dismiss commits selected directory when different from current',
+        (tester) async {
+          final tempDir = Directory.systemTemp.createTempSync(
+            'ws_barrier_test_',
+          );
+
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                sessionsByDirectoryProvider.overrideWith(
+                  (ref, directory) async => [],
+                ),
+              ],
+              child: MaterialApp(
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+                home: Scaffold(
+                  body: Consumer(
+                    builder: (context, ref, _) {
+                      return ElevatedButton(
+                        onPressed: () async {
+                          final container = ProviderScope.containerOf(context);
+                          final notifier = container.read(
+                            workspaceProvider.notifier,
+                          );
+                          await notifier.init();
+                          await notifier.addDirectory(tempDir.path);
+                          await notifier.switchWorkspace(
+                            Directory.current.path,
+                          );
+                          await showWorkspaceDialog(context, ref);
+                        },
+                        child: const Text('open'),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          );
+
+          tester.view.physicalSize = const Size(1200, 800);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.reset);
+
+          await tester.tap(find.text('open'));
+          await tester.pumpAndSettle();
+
+          // Tap dirB row to select it (but don't switch yet).
+          await tester.tap(find.text(p.basename(tempDir.path)));
+          await tester.pumpAndSettle();
+
+          // Dismiss via barrier tap.
+          await tester.tap(find.byType(ModalBarrier));
+          await tester.pumpAndSettle();
+
+          // Verify workspace switched to tempDir.
+          final container = ProviderScope.containerOf(
+            tester.element(find.byType(Scaffold)),
+          );
+          expect(
+            container.read(workspaceProvider).currentPath,
+            equals(tempDir.path),
+          );
+          expect(workspaceRuntimeCurrent.path, equals(tempDir.path));
+
+          tempDir.deleteSync(recursive: true);
+        },
+      );
     });
   });
 }

@@ -67,10 +67,9 @@ void main() {
       expect(output.metadata?['error'], isTrue);
     });
 
-    test('execute calls ctx.ask with correct permission and pattern', () async {
+    test('reads a file inside the project root without asking', () async {
       final tool = createReadTool();
       String? capturedPermission;
-      List<String>? capturedPatterns;
       final ctx = ToolContext(
         toolCallId: 'test',
         sessionId: 'test',
@@ -82,7 +81,6 @@ void main() {
               List<String>? always,
             }) async {
               capturedPermission = permission;
-              capturedPatterns = patterns;
             },
         askQuestion:
             ({required question, options = const [], multiple = false}) async =>
@@ -90,9 +88,19 @@ void main() {
       );
       final testFile = File('${testDir.path}/test_file.txt');
       await testFile.writeAsString('test');
-      await tool.execute({'file_path': testFile.path}, ctx);
-      expect(capturedPermission, equals('read'));
-      expect(capturedPatterns, contains(testFile.absolute.path));
+      final output = await tool.execute({'file_path': testFile.path}, ctx);
+      expect(capturedPermission, isNull);
+      expect(output.output, 'test');
+    });
+
+    test('execute with path outside the project root returns error', () async {
+      final tool = createReadTool();
+      final ctx = _mockCtx();
+      final output = await tool.execute({
+        'file_path': '/tmp/chatorai_denied_read.txt',
+      }, ctx);
+      expect(output.metadata?['error'], isTrue);
+      expect(output.output, contains('path denied'));
     });
 
     test('execute with non-existent file returns error', () async {

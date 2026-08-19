@@ -268,4 +268,86 @@ void main() {
       expect(captured, contains('attempt #1'));
     });
   });
+
+  group('ChatRetryService countdown + backoff reset', () {
+    test('countdown emits 0.0 after an immediate success', () async {
+      final cancellation = ChatCancellation();
+      final service = ChatRetryService(cancellation: cancellation);
+
+      final events = <double>[];
+      final sub = service.retryCountdown.listen(events.add);
+
+      await service.execute(({void Function()? onChunkReceived}) async {
+        return 'ok';
+      });
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      await sub.cancel();
+      expect(events, [0.0]);
+    });
+
+    test('countdown emits 0.0 when cancelled mid-sleep', () async {
+      final cancellation = ChatCancellation();
+      final service = ChatRetryService(
+        cancellation: cancellation,
+        policy: const RetryPolicy(baseDelay: Duration(milliseconds: 200)),
+      );
+
+      final events = <double>[];
+      final sub = service.retryCountdown.listen(events.add);
+      int attempts = 0;
+
+      final future = service.execute(({
+        void Function()? onChunkReceived,
+      }) async {
+        attempts++;
+        throw const FakeError('always fails');
+      });
+
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      service.cancelRetry();
+
+      try {
+        await future;
+        fail('expected throw');
+      } catch (_) {}
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await sub.cancel();
+      expect(events.last, 0.0);
+    });
+
+    test('backoff resets to baseDelay after a successful request', () async {
+      final cancellation = ChatCancellation();
+      final service = ChatRetryService(
+        cancellation: cancellation,
+        policy: const RetryPolicy(baseDelay: Duration(milliseconds: 50)),
+      );
+
+      final firstDelays = <int>[];
+      int attempts = 0;
+
+      await service.execute(({void Function()? onChunkReceived}) async {
+        attempts++;
+        if (attempts < 4) {
+          throw const FakeError('timeout');
+        }
+        return 'ok';
+      }, onRetry: (info) => firstDelays.add(info.nextDelayMs));
+      expect(firstDelays, [50, 100, 200]);
+
+      final secondDelays = <int>[];
+      int secondAttempts = 0;
+
+      await service.execute(({void Function()? onChunkReceived}) async {
+        secondAttempts++;
+        if (secondAttempts < 2) {
+          throw const FakeError('timeout');
+        }
+        return 'ok';
+      }, onRetry: (info) => secondDelays.add(info.nextDelayMs));
+      expect(secondAttempts, 2);
+      expect(secondDelays, [50]);
+    });
+  });
 }

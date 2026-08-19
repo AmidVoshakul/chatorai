@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 
 class FileSnapshotService {
   final AppDatabase _db;
@@ -14,7 +15,8 @@ class FileSnapshotService {
     : _boundaryOverride = boundary;
 
   FilesystemBoundary get _boundary =>
-      _boundaryOverride ?? FilesystemBoundary(workspace: Directory.current);
+      _boundaryOverride ??
+      FilesystemBoundary(workspace: workspaceRuntimeCurrent);
 
   Future<FileSnapshot> capture({
     required String sessionId,

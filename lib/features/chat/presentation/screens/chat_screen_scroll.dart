@@ -26,6 +26,12 @@ extension _ChatScreenScrollExt on _ChatScreenState {
     }
 
     final maxScroll = position.maxScrollExtent;
+    final currentOffset = _messageScrollController.offset;
+    final diff = (maxScroll - currentOffset).abs();
+
+    if (!force && diff < 5) {
+      return;
+    }
 
     final targetScroll = offset != null
         ? (maxScroll - offset).clamp(0.0, maxScroll)
@@ -50,6 +56,8 @@ extension _ChatScreenScrollExt on _ChatScreenState {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (!_autoScrollEnabled) return;
+      if (!_messageScrollController.hasClients) return;
       _scrollToBottom(force: false);
     });
   }

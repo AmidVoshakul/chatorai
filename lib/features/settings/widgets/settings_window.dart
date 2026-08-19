@@ -152,7 +152,7 @@ class _SettingsWindowState extends State<SettingsWindow> {
             onPressed: () {
               final state = _mcpServersKey.currentState;
               if (state != null) {
-                (state as dynamic)._showAddDialog();
+                (state as dynamic).showAddDialog();
               }
             },
           ),
@@ -164,7 +164,7 @@ class _SettingsWindowState extends State<SettingsWindow> {
             onPressed: () {
               final state = _mcpServersKey.currentState;
               if (state != null) {
-                (state as dynamic)._onRefresh();
+                (state as dynamic).refresh();
               }
             },
           ),

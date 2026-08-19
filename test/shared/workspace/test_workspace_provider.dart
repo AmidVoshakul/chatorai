@@ -222,6 +222,26 @@ void main() {
 
         tempDir.deleteSync(recursive: true);
       });
+
+      test(
+        'switchWorkspace updates Directory.current inside IOOverrides zone',
+        () async {
+          final tempDir = Directory.systemTemp.createTempSync(
+            'ws_zone_switch_test_',
+          );
+
+          await IOOverrides.runZoned(() async {
+            final notifier = container.read(workspaceProvider.notifier);
+            await notifier.init();
+            await notifier.switchWorkspace(tempDir.path);
+
+            expect(Directory.current.path, equals(tempDir.path));
+            expect(workspaceRuntimeCurrent.path, equals(tempDir.path));
+          }, getCurrentDirectory: () => workspaceRuntimeCurrent);
+
+          tempDir.deleteSync(recursive: true);
+        },
+      );
     });
 
     group('pruneMissing', () {

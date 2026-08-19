@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/config/config_initializer.dart';
@@ -15,6 +14,7 @@ import 'package:chatorai/features/chat/presentation/widgets/chat_input/attachmen
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
 import 'package:chatorai/core/tools/document_extractor_service.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -62,7 +62,7 @@ final appBootstrapFastProvider = FutureProvider<void>((ref) async {
   // (task tool, CLI) share a single resolution.
   InstructionsCache.instance.setRaw(
     config?.instructions ?? const [],
-    cwd: Directory.current,
+    cwd: workspaceRuntimeCurrent,
   );
 
   // Resolve the secret-storage backend (keyring vs encrypted SharedPreferences

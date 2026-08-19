@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chatorai/shared/utils/xdg_paths.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:path/path.dart' as p;
 
 /// Errors that can occur during config loading.
@@ -63,7 +64,8 @@ class ConfigLoader {
     return p.join(configDir, 'chatorai.json');
   }
 
-  static String _projectConfigPath() => p.join('.chatorai', 'chatorai.json');
+  static String _projectConfigPath() =>
+      p.join(workspaceRuntimeCurrent.path, '.chatorai', 'chatorai.json');
 
   /// Reads and decodes a single config file into a map.
   ///

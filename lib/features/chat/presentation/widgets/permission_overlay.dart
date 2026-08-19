@@ -7,6 +7,7 @@ import 'package:chatorai/core/permission/permission_provider.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/shared/utils/android_storage_permission.dart';
 import 'package:chatorai/shared/widgets/premium_sheet.dart';
 
 /// Bridges [PermissionService.onAsked] → UI dialog.
@@ -48,6 +49,10 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
     }
 
     final l10n = AppLocalizations.of(context)!;
+    final showAllFilesHint =
+        req.permission == 'external_directory' &&
+        !(await isAllFilesAccessGranted());
+    if (!mounted) return;
     LogTags.permission.logInfo(
       'PermissionOverlay._onRequest: Showing dialog for tool=${req.toolName}',
     );
@@ -155,6 +160,32 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
                     ],
                   ),
                 ),
+                if (showAllFilesHint)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          allFilesAccessHint(),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: ChatoraiColors.gray,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        premiumTonalButton(
+                          context: ctx,
+                          onPressed: () async {
+                            final granted = await ensureAllFilesAccess();
+                            if (granted && ctx.mounted) {
+                              Navigator.pop(ctx, PermissionReply.once);
+                            }
+                          },
+                          child: const Text('Enable all files access'),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),

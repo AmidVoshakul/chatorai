@@ -6,6 +6,7 @@ import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as p;
@@ -87,7 +88,7 @@ ToolDef createDocumentExtractPdfTool() {
         );
       }
 
-      final projectRoot = Directory.current.path;
+      final projectRoot = workspaceRuntimeCurrent.path;
       final safePath = await _autoAllowPath(resolved, projectRoot, ctx);
       if (safePath == null) {
         return ToolOutput(
@@ -168,7 +169,7 @@ ToolDef createDocumentExtractDocxTool() {
         );
       }
 
-      final projectRoot = Directory.current.path;
+      final projectRoot = workspaceRuntimeCurrent.path;
       final safePath = await _autoAllowPath(resolved, projectRoot, ctx);
       if (safePath == null) {
         return ToolOutput(
@@ -250,7 +251,7 @@ ToolDef createDocumentExtractXlsxTool() {
         );
       }
 
-      final projectRoot = Directory.current.path;
+      final projectRoot = workspaceRuntimeCurrent.path;
       final safePath = await _autoAllowPath(resolved, projectRoot, ctx);
       if (safePath == null) {
         return ToolOutput(
@@ -325,7 +326,7 @@ Future<String?> _autoAllowPath(
     safePath = p.normalize(p.isAbsolute(raw) ? raw : p.join(projectRoot, raw));
   }
 
-  final boundary = FilesystemBoundary(workspace: Directory.current);
+  final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
   final resolution = boundary.resolve(safePath);
   if (resolution.isExternal &&
       !isWithinAnyRoot(resolution.path, managedReadRoots)) {

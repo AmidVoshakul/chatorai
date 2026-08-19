@@ -201,5 +201,195 @@ void main() {
       await tester.pumpAndSettle();
       expect(fired, 2, reason: 'Second Escape must also fire immediately');
     });
+
+    testWidgets('Ctrl+W fires openWorkspace', (tester) async {
+      var fired = 0;
+
+      await tester.pumpWidget(
+        buildTestApp(
+          ShortcutHandler(
+            autofocus: true,
+            shortcuts: [
+              KeyboardShortcut(
+                id: 'test_open_workspace',
+                description: 'Test Ctrl+W',
+                activator: const KeyActivator.ctrlKey(LogicalKeyboardKey.keyW),
+                onExecute: (context, ref) {
+                  fired++;
+                },
+              ),
+            ],
+            child: const Scaffold(body: Center(child: Text('hello'))),
+          ),
+        ),
+      );
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyW);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyW);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+
+      expect(fired, 1, reason: 'Ctrl+W must fire openWorkspace');
+    });
+
+    testWidgets('Home fires scrollToChatStart', (tester) async {
+      var fired = 0;
+
+      await tester.pumpWidget(
+        buildTestApp(
+          ShortcutHandler(
+            autofocus: true,
+            shortcuts: [
+              KeyboardShortcut(
+                id: 'test_scroll_start',
+                description: 'Test Home',
+                activator: const KeyActivator.home(),
+                onExecute: (context, ref) {
+                  fired++;
+                },
+              ),
+            ],
+            child: const Scaffold(body: Center(child: Text('hello'))),
+          ),
+        ),
+      );
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.home);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.home);
+      await tester.pumpAndSettle();
+
+      expect(fired, 1, reason: 'Home must fire scrollToChatStart');
+    });
+
+    testWidgets('End fires scrollToChatEnd', (tester) async {
+      var fired = 0;
+
+      await tester.pumpWidget(
+        buildTestApp(
+          ShortcutHandler(
+            autofocus: true,
+            shortcuts: [
+              KeyboardShortcut(
+                id: 'test_scroll_end',
+                description: 'Test End',
+                activator: const KeyActivator.end(),
+                onExecute: (context, ref) {
+                  fired++;
+                },
+              ),
+            ],
+            child: const Scaffold(body: Center(child: Text('hello'))),
+          ),
+        ),
+      );
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.end);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.end);
+      await tester.pumpAndSettle();
+
+      expect(fired, 1, reason: 'End must fire scrollToChatEnd');
+    });
+
+    testWidgets(
+      'double-Esc priority: first Escape reserved, second fires cancel',
+      (tester) async {
+        var fireCancel = 0;
+        var fireClose = 0;
+
+        await tester.pumpWidget(
+          buildTestApp(
+            ShortcutHandler(
+              autofocus: true,
+              shortcuts: [
+                KeyboardShortcut(
+                  id: 'test_cancel_streaming',
+                  description: 'Test double Escape',
+                  activator: const KeyActivator.escapeDoublePress(),
+                  isActive: (ref) => true,
+                  onExecute: (context, ref) {
+                    fireCancel++;
+                  },
+                ),
+                KeyboardShortcut(
+                  id: 'test_close_dialog',
+                  description: 'Test close dialog',
+                  activator: const KeyActivator.escape(),
+                  onExecute: (context, ref) {
+                    fireClose++;
+                  },
+                ),
+              ],
+              child: const Scaffold(body: Center(child: Text('hello'))),
+            ),
+          ),
+        );
+
+        // First Escape press — should be reserved by double-press timer.
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+        expect(fireClose, 0, reason: 'First Escape must not close dialog');
+        expect(fireCancel, 0, reason: 'First Escape must not cancel yet');
+
+        // Second Escape press — should fire cancel.
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+        expect(fireCancel, 1, reason: 'Second Escape must cancel streaming');
+        expect(
+          fireClose,
+          0,
+          reason: 'Close dialog must not fire during cancel',
+        );
+      },
+    );
+
+    testWidgets(
+      'single-Esc when not streaming: first Escape fires closeDialog immediately',
+      (tester) async {
+        var fireCancel = 0;
+        var fireClose = 0;
+
+        await tester.pumpWidget(
+          buildTestApp(
+            ShortcutHandler(
+              autofocus: true,
+              shortcuts: [
+                KeyboardShortcut(
+                  id: 'test_cancel_streaming_inactive',
+                  description: 'Test double Escape inactive',
+                  activator: const KeyActivator.escapeDoublePress(),
+                  isActive: (ref) => false,
+                  onExecute: (context, ref) {
+                    fireCancel++;
+                  },
+                ),
+                KeyboardShortcut(
+                  id: 'test_close_dialog_inactive',
+                  description: 'Test close dialog inactive',
+                  activator: const KeyActivator.escape(),
+                  onExecute: (context, ref) {
+                    fireClose++;
+                  },
+                ),
+              ],
+              child: const Scaffold(body: Center(child: Text('hello'))),
+            ),
+          ),
+        );
+
+        // First Escape press — cancelStreaming is inactive, so closeDialog fires.
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+        expect(
+          fireClose,
+          1,
+          reason: 'First Escape must close dialog when not streaming',
+        );
+        expect(fireCancel, 0, reason: 'Cancel must not fire when inactive');
+      },
+    );
   });
 }

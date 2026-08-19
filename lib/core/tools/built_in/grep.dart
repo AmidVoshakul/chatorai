@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:path/path.dart' as p;
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
 import 'package:chatorai/shared/utils/logger.dart';
@@ -44,7 +45,7 @@ ToolDef createGrepTool() {
         );
       }
 
-      final root = input['path'] as String? ?? Directory.current.path;
+      final root = input['path'] as String? ?? workspaceRuntimeCurrent.path;
       final includePattern = input['include'] as String?;
       final regex = RegExp(
         pattern,
@@ -54,7 +55,7 @@ ToolDef createGrepTool() {
 
       final results = <String>[];
       final safeRoot = resolveSafePath(root, allowedRoots: managedReadRoots);
-      final boundary = FilesystemBoundary(workspace: Directory.current);
+      final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
       final grepResolution = boundary.resolve(safeRoot);
       if (grepResolution.isExternal &&
           !isWithinAnyRoot(grepResolution.path, managedReadRoots)) {

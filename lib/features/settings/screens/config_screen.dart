@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/xdg_paths.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:path/path.dart' as p;
 
 /// Read-only viewer for `chatorai.json`, split into a Global tab
@@ -53,7 +54,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     _ConfigScopeData? project;
     if (_supportsProjectScope) {
       final projectPath = p.join(
-        Directory.current.path,
+        workspaceRuntimeCurrent.path,
         '.chatorai',
         'chatorai.json',
       );

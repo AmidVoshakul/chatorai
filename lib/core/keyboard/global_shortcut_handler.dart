@@ -9,6 +9,7 @@ import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/presentation/screens/child_session_screen.dart';
+import 'package:chatorai/features/chat/presentation/widgets/workspace_dialog.dart';
 import 'package:chatorai/features/chat/presentation/widgets/welcome_questions_data.dart';
 import 'package:chatorai/features/models/screens/models_screen.dart';
 import 'package:chatorai/features/settings/widgets/settings_modal.dart';
@@ -23,7 +24,8 @@ import 'package:chatorai/providers.dart'
         chatListProvider,
         currentChatIdProvider,
         permissionServiceProvider,
-        scaffoldKeyProvider;
+        scaffoldKeyProvider,
+        chatScrollIntentProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -44,6 +46,10 @@ class GlobalShortcutHandler extends ConsumerWidget {
         _stopStreaming(ref),
         isActive: (r) => r.read(chatScreenProvider).isStreaming,
       ),
+      AppShortcuts.closeDialog(_closeTopWindow),
+      AppShortcuts.scrollToChatStart(_scrollToTop(ref)),
+      AppShortcuts.scrollToChatEnd(_scrollToBottom(ref)),
+      AppShortcuts.openWorkspace(_openWorkspace(context, ref)),
       AppShortcuts.openLatestChildSession(_openLatestChildSession(ref)),
       AppShortcuts.cyclePrimaryAgent(_cyclePrimaryAgent(ref)),
       AppShortcuts.toggleSidebar(_toggleSidebar(ref)),
@@ -198,6 +204,31 @@ class GlobalShortcutHandler extends ConsumerWidget {
       } else {
         navigatorKey.currentState?.pushNamed('/settings');
       }
+    };
+  }
+
+  VoidCallback _closeTopWindow() {
+    return () {
+      final nav = navigatorKey.currentState;
+      if (nav != null && nav.canPop()) {
+        nav.pop();
+      }
+    };
+  }
+
+  VoidCallback _scrollToTop(WidgetRef ref) {
+    return () => ref.read(chatScrollIntentProvider.notifier).scrollToStart();
+  }
+
+  VoidCallback _scrollToBottom(WidgetRef ref) {
+    return () => ref.read(chatScrollIntentProvider.notifier).scrollToEnd();
+  }
+
+  VoidCallback _openWorkspace(BuildContext context, WidgetRef ref) {
+    return () {
+      final overlayContext = navigatorKey.currentState?.overlay?.context;
+      if (overlayContext == null) return;
+      showWorkspaceDialog(overlayContext, ref);
     };
   }
 }

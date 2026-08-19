@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 
 import 'workspace_runtime.dart';
 import 'package:chatorai/core/config/config_provider.dart';
@@ -123,6 +124,7 @@ class WorkspaceNotifier extends Notifier<WorkspaceState> {
     }
 
     setRuntimeCwd(normalized);
+    LogTags.config.logDebug('switchWorkspace: setRuntimeCwd=$normalized');
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(lastWorkspacePrefsKey, normalized);

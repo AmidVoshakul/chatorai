@@ -8,6 +8,7 @@ import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/truncation_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/core/permission/arity.dart' as arity;
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:command_shield/command_shield.dart';
 import 'package:path/path.dart' as p;
 
@@ -413,10 +414,10 @@ ToolDef createShellTool() {
 
       final timeoutMs = input['timeout'] as int? ?? _defaultTimeoutMs;
       final workingDir = input['working_dir'] as String?;
-      final effectiveWorkingDir = workingDir ?? Directory.current.path;
+      final effectiveWorkingDir = workingDir ?? workspaceRuntimeCurrent.path;
 
       if (workingDir != null) {
-        final boundary = FilesystemBoundary(workspace: Directory.current);
+        final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
         final resolution = boundary.resolve(workingDir);
         if (resolution.isExternal) {
           await ctx.ask(
@@ -513,7 +514,7 @@ ToolDef createShellTool() {
           'bash',
           ['-c', command],
           runInShell: true,
-          workingDirectory: workingDir ?? Directory.current.path,
+          workingDirectory: workingDir ?? workspaceRuntimeCurrent.path,
         );
 
         Timer? abortTimer;

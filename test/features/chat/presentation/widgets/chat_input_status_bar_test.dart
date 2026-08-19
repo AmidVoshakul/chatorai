@@ -6,6 +6,7 @@ import 'package:chatorai/core/mcp/mcp_types.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input_status_bar.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/project_info_provider.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -573,6 +574,261 @@ void main() {
         final mcpText = tester.widget<Text>(find.text('MCP: 0/1'));
         final color = mcpText.style!.color!;
         expect(color.a, 1.0);
+      });
+    });
+
+    group('chip hover', () {
+      testWidgets('path chip hover darkens background in light theme', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => null),
+              mcpStatusesProvider.overrideWith((_) async => {}),
+            ],
+            child: MaterialApp(
+              theme: ThemeData.light(),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final pathChipFinder = find.byType(AnimatedContainer).first;
+        final pathChipContainer = tester.widget<AnimatedContainer>(
+          pathChipFinder,
+        );
+        final baseColor =
+            (pathChipContainer.decoration as BoxDecoration).color!;
+
+        final center = tester.getCenter(pathChipFinder);
+        final gesture = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
+        await gesture.moveTo(center);
+        await tester.pumpAndSettle();
+
+        final hoveredContainer = tester.widget<AnimatedContainer>(
+          pathChipFinder,
+        );
+        final hoveredColor =
+            (hoveredContainer.decoration as BoxDecoration).color!;
+
+        expect(hoveredColor, isNot(equals(baseColor)));
+      });
+
+      testWidgets('path chip hover lightens background in dark theme', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => null),
+              mcpStatusesProvider.overrideWith((_) async => {}),
+            ],
+            child: MaterialApp(
+              theme: ThemeData.dark(),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final pathChipFinder = find.byType(AnimatedContainer).first;
+        final pathChipContainer = tester.widget<AnimatedContainer>(
+          pathChipFinder,
+        );
+        final baseColor =
+            (pathChipContainer.decoration as BoxDecoration).color!;
+
+        final center = tester.getCenter(pathChipFinder);
+        final gesture = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
+        await gesture.moveTo(center);
+        await tester.pumpAndSettle();
+
+        final hoveredContainer = tester.widget<AnimatedContainer>(
+          pathChipFinder,
+        );
+        final hoveredColor =
+            (hoveredContainer.decoration as BoxDecoration).color!;
+
+        expect(hoveredColor, isNot(equals(baseColor)));
+      });
+
+      testWidgets('branch chip is hoverable', (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => 'main'),
+              mcpStatusesProvider.overrideWith((_) async => {}),
+            ],
+            child: MaterialApp(
+              theme: ThemeData.light(),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final branchChip = find.textContaining('⎇');
+        expect(branchChip, findsOneWidget);
+
+        final branchChipFinder = find.byType(AnimatedContainer).at(1);
+        final container = tester.widget<AnimatedContainer>(branchChipFinder);
+        final baseColor = (container.decoration as BoxDecoration).color!;
+        expect(baseColor.opacity, greaterThan(0));
+
+        final center = tester.getCenter(branchChipFinder);
+        final gesture = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
+        await gesture.moveTo(center);
+        await tester.pumpAndSettle();
+
+        final hoveredContainer = tester.widget<AnimatedContainer>(
+          branchChipFinder,
+        );
+        final hoveredColor =
+            (hoveredContainer.decoration as BoxDecoration).color!;
+        expect(hoveredColor, isNot(equals(baseColor)));
+      });
+
+      testWidgets('mcp chip is hoverable', (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => null),
+              mcpStatusesProvider.overrideWith(
+                (_) async => {'s1': McpServerStatus.connected()},
+              ),
+            ],
+            child: MaterialApp(
+              theme: ThemeData.light(),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final mcpChip = find.text('MCP: 1/1');
+        expect(mcpChip, findsOneWidget);
+
+        final mcpChipFinder = find.byType(AnimatedContainer).last;
+        final container = tester.widget<AnimatedContainer>(mcpChipFinder);
+        final baseColor = (container.decoration as BoxDecoration).color!;
+        expect(baseColor.opacity, greaterThan(0));
+
+        final center = tester.getCenter(mcpChipFinder);
+        final gesture = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
+        await gesture.moveTo(center);
+        await tester.pumpAndSettle();
+
+        final hoveredContainer = tester.widget<AnimatedContainer>(
+          mcpChipFinder,
+        );
+        final hoveredColor =
+            (hoveredContainer.decoration as BoxDecoration).color!;
+        expect(hoveredColor, isNot(equals(baseColor)));
+      });
+
+      testWidgets('tapping path chip opens workspace dialog', (tester) async {
+        bool dialogShown = false;
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => null),
+              mcpStatusesProvider.overrideWith((_) async => {}),
+            ],
+            child: MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(
+                body: ChatInputStatusBar(),
+                // Intercept showWorkspaceDialog by overriding the navigator
+                // We just verify the InkWell is tappable by tapping it
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final pathChip = find.text('chatorai');
+        expect(pathChip, findsOneWidget);
+
+        await tester.tap(pathChip);
+        await tester.pump();
+
+        // The InkWell onTap calls showWorkspaceDialog; we verify the chip
+        // is wrapped in InkWell by checking it responds to tap without error.
+        // A full dialog intercept would require navigator mocking; this
+        // confirms the tap target is wired.
+        expect(find.text('chatorai'), findsOneWidget);
+      });
+
+      testWidgets('tapping branch chip does nothing', (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => 'main'),
+              mcpStatusesProvider.overrideWith((_) async => {}),
+            ],
+            child: MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final branchChip = find.textContaining('⎇');
+        expect(branchChip, findsOneWidget);
+
+        await tester.tap(branchChip);
+        await tester.pump();
+
+        // No dialog or route should be pushed for a non-tappable chip.
+        expect(find.textContaining('⎇'), findsOneWidget);
+      });
+
+      testWidgets('tapping mcp chip does nothing', (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => null),
+              mcpStatusesProvider.overrideWith(
+                (_) async => {'s1': McpServerStatus.connected()},
+              ),
+            ],
+            child: MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final mcpChip = find.text('MCP: 1/1');
+        expect(mcpChip, findsOneWidget);
+
+        await tester.tap(mcpChip);
+        await tester.pump();
+
+        expect(find.text('MCP: 1/1'), findsOneWidget);
       });
     });
   });

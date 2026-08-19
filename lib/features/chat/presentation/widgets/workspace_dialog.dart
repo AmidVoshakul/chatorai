@@ -39,6 +39,7 @@ class _WorkspaceDialogState extends ConsumerState<_WorkspaceDialog> {
   String _directoryQuery = '';
   String _sessionQuery = '';
   String _selectedDirectory = '';
+  bool _isClosing = false;
 
   @override
   void initState() {
@@ -198,64 +199,90 @@ class _WorkspaceDialogState extends ConsumerState<_WorkspaceDialog> {
         .clamp(0.0, math.max(0.0, screenSize.height - 64))
         .toDouble();
 
-    return Align(
-      alignment: Alignment.center,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: ChatoraiSettingsWindow.maxWindowWidth,
-            maxHeight: maxHeight,
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: palette.surface,
-              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xl),
-              border: Border.all(
-                color: palette.border,
-                width: ChatoraiBorderWidth.thin,
-              ),
-              boxShadow: ChatoraiShadows.windowShadow,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop || _isClosing) return;
+        _isClosing = true;
+        try {
+          if (_selectedDirectory.isNotEmpty &&
+              _selectedDirectory != ref.read(workspaceProvider).currentPath) {
+            final switched = await _ensureSwitchedTo(_selectedDirectory);
+            if (switched && context.mounted) {
+              Navigator.pop(context, _selectedDirectory);
+            } else {
+              _isClosing = false;
+            }
+          } else if (context.mounted) {
+            Navigator.pop(context);
+          } else {
+            _isClosing = false;
+          }
+        } catch (_) {
+          _isClosing = false;
+          rethrow;
+        }
+      },
+      child: Align(
+        alignment: Alignment.center,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: ChatoraiSettingsWindow.maxWindowWidth,
+              maxHeight: maxHeight,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xl),
-              child: Material(
+            child: Container(
+              decoration: BoxDecoration(
                 color: palette.surface,
-                child: ShortcutHandler(
-                  autofocus: true,
-                  shortcuts: [
-                    AppShortcuts.closeDialog(() => Navigator.pop(context)),
-                  ],
-                  child: Column(
-                    children: [
-                      _DialogHeader(palette: palette, l10n: l10n),
-                      _HairlineDivider(color: palette.divider),
-                      Expanded(
-                        child: _TwoColumnBody(
-                          palette: palette,
-                          l10n: l10n,
-                          filteredDirectories: filtered,
-                          directoryQuery: _directoryQuery,
-                          sessionQuery: _sessionQuery,
-                          selectedDirectory: _selectedDirectory,
-                          currentPath: state.currentPath,
-                          onDirectoryQueryChanged: (value) =>
-                              setState(() => _directoryQuery = value),
-                          onSessionQueryChanged: (value) =>
-                              setState(() => _sessionQuery = value),
-                          onSelectDirectory: (path) {
-                            setState(() => _selectedDirectory = path);
-                          },
-                          onOpenSession: _openSession,
-                          onDeleteSession: _onDeleteSession,
-                          onAddDirectory: _onAddDirectory,
-                          onNewSession: _onNewSession,
-                          onSwitchDirectory: _ensureSwitchedTo,
-                          directorySearchController: _directorySearchController,
-                          sessionSearchController: _sessionSearchController,
-                        ),
-                      ),
+                borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xl),
+                border: Border.all(
+                  color: palette.border,
+                  width: ChatoraiBorderWidth.thin,
+                ),
+                boxShadow: ChatoraiShadows.windowShadow,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xl),
+                child: Material(
+                  color: palette.surface,
+                  child: ShortcutHandler(
+                    autofocus: true,
+                    shortcuts: [
+                      AppShortcuts.closeDialog(() => Navigator.pop(context)),
                     ],
+                    child: Column(
+                      children: [
+                        _DialogHeader(palette: palette, l10n: l10n),
+                        _HairlineDivider(color: palette.divider),
+                        Expanded(
+                          child: _TwoColumnBody(
+                            palette: palette,
+                            l10n: l10n,
+                            filteredDirectories: filtered,
+                            directoryQuery: _directoryQuery,
+                            sessionQuery: _sessionQuery,
+                            selectedDirectory: _selectedDirectory,
+                            currentPath: state.currentPath,
+                            onDirectoryQueryChanged: (value) =>
+                                setState(() => _directoryQuery = value),
+                            onSessionQueryChanged: (value) =>
+                                setState(() => _sessionQuery = value),
+                            onSelectDirectory: (path) {
+                              setState(() => _selectedDirectory = path);
+                            },
+                            onOpenSession: _openSession,
+                            onDeleteSession: _onDeleteSession,
+                            onAddDirectory: _onAddDirectory,
+                            onNewSession: _onNewSession,
+                            onSwitchDirectory: _ensureSwitchedTo,
+                            directorySearchController:
+                                _directorySearchController,
+                            sessionSearchController: _sessionSearchController,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

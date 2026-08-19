@@ -1,35 +1,35 @@
 import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/mcp/mcp_client_service.dart';
+import 'package:chatorai/core/mcp/mcp_config.dart';
 import 'package:chatorai/core/mcp/mcp_types.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Resolves once all configured MCP servers have finished connecting.
+/// Single owner of the [McpClientService] lifecycle.
 ///
-/// Shared by [toolRegistryProvider] and [mcpStatusesProvider] so the status bar
-/// keeps showing a spinner until servers actually connect. initialize() is
-/// idempotent (McpClientService guards with an internal completer), so both
-/// consumers wait on the SAME connection work.
+/// Re-runs whenever the config changes (including workspace switches) and
+/// reconciles live connections via [McpClientService.reload], which connects
+/// new servers, disconnects removed/disabled ones and reconnects servers whose
+/// config drifted. When MCP is not configured (or all servers were removed),
+/// reload tears down whatever is left, so stale connections never leak from
+/// one workspace into the next.
+///
+/// Shared by [toolRegistryProvider] and [mcpStatusesProvider] so both wait on
+/// the SAME connection work.
 final mcpInitializationProvider = FutureProvider<void>((ref) async {
   final config = await ref.watch(configProvider.future);
-  if (config.mcp == null || config.mcp!.servers.isEmpty) return;
-  await McpClientService.instance.initialize(config.mcp!);
+  final mcp = config.mcp ?? const McpConfig();
+  await McpClientService.instance.reload(mcp);
 });
 
 /// Snapshot of every MCP server status.
 ///
-/// When MCP is not configured, returns an empty map immediately without waiting
-/// for any init. When MCP is configured, resolves only AFTER the servers have
-/// finished connecting, so the chat status bar shows a spinner for the whole
-/// connection window and then the real `connected/total` count.
+/// Resolves only AFTER [mcpInitializationProvider] finished, so the chat
+/// status bar shows a spinner for the whole connection window and then the
+/// real `connected/total` count — and, when the config has no MCP servers,
+/// after the previous connections have been torn down.
 final mcpStatusesProvider = FutureProvider<Map<String, McpServerStatus>>((
   ref,
 ) async {
-  final config = await ref.watch(configProvider.future);
-
-  if (config.mcp == null || config.mcp!.servers.isEmpty) {
-    return const {};
-  }
-
   await ref.watch(mcpInitializationProvider.future);
   return McpClientService.instance.getAllStatuses();
 });

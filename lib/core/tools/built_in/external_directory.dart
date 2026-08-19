@@ -1,7 +1,7 @@
 import 'package:path/path.dart' as p;
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
-import 'dart:io';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 
 ToolDef createExternalDirectoryTool() {
   return ToolDef(
@@ -30,7 +30,7 @@ ToolDef createExternalDirectoryTool() {
       }
 
       final bypass = input['bypass'] as bool? ?? false;
-      final boundary = FilesystemBoundary(workspace: Directory.current);
+      final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
       final resolution = boundary.resolve(target);
 
       if (!resolution.isExternal || bypass) {

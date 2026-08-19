@@ -106,7 +106,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
     );
   }
 
-  Future<void> _showAddDialog() async {
+  Future<void> showAddDialog() async {
     _nameController.clear();
     _commandController.clear();
     _urlController.clear();
@@ -696,7 +696,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
     }
   }
 
-  Future<void> _onRefresh() async {
+  Future<void> refresh() async {
     if (_isRefreshing) return;
     setState(() => _isRefreshing = true);
     try {
@@ -810,7 +810,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
       IconButton(
         icon: const Icon(Icons.add),
         tooltip: l10n.mcpTooltipAdd,
-        onPressed: widget.onAdd ?? _showAddDialog,
+        onPressed: widget.onAdd ?? showAddDialog,
       ),
       if (_isRefreshing)
         const Padding(
@@ -821,7 +821,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
         IconButton(
           icon: const Icon(Icons.refresh),
           tooltip: l10n.mcpTooltipRefresh,
-          onPressed: widget.onRefresh ?? _onRefresh,
+          onPressed: widget.onRefresh ?? refresh,
         ),
     ];
 
@@ -857,7 +857,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
           data: (state) {
             final names = state.servers.keys.toList()..sort();
             if (names.isEmpty) {
-              return _EmptyState(isDark: isDark, onAdd: _showAddDialog);
+              return _EmptyState(isDark: isDark, onAdd: showAddDialog);
             }
             final statusesAsync = ref.watch(mcpStatusesProvider);
             final statuses = switch (statusesAsync) {

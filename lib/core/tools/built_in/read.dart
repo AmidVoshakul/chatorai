@@ -4,7 +4,9 @@ import 'dart:io';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
+import 'package:chatorai/shared/utils/android_storage_permission.dart';
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:path/path.dart' as p;
 
 const _binaryExtensions = {
@@ -95,11 +97,17 @@ ToolDef createReadTool() {
         );
       }
 
-      final safePath = resolveSafePath(
-        filePath,
-        allowedRoots: managedReadRoots,
-      );
-      final boundary = FilesystemBoundary(workspace: Directory.current);
+      final String safePath;
+      try {
+        safePath = resolveSafePath(filePath, allowedRoots: managedReadRoots);
+      } on ArgumentError {
+        return ToolOutput(
+          'Error: path denied: $filePath (outside the project root). '
+          '${allFilesAccessHint()}',
+          metadata: {'error': true, 'path': filePath},
+        );
+      }
+      final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
       final resolution = boundary.resolve(safePath);
       if (resolution.isExternal &&
           !isWithinAnyRoot(resolution.path, managedReadRoots)) {
@@ -131,10 +139,20 @@ ToolDef createReadTool() {
       try {
         bytes = await file.readAsBytes();
       } on FileSystemException catch (e) {
+        if (!await isAllFilesAccessGranted()) {
+          await ctx.ask(
+            permission: 'external_directory',
+            patterns: [safePath],
+            always: [safePath],
+            metadata: {
+              'filepath': safePath,
+              'parentDir': p.dirname(safePath),
+              'tool': 'read',
+            },
+          );
+        }
         return ToolOutput(
-          'Error: cannot read $safePath (${e.message}). '
-          'On Android 11+, direct file path access to shared storage is restricted. '
-          'Use the app file picker or copy the file into the app folder, then read it from there.',
+          'Error: cannot read $safePath (${e.message}). ${allFilesAccessHint()}',
           metadata: {'error': true, 'os_permission': true, 'path': safePath},
         );
       }

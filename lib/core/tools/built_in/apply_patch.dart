@@ -10,6 +10,7 @@ import 'package:chatorai/core/tools/lsp_diagnostics_format.dart';
 import 'package:chatorai/core/format/format_service.dart';
 import 'package:chatorai/core/session/file_snapshot_service.dart';
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:path/path.dart' as p;
 import 'package:chatorai/shared/utils/logger.dart';
 
@@ -255,7 +256,7 @@ Future<ToolOutput> _executeEnvelope(
   try {
     for (final op in ops) {
       final safePath = resolveSafePath(op.path);
-      final boundary = FilesystemBoundary(workspace: Directory.current);
+      final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
       final resolution = boundary.resolve(safePath);
       if (resolution.isExternal) {
         await ctx.ask(
@@ -363,7 +364,7 @@ Future<ToolOutput> _executeSingleFile(
     );
   }
   final safePath = resolveSafePath(rawPath);
-  final boundary = FilesystemBoundary(workspace: Directory.current);
+  final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
   final resolution = boundary.resolve(safePath);
   if (resolution.isExternal) {
     await ctx.ask(

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
@@ -33,9 +34,9 @@ ToolDef createGlobTool() {
         );
       }
 
-      final root = input['path'] as String? ?? Directory.current.path;
+      final root = input['path'] as String? ?? workspaceRuntimeCurrent.path;
       final safeRoot = resolveSafePath(root, allowedRoots: managedReadRoots);
-      final boundary = FilesystemBoundary(workspace: Directory.current);
+      final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
       final globResolution = boundary.resolve(safeRoot);
       if (globResolution.isExternal &&
           !isWithinAnyRoot(globResolution.path, managedReadRoots)) {

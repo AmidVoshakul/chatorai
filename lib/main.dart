@@ -30,52 +30,58 @@ import 'package:shared_preferences/shared_preferences.dart';
 final _navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main(List<String> args) async {
+  // Force-init the lazy top-level before any zone getter can read it.
+  // Without this, IOOverrides.runZoned(getCurrentDirectory: () => workspaceRuntimeCurrent)
+  // can recurse: first touch inside the zone triggers the lazy initializer,
+  // which calls Directory.current -> zone getter -> workspaceRuntimeCurrent again.
+  workspaceRuntimeCurrent = Directory.current;
+
   final cwdResult = detectCwdOverride(args);
-
-  Future<void> run() async {
-    if (await runCliIfRequested(cwdResult.remainingArgs)) exit(0);
-
-    WidgetsFlutterBinding.ensureInitialized();
-
-    LogConfig.enabled = true;
-    LogConfig.minimumLevel = LogLevel.debug;
-
-    final platformHandler = PlatformDispatcher.instance.onError;
-    PlatformDispatcher.instance.onError = (error, estack) {
-      if (error is DioException) {
-        LogTags.chatService.logDebug(
-          '[Global] swallowed DioException (handled by _retry)',
-        );
-        return true;
-      }
-      if (error is TimeoutException) {
-        LogTags.chatService.logDebug(
-          '[Global] swallowed TimeoutException (handled by _retry)',
-        );
-        return true;
-      }
-      return platformHandler?.call(error, estack) ?? false;
-    };
-
-    runApp(const ProviderScope(child: ChatoraiApp()));
-  }
 
   if (cwdResult.hasOverride) {
     workspaceRuntimeCurrent = Directory(cwdResult.path!);
-  } else {
-    WidgetsFlutterBinding.ensureInitialized();
-    final initial = await resolveInitialWorkspace(
-      cliPath: null,
-      readLastUsed: () async => (await SharedPreferences.getInstance())
-          .getString(lastWorkspacePrefsKey),
-    );
-    workspaceRuntimeCurrent = Directory(initial);
   }
 
-  await IOOverrides.runZoned(
-    run,
-    getCurrentDirectory: () => workspaceRuntimeCurrent,
-  );
+  await IOOverrides.runZoned(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    if (!cwdResult.hasOverride) {
+      final initial = await resolveInitialWorkspace(
+        cliPath: null,
+        readLastUsed: () async => (await SharedPreferences.getInstance())
+            .getString(lastWorkspacePrefsKey),
+      );
+      workspaceRuntimeCurrent = Directory(initial);
+    }
+
+    Future<void> run() async {
+      if (await runCliIfRequested(cwdResult.remainingArgs)) exit(0);
+
+      LogConfig.enabled = true;
+      LogConfig.minimumLevel = LogLevel.debug;
+
+      final platformHandler = PlatformDispatcher.instance.onError;
+      PlatformDispatcher.instance.onError = (error, estack) {
+        if (error is DioException) {
+          LogTags.chatService.logDebug(
+            '[Global] swallowed DioException (handled by _retry)',
+          );
+          return true;
+        }
+        if (error is TimeoutException) {
+          LogTags.chatService.logDebug(
+            '[Global] swallowed TimeoutException (handled by _retry)',
+          );
+          return true;
+        }
+        return platformHandler?.call(error, estack) ?? false;
+      };
+
+      runApp(const ProviderScope(child: ChatoraiApp()));
+    }
+
+    await run();
+  }, getCurrentDirectory: () => workspaceRuntimeCurrent);
 }
 
 // ===========================================================================
@@ -120,6 +126,7 @@ class ChatoraiApp extends ConsumerWidget {
       theme: theme,
       debugShowCheckedModeBanner: false,
       home: bootstrap.when(
+        skipLoadingOnReload: true,
         loading: () => const AppLoadingScreen(),
         error: (e, _) => const BootstrapErrorScreen(),
         data: (_) => const PermissionOverlay(

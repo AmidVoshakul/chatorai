@@ -8,8 +8,6 @@ import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/constants/chat_constants.dart';
 import 'package:chatorai/core/context/compaction_orchestrator.dart';
 import 'package:chatorai/core/context/compaction_service.dart';
-import 'package:chatorai/core/keyboard/shortcut_handler.dart';
-import 'package:chatorai/core/keyboard/shortcuts.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/session/event_bus.dart';
 import 'package:chatorai/core/session/events.dart';
@@ -56,7 +54,8 @@ import 'package:chatorai/providers.dart'
         sessionStackProvider,
         permissionServiceProvider,
         sessionPartsProvider,
-        scaffoldKeyProvider;
+        scaffoldKeyProvider,
+        listenChatScrollIntent;
 import 'package:chatorai/shared/utils/chat_error_utils.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
@@ -144,6 +143,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   /// Test-only: handle scroll event.
   @visibleForTesting
   void handleScroll() => _handleScroll();
+
+  /// Test-only: schedule auto-scroll like a streaming chunk does.
+  @visibleForTesting
+  void maybeAutoScrollDuringStreaming() => _maybeAutoScrollDuringStreaming();
 
   Chat? get currentChat => ref.watch(currentChatProvider);
   String get selectedModelId => ref.watch(modelProvider).selectedModelId;
@@ -234,16 +237,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
   }
 
-  void _scrollToChatStart() {
-    if (_messageScrollController.hasClients) {
-      _messageScrollController.jumpTo(0);
-    }
-  }
-
-  void _scrollToChatEnd() {
-    _scrollToBottom(force: true);
-  }
-
   Future<void> _showContinuationSuggestions(Message message) async {
     final theme = ref.read(themeProvider);
     if (!theme.showContinuationSuggestions) return;
@@ -258,6 +251,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   @override
   Widget build(BuildContext context) {
+    listenChatScrollIntent(ref, _messageScrollController);
     final isStreaming = ref.watch(
       chatScreenProvider.select((s) => s.isStreaming),
     );
@@ -329,12 +323,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           )
         : baseLayout;
 
-    final shortcuts = [
-      AppShortcuts.scrollToChatStart(_scrollToChatStart),
-      AppShortcuts.scrollToChatEnd(_scrollToChatEnd),
-    ];
-
-    return ShortcutHandler(shortcuts: shortcuts, child: screenContent);
+    return screenContent;
   }
 
   /// Generates a session title from the first user message when the chat

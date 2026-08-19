@@ -77,7 +77,7 @@ class ChatRetryService {
 
   void _resetRetryState() {
     isRetrying = false;
-    _emit(null, '');
+    _emit(0.0, '');
   }
 
   void dispose() {
@@ -93,7 +93,9 @@ class ChatRetryService {
     if (progress != null && rc != null && !rc.isClosed) {
       try {
         rc.add(progress);
-      } catch (_) {}
+      } catch (e) {
+        // ignore
+      }
     }
     if (message != null && mc != null && !mc.isClosed) {
       try {

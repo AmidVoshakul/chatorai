@@ -112,6 +112,15 @@ class AppShortcuts {
     );
   }
 
+  static KeyboardShortcut openWorkspace(void Function() onExecute) {
+    return KeyboardShortcut(
+      id: 'open_workspace',
+      description: 'Open workspace (Ctrl+W)',
+      activator: const KeyActivator.ctrlKey(LogicalKeyboardKey.keyW),
+      onExecute: (_, _) => onExecute(),
+    );
+  }
+
   static KeyboardShortcut scrollToChatStart(void Function() onExecute) {
     return KeyboardShortcut(
       id: 'scroll_to_chat_start',

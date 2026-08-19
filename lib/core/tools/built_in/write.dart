@@ -4,8 +4,8 @@ import 'dart:io';
 
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
-
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:chatorai/core/lsp/lsp_service.dart';
 import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/core/tools/lsp_diagnostics_format.dart';
@@ -53,7 +53,7 @@ ToolDef createWriteTool({
       String safePath;
       try {
         safePath = resolveSafePath(filePath);
-        final boundary = FilesystemBoundary(workspace: Directory.current);
+        final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
         final resolution = boundary.resolve(safePath);
         if (resolution.isExternal) {
           await ctx.ask(

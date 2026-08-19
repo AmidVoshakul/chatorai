@@ -8,6 +8,7 @@ import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/shell.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 
 // Mock for CancellationToken
 class MockCancellationToken extends Mock implements sdk.CancellationToken {}
@@ -123,6 +124,28 @@ void main() {
         expect(output.output, isNotEmpty);
         expect(askCalled, isFalse);
       });
+
+      test(
+        'default working dir follows workspaceRuntimeCurrent',
+        () async {
+          final original = workspaceRuntimeCurrent;
+          final tempDir = Directory.systemTemp.createTempSync(
+            'shell_cwd_test_',
+          );
+          try {
+            workspaceRuntimeCurrent = tempDir;
+            final ctx = _createMockContext();
+            final output = await shellTool.execute({'command': 'pwd'}, ctx);
+
+            expect(output, isA<ToolOutput>());
+            expect(output.output, contains(tempDir.path));
+          } finally {
+            workspaceRuntimeCurrent = original;
+            tempDir.deleteSync(recursive: true);
+          }
+        },
+        skip: !Platform.isLinux,
+      );
     });
 
     group('Shell operator detection', () {

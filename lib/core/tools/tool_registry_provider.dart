@@ -154,12 +154,7 @@ final toolRegistryProvider = FutureProvider<ToolRegistry>((ref) async {
     }
   };
 
-  // Register MCP cleanup regardless of how MCP initialize resolves, so the
-  // service is torn down on provider disposal.
   if (config.mcp != null && config.mcp!.servers.isNotEmpty) {
-    ref.onDispose(() {
-      McpClientService.instance.dispose();
-    });
     // Initialize MCP in the background. The registry is returned immediately
     // with built-in tools/skills/LSP ready so the chat (and Welcome questions)
     // render without waiting for MCP servers to connect. `_initializeMcpTools`

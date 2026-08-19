@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'config_manager.dart';
 import 'instructions_resolver.dart';
 import 'models/chatorai_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 
 /// Riverpod provider that loads and exposes [ChatOrAIConfig].
 final configProvider = FutureProvider<ChatOrAIConfig>((ref) async {
@@ -28,7 +27,7 @@ final resolvedInstructionsProvider = FutureProvider<List<String>>((ref) async {
   // and relative `instructions[]` entries resolve from it.
   InstructionsCache.instance.setRaw(
     config.instructions,
-    cwd: Directory.current,
+    cwd: workspaceRuntimeCurrent,
   );
   return InstructionsCache.instance.resolved;
 });

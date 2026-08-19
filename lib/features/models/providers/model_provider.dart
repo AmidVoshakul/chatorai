@@ -139,6 +139,7 @@ class ModelNotifier extends Notifier<ModelState> {
       final usageCounts = _readIntMap(prefs, _usageCountsKey);
       final lastUsed = _readIntMap(prefs, _lastUsedKey);
 
+      if (!ref.mounted) return;
       state = state.copyWith(
         selectedModelId: selectedModelId,
         favoriteModelIds: favoriteModelIds,
@@ -152,7 +153,9 @@ class ModelNotifier extends Notifier<ModelState> {
       _settingsLoaded.complete();
     } catch (e) {
       _logger.logError('[ModelNotifier] Error loading settings: $e');
-      state = state.copyWith(isLoading: false);
+      if (ref.mounted) {
+        state = state.copyWith(isLoading: false);
+      }
       _settingsLoaded.complete();
     }
   }
@@ -256,6 +259,7 @@ class ModelNotifier extends Notifier<ModelState> {
         }
       }
 
+      if (!ref.mounted) return;
       state = state.copyWith(
         availableModels: availableModels,
         selectedModelId: selectedModelId,
@@ -269,7 +273,9 @@ class ModelNotifier extends Notifier<ModelState> {
       );
     } catch (e) {
       _logger.logError('[ModelNotifier] Failed to load models: $e');
-      state = state.copyWith(isLoadingModels: false);
+      if (ref.mounted) {
+        state = state.copyWith(isLoadingModels: false);
+      }
     } finally {
       _loadingModels = false;
     }

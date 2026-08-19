@@ -428,6 +428,7 @@ class ChatoraiSettingsWindow {
         nav: Color(0xFFF4F3F0),
         navItemHover: Color(0x0A000000),
         navItemSelected: Color(0xFFFDEEDB),
+        chipHover: Color(0x0A000000),
         content: Color(0xFFFEFDFC),
         divider: Color(0xFFE9E5DE),
         border: Color(0xFFDDD8CF),
@@ -442,6 +443,7 @@ class ChatoraiSettingsWindow {
     nav: Color(0xFF202020),
     navItemHover: Color(0x14FFFFFF),
     navItemSelected: Color(0xFF2A2A2A),
+    chipHover: Color(0x14FFFFFF),
     content: Color(0xFF161616),
     divider: Color(0xFF2C2C2C),
     border: Color(0xFF343434),
@@ -458,6 +460,7 @@ class ChatoraiSettingsWindowColors {
   final Color nav;
   final Color navItemHover;
   final Color navItemSelected;
+  final Color chipHover;
   final Color content;
   final Color divider;
   final Color border;
@@ -471,6 +474,7 @@ class ChatoraiSettingsWindowColors {
     required this.nav,
     required this.navItemHover,
     required this.navItemSelected,
+    required this.chipHover,
     required this.content,
     required this.divider,
     required this.border,

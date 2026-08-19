@@ -146,19 +146,15 @@ class ChatInputStatusBar extends ConsumerWidget {
       Tooltip(
         message: l10n.changeWorkingDirectory,
         preferBelow: false,
-        child: InkWell(
-          onTap: () => showWorkspaceDialog(context, ref),
-          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-          hoverColor: ChatoraiColors.black05,
-          child: _StatusChip(
-            icon: Icon(
-              Icons.folder_outlined,
-              size: ChatoraiIconSizes.xxs,
-              color: ChatoraiColors.gray,
-            ),
-            label: p.basename(dir),
+        child: _StatusChip(
+          icon: Icon(
+            Icons.folder_outlined,
+            size: ChatoraiIconSizes.xxs,
             color: ChatoraiColors.gray,
           ),
+          label: p.basename(dir),
+          color: ChatoraiColors.gray,
+          onTap: () => showWorkspaceDialog(context, ref),
         ),
       ),
     );
@@ -195,32 +191,41 @@ class ChatInputStatusBar extends ConsumerWidget {
 
 // ==== CHIP WIDGET ======================================================
 
-class _StatusChip extends StatelessWidget {
+class _StatusChip extends StatefulWidget {
   const _StatusChip({
     required this.icon,
     required this.label,
     required this.color,
     this.maxLabelWidth,
+    this.onTap,
   });
 
   final Widget? icon;
   final String label;
   final Color color;
   final double? maxLabelWidth;
+  final VoidCallback? onTap;
+
+  @override
+  State<_StatusChip> createState() => _StatusChipState();
+}
+
+class _StatusChipState extends State<_StatusChip> {
+  bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
     final palette = ChatoraiSettingsWindow.of(context);
     Widget textChild = Text(
-      label,
-      style: TextStyle(color: color, fontSize: ChatoraiFontSizes.sm),
+      widget.label,
+      style: TextStyle(color: widget.color, fontSize: ChatoraiFontSizes.sm),
     );
-    if (maxLabelWidth != null) {
+    if (widget.maxLabelWidth != null) {
       textChild = ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxLabelWidth!),
+        constraints: BoxConstraints(maxWidth: widget.maxLabelWidth!),
         child: Text(
-          label,
-          style: TextStyle(color: color, fontSize: ChatoraiFontSizes.sm),
+          widget.label,
+          style: TextStyle(color: widget.color, fontSize: ChatoraiFontSizes.sm),
           overflow: TextOverflow.ellipsis,
           maxLines: 1,
         ),
@@ -230,25 +235,43 @@ class _StatusChip extends StatelessWidget {
     final child = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (icon != null) ...[icon!, const SizedBox(width: ChatoraiSpacing.xs)],
+        if (widget.icon != null) ...[
+          widget.icon!,
+          const SizedBox(width: ChatoraiSpacing.xs),
+        ],
         textChild,
       ],
     );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: palette.surface.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xs),
-        border: Border.all(
-          color: palette.border.withValues(alpha: 0.55),
-          width: ChatoraiBorderWidth.thin,
+    final baseColor = palette.surface.withValues(alpha: 0.5);
+    final hoverColor = palette.chipHover;
+
+    return MouseRegion(
+      onHover: (_) {
+        if (!_hovered) {
+          setState(() => _hovered = true);
+        }
+      },
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: ChatoraiDurations.fast,
+          decoration: BoxDecoration(
+            color: _hovered ? hoverColor : baseColor,
+            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xs),
+            border: Border.all(
+              color: palette.border.withValues(alpha: 0.55),
+              width: ChatoraiBorderWidth.thin,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: ChatoraiSpacing.xs,
+            vertical: 2,
+          ),
+          child: child,
         ),
       ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: ChatoraiSpacing.xs,
-        vertical: 2,
-      ),
-      child: child,
     );
   }
 }

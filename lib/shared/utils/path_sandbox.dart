@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:chatorai/shared/utils/xdg_paths.dart';
+import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:path/path.dart' as p;
 
 /// Directories the model is permitted to read even though they live outside the
@@ -13,7 +12,7 @@ List<String>? _cachedManagedReadRoots;
 /// of [XdgPaths.dataSubdirSync]) on every [resolveSafePath] / [isWithinAnyRoot]
 /// call.
 List<String> get managedReadRoots => _cachedManagedReadRoots ??= [
-  Directory.current.path,
+  workspaceRuntimeCurrent.path,
   XdgPaths.dataSubdirSync('tool-output').path,
   XdgPaths.dataSubdirSync('attachments').path,
 ];
@@ -33,16 +32,16 @@ String resolveSafePath(
   final normalized = p.normalize(
     userPath.startsWith('~')
         ? p.join(
-            Directory.current.path,
+            workspaceRuntimeCurrent.path,
             userPath.length > 2 ? userPath.substring(2) : '.',
           )
         : userPath,
   );
   final absolute = p.isAbsolute(normalized)
       ? normalized
-      : p.join(Directory.current.path, normalized);
+      : p.join(workspaceRuntimeCurrent.path, normalized);
   final normalizedAbsolute = p.normalize(absolute);
-  final projectRoot = Directory.current.path;
+  final projectRoot = workspaceRuntimeCurrent.path;
   if (normalizedAbsolute != projectRoot &&
       !p.isWithin(projectRoot, normalizedAbsolute)) {
     if (isWithinAnyRoot(normalizedAbsolute, allowedRoots)) {
