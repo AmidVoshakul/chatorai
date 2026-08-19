@@ -67,8 +67,6 @@ class AssistantMessageBubble extends StatelessWidget {
   final Future<void> Function(String)? onContinuationSelected;
   final VoidCallback? onMessageDeleted;
   final VoidCallback? onMessageRegenerate;
-  final int? cumulativeTokens;
-  final int? contextLength;
   final bool expandReasoningByDefault;
   final bool reasoningEnabled;
   final void Function(String? sessionId)? onTaskTap;
@@ -85,8 +83,6 @@ class AssistantMessageBubble extends StatelessWidget {
     this.onContinuationSelected,
     this.onMessageDeleted,
     this.onMessageRegenerate,
-    this.cumulativeTokens,
-    this.contextLength,
     this.expandReasoningByDefault = true,
     this.reasoningEnabled = true,
     this.onTaskTap,
@@ -201,8 +197,6 @@ class AssistantMessageBubble extends StatelessWidget {
           onMessageDeleted: onMessageDeleted,
           onMessageRegenerate: onMessageRegenerate,
           onContinuationSelected: onContinuationSelected,
-          cumulativeTokens: cumulativeTokens,
-          contextLength: contextLength,
           agentName: agentName,
           isCompactionSummary: isCompactionSummary,
           model: message.model,

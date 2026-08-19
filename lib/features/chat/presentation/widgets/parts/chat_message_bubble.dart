@@ -23,8 +23,6 @@ class ChatMessageBubble extends StatefulWidget {
   final Function(String, String)? onMessageEditedAndSend;
   final bool isLastMessage;
   final Function(String messageId, String answer)? onQuestionAnswer;
-  final int? cumulativeTokens;
-  final int? contextLength;
   final void Function(String? sessionId)? onTaskTap;
   final bool expandReasoningByDefault;
   final bool reasoningEnabled;
@@ -43,8 +41,6 @@ class ChatMessageBubble extends StatefulWidget {
     this.onMessageEditedAndSend,
     this.isLastMessage = false,
     this.onQuestionAnswer,
-    this.cumulativeTokens,
-    this.contextLength,
     this.onTaskTap,
     this.expandReasoningByDefault = true,
     this.reasoningEnabled = true,
@@ -129,8 +125,6 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         onMessageDeleted: widget.onMessageDeleted,
         onMessageRegenerate: widget.onMessageRegenerate,
         onContinuationSelected: widget.onContinuationSelected,
-        cumulativeTokens: widget.cumulativeTokens,
-        contextLength: widget.contextLength,
       );
     }
     return switch (widget.message) {
@@ -143,8 +137,6 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         onMessageDeleted: widget.onMessageDeleted,
         onMessageRegenerate: widget.onMessageRegenerate,
         onContinuationSelected: widget.onContinuationSelected,
-        cumulativeTokens: widget.cumulativeTokens,
-        contextLength: widget.contextLength,
         timestamp: m.timestamp,
       ),
       AssistantMessage m => AssistantMessageBubble(
@@ -157,8 +149,6 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         onContinuationSelected: widget.onContinuationSelected,
         onMessageDeleted: widget.onMessageDeleted,
         onMessageRegenerate: widget.onMessageRegenerate,
-        cumulativeTokens: widget.cumulativeTokens,
-        contextLength: widget.contextLength,
         expandReasoningByDefault: widget.expandReasoningByDefault,
         reasoningEnabled: widget.reasoningEnabled,
         onTaskTap: widget.onTaskTap,

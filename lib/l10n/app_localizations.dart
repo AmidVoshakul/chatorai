@@ -622,6 +622,96 @@ abstract class AppLocalizations {
   /// **'Context'**
   String get context;
 
+  /// No description provided for @contextMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages: {used} / {usable} tokens ({percent}%)'**
+  String contextMessages(Object percent, Object usable, Object used);
+
+  /// No description provided for @contextInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions'**
+  String get contextInstructions;
+
+  /// No description provided for @contextAgentPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent prompt'**
+  String get contextAgentPrompt;
+
+  /// No description provided for @contextUserPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'User prompt'**
+  String get contextUserPrompt;
+
+  /// No description provided for @contextCompactSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Compact session'**
+  String get contextCompactSession;
+
+  /// No description provided for @contextCompacting.
+  ///
+  /// In en, this message translates to:
+  /// **'Compacting…'**
+  String get contextCompacting;
+
+  /// No description provided for @contextUsageBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage breakdown'**
+  String get contextUsageBreakdown;
+
+  /// No description provided for @contextPromptTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt tokens'**
+  String get contextPromptTokens;
+
+  /// No description provided for @contextOutputTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Output tokens'**
+  String get contextOutputTokens;
+
+  /// No description provided for @contextReasoningTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Reasoning tokens'**
+  String get contextReasoningTokens;
+
+  /// No description provided for @contextCacheRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache read'**
+  String get contextCacheRead;
+
+  /// No description provided for @contextCacheWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache write'**
+  String get contextCacheWrite;
+
+  /// No description provided for @contextToolTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool tokens'**
+  String get contextToolTokens;
+
+  /// No description provided for @contextTokensIncludedInPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool tokens included in prompt'**
+  String get contextTokensIncludedInPrompt;
+
+  /// No description provided for @contextAutoCompactAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-compact at {percent}% · {buffer} tokens'**
+  String contextAutoCompactAt(Object buffer, Object percent);
+
   /// No description provided for @free.
   ///
   /// In en, this message translates to:

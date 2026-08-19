@@ -1,11 +1,7 @@
 import 'package:chatorai/core/session/session_repository.dart';
-import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/format_time_utils.dart';
-import 'package:chatorai/shared/utils/format_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'action_menu_button.dart';
 
@@ -20,8 +16,6 @@ class ActionRow extends StatelessWidget {
   final VoidCallback? onMessageDeleted;
   final VoidCallback? onMessageRegenerate;
   final Future<void> Function(String)? onContinuationSelected;
-  final int? cumulativeTokens;
-  final int? contextLength;
   final String? agentName;
   final String? model;
   final DateTime? timestamp;
@@ -39,8 +33,6 @@ class ActionRow extends StatelessWidget {
     this.onMessageDeleted,
     this.onMessageRegenerate,
     this.onContinuationSelected,
-    this.cumulativeTokens,
-    this.contextLength,
     this.agentName,
     this.model,
     this.timestamp,
@@ -144,58 +136,7 @@ class ActionRow extends StatelessWidget {
               ],
             ),
           ),
-          Consumer(
-            builder: (context, ref, _) {
-              final isRetrying = ref.watch(
-                chatScreenProvider.select((s) => s.isRetrying),
-              );
-              if (isLastMessage && isRetrying) {
-                final retryMessage = ref.read(chatScreenProvider).retryMessage;
-                return _RetryIndicator(message: retryMessage ?? 'Retrying…');
-              }
-              if (cumulativeTokens != null) {
-                return Padding(
-                  padding: const EdgeInsets.only(left: 8, right: 8),
-                  child: Text(
-                    tokenDisplay(cumulativeTokens!, contextLength),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w400,
-                      color: theme.textTheme.bodySmall?.color?.withValues(
-                        alpha: 0.5,
-                      ),
-                    ),
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
         ],
-      ),
-    );
-  }
-}
-
-class _RetryIndicator extends StatelessWidget {
-  final String message;
-
-  const _RetryIndicator({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = ChatoraiColors.error;
-
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, right: 8),
-      child: Text(
-        message,
-        style: theme.textTheme.bodySmall?.copyWith(
-          fontWeight: FontWeight.w500,
-          color: color,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
       ),
     );
   }

@@ -278,6 +278,55 @@ class AppLocalizationsZh extends AppLocalizations {
   String get context => '上下文';
 
   @override
+  String contextMessages(Object percent, Object usable, Object used) {
+    return '消息: $used / $usable 令牌 ($percent%)';
+  }
+
+  @override
+  String get contextInstructions => '指令';
+
+  @override
+  String get contextAgentPrompt => '代理提示词';
+
+  @override
+  String get contextUserPrompt => '用户提示词';
+
+  @override
+  String get contextCompactSession => '压缩会话';
+
+  @override
+  String get contextCompacting => '压缩中…';
+
+  @override
+  String get contextUsageBreakdown => '使用情况';
+
+  @override
+  String get contextPromptTokens => '提示令牌';
+
+  @override
+  String get contextOutputTokens => '输出令牌';
+
+  @override
+  String get contextReasoningTokens => '推理令牌';
+
+  @override
+  String get contextCacheRead => '缓存读取';
+
+  @override
+  String get contextCacheWrite => '缓存写入';
+
+  @override
+  String get contextToolTokens => '工具令牌';
+
+  @override
+  String get contextTokensIncludedInPrompt => '工具令牌已包含在提示中';
+
+  @override
+  String contextAutoCompactAt(Object buffer, Object percent) {
+    return '在 $percent% 自动压缩 · 缓冲区 $buffer 令牌';
+  }
+
+  @override
   String get free => '免费';
 
   @override

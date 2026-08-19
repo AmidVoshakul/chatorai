@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Circular context ring indicator** in `ChatInputStatusBar`: replaces the text token counter under assistant messages with a small ring progress indicator showing context usage. The ring is right-aligned in the status bar, ~16px diameter with ~2px stroke, and color-coded: green below 80%, amber 80-95%, red above 95%.
+- **Context usage popup**: desktop hover popover (200-300ms delay) and mobile tap `showModalBottomSheet` showing messages line with `LinearProgressIndicator`, context sources list (agent prompt, user prompt, instruction blocks), and a "Compact session" button with spinner during execution.
+- **New provider** `sessionContextUsageProvider` in `lib/features/chat/data/providers/session_context_usage_provider.dart`: calculates used tokens from assistant messages only (`tokensInput + tokensOutput + tokensReasoning`), handles `contextLength` fallback (200000), buffer fallback (`min(20000, contextLength ~/ 10)`), and aggregates instruction sources.
+- **Localization keys** for context popup in all 6 languages (en/ru/uk/zh/ja/ar): `contextMessages`, `contextInstructions`, `contextAgentPrompt`, `contextUserPrompt`, `contextCompactSession`, `contextCompacting`.
+
+### Changed
+
+- **Removed text token display from UI**: removed `cumulativeTokens`/`contextLength` plumbing from `ActionRow`, `ChatMessageBubble`, `AssistantMessageBubble`, `UserMessageBubble`, `UserMessageEdit`, `ChatMessages`, and `SessionContextWindow`. Data models (`contextLength` on messages, `TokenCounter`) remain intact.
+- **Removed `tokenDisplay` utility** from `lib/shared/utils/format_utils.dart`; kept `formatTokenCount` for other uses.
+- **Updated `ChatInputStatusBar` layout**: changed from `Padding > Wrap` to `Padding > Row(Expanded(Wrap), ring chip)` to accommodate the new ring indicator.
+
 ### Fixed
 
 - **GUI launcher no longer blocks terminal** — running `chatorai` without arguments now launches the GUI in the background and returns control to the shell immediately. CLI commands (`chatorai stats`, `chatorai models`, etc.) remain foreground and preserve exit codes. Added error message if the binary is missing.

@@ -54,9 +54,6 @@ class ChatMessages extends ConsumerStatefulWidget {
   final String? agentName;
   final String? sessionId;
 
-  /// Total cumulative tokens for non-active sessions (used in child session windows)
-  final int? totalTokens;
-
   /// When `false`, this widget does NOT watch the global `chatScreenProvider`
   /// streaming state. Use this for child session windows which render their
   /// own history via stored messages and must not pick up the parent's
@@ -89,7 +86,6 @@ class ChatMessages extends ConsumerStatefulWidget {
     this.onTaskTap,
     this.agentName,
     this.sessionId,
-    this.totalTokens,
     this.isActiveSession = true,
   });
 
@@ -332,19 +328,6 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     final hasAssistantMessage =
         hasMessages && messages.last.role == MessageRole.assistant;
 
-    int cumulativeForIndex(int msgIndex) {
-      var total = 0;
-      for (var i = 0; i <= msgIndex && i < messages.length; i++) {
-        final m = messages[i];
-        if (m.role == MessageRole.assistant) {
-          total += m.tokensInput ?? 0;
-          total += m.tokensOutput ?? 0;
-          total += m.tokensReasoning ?? 0;
-        }
-      }
-      return total;
-    }
-
     final showStreamingBubble = _showStreamingBubble(
       streamingMessageParts: streamingMessageParts,
       streamingIsActive: streamingIsActive,
@@ -457,11 +440,6 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                         onMessageEdited: widget.onMessageEdited,
                         onMessageEditedAndSend: widget.onMessageEditAndSend,
                         isLastMessage: isLastMessage,
-                        cumulativeTokens: message.role == MessageRole.assistant
-                            ? (widget.totalTokens ??
-                                  cumulativeForIndex(msgIndex))
-                            : null,
-                        contextLength: message.contextLength,
                         onTaskTap: widget.onTaskTap,
                         expandReasoningByDefault: expandReasoningByDefault,
                         reasoningEnabled: reasoningEnabled,

@@ -281,6 +281,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get context => 'Context';
 
   @override
+  String contextMessages(Object percent, Object usable, Object used) {
+    return 'Messages: $used / $usable tokens ($percent%)';
+  }
+
+  @override
+  String get contextInstructions => 'Instructions';
+
+  @override
+  String get contextAgentPrompt => 'Agent prompt';
+
+  @override
+  String get contextUserPrompt => 'User prompt';
+
+  @override
+  String get contextCompactSession => 'Compact session';
+
+  @override
+  String get contextCompacting => 'Compacting…';
+
+  @override
+  String get contextUsageBreakdown => 'Usage breakdown';
+
+  @override
+  String get contextPromptTokens => 'Prompt tokens';
+
+  @override
+  String get contextOutputTokens => 'Output tokens';
+
+  @override
+  String get contextReasoningTokens => 'Reasoning tokens';
+
+  @override
+  String get contextCacheRead => 'Cache read';
+
+  @override
+  String get contextCacheWrite => 'Cache write';
+
+  @override
+  String get contextToolTokens => 'Tool tokens';
+
+  @override
+  String get contextTokensIncludedInPrompt => 'Tool tokens included in prompt';
+
+  @override
+  String contextAutoCompactAt(Object buffer, Object percent) {
+    return 'Auto-compact at $percent% · $buffer tokens';
+  }
+
+  @override
   String get free => 'Free';
 
   @override

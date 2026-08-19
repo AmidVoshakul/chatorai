@@ -239,8 +239,6 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
           agentName: state.agent,
           selectedModel: ref.watch(modelProvider).selectedModelId,
           isActiveSession: false,
-          totalTokens:
-              state.tokensInput + state.tokensOutput + state.tokensReasoning,
           onSendMessage: (messageData) {},
           onMessageDeleted: () {},
           onMessageEdited: (_, _) {},

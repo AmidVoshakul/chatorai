@@ -16,8 +16,6 @@ class UserMessageEdit extends StatelessWidget {
   final VoidCallback? onMessageDeleted;
   final VoidCallback? onMessageRegenerate;
   final Future<void> Function(String)? onContinuationSelected;
-  final int? cumulativeTokens;
-  final int? contextLength;
 
   const UserMessageEdit({
     super.key,
@@ -32,8 +30,6 @@ class UserMessageEdit extends StatelessWidget {
     this.onMessageDeleted,
     this.onMessageRegenerate,
     this.onContinuationSelected,
-    this.cumulativeTokens,
-    this.contextLength,
   });
 
   @override
@@ -126,8 +122,6 @@ class UserMessageEdit extends StatelessWidget {
           onMessageDeleted: onMessageDeleted,
           onMessageRegenerate: onMessageRegenerate,
           onContinuationSelected: onContinuationSelected,
-          cumulativeTokens: cumulativeTokens,
-          contextLength: contextLength,
           agentName: null,
           model: null,
           timestamp: null,

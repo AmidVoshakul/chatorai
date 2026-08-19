@@ -16,8 +16,6 @@ class UserMessageBubble extends StatelessWidget {
   final VoidCallback? onMessageDeleted;
   final VoidCallback? onMessageRegenerate;
   final Future<void> Function(String)? onContinuationSelected;
-  final int? cumulativeTokens;
-  final int? contextLength;
   final DateTime? timestamp;
   final double maxWidth;
 
@@ -39,8 +37,6 @@ class UserMessageBubble extends StatelessWidget {
     this.onMessageDeleted,
     this.onMessageRegenerate,
     this.onContinuationSelected,
-    this.cumulativeTokens,
-    this.contextLength,
     this.timestamp,
     this.maxWidth = 0.65,
   });
@@ -146,8 +142,6 @@ class UserMessageBubble extends StatelessWidget {
               onMessageDeleted: onMessageDeleted,
               onMessageRegenerate: onMessageRegenerate,
               onContinuationSelected: onContinuationSelected,
-              cumulativeTokens: cumulativeTokens,
-              contextLength: contextLength,
               agentName: null,
               model: null,
               timestamp: timestamp,

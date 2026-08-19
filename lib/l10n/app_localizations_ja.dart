@@ -278,6 +278,55 @@ class AppLocalizationsJa extends AppLocalizations {
   String get context => 'コンテキスト';
 
   @override
+  String contextMessages(Object percent, Object usable, Object used) {
+    return 'メッセージ: $used / $usable トークン ($percent%)';
+  }
+
+  @override
+  String get contextInstructions => '指示';
+
+  @override
+  String get contextAgentPrompt => 'エージェントプロンプト';
+
+  @override
+  String get contextUserPrompt => 'ユーザープロンプト';
+
+  @override
+  String get contextCompactSession => 'セッションを圧縮';
+
+  @override
+  String get contextCompacting => '圧縮中…';
+
+  @override
+  String get contextUsageBreakdown => '使用状況';
+
+  @override
+  String get contextPromptTokens => 'プロンプトトークン';
+
+  @override
+  String get contextOutputTokens => '出力トークン';
+
+  @override
+  String get contextReasoningTokens => '推論トークン';
+
+  @override
+  String get contextCacheRead => 'キャッシュ読み取り';
+
+  @override
+  String get contextCacheWrite => 'キャッシュ書き込み';
+
+  @override
+  String get contextToolTokens => 'ツールトークン';
+
+  @override
+  String get contextTokensIncludedInPrompt => 'ツールトークンはプロンプトに含まれています';
+
+  @override
+  String contextAutoCompactAt(Object buffer, Object percent) {
+    return '$percent% で自動圧縮 · バッファ $buffer トークン';
+  }
+
+  @override
   String get free => '無料';
 
   @override

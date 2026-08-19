@@ -431,14 +431,17 @@ class _ChatInputState extends ConsumerState<ChatInput>
               child: isMobile
                   ? Column(
                       mainAxisSize: MainAxisSize.min,
-                      children: [layoutChild, const ChatInputStatusBar()],
+                      children: [
+                        layoutChild,
+                        ChatInputStatusBar(onCompact: widget.onCompact),
+                      ],
                     )
                   : layoutChild,
             ),
           ],
         ),
         // На desktop — статус-бар снаружи (фон прозрачный, как и контейнер).
-        if (!isMobile) const ChatInputStatusBar(),
+        if (!isMobile) ChatInputStatusBar(onCompact: widget.onCompact),
       ],
     );
   }

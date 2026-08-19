@@ -283,6 +283,55 @@ class AppLocalizationsAr extends AppLocalizations {
   String get context => 'السياق';
 
   @override
+  String contextMessages(Object percent, Object usable, Object used) {
+    return 'الرسائل: $used / $usable رمز ($percent%)';
+  }
+
+  @override
+  String get contextInstructions => 'التعليمات';
+
+  @override
+  String get contextAgentPrompt => 'موجه الوكيل';
+
+  @override
+  String get contextUserPrompt => 'موجه المستخدم';
+
+  @override
+  String get contextCompactSession => 'ضغط الجلسة';
+
+  @override
+  String get contextCompacting => 'جاري الضغط…';
+
+  @override
+  String get contextUsageBreakdown => 'تفاصيل الاستخدام';
+
+  @override
+  String get contextPromptTokens => 'رموز الموجه';
+
+  @override
+  String get contextOutputTokens => 'رموز الإخراج';
+
+  @override
+  String get contextReasoningTokens => 'رموز الاستدلال';
+
+  @override
+  String get contextCacheRead => 'قراءة الذاكرة المؤقتة';
+
+  @override
+  String get contextCacheWrite => 'كتابة الذاكرة المؤقتة';
+
+  @override
+  String get contextToolTokens => 'رموز الأدوات';
+
+  @override
+  String get contextTokensIncludedInPrompt => 'رموز الأدوات مشمولة في الموجه';
+
+  @override
+  String contextAutoCompactAt(Object buffer, Object percent) {
+    return 'ضغط تلقائي عند $percent% · مخزن $buffer رمز';
+  }
+
+  @override
   String get free => 'مجاني';
 
   @override

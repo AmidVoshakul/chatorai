@@ -284,6 +284,56 @@ class AppLocalizationsRu extends AppLocalizations {
   String get context => 'Контекст';
 
   @override
+  String contextMessages(Object percent, Object usable, Object used) {
+    return 'Сообщения: $used / $usable токенов ($percent%)';
+  }
+
+  @override
+  String get contextInstructions => 'Инструкции';
+
+  @override
+  String get contextAgentPrompt => 'Промпт агента';
+
+  @override
+  String get contextUserPrompt => 'Промпт пользователя';
+
+  @override
+  String get contextCompactSession => 'Сжать сессию';
+
+  @override
+  String get contextCompacting => 'Сжатие…';
+
+  @override
+  String get contextUsageBreakdown => 'Использование';
+
+  @override
+  String get contextPromptTokens => 'Промпт-токены';
+
+  @override
+  String get contextOutputTokens => 'Токены вывода';
+
+  @override
+  String get contextReasoningTokens => 'Токены рассуждений';
+
+  @override
+  String get contextCacheRead => 'Чтение кэша';
+
+  @override
+  String get contextCacheWrite => 'Запись кэша';
+
+  @override
+  String get contextToolTokens => 'Токены инструментов';
+
+  @override
+  String get contextTokensIncludedInPrompt =>
+      'Токены инструментов включены в промпт';
+
+  @override
+  String contextAutoCompactAt(Object buffer, Object percent) {
+    return 'Автосжатие при $percent% · буфер $buffer токенов';
+  }
+
+  @override
   String get free => 'Бесплатно';
 
   @override
