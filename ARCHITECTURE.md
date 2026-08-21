@@ -429,6 +429,7 @@ lib/features/chat/
 │   │   ├── chat_app_bar.dart
 │   │   ├── session_context_window.dart
 │   │   ├── premium_confirm_sheet.dart
+│   │   ├── link_confirm_sheet.dart
 │   │   ├── workspace_dialog.dart
 │   │   └── workspace_switch_confirm_sheet.dart
 │   └── view_models/                # Not used; logic in providers

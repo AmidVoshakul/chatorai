@@ -6,6 +6,7 @@ import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/theme/markdown_styles.dart';
 import 'package:chatorai/shared/utils/message_utils.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/features/chat/presentation/widgets/link_confirm_sheet.dart';
 
 // ===========================================================================
 // DATA MODEL
@@ -256,6 +257,11 @@ class _TableBlockState extends State<TableBlock> {
                     selectable: false,
                     softLineBreak: true,
                     fitContent: true,
+                    onTapLink: (text, href, title) {
+                      if (href != null) {
+                        showLinkConfirmSheet(context, href: href);
+                      }
+                    },
                   ),
           );
         }),

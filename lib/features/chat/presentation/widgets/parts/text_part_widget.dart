@@ -2,6 +2,7 @@ import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/presentation/widgets/markdown_with_headings.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/code_block.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/table_block.dart';
+import 'package:chatorai/features/chat/presentation/widgets/link_confirm_sheet.dart';
 import 'package:chatorai/shared/theme/markdown_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -173,7 +174,7 @@ class _TextPartWidgetState extends State<TextPartWidget> {
       // Every earlier (finalized) block is cached by signature.
       final isTrailing = i == blocks.length - 1;
       if (isTrailing) {
-        widgets.add(_buildBlockWidget(block, styleSheet));
+        widgets.add(_buildBlockWidget(context, block, styleSheet));
       } else {
         final key = block.kind == _BlockKind.table
             ? '${block.kind.index}|${block.tableLines?.join('\u0000') ?? ''}'
@@ -182,7 +183,7 @@ class _TextPartWidgetState extends State<TextPartWidget> {
         if (cached != null) {
           widgets.add(cached);
         } else {
-          final w = _buildBlockWidget(block, styleSheet);
+          final w = _buildBlockWidget(context, block, styleSheet);
           _blockCache[key] = w;
           widgets.add(w);
         }
@@ -192,10 +193,14 @@ class _TextPartWidgetState extends State<TextPartWidget> {
     return widgets;
   }
 
-  Widget _buildBlockWidget(_Block block, MarkdownStyleSheet styleSheet) {
+  Widget _buildBlockWidget(
+    BuildContext context,
+    _Block block,
+    MarkdownStyleSheet styleSheet,
+  ) {
     switch (block.kind) {
       case _BlockKind.text:
-        return _buildMarkdownBlock(block.text, styleSheet);
+        return _buildMarkdownBlock(context, block.text, styleSheet);
       case _BlockKind.code:
         return CodeBlock(code: block.text, language: block.language ?? 'text');
       case _BlockKind.table:
@@ -207,12 +212,21 @@ class _TextPartWidgetState extends State<TextPartWidget> {
     }
   }
 
-  Widget _buildMarkdownBlock(String data, MarkdownStyleSheet styleSheet) {
+  Widget _buildMarkdownBlock(
+    BuildContext context,
+    String data,
+    MarkdownStyleSheet styleSheet,
+  ) {
     return RepaintBoundary(
       child: MarkdownBody(
         data: data,
         styleSheet: styleSheet,
         builders: HeadingBuilder.headingBuilders(),
+        onTapLink: (text, href, title) {
+          if (href != null) {
+            showLinkConfirmSheet(context, href: href);
+          }
+        },
       ),
     );
   }

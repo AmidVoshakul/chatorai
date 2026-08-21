@@ -146,6 +146,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get close => '閉じる';
 
   @override
+  String get confirmOpenLink => '本当に開きますか：';
+
+  @override
   String get copy => 'コピー';
 
   @override
@@ -1274,6 +1277,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get listening => '話してください...';
+
+  @override
+  String get linkCancel => 'キャンセル';
+
+  @override
+  String get linkCopied => 'リンクをコピーしました';
+
+  @override
+  String get linkOpen => '開く';
+
+  @override
+  String get linkOpenFailed => 'リンクを開けませんでした';
 
   @override
   String get sendMessage => 'メッセージを送信';

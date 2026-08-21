@@ -150,6 +150,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get close => 'إغلاق';
 
   @override
+  String get confirmOpenLink => 'هل تريد حقًا فتح:';
+
+  @override
   String get copy => 'نسخ';
 
   @override
@@ -1295,6 +1298,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get listening => 'تحدث الآن...';
+
+  @override
+  String get linkCancel => 'إلغاء';
+
+  @override
+  String get linkCopied => 'تم نسخ الرابط';
+
+  @override
+  String get linkOpen => 'فتح';
+
+  @override
+  String get linkOpenFailed => 'تعذر فتح الرابط';
 
   @override
   String get sendMessage => 'إرسال الرسالة';

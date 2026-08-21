@@ -152,6 +152,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get close => 'Закрити';
 
   @override
+  String get confirmOpenLink => 'Ви дійсно хочете відкрити:';
+
+  @override
   String get copy => 'Копіювати';
 
   @override
@@ -1342,6 +1345,18 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get listening => 'Говоріть...';
+
+  @override
+  String get linkCancel => 'Скасувати';
+
+  @override
+  String get linkCopied => 'Посилання скопійовано';
+
+  @override
+  String get linkOpen => 'Перейти';
+
+  @override
+  String get linkOpenFailed => 'Не вдалося відкрити посилання';
 
   @override
   String get sendMessage => 'Надіслати повідомлення';

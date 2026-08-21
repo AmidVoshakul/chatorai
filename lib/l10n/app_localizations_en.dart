@@ -149,6 +149,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get close => 'Close';
 
   @override
+  String get confirmOpenLink => 'Are you sure you want to open:';
+
+  @override
   String get copy => 'Copy';
 
   @override
@@ -1329,6 +1332,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get listening => 'Listening...';
+
+  @override
+  String get linkCancel => 'Cancel';
+
+  @override
+  String get linkCopied => 'Link copied';
+
+  @override
+  String get linkOpen => 'Open';
+
+  @override
+  String get linkOpenFailed => 'Failed to open link';
 
   @override
   String get sendMessage => 'Send message';

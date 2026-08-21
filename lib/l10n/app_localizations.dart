@@ -376,6 +376,12 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get close;
 
+  /// No description provided for @confirmOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to open:'**
+  String get confirmOpenLink;
+
   /// No description provided for @copy.
   ///
   /// In en, this message translates to:
@@ -2553,6 +2559,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Listening...'**
   String get listening;
+
+  /// No description provided for @linkCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get linkCancel;
+
+  /// No description provided for @linkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get linkCopied;
+
+  /// No description provided for @linkOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get linkOpen;
+
+  /// No description provided for @linkOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to open link'**
+  String get linkOpenFailed;
 
   /// No description provided for @sendMessage.
   ///

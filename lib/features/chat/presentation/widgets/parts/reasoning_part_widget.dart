@@ -1,4 +1,5 @@
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/features/chat/presentation/widgets/link_confirm_sheet.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/theme/markdown_styles.dart';
@@ -105,6 +106,11 @@ class _ReasoningPartWidgetState extends State<ReasoningPartWidget> {
         data: widget.part.content,
         styleSheet: ChatoraiMarkdownStyles.getMarkdownStyles(context),
         selectable: true,
+        onTapLink: (text, href, title) {
+          if (href != null) {
+            showLinkConfirmSheet(context, href: href);
+          }
+        },
       ),
     );
     _lastContent = widget.part.content;

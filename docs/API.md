@@ -98,6 +98,35 @@ Stream<StreamTextEvent> streamChatCompletion({
 - Token counting and overflow detection.
 - Cancellation via `CancellationToken` (used by emergency stop).
 
+### Link Launcher Utility
+
+`lib/shared/utils/link_launcher.dart` — pure business logic for validating and opening external links.
+
+```dart
+bool isHttpHttpsUrl(String? raw);
+enum LinkLaunchResult { opened, invalidScheme, failed }
+Future<LinkLaunchResult> launchExternalLink(
+  String href, {
+  Future<bool> Function(Uri uri, {LaunchMode mode})? launcher,
+});
+```
+
+`isHttpHttpsUrl` returns `true` only for non-null, non-empty URLs with `http` or `https` scheme. `launchExternalLink` returns `invalidScheme` for non-http URLs, `opened` on success, or `failed` if the platform launcher returns `false` or throws. The optional `launcher` parameter enables DI for tests.
+
+### Link Confirm Sheet
+
+`lib/features/chat/presentation/widgets/link_confirm_sheet.dart` — UI confirmation bottom-sheet for external links.
+
+```dart
+Future<void> showLinkConfirmSheet(
+  BuildContext context, {
+  required String href,
+  Future<LinkLaunchResult> Function(String)? launcher,
+})
+```
+
+Shows a dismissible bottom-sheet with `PremiumSheetShell`, `PremiumHandle`, `PremiumAvatar` (`Icons.open_in_new`), and `KeyboardHandlerDialog` (Enter confirms, Escape cancels). Displays the URL as selectable monospaced text with a copy button (`SnackbarUtils.showCopySnackBar`). On confirm, calls `launchExternalLink`; on failure, shows `SnackbarUtils.showErrorSnackBar` with `l10n.linkOpenFailed`. Non-http schemes are silently ignored.
+
 ### Usage Tracking API
 
 #### `UsageCallback`

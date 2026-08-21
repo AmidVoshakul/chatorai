@@ -6,7 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **Context usage ring indicator and popup**:
+ - **Link confirmation dialog**:
+   - Bottom-sheet confirmation when tapping `http`/`https` links in chat (`TextPartWidget`, `ReasoningPartWidget`, `table_block.dart`). Non-http schemes (`javascript:`, `data:`, `file:`, `tel:`, `mailto:`, empty) are silently ignored.
+   - New utility `lib/shared/utils/link_launcher.dart`: `isHttpHttpsUrl(String?)`, `enum LinkLaunchResult { opened, invalidScheme, failed }`, `launchExternalLink(String href, {launcher})` with DI-friendly `launcher` parameter (defaults to `url_launcher.launchUrl` with `LaunchMode.externalApplication`).
+   - New widget `lib/features/chat/presentation/widgets/link_confirm_sheet.dart`: `showLinkConfirmSheet(BuildContext, {required String href, launcher})` using `PremiumSheetShell`, `PremiumHandle`, `PremiumAvatar` (`Icons.open_in_new`), `KeyboardHandlerDialog` (Enter/Escape), `premiumGhostButton`/`premiumPrimaryButton`, `SnackbarUtils.showCopySnackBar` and `SnackbarUtils.showErrorSnackBar`. `isDismissible: true`.
+   - Localization keys added across 6 ARB files: `confirmOpenLink` ("Are you sure you want to open:"), `linkCancel` ("Cancel"), `linkOpen` ("Open"), `linkCopied` ("Link copied"), `linkOpenFailed` ("Failed to open link").
+   - Dependency added: `url_launcher: ^6.3.1`.
+ - **Context usage ring indicator and popup**:
   - Ring chip in `ChatInputStatusBar`: 14px diameter, 2px stroke, color-coded based on calibrated `usableRatio` (`warningRatio * usableRatio` / `hardRatio * usableRatio`). Green below warning threshold, amber between warning and hard, red above hard.
   - Context popup on desktop (hover, 300ms delay) and mobile (tap): shows context summary (`contextMessages`), segmented progress bar (used/free/buffer), auto-compact threshold (`contextAutoCompactAt`), instruction sources breakdown (`contextInstructions` with agent prompt, user system prompt, instruction blocks), usage breakdown (`contextUsageBreakdown`) with input/output/tool tokens, tool calls count, cache read/write (if >0), and spent USD (`contextSpentLabel`) if applicable. Compact session button with spinner during execution.
   - New provider `sessionContextUsageProvider` in `lib/features/chat/data/providers/session_context_usage_provider.dart`: aggregates context usage from the latest assistant message (`usedTokens`, `outputTokens`, `reasoningTokens`, `cacheReadTokens`, `cacheWriteTokens`, `toolTokens`, `toolCallsCount`), calculates `contextLength` (from latest assistant message or selected model), `buffer` (from compaction config or `OverflowDetector`), `usable` ratio, instruction sources, and `spentUsd` (session total across all assistant messages, per-message pricing from catalog or selected model, free models yield 0).

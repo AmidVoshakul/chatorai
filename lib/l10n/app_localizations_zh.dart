@@ -146,6 +146,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get close => '关闭';
 
   @override
+  String get confirmOpenLink => '您确定要打开：';
+
+  @override
   String get copy => '复制';
 
   @override
@@ -1269,6 +1272,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get listening => '请说话...';
+
+  @override
+  String get linkCancel => '取消';
+
+  @override
+  String get linkCopied => '链接已复制';
+
+  @override
+  String get linkOpen => '打开';
+
+  @override
+  String get linkOpenFailed => '无法打开链接';
 
   @override
   String get sendMessage => '发送消息';
