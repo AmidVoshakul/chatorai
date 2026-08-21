@@ -282,7 +282,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String contextMessages(Object percent, Object usable, Object used) {
-    return 'Messages: $used / $usable tokens ($percent%)';
+    return 'Context: $used / $usable tokens ($percent%)';
   }
 
   @override
@@ -304,13 +304,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contextUsageBreakdown => 'Usage breakdown';
 
   @override
-  String get contextPromptTokens => 'Prompt tokens';
+  String get contextPromptTokens => 'Input tokens';
 
   @override
   String get contextOutputTokens => 'Output tokens';
-
-  @override
-  String get contextReasoningTokens => 'Reasoning tokens';
 
   @override
   String get contextCacheRead => 'Cache read';
@@ -320,6 +317,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contextToolTokens => 'Tool tokens';
+
+  @override
+  String get contextSpentLabel => 'Spent';
 
   @override
   String get contextTokensIncludedInPrompt => 'Tool tokens included in prompt';

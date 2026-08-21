@@ -110,6 +110,9 @@ class AssistantMessage extends ChatMessage {
   final int? tokensInput;
   final int? tokensOutput;
   final int? tokensReasoning;
+  final int? tokensCacheRead;
+  final int? tokensCacheWrite;
+  final bool? tokensCacheIncludedInInput;
   final int? contextLength;
   final String? agent;
   final bool isCompactionSummary;
@@ -123,6 +126,9 @@ class AssistantMessage extends ChatMessage {
     this.tokensInput,
     this.tokensOutput,
     this.tokensReasoning,
+    this.tokensCacheRead,
+    this.tokensCacheWrite,
+    this.tokensCacheIncludedInInput,
     required super.timestamp,
     this.contextLength,
     this.agent,
@@ -137,6 +143,9 @@ class AssistantMessage extends ChatMessage {
     int? tokensInput,
     int? tokensOutput,
     int? tokensReasoning,
+    int? tokensCacheRead,
+    int? tokensCacheWrite,
+    bool? tokensCacheIncludedInInput,
     int? contextLength,
     String? agent,
     bool? isCompactionSummary,
@@ -152,6 +161,10 @@ class AssistantMessage extends ChatMessage {
       tokensInput: tokensInput ?? this.tokensInput,
       tokensOutput: tokensOutput ?? this.tokensOutput,
       tokensReasoning: tokensReasoning ?? this.tokensReasoning,
+      tokensCacheRead: tokensCacheRead ?? this.tokensCacheRead,
+      tokensCacheWrite: tokensCacheWrite ?? this.tokensCacheWrite,
+      tokensCacheIncludedInInput:
+          tokensCacheIncludedInInput ?? this.tokensCacheIncludedInInput,
       contextLength: contextLength ?? this.contextLength,
       agent: agent ?? this.agent,
       isCompactionSummary: isCompactionSummary ?? this.isCompactionSummary,
@@ -170,6 +183,9 @@ class AssistantMessage extends ChatMessage {
     'tokensInput': tokensInput,
     'tokensOutput': tokensOutput,
     'tokensReasoning': tokensReasoning,
+    'tokensCacheRead': tokensCacheRead,
+    'tokensCacheWrite': tokensCacheWrite,
+    'tokensCacheIncludedInInput': tokensCacheIncludedInInput,
     'contextLength': contextLength,
     'agent': agent,
     'isCompactionSummary': isCompactionSummary,
@@ -191,6 +207,9 @@ class AssistantMessage extends ChatMessage {
       tokensInput: json['tokensInput'] as int?,
       tokensOutput: json['tokensOutput'] as int?,
       tokensReasoning: json['tokensReasoning'] as int?,
+      tokensCacheRead: json['tokensCacheRead'] as int?,
+      tokensCacheWrite: json['tokensCacheWrite'] as int?,
+      tokensCacheIncludedInInput: json['tokensCacheIncludedInInput'] as bool?,
       contextLength: json['contextLength'] as int?,
       agent: json['agent'] as String?,
       isCompactionSummary: json['isCompactionSummary'] as bool? ?? false,

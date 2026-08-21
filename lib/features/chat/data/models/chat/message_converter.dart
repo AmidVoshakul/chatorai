@@ -83,6 +83,9 @@ ChatMessage messageToChatMessage(Message message) {
         tokensInput: message.tokensInput,
         tokensOutput: message.tokensOutput,
         tokensReasoning: message.tokensReasoning,
+        tokensCacheRead: message.tokensCacheRead,
+        tokensCacheWrite: message.tokensCacheWrite,
+        tokensCacheIncludedInInput: message.tokensCacheIncludedInInput,
         contextLength: message.contextLength,
       );
 

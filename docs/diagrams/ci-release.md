@@ -1,6 +1,6 @@
 # CI / Release Pipeline Diagrams
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-08-21
 
 This file documents the single GitHub Actions workflow, build matrix, and
 GitHub Release publication flow used for every tagged version of ChatORAI.
@@ -128,4 +128,4 @@ graph LR
 ```
 
 **First git tag:** `v0.1.0`  
-**Current version:** `0.1.1`
+**Current version:** `0.1.2`

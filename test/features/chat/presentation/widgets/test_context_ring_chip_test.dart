@@ -1,5 +1,6 @@
 import 'package:chatorai/core/context/background_compaction_service.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
+import 'package:chatorai/core/mcp/mcp_status_provider.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/providers/session_context_usage_provider.dart';
@@ -8,6 +9,8 @@ import 'package:chatorai/features/models/providers/model_provider.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/shared/utils/project_info_provider.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -310,6 +313,270 @@ void main() {
         ),
       );
       expect(find.text('style check'), findsOneWidget);
+    });
+
+    group('SegmentedProgressBar colors', () {
+      testWidgets('used segment is green at 30% ratio', (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              currentChatProvider.overrideWithValue(
+                Chat(
+                  id: 'c1',
+                  title: 'Test',
+                  messages: const [],
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                ),
+              ),
+              sessionContextUsageProvider.overrideWithValue(
+                const SessionContextUsage(
+                  usedTokens: 60000,
+                  contextLength: 200000,
+                  buffer: 20000,
+                  usable: 180000,
+                  sources: [],
+                ),
+              ),
+              modelProvider.overrideWith(
+                () => _TestModelNotifier(
+                  ModelState(selectedModelObject: const _FakeModelConfig()),
+                ),
+              ),
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => null),
+              mcpStatusesProvider.overrideWith((_) async => {}),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final ringFinder = find.descendant(
+          of: find.byType(ChatInputStatusBar),
+          matching: find.byType(CustomPaint),
+        );
+        expect(ringFinder, findsOneWidget);
+
+        final center = tester.getCenter(ringFinder);
+        final gesture = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
+        await gesture.moveTo(center);
+        await tester.pump();
+
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Context: 60000 / 200000 tokens (30%)'),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('used segment transitions through warning and orange', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              currentChatProvider.overrideWithValue(
+                Chat(
+                  id: 'c1',
+                  title: 'Test',
+                  messages: const [],
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                ),
+              ),
+              sessionContextUsageProvider.overrideWithValue(
+                const SessionContextUsage(
+                  usedTokens: 160000,
+                  contextLength: 200000,
+                  buffer: 20000,
+                  usable: 180000,
+                  sources: [],
+                ),
+              ),
+              modelProvider.overrideWith(
+                () => _TestModelNotifier(
+                  ModelState(selectedModelObject: const _FakeModelConfig()),
+                ),
+              ),
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => null),
+              mcpStatusesProvider.overrideWith((_) async => {}),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final ringFinder = find.descendant(
+          of: find.byType(ChatInputStatusBar),
+          matching: find.byType(CustomPaint),
+        );
+        expect(ringFinder, findsOneWidget);
+
+        final center = tester.getCenter(ringFinder);
+        final gesture = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
+        await gesture.moveTo(center);
+        await tester.pump();
+
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Context: 160000 / 200000 tokens (80%)'),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('used segment is red at 95% ratio', (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              currentChatProvider.overrideWithValue(
+                Chat(
+                  id: 'c1',
+                  title: 'Test',
+                  messages: const [],
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                ),
+              ),
+              sessionContextUsageProvider.overrideWithValue(
+                const SessionContextUsage(
+                  usedTokens: 190000,
+                  contextLength: 200000,
+                  buffer: 20000,
+                  usable: 180000,
+                  sources: [],
+                ),
+              ),
+              modelProvider.overrideWith(
+                () => _TestModelNotifier(
+                  ModelState(selectedModelObject: const _FakeModelConfig()),
+                ),
+              ),
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => null),
+              mcpStatusesProvider.overrideWith((_) async => {}),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final ringFinder = find.descendant(
+          of: find.byType(ChatInputStatusBar),
+          matching: find.byType(CustomPaint),
+        );
+        expect(ringFinder, findsOneWidget);
+
+        final center = tester.getCenter(ringFinder);
+        final gesture = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
+        await gesture.moveTo(center);
+        await tester.pump();
+
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Context: 190000 / 200000 tokens (95%)'),
+          findsOneWidget,
+        );
+      });
+    });
+
+    group('ContextRingChip flicker fix', () {
+      testWidgets(
+        'rapid hover enter/exit does not crash or duplicate overlays',
+        (tester) async {
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                currentChatProvider.overrideWithValue(
+                  Chat(
+                    id: 'c1',
+                    title: 'Test',
+                    messages: const [],
+                    createdAt: DateTime.now(),
+                    updatedAt: DateTime.now(),
+                  ),
+                ),
+                sessionContextUsageProvider.overrideWithValue(
+                  const SessionContextUsage(
+                    usedTokens: 10000,
+                    contextLength: 200000,
+                    buffer: 20000,
+                    usable: 180000,
+                    sources: [],
+                  ),
+                ),
+                modelProvider.overrideWith(
+                  () => _TestModelNotifier(
+                    ModelState(selectedModelObject: const _FakeModelConfig()),
+                  ),
+                ),
+                workingDirProvider.overrideWithValue(
+                  '/home/user/work/chatorai',
+                ),
+                gitBranchProvider.overrideWith((_) async => null),
+                mcpStatusesProvider.overrideWith((_) async => {}),
+              ],
+              child: MaterialApp(
+                theme: AppTheme.lightTheme,
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+                home: Scaffold(body: ChatInputStatusBar()),
+              ),
+            ),
+          );
+          await tester.pump();
+
+          final ringFinder = find.descendant(
+            of: find.byType(ChatInputStatusBar),
+            matching: find.byType(CustomPaint),
+          );
+          expect(ringFinder, findsOneWidget);
+
+          final center = tester.getCenter(ringFinder);
+          final gesture = await tester.createGesture(
+            kind: PointerDeviceKind.mouse,
+          );
+
+          await gesture.moveTo(center);
+          await tester.pump();
+
+          await gesture.moveTo(const Offset(0, 0));
+          await tester.pump();
+
+          await gesture.moveTo(center);
+          await tester.pump();
+
+          await gesture.moveTo(const Offset(0, 0));
+          await tester.pump();
+
+          expect(find.byType(ChatInputStatusBar), findsOneWidget);
+        },
+      );
     });
   });
 }

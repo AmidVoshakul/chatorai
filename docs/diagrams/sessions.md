@@ -1,6 +1,6 @@
 # Session Core Diagrams
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-08-21
 
 This file documents the event-sourced session subsystem: Drift database schema
 (ER diagram) and the `SessionEvent` state machine.

@@ -36,6 +36,7 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
     int? latestTokensReasoning;
     int? latestTokensCacheRead;
     int? latestTokensCacheWrite;
+    bool? latestTokensCacheIncludedInInput;
     final modelContextLength = ref
         .read(modelProvider)
         .selectedModelObject
@@ -171,13 +172,22 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
             retryAttempt: info.attempt,
           );
         },
-        onUsage: (input, output, cacheRead, cacheWrite, reasoning) {
-          latestTokensInput = input;
-          latestTokensOutput = output;
-          latestTokensCacheRead = cacheRead;
-          latestTokensCacheWrite = cacheWrite;
-          latestTokensReasoning = reasoning;
-        },
+        onUsage:
+            (
+              input,
+              output,
+              cacheRead,
+              cacheWrite,
+              reasoning,
+              cacheIncludedInInput,
+            ) {
+              latestTokensInput = input;
+              latestTokensOutput = output;
+              latestTokensCacheRead = cacheRead;
+              latestTokensCacheWrite = cacheWrite;
+              latestTokensReasoning = reasoning;
+              latestTokensCacheIncludedInInput = cacheIncludedInInput;
+            },
         onToolStart: (toolCallId, toolName, input) async {
           toolInputs[toolCallId] = input;
           toolStartTimes[toolCallId] = DateTime.now();
@@ -401,6 +411,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               tokensInput: latestTokensInput,
               tokensOutput: latestTokensOutput,
               tokensReasoning: latestTokensReasoning,
+              tokensCacheRead: latestTokensCacheRead,
+              tokensCacheWrite: latestTokensCacheWrite,
+              tokensCacheIncludedInInput: latestTokensCacheIncludedInInput,
               contextLength: modelContextLength ?? lastMsg.contextLength,
             );
             newMessages = [
@@ -417,6 +430,9 @@ extension _ChatScreenStreamingExt on _ChatScreenState {
               tokensInput: latestTokensInput,
               tokensOutput: latestTokensOutput,
               tokensReasoning: latestTokensReasoning,
+              tokensCacheRead: latestTokensCacheRead,
+              tokensCacheWrite: latestTokensCacheWrite,
+              tokensCacheIncludedInInput: latestTokensCacheIncludedInInput,
               contextLength: modelContextLength,
               agent: activeAgent,
             );

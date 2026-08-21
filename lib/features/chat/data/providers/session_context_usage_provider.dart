@@ -1,6 +1,9 @@
 import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/context/overflow_detector.dart';
 import 'package:chatorai/core/context/token_counter.dart';
+import 'package:chatorai/core/llm/catalog_providers.dart'
+    show catalogServiceProvider;
+import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/models/providers/model_provider.dart'
@@ -41,6 +44,7 @@ class SessionContextUsage {
   final int cacheWriteTokens;
   final int toolTokens;
   final int toolCallsCount;
+  final double? spentUsd;
 
   const SessionContextUsage({
     required this.usedTokens,
@@ -54,7 +58,15 @@ class SessionContextUsage {
     this.cacheWriteTokens = 0,
     this.toolTokens = 0,
     this.toolCallsCount = 0,
+    this.spentUsd,
   });
+
+  int get totalTokens =>
+      usedTokens +
+      outputTokens +
+      reasoningTokens +
+      cacheReadTokens +
+      cacheWriteTokens;
 
   SessionContextUsage copyWith({
     int? usedTokens,
@@ -68,6 +80,7 @@ class SessionContextUsage {
     int? cacheWriteTokens,
     int? toolTokens,
     int? toolCallsCount,
+    double? spentUsd,
   }) {
     return SessionContextUsage(
       usedTokens: usedTokens ?? this.usedTokens,
@@ -81,6 +94,7 @@ class SessionContextUsage {
       cacheWriteTokens: cacheWriteTokens ?? this.cacheWriteTokens,
       toolTokens: toolTokens ?? this.toolTokens,
       toolCallsCount: toolCallsCount ?? this.toolCallsCount,
+      spentUsd: spentUsd ?? this.spentUsd,
     );
   }
 }
@@ -93,42 +107,103 @@ final sessionContextUsageProvider = Provider<SessionContextUsage>((ref) {
   final currentAgent = ref.watch(currentAgentProvider);
   final modelSettings = ref.watch(modelSettingsProvider);
 
-  final detector = OverflowDetector.forModel(
-    selectedModel?.contextLength,
-    compactionBuffer: compactionConfig.buffer > 0
-        ? compactionConfig.buffer
-        : null,
-  );
+  String? lastAssistantMsgId;
+  int? lastMsgContextLength;
 
   int usedTokens = 0;
   int outputTokens = 0;
   int reasoningTokens = 0;
-  if (chat != null) {
-    for (final message in chat.messages) {
-      if (message.role == MessageRole.assistant) {
-        usedTokens = message.tokensInput ?? 0;
-        outputTokens = message.tokensOutput ?? 0;
-        reasoningTokens = message.tokensReasoning ?? 0;
-      }
-    }
-  }
-
   int cacheReadTokens = 0;
   int cacheWriteTokens = 0;
   int toolTokens = 0;
   int toolCallsCount = 0;
   if (chat != null) {
-    final sessionState = ref.watch(sessionPartsProvider(chat.id)).value;
-    if (sessionState != null) {
-      cacheReadTokens = sessionState.tokensCacheRead;
-      cacheWriteTokens = sessionState.tokensCacheWrite;
-      for (final result in sessionState.toolResults) {
-        toolTokens += TokenCounter.estimate(json.encode(result.input));
-        toolTokens += TokenCounter.estimate(result.outputText);
+    for (final message in chat.messages.reversed) {
+      if (message.role != MessageRole.assistant) continue;
+      if (message.tokensInput != null) usedTokens = message.tokensInput!;
+      if (message.tokensOutput != null) outputTokens = message.tokensOutput!;
+      if (message.tokensReasoning != null) {
+        reasoningTokens = message.tokensReasoning!;
       }
-      toolCallsCount = sessionState.parts.whereType<AssistantTool>().length;
+      if (cacheReadTokens == 0 && cacheWriteTokens == 0) {
+        cacheReadTokens = message.tokensCacheRead ?? 0;
+        cacheWriteTokens = message.tokensCacheWrite ?? 0;
+      }
+      lastAssistantMsgId = message.id;
+      lastMsgContextLength = message.contextLength;
+      if (usedTokens > 0 || outputTokens > 0 || reasoningTokens > 0) break;
+    }
+    final sessionState = ref.watch(sessionPartsProvider(chat.id)).value;
+    if (sessionState != null && lastAssistantMsgId != null) {
+      for (final part in sessionState.parts) {
+        if (part is AssistantTool && part.messageId == lastAssistantMsgId) {
+          toolCallsCount++;
+          toolTokens += TokenCounter.estimate(json.encode(part.input));
+          if (part.output != null) {
+            toolTokens += TokenCounter.estimate(part.output!);
+          }
+        }
+      }
     }
   }
+
+  final effectiveContextLength =
+      lastMsgContextLength ?? selectedModel?.contextLength;
+  final detector = OverflowDetector.forModel(
+    effectiveContextLength,
+    compactionBuffer: compactionConfig.buffer > 0
+        ? compactionConfig.buffer
+        : null,
+  );
+
+  final Map<String, ModelConfig> modelsById = {};
+  final bool needsCatalog =
+      chat != null &&
+      chat.messages.any(
+        (m) => m.role == MessageRole.assistant && m.model != null,
+      );
+  if (needsCatalog) {
+    try {
+      final catalog = ref.read(catalogServiceProvider);
+      for (final m in catalog.getAllModels()) {
+        modelsById[m.id] = m;
+      }
+    } on StateError {
+      // catalogServiceProvider may be unavailable in tests or pre-bootstrap.
+    }
+  }
+
+  double spent = 0;
+  if (chat != null) {
+    for (final message in chat.messages) {
+      if (message.role != MessageRole.assistant) continue;
+      if (message.tokensInput == null) continue;
+
+      final pricing = message.model == null
+          ? selectedModel?.pricing
+          : modelsById.containsKey(message.model)
+          ? modelsById[message.model]?.pricing
+          : selectedModel?.pricing;
+
+      if (pricing == null ||
+          pricing.inputCostPer1k == null ||
+          pricing.outputCostPer1k == null) {
+        continue;
+      }
+
+      final billedInput = message.tokensCacheIncludedInInput == true
+          ? message.tokensInput!
+          : message.tokensInput! +
+                (message.tokensCacheRead ?? 0) +
+                (message.tokensCacheWrite ?? 0);
+      spent +=
+          (billedInput * pricing.inputCostPer1k! +
+              ((message.tokensOutput ?? 0) + (message.tokensReasoning ?? 0)) *
+                  pricing.outputCostPer1k!) /
+          1000;
+    }
+  }
+  final double? spentUsd = spent > 0 ? spent : null;
 
   final sources = <ContextInstructionSource>[];
 
@@ -186,5 +261,6 @@ final sessionContextUsageProvider = Provider<SessionContextUsage>((ref) {
     cacheWriteTokens: cacheWriteTokens,
     toolTokens: toolTokens,
     toolCallsCount: toolCallsCount,
+    spentUsd: spentUsd,
   );
 });

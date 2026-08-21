@@ -284,7 +284,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String contextMessages(Object percent, Object usable, Object used) {
-    return 'الرسائل: $used / $usable رمز ($percent%)';
+    return 'السياق: $used / $usable رمز ($percent%)';
   }
 
   @override
@@ -306,13 +306,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get contextUsageBreakdown => 'تفاصيل الاستخدام';
 
   @override
-  String get contextPromptTokens => 'رموز الموجه';
+  String get contextPromptTokens => 'رموز الإدخال';
 
   @override
   String get contextOutputTokens => 'رموز الإخراج';
-
-  @override
-  String get contextReasoningTokens => 'رموز الاستدلال';
 
   @override
   String get contextCacheRead => 'قراءة الذاكرة المؤقتة';
@@ -322,6 +319,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get contextToolTokens => 'رموز الأدوات';
+
+  @override
+  String get contextSpentLabel => 'المبلغ المنفق';
 
   @override
   String get contextTokensIncludedInPrompt => 'رموز الأدوات مشمولة في الموجه';

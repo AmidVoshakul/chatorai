@@ -2,58 +2,78 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.1.2]
 
 ### Added
 
-- **Circular context ring indicator** in `ChatInputStatusBar`: replaces the text token counter under assistant messages with a small ring progress indicator showing context usage. The ring is right-aligned in the status bar, ~16px diameter with ~2px stroke, and color-coded: green below 80%, amber 80-95%, red above 95%.
-- **Context usage popup**: desktop hover popover (200-300ms delay) and mobile tap `showModalBottomSheet` showing messages line with `LinearProgressIndicator`, context sources list (agent prompt, user prompt, instruction blocks), and a "Compact session" button with spinner during execution.
-- **New provider** `sessionContextUsageProvider` in `lib/features/chat/data/providers/session_context_usage_provider.dart`: calculates used tokens from assistant messages only (`tokensInput + tokensOutput + tokensReasoning`), handles `contextLength` fallback (200000), buffer fallback (`min(20000, contextLength ~/ 10)`), and aggregates instruction sources.
-- **Localization keys** for context popup in all 6 languages (en/ru/uk/zh/ja/ar): `contextMessages`, `contextInstructions`, `contextAgentPrompt`, `contextUserPrompt`, `contextCompactSession`, `contextCompacting`.
+- **Context usage ring indicator and popup**:
+  - Ring chip in `ChatInputStatusBar`: 14px diameter, 2px stroke, color-coded based on calibrated `usableRatio` (`warningRatio * usableRatio` / `hardRatio * usableRatio`). Green below warning threshold, amber between warning and hard, red above hard.
+  - Context popup on desktop (hover, 300ms delay) and mobile (tap): shows context summary (`contextMessages`), segmented progress bar (used/free/buffer), auto-compact threshold (`contextAutoCompactAt`), instruction sources breakdown (`contextInstructions` with agent prompt, user system prompt, instruction blocks), usage breakdown (`contextUsageBreakdown`) with input/output/tool tokens, tool calls count, cache read/write (if >0), and spent USD (`contextSpentLabel`) if applicable. Compact session button with spinner during execution.
+  - New provider `sessionContextUsageProvider` in `lib/features/chat/data/providers/session_context_usage_provider.dart`: aggregates context usage from the latest assistant message (`usedTokens`, `outputTokens`, `reasoningTokens`, `cacheReadTokens`, `cacheWriteTokens`, `toolTokens`, `toolCallsCount`), calculates `contextLength` (from latest assistant message or selected model), `buffer` (from compaction config or `OverflowDetector`), `usable` ratio, instruction sources, and `spentUsd` (session total across all assistant messages, per-message pricing from catalog or selected model, free models yield 0).
+- **Token/cache math refinement**:
+  - `UsageCacheTokens` and `UsageRawData` models in `lib/core/llm/usage_cache_mapper.dart`: unified extraction of cache read/write and reasoning tokens from provider-specific usage maps (OpenAI Chat Completions, OpenAI Responses, DeepSeek, Anthropic-compatible gateways).
+  - `tokensCacheIncludedInInput` flag on `AssistantMessage`: indicates whether cache tokens are already included in `tokensInput` to avoid double-counting. Serialized in `toJson`/`fromJson` and included in equality/hashCode.
+  - `UsageCallback` typedef: `void Function(int input, int output, int cacheRead, int cacheWrite, int reasoning, bool cacheIncludedInInput)` (6 arguments). Task tool discards the 6th argument via `_`.
+  - `ChatAiService.resolveUsage`: simplified — `cacheIncludedInInput` is always resolved from raw usage or SDK data; dead branch removed.
+- **Localization updates**:
+  - Removed obsolete `contextSpent` key from all 6 ARB files.
+  - Added `contextSpentLabel` ("Spent"), `contextCacheRead` ("Cache read"), `contextCacheWrite` ("Cache write"), `contextUsageBreakdown` ("Usage breakdown"), `contextPromptTokens` ("Input tokens"), `contextOutputTokens` ("Output tokens"), `contextToolTokens` ("Tool tokens"), `contextAutoCompactAt` ("Auto-compact at {percent}% · {buffer} tokens").
+- **Tool system refactor**:
+  - Renamed `bash` tool to `shell` across implementations, tests, and documentation.
+  - Added `document_extract` tool family: `createDocumentExtractPdfTool()`, `createDocumentExtractDocxTool()`, `createDocumentExtractXlsxTool()` for extracting text from PDF, DOCX, XLSX files.
+  - Added `task_container` tool for parallel subagent task execution with aggregated results.
+  - Removed dead code: `permission_bridge.dart`, `secure_file_service.dart`.
+- **Session and context improvements**:
+  - Child (task/subagent) sessions are excluded from parent context popup (only primary sessions with `parentId == null` are counted; their cost is already reflected in the parent prompt).
+  - Ring chip thresholds calibrated via `usableRatio`: `warningRatio` and `hardRatio` are multiplied by `usableRatio` to account for reserved buffer. `autoCompactPercent` is derived from `warningRatio * 100`.
+  - `OverflowDetector` and `BackgroundCompactionThresholds` used for context limit and buffer calculation.
+- **UI/UX improvements**:
+  - Removed text token counter from under assistant messages; replaced with ring chip.
+  - Removed `cumulativeTokens`/`contextLength` plumbing from `ActionRow`, `ChatMessageBubble`, `AssistantMessageBubble`, `UserMessageBubble`, `UserMessageEdit`, `ChatMessages`, and `SessionContextWindow`.
+  - Removed `tokenDisplay` utility from `lib/shared/utils/format_utils.dart`; kept `formatTokenCount`.
+  - Updated `ChatInputStatusBar` layout: `Padding > Row(Expanded(Wrap), ring chip)`.
+  - Added `workspace_dialog.dart` for directory/workspace management.
+  - Added `settings_window.dart` for desktop settings UI.
+  - Added `app_theme.dart` and `theme_extensions.dart` for centralized theming.
+  - Added `shimmer_mask.dart` for loading states.
+  - Added `premium_sheet.dart` for premium feature prompts.
+- **LSP expansion**:
+  - Built-in LSP servers expanded to 15 (dart, typescript, python, java, kotlin, go, rust, csharp, yaml, shell, clangd, lua, markdown, swift, zig).
+  - LSP auto-install via platform package managers (npm, cargo, brew, pip, go) when server command is missing.
+  - `lsp` config section in `chatorai.json`: global `enabled` flag plus per-server overrides.
+- **MCP improvements**:
+  - MCP Marketplace with 15 preconfigured remote servers, search, category filters, premium cards.
+  - MCP add dialog supports environment, headers, Raw JSON tab, token authentication.
+  - MCP server types accept `http`/`https`/`sse` as aliases for `remote`, `stdio` for `local`.
+- **Keyboard shortcuts**:
+  - Global shortcut handler for desktop (workspace switching, etc.).
+- **Workspace support**:
+  - Working directory override per session/project.
+  - Workspace provider for directory management.
+- **Tests**: numerous new unit and widget tests for context usage, ring chip, tools, sessions, LSP, MCP, permissions, etc.
 
 ### Changed
 
-- **Removed text token display from UI**: removed `cumulativeTokens`/`contextLength` plumbing from `ActionRow`, `ChatMessageBubble`, `AssistantMessageBubble`, `UserMessageBubble`, `UserMessageEdit`, `ChatMessages`, and `SessionContextWindow`. Data models (`contextLength` on messages, `TokenCounter`) remain intact.
-- **Removed `tokenDisplay` utility** from `lib/shared/utils/format_utils.dart`; kept `formatTokenCount` for other uses.
-- **Updated `ChatInputStatusBar` layout**: changed from `Padding > Wrap` to `Padding > Row(Expanded(Wrap), ring chip)` to accommodate the new ring indicator.
+- **ChatAiService**: migrated to `ai_sdk_dart` v2; `streamChatCompletion` uses new SDK types.
+- **SessionRunner**: refactored for better event sourcing and child session handling.
+- **Permission system**: `shell` tool default changed from `allow` to `ask`; `DangerousCharacterPolicy` softened to `review` for safe metacharacters (`|`, `>`, `<`, `&`).
+- **Model provider**: `recentModels` strip added to model selection screen.
+- **Compaction service**: refactored with `CompactionOrchestrator` and `BackgroundCompactionService`.
 
 ### Fixed
 
-- **GUI launcher no longer blocks terminal** — running `chatorai` without arguments now launches the GUI in the background and returns control to the shell immediately. CLI commands (`chatorai stats`, `chatorai models`, etc.) remain foreground and preserve exit codes. Added error message if the binary is missing.
-- **Tool-output storage path**: Truncated tool output was previously written to `getApplicationDocumentsDirectory()` (`~/Documents/chatorai/` on Linux), which caused `Path denied` errors when the model later tried to read it back via `read`/`grep`/`glob` because Documents is outside the project root and the path sandbox rejected it. Output is now written to the cross-platform data directory (`~/.local/share/chatorai/tool-output` on Linux, XDG-compliant on other desktops, sandboxed Documents on mobile). The `read`/`grep`/`glob` tools now accept this directory as a managed read root (symlink-safe via `FilesystemBoundary.resolve()`), so the model can read back its own truncated output without permission prompts. Deleted the dead `tool_output_bounding_service.dart` (no callers).
+- **Tool-output storage path**: Truncated tool output was previously written to `getApplicationDocumentsDirectory()` (`~/Documents/chatorai/` on Linux), which caused `Path denied` errors when the model later tried to read it back via `read`/`grep`/`glob` because Documents is outside the project root and the path sandbox rejected it. Output is now written to the cross-platform data directory (`~/.local/share/chatorai/tool-output` on Linux, XDG-compliant on other desktops, sandboxed Documents on mobile). The `read`/`grep`/`glob` tools now accept this directory as a managed read root (symlink-safe via `FilesystemBoundary.resolve()`), so the model can read back its own truncated output without permission prompts.
+- **Android database hang**: `createFileDatabase()` in `lib/core/session/database.dart` no longer imports `xdg_paths_cli.dart`. The function now requires an explicit `dataDir` parameter and creates the directory inline with `Directory(dataDir).create(recursive: true)`. `session_db_provider.dart` imports the Flutter-aware `xdg_paths.dart` and passes `await XdgPaths.dataHomeAsync`, which resolves to the app's sandboxed support directory on Android. `bin/chatorai.dart` passes `XdgPaths.dataHome` from `xdg_paths_cli.dart`.
+- **Linter warnings**: Resolved unused imports and dangling library doc comments introduced during refactoring. `flutter analyze` reports zero issues.
 
-### Added
+### Documentation
 
-- **LSP expansion to 15 built-in servers**:
-  dart, typescript, python, java, kotlin, go, rust, csharp, yaml, shell, clangd, lua, markdown, swift, zig.
-  Servers are started lazily on first file match, so unused languages incur no startup cost.
-- **LSP auto-install**: When a built-in server command is missing on PATH, ChatORAI installs it on-demand via platform package managers (`npm`, `cargo`, `brew`, `pip`, `go`) before falling back to empty diagnostics.
-- **`lsp` config section** in `chatorai.json`: global `enabled` flag plus per-server `servers.*` overrides via `LspConfig` / `LspServerEntryConfig`.
-  - `lsp: true/false` — enable or disable all built-in LSP.
-  - `lsp.servers.<id>.disabled` / `command` / `args` / `extensions` / `languageId` / `environment` / `autoInstall` — per-server overrides.
-- **LSP service refactor** (`lib/core/lsp/lsp_service.dart`):
-  - Built-in `_builtInServers` table (15 entries) with per-server `AutoInstallHint`.
-  - Per-cache-key `_activeCreation` lock prevents duplicate client spawning.
-  - `textDocument/didClose` sent in `diagnostics()` and `diagnosticsForFile()` lifecycle.
-  - 5-second timeout on `Process.run` in `_commandExists()`.
-- **LSP provider wiring** (`lib/core/lsp/lsp_provider.dart`): `lspServiceProvider` loads user servers from `config.lsp` at startup and invokes `service.shutdownAll()` on dispose.
-- **Removed dead code**: `_legacyFallback` path removed; `_openedFiles` cleared in `shutdownAll()`.
-- **Tests** (`test/core/lsp/lsp_service_test.dart`): boolean `lsp` parsing, user server load/skip disabled, `AutoInstallHint`, `shutdownAll` idempotency.
-- **Recent models** on the model-selection screen: a horizontal "stories"-style strip of the top-6 most recently and frequently used models, with a localized "Recent" header (English, Russian, Ukrainian, Chinese, Japanese, Arabic).
-- `ModelState` now tracks per-model `usageCounts` and `lastUsed` timestamps, persisted in `SharedPreferences` (`model_usage_counts`, `model_last_used`) alongside favorites. `setSelectedModel` increments the usage count and refreshes `lastUsed`.
-- `ModelState.recentModels` getter: top-6 models merged by usage count (desc) then last-used timestamp (desc), limited to currently available models.
-- Unit tests for the `recentModels` ranking logic in `test/features/models/providers/model_provider_recent_test.dart`.
-
-- **MCP server dialog: environment, headers and Raw JSON** — the "Add MCP server" dialog now supports optional `environment` (local) and `headers` (remote) JSON fields so token-authenticated servers (e.g. GitHub) can be added from the GUI. A "Raw JSON" tab lets users paste a single server object exactly as shown in server docs. Invalid JSON is rejected with an inline error and the server is not saved. Parsing/validation lives in `lib/features/settings/screens/mcp_add_server_helpers.dart`; added widget and unit tests in `test/features/settings/screens/mcp_add_server_helpers_test.dart` and `test/features/settings/screens/mcp_servers_screen_test.dart`.
-- `McpServerConfig.fromJson` now throws `ArgumentError` (instead of a raw cast error) when a local server has no `command` or a remote server has no `url`, giving clear validation messages for malformed server declarations.
-- **MCP spec-compliant server types**: `McpServerType.fromValue` now accepts `http`, `https`, and `sse` as aliases of `remote` (and `stdio` of `local`), case-insensitively. Spec-style configs such as `{"type": "http", "url": "https://mcp.context7.com/mcp"}` now parse correctly instead of failing with `Unknown MCP server type: http`. Remote servers connect via `StreamableHttpClientTransport`.
-- **MCP Marketplace**: the MCP servers screen now has two tabs — **Marketplace** and **Installed**. Marketplace lists 15 preconfigured, cross-platform remote servers (Exa, Context7, Hugging Face, Parallel, Tavily, GitHub, Postman, Slack, Figma, Canva, Stripe, Trivago, Send, ZipRecruiter, Adobe) with a search field, category filter chips (Search/Docs/Design/Dev/Finance/Travel/Jobs/Productivity/Social), and premium cards that expand to a full description on tap. One-tap **Install** adds the server to Installed exactly like a manual add (without a token); installed servers show an **Installed** badge and stay on the Marketplace tab. Catalog lives in `lib/core/mcp/mcp_marketplace_catalog.dart`; descriptions localized in all 6 languages.
-
-- **MCP add dialog simplified for end users**:
-  - **Raw JSON tab**: paste a whole server object exactly as in the docs — the server `name` is the OUTER key (e.g. `"searxng": { ... }`); no need to retype the name. Legacy form with `name` inside is still accepted.
-  - **Remote form**: replaced the free-form `headers` JSON field with a single **Access token** field plus a **Token type** selector (`Bearer` → `Authorization: Bearer …`, `ApiKey` → `X-Api-Key: …`, `Token` → `Authorization: …`). The token is wrapped into the correct header automatically — no JSON or quotes to type.
-  - Local form (name / type / command / environment) is unchanged.
-  - **Raw JSON now accepts the docs format verbatim**: the `mcpServers` wrapper (and `servers` / `mcp`) is unwrapped transparently, so users can paste the whole block from the MCP docs (`{"mcpServers": {"sequential-thinking": {...}}}`). The short form (`{"sequential-thinking": {...}}`), the legacy `name`-inside form, and one-server-per-paste rule are all preserved. Saved servers still use the existing flat `mcp` layout in `chatorai.json`.
+- **docs/API.md**: Added `sessionContextUsageProvider`, `UsageCallback`, `UsageCacheTokens`, `UsageRawData`, `extractUsageRawData`, `resolveUsage`. Updated `AssistantMessage` fields (added `tokensCacheRead`, `tokensCacheWrite`, `tokensCacheIncludedInInput`, `contextLength`, `agent`, `isCompactionSummary`). Updated built-in tool count from 18 to 21 unconditional tools (added `document_extract_pdf`, `document_extract_docx`, `document_extract_xlsx`, `task_container`). Removed references to deleted `ChatStorageService`.
+- **docs/COMMANDS.md**: Updated tool list to include `document_extract` family and `task_container`. Corrected unconditional tool count to 21.
+- **docs/CONFIGURATION.md**: Added `document_extract` tools to fallback `ask` list. Updated permission defaults table.
+- **docs/ENVIRONMENT.md**: Updated `ai_sdk_dart` and related package versions from `^1.x` to `^2.0.0` to match `pubspec.yaml`.
+- **docs/diagrams/tools.md**: Updated unconditional tool count from 18 to 21; added `document_extract` family and `task_container` to registry diagram.
+- **ARCHITECTURE.md**: Removed references to deleted files (`permission_bridge.dart`, `secure_file_service.dart`, `chat_repository_impl.dart`, `background_job_provider.dart`, `chat_message_export.dart`, `permission_dialog.dart`, `scrollable_action_buttons.dart`, `assistant_header.dart`, `patch_body.dart`, `diff_line.dart`). Added new files (`session_context_usage_provider.dart`, `chat_input_status_bar.dart`, `document_extract.dart`, `lsp_diagnostics_format.dart`, `tool_call_tracker.dart`, `workspace_provider.dart`, `workspace_runtime.dart`, `cwd_override.dart`, `background_compaction_service.dart`, `global_shortcut_handler.dart`, `keyboard_shortcut.dart`, `shortcuts.dart`, `premium_sheet.dart`, `shimmer_mask.dart`, `settings_window.dart`, `settings_modal.dart`, `settings_about_section.dart`, `settings_accessibility_section.dart`, `settings_appearance_section.dart`, `app_loading_screen.dart`, `android_storage_permission.dart`, `app_theme.dart`, `theme_extensions.dart`, `providers.dart`, `diff_body.dart`, `edit_body.dart`, `write_body.dart`, `diff_parser.dart`, `premium_confirm_sheet.dart`, `workspace_dialog.dart`, `workspace_switch_confirm_sheet.dart`, `session_context_window.dart`, `chat_screen_scroll.dart`, `chat_stream_actions.dart`). Updated tool layer description to reflect 21 unconditional + 3 conditional tools.
 
 ## [0.1.0]
 

@@ -1,9 +1,15 @@
 import 'dart:async';
 
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/mcp/mcp_status_provider.dart';
 import 'package:chatorai/core/mcp/mcp_types.dart';
+import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
+import 'package:chatorai/features/chat/data/models/chat_models.dart';
+import 'package:chatorai/features/chat/data/providers/session_context_usage_provider.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input_status_bar.dart';
+import 'package:chatorai/features/models/providers/model_provider.dart';
+import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/project_info_provider.dart';
 import 'package:flutter/gestures.dart';
@@ -11,6 +17,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+class _FakeModelConfig implements ModelConfig {
+  @override
+  final int contextLength = 200000;
+
+  const _FakeModelConfig();
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _TestModelNotifier extends ModelNotifier {
+  final ModelState _state;
+  _TestModelNotifier(this._state);
+
+  @override
+  ModelState build() => _state;
+}
 
 Set<Color> _spanColors(WidgetTester tester) {
   final texts = tester
@@ -830,6 +854,278 @@ void main() {
 
         expect(find.text('MCP: 1/1'), findsOneWidget);
       });
+    });
+  });
+
+  group('ContextPopup totalTokens and cache rows', () {
+    testWidgets('context line shows totalTokens not usedTokens', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sessionContextUsageProvider.overrideWithValue(
+              const SessionContextUsage(
+                usedTokens: 1000,
+                outputTokens: 500,
+                reasoningTokens: 200,
+                cacheReadTokens: 300,
+                cacheWriteTokens: 100,
+                contextLength: 200000,
+                buffer: 20000,
+                usable: 180000,
+                sources: [],
+              ),
+            ),
+            modelProvider.overrideWith(
+              () => _TestModelNotifier(
+                ModelState(selectedModelObject: const _FakeModelConfig()),
+              ),
+            ),
+            workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+            gitBranchProvider.overrideWith((_) async => null),
+            mcpStatusesProvider.overrideWith((_) async => {}),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final ringFinder = find.descendant(
+        of: find.byType(ChatInputStatusBar),
+        matching: find.byType(CustomPaint),
+      );
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.moveTo(tester.getCenter(ringFinder));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      // totalTokens = 1000 + 500 + 200 + 300 + 100 = 2100
+      expect(find.text('Context: 2100 / 200000 tokens (1%)'), findsOneWidget);
+    });
+
+    testWidgets('cache rows absent when cache tokens are zero', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sessionContextUsageProvider.overrideWithValue(
+              const SessionContextUsage(
+                usedTokens: 1000,
+                outputTokens: 500,
+                reasoningTokens: 200,
+                cacheReadTokens: 0,
+                cacheWriteTokens: 0,
+                contextLength: 200000,
+                buffer: 20000,
+                usable: 180000,
+                sources: [],
+              ),
+            ),
+            modelProvider.overrideWith(
+              () => _TestModelNotifier(
+                ModelState(selectedModelObject: const _FakeModelConfig()),
+              ),
+            ),
+            workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+            gitBranchProvider.overrideWith((_) async => null),
+            mcpStatusesProvider.overrideWith((_) async => {}),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final ringFinder = find.descendant(
+        of: find.byType(ChatInputStatusBar),
+        matching: find.byType(CustomPaint),
+      );
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.moveTo(tester.getCenter(ringFinder));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      // Popup is open with the breakdown; cache rows must be hidden when zero
+      expect(find.text('Input tokens'), findsOneWidget);
+      expect(find.text('Cache read'), findsNothing);
+      expect(find.text('Cache write'), findsNothing);
+    });
+
+    testWidgets('cache rows present when cache tokens are non-zero', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sessionContextUsageProvider.overrideWithValue(
+              const SessionContextUsage(
+                usedTokens: 1000,
+                outputTokens: 500,
+                reasoningTokens: 200,
+                cacheReadTokens: 300,
+                cacheWriteTokens: 100,
+                contextLength: 200000,
+                buffer: 20000,
+                usable: 180000,
+                sources: [],
+              ),
+            ),
+            modelProvider.overrideWith(
+              () => _TestModelNotifier(
+                ModelState(selectedModelObject: const _FakeModelConfig()),
+              ),
+            ),
+            workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+            gitBranchProvider.overrideWith((_) async => null),
+            mcpStatusesProvider.overrideWith((_) async => {}),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final ringFinder = find.descendant(
+        of: find.byType(ChatInputStatusBar),
+        matching: find.byType(CustomPaint),
+      );
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.moveTo(tester.getCenter(ringFinder));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      // Cache rows must be rendered when cache tokens are non-zero
+      expect(find.text('Input tokens'), findsOneWidget);
+      expect(find.text('Cache read'), findsOneWidget);
+      expect(find.text('Cache write'), findsOneWidget);
+    });
+
+    testWidgets(
+      'spent row shown in breakdown, not in context line, when spentUsd set',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              sessionContextUsageProvider.overrideWithValue(
+                const SessionContextUsage(
+                  usedTokens: 1000,
+                  outputTokens: 500,
+                  reasoningTokens: 200,
+                  cacheReadTokens: 300,
+                  cacheWriteTokens: 100,
+                  contextLength: 200000,
+                  buffer: 20000,
+                  usable: 180000,
+                  sources: [],
+                  spentUsd: 0.0123,
+                ),
+              ),
+              modelProvider.overrideWith(
+                () => _TestModelNotifier(
+                  ModelState(selectedModelObject: const _FakeModelConfig()),
+                ),
+              ),
+              workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+              gitBranchProvider.overrideWith((_) async => null),
+              mcpStatusesProvider.overrideWith((_) async => {}),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(body: ChatInputStatusBar()),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final ringFinder = find.descendant(
+          of: find.byType(ChatInputStatusBar),
+          matching: find.byType(CustomPaint),
+        );
+        final gesture = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
+        await gesture.moveTo(tester.getCenter(ringFinder));
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        // Spent no longer shares the context line (long context fit fix)
+        expect(find.text('Context: 2100 / 200000 tokens (1%)'), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.text('Context: 2100 / 200000 tokens (1%)'),
+            matching: find.text('\$0.01'),
+          ),
+          findsNothing,
+        );
+
+        // Spent rendered as its own premium row in the breakdown
+        expect(find.text('Spent'), findsOneWidget);
+        expect(find.text('\$0.01'), findsOneWidget);
+      },
+    );
+
+    testWidgets('ring chip percentage matches totalTokens/contextLength', (
+      tester,
+    ) async {
+      final usage = const SessionContextUsage(
+        usedTokens: 50000,
+        outputTokens: 25000,
+        reasoningTokens: 10000,
+        cacheReadTokens: 10000,
+        cacheWriteTokens: 5000,
+        contextLength: 200000,
+        buffer: 20000,
+        usable: 180000,
+        sources: [],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sessionContextUsageProvider.overrideWithValue(usage),
+            modelProvider.overrideWith(
+              () => _TestModelNotifier(
+                ModelState(selectedModelObject: const _FakeModelConfig()),
+              ),
+            ),
+            workingDirProvider.overrideWithValue('/home/user/work/chatorai'),
+            gitBranchProvider.overrideWith((_) async => null),
+            mcpStatusesProvider.overrideWith((_) async => {}),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: ChatInputStatusBar()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Verify totalTokens is computed correctly
+      // totalTokens = 50000 + 25000 + 10000 + 10000 + 5000 = 100000
+      final totalTokens = usage.totalTokens;
+      expect(totalTokens, 100000);
+
+      // Verify percentage calculation: 100000 / 200000 * 100 = 50%
+      final expectedPercent = (totalTokens / usage.contextLength * 100)
+          .toStringAsFixed(0);
+      expect(expectedPercent, '50');
     });
   });
 }

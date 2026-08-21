@@ -105,7 +105,7 @@ class _FakeChatAiService extends ChatAiService {
     // Await the callbacks: onCompletion performs database writes (event flush)
     // that must finish before this method resolves.
     await onChunk('Fake subagent output');
-    onUsage?.call(10, 20, 5, 3, 0);
+    onUsage?.call(10, 20, 5, 3, 0, false);
     await onCompletion('Fake subagent output');
   }
 }

@@ -22,6 +22,7 @@ class UsageRawData {
   final int cacheRead;
   final int cacheWrite;
   final int reasoning;
+  final bool cacheIncludedInInput;
 
   const UsageRawData({
     this.inputTotal = 0,
@@ -29,6 +30,7 @@ class UsageRawData {
     this.cacheRead = 0,
     this.cacheWrite = 0,
     this.reasoning = 0,
+    this.cacheIncludedInInput = false,
   });
 }
 
@@ -42,9 +44,25 @@ class UsageRawData {
 /// - Anthropic-compatible gateways: `cache_read_input_tokens` /
 ///   `cache_creation_input_tokens`.
 UsageCacheTokens extractCacheTokens(Object? rawUsage) {
+  return _extractCacheWithStyle(rawUsage).tokens;
+}
+
+/// Whether the matched cache tokens are already included in the input total.
+///
+/// Returns `null` when no cache field matched.
+/// - OpenAI/DeepSeek fields are included in `prompt_tokens` / `input_tokens`.
+/// - Anthropic gateway fields are billed separately.
+bool? extractCacheIncludedInInput(Object? rawUsage) {
+  return _extractCacheWithStyle(rawUsage).includedInInput;
+}
+
+({UsageCacheTokens tokens, bool? includedInInput}) _extractCacheWithStyle(
+  Object? rawUsage,
+) {
   final map = rawUsage is Map<String, dynamic> ? rawUsage : null;
   int? read;
   int? write;
+  bool? includedInInput;
 
   // Read candidates (first non-zero wins).
   final readCandidates = <int?>[
@@ -54,9 +72,11 @@ UsageCacheTokens extractCacheTokens(Object? rawUsage) {
     _deepInt(map, ['cache_read_input_tokens']),
   ];
 
-  for (final candidate in readCandidates) {
+  for (var i = 0; i < readCandidates.length; i++) {
+    final candidate = readCandidates[i];
     if (candidate != null && candidate > 0) {
       read = candidate;
+      includedInInput = i != 3;
       break;
     }
   }
@@ -67,14 +87,19 @@ UsageCacheTokens extractCacheTokens(Object? rawUsage) {
     _deepInt(map, ['input_tokens_details', 'cache_write_tokens']),
   ];
 
-  for (final candidate in writeCandidates) {
+  for (var i = 0; i < writeCandidates.length; i++) {
+    final candidate = writeCandidates[i];
     if (candidate != null && candidate > 0) {
       write = candidate;
+      includedInInput ??= i != 0;
       break;
     }
   }
 
-  return UsageCacheTokens(read: read ?? 0, write: write ?? 0);
+  return (
+    tokens: UsageCacheTokens(read: read ?? 0, write: write ?? 0),
+    includedInInput: includedInInput,
+  );
 }
 
 /// Maps provider-specific reasoning fields into a unified count.
@@ -95,6 +120,7 @@ int extractReasoningTokens(Object? rawUsage) {
 /// Null-safe: returns zeros for missing or non-map input.
 UsageRawData extractUsageRawData(Object? rawUsage) {
   final map = rawUsage is Map<String, dynamic> ? rawUsage : null;
+  final cacheIncluded = extractCacheIncludedInInput(rawUsage) ?? false;
   return UsageRawData(
     inputTotal:
         _deepInt(map, ['prompt_tokens']) ??
@@ -107,6 +133,7 @@ UsageRawData extractUsageRawData(Object? rawUsage) {
     cacheRead: extractCacheTokens(rawUsage).read,
     cacheWrite: extractCacheTokens(rawUsage).write,
     reasoning: extractReasoningTokens(rawUsage),
+    cacheIncludedInInput: cacheIncluded,
   );
 }
 

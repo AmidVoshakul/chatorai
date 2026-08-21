@@ -169,5 +169,118 @@ void main() {
       expect(resolved['cacheWrite'], 0);
       expect(resolved['reasoning'], 50);
     });
+
+    test('reasoning from usage.raw when captured raw is empty', () {
+      final sdkUsage = LanguageModelV4Usage(
+        inputTokens: const LanguageModelV4InputTokenUsage(
+          total: 500,
+          cacheRead: 100,
+          cacheWrite: 50,
+        ),
+        outputTokens: const LanguageModelV4OutputTokenUsage(
+          total: 50,
+          reasoning: 0,
+        ),
+      );
+
+      final resolved = service.resolveUsage(
+        sdkUsage,
+        const <String, dynamic>{},
+      );
+
+      expect(resolved['reasoning'], 0);
+    });
+
+    test('reasoning from usage.raw when captured raw is null', () {
+      final sdkUsage = LanguageModelV4Usage(
+        inputTokens: const LanguageModelV4InputTokenUsage(
+          total: 500,
+          cacheRead: 100,
+          cacheWrite: 50,
+        ),
+        outputTokens: const LanguageModelV4OutputTokenUsage(
+          total: 50,
+          reasoning: 0,
+        ),
+      );
+
+      final resolved = service.resolveUsage(sdkUsage, null);
+
+      expect(resolved['reasoning'], 0);
+    });
+
+    test('reasoning falls back to usage.raw when SDK reasoning is zero', () {
+      final rawUsage = {
+        'prompt_tokens': 1000,
+        'completion_tokens': 200,
+        'reasoning_tokens': 15,
+      };
+      final sdkUsage = LanguageModelV4Usage(
+        inputTokens: const LanguageModelV4InputTokenUsage(
+          total: 1000,
+          cacheRead: 0,
+          cacheWrite: 0,
+        ),
+        outputTokens: const LanguageModelV4OutputTokenUsage(
+          total: 200,
+          reasoning: 0,
+        ),
+      );
+
+      final resolved = service.resolveUsage(sdkUsage, rawUsage);
+
+      expect(resolved['reasoning'], 15);
+    });
+
+    test('cacheRead falls back to raw when SDK reports zero', () {
+      final rawUsage = {
+        'prompt_tokens': 1000,
+        'completion_tokens': 200,
+        'prompt_tokens_details': {'cached_tokens': 500},
+      };
+      final sdkUsage = LanguageModelV4Usage(
+        inputTokens: const LanguageModelV4InputTokenUsage(
+          total: 1000,
+          cacheRead: 0,
+          cacheWrite: 0,
+        ),
+        outputTokens: const LanguageModelV4OutputTokenUsage(
+          total: 200,
+          reasoning: 0,
+        ),
+      );
+
+      final resolved = service.resolveUsage(sdkUsage, rawUsage);
+
+      expect(resolved['cacheRead'], 500);
+    });
+
+    test('cacheIncludedInInput key is present in all branches', () {
+      final rawUsage = {
+        'prompt_tokens': 1000,
+        'completion_tokens': 200,
+        'prompt_tokens_details': {'cached_tokens': 500},
+      };
+      final sdkUsage = LanguageModelV4Usage(
+        inputTokens: const LanguageModelV4InputTokenUsage(
+          total: 1000,
+          cacheRead: 100,
+          cacheWrite: 50,
+        ),
+        outputTokens: const LanguageModelV4OutputTokenUsage(
+          total: 200,
+          reasoning: 10,
+        ),
+      );
+
+      final resolvedWithRaw = service.resolveUsage(sdkUsage, rawUsage);
+      expect(resolvedWithRaw.containsKey('cacheIncludedInInput'), true);
+
+      final resolvedWithoutRaw = service.resolveUsage(sdkUsage, null);
+      expect(resolvedWithoutRaw.containsKey('cacheIncludedInInput'), true);
+
+      final resolvedNull = service.resolveUsage(null, null);
+      expect(resolvedNull.containsKey('cacheIncludedInInput'), true);
+    });
   });
 }

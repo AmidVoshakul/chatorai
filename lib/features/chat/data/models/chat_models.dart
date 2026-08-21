@@ -58,6 +58,9 @@ class Message {
   final int? tokensInput;
   final int? tokensOutput;
   final int? tokensReasoning;
+  final int? tokensCacheRead;
+  final int? tokensCacheWrite;
+  final bool? tokensCacheIncludedInInput;
   final int? contextLength; // Model's context window length
   final List<Map<String, dynamic>>?
   partsJson; // Serialized MessageParts (tool calls, etc.)
@@ -81,6 +84,9 @@ class Message {
     this.tokensInput,
     this.tokensOutput,
     this.tokensReasoning,
+    this.tokensCacheRead,
+    this.tokensCacheWrite,
+    this.tokensCacheIncludedInInput,
     this.contextLength,
     this.partsJson,
     this.agent,
@@ -107,6 +113,9 @@ class Message {
     int? tokensInput,
     int? tokensOutput,
     int? tokensReasoning,
+    int? tokensCacheRead,
+    int? tokensCacheWrite,
+    bool? tokensCacheIncludedInInput,
     int? contextLength,
     List<Map<String, dynamic>>? partsJson,
     String? agent,
@@ -128,6 +137,10 @@ class Message {
       tokensInput: tokensInput ?? this.tokensInput,
       tokensOutput: tokensOutput ?? this.tokensOutput,
       tokensReasoning: tokensReasoning ?? this.tokensReasoning,
+      tokensCacheRead: tokensCacheRead ?? this.tokensCacheRead,
+      tokensCacheWrite: tokensCacheWrite ?? this.tokensCacheWrite,
+      tokensCacheIncludedInInput:
+          tokensCacheIncludedInInput ?? this.tokensCacheIncludedInInput,
       contextLength: contextLength ?? this.contextLength,
       partsJson: partsJson ?? this.partsJson,
       agent: agent ?? this.agent,
@@ -153,7 +166,10 @@ class Message {
         other.synthetic == synthetic &&
         other.tokensInput == tokensInput &&
         other.tokensOutput == tokensOutput &&
-        other.tokensReasoning == tokensReasoning;
+        other.tokensReasoning == tokensReasoning &&
+        other.tokensCacheRead == tokensCacheRead &&
+        other.tokensCacheWrite == tokensCacheWrite &&
+        other.tokensCacheIncludedInInput == tokensCacheIncludedInInput;
   }
 
   @override
@@ -172,6 +188,9 @@ class Message {
       tokensInput,
       tokensOutput,
       tokensReasoning,
+      tokensCacheRead,
+      tokensCacheWrite,
+      tokensCacheIncludedInInput,
     );
   }
 
@@ -195,6 +214,9 @@ class Message {
       'tokensInput': tokensInput,
       'tokensOutput': tokensOutput,
       'tokensReasoning': tokensReasoning,
+      'tokensCacheRead': tokensCacheRead,
+      'tokensCacheWrite': tokensCacheWrite,
+      'tokensCacheIncludedInInput': tokensCacheIncludedInInput,
       'contextLength': contextLength,
       'partsJson': partsJson,
       'agent': agent,
@@ -226,6 +248,9 @@ class Message {
       tokensInput: json['tokensInput'] as int?,
       tokensOutput: json['tokensOutput'] as int?,
       tokensReasoning: json['tokensReasoning'] as int?,
+      tokensCacheRead: json['tokensCacheRead'] as int?,
+      tokensCacheWrite: json['tokensCacheWrite'] as int?,
+      tokensCacheIncludedInInput: json['tokensCacheIncludedInInput'] as bool?,
       contextLength: json['contextLength'] as int?,
       partsJson: json['partsJson'] != null
           ? (json['partsJson'] as List<dynamic>).cast<Map<String, dynamic>>()

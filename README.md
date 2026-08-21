@@ -16,6 +16,7 @@ A modern AI chat application built with Flutter and Riverpod. Connect to any Ope
 - **Dark & light themes** — Adaptive UI with smooth transitions
 - **Multi-language** — 6 languages (en, ru, uk, zh, ja, ar) with RTL support
 - **Recent models** — A horizontal strip of your top-6 most recently and frequently used models on the model-selection screen
+- **Context usage indicator** — Ring chip in the chat input status bar shows context usage; tap/hover for a detailed popup with token breakdown (input, output, reasoning, cache read/write, tool tokens), spent USD, and a compact session button
 - **Local storage** — Chat history and settings persisted
 
 ## 🚀 Quick Start
@@ -83,9 +84,8 @@ That's it! The app will launch and you can start chatting.
 - [API Reference](docs/API.md) — Providers, services, models, and tools
 - [Commands](docs/COMMANDS.md) — CLI commands and `@` agent mentions
 - [Environment](docs/ENVIRONMENT.md) — Setup, dependencies, and platform notes
-- [Roadmap](docs/ROADMAP.md) — Completed milestones and future plans
-- [Configuration](docs/configuration.md) — chatorai.json schema and options
-- [Security](docs/security.md) — Permission system, secret handling, and trust boundaries
+- [Configuration](docs/CONFIGURATION.md) — chatorai.json schema and options
+- [Security](docs/SECURITY.md) — Permission system, secret handling, and trust boundaries
 - [Platform Paths](docs/xdg-paths.md) — XDG-aware path resolution (Linux/macOS/Windows/mobile)
 
 ### Diagrams

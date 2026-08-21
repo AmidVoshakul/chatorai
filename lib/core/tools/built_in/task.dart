@@ -188,7 +188,7 @@ ToolDef createTaskTool({
               tools: subagentTools,
               maxSteps: agent.maxSteps ?? unlimitedMaxSteps,
               abortSignal: ctx.abortSignal,
-              onUsage: (input, output, cacheRead, cacheWrite, reasoning) {
+              onUsage: (input, output, cacheRead, cacheWrite, reasoning, _) {
                 lastTokensInput = input;
                 lastTokensOutput = output;
                 lastTokensCacheRead = cacheRead;

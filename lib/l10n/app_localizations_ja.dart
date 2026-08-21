@@ -279,7 +279,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String contextMessages(Object percent, Object usable, Object used) {
-    return 'メッセージ: $used / $usable トークン ($percent%)';
+    return 'コンテキスト: $used / $usable トークン ($percent%)';
   }
 
   @override
@@ -301,13 +301,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contextUsageBreakdown => '使用状況';
 
   @override
-  String get contextPromptTokens => 'プロンプトトークン';
+  String get contextPromptTokens => '入力トークン';
 
   @override
   String get contextOutputTokens => '出力トークン';
-
-  @override
-  String get contextReasoningTokens => '推論トークン';
 
   @override
   String get contextCacheRead => 'キャッシュ読み取り';
@@ -317,6 +314,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get contextToolTokens => 'ツールトークン';
+
+  @override
+  String get contextSpentLabel => '使用額';
 
   @override
   String get contextTokensIncludedInPrompt => 'ツールトークンはプロンプトに含まれています';

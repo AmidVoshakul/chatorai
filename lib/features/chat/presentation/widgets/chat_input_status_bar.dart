@@ -289,7 +289,126 @@ class _StatusChipState extends State<_StatusChip> {
   }
 }
 
-// ==== CONTEXT RING CHIP ==================================================
+// ==== CONTEXT RING CHIP ====================================================
+
+class _SegmentedProgressBar extends StatelessWidget {
+  final double usedRatio;
+  final double freeRatio;
+  final double bufferRatio;
+
+  const _SegmentedProgressBar({
+    required this.usedRatio,
+    required this.freeRatio,
+    required this.bufferRatio,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const height = 6.0;
+    return CustomPaint(
+      size: const Size(double.infinity, height),
+      painter: _SegmentedProgressPainter(
+        usedRatio: usedRatio,
+        freeRatio: freeRatio,
+        bufferRatio: bufferRatio,
+      ),
+    );
+  }
+}
+
+class _SegmentedProgressPainter extends CustomPainter {
+  final double usedRatio;
+  final double freeRatio;
+  final double bufferRatio;
+
+  _SegmentedProgressPainter({
+    required this.usedRatio,
+    required this.freeRatio,
+    required this.bufferRatio,
+  });
+
+  Color _usedColor(double ratio) {
+    if (ratio < 0.5) {
+      return Color.lerp(
+        ChatoraiColors.success,
+        ChatoraiColors.warning,
+        ratio * 2,
+      )!;
+    } else if (ratio < 0.7) {
+      return Color.lerp(
+        ChatoraiColors.warning,
+        ChatoraiColors.orange,
+        (ratio - 0.5) * 5,
+      )!;
+    } else if (ratio < 0.9) {
+      return Color.lerp(
+        ChatoraiColors.orange,
+        ChatoraiColors.error,
+        (ratio - 0.7) * 5,
+      )!;
+    } else {
+      return ChatoraiColors.error;
+    }
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final height = size.height;
+    final usedWidth = size.width * usedRatio.clamp(0.0, 1.0);
+    final bufferWidth = size.width * bufferRatio.clamp(0.0, 1.0);
+    final freeWidth = max(0.0, size.width - usedWidth - bufferWidth);
+
+    final usedPaint = Paint()..color = _usedColor(usedRatio);
+    final freePaint = Paint()
+      ..color = ChatoraiColors.gray.withValues(alpha: 0.3);
+
+    if (usedWidth > 0) {
+      canvas.drawRect(Rect.fromLTWH(0, 0, usedWidth, height), usedPaint);
+    }
+    if (freeWidth > 0) {
+      canvas.drawRect(
+        Rect.fromLTWH(usedWidth, 0, freeWidth, height),
+        freePaint,
+      );
+    }
+    if (bufferWidth > 0) {
+      final bufferRect = Rect.fromLTWH(
+        usedWidth + freeWidth,
+        0,
+        bufferWidth,
+        height,
+      );
+      final bufferPaint = Paint()
+        ..color = ChatoraiColors.warning.withValues(alpha: 0.25);
+      canvas.drawRect(bufferRect, bufferPaint);
+
+      canvas.save();
+      canvas.clipRect(bufferRect);
+      final hatchPaint = Paint()
+        ..color = ChatoraiColors.warning.withValues(alpha: 0.7)
+        ..strokeWidth = 1.2;
+      for (
+        double i = bufferRect.left - height;
+        i < bufferRect.left + bufferRect.width + height;
+        i += 5
+      ) {
+        canvas.drawLine(
+          Offset(i, bufferRect.top),
+          Offset(i + height, bufferRect.bottom),
+          hatchPaint,
+        );
+      }
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SegmentedProgressPainter old) {
+    return old.usedRatio != usedRatio ||
+        old.freeRatio != freeRatio ||
+        old.bufferRatio != bufferRatio;
+  }
+}
 
 class _ContextRingChip extends StatefulWidget {
   const _ContextRingChip({this.onCompact});
@@ -323,14 +442,14 @@ class _ContextRingChipState extends State<_ContextRingChip> {
       onHoverEnter: () {
         _hoverTimer?.cancel();
       },
-      onHoverExit: _hidePopup,
+      onHoverExit: _scheduleHide,
     ).createOverlayEntry();
     Overlay.of(context).insert(_popupEntry!);
   }
 
-  void _hidePopup() {
+  void _scheduleHide() {
     _hoverTimer?.cancel();
-    _hoverTimer = Timer(const Duration(milliseconds: 200), () {
+    _hoverTimer = Timer(const Duration(milliseconds: 300), () {
       _popupEntry?.remove();
       _popupEntry = null;
       if (mounted) setState(() {});
@@ -349,11 +468,24 @@ class _ContextRingChipState extends State<_ContextRingChip> {
           return const SizedBox.shrink();
         }
 
-        final ratio = usage.usable > 0 ? usage.usedTokens / usage.usable : 0.0;
-        final color = _ringColor(ratio);
+        final ratio = usage.contextLength > 0
+            ? usage.totalTokens / usage.contextLength
+            : 0.0;
+        final thresholds = BackgroundCompactionThresholds();
+        final usableRatio = usage.contextLength > 0
+            ? ((usage.contextLength - usage.buffer) / usage.contextLength)
+                  .clamp(0.0, 1.0)
+            : 1.0;
+        final color = _ringColor(
+          ratio,
+          BackgroundCompactionThresholds(
+            warningRatio: thresholds.warningRatio * usableRatio,
+            hardRatio: thresholds.hardRatio * usableRatio,
+          ),
+        );
 
-        final ringSize = 16.0;
-        final strokeWidth = 2.0;
+        const ringSize = 14.0;
+        const strokeWidth = 2.0;
 
         return MouseRegion(
           onEnter: isMobile
@@ -362,11 +494,7 @@ class _ContextRingChipState extends State<_ContextRingChip> {
                   _hoverTimer?.cancel();
                   _showPopup(context);
                 },
-          onExit: isMobile
-              ? null
-              : (_) {
-                  _hidePopup();
-                },
+          onExit: isMobile ? null : (_) => _scheduleHide(),
           child: GestureDetector(
             onTap: isMobile
                 ? () {
@@ -378,7 +506,7 @@ class _ContextRingChipState extends State<_ContextRingChip> {
               height: ringSize,
               alignment: Alignment.center,
               child: CustomPaint(
-                size: Size(ringSize, ringSize),
+                size: const Size(ringSize, ringSize),
                 painter: _RingPainter(
                   progress: ratio.clamp(0.0, 1.0),
                   color: color,
@@ -392,8 +520,7 @@ class _ContextRingChipState extends State<_ContextRingChip> {
     );
   }
 
-  Color _ringColor(double ratio) {
-    final thresholds = BackgroundCompactionThresholds();
+  Color _ringColor(double ratio, BackgroundCompactionThresholds thresholds) {
     if (ratio < thresholds.warningRatio) return ChatoraiColors.success;
     if (ratio < thresholds.hardRatio) return ChatoraiColors.warning;
     return ChatoraiColors.error;
@@ -495,13 +622,14 @@ class _ContextPopupContent extends StatelessWidget {
       builder: (context, ref, _) {
         final usage = ref.watch(sessionContextUsageProvider);
         final l10n = AppLocalizations.of(context)!;
-        final ratio = usage.usable > 0 ? usage.usedTokens / usage.usable : 0.0;
-        final thresholds = BackgroundCompactionThresholds();
-        final color = ratio < thresholds.warningRatio
-            ? ChatoraiColors.success
-            : ratio < thresholds.hardRatio
-            ? ChatoraiColors.warning
-            : ChatoraiColors.error;
+        final percent = usage.contextLength > 0
+            ? (usage.totalTokens / usage.contextLength * 100)
+                  .clamp(0, 100)
+                  .toStringAsFixed(0)
+            : '0';
+        final autoCompactPercent =
+            (BackgroundCompactionThresholds().warningRatio * 100)
+                .toStringAsFixed(0);
 
         final popupWidth = 280.0;
         final screenWidth = MediaQuery.of(context).size.width;
@@ -561,17 +689,20 @@ class _ContextPopupContent extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.all(ChatoraiSpacing.md),
+                            padding: const EdgeInsets.fromLTRB(
+                              ChatoraiSpacing.md,
+                              ChatoraiSpacing.md,
+                              ChatoraiSpacing.md,
+                              ChatoraiSpacing.xs,
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   l10n.contextMessages(
-                                    ratio >= 0
-                                        ? (ratio * 100).toStringAsFixed(0)
-                                        : '0',
-                                    usage.usable.toString(),
-                                    usage.usedTokens.toString(),
+                                    percent,
+                                    usage.contextLength.toString(),
+                                    usage.totalTokens.toString(),
                                   ),
                                   style: TextStyle(
                                     fontSize: ChatoraiFontSizes.sm,
@@ -579,14 +710,46 @@ class _ContextPopupContent extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(height: ChatoraiSpacing.xs),
-                                LinearProgressIndicator(
-                                  value: ratio.clamp(0.0, 1.0),
-                                  color: color,
-                                  backgroundColor:
-                                      ChatoraiColors.premiumBorderSoft,
-                                  minHeight: 4,
+                                _SegmentedProgressBar(
+                                  usedRatio: usage.contextLength > 0
+                                      ? (usage.totalTokens /
+                                                usage.contextLength)
+                                            .clamp(0.0, 1.0)
+                                      : 0.0,
+                                  freeRatio: usage.contextLength > 0
+                                      ? ((usage.contextLength -
+                                                    usage.totalTokens -
+                                                    usage.buffer) /
+                                                usage.contextLength)
+                                            .clamp(0.0, 1.0)
+                                      : 0.0,
+                                  bufferRatio: usage.contextLength > 0
+                                      ? (usage.buffer / usage.contextLength)
+                                            .clamp(0.0, 1.0)
+                                      : 0.0,
                                 ),
                               ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              ChatoraiSpacing.md,
+                              0,
+                              ChatoraiSpacing.md,
+                              ChatoraiSpacing.xs,
+                            ),
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                l10n.contextAutoCompactAt(
+                                  usage.buffer.toString(),
+                                  autoCompactPercent,
+                                ),
+                                style: TextStyle(
+                                  fontSize: ChatoraiFontSizes.xs,
+                                  color: ChatoraiColors.premiumTextMuted,
+                                ),
+                              ),
                             ),
                           ),
                           if (usage.sources.isNotEmpty) ...[
@@ -679,9 +842,10 @@ class _ContextPopupContent extends StatelessWidget {
                                   label: l10n.contextOutputTokens,
                                   value: usage.outputTokens.toString(),
                                 ),
-                                _UsageRow(
-                                  label: l10n.contextReasoningTokens,
-                                  value: usage.reasoningTokens.toString(),
+                                Divider(
+                                  height: 1,
+                                  thickness: ChatoraiBorderWidth.thin,
+                                  color: ChatoraiColors.premiumBorderSoft,
                                 ),
                                 _UsageRow(
                                   label: l10n.contextToolTokens,
@@ -692,71 +856,59 @@ class _ContextPopupContent extends StatelessWidget {
                                     label: 'Tool calls',
                                     value: usage.toolCallsCount.toString(),
                                   ),
-                                _UsageRow(
-                                  label: l10n.contextCacheRead,
-                                  value: usage.cacheReadTokens.toString(),
-                                ),
-                                _UsageRow(
-                                  label: l10n.contextCacheWrite,
-                                  value: usage.cacheWriteTokens.toString(),
-                                ),
-                                const SizedBox(height: ChatoraiSpacing.xs),
-                                Divider(
-                                  height: 1,
-                                  thickness: ChatoraiBorderWidth.thin,
-                                  color: ChatoraiColors.premiumBorderSoft,
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      l10n.total,
-                                      style: TextStyle(
-                                        fontSize: ChatoraiFontSizes.xs,
-                                        color: ChatoraiColors.premiumText,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    Text(
-                                      (usage.usedTokens +
-                                              usage.outputTokens +
-                                              usage.reasoningTokens +
-                                              usage.cacheReadTokens +
-                                              usage.cacheWriteTokens)
-                                          .toString(),
-                                      style: TextStyle(
-                                        fontSize: ChatoraiFontSizes.xs,
-                                        color: ChatoraiColors.premiumText,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                if (usage.cacheReadTokens > 0)
+                                  _UsageRow(
+                                    label: l10n.contextCacheRead,
+                                    value: usage.cacheReadTokens.toString(),
+                                  ),
+                                if (usage.cacheWriteTokens > 0)
+                                  _UsageRow(
+                                    label: l10n.contextCacheWrite,
+                                    value: usage.cacheWriteTokens.toString(),
+                                  ),
                               ],
                             ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              ChatoraiSpacing.md,
-                              0,
-                              ChatoraiSpacing.md,
-                              ChatoraiSpacing.md,
+                          if (usage.spentUsd != null) ...[
+                            Divider(
+                              height: 1,
+                              thickness: ChatoraiBorderWidth.thin,
+                              color: ChatoraiColors.premiumBorderSoft,
                             ),
-                            child: Text(
-                              l10n.contextAutoCompactAt(
-                                usage.buffer.toString(),
-                                (BackgroundCompactionThresholds().warningRatio *
-                                        100)
-                                    .toInt()
-                                    .toString(),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: ChatoraiSpacing.md,
+                                vertical: ChatoraiSpacing.xs,
                               ),
-                              style: TextStyle(
-                                fontSize: ChatoraiFontSizes.xs,
-                                color: ChatoraiColors.premiumTextMuted,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    l10n.contextSpentLabel,
+                                    style: TextStyle(
+                                      fontSize: ChatoraiFontSizes.xs,
+                                      color: ChatoraiColors.premiumTextMuted,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: ChatoraiSpacing.sm),
+                                  Text(
+                                    '\$${usage.spentUsd!.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      fontSize: ChatoraiFontSizes.sm,
+                                      color: ChatoraiColors.orange,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.2,
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures(),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
+                          ],
                           if (onCompact != null && usage.usedTokens > 0)
                             Padding(
                               padding: const EdgeInsets.fromLTRB(

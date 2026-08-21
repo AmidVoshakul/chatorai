@@ -77,9 +77,8 @@ LIBGL_ALWAYS_SOFTWARE=1 flutter run -d linux  # Linux software rendering
 - [API Reference](docs/API.md) — Провайдеры, сервисы, модели, инструменты
 - [Commands](docs/COMMANDS.md) — CLI-команды и `@`-упоминания агентов
 - [Environment](docs/ENVIRONMENT.md) — Настройка окружения и зависимости
-- [Roadmap](docs/ROADMAP.md) — Выполненные milestones и планы
-- [Configuration](docs/configuration.md) — Схема chatorai.json и опции
-- [Security](docs/security.md) — Система разрешений, работа с секретами, границы доверия
+- [Configuration](docs/CONFIGURATION.md) — Схема chatorai.json и опции
+- [Security](docs/SECURITY.md) — Система разрешений, работа с секретами, границы доверия
 - [Platform Paths](docs/xdg-paths.md) — Пути для Linux/macOS/Windows/mobile
 
 ### Диаграммы

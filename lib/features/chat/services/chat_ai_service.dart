@@ -43,6 +43,7 @@ typedef UsageCallback =
       int cacheRead,
       int cacheWrite,
       int reasoning,
+      bool cacheIncludedInInput,
     );
 
 class ChatCompletionResponse {
@@ -569,6 +570,7 @@ class ChatAiService implements CompletionProvider {
                     resolved['cacheRead'] ?? 0,
                     resolved['cacheWrite'] ?? 0,
                     resolved['reasoning'] ?? 0,
+                    resolved['cacheIncludedInInput'] == true,
                   );
                   await onCompletion(text);
                   if (_overflowDetector.isOverflow(_tokenCounter.totalTokens)) {
@@ -795,6 +797,7 @@ class ChatAiService implements CompletionProvider {
                   resolved['cacheRead'] ?? 0,
                   resolved['cacheWrite'] ?? 0,
                   resolved['reasoning'] ?? 0,
+                  resolved['cacheIncludedInInput'] == true,
                 );
                 await onCompletion(text);
               default:
@@ -1017,8 +1020,8 @@ class ChatAiService implements CompletionProvider {
   /// SDK-bucketed `usage` on the finish event.
   ///
   /// Returns a map with keys: `inputTotal`, `outputTotal`, `cacheRead`,
-  /// `cacheWrite`, `reasoning`.
-  Map<String, int> resolveUsage(
+  /// `cacheWrite`, `reasoning`, `cacheIncludedInInput`.
+  Map<String, dynamic> resolveUsage(
     LanguageModelV4Usage? usage,
     Map<String, dynamic>? capturedRawUsage,
   ) {
@@ -1031,18 +1034,30 @@ class ChatAiService implements CompletionProvider {
         'cacheRead': rawData.cacheRead,
         'cacheWrite': rawData.cacheWrite,
         'reasoning': rawData.reasoning,
+        'cacheIncludedInInput': rawData.cacheIncludedInInput,
       };
     }
+    final sdkCacheRead = usage?.inputTokens.cacheRead;
+    final sdkCacheWrite = usage?.inputTokens.cacheWrite;
+    final sdkReasoning = usage?.outputTokens.reasoning;
     final cache = usage != null
         ? extractCacheTokens(usage.raw)
         : const UsageCacheTokens();
     return {
       'inputTotal': usage?.inputTokens.total ?? 0,
       'outputTotal': usage?.outputTokens.total ?? 0,
-      'cacheRead': usage?.inputTokens.cacheRead ?? cache.read,
-      'cacheWrite': usage?.inputTokens.cacheWrite ?? cache.write,
-      'reasoning':
-          usage?.outputTokens.reasoning ?? extractReasoningTokens(usage?.raw),
+      'cacheRead': (sdkCacheRead != null && sdkCacheRead > 0)
+          ? sdkCacheRead
+          : cache.read,
+      'cacheWrite': (sdkCacheWrite != null && sdkCacheWrite > 0)
+          ? sdkCacheWrite
+          : cache.write,
+      'reasoning': (sdkReasoning != null && sdkReasoning > 0)
+          ? sdkReasoning
+          : extractReasoningTokens(usage?.raw),
+      'cacheIncludedInInput': usage != null
+          ? extractUsageRawData(usage.raw).cacheIncludedInInput
+          : false,
     };
   }
 

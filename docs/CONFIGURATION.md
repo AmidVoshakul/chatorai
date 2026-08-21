@@ -1,6 +1,6 @@
 # Configuration
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-08-21
 
 ChatORAI can be configured via a JSON file (`chatorai.json`) to customize permissions, keybindings, provider settings, MCP servers, and more.
 
@@ -100,21 +100,23 @@ If no permission configuration is provided, the following defaults apply (source
     "grep": "allow",
     "webfetch": "allow",
     "websearch": "allow",
-    "task": "allow",
-    "question": "allow",
-    "todowrite": "allow",
+    "task": "deny",
+    "question": "deny",
+    "todowrite": "deny",
     "skill": "allow",
     "lsp": "allow",
     "shell": "ask",
     "edit": "ask",
     "write": "ask",
     "doom_loop": "ask",
-    "external_directory": "ask"
+    "external_directory": "ask",
+    "plan_enter": "deny",
+    "plan_exit": "deny"
   }
 }
 ```
 
-Tools without a ruleset entry (e.g. `apply_patch`, `format`, `invalid`, `plan_exit`, `json_schema`) fall back to `ask` via the evaluator.
+Tools without a ruleset entry (e.g. `apply_patch`, `format`, `invalid`, `json_schema`, `document_extract_pdf`, `document_extract_docx`, `document_extract_xlsx`) fall back to `ask` via the evaluator.
 
 ### `keybinding`
 
@@ -174,8 +176,8 @@ Controls automatic context compaction when token budget is exceeded.
   "compaction": {
     "auto": true,
     "prune": true,
-    "keep": { "tokens": 4000 },
-    "buffer": 2000
+    "buffer": 2000,
+    "tail_turns": 2
   }
 }
 ```
@@ -184,8 +186,10 @@ Controls automatic context compaction when token budget is exceeded.
 | ------------- | ------ | ----------------------------------------- |
 | `auto`        | `bool` | Enable automatic compaction               |
 | `prune`       | `bool` | Prune old tool outputs                    |
-| `keep.tokens` | `int`  | Tokens to preserve as recent context      |
 | `buffer`      | `int`  | Token buffer before triggering compaction |
+| `tail_turns`  | `int`  | Recent user-assistant pairs to keep verbatim |
+
+> **Note:** The legacy `keep.tokens` key is accepted for backward compatibility but is ignored.
 
 ### `formatter`
 

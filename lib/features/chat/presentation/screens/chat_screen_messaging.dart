@@ -570,6 +570,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
     int? tokensInput,
     int? tokensOutput,
     int? tokensReasoning,
+    int? tokensCacheRead,
+    int? tokensCacheWrite,
+    bool? tokensCacheIncludedInInput,
     int? contextLength,
     List<Map<String, dynamic>>? partsJson,
     String? agent,
@@ -585,6 +588,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
       tokensInput: tokensInput,
       tokensOutput: tokensOutput,
       tokensReasoning: tokensReasoning,
+      tokensCacheRead: tokensCacheRead,
+      tokensCacheWrite: tokensCacheWrite,
+      tokensCacheIncludedInInput: tokensCacheIncludedInInput,
       contextLength: contextLength,
       partsJson: partsJson,
       agent: agent ?? ref.read(currentAgentProvider).name,
@@ -659,6 +665,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
         reasoning: reasoning.isNotEmpty ? reasoning : null,
         isComplete: true,
         partsJson: partsJson,
+        tokensCacheRead: null,
+        tokensCacheWrite: null,
+        tokensCacheIncludedInInput: null,
         contextLength: ref
             .read(modelProvider)
             .selectedModelObject
@@ -674,6 +683,9 @@ extension _ChatScreenMessagingExt on _ChatScreenState {
         reasoning: reasoning.isNotEmpty ? reasoning : null,
         isComplete: true,
         partsJson: partsJson,
+        tokensCacheRead: null,
+        tokensCacheWrite: null,
+        tokensCacheIncludedInInput: null,
         contextLength: ref
             .read(modelProvider)
             .selectedModelObject

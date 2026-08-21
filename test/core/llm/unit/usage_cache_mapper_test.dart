@@ -223,5 +223,44 @@ void main() {
       expect(result.cacheRead, 500);
       expect(result.reasoning, 30);
     });
+
+    test('OpenAI chat cached_tokens sets cacheIncludedInInput true', () {
+      final usage = {
+        'prompt_tokens': 1000,
+        'completion_tokens': 200,
+        'prompt_tokens_details': {'cached_tokens': 500},
+      };
+      final result = extractUsageRawData(usage);
+      expect(result.cacheIncludedInInput, true);
+    });
+
+    test('DeepSeek prompt_cache_hit_tokens sets cacheIncludedInInput true', () {
+      final usage = {
+        'prompt_tokens': 1000,
+        'completion_tokens': 200,
+        'prompt_cache_hit_tokens': 500,
+      };
+      final result = extractUsageRawData(usage);
+      expect(result.cacheIncludedInInput, true);
+    });
+
+    test(
+      'Anthropic cache_read_input_tokens sets cacheIncludedInInput false',
+      () {
+        final usage = {
+          'prompt_tokens': 1000,
+          'completion_tokens': 200,
+          'cache_read_input_tokens': 500,
+          'cache_creation_input_tokens': 100,
+        };
+        final result = extractUsageRawData(usage);
+        expect(result.cacheIncludedInInput, false);
+      },
+    );
+
+    test('empty raw sets cacheIncludedInInput false', () {
+      final result = extractUsageRawData(const {});
+      expect(result.cacheIncludedInInput, false);
+    });
   });
 }

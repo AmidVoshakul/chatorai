@@ -285,7 +285,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String contextMessages(Object percent, Object usable, Object used) {
-    return 'Сообщения: $used / $usable токенов ($percent%)';
+    return 'Контекст: $used / $usable токенов ($percent%)';
   }
 
   @override
@@ -307,13 +307,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get contextUsageBreakdown => 'Использование';
 
   @override
-  String get contextPromptTokens => 'Промпт-токены';
+  String get contextPromptTokens => 'Входные токены';
 
   @override
   String get contextOutputTokens => 'Токены вывода';
-
-  @override
-  String get contextReasoningTokens => 'Токены рассуждений';
 
   @override
   String get contextCacheRead => 'Чтение кэша';
@@ -323,6 +320,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get contextToolTokens => 'Токены инструментов';
+
+  @override
+  String get contextSpentLabel => 'Потрачено';
 
   @override
   String get contextTokensIncludedInPrompt =>

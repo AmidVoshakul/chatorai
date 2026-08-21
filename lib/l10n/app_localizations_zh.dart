@@ -279,7 +279,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String contextMessages(Object percent, Object usable, Object used) {
-    return '消息: $used / $usable 令牌 ($percent%)';
+    return '上下文: $used / $usable 令牌 ($percent%)';
   }
 
   @override
@@ -301,13 +301,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contextUsageBreakdown => '使用情况';
 
   @override
-  String get contextPromptTokens => '提示令牌';
+  String get contextPromptTokens => '输入令牌';
 
   @override
   String get contextOutputTokens => '输出令牌';
-
-  @override
-  String get contextReasoningTokens => '推理令牌';
 
   @override
   String get contextCacheRead => '缓存读取';
@@ -317,6 +314,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get contextToolTokens => '工具令牌';
+
+  @override
+  String get contextSpentLabel => '已花费';
 
   @override
   String get contextTokensIncludedInPrompt => '工具令牌已包含在提示中';

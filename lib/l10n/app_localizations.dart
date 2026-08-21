@@ -625,7 +625,7 @@ abstract class AppLocalizations {
   /// No description provided for @contextMessages.
   ///
   /// In en, this message translates to:
-  /// **'Messages: {used} / {usable} tokens ({percent}%)'**
+  /// **'Context: {used} / {usable} tokens ({percent}%)'**
   String contextMessages(Object percent, Object usable, Object used);
 
   /// No description provided for @contextInstructions.
@@ -667,7 +667,7 @@ abstract class AppLocalizations {
   /// No description provided for @contextPromptTokens.
   ///
   /// In en, this message translates to:
-  /// **'Prompt tokens'**
+  /// **'Input tokens'**
   String get contextPromptTokens;
 
   /// No description provided for @contextOutputTokens.
@@ -675,12 +675,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Output tokens'**
   String get contextOutputTokens;
-
-  /// No description provided for @contextReasoningTokens.
-  ///
-  /// In en, this message translates to:
-  /// **'Reasoning tokens'**
-  String get contextReasoningTokens;
 
   /// No description provided for @contextCacheRead.
   ///
@@ -699,6 +693,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tool tokens'**
   String get contextToolTokens;
+
+  /// No description provided for @contextSpentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Spent'**
+  String get contextSpentLabel;
 
   /// No description provided for @contextTokensIncludedInPrompt.
   ///

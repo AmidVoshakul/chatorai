@@ -114,11 +114,11 @@ class _FakeChatAiServiceToolError extends ChatAiService {
 
       // 3) Agent recovers → produces output
       await onChunk('Recovered after tool error');
-      onUsage?.call(10, 20, 5, 3, 0);
+      onUsage?.call(10, 20, 5, 3, 0, false);
       await onCompletion('Recovered after tool error');
     } else {
       await onChunk('Normal output');
-      onUsage?.call(10, 20, 5, 3, 0);
+      onUsage?.call(10, 20, 5, 3, 0, false);
       await onCompletion('Normal output');
     }
   }

@@ -1,6 +1,6 @@
 # Architecture Overview Diagrams
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-08-21
 
 This file contains high-level mermaid diagrams for data flow, session pipeline,
 tool execution, MCP topology, and config resolution.  Each diagram is
