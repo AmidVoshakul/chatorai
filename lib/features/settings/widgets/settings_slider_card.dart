@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/features/settings/widgets/premium_blocks.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
 // ===========================================================================
 // SETTINGS SLIDER CARD WIDGET
 // ===========================================================================
 
 class SettingsSliderCard extends StatelessWidget {
-  final BuildContext context;
   final double value;
   final double min;
   final double max;
@@ -17,7 +17,6 @@ class SettingsSliderCard extends StatelessWidget {
 
   const SettingsSliderCard({
     super.key,
-    required this.context,
     required this.value,
     required this.min,
     required this.max,
@@ -35,18 +34,8 @@ class SettingsSliderCard extends StatelessWidget {
     final localizations = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
-      color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: isDark
-              ? ChatoraiColors.darkInputBorder
-              : ChatoraiColors.inputBorder,
-          width: 1,
-        ),
-      ),
-      elevation: 0,
+    return Container(
+      decoration: premiumCard(isDark),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

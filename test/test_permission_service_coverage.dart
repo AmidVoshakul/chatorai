@@ -2,6 +2,7 @@ import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
+import 'package:chatorai/core/permission/permission_storage.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
@@ -17,13 +18,12 @@ void main() {
     late MockSharedPreferences prefs;
 
     setUp(() {
-      service = PermissionService();
       prefs = MockSharedPreferences();
       when(() => prefs.getStringList(any())).thenReturn(null);
       when(
         () => prefs.setStringList(any(), any()),
       ).thenAnswer((_) async => true);
-      service.attachPreferences(prefs);
+      service = PermissionService(storage: SharedPrefsPermissionStorage(prefs));
     });
 
     test('emits PermissionRequest on onAsked when ask rule matches', () async {
@@ -203,17 +203,21 @@ void main() {
   });
 
   group('PermissionService — session-scoped approved rules', () {
-    test('attachPreferences does not load any rules', () async {
-      final prefs = MockSharedPreferences();
-      when(
-        () => prefs.getStringList(any()),
-      ).thenReturn(['read|lib/**|allow', 'write|src/**|deny']);
+    test(
+      'constructor with SharedPrefsPermissionStorage does not load any rules',
+      () async {
+        final prefs = MockSharedPreferences();
+        when(
+          () => prefs.getStringList(any()),
+        ).thenReturn(['read|lib/**|allow', 'write|src/**|deny']);
 
-      final s = PermissionService();
-      s.attachPreferences(prefs);
+        final s = PermissionService(
+          storage: SharedPrefsPermissionStorage(prefs),
+        );
 
-      expect(s.approvedRules, isEmpty);
-    });
+        expect(s.approvedRules, isEmpty);
+      },
+    );
 
     test('reply(always) adds rules in memory only', () async {
       final s = PermissionService();

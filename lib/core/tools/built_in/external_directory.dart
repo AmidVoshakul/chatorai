@@ -2,6 +2,7 @@ import 'package:path/path.dart' as p;
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
 import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/shared/utils/path_sandbox.dart';
 
 ToolDef createExternalDirectoryTool() {
   return ToolDef(
@@ -37,10 +38,15 @@ ToolDef createExternalDirectoryTool() {
         return const ToolOutput('ok');
       }
 
+      final patterns = externalDirectoryGlobPatterns(
+        p.dirname(resolution.path),
+        workspacePath: workspaceRuntimeCurrent.path,
+        fallback: resolution.path,
+      );
       await ctx.ask(
         permission: 'external_directory',
-        patterns: [resolution.path],
-        always: [resolution.path],
+        patterns: patterns,
+        always: patterns,
         metadata: {
           'filepath': resolution.path,
           'parentDir': p.dirname(resolution.path),

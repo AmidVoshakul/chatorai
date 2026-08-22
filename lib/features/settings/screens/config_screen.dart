@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/features/settings/widgets/premium_blocks.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/xdg_paths.dart';
@@ -97,15 +98,8 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     } else if (!_supportsProjectScope) {
       content = _ScopeConfigView(data: _global, isDark: isDark);
     } else {
-      tabBar = TabBar(
-        indicatorColor: ChatoraiColors.orange,
-        dividerColor: Colors.transparent,
-        labelColor: isDark
-            ? ChatoraiColors.pureWhite
-            : ChatoraiColors.pureBlack,
-        unselectedLabelColor: isDark
-            ? ChatoraiColors.darkSecondaryTextColor
-            : ChatoraiColors.secondaryTextColor,
+      tabBar = unifiedTabBar(
+        isDark: isDark,
         tabs: [
           Tab(text: l10n.configScopeGlobal),
           Tab(text: l10n.configScopeProject),
@@ -149,21 +143,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   }
 
   Widget _tabBarContainer({required TabBar tabBar, required bool isDark}) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: isDark
-                ? ChatoraiColors.darkInputBorder
-                : ChatoraiColors.inputBorder,
-          ),
-        ),
-      ),
-      child: PreferredSize(
-        preferredSize: const Size.fromHeight(48),
-        child: tabBar,
-      ),
-    );
+    return unifiedTabContainer(tabBar: tabBar, isDark: isDark);
   }
 
   PreferredSizeWidget _appBar(

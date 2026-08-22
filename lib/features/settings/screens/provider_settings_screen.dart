@@ -1,6 +1,7 @@
 import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_actions.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_dialogs.dart';
+import 'package:chatorai/features/settings/widgets/premium_blocks.dart';
 import 'package:chatorai/features/settings/widgets/provider_card.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
@@ -149,15 +150,7 @@ class ProviderSettingsScreen extends ConsumerWidget {
   Widget _buildEmptyState(bool isDark, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(ChatoraiSpacing.xxl),
-      decoration: BoxDecoration(
-        color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-        border: Border.all(
-          color: isDark
-              ? ChatoraiColors.darkInputBorder
-              : ChatoraiColors.inputBorder,
-        ),
-      ),
+      decoration: premiumCard(isDark),
       child: Center(
         child: Column(
           children: [

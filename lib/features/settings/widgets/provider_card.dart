@@ -1,4 +1,5 @@
 import 'package:chatorai/features/models/widgets/provider_icon.dart';
+import 'package:chatorai/features/settings/widgets/premium_blocks.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -37,15 +38,7 @@ class ProviderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(ChatoraiSpacing.lg),
-      decoration: BoxDecoration(
-        color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-        border: Border.all(
-          color: isDark
-              ? ChatoraiColors.darkInputBorder
-              : ChatoraiColors.inputBorder,
-        ),
-      ),
+      decoration: premiumCard(isDark),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -82,24 +75,20 @@ class ProviderCard extends StatelessWidget {
           const SizedBox(height: ChatoraiSpacing.md),
           Row(
             children: [
-              GestureDetector(
-                onTap: onToggle,
-                behavior: HitTestBehavior.opaque,
-                child: Transform.scale(
-                  scale: 0.7,
-                  child: Switch(
-                    value: enabled,
-                    onChanged: (_) => onToggle(),
-                    activeThumbColor: ChatoraiColors.orange,
-                    activeTrackColor: ChatoraiColors.orange.withAlpha(150),
-                    inactiveThumbColor: isDark
-                        ? ChatoraiColors.toggleInactiveThumbDark
-                        : ChatoraiColors.toggleInactiveThumbLight,
-                    inactiveTrackColor: isDark
-                        ? ChatoraiColors.toggleInactiveTrackDark
-                        : ChatoraiColors.toggleInactiveTrackLight,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
+              Transform.scale(
+                scale: 0.7,
+                child: Switch(
+                  value: enabled,
+                  onChanged: (_) => onToggle(),
+                  activeThumbColor: ChatoraiColors.orange,
+                  activeTrackColor: ChatoraiColors.orange.withAlpha(150),
+                  inactiveThumbColor: isDark
+                      ? ChatoraiColors.toggleInactiveThumbDark
+                      : ChatoraiColors.toggleInactiveThumbLight,
+                  inactiveTrackColor: isDark
+                      ? ChatoraiColors.toggleInactiveTrackDark
+                      : ChatoraiColors.toggleInactiveTrackLight,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
               const Spacer(),

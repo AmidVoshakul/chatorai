@@ -351,6 +351,23 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
         widget.showWelcomeSuggestions &&
         widget.welcomeSuggestions.isNotEmpty;
 
+    // Total number of list items. This is the value the [SelectionArea] below
+    // is keyed on: whenever the list length changes (a message is added/removed
+    // or a streaming/welcome/suggestion row toggles) the [SelectionArea] is
+    // rebuilt from scratch, discarding any active text selection. This prevents
+    // the Flutter framework assertion in `selectable_region.dart`
+    // (`currentSelectionStartIndex < selectables.length`) that fires when an
+    // in-progress selection references selectable indices that no longer exist
+    // after the list mutates during streaming.
+    final itemCount =
+        messages.length +
+        (shouldShowWaitingAnimation ? 1 : 0) +
+        (showStreamingBubble ? 1 : 0) +
+        (widget.showSuggestions && widget.continuationSuggestions.isNotEmpty
+            ? 1
+            : 0) +
+        (shouldShowWelcome ? 1 : 0);
+
     return Container(
       color: theme.scaffoldBackgroundColor,
       child: Column(
@@ -358,6 +375,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
           Expanded(
             child: RepaintBoundary(
               child: SelectionArea(
+                key: ValueKey(itemCount),
                 child: ListView.builder(
                   physics: _scrollPhysics(context),
                   addAutomaticKeepAlives: false,
@@ -368,15 +386,7 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
                     top: ChatMessagesConstants.verticalPadding,
                     bottom: ChatMessagesConstants.verticalPadding,
                   ),
-                  itemCount:
-                      messages.length +
-                      (shouldShowWaitingAnimation ? 1 : 0) +
-                      (showStreamingBubble ? 1 : 0) +
-                      (widget.showSuggestions &&
-                              widget.continuationSuggestions.isNotEmpty
-                          ? 1
-                          : 0) +
-                      (shouldShowWelcome ? 1 : 0),
+                  itemCount: itemCount,
                   controller: _scrollController,
                   itemBuilder: (context, index) {
                     int welcomeOffset = 0;

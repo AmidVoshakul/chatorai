@@ -223,22 +223,14 @@ class _AgentsInstructionsScreenState
         onRemove: _confirmRemove,
       );
     } else {
-      tabBar = PreferredSize(
-        preferredSize: const Size.fromHeight(48),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: hairlineColor(isDark))),
-          ),
-          child: TabBar(
-            indicatorColor: ChatoraiColors.orange,
-            dividerColor: Colors.transparent,
-            labelColor: titleColor(isDark),
-            unselectedLabelColor: subtleColor(isDark),
-            tabs: [
-              Tab(text: l10n.instructionsScopeGlobal),
-              Tab(text: l10n.instructionsScopeProject),
-            ],
-          ),
+      tabBar = unifiedTabContainer(
+        isDark: isDark,
+        tabBar: unifiedTabBar(
+          isDark: isDark,
+          tabs: [
+            Tab(text: l10n.instructionsScopeGlobal),
+            Tab(text: l10n.instructionsScopeProject),
+          ],
         ),
       );
       content = DefaultTabController(

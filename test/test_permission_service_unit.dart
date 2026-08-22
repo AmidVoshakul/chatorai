@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
+import 'package:chatorai/core/permission/permission_storage.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 
@@ -311,7 +312,9 @@ void main() {
       // Give time for all to register
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      // The 11th ask should be rate-limited (throws PermissionDeniedError)
+      // The 11th ask is soft-rate-limited: it must NOT throw into the agent
+      // stream. The implementation logs and falls through instead of raising
+      // PermissionDeniedError (which would break the tool execution stream).
       final req11 = const PermissionRequest(
         id: 'rate-10',
         toolName: 'shell',
@@ -319,10 +322,7 @@ void main() {
         patterns: ['cmd-10'],
       );
 
-      expect(
-        () => service.ask(req11, ruleset),
-        throwsA(isA<PermissionDeniedError>()),
-      );
+      await expectLater(service.ask(req11, ruleset), completes);
 
       // Clean up pending requests
       for (var i = 0; i < 10; i++) {
@@ -468,16 +468,16 @@ void main() {
     });
   });
 
-  group('PermissionService.attachPreferences', () {
-    test('session-scoped: does not load any rules', () async {
+  group('PermissionService constructor with SharedPrefsPermissionStorage', () {
+    test('does not auto-load rules on construction', () async {
       SharedPreferences.setMockInitialValues({
         'permission_approved_rules': ['read|*.txt|allow', 'shell|git *|allow'],
       });
 
       final prefs = await SharedPreferences.getInstance();
-      service.attachPreferences(prefs);
+      final s = PermissionService(storage: SharedPrefsPermissionStorage(prefs));
 
-      expect(service.approvedRules, isEmpty);
+      expect(s.approvedRules, isEmpty);
     });
   });
 }

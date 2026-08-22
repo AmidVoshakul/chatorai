@@ -9,6 +9,7 @@ import 'package:chatorai/core/tools/truncation_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/core/permission/arity.dart' as arity;
 import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/shared/utils/path_sandbox.dart';
 import 'package:command_shield/command_shield.dart';
 import 'package:path/path.dart' as p;
 
@@ -420,10 +421,15 @@ ToolDef createShellTool() {
         final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
         final resolution = boundary.resolve(workingDir);
         if (resolution.isExternal) {
+          final patterns = externalDirectoryGlobPatterns(
+            p.dirname(resolution.path),
+            workspacePath: workspaceRuntimeCurrent.path,
+            fallback: resolution.path,
+          );
           await ctx.ask(
             permission: 'external_directory',
-            patterns: [resolution.path],
-            always: [resolution.path],
+            patterns: patterns,
+            always: patterns,
             metadata: {
               'filepath': resolution.path,
               'parentDir': p.dirname(resolution.path),
@@ -437,10 +443,19 @@ ToolDef createShellTool() {
 
       // External directories always require permission, regardless of decision
       if (preflight.externalDirs.isNotEmpty) {
+        final patterns = preflight.externalDirs
+            .expand(
+              (d) => externalDirectoryGlobPatterns(
+                d,
+                workspacePath: workspaceRuntimeCurrent.path,
+                fallback: d,
+              ),
+            )
+            .toList();
         await ctx.ask(
           permission: 'external_directory',
-          patterns: preflight.externalDirs,
-          always: preflight.externalDirs,
+          patterns: patterns,
+          always: patterns,
           metadata: {'command': command, 'directories': preflight.externalDirs},
         );
       }

@@ -4161,6 +4161,300 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New session'**
   String get newSession;
+
+  /// No description provided for @autoApproveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-Approve'**
+  String get autoApproveTitle;
+
+  /// No description provided for @autoApproveSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure automatic permission approvals'**
+  String get autoApproveSubtitle;
+
+  /// No description provided for @autoApproveExternalDirectoryDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow access to external directories'**
+  String get autoApproveExternalDirectoryDesc;
+
+  /// No description provided for @autoApproveShellDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow shell command execution'**
+  String get autoApproveShellDesc;
+
+  /// No description provided for @autoApproveReadDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow reading files'**
+  String get autoApproveReadDesc;
+
+  /// No description provided for @autoApproveEditDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow editing files'**
+  String get autoApproveEditDesc;
+
+  /// No description provided for @autoApproveWriteDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow writing files'**
+  String get autoApproveWriteDesc;
+
+  /// No description provided for @autoApproveGlobDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow glob pattern searches'**
+  String get autoApproveGlobDesc;
+
+  /// No description provided for @autoApproveGrepDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow grep searches'**
+  String get autoApproveGrepDesc;
+
+  /// No description provided for @autoApproveWebsearchDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow web searches'**
+  String get autoApproveWebsearchDesc;
+
+  /// No description provided for @autoApproveWebfetchDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow fetching web pages'**
+  String get autoApproveWebfetchDesc;
+
+  /// No description provided for @autoApproveDoomLoopDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow doom loop detection'**
+  String get autoApproveDoomLoopDesc;
+
+  /// No description provided for @autoApproveSkillDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow skill execution'**
+  String get autoApproveSkillDesc;
+
+  /// No description provided for @autoApproveLspDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow LSP tool usage'**
+  String get autoApproveLspDesc;
+
+  /// No description provided for @autoApproveTaskDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow task tool usage'**
+  String get autoApproveTaskDesc;
+
+  /// No description provided for @autoApproveTodowriteDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow todo write operations'**
+  String get autoApproveTodowriteDesc;
+
+  /// No description provided for @exceptionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exceptions'**
+  String get exceptionsTitle;
+
+  /// No description provided for @addPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Add path'**
+  String get addPath;
+
+  /// No description provided for @addCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'Add command'**
+  String get addCommand;
+
+  /// No description provided for @scopeGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Global'**
+  String get scopeGlobal;
+
+  /// No description provided for @scopeProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Project'**
+  String get scopeProject;
+
+  /// No description provided for @defaultInherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Default (inherit)'**
+  String get defaultInherit;
+
+  /// No description provided for @defaultAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get defaultAllow;
+
+  /// No description provided for @defaultAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask'**
+  String get defaultAsk;
+
+  /// No description provided for @defaultDeny.
+  ///
+  /// In en, this message translates to:
+  /// **'Deny'**
+  String get defaultDeny;
+
+  /// No description provided for @autoApproveDefaultInherited.
+  ///
+  /// In en, this message translates to:
+  /// **'Default ({action})'**
+  String autoApproveDefaultInherited(Object action);
+
+  /// No description provided for @autoApproveGroupFileAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'File Access'**
+  String get autoApproveGroupFileAccess;
+
+  /// No description provided for @autoApproveGroupShell.
+  ///
+  /// In en, this message translates to:
+  /// **'Shell & Commands'**
+  String get autoApproveGroupShell;
+
+  /// No description provided for @autoApproveGroupNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network'**
+  String get autoApproveGroupNetwork;
+
+  /// No description provided for @autoApproveGroupAgents.
+  ///
+  /// In en, this message translates to:
+  /// **'Agents & Automation'**
+  String get autoApproveGroupAgents;
+
+  /// No description provided for @autoApproveCommandPatternLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Command pattern'**
+  String get autoApproveCommandPatternLabel;
+
+  /// No description provided for @autoApprovePathPatternLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Path pattern'**
+  String get autoApprovePathPatternLabel;
+
+  /// No description provided for @autoApproveCommandPatternHint.
+  ///
+  /// In en, this message translates to:
+  /// **'git *'**
+  String get autoApproveCommandPatternHint;
+
+  /// No description provided for @autoApprovePathPatternHint.
+  ///
+  /// In en, this message translates to:
+  /// **'/home/**/*.txt'**
+  String get autoApprovePathPatternHint;
+
+  /// No description provided for @autoApproveScopeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Global applies everywhere · Project overrides per workspace'**
+  String get autoApproveScopeHint;
+
+  /// No description provided for @autoApproveNoExceptions.
+  ///
+  /// In en, this message translates to:
+  /// **'No exceptions — uses default for all patterns'**
+  String get autoApproveNoExceptions;
+
+  /// No description provided for @autoApproveBrowseDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse directory'**
+  String get autoApproveBrowseDirectory;
+
+  /// No description provided for @autoApproveScopeProjectDisabledTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'No project configuration found. Create .chatorai/chatorai.json to enable project-scoped permissions.'**
+  String get autoApproveScopeProjectDisabledTooltip;
+
+  /// No description provided for @autoApproveActionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Action'**
+  String get autoApproveActionLabel;
+
+  /// No description provided for @autoApprovePatternHintFile.
+  ///
+  /// In en, this message translates to:
+  /// **'/home/user/project/** • ~/Documents/*'**
+  String get autoApprovePatternHintFile;
+
+  /// No description provided for @autoApprovePatternHintCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'npm run * • git status'**
+  String get autoApprovePatternHintCommand;
+
+  /// No description provided for @autoApproveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String autoApproveError(Object error);
+
+  /// No description provided for @settingsMcpSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Model Context Protocol tool servers'**
+  String get settingsMcpSubtitle;
+
+  /// No description provided for @mcpAuthNoAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'No Auth'**
+  String get mcpAuthNoAuth;
+
+  /// No description provided for @mcpAuthToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Token'**
+  String get mcpAuthToken;
+
+  /// No description provided for @mcpAuthOAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'OAuth 2.1'**
+  String get mcpAuthOAuth;
+
+  /// No description provided for @statsInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Input'**
+  String get statsInput;
+
+  /// No description provided for @statsOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Output'**
+  String get statsOutput;
+
+  /// No description provided for @statsCacheRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache Read'**
+  String get statsCacheRead;
 }
 
 class _AppLocalizationsDelegate

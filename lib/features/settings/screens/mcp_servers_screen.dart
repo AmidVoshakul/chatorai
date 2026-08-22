@@ -30,10 +30,10 @@ class McpServersScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<McpServersScreen> createState() => _McpServersScreenState();
+  ConsumerState<McpServersScreen> createState() => McpServersScreenState();
 }
 
-class _McpServersScreenState extends ConsumerState<McpServersScreen>
+class McpServersScreenState extends ConsumerState<McpServersScreen>
     with TickerProviderStateMixin {
   final _nameController = TextEditingController();
   final _commandController = TextEditingController();
@@ -84,26 +84,6 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
     _tabController.dispose();
     _screenTabController.dispose();
     super.dispose();
-  }
-
-  InputDecoration _fieldDecoration({
-    required String label,
-    required String hint,
-    required String helper,
-    required bool isDark,
-  }) {
-    final helperColor = isDark
-        ? ChatoraiColors.darkSecondaryTextColor.withAlpha(140)
-        : ChatoraiColors.secondaryTextColor.withAlpha(140);
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      hintMaxLines: 12,
-      helperText: helper,
-      helperStyle: TextStyle(fontSize: 11, color: helperColor),
-      helperMaxLines: 2,
-      contentPadding: const EdgeInsets.only(left: 12, right: 12, top: 2),
-    );
   }
 
   Future<void> showAddDialog() async {
@@ -159,7 +139,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                     if (_tabController.index == _tabForm) ...[
                       TextField(
                         controller: _nameController,
-                        decoration: _fieldDecoration(
+                        decoration: premiumFieldDecoration(
                           label: l10n.mcpNameLabel,
                           hint: l10n.mcpNameHint,
                           helper: l10n.mcpNameHelper,
@@ -218,7 +198,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                               fontFamily: 'monospace',
                               fontSize: 13,
                             ),
-                            decoration: _fieldDecoration(
+                            decoration: premiumFieldDecoration(
                               label: l10n.mcpRawLabel,
                               hint: mcpRawExample,
                               helper: l10n.mcpRawHelper,
@@ -238,7 +218,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                             if (_isRemote)
                               TextField(
                                 controller: _urlController,
-                                decoration: _fieldDecoration(
+                                decoration: premiumFieldDecoration(
                                   label: l10n.mcpUrlLabel,
                                   hint: l10n.mcpUrlHint,
                                   helper: l10n.mcpUrlHelper,
@@ -248,7 +228,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                             else
                               TextField(
                                 controller: _commandController,
-                                decoration: _fieldDecoration(
+                                decoration: premiumFieldDecoration(
                                   label: l10n.mcpCommandLabel,
                                   hint: l10n.mcpCommandHint,
                                   helper: l10n.mcpCommandHelper,
@@ -260,7 +240,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                               if (_authType == AuthType.token) ...[
                                 TextField(
                                   controller: _tokenController,
-                                  decoration: _fieldDecoration(
+                                  decoration: premiumFieldDecoration(
                                     label: l10n.mcpTokenLabel,
                                     hint: l10n.mcpTokenHint,
                                     helper: l10n.mcpTokenHelper,
@@ -272,7 +252,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                               if (_authType == AuthType.oauth) ...[
                                 TextField(
                                   controller: _oauthClientIdController,
-                                  decoration: _fieldDecoration(
+                                  decoration: premiumFieldDecoration(
                                     label: l10n.mcpOAuthClientIdLabel,
                                     hint: l10n.mcpOAuthClientIdHint,
                                     helper: '',
@@ -282,7 +262,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                                 const SizedBox(height: 8),
                                 TextField(
                                   controller: _oauthClientSecretController,
-                                  decoration: _fieldDecoration(
+                                  decoration: premiumFieldDecoration(
                                     label: l10n.mcpOAuthClientSecretLabel,
                                     hint: l10n.mcpOAuthClientSecretHint,
                                     helper: '',
@@ -292,7 +272,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                                 const SizedBox(height: 8),
                                 TextField(
                                   controller: _oauthScopeController,
-                                  decoration: _fieldDecoration(
+                                  decoration: premiumFieldDecoration(
                                     label: l10n.mcpOAuthScopeLabel,
                                     hint: l10n.mcpOAuthScopeHint,
                                     helper: '',
@@ -306,24 +286,24 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                                   Expanded(
                                     child: DropdownButtonFormField<AuthType>(
                                       initialValue: _authType,
-                                      decoration: _fieldDecoration(
+                                      decoration: premiumFieldDecoration(
                                         label: l10n.mcpAuthTypeLabel,
                                         hint: '',
                                         helper: l10n.mcpAuthTypeHelper,
                                         isDark: isDark,
                                       ),
-                                      items: const [
+                                      items: [
                                         DropdownMenuItem(
                                           value: AuthType.noAuth,
-                                          child: Text('No Auth'),
+                                          child: Text(l10n.mcpAuthNoAuth),
                                         ),
                                         DropdownMenuItem(
                                           value: AuthType.token,
-                                          child: Text('Token'),
+                                          child: Text(l10n.mcpAuthToken),
                                         ),
                                         DropdownMenuItem(
                                           value: AuthType.oauth,
-                                          child: Text('OAuth 2.1'),
+                                          child: Text(l10n.mcpAuthOAuth),
                                         ),
                                       ],
                                       onChanged: (v) =>
@@ -338,7 +318,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                                 maxLines: 4,
                                 minLines: 1,
                                 keyboardType: TextInputType.multiline,
-                                decoration: _fieldDecoration(
+                                decoration: premiumFieldDecoration(
                                   label: l10n.mcpEnvLabel,
                                   hint: l10n.mcpEnvHint,
                                   helper: l10n.mcpEnvHelper,
@@ -512,7 +492,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                     TextField(
                       controller: _nameController,
                       enabled: false,
-                      decoration: _fieldDecoration(
+                      decoration: premiumFieldDecoration(
                         label: l10n.mcpNameLabel,
                         hint: '',
                         helper: l10n.mcpNameHelper,
@@ -528,7 +508,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                     if (_isRemote)
                       TextField(
                         controller: _urlController,
-                        decoration: _fieldDecoration(
+                        decoration: premiumFieldDecoration(
                           label: l10n.mcpUrlLabel,
                           hint: l10n.mcpUrlHint,
                           helper: l10n.mcpUrlHelper,
@@ -538,7 +518,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                     else
                       TextField(
                         controller: _commandController,
-                        decoration: _fieldDecoration(
+                        decoration: premiumFieldDecoration(
                           label: l10n.mcpCommandLabel,
                           hint: l10n.mcpCommandHint,
                           helper: l10n.mcpCommandHelper,
@@ -550,7 +530,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                       if (_authType == AuthType.token)
                         TextField(
                           controller: _tokenController,
-                          decoration: _fieldDecoration(
+                          decoration: premiumFieldDecoration(
                             label: l10n.mcpTokenLabel,
                             hint: l10n.mcpTokenHint,
                             helper: l10n.mcpTokenHelper,
@@ -562,7 +542,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                       if (_authType == AuthType.oauth) ...[
                         TextField(
                           controller: _oauthClientIdController,
-                          decoration: _fieldDecoration(
+                          decoration: premiumFieldDecoration(
                             label: l10n.mcpOAuthClientIdLabel,
                             hint: l10n.mcpOAuthClientIdHint,
                             helper: '',
@@ -572,7 +552,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                         const SizedBox(height: 8),
                         TextField(
                           controller: _oauthClientSecretController,
-                          decoration: _fieldDecoration(
+                          decoration: premiumFieldDecoration(
                             label: l10n.mcpOAuthClientSecretLabel,
                             hint: l10n.mcpOAuthClientSecretHint,
                             helper: '',
@@ -582,7 +562,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                         const SizedBox(height: 8),
                         TextField(
                           controller: _oauthScopeController,
-                          decoration: _fieldDecoration(
+                          decoration: premiumFieldDecoration(
                             label: l10n.mcpOAuthScopeLabel,
                             hint: l10n.mcpOAuthScopeHint,
                             helper: '',
@@ -593,24 +573,24 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                       ],
                       DropdownButtonFormField<AuthType>(
                         initialValue: _authType,
-                        decoration: _fieldDecoration(
+                        decoration: premiumFieldDecoration(
                           label: l10n.mcpAuthTypeLabel,
                           hint: '',
                           helper: l10n.mcpAuthTypeHelper,
                           isDark: isDark,
                         ),
-                        items: const [
+                        items: [
                           DropdownMenuItem(
                             value: AuthType.noAuth,
-                            child: Text('No Auth'),
+                            child: Text(l10n.mcpAuthNoAuth),
                           ),
                           DropdownMenuItem(
                             value: AuthType.token,
-                            child: Text('Token'),
+                            child: Text(l10n.mcpAuthToken),
                           ),
                           DropdownMenuItem(
                             value: AuthType.oauth,
-                            child: Text('OAuth 2.1'),
+                            child: Text(l10n.mcpAuthOAuth),
                           ),
                         ],
                         onChanged: (v) => setLocal(() => _authType = v!),
@@ -621,7 +601,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                         maxLines: 4,
                         minLines: 1,
                         keyboardType: TextInputType.multiline,
-                        decoration: _fieldDecoration(
+                        decoration: premiumFieldDecoration(
                           label: l10n.mcpEnvLabel,
                           hint: l10n.mcpEnvHint,
                           helper: l10n.mcpEnvHelper,
@@ -825,17 +805,9 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
         ),
     ];
 
-    final tabBar = TabBar(
+    final tabBar = unifiedTabBar(
       controller: _screenTabController,
-      indicatorColor: ChatoraiColors.orange,
-      indicatorSize: TabBarIndicatorSize.tab,
-      dividerColor: isDark
-          ? ChatoraiColors.darkBorderColor
-          : ChatoraiColors.lightBorderColor,
-      labelColor: isDark ? ChatoraiColors.pureWhite : ChatoraiColors.pureBlack,
-      unselectedLabelColor: isDark
-          ? ChatoraiColors.darkSecondaryTextColor
-          : ChatoraiColors.secondaryTextColor,
+      isDark: isDark,
       tabs: [
         Tab(text: l10n.mcpMarketplaceTab),
         Tab(text: l10n.mcpInstalledTab),
@@ -866,56 +838,28 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
             };
             return SingleChildScrollView(
               padding: const EdgeInsets.all(ChatoraiSpacing.lg),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxColumns = widget.embedded ? 2 : 3;
-                  final crossAxisCount = constraints.maxWidth >= 720
-                      ? maxColumns
-                      : constraints.maxWidth >= 480
-                      ? 2
-                      : 1;
-                  final spacing = ChatoraiSpacing.md;
-                  final cardWidth =
-                      (constraints.maxWidth - spacing * (crossAxisCount - 1)) /
-                      crossAxisCount;
-                  final children = <Widget>[
-                    for (final name in names)
-                      SizedBox(
-                        width: cardWidth,
-                        child: _ServerCard(
-                          name: name,
-                          config: state.servers[name]!,
-                          scopes: state.serverScopes(name),
-                          status: statuses[name],
-                          isDark: isDark,
-                          onToggle: (enabled) => ref
-                              .read(mcpManagementProvider.notifier)
-                              .setEnabled(name, enabled),
-                          onRemove: () =>
-                              _confirmRemove(name, state.serverScopes(name)),
-                          onEdit: () => _showEditDialog(
-                            name,
-                            state.servers[name]!,
-                            state.serverScopes(name),
-                          ),
-                        ),
+              child: CardGrid(
+                maxColumns: widget.embedded ? 2 : 3,
+                children: [
+                  for (final name in names)
+                    _ServerCard(
+                      name: name,
+                      config: state.servers[name]!,
+                      scopes: state.serverScopes(name),
+                      status: statuses[name],
+                      isDark: isDark,
+                      onToggle: (enabled) => ref
+                          .read(mcpManagementProvider.notifier)
+                          .setEnabled(name, enabled),
+                      onRemove: () =>
+                          _confirmRemove(name, state.serverScopes(name)),
+                      onEdit: () => _showEditDialog(
+                        name,
+                        state.servers[name]!,
+                        state.serverScopes(name),
                       ),
-                  ];
-                  final remainder = names.length % crossAxisCount;
-                  if (remainder != 0) {
-                    children.addAll(
-                      List.generate(
-                        crossAxisCount - remainder,
-                        (_) => SizedBox(width: cardWidth),
-                      ),
-                    );
-                  }
-                  return Wrap(
-                    spacing: spacing,
-                    runSpacing: spacing,
-                    children: children,
-                  );
-                },
+                    ),
+                ],
               ),
             );
           },
@@ -946,21 +890,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
     required TabBar tabBar,
     required bool isDark,
   }) {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(48),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: isDark
-                  ? ChatoraiColors.darkBorderColor
-                  : ChatoraiColors.lightBorderColor,
-            ),
-          ),
-        ),
-        child: tabBar,
-      ),
-    );
+    return unifiedTabContainer(tabBar: tabBar, isDark: isDark);
   }
 
   Widget _buildMarketplace(bool isDark, AppLocalizations l10n) {
@@ -988,38 +918,25 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
         Padding(
           padding: const EdgeInsets.fromLTRB(
             ChatoraiSpacing.lg,
-            ChatoraiSpacing.md,
+            ChatoraiSpacing.lg,
             ChatoraiSpacing.lg,
             ChatoraiSpacing.sm,
           ),
           child: TextField(
             controller: _searchController,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
+            decoration: marketplaceSearchDecoration(
+              isDark: isDark,
               hintText: l10n.mcpMarketplaceSearchHint,
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-                borderSide: BorderSide(
-                  color: isDark
-                      ? ChatoraiColors.darkInputBorder
-                      : ChatoraiColors.inputBorder,
-                ),
-              ),
             ),
           ),
         ),
         SizedBox(
-          height: 40,
+          height: 28,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.lg),
             itemCount: categories.length + 1,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            separatorBuilder: (_, _) => const SizedBox(width: 6),
             itemBuilder: (context, index) {
               if (index == 0) {
                 return CategoryChip(
@@ -1060,60 +977,30 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                 )
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(ChatoraiSpacing.lg),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final crossCount = constraints.maxWidth >= 720
-                          ? 3
-                          : constraints.maxWidth >= 480
-                          ? 2
-                          : 1;
-                      final spacing = ChatoraiSpacing.md;
-                      final cardWidth =
-                          (constraints.maxWidth - spacing * (crossCount - 1)) /
-                          crossCount;
-                      final children = <Widget>[
-                        for (final entry in visible)
-                          SizedBox(
-                            width: cardWidth,
-                            child: _MarketCard(
-                              entry: entry,
-                              isDark: isDark,
-                              supportsProject: supportsProject,
-                              installedGlobal: globalServers.containsKey(
-                                entry.id,
-                              ),
-                              installedProject: projectServers.containsKey(
-                                entry.id,
-                              ),
-                              expanded: _expanded.contains(entry.id),
-                              description: entry.description(l10n),
-                              onToggleExpand: () => setState(() {
-                                if (_expanded.contains(entry.id)) {
-                                  _expanded.remove(entry.id);
-                                } else {
-                                  _expanded.add(entry.id);
-                                }
-                              }),
-                              onInstall: (scope) =>
-                                  _installFromMarketplace(entry, scope),
-                            ),
+                  child: CardGrid(
+                    children: [
+                      for (final entry in visible)
+                        _MarketCard(
+                          entry: entry,
+                          isDark: isDark,
+                          supportsProject: supportsProject,
+                          installedGlobal: globalServers.containsKey(entry.id),
+                          installedProject: projectServers.containsKey(
+                            entry.id,
                           ),
-                      ];
-                      final remainder = visible.length % crossCount;
-                      if (remainder != 0) {
-                        children.addAll(
-                          List.generate(
-                            crossCount - remainder,
-                            (_) => SizedBox(width: cardWidth),
-                          ),
-                        );
-                      }
-                      return Wrap(
-                        spacing: spacing,
-                        runSpacing: spacing,
-                        children: children,
-                      );
-                    },
+                          expanded: _expanded.contains(entry.id),
+                          description: entry.description(l10n),
+                          onToggleExpand: () => setState(() {
+                            if (_expanded.contains(entry.id)) {
+                              _expanded.remove(entry.id);
+                            } else {
+                              _expanded.add(entry.id);
+                            }
+                          }),
+                          onInstall: (scope) =>
+                              _installFromMarketplace(entry, scope),
+                        ),
+                    ],
                   ),
                 ),
         ),
@@ -1195,7 +1082,7 @@ class _McpServersScreenState extends ConsumerState<McpServersScreen>
                   TextField(
                     controller: controller,
                     obscureText: true,
-                    decoration: _fieldDecoration(
+                    decoration: premiumFieldDecoration(
                       label: l10n.mcpTokenInputLabel,
                       hint: l10n.mcpTokenInputHint,
                       helper: l10n.mcpTokenInputHelper,
@@ -1261,15 +1148,7 @@ class _ServerCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(ChatoraiSpacing.lg),
-      decoration: BoxDecoration(
-        color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-        border: Border.all(
-          color: isDark
-              ? ChatoraiColors.darkInputBorder
-              : ChatoraiColors.inputBorder,
-        ),
-      ),
+      decoration: premiumCard(isDark),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1493,15 +1372,7 @@ class _EmptyState extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.all(ChatoraiSpacing.lg),
         padding: const EdgeInsets.all(ChatoraiSpacing.xxl),
-        decoration: BoxDecoration(
-          color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
-          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-          border: Border.all(
-            color: isDark
-                ? ChatoraiColors.darkInputBorder
-                : ChatoraiColors.inputBorder,
-          ),
-        ),
+        decoration: premiumCard(isDark),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1607,22 +1478,7 @@ class _MarketCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
-      decoration: BoxDecoration(
-        color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
-        border: Border.all(
-          color: isDark
-              ? ChatoraiColors.darkInputBorder
-              : ChatoraiColors.inputBorder,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(isDark ? 40 : 18),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: premiumCard(isDark),
       child: Material(
         color: Colors.transparent,
         child: InkWell(

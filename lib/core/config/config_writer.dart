@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:chatorai/core/config/chatorai_schema.dart';
 import 'package:chatorai/core/config/config_loader.dart';
+import 'package:chatorai/core/config/file_lock_service.dart';
 import 'package:chatorai/core/mcp/mcp_config.dart';
 import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:json_schema/json_schema.dart';
@@ -182,62 +183,52 @@ class ConfigWriter {
   ) async {
     _validate(data);
 
-    final file = File(path);
-    final previous = await file.exists() ? await file.readAsString() : null;
+    await FileLockService.withLock(path, () async {
+      final file = File(path);
+      final previous = await file.exists() ? await file.readAsString() : null;
 
-    await XdgPaths.ensureDir(p.dirname(path));
-    final encoded = JsonEncoder.withIndent('  ').convert(data);
+      await XdgPaths.ensureDir(p.dirname(path));
+      final encoded = JsonEncoder.withIndent('  ').convert(data);
 
-    final tempPath = '$path.tmp';
-    final tempFile = File(tempPath);
-    try {
-      await tempFile.writeAsString(encoded);
-    } catch (e) {
+      final tempPath = '$path.tmp';
+      final tempFile = File(tempPath);
       try {
-        if (await tempFile.exists()) await tempFile.delete();
-      } catch (_) {}
-      rethrow;
-    }
-
-    try {
-      await tempFile.rename(path);
-    } catch (e) {
-      try {
-        if (await tempFile.exists()) await tempFile.delete();
-      } catch (_) {}
-      rethrow;
-    }
-
-    try {
-      final reread = json.decode(await file.readAsString());
-      if (reread is Map<String, dynamic>) {
-        _validate(reread);
-      } else {
-        throw const FormatException('top-level JSON must be an object');
-      }
-    } on Exception catch (e) {
-      if (previous != null) {
-        await file.writeAsString(previous);
-      } else {
+        await tempFile.writeAsString(encoded);
+      } catch (e) {
         try {
-          await file.delete();
+          if (await tempFile.exists()) await tempFile.delete();
         } catch (_) {}
+        rethrow;
       }
-      throw ConfigValidationError('Corrupted write to $path: $e');
-    }
-  }
 
-  /// Resolves the concrete file path to write to.
-  ///
-  /// When [configPath] is provided it is used verbatim (handy for tests and
-  /// for callers that already know the target file). Otherwise the global
-  /// user config is used — the same file [ConfigManager.loadConfig] reads by
-  /// default — so the TUI and the scriptable subcommands always operate on
-  /// the same on-disk `chatorai.json`.
-  static Future<String> _targetPath({
-    bool global = true,
-    String? configPath,
-  }) async => configPath ?? await resolveConfigPath(global: global);
+      try {
+        await tempFile.rename(path);
+      } catch (e) {
+        try {
+          if (await tempFile.exists()) await tempFile.delete();
+        } catch (_) {}
+        rethrow;
+      }
+
+      try {
+        final reread = json.decode(await file.readAsString());
+        if (reread is Map<String, dynamic>) {
+          _validate(reread);
+        } else {
+          throw const FormatException('top-level JSON must be an object');
+        }
+      } on Exception catch (e) {
+        if (previous != null) {
+          await file.writeAsString(previous);
+        } else {
+          try {
+            await file.delete();
+          } catch (_) {}
+        }
+        throw ConfigValidationError('Corrupted write to $path: $e');
+      }
+    });
+  }
 
   /// Reads the existing MCP configuration from [config], tolerating both the
   /// flat `mcp.<name>` layout and the nested `mcp.servers.*` layout. Always
@@ -255,7 +246,7 @@ class ConfigWriter {
     bool global = true,
     String? configPath,
   }) async {
-    final path = await _targetPath(global: global, configPath: configPath);
+    final path = configPath ?? await resolveConfigPath(global: global);
     final config = await readRawConfig(path);
     final mcp = _readMcp(config);
     final servers = {...mcp.servers, name: cfg};
@@ -272,7 +263,7 @@ class ConfigWriter {
     bool global = true,
     String? configPath,
   }) async {
-    final path = await _targetPath(global: global, configPath: configPath);
+    final path = configPath ?? await resolveConfigPath(global: global);
     final config = await readRawConfig(path);
     final mcp = _readMcp(config);
     if (!mcp.servers.containsKey(name)) return;
@@ -320,7 +311,7 @@ class ConfigWriter {
     bool global = true,
     String? configPath,
   }) async {
-    final path = await _targetPath(global: global, configPath: configPath);
+    final path = configPath ?? await resolveConfigPath(global: global);
     final config = await readRawConfig(path);
     final entries = _readInstructions(config);
     if (entries.contains(entry)) return;
@@ -336,7 +327,7 @@ class ConfigWriter {
     bool global = true,
     String? configPath,
   }) async {
-    final path = await _targetPath(global: global, configPath: configPath);
+    final path = configPath ?? await resolveConfigPath(global: global);
     final config = await readRawConfig(path);
     final entries = _readInstructions(config);
     if (!entries.contains(entry)) return;
@@ -356,7 +347,7 @@ class ConfigWriter {
     bool global = true,
     String? configPath,
   }) async {
-    final path = await _targetPath(global: global, configPath: configPath);
+    final path = configPath ?? await resolveConfigPath(global: global);
     final config = await readRawConfig(path);
     final entries = _readInstructions(config);
 
@@ -381,7 +372,7 @@ class ConfigWriter {
     bool global = true,
     String? configPath,
   }) async {
-    final path = await _targetPath(global: global, configPath: configPath);
+    final path = configPath ?? await resolveConfigPath(global: global);
     final config = await readRawConfig(path);
     final mcp = _readMcp(config);
     final existing = mcp.servers[name];
@@ -394,6 +385,25 @@ class ConfigWriter {
       servers: servers,
       defaultTimeout: mcp.defaultTimeout,
     ).toJson();
+    await writeRawConfig(path, config);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Permission section
+  // ---------------------------------------------------------------------------
+
+  /// Replaces the `permission` section in [config] with [section].
+  ///
+  /// Writes to the global user config by default, or to a project-scoped
+  /// `chatorai.json` when [global] is `false` or [configPath] is provided.
+  static Future<void> upsertPermissionSection(
+    Map<String, dynamic> section, {
+    bool global = true,
+    String? configPath,
+  }) async {
+    final path = configPath ?? await resolveConfigPath(global: global);
+    final config = await readRawConfig(path);
+    config['permission'] = section;
     await writeRawConfig(path, config);
   }
 }

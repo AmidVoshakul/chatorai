@@ -4,15 +4,12 @@ import 'dart:io';
 import 'package:dartdiff/dartdiff.dart';
 import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/core/tools/tool.dart';
-import 'package:chatorai/shared/utils/path_sandbox.dart';
 import 'package:chatorai/core/lsp/lsp_service.dart';
 import 'package:chatorai/core/tools/lsp_diagnostics_format.dart';
 import 'package:chatorai/core/format/format_service.dart';
 import 'package:chatorai/core/session/file_snapshot_service.dart';
-import 'package:chatorai/core/tools/filesystem_boundary.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
-import 'package:path/path.dart' as p;
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/core/tools/built_in/tool_path_resolve.dart';
 
 enum PatchOpType { add, update, delete }
 
@@ -255,21 +252,13 @@ Future<ToolOutput> _executeEnvelope(
 
   try {
     for (final op in ops) {
-      final safePath = resolveSafePath(op.path);
-      final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
-      final resolution = boundary.resolve(safePath);
-      if (resolution.isExternal) {
-        await ctx.ask(
-          permission: 'external_directory',
-          patterns: [resolution.path],
-          always: [resolution.path],
-          metadata: {
-            'filepath': resolution.path,
-            'parentDir': p.dirname(resolution.path),
-            'tool': 'apply_patch',
-          },
-        );
-      }
+      final resolved = await resolveToolPath(
+        ctx: ctx,
+        userPath: op.path,
+        toolName: 'apply_patch',
+      );
+      if (resolved.isError) return resolved.error!;
+      final safePath = resolved.path!;
       await ctx.ask(permission: 'edit', patterns: [safePath]);
 
       switch (op.type) {
@@ -363,21 +352,13 @@ Future<ToolOutput> _executeSingleFile(
       metadata: {'error': true},
     );
   }
-  final safePath = resolveSafePath(rawPath);
-  final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
-  final resolution = boundary.resolve(safePath);
-  if (resolution.isExternal) {
-    await ctx.ask(
-      permission: 'external_directory',
-      patterns: [resolution.path],
-      always: [resolution.path],
-      metadata: {
-        'filepath': resolution.path,
-        'parentDir': p.dirname(resolution.path),
-        'tool': 'apply_patch',
-      },
-    );
-  }
+  final resolved = await resolveToolPath(
+    ctx: ctx,
+    userPath: rawPath,
+    toolName: 'apply_patch',
+  );
+  if (resolved.isError) return resolved.error!;
+  final safePath = resolved.path!;
   await ctx.ask(permission: 'edit', patterns: [safePath]);
 
   final file = File(safePath);
@@ -547,7 +528,14 @@ Future<void> _applyUpdate(
   }
 
   if (op.moveTo != null) {
-    final destPath = resolveSafePath(op.moveTo!);
+    final destResolved = await resolveToolPath(
+      ctx: ctx,
+      userPath: op.moveTo!,
+      toolName: 'apply_patch',
+    );
+    if (destResolved.isError) throw Exception(destResolved.error!.output);
+    final destPath = destResolved.path!;
+    await ctx.ask(permission: 'edit', patterns: [destPath]);
     if (destPath == safePath) {
       await file.writeAsString(result, encoding: utf8);
       applied.add(_AppliedChange(safePath, originalContent, true));

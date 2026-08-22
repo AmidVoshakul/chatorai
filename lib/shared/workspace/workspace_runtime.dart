@@ -1,5 +1,12 @@
 import 'dart:io';
 
+/// Legacy global runtime CWD.
+///
+/// This global is retained for backward compatibility with existing utilities
+/// that have not yet been migrated to Riverpod. New code should read the
+/// current workspace path via `ref.watch(workspaceProvider).currentPath` and
+/// avoid mutating this global directly. The [WorkspaceSwitcher] keeps this
+/// global in sync with [Directory.current] during workspace switches.
 Directory workspaceRuntimeCurrent = Directory.current;
 
 void setRuntimeCwd(String path) {

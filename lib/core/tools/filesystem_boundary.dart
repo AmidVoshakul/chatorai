@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import '../permission/rule.dart';
 
 class PathResolution {
@@ -74,7 +73,7 @@ class FilesystemBoundary {
     final expanded = _expandTilde(path);
     final absolute = p.isAbsolute(expanded)
         ? expanded
-        : p.join(workspaceRuntimeCurrent.path, expanded);
+        : p.join(workspace.path, expanded);
     return p.normalize(absolute);
   }
 

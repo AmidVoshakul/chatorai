@@ -91,8 +91,8 @@ void main() {
       expect(result.output, equals('ok'));
       expect(asks.length, equals(1));
       expect(asks.first.permission, equals('external_directory'));
-      expect(asks.first.patterns, contains('/tmp/external_file.txt'));
-      expect(asks.first.always, contains('/tmp/external_file.txt'));
+      expect(asks.first.patterns, contains('/tmp/*'));
+      expect(asks.first.always, contains('/tmp/*'));
       expect(asks.first.metadata['filepath'], equals('/tmp/external_file.txt'));
       expect(asks.first.metadata['rule'], equals('ask'));
     });

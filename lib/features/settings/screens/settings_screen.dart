@@ -1,4 +1,5 @@
 import 'package:chatorai/features/settings/screens/agents_instructions_screen.dart';
+import 'package:chatorai/features/settings/screens/auto_approve_screen.dart';
 import 'package:chatorai/features/settings/screens/config_screen.dart';
 import 'package:chatorai/features/settings/screens/mcp_servers_screen.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_screen.dart';
@@ -44,7 +45,6 @@ class SettingsScreen extends ConsumerWidget {
             SettingsSectionHeader(title: localizations.providerConfiguration),
             const SizedBox(height: ChatoraiSpacing.lg),
             SettingsSelectionCard(
-              context: context,
               icon: Icons.api,
               title: localizations.providers,
               subtitle: localizations.manageProviders,
@@ -57,7 +57,6 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: ChatoraiSpacing.xl),
             SettingsSelectionCard(
-              context: context,
               icon: Icons.bar_chart,
               title: localizations.usageStatistics,
               subtitle: localizations.totalSessions,
@@ -70,7 +69,6 @@ class SettingsScreen extends ConsumerWidget {
             SettingsSectionHeader(title: localizations.configuration),
             const SizedBox(height: ChatoraiSpacing.lg),
             SettingsSelectionCard(
-              context: context,
               icon: Icons.settings,
               title: localizations.configuration,
               subtitle: localizations.configuration,
@@ -81,10 +79,9 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: ChatoraiSpacing.xl),
             SettingsSelectionCard(
-              context: context,
               icon: Icons.extension,
               title: localizations.mcpServers,
-              subtitle: 'Manage Model Context Protocol tool servers',
+              subtitle: localizations.settingsMcpSubtitle,
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const McpServersScreen()),
@@ -92,7 +89,6 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: ChatoraiSpacing.xl),
             SettingsSelectionCard(
-              context: context,
               icon: Icons.description_outlined,
               title: localizations.agentsInstructions,
               subtitle: localizations.agentsInstructionsSubtitle,
@@ -105,7 +101,6 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: ChatoraiSpacing.md),
             SettingsSelectionCard(
-              context: context,
               icon: Icons.auto_awesome_outlined,
               title: localizations.skillsTitle,
               subtitle: localizations.skillsSubtitle,
@@ -115,12 +110,21 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: ChatoraiSpacing.xl),
+            SettingsSelectionCard(
+              icon: Icons.check_circle_outline,
+              title: localizations.autoApproveTitle,
+              subtitle: localizations.autoApproveSubtitle,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AutoApproveScreen()),
+              ),
+            ),
+            const SizedBox(height: ChatoraiSpacing.xl),
             const SettingsAppearanceSection(),
             const SizedBox(height: ChatoraiSpacing.xl),
             const SettingsAccessibilitySection(),
             const SizedBox(height: ChatoraiSpacing.xl),
             SettingsSelectionCard(
-              context: context,
               icon: Icons.info_outline,
               title: localizations.appInfo,
               subtitle: '',

@@ -214,7 +214,7 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
       LogTags.permission.logInfo(
         'PermissionOverlay._onRequest: Reply=$reply for tool=${req.toolName}',
       );
-      service.reply(req.id, reply);
+      await service.reply(req.id, reply);
     }
   }
 

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/core/stats/stats_service.dart';
-import 'package:chatorai/features/sessions/providers/session_providers.dart';
+import 'package:chatorai/features/settings/providers/stats_provider.dart';
+import 'package:chatorai/features/settings/widgets/premium_blocks.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 
@@ -15,62 +16,99 @@ class StatsScreen extends ConsumerWidget {
     final localizations = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final body = FutureBuilder<SessionStats>(
-      future: _loadStats(ref),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(
-            child: Text(localizations.statsError(snapshot.error.toString())),
-          );
-        }
-        final stats = snapshot.data;
-        if (stats == null) {
-          return Center(child: Text(localizations.noStatsAvailable));
-        }
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(ChatoraiSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _StatCardsRow(
-                isDark: isDark,
-                stats: stats,
-                localizations: localizations,
-              ),
-              const SizedBox(height: ChatoraiSpacing.xl),
-              _PremiumCard(
-                isDark: isDark,
-                title: localizations.totalTokens,
-                child: _TokensSection(stats: stats, isDark: isDark),
-              ),
-              const SizedBox(height: ChatoraiSpacing.lg),
-              if (stats.toolUsage.isNotEmpty)
-                _PremiumCard(
-                  isDark: isDark,
-                  title: localizations.toolUsage,
-                  child: _ToolUsageSection(stats: stats, isDark: isDark),
-                ),
-              if (stats.toolUsage.isNotEmpty)
-                const SizedBox(height: ChatoraiSpacing.lg),
-              if (stats.modelUsage.isNotEmpty)
-                _PremiumCard(
-                  isDark: isDark,
-                  title: localizations.modelUsage,
-                  child: _ModelUsageSection(
-                    stats: stats,
+    final body = ref
+        .watch(statsProvider)
+        .when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) =>
+              Center(child: Text(localizations.statsError(error.toString()))),
+          data: (stats) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(ChatoraiSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _StatCardsRow(
                     isDark: isDark,
+                    stats: stats,
                     localizations: localizations,
                   ),
-                ),
-            ],
-          ),
+                  const SizedBox(height: ChatoraiSpacing.xl),
+                  PremiumCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          localizations.totalTokens,
+                          style: TextStyle(
+                            fontSize: ChatoraiFontSizes.lg,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? ChatoraiColors.pureWhite
+                                : ChatoraiColors.pureBlack,
+                          ),
+                        ),
+                        const SizedBox(height: ChatoraiSpacing.md),
+                        _TokensSection(
+                          stats: stats,
+                          isDark: isDark,
+                          localizations: localizations,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: ChatoraiSpacing.lg),
+                  if (stats.toolUsage.isNotEmpty)
+                    PremiumCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            localizations.toolUsage,
+                            style: TextStyle(
+                              fontSize: ChatoraiFontSizes.lg,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? ChatoraiColors.pureWhite
+                                  : ChatoraiColors.pureBlack,
+                            ),
+                          ),
+                          const SizedBox(height: ChatoraiSpacing.md),
+                          _ToolUsageSection(stats: stats, isDark: isDark),
+                        ],
+                      ),
+                    ),
+                  if (stats.toolUsage.isNotEmpty)
+                    const SizedBox(height: ChatoraiSpacing.lg),
+                  if (stats.modelUsage.isNotEmpty)
+                    PremiumCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            localizations.modelUsage,
+                            style: TextStyle(
+                              fontSize: ChatoraiFontSizes.lg,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? ChatoraiColors.pureWhite
+                                  : ChatoraiColors.pureBlack,
+                            ),
+                          ),
+                          const SizedBox(height: ChatoraiSpacing.md),
+                          _ModelUsageSection(
+                            stats: stats,
+                            isDark: isDark,
+                            localizations: localizations,
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
         );
-      },
-    );
 
     if (embedded) return body;
 
@@ -88,11 +126,6 @@ class StatsScreen extends ConsumerWidget {
       body: body,
     );
   }
-
-  Future<SessionStats> _loadStats(WidgetRef ref) async {
-    final db = await ref.read(sessionDatabaseProvider.future);
-    return StatsAggregator(db).aggregate();
-  }
 }
 
 class _StatCardsRow extends StatelessWidget {
@@ -108,201 +141,114 @@ class _StatCardsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= 720) {
-          return Row(
+    return CardGrid(
+      children: [
+        PremiumCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _StatCard(
-                  isDark: isDark,
-                  icon: Icons.chat_bubble_outline,
-                  label: localizations.totalSessions,
-                  value: stats.totalSessions.toString(),
+              Icon(
+                Icons.chat_bubble_outline,
+                size: ChatoraiIconSizes.lg,
+                color: ChatoraiColors.orange,
+              ),
+              const SizedBox(height: ChatoraiSpacing.md),
+              Text(
+                stats.totalSessions.toString(),
+                style: TextStyle(
+                  fontSize: ChatoraiFontSizes.xxl,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? ChatoraiColors.pureWhite
+                      : ChatoraiColors.pureBlack,
+                  height: 1.1,
                 ),
               ),
-              const SizedBox(width: ChatoraiSpacing.md),
-              Expanded(
-                child: _StatCard(
-                  isDark: isDark,
-                  icon: Icons.message_outlined,
-                  label: localizations.totalMessages,
-                  value: _formatNumber(stats.totalMessages),
-                ),
-              ),
-              const SizedBox(width: ChatoraiSpacing.md),
-              Expanded(
-                child: _StatCard(
-                  isDark: isDark,
-                  icon: Icons.calendar_today_outlined,
-                  label: localizations.days,
-                  value: stats.days.toString(),
+              const SizedBox(height: ChatoraiSpacing.xs),
+              Text(
+                localizations.totalSessions,
+                style: TextStyle(
+                  fontSize: ChatoraiFontSizes.sm,
+                  color: isDark
+                      ? ChatoraiColors.darkSecondaryTextColor
+                      : ChatoraiColors.secondaryTextColor,
+                  height: 1.3,
                 ),
               ),
             ],
-          );
-        }
-        return Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    isDark: isDark,
-                    icon: Icons.chat_bubble_outline,
-                    label: localizations.totalSessions,
-                    value: stats.totalSessions.toString(),
-                  ),
-                ),
-                const SizedBox(width: ChatoraiSpacing.md),
-                Expanded(
-                  child: _StatCard(
-                    isDark: isDark,
-                    icon: Icons.message_outlined,
-                    label: localizations.totalMessages,
-                    value: _formatNumber(stats.totalMessages),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: ChatoraiSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    isDark: isDark,
-                    icon: Icons.calendar_today_outlined,
-                    label: localizations.days,
-                    value: stats.days.toString(),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final bool isDark;
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _StatCard({
-    required this.isDark,
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(ChatoraiSpacing.lg),
-      decoration: BoxDecoration(
-        gradient: isDark
-            ? const LinearGradient(
-                colors: [Color(0xFF1E1E1E), Color(0xFF262626)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : const LinearGradient(
-                colors: [Color(0xFFFAFAFA), Color(0xFFF5F5F5)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-        border: Border.all(
-          color: isDark
-              ? ChatoraiColors.darkInputBorder
-              : ChatoraiColors.inputBorder,
-        ),
-        boxShadow: isDark
-            ? ChatoraiShadows.darkShadow
-            : ChatoraiShadows.cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: ChatoraiIconSizes.lg, color: ChatoraiColors.orange),
-          const SizedBox(height: ChatoraiSpacing.md),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: ChatoraiFontSizes.xxl,
-              fontWeight: FontWeight.w700,
-              color: isDark
-                  ? ChatoraiColors.pureWhite
-                  : ChatoraiColors.pureBlack,
-              height: 1.1,
-            ),
           ),
-          const SizedBox(height: ChatoraiSpacing.xs),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: ChatoraiFontSizes.sm,
-              color: isDark
-                  ? ChatoraiColors.darkSecondaryTextColor
-                  : ChatoraiColors.secondaryTextColor,
-              height: 1.3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PremiumCard extends StatelessWidget {
-  final bool isDark;
-  final String title;
-  final Widget child;
-
-  const _PremiumCard({
-    required this.isDark,
-    required this.title,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1A1A) : ChatoraiColors.lightCard,
-        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-        border: Border.all(
-          color: isDark
-              ? ChatoraiColors.darkInputBorder
-              : ChatoraiColors.inputBorder,
         ),
-        boxShadow: isDark
-            ? ChatoraiShadows.darkShadow
-            : ChatoraiShadows.cardShadow,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(ChatoraiSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: ChatoraiFontSizes.lg,
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? ChatoraiColors.pureWhite
-                    : ChatoraiColors.pureBlack,
+        PremiumCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.message_outlined,
+                size: ChatoraiIconSizes.lg,
+                color: ChatoraiColors.orange,
               ),
-            ),
-            const SizedBox(height: ChatoraiSpacing.md),
-            child,
-          ],
+              const SizedBox(height: ChatoraiSpacing.md),
+              Text(
+                _formatNumber(stats.totalMessages),
+                style: TextStyle(
+                  fontSize: ChatoraiFontSizes.xxl,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? ChatoraiColors.pureWhite
+                      : ChatoraiColors.pureBlack,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: ChatoraiSpacing.xs),
+              Text(
+                localizations.totalMessages,
+                style: TextStyle(
+                  fontSize: ChatoraiFontSizes.sm,
+                  color: isDark
+                      ? ChatoraiColors.darkSecondaryTextColor
+                      : ChatoraiColors.secondaryTextColor,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+        PremiumCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.calendar_today_outlined,
+                size: ChatoraiIconSizes.lg,
+                color: ChatoraiColors.orange,
+              ),
+              const SizedBox(height: ChatoraiSpacing.md),
+              Text(
+                stats.days.toString(),
+                style: TextStyle(
+                  fontSize: ChatoraiFontSizes.xxl,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? ChatoraiColors.pureWhite
+                      : ChatoraiColors.pureBlack,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: ChatoraiSpacing.xs),
+              Text(
+                localizations.days,
+                style: TextStyle(
+                  fontSize: ChatoraiFontSizes.sm,
+                  color: isDark
+                      ? ChatoraiColors.darkSecondaryTextColor
+                      : ChatoraiColors.secondaryTextColor,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -310,30 +256,30 @@ class _PremiumCard extends StatelessWidget {
 class _TokensSection extends StatelessWidget {
   final SessionStats stats;
   final bool isDark;
+  final AppLocalizations localizations;
 
-  const _TokensSection({required this.stats, required this.isDark});
+  const _TokensSection({
+    required this.stats,
+    required this.isDark,
+    required this.localizations,
+  });
 
   @override
   Widget build(BuildContext context) {
     final tokens = stats.totalTokens;
     final rows = <_TokenRow>[
       _TokenRow(
-        label: 'Input',
+        label: localizations.statsInput,
         value: tokens.input,
         color: const Color(0xFF4A90D9),
       ),
       _TokenRow(
-        label: 'Output',
+        label: localizations.statsOutput,
         value: tokens.output,
         color: ChatoraiColors.orange,
       ),
       _TokenRow(
-        label: 'Reasoning',
-        value: tokens.reasoning,
-        color: const Color(0xFF9B59B6),
-      ),
-      _TokenRow(
-        label: 'Cache Read',
+        label: localizations.statsCacheRead,
         value: tokens.cacheRead,
         color: const Color(0xFF27AE60),
       ),

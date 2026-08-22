@@ -7,6 +7,14 @@ import 'package:chatorai/shared/utils/logger.dart';
 
 import 'workspace_runtime.dart';
 import 'package:chatorai/core/config/config_provider.dart';
+import 'package:chatorai/core/config/config_watcher.dart';
+import 'package:chatorai/core/mcp/mcp_status_provider.dart';
+import 'package:chatorai/core/permission/permission_provider.dart';
+import 'package:chatorai/features/chat/data/providers/chat_providers.dart';
+import 'package:chatorai/features/sessions/providers/session_providers.dart';
+import 'package:chatorai/features/settings/providers/auto_approve_provider.dart';
+import 'package:chatorai/features/settings/providers/mcp_management_provider.dart';
+import 'package:chatorai/shared/utils/path_sandbox.dart';
 
 class WorkspaceState {
   final String currentPath;
@@ -123,8 +131,12 @@ class WorkspaceNotifier extends Notifier<WorkspaceState> {
       throw ArgumentError('Directory does not exist: $normalized');
     }
 
+    LogTags.config.logDebug('switchWorkspace: path=$normalized');
+
+    // Sync global runtime CWD so direct callers (bypassing WorkspaceSwitcher)
+    // do not leave workspaceRuntimeCurrent and Directory.current desynced.
     setRuntimeCwd(normalized);
-    LogTags.config.logDebug('switchWorkspace: setRuntimeCwd=$normalized');
+    Directory.current = Directory(normalized);
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(lastWorkspacePrefsKey, normalized);
@@ -142,7 +154,31 @@ class WorkspaceNotifier extends Notifier<WorkspaceState> {
       initialized: true,
     );
 
+    // Notify the old permission service instance before invalidation so it
+    // can clear its in-memory caches while still valid.
+    final oldPerm = ref.read(permissionServiceProvider);
+    oldPerm.onWorkspaceChanged();
+
+    // Invalidate all providers that cache data scoped to the previous workspace.
+    // managedReadRootsProvider and resolvedInstructionsProvider watch
+    // workspaceProvider, so they are auto-invalidated by the state change above
+    // and must NOT be invalidated here (doing so triggers a CircularDependencyError).
     ref.invalidate(configProvider);
+    ref.invalidate(sessionRepositoryProvider);
+    ref.invalidate(chatListProvider);
+    ref.invalidate(sessionsByDirectoryProvider);
+    ref.invalidate(permissionServiceProvider);
+    ref.invalidate(autoApproveProvider);
+    ref.invalidate(mcpManagementProvider);
+    ref.invalidate(mcpStatusesProvider);
+    ref.invalidate(configWatcherProvider);
+
+    // Attach the new workspace to the freshly-created permission service.
+    final newPerm = ref.read(permissionServiceProvider);
+    await newPerm.attachWorkspace(normalized);
+
+    // Clear the path-sandbox managed-read-roots cache after invalidation.
+    clearManagedReadRootsCache();
   }
 
   /// Removes known directories that no longer exist on disk.

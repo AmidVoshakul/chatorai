@@ -231,4 +231,98 @@ void main() {
       expect(headings.last.map((h) => h.text), ['Bar']);
     });
   });
+
+  group('ChatMessages selection safety', () {
+    testWidgets('adding a message (itemCount change) does not throw', (
+      tester,
+    ) async {
+      final mockRepo = MockSessionRepository();
+      final chatOne = Chat(
+        id: 'chat-1',
+        title: 'Test',
+        messages: [
+          Message(
+            id: 'm1',
+            role: MessageRole.user,
+            content: 'Hello',
+            timestamp: DateTime.now(),
+            isComplete: true,
+            synthetic: false,
+            tokensInput: 0,
+            tokensOutput: 0,
+            tokensReasoning: 0,
+            contextLength: 0,
+            model: null,
+            agent: null,
+            reasoning: null,
+            partsJson: const [],
+          ),
+        ],
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      final chatTwo = Chat(
+        id: 'chat-1',
+        title: 'Test',
+        messages: [
+          ...chatOne.messages,
+          Message(
+            id: 'm2',
+            role: MessageRole.assistant,
+            content: 'Hi there, this is a selectable reply.',
+            timestamp: DateTime.now(),
+            isComplete: true,
+            synthetic: false,
+            tokensInput: 0,
+            tokensOutput: 0,
+            tokensReasoning: 0,
+            contextLength: 0,
+            model: null,
+            agent: null,
+            reasoning: null,
+            partsJson: const [],
+          ),
+        ],
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      Widget build(Chat chat) => ProviderScope(
+        overrides: [
+          sessionRepositoryProvider.overrideWith((ref) => mockRepo),
+          chatScreenProvider.overrideWith(() => ChatScreenNotifier()),
+          themeProvider.overrideWith(() => ThemeNotifier()),
+          modelSettingsProvider.overrideWith(() => ModelSettingsNotifier()),
+          currentAgentProvider.overrideWith(() => CurrentAgentNotifier()),
+          providerCatalogServiceProvider.overrideWith(
+            (ref) => _FakeCatalogService(),
+          ),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ChatMessages(
+              sessionRepository: mockRepo,
+              chat: chat,
+              onSendMessage: (_) {},
+              onMessageDeleted: () {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(build(chatOne));
+      await tester.pumpAndSettle();
+      expect(find.byType(SelectionArea), findsOneWidget);
+
+      // Simulate a new message arriving (itemCount increases) — the exact
+      // condition that previously triggered the SelectionArea assertion.
+      await tester.pumpWidget(build(chatTwo));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(SelectionArea), findsOneWidget);
+    });
+  });
 }

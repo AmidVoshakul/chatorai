@@ -315,22 +315,14 @@ class _SkillsScreenState extends ConsumerState<SkillsScreen> {
       ),
     ];
 
-    final tabBar = PreferredSize(
-      preferredSize: const Size.fromHeight(48),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: hairlineColor(isDark))),
-        ),
-        child: TabBar(
-          indicatorColor: ChatoraiColors.orange,
-          dividerColor: Colors.transparent,
-          labelColor: titleColor(isDark),
-          unselectedLabelColor: subtleColor(isDark),
-          tabs: [
-            for (final spec in tabSpecs)
-              _ScopeTab(spec: spec, iconOnly: iconOnly),
-          ],
-        ),
+    final tabBar = unifiedTabContainer(
+      isDark: isDark,
+      tabBar: unifiedTabBar(
+        isDark: isDark,
+        tabs: [
+          for (final spec in tabSpecs)
+            _ScopeTab(spec: spec, iconOnly: iconOnly),
+        ],
       ),
     );
 
@@ -379,7 +371,7 @@ class _ScopeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tab(
-      height: 48,
+      height: kCompactTabHeight,
       child: Tooltip(
         message: spec.tooltip,
         child: Row(
@@ -767,14 +759,14 @@ class _MarketplaceViewState extends State<_MarketplaceView> {
         TextField(
           controller: _searchController,
           onChanged: (v) => setState(() => _query = v),
-          decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.search_rounded),
+          decoration: marketplaceSearchDecoration(
+            isDark: isDark,
             hintText: l10n.skillsMarketplaceSearchHint,
           ),
         ),
-        const SizedBox(height: ChatoraiSpacing.md),
+        const SizedBox(height: ChatoraiSpacing.sm),
         SizedBox(
-          height: 40,
+          height: 28,
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [

@@ -5,8 +5,7 @@ import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
 import 'package:chatorai/shared/utils/android_storage_permission.dart';
-import 'package:chatorai/core/tools/filesystem_boundary.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/core/tools/built_in/tool_path_resolve.dart';
 import 'package:path/path.dart' as p;
 
 const _binaryExtensions = {
@@ -97,33 +96,20 @@ ToolDef createReadTool() {
         );
       }
 
-      final String safePath;
-      try {
-        safePath = resolveSafePath(filePath, allowedRoots: managedReadRoots);
-      } on ArgumentError {
-        return ToolOutput(
-          'Error: path denied: $filePath (outside the project root). '
-          '${allFilesAccessHint()}',
-          metadata: {'error': true, 'path': filePath},
-        );
-      }
-      final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
-      final resolution = boundary.resolve(safePath);
-      if (resolution.isExternal &&
-          !isWithinAnyRoot(resolution.path, managedReadRoots)) {
+      final resolved = await resolveToolPath(
+        ctx: ctx,
+        userPath: filePath,
+        toolName: 'read',
+      );
+      if (resolved.isError) return resolved.error!;
+      final safePath = resolved.path!;
+      if (!isWithinAnyRoot(safePath, managedReadRoots)) {
         await ctx.ask(
-          permission: 'external_directory',
-          patterns: [resolution.path],
-          always: [resolution.path],
-          metadata: {
-            'filepath': resolution.path,
-            'parentDir': p.dirname(resolution.path),
-            'tool': 'read',
-          },
+          permission: 'read',
+          patterns: [safePath],
+          always: const ['*'],
+          metadata: {'filepath': safePath, 'tool': 'read'},
         );
-      }
-      if (!isWithinAnyRoot(resolution.path, managedReadRoots)) {
-        await ctx.ask(permission: 'read', patterns: [resolution.path]);
       }
       final offset = input['offset'] as int? ?? 0;
       final limit = input['limit'] as int? ?? 2000;
@@ -139,18 +125,6 @@ ToolDef createReadTool() {
       try {
         bytes = await file.readAsBytes();
       } on FileSystemException catch (e) {
-        if (!await isAllFilesAccessGranted()) {
-          await ctx.ask(
-            permission: 'external_directory',
-            patterns: [safePath],
-            always: [safePath],
-            metadata: {
-              'filepath': safePath,
-              'parentDir': p.dirname(safePath),
-              'tool': 'read',
-            },
-          );
-        }
         return ToolOutput(
           'Error: cannot read $safePath (${e.message}). ${allFilesAccessHint()}',
           metadata: {'error': true, 'os_permission': true, 'path': safePath},

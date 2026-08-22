@@ -93,14 +93,14 @@ void main() {
       expect(output.output, 'test');
     });
 
-    test('execute with path outside the project root returns error', () async {
+    test('execute with non-existent file returns error', () async {
       final tool = createReadTool();
       final ctx = _mockCtx();
       final output = await tool.execute({
         'file_path': '/tmp/chatorai_denied_read.txt',
       }, ctx);
       expect(output.metadata?['error'], isTrue);
-      expect(output.output, contains('path denied'));
+      expect(output.output, contains('file not found'));
     });
 
     test('execute with non-existent file returns error', () async {

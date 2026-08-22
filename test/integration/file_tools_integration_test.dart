@@ -282,20 +282,23 @@ void main() {
       expect(output.output, contains('content is required'));
     });
 
-    test('handles path outside project root safely', () async {
+    test('allows non-dangerous path outside project root', () async {
       final tool = registry.get('write')!;
-      // Try to write outside the sandbox using absolute path trick
-      final filePath = '/tmp/outside_project.txt';
-      final content = 'Should not be written';
+      final filePath = '/tmp/outside_project_chatorai_test.txt';
+      final content = 'Should be written';
 
-      final output = await tool.execute({
-        'file_path': filePath,
-        'content': content,
-      }, const IntegrationTestContext());
+      try {
+        final output = await tool.execute({
+          'file_path': filePath,
+          'content': content,
+        }, const IntegrationTestContext());
 
-      expect(output.metadata?['error'], isTrue);
-      expect(output.output, contains('Path denied'));
-      expect(File(filePath).existsSync(), isFalse);
+        expect(output.metadata?['error'], isNull);
+        expect(File(filePath).existsSync(), isTrue);
+        expect(File(filePath).readAsStringSync(), equals(content));
+      } finally {
+        if (File(filePath).existsSync()) File(filePath).deleteSync();
+      }
     });
   });
 

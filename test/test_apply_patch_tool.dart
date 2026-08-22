@@ -437,16 +437,14 @@ void main() {
     });
 
     group('execute - project sandbox', () {
-      test('throws when file path is outside project root', () async {
-        // resolveSafePath throws ArgumentError for paths outside project root
+      test('returns error when file path does not exist', () async {
         final outsidePath = '/tmp/ap_outside_project.txt';
-        await expectLater(
-          tool.execute({
-            'file_path': outsidePath,
-            'patch': '@@ -1 +1 @@\n+test',
-          }, _mockCtx()),
-          throwsA(isA<ArgumentError>()),
-        );
+        final result = await tool.execute({
+          'file_path': outsidePath,
+          'patch': '@@ -1 +1 @@\n+test',
+        }, _mockCtx());
+        expect(result.metadata?['error'], isTrue);
+        expect(result.output, contains('file not found'));
       });
 
       test('accepts file path inside project root', () async {

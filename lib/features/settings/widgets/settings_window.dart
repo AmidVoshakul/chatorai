@@ -1,4 +1,5 @@
 import 'package:chatorai/features/settings/screens/agents_instructions_screen.dart';
+import 'package:chatorai/features/settings/screens/auto_approve_screen.dart';
 import 'package:chatorai/features/settings/screens/config_screen.dart';
 import 'package:chatorai/features/settings/screens/mcp_servers_screen.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_screen.dart';
@@ -18,12 +19,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // ===========================================================================
 
 class _SettingsCategorySpec {
+  final String id;
   final IconData icon;
   final String Function(AppLocalizations) label;
   final Widget Function(BuildContext) builder;
   final List<Widget>? headerActions;
 
   const _SettingsCategorySpec({
+    required this.id,
     required this.icon,
     required this.label,
     required this.builder,
@@ -40,52 +43,83 @@ class SettingsWindow extends StatefulWidget {
 
 class _SettingsWindowState extends State<SettingsWindow> {
   int _selectedIndex = 0;
-  final _mcpServersKey = GlobalKey<State<McpServersScreen>>();
+  final _mcpServersKey = GlobalKey<McpServersScreenState>();
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final palette = ChatoraiSettingsWindow.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Right pane must be a bit darker than left to separate and let premium
+    // cards (gradient 0x1E→0x26 dark / FA→F5 light) pop. Palette was designed
+    // for this: dark content (0x16) < nav (0x20), light nav (0xF4) < content
+    // (0xFE). So we flip for light to keep right darker in both themes.
+    final leftBg = isDark ? palette.nav : palette.content;
+    final rightBg = isDark ? palette.content : palette.nav;
     final categories = _categories(localizations);
 
     return Column(
       children: [
-        _TopBar(palette: palette, onClose: () => Navigator.pop(context)),
+        Container(
+          color: leftBg,
+          child: _TopBar(
+            palette: palette,
+            onClose: () => Navigator.pop(context),
+          ),
+        ),
         _HairlineDivider(color: palette.divider),
         Expanded(
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _CategoryNav(
-                palette: palette,
-                categories: categories,
-                selectedIndex: _selectedIndex,
-                onSelected: (index) => setState(() => _selectedIndex = index),
+              Container(
+                color: leftBg,
+                child: _CategoryNav(
+                  palette: palette,
+                  categories: categories,
+                  selectedIndex: _selectedIndex,
+                  onSelected: (index) => setState(() => _selectedIndex = index),
+                ),
               ),
-              _HairlineDivider(color: palette.divider),
+              Container(
+                width: ChatoraiBorderWidth.thin,
+                color: palette.divider,
+              ),
               Expanded(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: ChatoraiSettingsWindow.contentMaxWidth,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _PaneHeader(
-                          title: categories[_selectedIndex].label(
-                            localizations,
+                child: Container(
+                  color: rightBg,
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: ChatoraiSettingsWindow.contentMaxWidth,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _PaneHeader(
+                            title: categories[_selectedIndex].label(
+                              localizations,
+                            ),
+                            palette: palette,
+                            actions: categories[_selectedIndex].headerActions,
                           ),
-                          palette: palette,
-                          actions: categories[_selectedIndex].headerActions,
-                        ),
-                        _HairlineDivider(color: palette.divider),
-                        Expanded(
-                          key: ValueKey(_selectedIndex),
-                          child: categories[_selectedIndex].builder(context),
-                        ),
-                      ],
+                          _HairlineDivider(color: palette.divider),
+                          Expanded(
+                            child: IndexedStack(
+                              index: _selectedIndex,
+                              children: categories
+                                  .map(
+                                    (c) => KeyedSubtree(
+                                      key: PageStorageKey(c.id),
+                                      child: c.builder(context),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -99,6 +133,7 @@ class _SettingsWindowState extends State<SettingsWindow> {
 
   List<_SettingsCategorySpec> _categories(AppLocalizations l10n) => [
     _SettingsCategorySpec(
+      id: 'providers',
       icon: Icons.api,
       label: (_) => l10n.providers,
       builder: (_) => const ProviderSettingsScreen(embedded: true),
@@ -131,16 +166,19 @@ class _SettingsWindowState extends State<SettingsWindow> {
       ],
     ),
     _SettingsCategorySpec(
+      id: 'usageStatistics',
       icon: Icons.bar_chart,
       label: (_) => l10n.usageStatistics,
       builder: (_) => const StatsScreen(embedded: true),
     ),
     _SettingsCategorySpec(
+      id: 'configuration',
       icon: Icons.settings,
       label: (_) => l10n.configuration,
       builder: (_) => const ConfigScreen(embedded: true),
     ),
     _SettingsCategorySpec(
+      id: 'mcpServers',
       icon: Icons.extension,
       label: (_) => l10n.mcpServers,
       builder: (_) => McpServersScreen(embedded: true, key: _mcpServersKey),
@@ -152,7 +190,7 @@ class _SettingsWindowState extends State<SettingsWindow> {
             onPressed: () {
               final state = _mcpServersKey.currentState;
               if (state != null) {
-                (state as dynamic).showAddDialog();
+                state.showAddDialog();
               }
             },
           ),
@@ -164,7 +202,7 @@ class _SettingsWindowState extends State<SettingsWindow> {
             onPressed: () {
               final state = _mcpServersKey.currentState;
               if (state != null) {
-                (state as dynamic).refresh();
+                state.refresh();
               }
             },
           ),
@@ -172,16 +210,25 @@ class _SettingsWindowState extends State<SettingsWindow> {
       ],
     ),
     _SettingsCategorySpec(
+      id: 'agentsInstructions',
       icon: Icons.description_outlined,
       label: (_) => l10n.agentsInstructions,
       builder: (_) => const AgentsInstructionsScreen(embedded: true),
     ),
     _SettingsCategorySpec(
+      id: 'skills',
       icon: Icons.auto_awesome_outlined,
       label: (_) => l10n.skillsTitle,
       builder: (_) => const SkillsScreen(embedded: true),
     ),
     _SettingsCategorySpec(
+      id: 'autoApprove',
+      icon: Icons.check_circle_outline,
+      label: (_) => l10n.autoApproveTitle,
+      builder: (_) => const AutoApproveScreen(embedded: true),
+    ),
+    _SettingsCategorySpec(
+      id: 'appearance',
       icon: Icons.palette_outlined,
       label: (_) => l10n.appearance,
       builder: (_) => const SingleChildScrollView(
@@ -190,6 +237,7 @@ class _SettingsWindowState extends State<SettingsWindow> {
       ),
     ),
     _SettingsCategorySpec(
+      id: 'accessibility',
       icon: Icons.accessibility_new,
       label: (_) => l10n.accessibility,
       builder: (_) => const SingleChildScrollView(
@@ -198,6 +246,7 @@ class _SettingsWindowState extends State<SettingsWindow> {
       ),
     ),
     _SettingsCategorySpec(
+      id: 'appInfo',
       icon: Icons.info,
       label: (_) => l10n.appInfo,
       builder: (_) => const SingleChildScrollView(

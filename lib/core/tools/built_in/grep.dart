@@ -6,8 +6,8 @@ import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
 import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:path/path.dart' as p;
-import 'package:chatorai/core/tools/filesystem_boundary.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/core/tools/built_in/tool_path_resolve.dart';
 
 ToolDef createGrepTool() {
   return ToolDef(
@@ -54,23 +54,14 @@ ToolDef createGrepTool() {
       final maxMatches = input['max_matches'] as int? ?? 50;
 
       final results = <String>[];
-      final safeRoot = resolveSafePath(root, allowedRoots: managedReadRoots);
-      final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
-      final grepResolution = boundary.resolve(safeRoot);
-      if (grepResolution.isExternal &&
-          !isWithinAnyRoot(grepResolution.path, managedReadRoots)) {
-        await ctx.ask(
-          permission: 'external_directory',
-          patterns: [grepResolution.path],
-          always: [grepResolution.path],
-          metadata: {
-            'filepath': grepResolution.path,
-            'parentDir': p.dirname(grepResolution.path),
-            'tool': 'grep',
-          },
-        );
-      }
-      if (!isWithinAnyRoot(grepResolution.path, managedReadRoots)) {
+      final resolved = await resolveToolPath(
+        ctx: ctx,
+        userPath: root,
+        toolName: 'grep',
+      );
+      if (resolved.isError) return resolved.error!;
+      final safeRoot = resolved.path!;
+      if (!isWithinAnyRoot(safeRoot, managedReadRoots)) {
         await ctx.ask(permission: 'grep', patterns: [pattern]);
       }
       final dir = Directory(safeRoot);

@@ -2,10 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.2]
+## [Unreleased]
 
 ### Added
 
+ - **Auto-Approve settings (file-access permissions UI)**:
+   - New `AutoApproveScreen` (Settings → Auto-Approve) exposes the 14 permission categories from `PermissionRuleset.defaults()` (external_directory, shell, read, edit, write, glob, grep, webfetch, websearch, doom_loop, skill, lsp, task, todowrite) with a per-category `Default(<built-in>)/Allow/Ask/Deny` dropdown and a collapsible Exceptions block (path patterns for file categories, command patterns for `shell`). `question`/`plan_enter`/`plan_exit` are hidden internal categories.
+   - `auto_approve_provider.dart` (`AutoApproveNotifier`): loads effective rules from the merged `chatorai.json` `permission` section, saves via `ConfigWriter.upsertPermissionSection`, and invalidates `configProvider` so changes apply immediately. `Default` omits the key (inherits `PermissionRuleset.defaults()`); explicit actions are written as a string or `{"*": action, ...exceptions}` map.
+   - Project vs Global scope toggle, hidden on mobile (`_supportsProjectScope`), mirroring the MCP/instructions providers.
+   - Localization keys added across all 6 ARB files (`autoApproveTitle`, `autoApproveSubtitle`, `scopeGlobal`, `scopeProject`, `defaultInherit/Allow/Ask/Deny`, `exceptionsTitle`, `addPath`, `addCommand`, `cancel`, `save`).
+ - **Live config reload (reactivity)**:
+   - `ConfigWatcher` watches the parent directory of the global (`<configHome>/chatorai.json`, all platforms) and project (`<cwd>/.chatorai/chatorai.json`, desktop only) config files and, on change, calls `ref.invalidate(configProvider)`. Cascade: `skillServiceProvider` re-applies rules via `PermissionService.replaceDefaultRules` and `toolRegistryProvider` rebuilds `ToolRegistry`, so external edits to `chatorai.json` take effect without a restart (like opencode/kilocode). Directory watching survives atomic rename-based writes (`ConfigWriter` writes via temp+rename). Debounced (~300 ms); missing directories are tolerated.
+   - `PermissionService.replaceDefaultRules` now marks the service as seeded so live reloads actually update effective defaults; session-scoped grants are preserved.
  - **Link confirmation dialog**:
    - Bottom-sheet confirmation when tapping `http`/`https` links in chat (`TextPartWidget`, `ReasoningPartWidget`, `table_block.dart`). Non-http schemes (`javascript:`, `data:`, `file:`, `tel:`, `mailto:`, empty) are silently ignored.
    - New utility `lib/shared/utils/link_launcher.dart`: `isHttpHttpsUrl(String?)`, `enum LinkLaunchResult { opened, invalidScheme, failed }`, `launchExternalLink(String href, {launcher})` with DI-friendly `launcher` parameter (defaults to `url_launcher.launchUrl` with `LaunchMode.externalApplication`).
@@ -65,12 +73,16 @@ All notable changes to this project will be documented in this file.
 - **Permission system**: `shell` tool default changed from `allow` to `ask`; `DangerousCharacterPolicy` softened to `review` for safe metacharacters (`|`, `>`, `<`, `&`).
 - **Model provider**: `recentModels` strip added to model selection screen.
 - **Compaction service**: refactored with `CompactionOrchestrator` and `BackgroundCompactionService`.
+- **File-access safety net**:
+  - `path_sandbox.dart`: `PathDeniedException` + `isHardDenied` block dangerous paths (`/etc/shadow`, `~/.ssh`, `windows/system32`, `authorized_keys`); `resolveSafePath` no longer throws for non-dangerous external paths.
+  - `tool_path_resolve.dart`: shared `resolveToolPath` helper centralizes path resolution + `external_directory` ask + `PathDeniedException` handling across read/write/edit/glob/grep/apply_patch/document_extract/external_directory tools (no duplicated resolution logic).
 
 ### Fixed
 
 - **Tool-output storage path**: Truncated tool output was previously written to `getApplicationDocumentsDirectory()` (`~/Documents/chatorai/` on Linux), which caused `Path denied` errors when the model later tried to read it back via `read`/`grep`/`glob` because Documents is outside the project root and the path sandbox rejected it. Output is now written to the cross-platform data directory (`~/.local/share/chatorai/tool-output` on Linux, XDG-compliant on other desktops, sandboxed Documents on mobile). The `read`/`grep`/`glob` tools now accept this directory as a managed read root (symlink-safe via `FilesystemBoundary.resolve()`), so the model can read back its own truncated output without permission prompts.
 - **Android database hang**: `createFileDatabase()` in `lib/core/session/database.dart` no longer imports `xdg_paths_cli.dart`. The function now requires an explicit `dataDir` parameter and creates the directory inline with `Directory(dataDir).create(recursive: true)`. `session_db_provider.dart` imports the Flutter-aware `xdg_paths.dart` and passes `await XdgPaths.dataHomeAsync`, which resolves to the app's sandboxed support directory on Android. `bin/chatorai.dart` passes `XdgPaths.dataHome` from `xdg_paths_cli.dart`.
 - **Linter warnings**: Resolved unused imports and dangling library doc comments introduced during refactoring. `flutter analyze` reports zero issues.
+- **SelectionArea crash during streaming**: `lib/features/chat/presentation/widgets/chat_messages.dart` wrapped the message `ListView.builder` in a single `SelectionArea`. When `itemCount` changed mid-stream while the user had an active text selection, the `MultiSelectableSelectionContainerDelegate` indices became stale and Flutter threw `currentSelectionStartIndex < selectables.length` (`selectable_region.dart`). The `SelectionArea` is now keyed on `itemCount`, so it is rebuilt from scratch (dropping any active selection) whenever the list length changes. Selection/copy of message and code content is preserved; per-bubble `SelectableText`/`SelectionArea` (code blocks, tool results, speech overlay) are unaffected. Added widget tests guarding the fix.
 
 ### Documentation
 
@@ -80,6 +92,15 @@ All notable changes to this project will be documented in this file.
 - **docs/ENVIRONMENT.md**: Updated `ai_sdk_dart` and related package versions from `^1.x` to `^2.0.0` to match `pubspec.yaml`.
 - **docs/diagrams/tools.md**: Updated unconditional tool count from 18 to 21; added `document_extract` family and `task_container` to registry diagram.
 - **ARCHITECTURE.md**: Removed references to deleted files (`permission_bridge.dart`, `secure_file_service.dart`, `chat_repository_impl.dart`, `background_job_provider.dart`, `chat_message_export.dart`, `permission_dialog.dart`, `scrollable_action_buttons.dart`, `assistant_header.dart`, `patch_body.dart`, `diff_line.dart`). Added new files (`session_context_usage_provider.dart`, `chat_input_status_bar.dart`, `document_extract.dart`, `lsp_diagnostics_format.dart`, `tool_call_tracker.dart`, `workspace_provider.dart`, `workspace_runtime.dart`, `cwd_override.dart`, `background_compaction_service.dart`, `global_shortcut_handler.dart`, `keyboard_shortcut.dart`, `shortcuts.dart`, `premium_sheet.dart`, `shimmer_mask.dart`, `settings_window.dart`, `settings_modal.dart`, `settings_about_section.dart`, `settings_accessibility_section.dart`, `settings_appearance_section.dart`, `app_loading_screen.dart`, `android_storage_permission.dart`, `app_theme.dart`, `theme_extensions.dart`, `providers.dart`, `diff_body.dart`, `edit_body.dart`, `write_body.dart`, `diff_parser.dart`, `premium_confirm_sheet.dart`, `workspace_dialog.dart`, `workspace_switch_confirm_sheet.dart`, `session_context_window.dart`, `chat_screen_scroll.dart`, `chat_stream_actions.dart`). Updated tool layer description to reflect 21 unconditional + 3 conditional tools.
+
+### Fixed
+
+ - **Recursive external-directory permissions (no more per-file dialog spam)**:
+   - Root cause: `external_directory` permission was requested with the exact file path as both `patterns` and `always`, so an "Always" grant covered only that single file — every subsequent file in the same directory re-prompted the user.
+   - `tool_path_resolve.dart`, `shell.dart` (working-dir + preflight `externalDirs`), and `external_directory.dart` now request `dirname(path)/*` (a directory glob). Because the wildcard engine (`lib/core/permission/wildcard.dart`, `dotAll: true`) treats `*` as recursive, a single "Always" grant covers the whole directory tree (`/dir/*` matches `/dir/file` and `/dir/sub/file`).
+   - **Over-broad guard**: a new pure helper `externalDirectoryGlobPatterns(directory, {workspacePath, fallback})` in `lib/shared/utils/path_sandbox.dart` returns the exact `fallback` path (no `/*`) when the directory is the filesystem root (`/`) or an ancestor of the workspace, preventing an accidental `/*` (whole-disk) grant. DRY: the same helper is used by all three call sites.
+   - `read.dart` and `document_extract.dart` `read` permission asks now pass `always: ['*']` (matching opencode `read.ts`), so the first "Always" on a read dialog grants universal read instead of re-prompting per file.
+   - Tests: added unit tests for `externalDirectoryGlobPatterns` (file → `dirname/*`; FS root → exact path; above-workspace → exact path; recursive coverage verified via `wildcard.match`) and an integration test in `test_tool_path_resolve_test.dart`; updated `test_external_directory_tool.dart` and `test_shell_ast_scanner.dart` assertions to the new glob patterns.
 
 ## [0.1.0]
 

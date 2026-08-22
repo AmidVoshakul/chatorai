@@ -83,7 +83,7 @@ final skillServiceProvider = FutureProvider<SkillService>((ref) async {
     if (permissionConfig.isNotEmpty)
       ...PermissionRuleset.fromConfig(permissionConfig),
   ];
-  permissionService.seedRules(PermissionRuleset(rules: rulesList));
+  permissionService.replaceDefaultRules(PermissionRuleset(rules: rulesList));
   return SkillService(
     sources: sources,
     plugins: plugins,

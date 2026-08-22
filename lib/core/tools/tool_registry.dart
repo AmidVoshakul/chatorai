@@ -67,6 +67,10 @@ class ToolRegistry {
       PermissionRuleset(rules: [..._defaultRules.rules]),
       if (_executor.agentRules != null) _executor.agentRules!,
       PermissionRuleset(rules: [], sessionApproved: _permissions.approvedRules),
+      PermissionRuleset(
+        rules: [],
+        sessionApproved: _permissions.onceApprovedRules,
+      ),
     ];
     return _tools
         .where(
@@ -106,6 +110,12 @@ class ToolRegistry {
         description: def.description,
         executeDynamic: (input, options) async {
           final result = await _executor.execute(def, input, options);
+          // Preserve structured content blocks (e.g. files, outputPath) when
+          // the tool explicitly provides them via metadata['structured'].
+          final meta = result['metadata'] as Map<String, dynamic>?;
+          if (meta != null && meta['structured'] != null) {
+            return meta['structured'];
+          }
           if (result.containsKey('output')) return result['output'] as String;
           if (result.containsKey('message')) return result['message'] as String;
           return result.toString();

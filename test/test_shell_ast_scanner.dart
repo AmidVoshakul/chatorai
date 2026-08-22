@@ -109,7 +109,7 @@ void main() {
           reason:
               'external_directory asked exactly once (no duplicate per dir)',
         );
-        expect(extCalls.single['patterns'], contains('/tmp'));
+        expect(extCalls.single['patterns'], contains('/tmp/*'));
 
         final shellCalls = rec.calls
             .where((c) => c['permission'] == 'shell')
@@ -234,8 +234,8 @@ void main() {
               'external_directory asked exactly once for all external paths',
         );
         final extPatterns = extCalls.single['patterns'] as List<String>;
-        expect(extPatterns, contains('/tmp'));
-        expect(extPatterns, contains('/var/log'));
+        expect(extPatterns, contains('/tmp/*'));
+        expect(extPatterns, contains('/var/log/*'));
 
         final shellCalls = rec.calls
             .where((c) => c['permission'] == 'shell')

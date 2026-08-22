@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:chatorai/features/settings/widgets/premium_blocks.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
 // ===========================================================================
 // SETTINGS TOGGLE TILE WIDGET
 // ===========================================================================
 
 class SettingsToggleTile extends StatelessWidget {
-  final BuildContext context;
   final String title;
   final String subtitle;
   final bool value;
@@ -14,7 +14,6 @@ class SettingsToggleTile extends StatelessWidget {
 
   const SettingsToggleTile({
     super.key,
-    required this.context,
     required this.title,
     required this.subtitle,
     required this.value,
@@ -29,68 +28,63 @@ class SettingsToggleTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
-      color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: isDark
-              ? ChatoraiColors.darkInputBorder
-              : ChatoraiColors.inputBorder,
-          width: 1,
-        ),
-      ),
-      elevation: 0,
-      child: InkWell(
-        onTap: () => onChanged(!value),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: isDark
-                            ? ChatoraiColors.darkTextColor
-                            : ChatoraiColors.lightTextColor,
+    return Container(
+      decoration: premiumCard(isDark),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+          onTap: () => onChanged(!value),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: isDark
+                              ? ChatoraiColors.darkTextColor
+                              : ChatoraiColors.lightTextColor,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark
-                            ? ChatoraiColors.darkSecondaryTextColor
-                            : ChatoraiColors.secondaryTextColor,
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark
+                              ? ChatoraiColors.darkSecondaryTextColor
+                              : ChatoraiColors.secondaryTextColor,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Transform.scale(
-                scale: 0.75,
-                child: Switch(
-                  value: value,
-                  onChanged: onChanged,
-                  activeThumbColor: ChatoraiColors.orange,
-                  activeTrackColor: ChatoraiColors.orange.withAlpha(150),
-                  inactiveThumbColor: isDark
-                      ? ChatoraiColors.toggleInactiveThumbDark
-                      : ChatoraiColors.toggleInactiveThumbLight,
-                  inactiveTrackColor: isDark
-                      ? ChatoraiColors.toggleInactiveTrackDark
-                      : ChatoraiColors.toggleInactiveTrackLight,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                Transform.scale(
+                  scale: 0.75,
+                  child: Switch(
+                    value: value,
+                    onChanged: onChanged,
+                    activeThumbColor: ChatoraiColors.orange,
+                    activeTrackColor: ChatoraiColors.orange.withAlpha(150),
+                    inactiveThumbColor: isDark
+                        ? ChatoraiColors.toggleInactiveThumbDark
+                        : ChatoraiColors.toggleInactiveThumbLight,
+                    inactiveTrackColor: isDark
+                        ? ChatoraiColors.toggleInactiveTrackDark
+                        : ChatoraiColors.toggleInactiveTrackLight,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

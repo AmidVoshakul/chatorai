@@ -2133,4 +2133,158 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get newSession => '新会话';
+
+  @override
+  String get autoApproveTitle => '自动批准';
+
+  @override
+  String get autoApproveSubtitle => '配置自动权限批准';
+
+  @override
+  String get autoApproveExternalDirectoryDesc => '允许访问外部目录';
+
+  @override
+  String get autoApproveShellDesc => '允许执行 shell 命令';
+
+  @override
+  String get autoApproveReadDesc => '允许读取文件';
+
+  @override
+  String get autoApproveEditDesc => '允许编辑文件';
+
+  @override
+  String get autoApproveWriteDesc => '允许写入文件';
+
+  @override
+  String get autoApproveGlobDesc => '允许 glob 搜索';
+
+  @override
+  String get autoApproveGrepDesc => '允许 grep 搜索';
+
+  @override
+  String get autoApproveWebsearchDesc => '允许网络搜索';
+
+  @override
+  String get autoApproveWebfetchDesc => '允许获取网页';
+
+  @override
+  String get autoApproveDoomLoopDesc => '允许 doom loop 检测';
+
+  @override
+  String get autoApproveSkillDesc => '允许执行技能';
+
+  @override
+  String get autoApproveLspDesc => '允许使用 LSP';
+
+  @override
+  String get autoApproveTaskDesc => '允许使用 task';
+
+  @override
+  String get autoApproveTodowriteDesc => '允许 todo 写入操作';
+
+  @override
+  String get exceptionsTitle => '例外';
+
+  @override
+  String get addPath => '添加路径';
+
+  @override
+  String get addCommand => '添加命令';
+
+  @override
+  String get scopeGlobal => '全局';
+
+  @override
+  String get scopeProject => '项目';
+
+  @override
+  String get defaultInherit => '默认（继承）';
+
+  @override
+  String get defaultAllow => '允许';
+
+  @override
+  String get defaultAsk => '询问';
+
+  @override
+  String get defaultDeny => '拒绝';
+
+  @override
+  String autoApproveDefaultInherited(Object action) {
+    return '默认（$action）';
+  }
+
+  @override
+  String get autoApproveGroupFileAccess => '文件访问';
+
+  @override
+  String get autoApproveGroupShell => 'Shell 与命令';
+
+  @override
+  String get autoApproveGroupNetwork => '网络';
+
+  @override
+  String get autoApproveGroupAgents => '代理与自动化';
+
+  @override
+  String get autoApproveCommandPatternLabel => '命令模式';
+
+  @override
+  String get autoApprovePathPatternLabel => '路径模式';
+
+  @override
+  String get autoApproveCommandPatternHint => 'git *';
+
+  @override
+  String get autoApprovePathPatternHint => '/home/**/*.txt';
+
+  @override
+  String get autoApproveScopeHint => '全局适用于所有位置 · 项目按工作区覆盖';
+
+  @override
+  String get autoApproveNoExceptions => '无例外 — 所有模式均使用默认值';
+
+  @override
+  String get autoApproveBrowseDirectory => '浏览目录';
+
+  @override
+  String get autoApproveScopeProjectDisabledTooltip =>
+      '未找到项目配置。创建 .chatorai/chatorai.json 以启用项目级权限。';
+
+  @override
+  String get autoApproveActionLabel => 'Action';
+
+  @override
+  String get autoApprovePatternHintFile =>
+      '/home/user/project/** • ~/Documents/*';
+
+  @override
+  String get autoApprovePatternHintCommand => 'npm run * • git status';
+
+  @override
+  String autoApproveError(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get settingsMcpSubtitle =>
+      'Manage Model Context Protocol tool servers';
+
+  @override
+  String get mcpAuthNoAuth => 'No Auth';
+
+  @override
+  String get mcpAuthToken => 'Token';
+
+  @override
+  String get mcpAuthOAuth => 'OAuth 2.1';
+
+  @override
+  String get statsInput => 'Input';
+
+  @override
+  String get statsOutput => 'Output';
+
+  @override
+  String get statsCacheRead => 'Cache Read';
 }

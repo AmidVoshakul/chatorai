@@ -1,16 +1,25 @@
 import 'package:chatorai/core/keyboard/keyboard_shortcut.dart';
 import 'package:chatorai/core/keyboard/shortcut_handler.dart';
+import 'package:chatorai/features/settings/providers/auto_approve_provider.dart';
 import 'package:chatorai/features/settings/widgets/settings_modal.dart';
 import 'package:chatorai/features/settings/widgets/settings_window.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _FakeAutoApproveNotifier extends AutoApproveNotifier {
+  final AutoApproveState fakeState;
+
+  _FakeAutoApproveNotifier(this.fakeState);
+
+  @override
+  Future<AutoApproveState> build() async => fakeState;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -99,6 +108,66 @@ void main() {
 
       expect(find.text('Wide screen mode'), findsOneWidget);
       expect(find.text('Auto-scroll during streaming'), findsOneWidget);
+    });
+
+    testWidgets('includes Auto-Approve category and shows embedded content', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            themeProvider.overrideWith(() => ThemeNotifier()),
+            languageProvider.overrideWith(() => LanguageNotifier()),
+            autoApproveProvider.overrideWith(
+              () => _FakeAutoApproveNotifier(
+                AutoApproveState(
+                  categories: const [
+                    AutoApproveCategory(
+                      id: 'read',
+                      label: 'Read',
+                      description: '',
+                      defaultAction: null,
+                      exceptions: const {},
+                      isFileCategory: true,
+                      isShellCategory: false,
+                    ),
+                  ],
+                  supportsProjectScope: false,
+                  scope: AutoApproveScope.global,
+                ),
+              ),
+            ),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              AppLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Material(
+                child: MediaQuery(
+                  data: const MediaQueryData(size: Size(1280, 720)),
+                  child: const SettingsWindow(),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Auto-Approve'), findsOneWidget);
+
+      await tester.tap(find.text('Auto-Approve'));
+      await tester.pumpAndSettle();
+
+      // Embedded content should be visible without an AppBar.
+      expect(find.byType(AppBar), findsNothing);
+      expect(find.text('File Access'), findsOneWidget);
     });
   });
 

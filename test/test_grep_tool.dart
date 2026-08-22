@@ -71,7 +71,16 @@ void main() {
             ({required question, options = const [], multiple = false}) async =>
                 '',
       );
-      await tool.execute({'pattern': 'test', 'path': '.'}, ctx);
+      final externalDir = Directory('/tmp/grep_test_perm');
+      externalDir.createSync(recursive: true);
+      final testFile = File('${externalDir.path}/test.txt');
+      await testFile.writeAsString('test content');
+      try {
+        await tool.execute({'pattern': 'test', 'path': externalDir.path}, ctx);
+      } finally {
+        testFile.deleteSync();
+        externalDir.deleteSync(recursive: true);
+      }
       expect(capturedPermission, equals('grep'));
       expect(capturedPatterns, contains('test'));
     });
@@ -587,6 +596,10 @@ void main() {
     group('permission denial', () {
       test('propagates exception when ctx.ask throws', () async {
         final tool = createGrepTool();
+        final externalDir = Directory('/tmp/grep_test_deny');
+        externalDir.createSync(recursive: true);
+        final testFile = File('${externalDir.path}/test.txt');
+        await testFile.writeAsString('test content');
         final ctx = ToolContext(
           toolCallId: 'test-deny',
           sessionId: 'test',
@@ -608,9 +621,11 @@ void main() {
         );
 
         await expectLater(
-          tool.execute({'pattern': 'test', 'path': '.'}, ctx),
+          tool.execute({'pattern': 'test', 'path': externalDir.path}, ctx),
           throwsA(isA<Exception>()),
         );
+        testFile.deleteSync();
+        externalDir.deleteSync(recursive: true);
       });
     });
   });

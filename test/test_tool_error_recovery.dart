@@ -18,6 +18,7 @@ import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/llm/model_resolver.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
+import 'package:chatorai/core/permission/permission_storage.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/session/session_id.dart';
@@ -175,8 +176,9 @@ Future<_TestHarness> _createHarness(ChatAiService chatService) async {
   final runner = SessionRunner(repository, null);
   final runnerHolder = SessionRunnerHolder(runner);
 
-  final ps = PermissionService();
-  ps.attachPreferences(_createMockPrefs());
+  final ps = PermissionService(
+    storage: SharedPrefsPermissionStorage(_createMockPrefs()),
+  );
   final toolRegistry = ToolRegistry(ps, PermissionRuleset(rules: []));
 
   return _TestHarness(

@@ -1,3 +1,4 @@
+import 'package:chatorai/features/settings/widgets/premium_blocks.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -20,16 +21,7 @@ class SettingsAboutSection extends StatelessWidget {
         }
 
         return Container(
-          decoration: BoxDecoration(
-            color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
-            borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-            border: Border.all(
-              color: isDark
-                  ? ChatoraiColors.darkInputBorder
-                  : ChatoraiColors.inputBorder,
-              width: 1,
-            ),
-          ),
+          decoration: premiumCard(isDark),
           padding: const EdgeInsets.all(ChatoraiSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

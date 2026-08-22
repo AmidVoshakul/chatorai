@@ -2225,4 +2225,162 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get newSession => 'Новая сессия';
+
+  @override
+  String get autoApproveTitle => 'Автоподтверждение';
+
+  @override
+  String get autoApproveSubtitle =>
+      'Настройка автоматического подтверждения разрешений';
+
+  @override
+  String get autoApproveExternalDirectoryDesc =>
+      'Разрешить доступ к внешним директориям';
+
+  @override
+  String get autoApproveShellDesc => 'Разрешить выполнение shell-команд';
+
+  @override
+  String get autoApproveReadDesc => 'Разрешить чтение файлов';
+
+  @override
+  String get autoApproveEditDesc => 'Разрешить редактирование файлов';
+
+  @override
+  String get autoApproveWriteDesc => 'Разрешить запись файлов';
+
+  @override
+  String get autoApproveGlobDesc => 'Разрешить glob-поиск';
+
+  @override
+  String get autoApproveGrepDesc => 'Разрешить grep-поиск';
+
+  @override
+  String get autoApproveWebsearchDesc => 'Разрешить веб-поиск';
+
+  @override
+  String get autoApproveWebfetchDesc => 'Разрешить загрузку веб-страниц';
+
+  @override
+  String get autoApproveDoomLoopDesc => 'Разрешить обнаружение doom loop';
+
+  @override
+  String get autoApproveSkillDesc => 'Разрешить выполнение навыков';
+
+  @override
+  String get autoApproveLspDesc => 'Разрешить использование LSP';
+
+  @override
+  String get autoApproveTaskDesc => 'Разрешить использование task';
+
+  @override
+  String get autoApproveTodowriteDesc => 'Разрешить операции с todo';
+
+  @override
+  String get exceptionsTitle => 'Исключения';
+
+  @override
+  String get addPath => 'Добавить путь';
+
+  @override
+  String get addCommand => 'Добавить команду';
+
+  @override
+  String get scopeGlobal => 'Глобально';
+
+  @override
+  String get scopeProject => 'Проект';
+
+  @override
+  String get defaultInherit => 'По умолчанию (унаследовать)';
+
+  @override
+  String get defaultAllow => 'Разрешить';
+
+  @override
+  String get defaultAsk => 'Спрашивать';
+
+  @override
+  String get defaultDeny => 'Запретить';
+
+  @override
+  String autoApproveDefaultInherited(Object action) {
+    return 'По умолчанию ($action)';
+  }
+
+  @override
+  String get autoApproveGroupFileAccess => 'Доступ к файлам';
+
+  @override
+  String get autoApproveGroupShell => 'Оболочка и команды';
+
+  @override
+  String get autoApproveGroupNetwork => 'Сеть';
+
+  @override
+  String get autoApproveGroupAgents => 'Агенты и автоматизация';
+
+  @override
+  String get autoApproveCommandPatternLabel => 'Шаблон команды';
+
+  @override
+  String get autoApprovePathPatternLabel => 'Шаблон пути';
+
+  @override
+  String get autoApproveCommandPatternHint => 'git *';
+
+  @override
+  String get autoApprovePathPatternHint => '/home/**/*.txt';
+
+  @override
+  String get autoApproveScopeHint =>
+      'Глобальные — везде · Проект — переопределяет для рабочей области';
+
+  @override
+  String get autoApproveNoExceptions =>
+      'Нет исключений — для всех шаблонов действует умолчание';
+
+  @override
+  String get autoApproveBrowseDirectory => 'Выбрать директорию';
+
+  @override
+  String get autoApproveScopeProjectDisabledTooltip =>
+      'Конфигурация проекта не найдена. Создайте .chatorai/chatorai.json для включения проектных разрешений.';
+
+  @override
+  String get autoApproveActionLabel => 'Action';
+
+  @override
+  String get autoApprovePatternHintFile =>
+      '/home/user/project/** • ~/Documents/*';
+
+  @override
+  String get autoApprovePatternHintCommand => 'npm run * • git status';
+
+  @override
+  String autoApproveError(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get settingsMcpSubtitle =>
+      'Manage Model Context Protocol tool servers';
+
+  @override
+  String get mcpAuthNoAuth => 'No Auth';
+
+  @override
+  String get mcpAuthToken => 'Token';
+
+  @override
+  String get mcpAuthOAuth => 'OAuth 2.1';
+
+  @override
+  String get statsInput => 'Input';
+
+  @override
+  String get statsOutput => 'Output';
+
+  @override
+  String get statsCacheRead => 'Cache Read';
 }

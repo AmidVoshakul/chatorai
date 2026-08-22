@@ -4,10 +4,7 @@ import 'dart:io';
 import 'package:dartdiff/dartdiff.dart';
 import 'package:chatorai/core/tools/file_edit_guard.dart';
 import 'package:chatorai/core/tools/tool.dart';
-import 'package:chatorai/shared/utils/path_sandbox.dart';
-import 'package:path/path.dart' as p;
-import 'package:chatorai/core/tools/filesystem_boundary.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/core/tools/built_in/tool_path_resolve.dart';
 import 'package:chatorai/core/lsp/lsp_service.dart';
 import 'package:chatorai/core/tools/lsp_diagnostics_format.dart';
 import 'package:chatorai/core/format/format_service.dart';
@@ -153,21 +150,13 @@ ToolDef createEditTool({
         );
       }
 
-      final safePath = resolveSafePath(filePath);
-      final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
-      final resolution = boundary.resolve(safePath);
-      if (resolution.isExternal) {
-        await ctx.ask(
-          permission: 'external_directory',
-          patterns: [resolution.path],
-          always: [resolution.path],
-          metadata: {
-            'filepath': resolution.path,
-            'parentDir': p.dirname(resolution.path),
-            'tool': 'edit',
-          },
-        );
-      }
+      final resolved = await resolveToolPath(
+        ctx: ctx,
+        userPath: filePath,
+        toolName: 'edit',
+      );
+      if (resolved.isError) return resolved.error!;
+      final safePath = resolved.path!;
       await ctx.ask(permission: 'edit', patterns: ['edit:file_path=$safePath']);
 
       final staleMtime = await FileEditGuard.checkStale(safePath);

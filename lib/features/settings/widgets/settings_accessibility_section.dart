@@ -27,7 +27,6 @@ class SettingsAccessibilitySection extends ConsumerWidget {
           const SizedBox(height: ChatoraiSpacing.lg),
         ],
         SettingsToggleTile(
-          context: context,
           title: localizations.wideScreenMode,
           subtitle: localizations.useFullScreenWidth,
           value: theme.wideScreenMode,
@@ -36,7 +35,6 @@ class SettingsAccessibilitySection extends ConsumerWidget {
         ),
         const SizedBox(height: ChatoraiSpacing.lg),
         SettingsToggleTile(
-          context: context,
           title: localizations.autoScrollDuringStreaming,
           subtitle: localizations.autoScrollDuringStreamingDesc,
           value: theme.autoScrollDuringStreaming,
@@ -46,7 +44,6 @@ class SettingsAccessibilitySection extends ConsumerWidget {
         ),
         const SizedBox(height: ChatoraiSpacing.lg),
         SettingsToggleTile(
-          context: context,
           title: localizations.showContinuationSuggestions,
           subtitle: localizations.showContinuationSuggestionsDesc,
           value: theme.showContinuationSuggestions,
@@ -56,7 +53,6 @@ class SettingsAccessibilitySection extends ConsumerWidget {
         ),
         const SizedBox(height: ChatoraiSpacing.lg),
         SettingsToggleTile(
-          context: context,
           title: localizations.expandReasoningByDefault,
           subtitle: localizations.expandReasoningByDefaultDesc,
           value: theme.expandReasoningByDefault,

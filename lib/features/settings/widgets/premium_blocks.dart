@@ -7,25 +7,69 @@ import 'package:flutter/material.dart';
 /// and the tokens (dark hairline, borderless dark cards, orange accent) live in
 /// one place.
 
-/// Card surface with NO border in dark mode (the scaffold/card contrast does
-/// the separating), and a whisper-thin border only in light mode where the
-/// surfaces are too close to read otherwise.
+/// Unified premium card — same luxury gradient as Auto-Approve tools.
+/// Single source of truth (DRY) for all settings cards: Skills, MCP,
+/// Agents Instructions, Provider, Appearance, Accessibility, etc.
 BoxDecoration premiumCard(bool isDark) => BoxDecoration(
-  color: isDark ? ChatoraiColors.darkCard : ChatoraiColors.lightCard,
   borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
-  border: isDark
-      ? null
-      : Border.all(color: ChatoraiColors.inputBorder, width: 1),
-  boxShadow: isDark
-      ? null
-      : [
-          BoxShadow(
-            color: ChatoraiColors.pureBlack.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+  border: Border.all(
+    color: isDark ? ChatoraiColors.darkInputBorder : ChatoraiColors.inputBorder,
+    width: ChatoraiBorderWidth.thin,
+  ),
+  boxShadow: isDark ? ChatoraiShadows.darkShadow : ChatoraiShadows.cardShadow,
+  gradient: isDark
+      ? const LinearGradient(
+          colors: [Color(0xFF1E1E1E), Color(0xFF262626)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        )
+      : const LinearGradient(
+          colors: [Color(0xFFFAFAFA), Color(0xFFF5F5F5)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
 );
+
+BoxDecoration premiumDialog(bool isDark) => premiumCard(
+  isDark,
+).copyWith(borderRadius: BorderRadius.circular(ChatoraiBorderRadius.xl));
+
+InputDecoration premiumFieldDecoration({
+  required String label,
+  String? hint,
+  String? helper,
+  required bool isDark,
+}) {
+  final helperColor = isDark
+      ? ChatoraiColors.darkSecondaryTextColor.withAlpha(140)
+      : ChatoraiColors.secondaryTextColor.withAlpha(140);
+  return InputDecoration(
+    labelText: label,
+    hintText: hint,
+    hintMaxLines: 12,
+    helperText: helper,
+    helperStyle: TextStyle(fontSize: 11, color: helperColor),
+    helperMaxLines: 2,
+    contentPadding: const EdgeInsets.only(left: 12, right: 12, top: 2),
+  );
+}
+
+class PremiumCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+
+  const PremiumCard({super.key, required this.child, this.padding});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: padding ?? const EdgeInsets.all(ChatoraiSpacing.lg),
+      decoration: premiumCard(isDark),
+      child: child,
+    );
+  }
+}
 
 /// A hairline divider that stays *dark* in dark mode (never white) and a soft
 /// neutral in light mode. Used under the tab bar.
@@ -38,6 +82,101 @@ Color titleColor(bool isDark) =>
 Color subtleColor(bool isDark) => isDark
     ? ChatoraiColors.darkSecondaryTextColor
     : ChatoraiColors.secondaryTextColor;
+
+/// Compact unified tab bar — single source of truth for all category tabs
+/// (Skills, MCP, Agents, Config, Auto-Approve). Height 40 (was 48) for a
+/// denser premium look. DRY: use everywhere instead of duplicating TabBar.
+const double kCompactTabHeight = 40.0;
+
+TabBar unifiedTabBar({
+  required List<Widget> tabs,
+  required bool isDark,
+  TabController? controller,
+  void Function(int)? onTap,
+  bool isScrollable = false,
+}) => TabBar(
+  controller: controller,
+  onTap: onTap,
+  tabs: tabs,
+  isScrollable: isScrollable,
+  indicatorColor: ChatoraiColors.orange,
+  indicatorSize: TabBarIndicatorSize.tab,
+  dividerColor: Colors.transparent,
+  labelColor: isDark ? ChatoraiColors.pureWhite : ChatoraiColors.pureBlack,
+  unselectedLabelColor: isDark
+      ? ChatoraiColors.darkSecondaryTextColor
+      : ChatoraiColors.secondaryTextColor,
+  labelStyle: const TextStyle(
+    fontWeight: FontWeight.w600,
+    fontSize: ChatoraiFontSizes.base,
+  ),
+  unselectedLabelStyle: const TextStyle(
+    fontWeight: FontWeight.w500,
+    fontSize: ChatoraiFontSizes.base,
+  ),
+  labelPadding: const EdgeInsets.symmetric(horizontal: ChatoraiSpacing.md),
+  overlayColor: WidgetStateProperty.all(Colors.transparent),
+);
+
+PreferredSizeWidget unifiedTabContainer({
+  required TabBar tabBar,
+  required bool isDark,
+}) => PreferredSize(
+  preferredSize: const Size.fromHeight(kCompactTabHeight),
+  child: DecoratedBox(
+    decoration: BoxDecoration(
+      border: Border(
+        bottom: BorderSide(
+          color: isDark
+              ? ChatoraiColors.darkInputBorder
+              : ChatoraiColors.inputBorder,
+        ),
+      ),
+    ),
+    child: SizedBox(height: kCompactTabHeight, child: tabBar),
+  ),
+);
+
+/// Unified marketplace search — identical in MCP and Skills.
+/// Premium compact field with high-contrast fill and orange focus.
+InputDecoration marketplaceSearchDecoration({
+  required bool isDark,
+  required String hintText,
+}) => InputDecoration(
+  prefixIcon: Icon(
+    Icons.search_rounded,
+    size: 18,
+    color: isDark
+        ? ChatoraiColors.darkSecondaryTextColor
+        : ChatoraiColors.secondaryTextColor,
+  ),
+  hintText: hintText,
+  hintStyle: TextStyle(
+    color: isDark ? const Color(0xFF8A8A8A) : const Color(0xFF9A9A9A),
+    fontSize: ChatoraiFontSizes.base,
+  ),
+  filled: true,
+  fillColor: isDark ? const Color(0xFF2F2F2F) : Colors.white,
+  isDense: true,
+  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+  enabledBorder: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+    borderSide: BorderSide(
+      color: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFE0E0E0),
+      width: ChatoraiBorderWidth.thin,
+    ),
+  ),
+  focusedBorder: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+    borderSide: const BorderSide(color: ChatoraiColors.orange, width: 1.4),
+  ),
+  border: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+    borderSide: BorderSide(
+      color: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFE0E0E0),
+    ),
+  ),
+);
 
 /// Section heading with a helper subtitle.
 class SectionTitle extends StatelessWidget {
@@ -83,17 +222,20 @@ class SectionTitle extends StatelessWidget {
 /// Responsive grid: 1 / 2 / 3 columns based on available width.
 class CardGrid extends StatelessWidget {
   final List<Widget> children;
-  const CardGrid({super.key, required this.children});
+  final int maxColumns;
+
+  const CardGrid({super.key, required this.children, this.maxColumns = 3});
 
   @override
   Widget build(BuildContext context) {
     if (children.isEmpty) return const SizedBox.shrink();
     return LayoutBuilder(
       builder: (context, constraints) {
+        final effectiveMax = maxColumns.clamp(1, 3);
         final crossCount = constraints.maxWidth >= 720
-            ? 3
+            ? effectiveMax
             : constraints.maxWidth >= 480
-            ? 2
+            ? effectiveMax.clamp(1, 2)
             : 1;
         const spacing = ChatoraiSpacing.md;
         final cardWidth =
@@ -261,8 +403,8 @@ class _FileEditorDialogState extends State<FileEditorDialog> {
   }
 }
 
-/// A pill-shaped, selectable filter chip used for category filters in the MCP
-/// and Skills marketplaces. Selected chips use the accent orange fill.
+/// Compact premium pill for marketplace category filters (MCP & Skills).
+/// Unified, dense and expensive — replaces the previous large 14/8 chip.
 class CategoryChip extends StatelessWidget {
   final String label;
   final bool selected;
@@ -286,28 +428,38 @@ class CategoryChip extends StatelessWidget {
               : ChatoraiColors.secondaryTextColor);
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      child: AnimatedContainer(
+        duration: ChatoraiDurations.fast,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
         decoration: BoxDecoration(
           color: selected
               ? ChatoraiColors.orange
-              : (isDark
-                    ? ChatoraiColors.darkInputFill
-                    : ChatoraiColors.inputFill),
+              : (isDark ? const Color(0xFF262626) : Colors.white),
           borderRadius: BorderRadius.circular(ChatoraiBorderRadius.full),
           border: Border.all(
             color: selected
                 ? ChatoraiColors.orange
-                : (isDark
-                      ? ChatoraiColors.darkInputBorder
-                      : ChatoraiColors.inputBorder),
+                : (isDark ? const Color(0xFF2F2F2F) : const Color(0xFFE8E8E8)),
+            width: ChatoraiBorderWidth.thin,
           ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: ChatoraiColors.orange.withValues(alpha: 0.28),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: ChatoraiFontSizes.base,
-            fontWeight: FontWeight.w600,
+            fontSize: ChatoraiFontSizes.md,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            letterSpacing: 0.15,
+            height: 1.1,
             color: fg,
           ),
         ),

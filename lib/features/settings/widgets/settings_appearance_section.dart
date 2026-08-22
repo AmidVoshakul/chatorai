@@ -34,7 +34,6 @@ class SettingsAppearanceSection extends ConsumerWidget {
           const SizedBox(height: ChatoraiSpacing.lg),
         ],
         SettingsSelectionCard(
-          context: context,
           icon: Icons.palette,
           title: _getThemeModeName(theme.themeMode, localizations),
           subtitle: localizations.theme,
@@ -42,7 +41,6 @@ class SettingsAppearanceSection extends ConsumerWidget {
         ),
         const SizedBox(height: ChatoraiSpacing.xl),
         SettingsSelectionCard(
-          context: context,
           icon: Icons.language,
           title: _getLanguageName(language.selectedLanguage, localizations),
           subtitle: localizations.language,
@@ -52,7 +50,6 @@ class SettingsAppearanceSection extends ConsumerWidget {
         SettingsSectionHeader(title: localizations.fontSize),
         const SizedBox(height: ChatoraiSpacing.lg),
         SettingsSliderCard(
-          context: context,
           value: theme.fontSize,
           min: 0.8,
           max: 1.5,

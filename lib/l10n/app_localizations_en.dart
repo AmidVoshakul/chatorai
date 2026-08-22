@@ -2215,4 +2215,161 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get newSession => 'New session';
+
+  @override
+  String get autoApproveTitle => 'Auto-Approve';
+
+  @override
+  String get autoApproveSubtitle => 'Configure automatic permission approvals';
+
+  @override
+  String get autoApproveExternalDirectoryDesc =>
+      'Allow access to external directories';
+
+  @override
+  String get autoApproveShellDesc => 'Allow shell command execution';
+
+  @override
+  String get autoApproveReadDesc => 'Allow reading files';
+
+  @override
+  String get autoApproveEditDesc => 'Allow editing files';
+
+  @override
+  String get autoApproveWriteDesc => 'Allow writing files';
+
+  @override
+  String get autoApproveGlobDesc => 'Allow glob pattern searches';
+
+  @override
+  String get autoApproveGrepDesc => 'Allow grep searches';
+
+  @override
+  String get autoApproveWebsearchDesc => 'Allow web searches';
+
+  @override
+  String get autoApproveWebfetchDesc => 'Allow fetching web pages';
+
+  @override
+  String get autoApproveDoomLoopDesc => 'Allow doom loop detection';
+
+  @override
+  String get autoApproveSkillDesc => 'Allow skill execution';
+
+  @override
+  String get autoApproveLspDesc => 'Allow LSP tool usage';
+
+  @override
+  String get autoApproveTaskDesc => 'Allow task tool usage';
+
+  @override
+  String get autoApproveTodowriteDesc => 'Allow todo write operations';
+
+  @override
+  String get exceptionsTitle => 'Exceptions';
+
+  @override
+  String get addPath => 'Add path';
+
+  @override
+  String get addCommand => 'Add command';
+
+  @override
+  String get scopeGlobal => 'Global';
+
+  @override
+  String get scopeProject => 'Project';
+
+  @override
+  String get defaultInherit => 'Default (inherit)';
+
+  @override
+  String get defaultAllow => 'Allow';
+
+  @override
+  String get defaultAsk => 'Ask';
+
+  @override
+  String get defaultDeny => 'Deny';
+
+  @override
+  String autoApproveDefaultInherited(Object action) {
+    return 'Default ($action)';
+  }
+
+  @override
+  String get autoApproveGroupFileAccess => 'File Access';
+
+  @override
+  String get autoApproveGroupShell => 'Shell & Commands';
+
+  @override
+  String get autoApproveGroupNetwork => 'Network';
+
+  @override
+  String get autoApproveGroupAgents => 'Agents & Automation';
+
+  @override
+  String get autoApproveCommandPatternLabel => 'Command pattern';
+
+  @override
+  String get autoApprovePathPatternLabel => 'Path pattern';
+
+  @override
+  String get autoApproveCommandPatternHint => 'git *';
+
+  @override
+  String get autoApprovePathPatternHint => '/home/**/*.txt';
+
+  @override
+  String get autoApproveScopeHint =>
+      'Global applies everywhere · Project overrides per workspace';
+
+  @override
+  String get autoApproveNoExceptions =>
+      'No exceptions — uses default for all patterns';
+
+  @override
+  String get autoApproveBrowseDirectory => 'Browse directory';
+
+  @override
+  String get autoApproveScopeProjectDisabledTooltip =>
+      'No project configuration found. Create .chatorai/chatorai.json to enable project-scoped permissions.';
+
+  @override
+  String get autoApproveActionLabel => 'Action';
+
+  @override
+  String get autoApprovePatternHintFile =>
+      '/home/user/project/** • ~/Documents/*';
+
+  @override
+  String get autoApprovePatternHintCommand => 'npm run * • git status';
+
+  @override
+  String autoApproveError(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get settingsMcpSubtitle =>
+      'Manage Model Context Protocol tool servers';
+
+  @override
+  String get mcpAuthNoAuth => 'No Auth';
+
+  @override
+  String get mcpAuthToken => 'Token';
+
+  @override
+  String get mcpAuthOAuth => 'OAuth 2.1';
+
+  @override
+  String get statsInput => 'Input';
+
+  @override
+  String get statsOutput => 'Output';
+
+  @override
+  String get statsCacheRead => 'Cache Read';
 }

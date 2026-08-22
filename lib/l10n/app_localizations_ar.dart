@@ -2173,4 +2173,161 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get newSession => 'جلسة جديدة';
+
+  @override
+  String get autoApproveTitle => 'الموافقة التلقائية';
+
+  @override
+  String get autoApproveSubtitle => 'تكوين الموافقة التلقائية على الأذونات';
+
+  @override
+  String get autoApproveExternalDirectoryDesc =>
+      'السماح بالوصول إلى الأدلة الخارجية';
+
+  @override
+  String get autoApproveShellDesc => 'السماح بتنفيذ أوامر الشل';
+
+  @override
+  String get autoApproveReadDesc => 'السماح بقراءة الملفات';
+
+  @override
+  String get autoApproveEditDesc => 'السماح بتعديل الملفات';
+
+  @override
+  String get autoApproveWriteDesc => 'السماح بكتابة الملفات';
+
+  @override
+  String get autoApproveGlobDesc => 'السماح بالبحث بنمط glob';
+
+  @override
+  String get autoApproveGrepDesc => 'السماح بالبحث بـ grep';
+
+  @override
+  String get autoApproveWebsearchDesc => 'السماح بالبحث على الويب';
+
+  @override
+  String get autoApproveWebfetchDesc => 'السماح بجلب صفحات الويب';
+
+  @override
+  String get autoApproveDoomLoopDesc => 'السماح بالكشف عن doom loop';
+
+  @override
+  String get autoApproveSkillDesc => 'السماح بتنفيذ المهارات';
+
+  @override
+  String get autoApproveLspDesc => 'السماح باستخدام LSP';
+
+  @override
+  String get autoApproveTaskDesc => 'السماح باستخدام task';
+
+  @override
+  String get autoApproveTodowriteDesc => 'السماح بعمليات كتابة todo';
+
+  @override
+  String get exceptionsTitle => 'استثناءات';
+
+  @override
+  String get addPath => 'إضافة مسار';
+
+  @override
+  String get addCommand => 'إضافة أمر';
+
+  @override
+  String get scopeGlobal => 'عام';
+
+  @override
+  String get scopeProject => 'مشروع';
+
+  @override
+  String get defaultInherit => 'افتراضي (وراثة)';
+
+  @override
+  String get defaultAllow => 'سماح';
+
+  @override
+  String get defaultAsk => 'سؤال';
+
+  @override
+  String get defaultDeny => 'رفض';
+
+  @override
+  String autoApproveDefaultInherited(Object action) {
+    return 'الافتراضي ($action)';
+  }
+
+  @override
+  String get autoApproveGroupFileAccess => 'الوصول للملفات';
+
+  @override
+  String get autoApproveGroupShell => 'الصدفة والأوامر';
+
+  @override
+  String get autoApproveGroupNetwork => 'الشبكة';
+
+  @override
+  String get autoApproveGroupAgents => 'الوكلاء والأتمتة';
+
+  @override
+  String get autoApproveCommandPatternLabel => 'نمط الأمر';
+
+  @override
+  String get autoApprovePathPatternLabel => 'نمط المسار';
+
+  @override
+  String get autoApproveCommandPatternHint => 'git *';
+
+  @override
+  String get autoApprovePathPatternHint => '/home/**/*.txt';
+
+  @override
+  String get autoApproveScopeHint =>
+      'العام يطبق في كل مكان · المشروع يتجاوز حسب مساحة العمل';
+
+  @override
+  String get autoApproveNoExceptions =>
+      'لا استثناءات — يُستخدم الافتراضي لجميع الأنماط';
+
+  @override
+  String get autoApproveBrowseDirectory => 'تصفح الدليل';
+
+  @override
+  String get autoApproveScopeProjectDisabledTooltip =>
+      'لم يتم العثور على تكوين المشروع. أنشئ .chatorai/chatorai.json لتمكين أذونات المشروع.';
+
+  @override
+  String get autoApproveActionLabel => 'Action';
+
+  @override
+  String get autoApprovePatternHintFile =>
+      '/home/user/project/** • ~/Documents/*';
+
+  @override
+  String get autoApprovePatternHintCommand => 'npm run * • git status';
+
+  @override
+  String autoApproveError(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get settingsMcpSubtitle =>
+      'Manage Model Context Protocol tool servers';
+
+  @override
+  String get mcpAuthNoAuth => 'No Auth';
+
+  @override
+  String get mcpAuthToken => 'Token';
+
+  @override
+  String get mcpAuthOAuth => 'OAuth 2.1';
+
+  @override
+  String get statsInput => 'Input';
+
+  @override
+  String get statsOutput => 'Output';
+
+  @override
+  String get statsCacheRead => 'Cache Read';
 }

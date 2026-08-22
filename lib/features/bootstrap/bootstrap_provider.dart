@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/config/config_initializer.dart';
 import 'package:chatorai/core/config/config_provider.dart';
+import 'package:chatorai/core/config/config_watcher.dart';
 import 'package:chatorai/core/config/instructions_resolver.dart';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/llm/catalog_providers.dart';
@@ -47,6 +48,9 @@ final appBootstrapFastProvider = FutureProvider<void>((ref) async {
 
   // XdgPaths.init() вызывается внутри ensureGlobalConfig(); он idempotent.
   await ConfigInitializer.ensureGlobalConfig();
+
+  // Activate the config file watcher for live reloads.
+  ref.watch(configWatcherProvider);
 
   // SSOT для конфига — configProvider валидирует по JSON-схеме.
   // При ошибке валидации chatorai.json продолжаем с null (MCP/overrides не

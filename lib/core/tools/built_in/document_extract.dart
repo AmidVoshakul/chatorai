@@ -1,15 +1,14 @@
 import 'dart:io';
 
 import 'package:chatorai/core/tools/document_extractor_service.dart';
-import 'package:chatorai/core/tools/filesystem_boundary.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
-import 'package:chatorai/shared/utils/path_sandbox.dart';
 import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as p;
+import 'package:chatorai/core/tools/built_in/tool_path_resolve.dart';
 
 // ---------------------------------------------------------------------------
 // document_extract_pdf
@@ -294,13 +293,7 @@ ToolDef createDocumentExtractXlsxTool() {
 String? _resolvePath(String raw) {
   final trimmed = raw.trim();
   if (trimmed.contains('*') || trimmed.contains('?')) {
-    final glob = Glob(trimmed);
-    final matches = glob
-        .listSync()
-        .whereType<File>()
-        .map((f) => f.path)
-        .toList();
-    return matches.isEmpty ? null : matches.first;
+    return trimmed;
   }
   if (trimmed.contains(',')) {
     final parts = trimmed
@@ -319,38 +312,49 @@ Future<String?> _autoAllowPath(
   String projectRoot,
   ToolContext ctx,
 ) async {
-  String safePath;
   try {
-    safePath = resolveSafePath(raw, allowedRoots: managedReadRoots);
-  } on ArgumentError {
-    safePath = p.normalize(p.isAbsolute(raw) ? raw : p.join(projectRoot, raw));
-  }
-
-  final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
-  final resolution = boundary.resolve(safePath);
-  if (resolution.isExternal &&
-      !isWithinAnyRoot(resolution.path, managedReadRoots)) {
-    try {
-      await ctx.ask(
-        permission: 'external_directory',
-        patterns: [resolution.path],
-        always: [resolution.path],
-        metadata: {
-          'toolName': 'document_extract',
-          'requestedPath': resolution.path,
-        },
-      );
-    } on PermissionDeniedError catch (e) {
+    final resolved = await resolveToolPath(
+      ctx: ctx,
+      userPath: raw,
+      toolName: 'document_extract',
+    );
+    if (resolved.isError) {
       LogTags.skills.logWarning(
-        'document_extract: permission denied for ${resolution.path}: $e',
-      );
-      return null;
-    } on PermissionRejectedError catch (e) {
-      LogTags.skills.logWarning(
-        'document_extract: permission rejected for ${resolution.path}: $e',
+        'document_extract: permission denied for $raw: ${resolved.error!.output}',
       );
       return null;
     }
+    final safePath = resolved.path;
+    if (safePath == null) return null;
+    await ctx.ask(
+      permission: 'read',
+      patterns: [safePath],
+      always: const ['*'],
+      metadata: {'filepath': safePath, 'tool': 'document_extract'},
+    );
+    if (safePath.contains('*') || safePath.contains('?')) {
+      final glob = Glob(safePath);
+      final matches = glob
+          .listSync()
+          .whereType<File>()
+          .map((f) => f.path)
+          .toList();
+      // Reaching here means permission was already granted, so an empty match
+      // set is a genuine "no files matched the glob" — not a permission denial.
+      // Return the pattern so the caller's existence check reports "not found".
+      if (matches.isEmpty) return safePath;
+      return matches.first;
+    }
+    return safePath;
+  } on PermissionDeniedError catch (e) {
+    LogTags.skills.logWarning(
+      'document_extract: permission denied for $raw: $e',
+    );
+    return null;
+  } on PermissionRejectedError catch (e) {
+    LogTags.skills.logWarning(
+      'document_extract: permission rejected for $raw: $e',
+    );
+    return null;
   }
-  return resolution.path;
 }

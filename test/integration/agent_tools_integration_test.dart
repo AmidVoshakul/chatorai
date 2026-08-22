@@ -8,6 +8,7 @@ import 'package:test/test.dart';
 import 'package:chatorai/core/llm/model_resolver.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
+import 'package:chatorai/core/permission/permission_storage.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_runner.dart';
@@ -162,8 +163,9 @@ Future<_TaskTestHarness> _createTaskHarness(ChatAiService chatService) async {
   // Create an initial parent session so child session creation works
   await repository.createSession(agent: 'test');
 
-  final ps = PermissionService();
-  ps.attachPreferences(_createMockPrefs());
+  final ps = PermissionService(
+    storage: SharedPrefsPermissionStorage(_createMockPrefs()),
+  );
   final toolRegistry = ToolRegistry(ps, PermissionRuleset(rules: []));
 
   return _TaskTestHarness(
