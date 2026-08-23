@@ -2,16 +2,16 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/core/config/config_loader.dart';
 import 'package:chatorai/features/settings/widgets/premium_blocks.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/xdg_paths.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
-import 'package:path/path.dart' as p;
+import 'package:chatorai/shared/workspace/workspace_provider.dart';
 
 /// Read-only viewer for `chatorai.json`, split into a Global tab
 /// (`<xdg-config>/chatorai.json`) and, on desktop, a Project tab
-/// (`<cwd>/.chatorai/chatorai.json`). Project settings override global ones.
+/// (`<workspace>/.chatorai/chatorai.json`). Project settings override global ones.
 class ConfigScreen extends ConsumerStatefulWidget {
   final bool embedded;
 
@@ -45,21 +45,38 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   void initState() {
     super.initState();
     _loadConfig();
+
+    // Reload config whenever the active workspace changes so the Project
+    // tab always reflects the current workspace path.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.listenManual<WorkspaceState>(workspaceProvider, (previous, next) {
+        if (previous?.currentPath != next.currentPath) {
+          _loadConfig();
+        }
+      });
+    });
   }
 
   Future<void> _loadConfig() async {
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+    });
+
     await XdgPaths.init();
-    final configDir = await XdgPaths.configHomeAsync;
-    final global = await _read(p.join(configDir, 'chatorai.json'));
+    final global = await _read(
+      await ConfigLoader.resolveConfigPath(global: true),
+    );
 
     _ConfigScopeData? project;
     if (_supportsProjectScope) {
-      final projectPath = p.join(
-        workspaceRuntimeCurrent.path,
-        '.chatorai',
-        'chatorai.json',
+      final workspace = ref.read(workspaceProvider);
+      project = await _read(
+        await ConfigLoader.resolveConfigPath(
+          global: false,
+          projectRoot: Directory(workspace.currentPath),
+        ),
       );
-      project = await _read(projectPath);
     }
 
     if (mounted) {
@@ -105,18 +122,15 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
           Tab(text: l10n.configScopeProject),
         ],
       );
-      content = DefaultTabController(
-        length: 2,
-        child: TabBarView(
-          children: [
-            _ScopeConfigView(data: _global, isDark: isDark),
-            _ScopeConfigView(
-              data: _project,
-              isDark: isDark,
-              footnote: l10n.configProjectOverrides,
-            ),
-          ],
-        ),
+      content = TabBarView(
+        children: [
+          _ScopeConfigView(data: _global, isDark: isDark),
+          _ScopeConfigView(
+            data: _project,
+            isDark: isDark,
+            footnote: l10n.configProjectOverrides,
+          ),
+        ],
       );
     }
 

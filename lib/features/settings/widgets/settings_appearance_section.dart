@@ -74,14 +74,6 @@ class SettingsAppearanceSection extends ConsumerWidget {
   }
 
   String _getLanguageName(String code, AppLocalizations localizations) {
-    final languages = <String, String>{
-      'en': localizations.english,
-      'ru': localizations.russian,
-      'uk': localizations.ukrainian,
-      'ar': localizations.arabic,
-      'zh': localizations.chinese,
-      'ja': localizations.japanese,
-    };
-    return languages[code] ?? code.toUpperCase();
+    return LanguageState.getLocalizedLanguageName(code, localizations);
   }
 }

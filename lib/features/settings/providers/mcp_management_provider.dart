@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:chatorai/core/config/config_loader.dart';
 import 'package:chatorai/core/config/config_manager.dart';
 import 'package:chatorai/core/config/config_writer.dart';
 import 'package:chatorai/core/mcp/mcp_client_service.dart';
@@ -128,7 +129,7 @@ class McpManagementNotifier extends AsyncNotifier<McpManagementState> {
     try {
       final path =
           _overridePath ??
-          await ConfigWriter.resolveConfigPath(
+          await ConfigLoader.resolveConfigPath(
             global: scope == McpScope.global,
           );
       final raw = await ConfigWriter.readRawConfig(path);
@@ -144,7 +145,7 @@ class McpManagementNotifier extends AsyncNotifier<McpManagementState> {
 
   Future<String> _configPath(McpScope scope) async =>
       _overridePath ??
-      await ConfigWriter.resolveConfigPath(global: scope == McpScope.global);
+      await ConfigLoader.resolveConfigPath(global: scope == McpScope.global);
 
   /// Reconcile the live [McpClientService] and dependent providers with the
   /// current on-disk config, so MCP connections and the chat status bar update

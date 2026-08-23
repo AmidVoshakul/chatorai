@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:chatorai/core/config/agents_file_service.dart';
+import 'package:chatorai/core/config/config_loader.dart';
 import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/config/config_writer.dart';
 import 'package:chatorai/core/config/instructions_resolver.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/shared/workspace/workspace_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
@@ -110,7 +113,17 @@ class InstructionsManagementNotifier
   }
 
   @override
-  Future<InstructionsManagementState> build() => _reload();
+  Future<InstructionsManagementState> build() {
+    // Re-read whenever the active workspace changes so the Project tab always
+    // reflects the current workspace root (both the config path and the
+    // auto-discovered AGENTS.md walk-up move with it).
+    ref.listen(workspaceProvider, (previous, next) {
+      if (previous?.currentPath != next.currentPath) {
+        unawaited(refresh());
+      }
+    });
+    return _reload();
+  }
 
   Future<InstructionsManagementState> _reload() async {
     try {
@@ -134,7 +147,9 @@ class InstructionsManagementNotifier
             .discoverFiles(cwd: projectRoot)
             .where((f) => f.exists)
             .toList();
-        projectEntries = await _readEntries(_projectConfigPath(projectRoot));
+        projectEntries = await _readEntries(
+          await _projectConfigPath(projectRoot),
+        );
       }
 
       return InstructionsManagementState(
@@ -163,20 +178,29 @@ class InstructionsManagementNotifier
 
   Future<String> _globalConfigPath() async =>
       _globalConfigPathOverride ??
-      await ConfigWriter.resolveConfigPath(global: true);
+      await ConfigLoader.resolveConfigPath(global: true);
 
-  String _projectConfigPath(Directory root) =>
-      p.join(root.path, '.chatorai', 'chatorai.json');
+  Future<String> _projectConfigPath(Directory root) async =>
+      ConfigLoader.resolveConfigPath(global: false, projectRoot: root);
 
   Future<String> _configPathFor(InstructionsScope scope) async =>
       scope == InstructionsScope.project
-      ? _projectConfigPath(_projectRoot)
+      ? await _projectConfigPath(_projectRoot)
       : await _globalConfigPath();
 
   /// Absolute root for a scope: the project root for [InstructionsScope.project]
-  /// and `null` (i.e. relative to the global config dir) for global.
-  Directory? _rootFor(InstructionsScope scope) =>
-      scope == InstructionsScope.project ? _projectRoot : null;
+  /// and the global config dir for global. [relPath] already carries the
+  /// `.chatorai/instructions/` prefix, so the root must NOT include it.
+  Future<Directory?> _rootFor(InstructionsScope scope) async =>
+      scope == InstructionsScope.project ? _projectRoot : await _globalRoot();
+
+  /// Absolute directory the global scope's managed instruction files live
+  /// under: `<configHome>/`. Independent of the process working directory, so
+  /// global instructions never leak into the project folder.
+  Future<Directory> _globalRoot() async {
+    final configPath = await _globalConfigPath();
+    return Directory(p.dirname(configPath));
+  }
 
   Future<void> _persistAndSync(Future<void> Function() mutation) async {
     await mutation();
@@ -209,6 +233,28 @@ class InstructionsManagementNotifier
   // instructions[] entries
   // ---------------------------------------------------------------------------
 
+  /// Reads the current contents of an inline instruction [entry] under [scope].
+  Future<String> readInstructionEntry(
+    String entry, {
+    required InstructionsScope scope,
+  }) async {
+    final absPath = await _absoluteForScope(scope, entry);
+    return File(absPath).readAsString();
+  }
+
+  /// Writes [content] to an inline instruction [entry] under [scope] and syncs
+  /// so a running chat picks it up without a restart.
+  Future<void> saveInstructionEntry(
+    String entry,
+    String content, {
+    required InstructionsScope scope,
+  }) async {
+    await _persistAndSync(() async {
+      final absPath = await _absoluteForScope(scope, entry);
+      await File(absPath).writeAsString(content);
+    });
+  }
+
   /// Creates an inline instruction in [scope]: writes `[name].md` under
   /// `<scope>/.chatorai/instructions/` and registers its relative path in
   /// `instructions[]`.
@@ -219,7 +265,7 @@ class InstructionsManagementNotifier
   }) async {
     await _persistAndSync(() async {
       final relPath = p.join(kInstructionsSubdir, _slugFile(name));
-      final absPath = _absoluteForScope(scope, relPath);
+      final absPath = await _absoluteForScope(scope, relPath);
       final file = File(absPath);
       await file.parent.create(recursive: true);
       await file.writeAsString(content);
@@ -240,7 +286,7 @@ class InstructionsManagementNotifier
     await _persistAndSync(() async {
       final baseName = p.basename(sourcePath);
       final relPath = p.join(kInstructionsSubdir, baseName);
-      final absPath = _absoluteForScope(scope, relPath);
+      final absPath = await _absoluteForScope(scope, relPath);
       final dest = File(absPath);
       await dest.parent.create(recursive: true);
       await File(sourcePath).copy(absPath);
@@ -292,9 +338,10 @@ class InstructionsManagementNotifier
   // ---------------------------------------------------------------------------
 
   /// Resolves a scope-relative path to an absolute one. For the global scope
-  /// the instructions dir is left relative to the global config dir.
-  String _absoluteForScope(InstructionsScope scope, String relPath) {
-    final root = _rootFor(scope);
+  /// the instructions dir is relative to the global config dir; for project
+  /// it is relative to the project root.
+  Future<String> _absoluteForScope(InstructionsScope scope, String relPath) async {
+    final root = await _rootFor(scope);
     if (root != null) return p.join(root.path, relPath);
     return relPath;
   }
@@ -307,7 +354,7 @@ class InstructionsManagementNotifier
         !normalized.startsWith(kInstructionsSubdir)) {
       return;
     }
-    final absPath = _absoluteForScope(scope, normalized);
+    final absPath = await _absoluteForScope(scope, normalized);
     final file = File(absPath);
     if (await file.exists()) {
       try {

@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat/todo_part.dart';
@@ -707,56 +706,11 @@ class EventStore {
   }
 
   Map<String, dynamic>? _serializePermission(PermissionRuleset? pr) {
-    if (pr == null) return null;
-    if (pr.rules.isEmpty && pr.sessionApproved.isEmpty) return null;
-    return {
-      'rules': pr.rules
-          .map(
-            (r) => {
-              'permission': r.permission,
-              'pattern': r.pattern,
-              'action': r.action.name,
-            },
-          )
-          .toList(),
-      'sessionApproved': pr.sessionApproved
-          .map(
-            (r) => {
-              'permission': r.permission,
-              'pattern': r.pattern,
-              'action': r.action.name,
-            },
-          )
-          .toList(),
-    };
+    return PermissionRulesetCodec.toJson(pr);
   }
 
   static PermissionRuleset? _deserializePermission(Map<String, dynamic>? data) {
-    if (data == null) return null;
-    return PermissionRuleset(
-      rules:
-          (data['rules'] as List<dynamic>?)
-              ?.map(
-                (r) => PermissionRule(
-                  permission: r['permission'] as String,
-                  pattern: r['pattern'] as String,
-                  action: PermissionAction.values.byName(r['action'] as String),
-                ),
-              )
-              .toList() ??
-          [],
-      sessionApproved:
-          (data['sessionApproved'] as List<dynamic>?)
-              ?.map(
-                (r) => PermissionRule(
-                  permission: r['permission'] as String,
-                  pattern: r['pattern'] as String,
-                  action: PermissionAction.values.byName(r['action'] as String),
-                ),
-              )
-              .toList() ??
-          [],
-    );
+    return PermissionRulesetCodec.fromJson(data);
   }
 
   /// Compute the next sequence number for a session by reading the current

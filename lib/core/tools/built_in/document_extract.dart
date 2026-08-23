@@ -104,6 +104,16 @@ ToolDef createDocumentExtractPdfTool() {
         );
       }
 
+      final fileSize = await file.length();
+      final maxFileSizeBytes =
+          DocumentExtractorService.maxFileSizeMb * 1024 * 1024;
+      if (fileSize > maxFileSizeBytes) {
+        return ToolOutput(
+          'Error: file too large: $fileSize bytes (max $maxFileSizeBytes bytes)',
+          metadata: {'error': true},
+        );
+      }
+
       try {
         final content = await DocumentExtractorService().extractPdf(
           safePath,
@@ -181,6 +191,16 @@ ToolDef createDocumentExtractDocxTool() {
       if (!file.existsSync()) {
         return ToolOutput(
           'Error: file not found: "$rawPath"',
+          metadata: {'error': true},
+        );
+      }
+
+      final fileSize = await file.length();
+      final maxFileSizeBytes =
+          DocumentExtractorService.maxFileSizeMb * 1024 * 1024;
+      if (fileSize > maxFileSizeBytes) {
+        return ToolOutput(
+          'Error: file too large: $fileSize bytes (max $maxFileSizeBytes bytes)',
           metadata: {'error': true},
         );
       }
@@ -263,6 +283,16 @@ ToolDef createDocumentExtractXlsxTool() {
       if (!file.existsSync()) {
         return ToolOutput(
           'Error: file not found: "$rawPath"',
+          metadata: {'error': true},
+        );
+      }
+
+      final fileSize = await file.length();
+      final maxFileSizeBytes =
+          DocumentExtractorService.maxFileSizeMb * 1024 * 1024;
+      if (fileSize > maxFileSizeBytes) {
+        return ToolOutput(
+          'Error: file too large: $fileSize bytes (max $maxFileSizeBytes bytes)',
           metadata: {'error': true},
         );
       }

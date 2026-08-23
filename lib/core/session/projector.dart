@@ -1325,28 +1325,7 @@ Future<String?> _lookupInputJson(AppDatabase db, String toolCallId) async {
 }
 
 Map<String, dynamic>? _serializePermission(PermissionRuleset? pr) {
-  if (pr == null) return null;
-  if (pr.rules.isEmpty && pr.sessionApproved.isEmpty) return null;
-  return {
-    'rules': pr.rules
-        .map(
-          (r) => {
-            'permission': r.permission,
-            'pattern': r.pattern,
-            'action': r.action.name,
-          },
-        )
-        .toList(),
-    'sessionApproved': pr.sessionApproved
-        .map(
-          (r) => {
-            'permission': r.permission,
-            'pattern': r.pattern,
-            'action': r.action.name,
-          },
-        )
-        .toList(),
-  };
+  return PermissionRulesetCodec.toJson(pr);
 }
 
 SessionState _projectCompactionEnded(

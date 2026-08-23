@@ -20,14 +20,14 @@ void showLanguageSelectionDialog(
             languageProvider.select((s) => s.selectedLanguage),
           );
 
-          final languages = <String, String>{
-            'en': localizations.english,
-            'ru': localizations.russian,
-            'uk': localizations.ukrainian,
-            'ar': localizations.arabic,
-            'zh': localizations.chinese,
-            'ja': localizations.japanese,
-          };
+          final languages = Map<String, String>.fromEntries(
+            LanguageState.supportedLanguages.map(
+              (code) => MapEntry(
+                code,
+                LanguageState.getLocalizedLanguageName(code, localizations),
+              ),
+            ),
+          );
 
           return Dialog(
             backgroundColor: isDark

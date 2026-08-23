@@ -1,5 +1,4 @@
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:equatable/equatable.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -329,60 +328,11 @@ class SessionState extends Equatable {
   static String? _sessionIdNullableToJson(SessionID? value) => value?.value;
 
   static PermissionRuleset? _permissionFromJson(Map<String, dynamic>? json) {
-    if (json == null) return null;
-    final rules = (json['rules'] as List?)
-        ?.map(
-          (e) => PermissionRule(
-            permission: e['permission'] as String,
-            pattern: e['pattern'] as String,
-            action: PermissionAction.values.firstWhere(
-              (a) => a.name == e['action'] as String,
-              orElse: () => PermissionAction.ask,
-            ),
-          ),
-        )
-        .toList();
-    final sessionApproved = (json['sessionApproved'] as List?)
-        ?.map(
-          (e) => PermissionRule(
-            permission: e['permission'] as String,
-            pattern: e['pattern'] as String,
-            action: PermissionAction.values.firstWhere(
-              (a) => a.name == e['action'] as String,
-              orElse: () => PermissionAction.ask,
-            ),
-          ),
-        )
-        .toList();
-    return PermissionRuleset(
-      rules: rules ?? const [],
-      sessionApproved: sessionApproved ?? const [],
-    );
+    return PermissionRulesetCodec.fromJson(json);
   }
 
   static Map<String, dynamic>? _permissionToJson(PermissionRuleset? pr) {
-    if (pr == null) return null;
-    if (pr.rules.isEmpty && pr.sessionApproved.isEmpty) return null;
-    return {
-      'rules': pr.rules
-          .map(
-            (r) => {
-              'permission': r.permission,
-              'pattern': r.pattern,
-              'action': r.action.name,
-            },
-          )
-          .toList(),
-      'sessionApproved': pr.sessionApproved
-          .map(
-            (r) => {
-              'permission': r.permission,
-              'pattern': r.pattern,
-              'action': r.action.name,
-            },
-          )
-          .toList(),
-    };
+    return PermissionRulesetCodec.toJson(pr);
   }
 
   /// Raw string form for code that hasn't migrated to `SessionID` yet.

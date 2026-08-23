@@ -26,13 +26,15 @@ class ConfigWriter {
   /// Path of the config file for the given [global]/project scope.
   ///
   /// - global: `<configHome>/chatorai.json`
-  /// - project: `<cwd>/.chatorai/chatorai.json`
-  static Future<String> resolveConfigPath({required bool global}) async {
-    if (global) {
-      final configDir = await XdgPaths.configHomeAsync;
-      return p.join(configDir, 'chatorai.json');
-    }
-    return p.join('.chatorai', 'chatorai.json');
+  /// - project: `<workspaceRuntimeCurrent.path>/.chatorai/chatorai.json`
+  static Future<String> resolveConfigPath({
+    required bool global,
+    Directory? projectRoot,
+  }) async {
+    return ConfigLoader.resolveConfigPath(
+      global: global,
+      projectRoot: projectRoot,
+    );
   }
 
   /// Reads the raw JSON map from [path], or `{}` when the file is absent.

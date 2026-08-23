@@ -64,8 +64,27 @@ class ConfigLoader {
     return p.join(configDir, 'chatorai.json');
   }
 
-  static String _projectConfigPath() =>
-      p.join(workspaceRuntimeCurrent.path, '.chatorai', 'chatorai.json');
+  static String _projectConfigPath([Directory? projectRoot]) => p.join(
+    projectRoot?.path ?? workspaceRuntimeCurrent.path,
+    '.chatorai',
+    'chatorai.json',
+  );
+
+  /// Resolves the absolute path to `chatorai.json` for the given scope.
+  ///
+  /// - [global] → `<XDG_CONFIG_HOME>/chatorai.json`
+  /// - project → `<workspaceRuntimeCurrent.path>/.chatorai/chatorai.json`
+  ///
+  /// Always returns an absolute path. Never depends on `Directory.current`.
+  static Future<String> resolveConfigPath({
+    required bool global,
+    Directory? projectRoot,
+  }) async {
+    if (global) {
+      return await _globalConfigPath();
+    }
+    return _projectConfigPath(projectRoot);
+  }
 
   /// Reads and decodes a single config file into a map.
   ///

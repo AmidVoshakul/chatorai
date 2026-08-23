@@ -5,6 +5,7 @@ import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_snapshot_codec.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:drift/drift.dart';
 
 import 'database.dart' as db show ToolResult;
@@ -650,32 +651,13 @@ class SessionRepository {
 PermissionRuleset? _deserializePermission(String? raw) {
   if (raw == null || raw.isEmpty) return null;
   try {
-    final data = jsonDecode(raw) as Map<String, dynamic>;
-    return PermissionRuleset(
-      rules:
-          (data['rules'] as List<dynamic>?)
-              ?.map(
-                (r) => PermissionRule(
-                  permission: r['permission'] as String,
-                  pattern: r['pattern'] as String,
-                  action: PermissionAction.values.byName(r['action'] as String),
-                ),
-              )
-              .toList() ??
-          [],
-      sessionApproved:
-          (data['sessionApproved'] as List<dynamic>?)
-              ?.map(
-                (r) => PermissionRule(
-                  permission: r['permission'] as String,
-                  pattern: r['pattern'] as String,
-                  action: PermissionAction.values.byName(r['action'] as String),
-                ),
-              )
-              .toList() ??
-          [],
-    );
-  } catch (_) {
+    final data = jsonDecode(raw) as Map<String, dynamic>?;
+    return PermissionRulesetCodec.fromJson(data);
+  } on FormatException catch (e) {
+    LogTags.permission.logWarning('Bad permission JSON in session row: $e');
+    return null;
+  } on Object catch (e) {
+    LogTags.permission.logWarning('Failed to deserialize permission rules: $e');
     return null;
   }
 }

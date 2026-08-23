@@ -1,14 +1,13 @@
 import 'dart:io';
 
+import 'package:chatorai/core/config/config_loader.dart';
 import 'package:chatorai/core/config/config_manager.dart';
 import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/config/config_writer.dart';
 import 'package:chatorai/core/config/models/permission_section.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as p;
 
 /// Auto-Approve categories exposed to the UI.
 ///
@@ -136,14 +135,12 @@ class AutoApproveNotifier extends AsyncNotifier<AutoApproveState> {
 
   /// Resolves the concrete config file for the active scope.
   ///
-  /// [_overridePath] (test hook) always wins. Otherwise the global file is
-  /// resolved via [ConfigWriter], and the project file via the workspace root
-  /// (matching [ConfigLoader._projectConfigPath]) so it is absolute and
-  /// independent of the process working directory.
+  /// [_overridePath] (test hook) always wins. Otherwise the path is resolved
+  /// via [ConfigLoader.resolveConfigPath] so it is absolute and independent of
+  /// the process working directory.
   Future<String> _scopeConfigPath(bool global) async {
     if (_overridePath != null) return _overridePath!;
-    if (global) return await ConfigWriter.resolveConfigPath(global: true);
-    return p.join(workspaceRuntimeCurrent.path, '.chatorai', 'chatorai.json');
+    return ConfigLoader.resolveConfigPath(global: global);
   }
 
   Future<AutoApproveState> _load() async {

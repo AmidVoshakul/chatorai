@@ -1,8 +1,8 @@
 import 'dart:io';
 
+import 'package:chatorai/core/config/config_loader.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/xdg_paths.dart';
-import 'package:path/path.dart' as p;
 
 /// Ensures `chatorai.json` exists at first launch.
 class ConfigInitializer {
@@ -16,16 +16,18 @@ class ConfigInitializer {
   static Future<void> ensureGlobalConfig() async {
     await XdgPaths.init();
 
-    final projectConfig = File(p.join('.chatorai', 'chatorai.json'));
+    final projectConfigPath = await ConfigLoader.resolveConfigPath(
+      global: false,
+    );
+    final projectConfig = File(projectConfigPath);
     if (await projectConfig.exists()) {
       LogTags.settings.logDebug(
         '[ConfigInitializer] Project config already exists',
       );
-      return;
     }
 
     final configDir = await XdgPaths.configHomeAsync;
-    final configFile = File(p.join(configDir, 'chatorai.json'));
+    final configFile = File(await ConfigLoader.resolveConfigPath(global: true));
     if (!await configFile.exists()) {
       await XdgPaths.ensureDir(configDir);
       await configFile.writeAsString(_defaultConfig);

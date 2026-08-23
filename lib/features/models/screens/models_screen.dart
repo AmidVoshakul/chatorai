@@ -1,3 +1,4 @@
+import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/features/models/providers/model_provider.dart';
 import 'package:chatorai/features/models/providers/models_provider.dart';
@@ -220,25 +221,12 @@ class _ModelsScreenState extends ConsumerState<ModelsScreen> {
     );
   }
 
-  static const _providerNames = {
-    'openai': 'OpenAI',
-    'anthropic': 'Anthropic',
-    'google': 'Google',
-    'deepseek': 'DeepSeek',
-    'openrouter': 'OpenRouter',
-    'ollama': 'Ollama',
-    'groq': 'Groq',
-    'mistral': 'Mistral',
-    'xai': 'xAI',
-    'perplexity': 'Perplexity',
-    'cohere': 'Cohere',
-    'kilo': 'Kilo',
-    'github': 'GitHub',
-    'lmstudio': 'LM Studio',
-    'vllm': 'vLLM',
-  };
-
-  String _providerName(String? id) => _providerNames[id] ?? (id ?? 'Unknown');
+  String _providerName(String? id) {
+    if (id == null) return 'Unknown';
+    final catalog = ref.read(catalogServiceProvider);
+    final provider = catalog.getProvider(id);
+    return provider?.name ?? id;
+  }
 }
 
 class _PremiumSearchBar extends StatelessWidget {

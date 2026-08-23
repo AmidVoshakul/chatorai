@@ -82,6 +82,35 @@ class _AgentsInstructionsScreenState
     }
   }
 
+  Future<void> _openEntry(String entry, InstructionsScope scope) async {
+    final l10n = AppLocalizations.of(context)!;
+    String initial;
+    try {
+      initial = await _notifier.readInstructionEntry(entry, scope: scope);
+    } catch (e) {
+      _showError(l10n.instructionsSaveError(e.toString()));
+      return;
+    }
+    if (!mounted) return;
+    final result = await showDialog<String>(
+      context: context,
+      builder: (_) => FileEditorDialog(
+        title: p.basename(entry),
+        subtitle: entry,
+        initialContent: initial,
+        readOnly: false,
+        hintText: l10n.instructionsContentHint,
+      ),
+    );
+    if (result == null) return;
+    try {
+      await _notifier.saveInstructionEntry(entry, result, scope: scope);
+      _showSuccess(l10n.agentsMdSaved);
+    } catch (e) {
+      _showError(l10n.instructionsSaveError(e.toString()));
+    }
+  }
+
   Future<void> _createProjectAgents() async {
     final l10n = AppLocalizations.of(context)!;
     final result = await showDialog<String>(
@@ -221,6 +250,7 @@ class _AgentsInstructionsScreenState
         onInline: _showInlineDialog,
         onUpload: _uploadFile,
         onRemove: _confirmRemove,
+        onEditEntry: _openEntry,
       );
     } else {
       tabBar = unifiedTabContainer(
@@ -233,32 +263,31 @@ class _AgentsInstructionsScreenState
           ],
         ),
       );
-      content = DefaultTabController(
-        length: 2,
-        child: TabBarView(
-          children: [
-            _ScopeView(
-              scope: InstructionsScope.global,
-              data: state.global,
-              isDark: isDark,
-              onOpen: _openDiscovered,
-              onCreateProjectAgents: _createProjectAgents,
-              onInline: _showInlineDialog,
-              onUpload: _uploadFile,
-              onRemove: _confirmRemove,
-            ),
-            _ScopeView(
-              scope: InstructionsScope.project,
-              data: state.project,
-              isDark: isDark,
-              onOpen: _openDiscovered,
-              onCreateProjectAgents: _createProjectAgents,
-              onInline: _showInlineDialog,
-              onUpload: _uploadFile,
-              onRemove: _confirmRemove,
-            ),
-          ],
-        ),
+      content = TabBarView(
+        children: [
+          _ScopeView(
+            scope: InstructionsScope.global,
+            data: state.global,
+            isDark: isDark,
+            onOpen: _openDiscovered,
+            onCreateProjectAgents: _createProjectAgents,
+            onInline: _showInlineDialog,
+            onUpload: _uploadFile,
+            onRemove: _confirmRemove,
+            onEditEntry: _openEntry,
+          ),
+          _ScopeView(
+            scope: InstructionsScope.project,
+            data: state.project,
+            isDark: isDark,
+            onOpen: _openDiscovered,
+            onCreateProjectAgents: _createProjectAgents,
+            onInline: _showInlineDialog,
+            onUpload: _uploadFile,
+            onRemove: _confirmRemove,
+            onEditEntry: _openEntry,
+          ),
+        ],
       );
     }
 
@@ -298,6 +327,7 @@ class _ScopeView extends StatelessWidget {
   final void Function(InstructionsScope) onInline;
   final void Function(InstructionsScope) onUpload;
   final void Function(String, InstructionsScope) onRemove;
+  final void Function(String entry, InstructionsScope scope) onEditEntry;
 
   const _ScopeView({
     required this.scope,
@@ -308,6 +338,7 @@ class _ScopeView extends StatelessWidget {
     required this.onInline,
     required this.onUpload,
     required this.onRemove,
+    required this.onEditEntry,
   });
 
   @override
@@ -335,6 +366,7 @@ class _ScopeView extends StatelessWidget {
                   file: file,
                   isDark: isDark,
                   onTap: () => onOpen(file),
+                  onEdit: file.editable ? () => onOpen(file) : null,
                 ),
             ],
           ),
@@ -368,6 +400,7 @@ class _ScopeView extends StatelessWidget {
                 _InstructionCard(
                   entry: entry,
                   isDark: isDark,
+                  onEdit: () => onEditEntry(entry, scope),
                   onRemove: () => onRemove(entry, scope),
                 ),
             ],
@@ -435,11 +468,13 @@ class _DiscoveredCard extends StatelessWidget {
   final DiscoveredInstructionFile file;
   final bool isDark;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
 
   const _DiscoveredCard({
     required this.file,
     required this.isDark,
     required this.onTap,
+    this.onEdit,
   });
 
   @override
@@ -468,13 +503,15 @@ class _DiscoveredCard extends StatelessWidget {
                     size: ChatoraiIconSizes.xxl,
                   ),
                   const Spacer(),
-                  Icon(
-                    file.editable
-                        ? Icons.edit_outlined
-                        : Icons.visibility_outlined,
-                    size: ChatoraiIconSizes.md,
-                    color: subtleColor(isDark),
-                  ),
+                  if (onEdit != null)
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined),
+                      iconSize: ChatoraiIconSizes.lg,
+                      color: subtleColor(isDark),
+                      tooltip: l10n.commonEdit,
+                      visualDensity: VisualDensity.compact,
+                      onPressed: onEdit,
+                    ),
                 ],
               ),
               const SizedBox(height: ChatoraiSpacing.sm),
@@ -504,19 +541,6 @@ class _DiscoveredCard extends StatelessWidget {
                 spacing: ChatoraiSpacing.xs,
                 runSpacing: ChatoraiSpacing.xs,
                 children: [
-                  PillBadge(
-                    label: file.isGlobal
-                        ? l10n.instructionsBadgeGlobal
-                        : l10n.instructionsBadgeProject,
-                    color: ChatoraiColors.orange,
-                    isDark: isDark,
-                  ),
-                  if (!file.editable)
-                    PillBadge(
-                      label: l10n.instructionsFileReadOnly,
-                      color: subtleColor(isDark),
-                      isDark: isDark,
-                    ),
                   if (!file.exists)
                     PillBadge(
                       label: l10n.instructionsFileNotCreated,
@@ -584,63 +608,81 @@ class _AddMenu extends StatelessWidget {
 class _InstructionCard extends StatelessWidget {
   final String entry;
   final bool isDark;
+  final VoidCallback onEdit;
   final VoidCallback onRemove;
 
   const _InstructionCard({
     required this.entry,
     required this.isDark,
+    required this.onEdit,
     required this.onRemove,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(ChatoraiSpacing.lg),
-      decoration: premiumCard(isDark),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.article_rounded,
-            color: ChatoraiColors.orange,
-            size: ChatoraiIconSizes.xxl,
-          ),
-          const SizedBox(width: ChatoraiSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  p.basename(entry),
-                  style: TextStyle(
-                    fontSize: ChatoraiFontSizes.base,
-                    fontWeight: FontWeight.w600,
-                    color: titleColor(isDark),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+    final l10n = AppLocalizations.of(context)!;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onEdit,
+        borderRadius: BorderRadius.circular(ChatoraiBorderRadius.md),
+        child: Ink(
+          padding: const EdgeInsets.all(ChatoraiSpacing.lg),
+          decoration: premiumCard(isDark),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.article_rounded,
+                color: ChatoraiColors.orange,
+                size: ChatoraiIconSizes.xxl,
+              ),
+              const SizedBox(width: ChatoraiSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.basename(entry),
+                      style: TextStyle(
+                        fontSize: ChatoraiFontSizes.base,
+                        fontWeight: FontWeight.w600,
+                        color: titleColor(isDark),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      entry,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: ChatoraiFontSizes.sm,
+                        color: subtleColor(isDark),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  entry,
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: ChatoraiFontSizes.sm,
-                    color: subtleColor(isDark),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                iconSize: ChatoraiIconSizes.lg,
+                color: subtleColor(isDark),
+                tooltip: l10n.commonEdit,
+                visualDensity: VisualDensity.compact,
+                onPressed: onEdit,
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded),
+                iconSize: ChatoraiIconSizes.lg,
+                color: ChatoraiColors.error,
+                tooltip: l10n.commonRemove,
+                onPressed: onRemove,
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded),
-            iconSize: ChatoraiIconSizes.lg,
-            color: ChatoraiColors.error,
-            tooltip: AppLocalizations.of(context)!.commonRemove,
-            onPressed: onRemove,
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -70,7 +70,7 @@ Future<void> runMcp(List<String> args, {String? configPath}) async {
 /// user config when no explicit [configPath] was supplied.
 Future<String> _targetConfigPath({String? configPath}) async {
   if (configPath != null) return configPath;
-  return ConfigWriter.resolveConfigPath(global: true);
+  return ConfigLoader.resolveConfigPath(global: true);
 }
 
 Future<void> _runAdd(List<String> args, {String? configPath}) async {

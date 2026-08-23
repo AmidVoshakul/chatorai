@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:chatorai/core/config/config_loader.dart';
 import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/config/config_writer.dart';
 import 'package:chatorai/shared/utils/logger.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 
@@ -69,7 +69,7 @@ class ConfigWatcher {
 
   Future<void> _watchGlobal() async {
     final path =
-        _globalConfigPath ?? await ConfigWriter.resolveConfigPath(global: true);
+        _globalConfigPath ?? await ConfigLoader.resolveConfigPath(global: true);
     await _watchDirOf(path, _onGlobalChanged, (s) => _globalSubscription = s);
   }
 
@@ -79,7 +79,7 @@ class ConfigWatcher {
 
     final path =
         _projectConfigPath ??
-        p.join(workspaceRuntimeCurrent.path, '.chatorai', 'chatorai.json');
+        await ConfigLoader.resolveConfigPath(global: false);
     await _watchDirOf(path, _onProjectChanged, (s) => _projectSubscription = s);
   }
 
