@@ -59,8 +59,14 @@ All notable changes to this project will be documented in this file.
   - MCP Marketplace with 15 preconfigured remote servers, search, category filters, premium cards.
   - MCP add dialog supports environment, headers, Raw JSON tab, token authentication.
   - MCP server types accept `http`/`https`/`sse` as aliases for `remote`, `stdio` for `local`.
-- **Keyboard shortcuts**:
-  - Global shortcut handler for desktop (workspace switching, etc.).
+ - **Keyboard shortcuts**:
+   - Global shortcut handler for desktop (workspace switching, etc.).
+   - User-configurable keyboard shortcut system: extended `KeyActivator` with `shift`/`alt`/`meta` modifiers, `fromString()`/`format()` round-trip, and updated `matches()` logic. Added `KeyboardShortcut.copyWith()` for runtime override.
+   - `KeybindingNotifier` (`keybinding_provider.dart`): Riverpod `Notifier` managing user keybinding overrides, persisted via `ConfigWriter.upsertKeybindingSection()` into `chatorai.json`. Supports `setBinding`, `resetToDefaults`, conflict detection, and bare-key validation.
+   - `KeyboardShortcutsScreen` (`keyboard_shortcuts_screen.dart`): premium settings UI with capture widget, conflict detection, reset-to-defaults, and desktop-first capture (mobile view-only).
+   - Registered in `settings_screen.dart` (mobile) and `settings_window.dart` (desktop). Exported via `lib/providers.dart`.
+   - Localization strings added across all 6 ARB files; `flutter gen-l10n` run.
+   - Tests: `keybinding_service_test.dart` (KeyActivator round-trip, matches, copyWith), `keybinding_provider_test.dart` (load/set/reset/conflicts/validation), `shortcut_handler_test.dart` (existing, still green), `test_global_shortcut_handler_workspace.dart` (existing, now compiles after `currentAgentProvider` export fix).
 - **Workspace support**:
   - Working directory override per session/project.
   - Workspace provider for directory management.

@@ -36,7 +36,10 @@ const Map<String, dynamic> chatoraiSchema = {
         ],
       },
     },
-    'keybinding': {'type': 'object'},
+    'keybinding': {
+      'type': 'object',
+      'additionalProperties': {'type': 'string'},
+    },
     'skills': {
       'type': 'object',
       'properties': {

@@ -2296,4 +2296,65 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get statsCacheRead => 'Cache Read';
+
+  @override
+  String get keyboardShortcuts => 'キーボードショートカット';
+
+  @override
+  String get keyboardShortcutsSubtitle => 'アプリのキーボードショートカットをカスタマイズ';
+
+  @override
+  String get keybindingsReadOnlyMobile => 'キーボードショートカットはデスクトップでのみ利用可能です';
+
+  @override
+  String get keyboardShortcutsResetConfirm =>
+      'すべてのキーボードショートカットをデフォルトにリセットしますか？';
+
+  @override
+  String get bindingConflict => '競合';
+
+  @override
+  String get captureHint => 'キーの組み合わせを押してください...';
+
+  @override
+  String get shortcutCancelStreaming => 'AI応答をキャンセル';
+
+  @override
+  String get shortcutCloseDialog => 'ダイアログを閉じる';
+
+  @override
+  String get shortcutOpenLatestChild => '最新の子セッションを開く';
+
+  @override
+  String get shortcutNavPrevSibling => '前の兄弟セッション';
+
+  @override
+  String get shortcutNavNextSibling => '次の兄弟セッション';
+
+  @override
+  String get shortcutNavParent => '親セッションに移動';
+
+  @override
+  String get shortcutCyclePrimaryAgent => 'プライマリエージェントを切り替え';
+
+  @override
+  String get shortcutToggleSidebar => 'サイドバーを切り替え';
+
+  @override
+  String get shortcutNewChat => '新しいチャット';
+
+  @override
+  String get shortcutOpenModelSelector => 'モデルセレクタを開く';
+
+  @override
+  String get shortcutOpenSettings => '設定を開く';
+
+  @override
+  String get shortcutOpenWorkspace => 'ワークスペースを開く';
+
+  @override
+  String get shortcutScrollToChatStart => '一番上にスクロール';
+
+  @override
+  String get shortcutScrollToChatEnd => '一番下にスクロール';
 }

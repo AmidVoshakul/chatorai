@@ -2287,4 +2287,64 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get statsCacheRead => 'Cache Read';
+
+  @override
+  String get keyboardShortcuts => '键盘快捷键';
+
+  @override
+  String get keyboardShortcutsSubtitle => '自定义应用程序键盘快捷键';
+
+  @override
+  String get keybindingsReadOnlyMobile => '键盘快捷键仅在桌面端可用';
+
+  @override
+  String get keyboardShortcutsResetConfirm => '您确定要将所有键盘快捷键重置为默认值吗？';
+
+  @override
+  String get bindingConflict => '冲突';
+
+  @override
+  String get captureHint => '按下按键组合...';
+
+  @override
+  String get shortcutCancelStreaming => '取消 AI 响应';
+
+  @override
+  String get shortcutCloseDialog => '关闭对话框';
+
+  @override
+  String get shortcutOpenLatestChild => '打开最新的子会话';
+
+  @override
+  String get shortcutNavPrevSibling => '上一个同级会话';
+
+  @override
+  String get shortcutNavNextSibling => '下一个同级会话';
+
+  @override
+  String get shortcutNavParent => '转到父会话';
+
+  @override
+  String get shortcutCyclePrimaryAgent => '切换主要代理';
+
+  @override
+  String get shortcutToggleSidebar => '切换侧边栏';
+
+  @override
+  String get shortcutNewChat => '新建聊天';
+
+  @override
+  String get shortcutOpenModelSelector => '打开模型选择器';
+
+  @override
+  String get shortcutOpenSettings => '打开设置';
+
+  @override
+  String get shortcutOpenWorkspace => '打开工作区';
+
+  @override
+  String get shortcutScrollToChatStart => '滚动到顶部';
+
+  @override
+  String get shortcutScrollToChatEnd => '滚动到底部';
 }

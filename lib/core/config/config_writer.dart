@@ -408,4 +408,19 @@ class ConfigWriter {
     config['permission'] = section;
     await writeRawConfig(path, config);
   }
+
+  /// Replaces the `keybinding` section in [config] with [bindings].
+  ///
+  /// Writes to the global user config by default, or to a project-scoped
+  /// `chatorai.json` when [global] is `false` or [configPath] is provided.
+  static Future<void> upsertKeybindingSection(
+    Map<String, String> bindings, {
+    bool global = true,
+    String? configPath,
+  }) async {
+    final path = configPath ?? await resolveConfigPath(global: global);
+    final config = await readRawConfig(path);
+    config['keybinding'] = bindings;
+    await writeRawConfig(path, config);
+  }
 }

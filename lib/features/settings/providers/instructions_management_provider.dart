@@ -340,7 +340,10 @@ class InstructionsManagementNotifier
   /// Resolves a scope-relative path to an absolute one. For the global scope
   /// the instructions dir is relative to the global config dir; for project
   /// it is relative to the project root.
-  Future<String> _absoluteForScope(InstructionsScope scope, String relPath) async {
+  Future<String> _absoluteForScope(
+    InstructionsScope scope,
+    String relPath,
+  ) async {
     final root = await _rootFor(scope);
     if (root != null) return p.join(root.path, relPath);
     return relPath;

@@ -2330,4 +2330,67 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get statsCacheRead => 'Cache Read';
+
+  @override
+  String get keyboardShortcuts => 'اختصارات لوحة المفاتيح';
+
+  @override
+  String get keyboardShortcutsSubtitle =>
+      'تخصيص اختصارات لوحة المفاتيح للتطبيق';
+
+  @override
+  String get keybindingsReadOnlyMobile =>
+      'اختصارات لوحة المفاتيح متوفرة فقط على سطح المكتب';
+
+  @override
+  String get keyboardShortcutsResetConfirm =>
+      'هل أنت متأكد أنك تريد إعادة تعيين جميع اختصارات لوحة المفاتيح إلى القيم الافتراضية؟';
+
+  @override
+  String get bindingConflict => 'تعارض';
+
+  @override
+  String get captureHint => 'اضغط على مزيج مفاتيح...';
+
+  @override
+  String get shortcutCancelStreaming => 'إلغاء استجابة الذكاء الاصطناعي';
+
+  @override
+  String get shortcutCloseDialog => 'إغلاق الحوار';
+
+  @override
+  String get shortcutOpenLatestChild => 'فتح أحدث جلسة فرعية';
+
+  @override
+  String get shortcutNavPrevSibling => 'الجلسة السابقة';
+
+  @override
+  String get shortcutNavNextSibling => 'الجلسة التالية';
+
+  @override
+  String get shortcutNavParent => 'الانتقال إلى الجلسة الأب';
+
+  @override
+  String get shortcutCyclePrimaryAgent => 'تبديل الوكيل الأساسي';
+
+  @override
+  String get shortcutToggleSidebar => 'تبديل الشريط الجانبي';
+
+  @override
+  String get shortcutNewChat => 'دردشة جديدة';
+
+  @override
+  String get shortcutOpenModelSelector => 'فتح منتقي النموذج';
+
+  @override
+  String get shortcutOpenSettings => 'فتح الإعدادات';
+
+  @override
+  String get shortcutOpenWorkspace => 'فتح مساحة العمل';
+
+  @override
+  String get shortcutScrollToChatStart => 'التمرير إلى الأعلى';
+
+  @override
+  String get shortcutScrollToChatEnd => 'التمرير إلى الأسفل';
 }

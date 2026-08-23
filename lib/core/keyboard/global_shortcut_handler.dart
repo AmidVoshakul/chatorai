@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:chatorai/core/agents/agent_registry.dart';
+import 'package:chatorai/core/agents/agent_provider.dart';
 import 'package:chatorai/core/keyboard/keyboard_shortcut.dart';
+import 'package:chatorai/core/keyboard/keybinding_provider.dart';
 import 'package:chatorai/core/keyboard/shortcut_handler.dart';
 import 'package:chatorai/core/keyboard/shortcuts.dart';
 import 'package:chatorai/core/constants/chat_constants.dart';
@@ -20,7 +22,6 @@ import 'package:chatorai/providers.dart'
         chatScreenProvider,
         currentSessionRunnerProvider,
         sessionPartsProvider,
-        currentAgentProvider,
         chatListProvider,
         currentChatIdProvider,
         permissionServiceProvider,
@@ -41,22 +42,34 @@ class GlobalShortcutHandler extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final shortcuts = <KeyboardShortcut>[
-      AppShortcuts.cancelStreaming(
-        _stopStreaming(ref),
-        isActive: (r) => r.read(chatScreenProvider).isStreaming,
-      ),
-      AppShortcuts.closeDialog(_closeTopWindow),
-      AppShortcuts.scrollToChatStart(_scrollToTop(ref)),
-      AppShortcuts.scrollToChatEnd(_scrollToBottom(ref)),
-      AppShortcuts.openWorkspace(_openWorkspace(context, ref)),
-      AppShortcuts.openLatestChildSession(_openLatestChildSession(ref)),
-      AppShortcuts.cyclePrimaryAgent(_cyclePrimaryAgent(ref)),
-      AppShortcuts.toggleSidebar(_toggleSidebar(ref)),
-      AppShortcuts.newChat(_newChat(ref, context)),
-      AppShortcuts.openModelSelector(_openModelSelector(ref)),
-      AppShortcuts.openSettings(_openSettings(ref)),
-    ];
+    final keybindings = ref.watch(keybindingProvider);
+    final shortcuts =
+        <KeyboardShortcut>[
+          AppShortcuts.cancelStreaming(
+            _stopStreaming(ref),
+            isActive: (r) => r.read(chatScreenProvider).isStreaming,
+          ),
+          AppShortcuts.closeDialog(_closeTopWindow),
+          AppShortcuts.scrollToChatStart(_scrollToTop(ref)),
+          AppShortcuts.scrollToChatEnd(_scrollToBottom(ref)),
+          AppShortcuts.openWorkspace(_openWorkspace(context, ref)),
+          AppShortcuts.openLatestChildSession(_openLatestChildSession(ref)),
+          AppShortcuts.cyclePrimaryAgent(_cyclePrimaryAgent(ref)),
+          AppShortcuts.toggleSidebar(_toggleSidebar(ref)),
+          AppShortcuts.newChat(_newChat(ref, context)),
+          AppShortcuts.openModelSelector(_openModelSelector(ref)),
+          AppShortcuts.openSettings(_openSettings(ref)),
+        ].map((s) {
+          final override = keybindings[s.id];
+          if (override != null) {
+            try {
+              return s.copyWith(activator: KeyActivator.fromString(override));
+            } on FormatException {
+              // keep default if override is invalid
+            }
+          }
+          return s;
+        }).toList();
 
     return ShortcutHandler(shortcuts: shortcuts, autofocus: true, child: child);
   }

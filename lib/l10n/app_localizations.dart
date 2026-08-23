@@ -4455,6 +4455,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cache Read'**
   String get statsCacheRead;
+
+  /// No description provided for @keyboardShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard Shortcuts'**
+  String get keyboardShortcuts;
+
+  /// No description provided for @keyboardShortcutsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize keyboard shortcuts for the app'**
+  String get keyboardShortcutsSubtitle;
+
+  /// No description provided for @keybindingsReadOnlyMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts are only available on desktop'**
+  String get keybindingsReadOnlyMobile;
+
+  /// No description provided for @keyboardShortcutsResetConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to reset all keyboard shortcuts to defaults?'**
+  String get keyboardShortcutsResetConfirm;
+
+  /// No description provided for @bindingConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict'**
+  String get bindingConflict;
+
+  /// No description provided for @captureHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Press a key combination...'**
+  String get captureHint;
+
+  /// No description provided for @shortcutCancelStreaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel AI response'**
+  String get shortcutCancelStreaming;
+
+  /// No description provided for @shortcutCloseDialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Close dialog'**
+  String get shortcutCloseDialog;
+
+  /// No description provided for @shortcutOpenLatestChild.
+  ///
+  /// In en, this message translates to:
+  /// **'Open latest child session'**
+  String get shortcutOpenLatestChild;
+
+  /// No description provided for @shortcutNavPrevSibling.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous sibling session'**
+  String get shortcutNavPrevSibling;
+
+  /// No description provided for @shortcutNavNextSibling.
+  ///
+  /// In en, this message translates to:
+  /// **'Next sibling session'**
+  String get shortcutNavNextSibling;
+
+  /// No description provided for @shortcutNavParent.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to parent session'**
+  String get shortcutNavParent;
+
+  /// No description provided for @shortcutCyclePrimaryAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Cycle primary agent'**
+  String get shortcutCyclePrimaryAgent;
+
+  /// No description provided for @shortcutToggleSidebar.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle sidebar'**
+  String get shortcutToggleSidebar;
+
+  /// No description provided for @shortcutNewChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get shortcutNewChat;
+
+  /// No description provided for @shortcutOpenModelSelector.
+  ///
+  /// In en, this message translates to:
+  /// **'Open model selector'**
+  String get shortcutOpenModelSelector;
+
+  /// No description provided for @shortcutOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get shortcutOpenSettings;
+
+  /// No description provided for @shortcutOpenWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Open workspace'**
+  String get shortcutOpenWorkspace;
+
+  /// No description provided for @shortcutScrollToChatStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll to top'**
+  String get shortcutScrollToChatStart;
+
+  /// No description provided for @shortcutScrollToChatEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll to bottom'**
+  String get shortcutScrollToChatEnd;
 }
 
 class _AppLocalizationsDelegate

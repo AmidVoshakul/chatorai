@@ -1,9 +1,12 @@
 // Feature: Chat
 // Core: Config
-export 'package:chatorai/core/agents/agent_provider.dart';
 export 'package:chatorai/core/config/config_manager.dart';
 export 'package:chatorai/core/config/config_provider.dart'
     show configProvider, compactionConfigProvider;
+export 'package:chatorai/core/keyboard/keybinding_provider.dart';
+// Core: Agents
+export 'package:chatorai/core/agents/agent_provider.dart'
+    show currentAgentProvider;
 // Core: Settings
 export 'package:chatorai/core/i18n/language_provider.dart';
 // Core: Permissions

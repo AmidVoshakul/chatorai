@@ -1,6 +1,7 @@
 import 'package:chatorai/features/settings/screens/agents_instructions_screen.dart';
 import 'package:chatorai/features/settings/screens/auto_approve_screen.dart';
 import 'package:chatorai/features/settings/screens/config_screen.dart';
+import 'package:chatorai/features/settings/screens/keyboard_shortcuts_screen.dart';
 import 'package:chatorai/features/settings/screens/mcp_servers_screen.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_screen.dart';
 import 'package:chatorai/features/settings/screens/skills_screen.dart';
@@ -120,6 +121,18 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: ChatoraiSpacing.xl),
+            SettingsSelectionCard(
+              icon: Icons.keyboard_outlined,
+              title: localizations.keyboardShortcuts,
+              subtitle: localizations.keyboardShortcutsSubtitle,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const KeyboardShortcutsScreen(),
+                ),
+              ),
+            ),
+            const SizedBox(height: ChatoraiSpacing.xxxl),
             const SettingsAppearanceSection(),
             const SizedBox(height: ChatoraiSpacing.xl),
             const SettingsAccessibilitySection(),

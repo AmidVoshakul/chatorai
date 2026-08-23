@@ -2389,4 +2389,66 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get statsCacheRead => 'Cache Read';
+
+  @override
+  String get keyboardShortcuts => 'Гарячі клавіші';
+
+  @override
+  String get keyboardShortcutsSubtitle => 'Налаштування гарячих клавіш додатка';
+
+  @override
+  String get keybindingsReadOnlyMobile =>
+      'Гарячі клавіші доступні лише на настільних платформах';
+
+  @override
+  String get keyboardShortcutsResetConfirm =>
+      'Ви впевнені, що хочете скинути всі гарячі клавіші до значень за замовчуванням?';
+
+  @override
+  String get bindingConflict => 'Конфлікт';
+
+  @override
+  String get captureHint => 'Натисніть комбінацію клавіш...';
+
+  @override
+  String get shortcutCancelStreaming => 'Скасувати відповідь ШІ';
+
+  @override
+  String get shortcutCloseDialog => 'Закрити діалог';
+
+  @override
+  String get shortcutOpenLatestChild => 'Відкрити останню дочірню сесію';
+
+  @override
+  String get shortcutNavPrevSibling => 'Попередня сесія-рівень';
+
+  @override
+  String get shortcutNavNextSibling => 'Наступна сесія-рівень';
+
+  @override
+  String get shortcutNavParent => 'Перейти до батьківської сесії';
+
+  @override
+  String get shortcutCyclePrimaryAgent => 'Перемкнути основного агента';
+
+  @override
+  String get shortcutToggleSidebar => 'Перемкнути бічну панель';
+
+  @override
+  String get shortcutNewChat => 'Новий чат';
+
+  @override
+  String get shortcutOpenModelSelector => 'Відкрити вибір моделі';
+
+  @override
+  String get shortcutOpenSettings => 'Відкрити налаштування';
+
+  @override
+  String get shortcutOpenWorkspace => 'Відкрити робочу область';
+
+  @override
+  String get shortcutScrollToChatStart => 'Прокрутити вгору';
+
+  @override
+  String get shortcutScrollToChatEnd => 'Прокрутити вниз';
 }

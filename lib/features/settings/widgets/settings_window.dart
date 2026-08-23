@@ -1,6 +1,7 @@
 import 'package:chatorai/features/settings/screens/agents_instructions_screen.dart';
 import 'package:chatorai/features/settings/screens/auto_approve_screen.dart';
 import 'package:chatorai/features/settings/screens/config_screen.dart';
+import 'package:chatorai/features/settings/screens/keyboard_shortcuts_screen.dart';
 import 'package:chatorai/features/settings/screens/mcp_servers_screen.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_screen.dart';
 import 'package:chatorai/features/settings/screens/provider_settings_dialogs.dart';
@@ -226,6 +227,12 @@ class _SettingsWindowState extends State<SettingsWindow> {
       icon: Icons.check_circle_outline,
       label: (_) => l10n.autoApproveTitle,
       builder: (_) => const AutoApproveScreen(embedded: true),
+    ),
+    _SettingsCategorySpec(
+      id: 'keyboardShortcuts',
+      icon: Icons.keyboard_outlined,
+      label: (_) => l10n.keyboardShortcuts,
+      builder: (_) => const KeyboardShortcutsScreen(embedded: true),
     ),
     _SettingsCategorySpec(
       id: 'appearance',

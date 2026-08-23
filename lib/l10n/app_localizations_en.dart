@@ -2372,4 +2372,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statsCacheRead => 'Cache Read';
+
+  @override
+  String get keyboardShortcuts => 'Keyboard Shortcuts';
+
+  @override
+  String get keyboardShortcutsSubtitle =>
+      'Customize keyboard shortcuts for the app';
+
+  @override
+  String get keybindingsReadOnlyMobile =>
+      'Keyboard shortcuts are only available on desktop';
+
+  @override
+  String get keyboardShortcutsResetConfirm =>
+      'Are you sure you want to reset all keyboard shortcuts to defaults?';
+
+  @override
+  String get bindingConflict => 'Conflict';
+
+  @override
+  String get captureHint => 'Press a key combination...';
+
+  @override
+  String get shortcutCancelStreaming => 'Cancel AI response';
+
+  @override
+  String get shortcutCloseDialog => 'Close dialog';
+
+  @override
+  String get shortcutOpenLatestChild => 'Open latest child session';
+
+  @override
+  String get shortcutNavPrevSibling => 'Previous sibling session';
+
+  @override
+  String get shortcutNavNextSibling => 'Next sibling session';
+
+  @override
+  String get shortcutNavParent => 'Go to parent session';
+
+  @override
+  String get shortcutCyclePrimaryAgent => 'Cycle primary agent';
+
+  @override
+  String get shortcutToggleSidebar => 'Toggle sidebar';
+
+  @override
+  String get shortcutNewChat => 'New chat';
+
+  @override
+  String get shortcutOpenModelSelector => 'Open model selector';
+
+  @override
+  String get shortcutOpenSettings => 'Open settings';
+
+  @override
+  String get shortcutOpenWorkspace => 'Open workspace';
+
+  @override
+  String get shortcutScrollToChatStart => 'Scroll to top';
+
+  @override
+  String get shortcutScrollToChatEnd => 'Scroll to bottom';
 }
