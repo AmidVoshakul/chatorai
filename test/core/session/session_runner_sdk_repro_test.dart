@@ -311,9 +311,13 @@ void main() {
       final textParts = parts.whereType<AssistantText>().toList();
       final toolParts = parts.whereType<AssistantTool>().toList();
 
-      // Expected part order: R1 (the WHOLE step-1 thought — pre-tool AND
-      // post-tool reasoning in ONE part, no mid-sentence break) → tool cards
-      // → R2 (step-2 thought) → text.
+      // Expected part order:
+      //   R1 — pre-tool reasoning ("Let me check the weather...")
+      //   T1, T2 — tool cards emitted immediately when tools start
+      //   R2 — post-tool reasoning buffered during tool execution
+      //         ("Now let me fetch the details from the page.")
+      //   R3 — step-2 thought ("The weather in Chernihiv today:")
+      //   Text — final answer
       final kinds = parts
           .map(
             (p) => p is AssistantReasoning
@@ -328,29 +332,28 @@ void main() {
 
       expect(
         reasoningParts.length,
-        2,
+        3,
         reason:
-            'step-1 thought (pre+post tool) is ONE part, step-2 thought '
-            'is the second. Actual kinds: $kinds',
+            'pre-tool thought + post-tool buffered thought + step-2 thought '
+            '= 3 separate parts. Actual kinds: $kinds',
       );
       expect(
-        reasoningParts.first.text,
+        reasoningParts[0].text,
         contains('Let me check the weather'),
-        reason: 'part 1 starts with the pre-tool thought',
+        reason: 'part 1 is the pre-tool thought',
       );
       expect(
-        reasoningParts.first.text,
+        reasoningParts[1].text,
         contains('Now let me fetch'),
         reason:
-            'post-tool thought must be part of the SAME part — the '
-            'step-1 thought must NOT be torn in the middle. '
-            'Actual: ${reasoningParts.first.text}',
+            'part 2 is the post-tool buffered thought — it must NOT be merged '
+            'into part 1. Actual: ${reasoningParts.map((p) => p.text).toList()}',
       );
       expect(
-        reasoningParts.last.text,
+        reasoningParts[2].text,
         contains('The weather in Chernihiv today:'),
         reason:
-            'last reasoning = step-2 thought, not a merged blob. '
+            'part 3 is the step-2 thought, not a merged blob. '
             'Actual: ${reasoningParts.map((p) => p.text).toList()}',
       );
       expect(textParts.single.text, contains('+18°C'));
@@ -361,14 +364,15 @@ void main() {
         reason: 'completed tool card input must be the FULL input, not {}',
       );
 
-      // Cards sit BETWEEN the two thought parts: thought → tools → thought.
+      // Cards sit between pre-tool reasoning and post-tool buffered reasoning:
+      //   thought → tools → buffered thought → step-2 thought.
       final firstToolIdx = parts.indexWhere((p) => p is AssistantTool);
       expect(
         firstToolIdx,
         1,
         reason:
-            'tool cards must come right after the single step-1 thought '
-            'part and before the step-2 thought. Actual kinds: $kinds',
+            'tool cards must come right after the pre-tool thought part. '
+            'Actual kinds: $kinds',
       );
     });
   });
