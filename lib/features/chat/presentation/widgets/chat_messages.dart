@@ -7,6 +7,7 @@ import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
 import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_scroll_follow_controller.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart'
     show MessageData;
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages_suggestions.dart';
@@ -54,6 +55,11 @@ class ChatMessages extends ConsumerStatefulWidget {
   final String? agentName;
   final String? sessionId;
 
+  /// External follow owner (main chat via [ChatMessagesArea], owned by
+  /// ChatScreen). Null → internal fallback (child window, tests): same class,
+  /// same rules (DRY) without touching forbidden callers.
+  final ChatScrollFollowController? followController;
+
   /// When `false`, this widget does NOT watch the global `chatScreenProvider`
   /// streaming state. Use this for child session windows which render their
   /// own history via stored messages and must not pick up the parent's
@@ -72,6 +78,7 @@ class ChatMessages extends ConsumerStatefulWidget {
     this.onContinueResponse,
     this.onRegenerateResponse,
     this.scrollController,
+    this.followController,
     this.continuationSuggestions = const [],
     this.showSuggestions = false,
     this.isSuggestionsLoading = false,
@@ -99,20 +106,46 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
   final GlobalKey _loadingIndicatorKey = GlobalKey();
 
   List<MarkdownHeadingInfoWithKey> _headings = [];
+  final HeadingAnchorRegistry _headingRegistry = HeadingAnchorRegistry();
 
   /// Cache of non-synthetic messages, keyed on the source messages list
-  /// reference. The list reference changes exactly when messages are added or
-  /// removed, so this avoids re-allocating + re-filtering the full list on
-  /// every build (e.g. while streaming parts update via chatScreenProvider).
+  /// reference and a content hash. The list reference changes exactly when
+  /// messages are added or removed, so this avoids re-allocating +
+  /// re-filtering the full list on every build (e.g. while streaming parts
+  /// update via chatScreenProvider).
   List<Message>? _cachedVisibleMessages;
   List<Message>? _cachedSourceList;
+  int _cachedSourceSignature = 0;
+
+  /// Follow owner: external for main chat, internal fallback otherwise.
+  late final ChatScrollFollowController _follow;
+  bool _ownsFollow = false;
+  List<AssistantContent>? _lastPartsRef;
+
+  /// Cheap structural signature: a new list reference plus a change to the
+  /// trailing message (streaming updates the last message's content/parts)
+  /// invalidates the cache. Avoids allocating a per-message string on every
+  /// build (the previous hash joined every message into one large String).
+  static int _signature(List<Message>? source) {
+    if (source == null) return 0;
+    final last = source.isEmpty ? null : source.last;
+    return Object.hash(
+      source.length,
+      last?.content.hashCode ?? 0,
+      last?.isComplete.hashCode ?? 0,
+      last?.partsJson?.length ?? 0,
+    );
+  }
 
   List<Message> get _visibleMessages {
     final source = widget.chat?.messages;
-    if (_cachedSourceList == source && _cachedVisibleMessages != null) {
+    if (_cachedSourceList == source &&
+        _cachedVisibleMessages != null &&
+        _cachedSourceSignature == _signature(source)) {
       return _cachedVisibleMessages!;
     }
     _cachedSourceList = source;
+    _cachedSourceSignature = _signature(source);
     _cachedVisibleMessages =
         source?.where((m) => !m.synthetic).toList() ?? const [];
     return _cachedVisibleMessages!;
@@ -128,6 +161,13 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
       '[ChatMessages] Initializing ChatMessages with chat: ${widget.chat?.id}, messages: ${widget.chat?.messages.length ?? 0}',
     );
     _scrollController = widget.scrollController ?? ScrollController();
+    if (widget.followController != null) {
+      _follow = widget.followController!;
+    } else {
+      _follow = ChatScrollFollowController();
+      _ownsFollow = true;
+    }
+    _follow.attach(_scrollController);
     _logger.logInfo(
       '[ChatMessages] ScrollController initialized: ${_scrollController.hashCode}',
     );
@@ -141,53 +181,68 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     if (widget.scrollController == null) {
       _scrollController.dispose();
     }
+    if (_ownsFollow) _follow.dispose();
     super.dispose();
   }
 
   @override
   void didUpdateWidget(ChatMessages oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.scrollController != widget.scrollController) {
+      _scrollController = widget.scrollController ?? _scrollController;
+      _follow.attach(_scrollController);
+    }
+    if (oldWidget.followController != widget.followController &&
+        widget.followController != null) {
+      _follow.dispose();
+      _follow = widget.followController!;
+      _ownsFollow = false;
+      _follow.attach(_scrollController);
+    }
+    if (_shouldRefreshHeadings(oldWidget)) _refreshHeadingsCache();
+  }
 
+  bool _shouldRefreshHeadings(ChatMessages oldWidget) {
     final newMessages = widget.chat?.messages ?? [];
-    final isStreaming =
-        newMessages.isNotEmpty &&
+    if (newMessages.isNotEmpty &&
         !newMessages.last.isComplete &&
-        newMessages.last.role == MessageRole.assistant;
-
-    if (isStreaming) {
-      return;
+        newMessages.last.role == MessageRole.assistant) {
+      return false;
     }
-
     final oldMessages = oldWidget.chat?.messages ?? [];
-
-    bool shouldUpdate =
-        widget.chat?.id != oldWidget.chat?.id ||
-        oldMessages.length != newMessages.length;
-
-    if (!shouldUpdate && oldMessages.length == newMessages.length) {
-      for (int i = 0; i < oldMessages.length; i++) {
-        if (oldMessages[i].content != newMessages[i].content) {
-          shouldUpdate = true;
-          break;
-        }
-      }
+    if (widget.chat?.id != oldWidget.chat?.id) return true;
+    if (oldMessages.length != newMessages.length) return true;
+    for (int i = 0; i < oldMessages.length; i++) {
+      if (oldMessages[i].content != newMessages[i].content) return true;
     }
+    return false;
+  }
 
-    if (shouldUpdate) {
-      _updateHeadings();
-    }
+  void _refreshHeadingsCache() {
+    _cachedSourceList = null;
+    _cachedVisibleMessages = null;
+    _cachedSourceSignature = 0;
+    _updateHeadings();
+  }
+
+  void _notePartsGrowth(List<AssistantContent> parts) {
+    if (identical(_lastPartsRef, parts)) return;
+    _lastPartsRef = parts;
+    final autoScroll = ref.read(themeProvider).autoScrollDuringStreaming;
+    _follow.noteGrowth(autoScroll: autoScroll);
   }
 
   void _updateHeadings() {
     final messages = widget.chat?.messages ?? [];
 
-    HeadingAnchorRegistry().clear();
-
     final parseStopwatch = Stopwatch()..start();
     _headings = MarkdownParserWithKeys.parseAllMessagesHeadings(
       messages,
       existingHeadings: _headings.isNotEmpty ? _headings : null,
+      registry: _headingRegistry,
     );
+    // Drop anchors for headings that no longer exist (deleted/edited messages).
+    _headingRegistry.prune(_headings.map((h) => h.anchor.id).toSet());
     parseStopwatch.stop();
 
     _logger.logInfo(
@@ -225,12 +280,6 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     required List<Message> messages,
   }) {
     if (streamingParts.isEmpty) return const [];
-    // Only parts of the CURRENT streaming message may appear in the
-    // streaming bubble: the last assistant message that is still
-    // incomplete. Keying off `streamingParts.last` alone leaks the parts
-    // of the previously completed response into the bubble right after a
-    // new send — the old answer briefly shows up and then "switches" to
-    // the new one when its first deltas arrive.
     final currentAssistant =
         messages.isNotEmpty &&
             messages.last.role == MessageRole.assistant &&
@@ -275,18 +324,6 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
     );
   }
 
-  void scrollToHeading(String messageId) {
-    final messageIndex =
-        widget.chat?.messages.indexWhere((m) => m.id == messageId) ?? -1;
-    if (messageIndex >= 0) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
-  }
-
   void sendMessage(MessageData messageData) {
     widget.onSendMessage(messageData);
   }
@@ -295,16 +332,15 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
   Widget build(BuildContext context) {
     super.build(context);
 
-    final streamingSessionId = ref.watch(
-      chatScreenProvider.select((s) => s.streamingSessionId),
-    );
-    final streamingParts = streamingSessionId != null
-        ? (ref.watch(sessionPartsProvider(streamingSessionId)).value?.parts ??
+    final streamingParts = widget.sessionId != null
+        ? (ref.watch(sessionPartsProvider(widget.sessionId!)).value?.parts ??
               const <AssistantContent>[])
         : const <AssistantContent>[];
     final streamingIsActive = widget.isActiveSession
         ? ref.watch(chatScreenProvider.select((s) => s.isStreaming))
         : false;
+
+    _notePartsGrowth(streamingParts);
 
     final messages = _visibleMessages;
     final List<MessagePart> streamingMessageParts = _streamingMessageParts(
@@ -368,160 +404,193 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
             : 0) +
         (shouldShowWelcome ? 1 : 0);
 
+    final children = <Widget>[];
+
+    if (shouldShowWelcome) {
+      children.add(
+        ChatMessagesWelcomeSuggestions(
+          suggestions: widget.welcomeSuggestions,
+          parentContext: context,
+          onSuggestionTap: (suggestion) {
+            widget.onSendMessage(MessageData(text: suggestion));
+          },
+          onClose: widget.onWelcomeSuggestionsClose,
+        ),
+      );
+    }
+
+    // While the streaming bubble is visible it fully represents the message
+    // being streamed (card, reasoning, text). Rendering the static bubble for
+    // that same id as well would duplicate every part — most visibly a task
+    // card — so the static entry is skipped until the stream finalizes and
+    // the bubble swaps back to the completed message.
+    final streamingBubbleMessageId =
+        showStreamingBubble &&
+            messages.isNotEmpty &&
+            messages.last.role == MessageRole.assistant
+        ? messages.last.id
+        : null;
+
+    for (int i = 0; i < messages.length; i++) {
+      final message = messages[i];
+      if (message.id == streamingBubbleMessageId) continue;
+      final isLastMessage = i == messages.length - 1;
+
+      final chatMsg = messageToChatMessage(message);
+      final agentNameForMessage = (chatMsg is AssistantMessage)
+          ? (chatMsg.isCompactionSummary
+                ? AppLocalizations.of(context)!.compactionAgentName
+                : (chatMsg.agent ?? currentAgent.name))
+          : currentAgent.name;
+      final originalModelId = (chatMsg is AssistantMessage)
+          ? chatMsg.model
+          : null;
+      final resolvedMsg = (chatMsg is AssistantMessage)
+          ? chatMsg.copyWith(model: _resolveModelDisplayName(chatMsg.model))
+          : chatMsg;
+      final reasoningEnabled = originalModelId != null
+          ? (modelSettings.settingsCache[originalModelId]?.reasoningEnabled ??
+                true)
+          : true;
+
+      children.add(
+        ChatMessageBubble(
+          key: ValueKey(message.id),
+          message: resolvedMsg,
+          chatId: widget.chat!.id,
+          messageId: message.id,
+          headings: _headings,
+          sessionRepository: widget.sessionRepository,
+          agentName: widget.agentName ?? agentNameForMessage,
+          onContinuationSelected: message.role == MessageRole.assistant
+              ? (_) => widget.onContinueResponse?.call(message.id)
+              : null,
+          onMessageDeleted: widget.onMessageDeleted,
+          onMessageRegenerate: widget.onRegenerateResponse != null
+              ? () => widget.onRegenerateResponse!(message.id)
+              : null,
+          onMessageEdited: widget.onMessageEdited,
+          onMessageEditedAndSend: widget.onMessageEditAndSend,
+          isLastMessage: isLastMessage,
+          onTaskTap: widget.onTaskTap,
+          expandReasoningByDefault: expandReasoningByDefault,
+          reasoningEnabled: reasoningEnabled,
+        ),
+      );
+    }
+
+    if (showStreamingBubble) {
+      final lastMessage = messages.isNotEmpty ? messages.last : null;
+      final message = _buildStreamingAssistantMessage(
+        messages: messages,
+        streamingMessageParts: streamingMessageParts,
+        streamingIsActive: streamingIsActive,
+      );
+      final agentNameForStream =
+          lastMessage?.agent ?? widget.agentName ?? currentAgent.name;
+      children.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: ChatMessageBubble(
+            key: const ValueKey('streaming-bubble'),
+            message: message,
+            chatId: widget.chat?.id ?? '',
+            messageId: lastMessage?.id ?? 'streaming',
+            headings: _headings,
+            sessionRepository: widget.sessionRepository,
+            agentName: agentNameForStream,
+            onTaskTap: widget.onTaskTap,
+            expandReasoningByDefault: expandReasoningByDefault,
+            reasoningEnabled: message.model != null
+                ? (modelSettings
+                          .settingsCache[message.model]
+                          ?.reasoningEnabled ??
+                      true)
+                : true,
+          ),
+        ),
+      );
+    } else if (shouldShowWaitingAnimation) {
+      children.add(
+        ChatMessagesWaitingAnimation(loadingIndicatorKey: _loadingIndicatorKey),
+      );
+    }
+
+    if (widget.showSuggestions && widget.continuationSuggestions.isNotEmpty) {
+      children.add(
+        ChatMessagesContinuationSuggestions(
+          suggestions: widget.continuationSuggestions,
+          isLoading: widget.isSuggestionsLoading,
+          parentContext: context,
+          onSuggestionTap: (suggestion) {
+            widget.onSendMessage(MessageData(text: suggestion));
+          },
+          onClose: widget.onSuggestionsClose,
+          onRefresh: widget.onSuggestionsRefresh,
+        ),
+      );
+    }
+
     return Container(
       color: theme.scaffoldBackgroundColor,
       child: Column(
         children: [
           Expanded(
-            child: RepaintBoundary(
-              child: SelectionArea(
-                key: ValueKey(itemCount),
-                child: ListView.builder(
-                  physics: _scrollPhysics(context),
-                  addAutomaticKeepAlives: false,
-                  addRepaintBoundaries: true,
-                  padding: EdgeInsets.only(
-                    left: ChatMessagesConstants.horizontalPadding,
-                    right: ChatMessagesConstants.horizontalPadding,
-                    top: ChatMessagesConstants.verticalPadding,
-                    bottom: ChatMessagesConstants.verticalPadding,
-                  ),
-                  itemCount: itemCount,
-                  controller: _scrollController,
-                  itemBuilder: (context, index) {
-                    int welcomeOffset = 0;
-
-                    if (shouldShowWelcome) {
-                      if (index == 0) {
-                        return ChatMessagesWelcomeSuggestions(
-                          suggestions: widget.welcomeSuggestions,
-                          parentContext: context,
-                          onSuggestionTap: (suggestion) {
-                            widget.onSendMessage(MessageData(text: suggestion));
-                          },
-                          onClose: widget.onWelcomeSuggestionsClose,
-                        );
-                      }
-                      welcomeOffset = 1;
-                    }
-
-                    final msgIndex = index - welcomeOffset;
-                    if (msgIndex >= 0 && msgIndex < messages.length) {
-                      final message = messages[msgIndex];
-                      final isLastMessage = msgIndex == messages.length - 1;
-
-                      final chatMsg = messageToChatMessage(message);
-                      final agentNameForMessage = (chatMsg is AssistantMessage)
-                          ? (chatMsg.isCompactionSummary
-                                ? AppLocalizations.of(
-                                    context,
-                                  )!.compactionAgentName
-                                : (chatMsg.agent ?? currentAgent.name))
-                          : currentAgent.name;
-                      final originalModelId = (chatMsg is AssistantMessage)
-                          ? chatMsg.model
-                          : null;
-                      final resolvedMsg = (chatMsg is AssistantMessage)
-                          ? chatMsg.copyWith(
-                              model: _resolveModelDisplayName(chatMsg.model),
-                            )
-                          : chatMsg;
-                      final reasoningEnabled = originalModelId != null
-                          ? (modelSettings
-                                    .settingsCache[originalModelId]
-                                    ?.reasoningEnabled ??
-                                true)
-                          : true;
-                      return ChatMessageBubble(
-                        key: ValueKey(message.id),
-                        message: resolvedMsg,
-                        chatId: widget.chat!.id,
-                        messageId: message.id,
-                        sessionRepository: widget.sessionRepository,
-                        agentName: widget.agentName ?? agentNameForMessage,
-                        onContinuationSelected:
-                            message.role == MessageRole.assistant
-                            ? (_) => widget.onContinueResponse?.call(message.id)
-                            : null,
-                        onMessageDeleted: widget.onMessageDeleted,
-                        onMessageRegenerate: widget.onRegenerateResponse != null
-                            ? () => widget.onRegenerateResponse!(message.id)
-                            : null,
-                        onMessageEdited: widget.onMessageEdited,
-                        onMessageEditedAndSend: widget.onMessageEditAndSend,
-                        isLastMessage: isLastMessage,
-                        onTaskTap: widget.onTaskTap,
-                        expandReasoningByDefault: expandReasoningByDefault,
-                        reasoningEnabled: reasoningEnabled,
-                      );
-                    }
-
-                    final afterMessages = welcomeOffset + messages.length;
-                    var extraPos = afterMessages;
-
-                    if (showStreamingBubble) {
-                      if (index == extraPos) {
-                        final lastMessage = messages.isNotEmpty
-                            ? messages.last
-                            : null;
-                        final message = _buildStreamingAssistantMessage(
-                          messages: messages,
-                          streamingMessageParts: streamingMessageParts,
-                          streamingIsActive: streamingIsActive,
-                        );
-                        final agentNameForStream =
-                            lastMessage?.agent ??
-                            widget.agentName ??
-                            currentAgent.name;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: ChatMessageBubble(
-                            key: const ValueKey('streaming-bubble'),
-                            message: message,
-                            chatId: widget.chat?.id ?? '',
-                            messageId: lastMessage?.id ?? 'streaming',
-                            sessionRepository: widget.sessionRepository,
-                            agentName: agentNameForStream,
-                            onTaskTap: widget.onTaskTap,
-                            expandReasoningByDefault: expandReasoningByDefault,
-                            reasoningEnabled: message.model != null
-                                ? (modelSettings
-                                          .settingsCache[message.model]
-                                          ?.reasoningEnabled ??
-                                      true)
-                                : true,
+            // LayoutBuilder sits OUTSIDE the scrollable so [constraints] carry
+            // the real viewport height (inside a scrollable the main axis is
+            // unbounded).
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final minContentHeight =
+                    (constraints.maxHeight -
+                            ChatMessagesConstants.verticalPadding * 2)
+                        .clamp(0.0, double.infinity)
+                        .toDouble();
+                return RepaintBoundary(
+                  child: Scrollbar(
+                    controller: _scrollController,
+                    thumbVisibility: false,
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: _follow.handleNotification,
+                      child: SingleChildScrollView(
+                        controller: _scrollController,
+                        physics: _scrollPhysics(context),
+                        padding: EdgeInsets.only(
+                          left: ChatMessagesConstants.horizontalPadding,
+                          right: ChatMessagesConstants.horizontalPadding,
+                          top: ChatMessagesConstants.verticalPadding,
+                          bottom: ChatMessagesConstants.verticalPadding,
+                        ),
+                        child: SelectionArea(
+                          // Rebuilt only when the item count changes (message
+                          // added/removed, streaming/welcome/suggestion row
+                          // toggles). Keeping the Scrollable ABOVE SelectionArea
+                          // means this rebuild never recreates the
+                          // ScrollPosition, so the scroll offset is preserved
+                          // across list mutations (including the streaming-bubble
+                          // -> final-message swap at the end of a response, which
+                          // previously caused a jump-to-top).
+                          key: ValueKey(itemCount),
+                          // The scrollable is top-down: offset 0 shows the
+                          // oldest content, growing offsets move towards the
+                          // newest. minHeight keeps short content (welcome
+                          // screen) anchored to the TOP of the viewport
+                          // instead of hugging the input.
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: minContentHeight,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: children,
+                            ),
                           ),
-                        );
-                      }
-                      extraPos++;
-                    } else if (shouldShowWaitingAnimation) {
-                      if (index == extraPos) {
-                        return ChatMessagesWaitingAnimation(
-                          loadingIndicatorKey: _loadingIndicatorKey,
-                        );
-                      }
-                      extraPos++;
-                    }
-
-                    if (widget.showSuggestions &&
-                        widget.continuationSuggestions.isNotEmpty &&
-                        index == extraPos) {
-                      return ChatMessagesContinuationSuggestions(
-                        suggestions: widget.continuationSuggestions,
-                        isLoading: widget.isSuggestionsLoading,
-                        parentContext: context,
-                        onSuggestionTap: (suggestion) {
-                          widget.onSendMessage(MessageData(text: suggestion));
-                        },
-                        onClose: widget.onSuggestionsClose,
-                        onRefresh: widget.onSuggestionsRefresh,
-                      );
-                    }
-
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],

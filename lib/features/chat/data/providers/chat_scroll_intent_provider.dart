@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chatorai/core/constants/chat_messages_constants.dart';
 
 /// Direction a global Home/End shortcut should scroll the chat list.
 enum ChatScrollTarget { start, end }
@@ -56,10 +57,31 @@ void listenChatScrollIntent(WidgetRef ref, ScrollController controller) {
   ref.listen<ChatScrollIntent>(chatScrollIntentProvider, (previous, next) {
     if (previous?.generation == next.generation) return;
     if (!controller.hasClients) return;
+    // The chat list is top-down: offset 0 is the oldest content, growing
+    // offsets move towards the newest content (maxScrollExtent).
     if (next.target == ChatScrollTarget.start) {
       controller.jumpTo(0);
     } else {
       controller.jumpTo(controller.position.maxScrollExtent);
     }
   });
+}
+
+// ---------------------------------------------------------------------------
+// Scroll helper — single source of truth for "where is the bottom".
+//
+// The chat list is top-down (`SingleChildScrollView` without reverse):
+// offset 0 shows the oldest content and growing offsets move towards the
+// newest content (maxScrollExtent).
+// ---------------------------------------------------------------------------
+
+/// Whether [controller] sits within [threshold] pixels of the newest content
+/// (maxScrollExtent). Safe to call anytime: returns `false` when unattached.
+///
+/// Defaults to [ChatMessagesConstants.userScrolledAwayBand], the tight band
+/// used to detect that the user has manually scrolled away from the bottom.
+bool chatIsNearBottom(ScrollController controller, {double? threshold}) {
+  if (!controller.hasClients) return false;
+  final band = threshold ?? ChatMessagesConstants.userScrolledAwayBand;
+  return controller.offset >= controller.position.maxScrollExtent - band;
 }

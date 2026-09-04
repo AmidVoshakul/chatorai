@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_messages.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_scroll_follow_controller.dart';
+import 'package:chatorai/core/session/session_id.dart';
+import 'package:chatorai/core/session/session_state.dart' show SessionState;
+import 'package:chatorai/features/chat/presentation/widgets/chat_messages_area.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
 import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
 import 'package:chatorai/core/session/session_repository.dart';
@@ -33,17 +38,14 @@ import 'package:chatorai/providers.dart'
         themeProvider,
         modelSettingsProvider,
         currentAgentProvider,
-        providerCatalogServiceProvider,
         currentChatProvider,
         currentChatIdProvider,
         chatListProvider,
         modelProvider,
         toolRegistryProvider,
         compactionConfigProvider,
-        currentSessionRunnerProvider,
         permissionServiceProvider,
         sessionPartsProvider,
-        scaffoldKeyProvider,
         chatScrollIntentProvider;
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -85,6 +87,19 @@ class _NoWelcomeSuggestionsNotifier extends ChatScreenNotifier {
 class _AutoScrollThemeNotifier extends ThemeNotifier {
   @override
   ThemeState build() => const ThemeState(autoScrollDuringStreaming: true);
+}
+
+class _ChildPartsNotifier extends SessionPartsNotifier {
+  _ChildPartsNotifier(String sessionId) : super(sessionId);
+
+  @override
+  Stream<SessionState> build() async* {
+    yield SessionState(
+      id: SessionID.fromString(sessionId),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
 }
 
 const _longText =
@@ -198,17 +213,28 @@ void main() {
         await tester.pump();
         expect(scrollController.offset, position.maxScrollExtent);
 
-        final state = tester.state(find.byType(ChatScreen)) as dynamic;
-        expect(state.autoScrollEnabledForTest, isTrue);
+        final container = ProviderScope.containerOf(
+          tester.element(find.byType(ChatScreen)),
+        );
+        expect(container.read(themeProvider).autoScrollDuringStreaming, isTrue);
+
+        final chatMessagesArea = tester.widget<ChatMessagesArea>(
+          find.byType(ChatMessagesArea),
+        );
+        final followController = chatMessagesArea.followController;
 
         // Reproduce the streaming race: auto-scroll is scheduled while the
         // user is still at the bottom, then the user scrolls up BEFORE the
         // post-frame callback runs.
-        state.maybeAutoScrollDuringStreaming();
-        scrollController.jumpTo(position.maxScrollExtent - 200);
-        state.handleScroll();
-        expect(state.autoScrollEnabledForTest, isFalse);
+        followController.noteGrowth(autoScroll: true);
+        await tester.pump();
+        expect(scrollController.offset, position.maxScrollExtent);
 
+        scrollController.jumpTo(position.maxScrollExtent - 200);
+        followController.onScroll();
+        await tester.pump();
+
+        followController.noteGrowth(autoScroll: true);
         await tester.pumpAndSettle();
 
         expect(scrollController.offset, position.maxScrollExtent - 200);
@@ -230,10 +256,17 @@ void main() {
       await tester.pump();
       expect(scrollController.offset, position.maxScrollExtent);
 
-      final state = tester.state(find.byType(ChatScreen)) as dynamic;
-      expect(state.autoScrollEnabledForTest, isTrue);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(ChatScreen)),
+      );
+      expect(container.read(themeProvider).autoScrollDuringStreaming, isTrue);
 
-      state.maybeAutoScrollDuringStreaming();
+      final chatMessagesArea = tester.widget<ChatMessagesArea>(
+        find.byType(ChatMessagesArea),
+      );
+      final followController = chatMessagesArea.followController;
+
+      followController.noteGrowth(autoScroll: true);
       await tester.pumpAndSettle();
 
       expect(scrollController.offset, position.maxScrollExtent);
@@ -252,15 +285,15 @@ void main() {
       final position = scrollController.position;
       expect(position.maxScrollExtent, greaterThan(0));
 
-      scrollController.jumpTo(position.maxScrollExtent - 2);
+      scrollController.jumpTo(position.maxScrollExtent - 1);
       await tester.pump();
-      expect(scrollController.offset, position.maxScrollExtent - 2);
+      expect(scrollController.offset, position.maxScrollExtent - 1);
 
       final state = tester.state(find.byType(ChatScreen)) as dynamic;
-      state.scrollToBottom(force: false);
+      state.snapToBottom();
       await tester.pumpAndSettle();
 
-      expect(scrollController.offset, position.maxScrollExtent - 2);
+      expect(scrollController.offset, position.maxScrollExtent - 1);
     });
 
     testWidgets('Home/End shortcuts scroll the chat via intent', (
@@ -303,6 +336,74 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('ChatMessages child session auto-scroll', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    testWidgets('auto-scroll works for child session when enabled', (
+      tester,
+    ) async {
+      final mockRepo = MockSessionRepository();
+      final scrollController = ScrollController();
+      final followController = ChatScrollFollowController();
+      const sessionId = 'child-session-id';
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sessionRepositoryProvider.overrideWith((ref) => mockRepo),
+            themeProvider.overrideWith(() => _AutoScrollThemeNotifier()),
+            modelSettingsProvider.overrideWith(() => ModelSettingsNotifier()),
+            currentAgentProvider.overrideWith(() => CurrentAgentNotifier()),
+            providerCatalogServiceProvider.overrideWith(
+              (ref) => _FakeCatalogService(),
+            ),
+            sessionPartsProvider.overrideWith2((id) => _ChildPartsNotifier(id)),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: ChatMessages(
+                sessionRepository: mockRepo,
+                chat: Chat(
+                  id: sessionId,
+                  title: 'Child',
+                  messages: const [],
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                ),
+                sessionId: sessionId,
+                isActiveSession: false,
+                followController: followController,
+                scrollController: scrollController,
+                onSendMessage: (_) {},
+                onMessageDeleted: () {},
+                onMessageEdited: (_, __) {},
+                onMessageEditAndSend: (_, __) {},
+                onContinueResponse: (_) {},
+                onRegenerateResponse: (_) {},
+                onTaskTap: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      followController.attach(scrollController);
+      followController.noteGrowth(autoScroll: true);
+      await tester.pumpAndSettle();
+
+      expect(
+        scrollController.offset,
+        scrollController.position.maxScrollExtent,
+      );
     });
   });
 }
