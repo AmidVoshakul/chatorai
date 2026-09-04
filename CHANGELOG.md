@@ -6,7 +6,40 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
- - **Active session spinner in sidebar and workspace**:
+- **Unified chat auto-scroll**:
+  - `ChatMessagesConstants.followBand` (`150.0`) and `userScrolledAwayBand` (`25.0`) are the single source of truth for scroll thresholds across all chat views.
+  - `ChatScrollFollowController` drives auto-scroll identically for parent (`ChatMessagesArea`) and child (`SessionContextWindow`) sessions via `noteGrowth()` / `handleNotification()`.
+  - `chatIsNearBottom(controller, {threshold})` helper centralizes "is the user at the bottom" logic.
+  - `ChatMessages` now accepts an optional external `followController`; when provided, the same controller is shared between parent and child windows.
+  - Widget test added: `test_chat_messages_auto_scroll_widget_test.dart` covers parent auto-scroll, scroll-away suppression, Home/End shortcuts, unmount cleanup, and child-session auto-scroll.
+
+### Changed
+
+- **SessionRunner tool-card ordering**:
+  - Removed the deferred tool-card mechanism (`_toolCardGrace`, `_pendingToolCalls`, `_toolCardTimer`). Tool cards (`ToolCalled` + new `ToolStarted`) are now emitted immediately in `onToolStart`, after the preceding reasoning part is closed.
+  - Post-tool reasoning is buffered during tool execution (`_bufferedReasoning` + `_toolRunningCount`) and flushed as a new reasoning part when the tool ends (`onToolEnd` / `onToolError` → `_decrementToolRunning()` → `_flushBufferedReasoning()`).
+  - `onChunk`, `onCompletion`, and `onError` now call `_closeReasoningIfOpen()` instead of the removed `_flushPendingToolCallsAndCloseReasoning()`.
+  - `toolCardGrace` parameter removed from `SessionRunner.startSession` / `startInitializedSession` / `SessionRunnerSession` constructors.
+- **Event schema**: Added `ToolStarted` event (`session_runner.dart`, `events.dart`, `event_store.dart`, `projector.dart`) emitted alongside `ToolCalled` when a tool begins execution. `projectEvent` projects it as `AssistantTool(state: ToolState.pending)`.
+
+### Fixed
+
+- **Tool-card display order**: Tools no longer appear mid-thought. Reasoning blocks are closed before tool cards are emitted, and subsequent reasoning after a tool becomes a separate block — restoring the visual order `thought → tool → tool → thought → answer`.
+
+### Tests
+
+- `session_runner_streaming_test.dart`: Updated all deferred-tool-card tests to assert immediate emission; added tests for buffered post-tool reasoning flush, parallel tool waves, and `ToolStarted` ordering.
+- `session_runner_sdk_repro_test.dart`: Updated kilo-style SSE reproduction to expect 3 reasoning parts (pre-tool, buffered post-tool, step-2 thought) with tool cards emitted immediately after the first thought.
+- `test_tool_card_after_reasoning.dart`: Removed unused `events.dart` import; assertions now cover immediate tool-card emission with `ReasoningEnded` before `ToolCalled`.
+
+### Documentation
+
+- **CHANGELOG.md**: Documented the deferred-tool-card removal and `ToolStarted` event addition.
+
+---
+Status: Completed
+Verification: I have done everything
+---
    - New `activeSessionIdsProvider` in `session_providers.dart`: reactive `Provider<Set<String>>` exposing the currently streaming session ID(s) derived from `chatScreenProvider.isStreaming` and `streamingSessionId`. This is the single source of truth for “which chat is being answered right now”.
    - Sidebar (`lib/features/sessions/presentation/widgets/sidebar.dart`): each chat item now shows a small `SpinKitCircle` (size 14, gray) to the left of the chat title when that chat ID is active. The spinner disappears automatically when `finalizeStreaming()` clears the streaming state.
    - Workspace dialog (`lib/features/chat/presentation/widgets/workspace_dialog.dart`): same spinner appears to the left of the session title for active sessions, keeping sidebar and workspace synchronized through the same provider.
