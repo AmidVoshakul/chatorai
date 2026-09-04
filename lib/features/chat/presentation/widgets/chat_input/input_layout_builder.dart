@@ -213,15 +213,19 @@ class InputLayoutBuilder {
     final theme = config.theme;
     final chatInputState = config.chatInputState;
     final isMobile = config.isMobile;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        InputWidgetBuilders.buildActionButton(
-          key: config.plusKey,
-          buttonSize: config.buttonSize,
+    final buttonBorderRadius =
+        BorderRadius.circular(ChatoraiBorderRadius.md);
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InputWidgetBuilders.buildActionButton(
+            key: config.plusKey,
+            buttonSize: config.buttonSize,
           bgColor: theme.brightness == Brightness.dark
               ? ChatoraiColors.inputContainerDark
               : ChatoraiColors.inputContainerLight,
+          borderRadius: buttonBorderRadius,
           onTap: config.onPlusMenu,
           tooltip: localizations.addFileTooltip,
           child: Icon(Icons.add, color: theme.iconTheme.color),
@@ -233,6 +237,7 @@ class InputLayoutBuilder {
           bgColor: theme.brightness == Brightness.dark
               ? ChatoraiColors.inputContainerDark
               : ChatoraiColors.inputContainerLight,
+          borderRadius: buttonBorderRadius,
           onTap: config.onModelSettings,
           tooltip: localizations.modelSettingsTooltip,
           child: Icon(Icons.tune, color: theme.iconTheme.color),
@@ -242,14 +247,15 @@ class InputLayoutBuilder {
           key: config.agentKey,
           theme: theme,
           currentAgent: config.currentAgent,
+          borderRadius: buttonBorderRadius,
           onTap: config.onAgentSwitcher,
           tooltip: localizations.switchAgentTooltip,
         ),
         const SizedBox(width: ChatoraiSpacing.md),
         Expanded(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (chatInputState.attachedFilePath != null) ...[
                 Padding(
@@ -268,26 +274,22 @@ class InputLayoutBuilder {
                 ),
                 const SizedBox(height: ChatoraiSpacing.xs),
               ],
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(config.context).size.height * 0.4,
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.brightness == Brightness.dark
-                        ? ChatoraiColors.inputContainerDark
-                        : ChatoraiColors.inputContainerLight,
-                    borderRadius: BorderRadius.circular(
-                      ChatoraiBorderRadius.md,
-                    ),
-                    border: Border.all(
-                      color: theme.brightness == Brightness.dark
-                          ? ChatoraiColors.inputContainerBorderDark
-                          : ChatoraiColors.inputContainerBorderLight,
-                      width: ChatoraiBorderWidth.thinBold,
-                    ),
+              Expanded(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(config.context).size.height * 0.4,
                   ),
-                  child: config.textField,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: theme.brightness == Brightness.dark
+                          ? ChatoraiColors.inputContainerDark
+                          : ChatoraiColors.inputContainerLight,
+                      borderRadius: BorderRadius.circular(
+                        ChatoraiBorderRadius.md,
+                      ),
+                    ),
+                    child: config.textField,
+                  ),
                 ),
               ),
             ],
@@ -308,8 +310,10 @@ class InputLayoutBuilder {
           onLongPressMic: config.onLongPressMic,
           ref: config.ref,
           isStreaming: config.isStreaming,
+          borderRadius: buttonBorderRadius,
         ),
       ],
+    ),
     );
   }
 
@@ -336,6 +340,7 @@ class InputLayoutBuilder {
     required AgentDefinition currentAgent,
   }) {
     final localizations = AppLocalizations.of(context)!;
+    final buttonBorderRadius = BorderRadius.circular(ChatoraiBorderRadius.md);
     return Row(
       children: [
         InputWidgetBuilders.buildActionButton(
@@ -354,6 +359,7 @@ class InputLayoutBuilder {
               : (theme.brightness == Brightness.dark
                     ? ChatoraiColors.inputContainerDark
                     : ChatoraiColors.inputContainerLight),
+          borderRadius: buttonBorderRadius,
           onTap: onPlusMenu,
           tooltip: localizations.addFileTooltip,
           child: Icon(
@@ -371,6 +377,7 @@ class InputLayoutBuilder {
           bgColor: theme.brightness == Brightness.dark
               ? ChatoraiColors.inputContainerDark
               : ChatoraiColors.inputContainerLight,
+          borderRadius: buttonBorderRadius,
           onTap: onModelSettings,
           tooltip: localizations.modelSettingsTooltip,
           child: Icon(Icons.tune, size: iconSize, color: theme.iconTheme.color),
@@ -380,6 +387,7 @@ class InputLayoutBuilder {
           key: agentKey,
           theme: theme,
           currentAgent: currentAgent,
+          borderRadius: buttonBorderRadius,
           onTap: onAgentSwitcher,
           tooltip: localizations.switchAgentTooltip,
         ),
@@ -398,6 +406,7 @@ class InputLayoutBuilder {
           onLongPressMic: onLongPressMic,
           ref: ref,
           isStreaming: isStreaming,
+          borderRadius: buttonBorderRadius,
         ),
       ],
     );
@@ -417,12 +426,14 @@ class InputLayoutBuilder {
     required VoidCallback? onLongPressMic,
     required WidgetRef ref,
     required bool isStreaming,
+    BorderRadius? borderRadius,
   }) {
     if (isStreaming) {
       return InputWidgetBuilders.buildStopButton(
         context,
         ref,
         onStopStreaming: onStopStreaming,
+        borderRadius: borderRadius,
       );
     }
     final isListening =
@@ -441,6 +452,7 @@ class InputLayoutBuilder {
     return InputWidgetBuilders.buildActionButton(
       buttonSize: buttonSize,
       tooltip: actionTooltip,
+      borderRadius: borderRadius,
       gradient: showGradient
           ? LinearGradient(
               colors: [

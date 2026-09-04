@@ -71,7 +71,7 @@ class InputWidgetBuilders {
                   filled: false,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: ChatoraiSpacing.lg,
-                    vertical: ChatoraiSpacing.md,
+                    vertical: ChatoraiSpacing.xs,
                   ),
                 ),
           style: theme.textTheme.bodyMedium?.copyWith(
@@ -94,7 +94,10 @@ class InputWidgetBuilders {
     VoidCallback? onTap,
     VoidCallback? onLongPress,
     String? tooltip,
+    BorderRadius? borderRadius,
   }) {
+    final effectiveBorderRadius =
+        borderRadius ?? BorderRadius.circular(buttonSize / 2);
     return Container(
       key: key,
       width: buttonSize,
@@ -102,15 +105,15 @@ class InputWidgetBuilders {
       decoration: BoxDecoration(
         gradient: gradient,
         color: gradient == null ? bgColor : null,
-        borderRadius: BorderRadius.circular(buttonSize / 2),
+        borderRadius: effectiveBorderRadius,
       ),
       child: Tooltip(
         message: tooltip ?? '',
         child: Material(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(buttonSize / 2),
+          borderRadius: effectiveBorderRadius,
           child: InkWell(
-            borderRadius: BorderRadius.circular(buttonSize / 2),
+            borderRadius: effectiveBorderRadius,
             onTap: onTap,
             onLongPress: onLongPress,
             child: Center(child: child),
@@ -124,12 +127,17 @@ class InputWidgetBuilders {
     BuildContext context,
     WidgetRef ref, {
     required VoidCallback? onStopStreaming,
+    BorderRadius? borderRadius,
   }) {
     final localizations = AppLocalizations.of(context)!;
     final retryAsync = ref.watch(retryCountdownProvider);
     final retryProgress = retryAsync.hasValue ? retryAsync.value : null;
     final isRetrying =
         retryProgress != null && retryProgress > 0 && retryProgress <= 1;
+
+    final effectiveBorderRadius =
+        borderRadius ?? BorderRadius.circular(22);
+    final isCircle = borderRadius == null;
 
     return AnimatedContainer(
       duration: ChatoraiDurations.normal,
@@ -146,7 +154,8 @@ class InputWidgetBuilders {
                 ],
               ),
         color: isRetrying ? Colors.transparent : null,
-        shape: BoxShape.circle,
+        shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: isCircle ? null : effectiveBorderRadius,
         boxShadow: isRetrying ? null : ChatoraiShadows.cardShadow,
       ),
       child: Stack(
@@ -246,7 +255,10 @@ class InputWidgetBuilders {
     required AgentDefinition currentAgent,
     required VoidCallback onTap,
     String? tooltip,
+    BorderRadius? borderRadius,
   }) {
+    final effectiveBorderRadius =
+        borderRadius ?? BorderRadius.circular(22);
     return Container(
       key: key,
       width: 44,
@@ -255,15 +267,15 @@ class InputWidgetBuilders {
         color: theme.brightness == Brightness.dark
             ? ChatoraiColors.inputContainerDark
             : ChatoraiColors.inputContainerLight,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: effectiveBorderRadius,
       ),
       child: Tooltip(
         message: tooltip ?? '',
         child: Material(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: effectiveBorderRadius,
           child: InkWell(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: effectiveBorderRadius,
             onTap: onTap,
             child: Center(
               child: Text(
