@@ -839,7 +839,7 @@ class _SessionColumn extends ConsumerWidget {
   }
 }
 
-class _SessionRow extends StatelessWidget {
+class _SessionRow extends ConsumerWidget {
   final SessionState session;
   final ChatoraiSettingsWindowColors palette;
   final AppLocalizations l10n;
@@ -855,7 +855,8 @@ class _SessionRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeIds = ref.watch(activeSessionIdsProvider);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(ChatoraiBorderRadius.sm),
@@ -868,6 +869,11 @@ class _SessionRow extends StatelessWidget {
           ),
           child: Row(
             children: [
+              if (activeIds.contains(session.id.value))
+                const Padding(
+                  padding: EdgeInsets.only(right: ChatoraiSpacing.xs),
+                  child: SpinKitCircle(size: 14, color: ChatoraiColors.gray),
+                ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

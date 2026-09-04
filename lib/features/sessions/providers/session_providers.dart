@@ -4,6 +4,7 @@ import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/session/session_stack.dart';
 import 'package:chatorai/core/session/session_state.dart';
+import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 export 'package:chatorai/core/session/session_db_provider.dart'
@@ -20,6 +21,10 @@ class _CurrentRunnerNotifier
 
   @override
   ({SessionRunner runner, String sessionId})? build() => null;
+
+  /// Direct access to the bound holder for callers that need to pass it
+  /// through (e.g. delegated command subtasks registering task parts).
+  SessionRunnerHolder? get holder => _holder;
 
   void set(SessionRunner runner, String sessionId) {
     state = (runner: runner, sessionId: sessionId);
@@ -121,3 +126,16 @@ final sessionsByDirectoryProvider = FutureProvider.autoDispose
       final repo = await ref.read(sessionRepositoryProvider.future);
       return repo.findSessionsByDirectory(directory);
     });
+
+/// Reactive set of currently active (streaming) session IDs.
+///
+/// This is the single source of truth for sidebar/workspace spinners:
+/// when [chatScreenProvider] is streaming, this provider returns the
+/// streaming session ID; otherwise it returns an empty set.
+final activeSessionIdsProvider = Provider<Set<String>>((ref) {
+  final chatState = ref.watch(chatScreenProvider);
+  if (chatState.isStreaming && chatState.streamingSessionId != null) {
+    return {chatState.streamingSessionId!};
+  }
+  return const {};
+});

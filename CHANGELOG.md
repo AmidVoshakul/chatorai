@@ -6,6 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+ - **Active session spinner in sidebar and workspace**:
+   - New `activeSessionIdsProvider` in `session_providers.dart`: reactive `Provider<Set<String>>` exposing the currently streaming session ID(s) derived from `chatScreenProvider.isStreaming` and `streamingSessionId`. This is the single source of truth for “which chat is being answered right now”.
+   - Sidebar (`lib/features/sessions/presentation/widgets/sidebar.dart`): each chat item now shows a small `SpinKitCircle` (size 14, gray) to the left of the chat title when that chat ID is active. The spinner disappears automatically when `finalizeStreaming()` clears the streaming state.
+   - Workspace dialog (`lib/features/chat/presentation/widgets/workspace_dialog.dart`): same spinner appears to the left of the session title for active sessions, keeping sidebar and workspace synchronized through the same provider.
+   - Unit test added: `test/features/sessions/providers/active_session_ids_provider_test.dart` covers streaming-active, streaming-null, idle, and session-change transitions.
  - **Auto-Approve settings (file-access permissions UI)**:
    - New `AutoApproveScreen` (Settings → Auto-Approve) exposes the 14 permission categories from `PermissionRuleset.defaults()` (external_directory, shell, read, edit, write, glob, grep, webfetch, websearch, doom_loop, skill, lsp, task, todowrite) with a per-category `Default(<built-in>)/Allow/Ask/Deny` dropdown and a collapsible Exceptions block (path patterns for file categories, command patterns for `shell`). `question`/`plan_enter`/`plan_exit` are hidden internal categories.
    - `auto_approve_provider.dart` (`AutoApproveNotifier`): loads effective rules from the merged `chatorai.json` `permission` section, saves via `ConfigWriter.upsertPermissionSection`, and invalidates `configProvider` so changes apply immediately. `Default` omits the key (inherits `PermissionRuleset.defaults()`); explicit actions are written as a string or `{"*": action, ...exceptions}` map.
@@ -74,6 +79,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **ChatScreen consolidation**: Merged 8 part files (`chat_screen_ai.dart`, `chat_screen_build.dart`, `chat_screen_edits.dart`, `chat_screen_management.dart`, `chat_screen_messaging.dart`, `chat_screen_navigator.dart`, `chat_screen_scroll.dart`, `chat_screen_streaming.dart`) into a single `chat_screen.dart`. UI/build/scroll/navigator methods are now regular instance methods on `_ChatScreenState`; action/streaming calls route directly to `ChatActions` (constructed with `Ref ref` in `initState`). Removed all `part` directives and deleted the 8 part files.
+- **ChatActions**: Added `runCompaction(Chat chat)` method to centralize compaction logic previously spread across `_ChatScreenState` and part files.
 - **ChatAiService**: migrated to `ai_sdk_dart` v2; `streamChatCompletion` uses new SDK types.
 - **SessionRunner**: refactored for better event sourcing and child session handling.
 - **Permission system**: `shell` tool default changed from `allow` to `ask`; `DangerousCharacterPolicy` softened to `review` for safe metacharacters (`|`, `>`, `<`, `&`).

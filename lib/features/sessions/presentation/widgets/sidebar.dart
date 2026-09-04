@@ -3,12 +3,17 @@ import 'package:chatorai/features/sessions/presentation/widgets/sidebar_chat_act
 import 'package:chatorai/features/sessions/providers/sidebar_provider.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart'
-    show themeProvider, languageProvider, currentChatProvider;
+    show
+        themeProvider,
+        languageProvider,
+        currentChatProvider,
+        activeSessionIdsProvider;
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/format_time_utils.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 // ===========================================================================
 // SIDEBAR WIDGET
@@ -301,6 +306,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
     String? currentChatId,
   ) {
     final isSelected = currentChatId == chat.id;
+    final activeIds = ref.watch(activeSessionIdsProvider);
 
     return Material(
       color: Colors.transparent,
@@ -318,6 +324,14 @@ class _SidebarState extends ConsumerState<Sidebar> {
             children: [
               Row(
                 children: [
+                  if (activeIds.contains(chat.id))
+                    const Padding(
+                      padding: EdgeInsets.only(right: ChatoraiSpacing.xs),
+                      child: SpinKitCircle(
+                        size: 14,
+                        color: ChatoraiColors.gray,
+                      ),
+                    ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
