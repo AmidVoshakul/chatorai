@@ -233,6 +233,8 @@ First public release.
 
 ### Fixed
 
+- **Retry backoff not resetting mid-stream**: `ChatRetryService.onChunkReceived` was only triggered for `StreamTextTextDeltaEvent`. After receiving reasoning deltas, tool results, or tool errors, the retry attempt counter was not reset, causing subsequent retries to use exponentially increased delays (16–32 s) instead of starting from the base delay. Fixed by calling `onChunkReceived` for all meaningful stream events (`reasoning-delta`, `tool-result`, `tool-error`, `reasoning-start/end`, `tool-input-*`, `usage`, `source`, `file`, `start-step`, `finish-step`, `finish`).
+
 - **Android database hang**: `createFileDatabase()` in `lib/core/session/database.dart` no longer imports `xdg_paths_cli.dart`. The function now requires an explicit `dataDir` parameter and creates the directory inline with `Directory(dataDir).create(recursive: true)`. `session_db_provider.dart` imports the Flutter-aware `xdg_paths.dart` and passes `await XdgPaths.dataHomeAsync`, which resolves to the app's sandboxed support directory on Android. `bin/chatorai.dart` passes `XdgPaths.dataHome` from `xdg_paths_cli.dart`. Removed temporary `.timeout(10s)` debug wrapper from `chat_screen_messaging.dart`; removed unused `import 'dart:async'` from `chat_screen.dart`.
 
 ## Earlier development

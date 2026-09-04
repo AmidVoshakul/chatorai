@@ -12,6 +12,7 @@ import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/usage_cache_mapper.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:dio/dio.dart';
+import 'package:chatorai/core/session/session_runner.dart';
 import 'package:uuid/uuid.dart';
 
 import 'chat_cancellation.dart';
@@ -469,12 +470,14 @@ class ChatAiService implements CompletionProvider {
                   await onChunk(delta);
                 case StreamTextReasoningDeltaEvent(:final delta):
                   if (!isGenerationStillValid(gen, _generation)) return;
+                  onChunkReceived?.call();
                   await onReasoning(delta);
                 case StreamTextToolResultEvent(
                   :final toolResult,
                   :final preliminary,
                 ):
                   if (!isGenerationStillValid(gen, _generation)) return;
+                  onChunkReceived?.call();
                   await _handleStreamToolResult(
                     prefix: 'streamChatCompletion',
                     toolResult: toolResult,
@@ -490,6 +493,7 @@ class ChatAiService implements CompletionProvider {
                   :final error,
                 ):
                   if (!isGenerationStillValid(gen, _generation)) return;
+                  onChunkReceived?.call();
                   if (!seenToolResults.contains(toolCallId)) {
                     seenToolResults.add(toolCallId);
                     toolTracker.markErrored(toolCallId);
@@ -500,32 +504,45 @@ class ChatAiService implements CompletionProvider {
                     );
                   }
                 case StreamTextReasoningStartEvent():
+                  onChunkReceived?.call();
                   break;
                 case StreamTextReasoningEndEvent():
                   if (!isGenerationStillValid(gen, _generation)) return;
+                  onChunkReceived?.call();
                   await onReasoningEnd?.call();
                   break;
                 case StreamTextTextStartEvent():
+                  onChunkReceived?.call();
                   break;
                 case StreamTextTextEndEvent():
+                  onChunkReceived?.call();
                   break;
                 case StreamTextToolInputStartEvent():
+                  onChunkReceived?.call();
                   break;
                 case StreamTextToolInputDeltaEvent():
+                  onChunkReceived?.call();
                   break;
                 case StreamTextToolInputEndEvent():
+                  onChunkReceived?.call();
                   break;
                 case StreamTextUsageEvent():
+                  onChunkReceived?.call();
                   break;
                 case StreamTextSourceEvent():
+                  onChunkReceived?.call();
                   break;
                 case StreamTextFileEvent():
+                  onChunkReceived?.call();
                   break;
                 case StreamTextStartEvent():
+                  onChunkReceived?.call();
                   break;
                 case StreamTextStartStepEvent():
+                  onChunkReceived?.call();
                   break;
                 case StreamTextFinishStepEvent():
+                  onChunkReceived?.call();
                   break;
                 case StreamTextRawEvent(:final rawValue):
                   if (rawValue is Map<String, dynamic> &&
@@ -552,6 +569,7 @@ class ChatAiService implements CompletionProvider {
                 case StreamTextFinishEvent(:final text, :final usage):
                   if (completionHandled) return;
                   if (!isGenerationStillValid(gen, _generation)) return;
+                  onChunkReceived?.call();
                   completionHandled = true;
                   _finalizeDanglingTools(toolTracker, onToolError);
                   final resolved = resolveUsage(usage, capturedRawUsage);
@@ -730,11 +748,13 @@ class ChatAiService implements CompletionProvider {
                 onChunkReceived?.call();
                 await onChunk(delta);
               case StreamTextReasoningDeltaEvent(:final delta):
+                onChunkReceived?.call();
                 await onReasoning(delta);
               case StreamTextToolResultEvent(
                 :final toolResult,
                 :final preliminary,
               ):
+                onChunkReceived?.call();
                 await _handleStreamToolResult(
                   prefix: 'runChildCompletion',
                   toolResult: toolResult,
@@ -749,6 +769,7 @@ class ChatAiService implements CompletionProvider {
                 :final toolName,
                 :final error,
               ):
+                onChunkReceived?.call();
                 if (!seenToolResults.contains(toolCallId)) {
                   seenToolResults.add(toolCallId);
                   toolTracker.markErrored(toolCallId);
@@ -775,6 +796,7 @@ class ChatAiService implements CompletionProvider {
                   throw error;
                 }
               case StreamTextReasoningEndEvent():
+                onChunkReceived?.call();
                 await onReasoningEnd?.call();
                 break;
               case StreamTextRawEvent(:final rawValue):
@@ -786,6 +808,7 @@ class ChatAiService implements CompletionProvider {
                 }
                 break;
               case StreamTextFinishEvent(:final text, :final usage):
+                onChunkReceived?.call();
                 _finalizeDanglingTools(toolTracker, onToolError);
                 final resolved = resolveUsage(usage, capturedRawUsage);
                 LogTags.chatService.logDebug(
@@ -801,6 +824,7 @@ class ChatAiService implements CompletionProvider {
                 );
                 await onCompletion(text);
               default:
+                onChunkReceived?.call();
                 break;
             }
           }
@@ -812,6 +836,94 @@ class ChatAiService implements CompletionProvider {
     } catch (_) {
       rethrow;
     }
+  }
+
+  /// Streams a delegated subagent completion into [child], wiring the standard
+  /// child-session callbacks: chunk/reasoning passthrough, tool lifecycle
+  /// (tool-start forwards an optional live title to [onChildToolTitle]), usage
+  /// accounting and completion persistence on the child session.
+  ///
+  /// Both delegation entry points — the parent-driven `task` tool and a
+  /// user-invoked slash-command subtask — share this wiring, so callback
+  /// behavior can never drift between them.
+  Future<void> runSubagentCompletion({
+    required SessionRunnerSession child,
+    required List<Map<String, dynamic>> messages,
+    required String model,
+    required double temperature,
+    required String sessionId,
+    required ToolSet tools,
+    required int maxSteps,
+    CancellationToken? abortSignal,
+    void Function(
+      int tokensInput,
+      int tokensOutput,
+      int tokensCacheRead,
+      int tokensCacheWrite,
+      int tokensReasoning,
+    )?
+    onUsage,
+    void Function(String childSessionId, String toolName, String? title)?
+    onChildToolTitle,
+  }) {
+    var lastTokensInput = 0;
+    var lastTokensOutput = 0;
+    var lastTokensCacheRead = 0;
+    var lastTokensCacheWrite = 0;
+    var lastTokensReasoning = 0;
+    return runChildCompletion(
+      messages: messages,
+      model: model,
+      temperature: temperature,
+      sessionId: sessionId,
+      tools: tools,
+      maxSteps: maxSteps,
+      abortSignal: abortSignal,
+      onUsage: (input, output, cacheRead, cacheWrite, reasoning, _) {
+        lastTokensInput = input;
+        lastTokensOutput = output;
+        lastTokensCacheRead = cacheRead;
+        lastTokensCacheWrite = cacheWrite;
+        lastTokensReasoning = reasoning;
+        onUsage?.call(
+          lastTokensInput,
+          lastTokensOutput,
+          lastTokensCacheRead,
+          lastTokensCacheWrite,
+          lastTokensReasoning,
+        );
+      },
+      onChunk: child.onChunk,
+      onReasoning: child.onReasoning,
+      onReasoningEnd: child.onReasoningEnd,
+      onToolStart: (toolCallId, toolName, input) async {
+        await child.onToolStart(toolCallId, toolName, input);
+        final title =
+            input['command'] as String? ??
+            input['query'] as String? ??
+            input['filePath'] as String? ??
+            input['path'] as String?;
+        onChildToolTitle?.call(child.sessionId.value, toolName, title);
+      },
+      onToolEnd: (toolCallId, toolName, result) async {
+        await child.onToolEnd(toolCallId, toolName, result);
+      },
+      onToolError: (toolCallId, toolName, error) async {
+        // Mark the tool as failed WITHOUT finalizing the child session, so
+        // the subagent can recover and continue after a tool error.
+        await child.onToolError(toolCallId, toolName, error);
+      },
+      onCompletion: (content) => child.onCompletion(
+        content: content,
+        reasoning: null,
+        model: model,
+        tokensInput: lastTokensInput,
+        tokensOutput: lastTokensOutput,
+        tokensCacheRead: lastTokensCacheRead,
+        tokensCacheWrite: lastTokensCacheWrite,
+        tokensReasoning: lastTokensReasoning,
+      ),
+    );
   }
 
   // ===========================================================================
