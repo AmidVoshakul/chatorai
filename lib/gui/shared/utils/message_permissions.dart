@@ -1,5 +1,4 @@
-import 'package:chatorai/core/chat/chat_models.dart'
-    as chat_models;
+import 'package:chatorai/core/chat/chat_models.dart' as chat_models;
 import 'package:chatorai/gui/shared/utils/message_action.dart';
 import 'package:flutter/material.dart';
 

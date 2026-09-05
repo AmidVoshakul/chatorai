@@ -8,8 +8,7 @@ import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/core/chat/chat/chat_message.dart';
 import 'package:chatorai/core/chat/chat/message_converter.dart';
-import 'package:chatorai/core/chat/chat_models.dart'
-    as chat_models;
+import 'package:chatorai/core/chat/chat_models.dart' as chat_models;
 import 'package:chatorai/gui/features/chat/data/providers/chat_providers.dart';
 import 'package:chatorai/gui/features/sessions/providers/sidebar_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

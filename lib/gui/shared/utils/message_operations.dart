@@ -1,8 +1,7 @@
 import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
-import 'package:chatorai/core/chat/chat_models.dart'
-    as chat_models;
+import 'package:chatorai/core/chat/chat_models.dart' as chat_models;
 import 'package:chatorai/gui/shared/utils/message_action.dart';
 import 'package:chatorai/gui/shared/utils/message_clipboard.dart' as clipboard;
 import 'package:chatorai/gui/shared/utils/message_dialogs.dart';

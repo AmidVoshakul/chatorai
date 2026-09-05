@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.1.2]
 
 ### Added
 
@@ -18,6 +18,62 @@ All notable changes to this project will be documented in this file.
   - Thin GUI wrapper in `gui/features/chat/data/providers/tool_registry_provider.dart`.
 - **Core chat services**:
   - `lib/core/chat/services/` with `chat_ai_service.dart`, `chat_cancellation.dart`, `chat_retry_service.dart`, `tool_call_tracker.dart`.
+- **New tests**:
+  - `test/core/workspace/test_workspace_port_test.dart`
+  - `test/core/tools/test_tool_registry_factory_test.dart`
+  - `test/core/commands/` (slash_command, catalog, executor, skill_template_renderer, skill_command_resolver)
+- **Slash command UX improvements**:
+  - `/thinking` command toggles `expandReasoningByDefault` in `themeProvider`, clears input without snackbar feedback.
+  - Cyclic navigation for command and skills popups (`navigateCommandPopup`/`navigateSkillsPopup` wrap around).
+  - Full localization of built-in slash-command descriptions across 6 languages (`slashCommandSkills`, `slashCommandNew`, `slashCommandClear`, `slashCommandCompact`, `slashCommandHelp`, `slashCommandUndo`, `slashCommandRedo`, `slashCommandSessions`, `slashCommandModels`, `slashCommandTheme`, `slashCommandThinking`).
+  - `SlashCommandNavigator` helper class with unit tests (`test_slash_command_navigator.dart`).
+- **Unified chat auto-scroll**:
+  - `ChatMessagesConstants.followBand` (`150.0`) and `userScrolledAwayBand` (`25.0`) are the single source of truth for scroll thresholds across all chat views.
+  - `ChatScrollFollowController` drives auto-scroll identically for parent (`ChatMessagesArea`) and child (`SessionContextWindow`) sessions via `noteGrowth()` / `handleNotification()`.
+  - `chatIsNearBottom(controller, {threshold})` helper centralizes "is the user at the bottom" logic.
+  - `ChatMessages` now accepts an optional external `followController`; when provided, the same controller is shared between parent and child windows.
+  - Widget test added: `test_chat_messages_auto_scroll_widget_test.dart` covers parent auto-scroll, scroll-away suppression, Home/End shortcuts, unmount cleanup, and child-session auto-scroll.
+- **Support the Project**:
+  - New `AboutSupportSection` widget (`lib/gui/features/settings/widgets/about_support_section.dart`) shared by the About dialog and the About settings section.
+  - Three full-width `OutlinedButton` actions: Star on GitHub (`https://github.com/AmidVoshakul/chatorai`), Become a Sponsor (`https://github.com/sponsors/AmidVoshakul`), Share your thoughts (`https://github.com/AmidVoshakul/chatorai/issues`).
+  - GitHub icon rendered via `SvgPicture.asset('assets/provider/github.svg')` with theme-aware `ColorFiltered` recolor, matching the existing provider card pattern.
+  - Links opened through the existing `launchExternalLink` utility (`lib/shared/utils/link_launcher.dart`).
+
+### Changed
+
+- **Architecture enforcement**: `core/` is pure Dart, `gui/` is Flutter desktop/mobile, `tui/` is Nocterm terminal UI. Chat domain models moved to `core/chat/`, all GUI code to `gui/`, TUI code to `tui/`.
+- **Permission handling**: executor returns not-handled, presentation shows permission dialog (Variant A).
+- **Core barrel**: `lib/core/core.dart` extended to cover commands, tools, workspace, chat, keyboard, format.
+- **Build configuration**: `build.yaml` builder paths updated to `lib/core/chat/chat/`.
+
+### Tests
+
+- `test/core/workspace/test_workspace_port_test.dart`: WorkspacePort interface and default implementation tests.
+- `test/core/tools/test_tool_registry_factory_test.dart`: Shared tool registry factory tests.
+- `test/core/commands/`: New test suite for slash-command core:
+  - `test_slash_command_test.dart`
+  - `test_slash_command_catalog_test.dart`
+  - `test_slash_command_executor_test.dart`
+  - `test_skill_template_renderer_test.dart`
+  - `test_skill_command_resolver_test.dart`
+  - `test_command_parser.dart`
+  - `test_command_registry.dart`
+  - `test_command_service.dart`
+- `test_slash_command_navigator.dart`: 6 tests covering cyclic navigation, empty-list safety, and selection matching.
+- `test_thinking_command.dart`: 2 tests verifying `/thinking` toggles `expandReasoningByDefault` via `themeProvider` and is selectable from the navigator.
+- `session_runner_streaming_test.dart`: Updated all deferred-tool-card tests to assert immediate emission; added tests for buffered post-tool reasoning flush, parallel tool waves, and `ToolStarted` ordering.
+- `session_runner_sdk_repro_test.dart`: Updated kilo-style SSE reproduction to expect 3 reasoning parts (pre-tool, buffered post-tool, step-2 thought) with tool cards emitted immediately after the first thought.
+- `test_tool_card_after_reasoning.dart`: Removed unused `events.dart` import; assertions now cover immediate tool-card emission with `ReasoningEnded` before `ToolCalled`.
+
+### Documentation
+
+- **CHANGELOG.md**: Documented the deferred-tool-card removal and `ToolStarted` event addition.
+- **README.md / README_RU.md**: Added support/contribution mention with GitHub and Sponsors links.
+
+## [Unreleased]
+
+### Added
+
 - **New tests**:
   - `test/core/workspace/test_workspace_port_test.dart`
   - `test/core/tools/test_tool_registry_factory_test.dart`

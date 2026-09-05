@@ -83,7 +83,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get highContrast => 'Висока контрастність';
 
   @override
-  String get increaseContrast => 'Збільшити контрастність для кращої читабельності';
+  String get increaseContrast =>
+      'Збільшити контрастність для кращої читабельності';
 
   @override
   String get wideScreenMode => 'Режим широкого екрану';
@@ -95,19 +96,23 @@ class AppLocalizationsUk extends AppLocalizations {
   String get autoScrollDuringStreaming => 'Автоскрол під час стрімінгу';
 
   @override
-  String get autoScrollDuringStreamingDesc => 'Автоматично прокручувати список вниз при появи нового контенту';
+  String get autoScrollDuringStreamingDesc =>
+      'Автоматично прокручувати список вниз при появи нового контенту';
 
   @override
   String get showContinuationSuggestions => 'Показувати продовження діалогу';
 
   @override
-  String get showContinuationSuggestionsDesc => 'Відображати пропозиції для продовження після відповіді AI';
+  String get showContinuationSuggestionsDesc =>
+      'Відображати пропозиції для продовження після відповіді AI';
 
   @override
-  String get expandReasoningByDefault => 'Розгортати reasoning за замовчуванням';
+  String get expandReasoningByDefault =>
+      'Розгортати reasoning за замовчуванням';
 
   @override
-  String get expandReasoningByDefaultDesc => 'Показувати блоки розмірковування розгорнутими при відповіді AI';
+  String get expandReasoningByDefaultDesc =>
+      'Показувати блоки розмірковування розгорнутими при відповіді AI';
 
   @override
   String get slashCommandSkills => 'Показати доступні навички';
@@ -167,7 +172,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get resetSettings => 'Скинути налаштування';
 
   @override
-  String get resetAllSettings => 'Скинути всі налаштування до значень за замовчуванням';
+  String get resetAllSettings =>
+      'Скинути всі налаштування до значень за замовчуванням';
 
   @override
   String get save => 'Зберегти';
@@ -199,13 +205,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settingsSaved => 'Налаштування збережено!';
 
   @override
-  String get settingsReset => 'Налаштування скинуто до значень за замовчуванням';
+  String get settingsReset =>
+      'Налаштування скинуто до значень за замовчуванням';
 
   @override
   String get appInfo => 'Інформація';
 
   @override
-  String get appDescription => 'Додаток для спілкування з AI моделями через OpenRouter API.\n\nМожливості:\n• Спілкування з різними AI моделями\n• Збереження історії чатів\n• Темна та світла теми\n• Адаптивний інтерфейс\n\nРозроблено з ❤️ з використанням Flutter';
+  String get appDescription =>
+      'Додаток для спілкування з AI моделями через OpenRouter API.\n\nМожливості:\n• Спілкування з різними AI моделями\n• Збереження історії чатів\n• Темна та світла теми\n• Адаптивний інтерфейс\n\nРозроблено з ❤️ з використанням Flutter';
 
   @override
   String get shareChat => 'Поділитися чатом';
@@ -226,7 +234,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get failedToCopyChat => 'Не вдалося скопіювати чат';
 
   @override
-  String get chatSharingNotImplemented => 'Спільний доступ до чату ще не реалізовано';
+  String get chatSharingNotImplemented =>
+      'Спільний доступ до чату ще не реалізовано';
 
   @override
   String get newChat => 'Новий чат';
@@ -359,7 +368,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get contextSpentLabel => 'Витрачено';
 
   @override
-  String get contextTokensIncludedInPrompt => 'Токени інструментів включені в промпт';
+  String get contextTokensIncludedInPrompt =>
+      'Токени інструментів включені в промпт';
 
   @override
   String contextAutoCompactAt(Object buffer, Object percent) {
@@ -406,7 +416,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get features => 'Можливості';
 
   @override
-  String get featuresDisplayedBasedOnActualModelCapabilities => 'Можливості відображаються на основі реальних можливостей моделі';
+  String get featuresDisplayedBasedOnActualModelCapabilities =>
+      'Можливості відображаються на основі реальних можливостей моделі';
 
   @override
   String get noModelsFound => 'Моделі не знайдено';
@@ -418,7 +429,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get tryADifferentSearchQuery => 'Спробуйте інший пошуковий запит';
 
   @override
-  String get tryRefreshingOrCheckYourInternetConnection => 'Спробуйте оновити або перевірте інтернет-з\'єднання';
+  String get tryRefreshingOrCheckYourInternetConnection =>
+      'Спробуйте оновити або перевірте інтернет-з\'єднання';
 
   @override
   String get aiIsTyping => 'AI друкує';
@@ -463,13 +475,16 @@ class AppLocalizationsUk extends AppLocalizations {
   String get failedToEditMessage => 'Не вдалося відредагувати повідомлення';
 
   @override
-  String get messageEditedAndResponseRegenerated => 'Повідомлення відредаговано та відповідь перегенеровано';
+  String get messageEditedAndResponseRegenerated =>
+      'Повідомлення відредаговано та відповідь перегенеровано';
 
   @override
-  String get failedToEditAndSendMessage => 'Не вдалося відредагувати та надіслати повідомлення';
+  String get failedToEditAndSendMessage =>
+      'Не вдалося відредагувати та надіслати повідомлення';
 
   @override
-  String get areYouSureYouWantToDeleteThisMessage => 'Ви впевнені, що хочете видалити це повідомлення?';
+  String get areYouSureYouWantToDeleteThisMessage =>
+      'Ви впевнені, що хочете видалити це повідомлення?';
 
   @override
   String confirmDeleteMessage(Object chatTitle) {
@@ -477,7 +492,8 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get areYouSureYouWantToRegenerateThisMessage => 'Ви впевнені, що хочете перегенерувати це повідомлення?';
+  String get areYouSureYouWantToRegenerateThisMessage =>
+      'Ви впевнені, що хочете перегенерувати це повідомлення?';
 
   @override
   String modelDoesNotSupportImages(Object modelId) {
@@ -499,7 +515,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get regenerationStarted => 'Перегенерація розпочата';
 
   @override
-  String get failedToRegenerateMessage => 'Не вдалося перегенерувати повідомлення';
+  String get failedToRegenerateMessage =>
+      'Не вдалося перегенерувати повідомлення';
 
   @override
   String get messageCopied => 'Повідомлення скопійовано';
@@ -566,37 +583,46 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeMessage => 'Вітаю! Чим я можу вам допомогти сьогодні?';
 
   @override
-  String get welcomeQuestion1 => 'Поясніть квантові обчислення простими словами';
+  String get welcomeQuestion1 =>
+      'Поясніть квантові обчислення простими словами';
 
   @override
   String get welcomeQuestion2 => 'Які останні тенденції в штучному інтелекті?';
 
   @override
-  String get welcomeQuestion3 => 'Допоможіть мені написати професійний email до моєї команди';
+  String get welcomeQuestion3 =>
+      'Допоможіть мені написати професійний email до моєї команди';
 
   @override
-  String get welcomeQuestion4 => 'Що мені вчити, щоб стати кращим програмістом?';
+  String get welcomeQuestion4 =>
+      'Що мені вчити, щоб стати кращим програмістом?';
 
   @override
-  String get welcomeQuestion5 => 'Дайте мені 5 креативних ідей для вихідного проекту';
+  String get welcomeQuestion5 =>
+      'Дайте мені 5 креативних ідей для вихідного проекту';
 
   @override
-  String get welcomeQuestion6 => 'Які є хороші книги для особистісного розвитку?';
+  String get welcomeQuestion6 =>
+      'Які є хороші книги для особистісного розвитку?';
 
   @override
-  String get welcomeQuestion7 => 'Допоможіть мені придумати назви для мого стартапу';
+  String get welcomeQuestion7 =>
+      'Допоможіть мені придумати назви для мого стартапу';
 
   @override
   String get welcomeQuestion8 => 'Створіть план харчування на здоровий тиждень';
 
   @override
-  String get welcomeQuestion9 => 'Які найкращі практики для розробки на Flutter?';
+  String get welcomeQuestion9 =>
+      'Які найкращі практики для розробки на Flutter?';
 
   @override
-  String get welcomeQuestion10 => 'Поясніть різницю між асинхронним та синхронним програмуванням';
+  String get welcomeQuestion10 =>
+      'Поясніть різницю між асинхронним та синхронним програмуванням';
 
   @override
-  String get welcomeQuestion11 => 'Як оптимізувати код для кращої продуктивності?';
+  String get welcomeQuestion11 =>
+      'Як оптимізувати код для кращої продуктивності?';
 
   @override
   String get welcomeQuestion12 => 'Які найкорисніші шаблони проектування?';
@@ -620,13 +646,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion18 => 'Як покращити концентрацію уваги?';
 
   @override
-  String get welcomeQuestion19 => 'Дайте мені щоденну рутину для максимальної продуктивності';
+  String get welcomeQuestion19 =>
+      'Дайте мені щоденну рутину для максимальної продуктивності';
 
   @override
   String get welcomeQuestion20 => 'Які є хороші звички для успіху?';
 
   @override
-  String get welcomeQuestion21 => 'Як підготуватися до співбесіди з програмної інженерії?';
+  String get welcomeQuestion21 =>
+      'Як підготуватися до співбесіди з програмної інженерії?';
 
   @override
   String get welcomeQuestion22 => 'Які навички найцінніші в IT-індустрії?';
@@ -638,13 +666,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion24 => 'Які провідні IT-компанії варто обирати?';
 
   @override
-  String get welcomeQuestion25 => 'Які останні прориви в космічних дослідженнях?';
+  String get welcomeQuestion25 =>
+      'Які останні прориви в космічних дослідженнях?';
 
   @override
   String get welcomeQuestion26 => 'Як ШІ змінює охорону здоров\'я?';
 
   @override
-  String get welcomeQuestion27 => 'Які найбільш захопливі технології 2026 року?';
+  String get welcomeQuestion27 =>
+      'Які найбільш захопливі технології 2026 року?';
 
   @override
   String get welcomeQuestion28 => 'Поясніть майбутнє відновлюваної енергетики';
@@ -659,16 +689,20 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion31 => 'Які найкращі способи вивчати нові навички?';
 
   @override
-  String get welcomeQuestion32 => 'Як зберігати мотивацію при вивченні чогось складного?';
+  String get welcomeQuestion32 =>
+      'Як зберігати мотивацію при вивченні чогось складного?';
 
   @override
-  String get welcomeQuestion33 => 'Які найкращі мови програмування варто вчити у 2026 році?';
+  String get welcomeQuestion33 =>
+      'Які найкращі мови програмування варто вчити у 2026 році?';
 
   @override
-  String get welcomeQuestion34 => 'Як побудувати сильне портфоліо для IT-вакансій?';
+  String get welcomeQuestion34 =>
+      'Як побудувати сильне портфоліо для IT-вакансій?';
 
   @override
-  String get welcomeQuestion35 => 'Які провідні інструменти ШІ для продуктивності?';
+  String get welcomeQuestion35 =>
+      'Які провідні інструменти ШІ для продуктивності?';
 
   @override
   String get welcomeQuestion36 => 'Як насправді працює машинне навчання?';
@@ -680,7 +714,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion38 => 'Як писати чистий та підтримуваний код?';
 
   @override
-  String get welcomeQuestion39 => 'Що таке мікросервіси і коли їх використовувати?';
+  String get welcomeQuestion39 =>
+      'Що таке мікросервіси і коли їх використовувати?';
 
   @override
   String get welcomeQuestion40 => 'Поясніть REST API vs GraphQL';
@@ -692,19 +727,22 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion42 => 'Як підготуватися до технічних співбесід?';
 
   @override
-  String get welcomeQuestion43 => 'Які м\'які навички потрібні кожному розробнику?';
+  String get welcomeQuestion43 =>
+      'Які м\'які навички потрібні кожному розробнику?';
 
   @override
   String get welcomeQuestion44 => 'Як домовлятися про зарплату як розробник?';
 
   @override
-  String get welcomeQuestion45 => 'Які найкращі інструменти для віддаленої роботи?';
+  String get welcomeQuestion45 =>
+      'Які найкращі інструменти для віддаленої роботи?';
 
   @override
   String get welcomeQuestion46 => 'Як залишатися продуктивним працюючи з дому?';
 
   @override
-  String get welcomeQuestion47 => 'Які найкращі методології управління проектами?';
+  String get welcomeQuestion47 =>
+      'Які найкращі методології управління проектами?';
 
   @override
   String get welcomeQuestion48 => 'Як поводитися з важкими колегами?';
@@ -743,16 +781,19 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion59 => 'Які найкращі практики кібербезпеки?';
 
   @override
-  String get welcomeQuestion60 => 'Як захистити свою конфіденційність в інтернеті?';
+  String get welcomeQuestion60 =>
+      'Як захистити свою конфіденційність в інтернеті?';
 
   @override
-  String get welcomeQuestion61 => 'Які найкращі інструменти для науки про дані?';
+  String get welcomeQuestion61 =>
+      'Які найкращі інструменти для науки про дані?';
 
   @override
   String get welcomeQuestion62 => 'Як ефективно візуалізувати дані?';
 
   @override
-  String get welcomeQuestion63 => 'Які найкращі фреймворки для мобільних додатків?';
+  String get welcomeQuestion63 =>
+      'Які найкращі фреймворки для мобільних додатків?';
 
   @override
   String get welcomeQuestion64 => 'Як створювати крос-платформні додатки?';
@@ -770,7 +811,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion68 => 'Як створювати цікавий контент?';
 
   @override
-  String get welcomeQuestion69 => 'Які найкращі стратегії для соціальних мереж?';
+  String get welcomeQuestion69 =>
+      'Які найкращі стратегії для соціальних мереж?';
 
   @override
   String get welcomeQuestion70 => 'Як побудувати особистий бренд?';
@@ -806,19 +848,22 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion80 => 'Як швидко вивчити нову мову?';
 
   @override
-  String get welcomeQuestion81 => 'Які найкращі практики для віддаленої командної роботи?';
+  String get welcomeQuestion81 =>
+      'Які найкращі практики для віддаленої командної роботи?';
 
   @override
   String get welcomeQuestion82 => 'Як проводити ефективні код-рев\'ю?';
 
   @override
-  String get welcomeQuestion83 => 'Які провідні навички для архітекторів програмного забезпечення?';
+  String get welcomeQuestion83 =>
+      'Які провідні навички для архітекторів програмного забезпечення?';
 
   @override
   String get welcomeQuestion84 => 'Як проектувати масштабовані бази даних?';
 
   @override
-  String get welcomeQuestion85 => 'Які найкращі DevOps-інструменти для вивчення?';
+  String get welcomeQuestion85 =>
+      'Які найкращі DevOps-інструменти для вивчення?';
 
   @override
   String get welcomeQuestion86 => 'Як реалізувати CI/CD конвеєри?';
@@ -833,7 +878,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion89 => 'Які найкращі практики для безпеки API?';
 
   @override
-  String get welcomeQuestion90 => 'Як оптимізувати продуктивність мобільних додатків?';
+  String get welcomeQuestion90 =>
+      'Як оптимізувати продуктивність мобільних додатків?';
 
   @override
   String get welcomeQuestion91 => 'Що таке прогресивні веб-додатки?';
@@ -845,7 +891,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion93 => 'Які найкращі принципи UI/UX-дизайну?';
 
   @override
-  String get welcomeQuestion94 => 'Як ефективно проводити дослідження користувачів?';
+  String get welcomeQuestion94 =>
+      'Як ефективно проводити дослідження користувачів?';
 
   @override
   String get welcomeQuestion95 => 'Які найкращі стратегії A/B-тестування?';
@@ -857,49 +904,60 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion97 => 'Які найкращі техніки гачкінгу?';
 
   @override
-  String get welcomeQuestion98 => 'Як побудувати спільноту навколо вашого продукту?';
+  String get welcomeQuestion98 =>
+      'Як побудувати спільноту навколо вашого продукту?';
 
   @override
-  String get welcomeQuestion99 => 'Які найкращі інструменти для підтримки клієнтів?';
+  String get welcomeQuestion99 =>
+      'Які найкращі інструменти для підтримки клієнтів?';
 
   @override
-  String get welcomeQuestion100 => 'Як ефективно обробляти зворотний зв\'язок від клієнтів?';
+  String get welcomeQuestion100 =>
+      'Як ефективно обробляти зворотний зв\'язок від клієнтів?';
 
   @override
   String get welcomeQuestion101 => 'Які відмінності між React та Vue?';
 
   @override
-  String get welcomeQuestion102 => 'Як TypeScript покращує розробку на JavaScript?';
+  String get welcomeQuestion102 =>
+      'Як TypeScript покращує розробку на JavaScript?';
 
   @override
-  String get welcomeQuestion103 => 'Які найкращі практики для проектування REST API?';
+  String get welcomeQuestion103 =>
+      'Які найкращі практики для проектування REST API?';
 
   @override
-  String get welcomeQuestion104 => 'Як реалізувати автентифікацію у веб-додатках?';
+  String get welcomeQuestion104 =>
+      'Як реалізувати автентифікацію у веб-додатках?';
 
   @override
   String get welcomeQuestion105 => 'Які переваги GraphQL над REST?';
 
   @override
-  String get welcomeQuestion106 => 'Як оптимізувати запити до бази даних для продуктивності?';
+  String get welcomeQuestion106 =>
+      'Як оптимізувати запити до бази даних для продуктивності?';
 
   @override
-  String get welcomeQuestion107 => 'Що таке архітектурні шаблони мікросервісів?';
+  String get welcomeQuestion107 =>
+      'Що таке архітектурні шаблони мікросервісів?';
 
   @override
   String get welcomeQuestion108 => 'Як реалізувати стратегії кешування?';
 
   @override
-  String get welcomeQuestion109 => 'Які найкращі фреймворки для тестування JavaScript?';
+  String get welcomeQuestion109 =>
+      'Які найкращі фреймворки для тестування JavaScript?';
 
   @override
-  String get welcomeQuestion110 => 'Як писати unit-тести для React-компонентів?';
+  String get welcomeQuestion110 =>
+      'Як писати unit-тести для React-компонентів?';
 
   @override
   String get welcomeQuestion111 => 'Що таке принципи SOLID в ООП?';
 
   @override
-  String get welcomeQuestion112 => 'Як реалізувати шаблони проектування в Python?';
+  String get welcomeQuestion112 =>
+      'Як реалізувати шаблони проектування в Python?';
 
   @override
   String get welcomeQuestion113 => 'Які найкращі практики для Git-воркфлоу?';
@@ -914,7 +972,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion116 => 'Як захистити Docker-контейнери?';
 
   @override
-  String get welcomeQuestion117 => 'Що таке стратегії розгортання в Kubernetes?';
+  String get welcomeQuestion117 =>
+      'Що таке стратегії розгортання в Kubernetes?';
 
   @override
   String get welcomeQuestion118 => 'Як моніторити продуктивність додатків?';
@@ -923,7 +982,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get welcomeQuestion119 => 'Які найкращі практики логування?';
 
   @override
-  String get welcomeQuestion120 => 'Як реалізувати обробку помилок у розподілених системах?';
+  String get welcomeQuestion120 =>
+      'Як реалізувати обробку помилок у розподілених системах?';
 
   @override
   String get continueConversation => 'Продовжити діалог';
@@ -973,7 +1033,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get noFavoriteModels => 'Немає вибраних моделей';
 
   @override
-  String get tapHeartToAddFavorites => 'Натисніть на сердечко біля моделей, щоб додати їх до вибраних';
+  String get tapHeartToAddFavorites =>
+      'Натисніть на сердечко біля моделей, щоб додати їх до вибраних';
 
   @override
   String get addToFavorites => 'Додати в обране';
@@ -988,7 +1049,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get loadingSkills => 'Завантаження навичок...';
 
   @override
-  String get noSkillsInstalled => 'Немає встановлених навичок. Додайте в .chatorai/skills/';
+  String get noSkillsInstalled =>
+      'Немає встановлених навичок. Додайте в .chatorai/skills/';
 
   @override
   String get noSkillsMatchSearch => 'Немає навичок, що відповідають пошуку';
@@ -1107,7 +1169,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get openaiCompatibleApi => 'OpenAI-сумісний API';
 
   @override
-  String get openaiCompatibleApiDescription => 'Підключення до будь-якого OpenAI-сумісного API';
+  String get openaiCompatibleApiDescription =>
+      'Підключення до будь-якого OpenAI-сумісного API';
 
   @override
   String get permissionAlways => 'Завжди дозволяти';
@@ -1137,22 +1200,28 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settingsApplied => 'Налаштування успішно застосовано';
 
   @override
-  String get speechErrorNetwork => 'Помилка мережі. Перевірте підключення до інтернету.';
+  String get speechErrorNetwork =>
+      'Помилка мережі. Перевірте підключення до інтернету.';
 
   @override
-  String get speechErrorNoMatch => 'Не вдалося розпізнати мову. Спробуйте ще раз.';
+  String get speechErrorNoMatch =>
+      'Не вдалося розпізнати мову. Спробуйте ще раз.';
 
   @override
-  String get speechErrorNotAuthorized => 'Немає доступу до мікрофона. Перевірте дозволи в налаштуваннях.';
+  String get speechErrorNotAuthorized =>
+      'Немає доступу до мікрофона. Перевірте дозволи в налаштуваннях.';
 
   @override
-  String get speechErrorServer => 'Помилка сервера розпізнавання. Спробуйте пізніше.';
+  String get speechErrorServer =>
+      'Помилка сервера розпізнавання. Спробуйте пізніше.';
 
   @override
-  String get speechErrorTimeout => 'Час очікування вичерпано. Нічого не почуто.';
+  String get speechErrorTimeout =>
+      'Час очікування вичерпано. Нічого не почуто.';
 
   @override
-  String get speechErrorTooManyRequests => 'Занадто багато запитів. Спробуйте пізніше.';
+  String get speechErrorTooManyRequests =>
+      'Занадто багато запитів. Спробуйте пізніше.';
 
   @override
   String get speechErrorUnknown => 'Помилка розпізнавання мови';
@@ -1181,13 +1250,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get systemPromptDescription => 'Інструкції для AI-асистента';
 
   @override
-  String get systemPromptSuggestion => 'Ви — корисний асистент. Продовжте діалог, запропонувавши 3 конкретні та логічні продовження останнього повідомлення. Відповідайте українською мовою.';
+  String get systemPromptSuggestion =>
+      'Ви — корисний асистент. Продовжте діалог, запропонувавши 3 конкретні та логічні продовження останнього повідомлення. Відповідайте українською мовою.';
 
   @override
   String get supportBecomeSponsor => 'Стати спонсором';
 
   @override
-  String get supportProjectSubtitle => 'Якщо вам подобається ChatORAI, підтримайте проєкт:';
+  String get supportProjectSubtitle =>
+      'Якщо вам подобається ChatORAI, підтримайте проєкт:';
 
   @override
   String get supportProjectTitle => 'Підтримайте проєкт';
@@ -1202,28 +1273,33 @@ class AppLocalizationsUk extends AppLocalizations {
   String get temperature => 'Температура';
 
   @override
-  String get temperatureDescription => 'Контролює випадковість: нижче = більш зосереджено, вище = більш креативно';
+  String get temperatureDescription =>
+      'Контролює випадковість: нижче = більш зосереджено, вище = більш креативно';
 
   @override
   String get toggleNavigatorTooltip => 'Перемкнути навігатор';
 
   @override
-  String get userPromptSuggestion => 'Запропонуйте 3 конкретні та логічні продовження для цього повідомлення. Відповідайте тільки списком, без додаткового тексту.';
+  String get userPromptSuggestion =>
+      'Запропонуйте 3 конкретні та логічні продовження для цього повідомлення. Відповідайте тільки списком, без додаткового тексту.';
 
   @override
   String get versionLabel => 'Версія:';
 
   @override
-  String get welcomeGreeting1 => 'Питай, досліджуй, створюй — давай розберемося разом.';
+  String get welcomeGreeting1 =>
+      'Питай, досліджуй, створюй — давай розберемося разом.';
 
   @override
-  String get welcomeGreeting2 => 'Постав питання, опиши завдання або просто почни розмову.';
+  String get welcomeGreeting2 =>
+      'Постав питання, опиши завдання або просто почни розмову.';
 
   @override
   String get welcomeGreeting3 => 'Постав питання або почни дослідження.';
 
   @override
-  String get welcomeGreeting4 => 'Постав будь-яке питання, поділися ідеєю або попроси допомоги — я тут, щоб допомогти.';
+  String get welcomeGreeting4 =>
+      'Постав будь-яке питання, поділися ідеєю або попроси допомоги — я тут, щоб допомогти.';
 
   @override
   String get welcomeGreeting5 => 'Є ідея? Давай розберемося.';
@@ -1343,7 +1419,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get maxTokens => 'Макс. токенів';
 
   @override
-  String get maxTokensDescription => 'Максимальна довжина згенерованої відповіді';
+  String get maxTokensDescription =>
+      'Максимальна довжина згенерованої відповіді';
 
   @override
   String get activeModel => 'Активна модель';
@@ -1362,7 +1439,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get micStopFailed => 'Не вдалося зупинити мікрофон';
 
   @override
-  String get errorProcessingRequest => 'Вибачте, сталася помилка при обробці вашого запиту. Будь ласка, спробуйте ще раз.';
+  String get errorProcessingRequest =>
+      'Вибачте, сталася помилка при обробці вашого запиту. Будь ласка, спробуйте ще раз.';
 
   @override
   String rateLimitRetryMessage(Object seconds) {
@@ -1376,13 +1454,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get errorEditingMessage => 'Помилка редагування повідомлення';
 
   @override
-  String get errorEditAndSendMessage => 'Помилка редагування та відправлення повідомлення';
+  String get errorEditAndSendMessage =>
+      'Помилка редагування та відправлення повідомлення';
 
   @override
   String get defaultSuggestion4 => 'Як це застосовується на практиці?';
 
   @override
-  String get fileAttachedButNotSupported => 'Файл прикріплено, але не підтримується поточною моделлю';
+  String get fileAttachedButNotSupported =>
+      'Файл прикріплено, але не підтримується поточною моделлю';
 
   @override
   String get expandTooltip => 'Розгорнути';
@@ -1415,7 +1495,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get addProviderHintApiKey => 'Введіть ваш API ключ';
 
   @override
-  String get addProviderHintCustomApiKey => 'Необов\'язково для локальних провайдерів';
+  String get addProviderHintCustomApiKey =>
+      'Необов\'язково для локальних провайдерів';
 
   @override
   String get addProviderLabelBaseUrl => 'Базовий URL';
@@ -1474,7 +1555,8 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get deleteProviderContent => 'Це видалить провайдера та всі його налаштування. Вам потрібно буде додати його знову, щоб використовувати його моделі.';
+  String get deleteProviderContent =>
+      'Це видалить провайдера та всі його налаштування. Вам потрібно буде додати його знову, щоб використовувати його моделі.';
 
   @override
   String get errorLoadingProviders => 'Помилка завантаження провайдерів';
@@ -1483,7 +1565,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get noProvidersConfigured => 'Немає налаштованих провайдерів';
 
   @override
-  String get addProviderToGetStarted => 'Додайте провайдера з API ключем, щоб почати';
+  String get addProviderToGetStarted =>
+      'Додайте провайдера з API ключем, щоб почати';
 
   @override
   String statsError(Object error) {
@@ -1553,7 +1636,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get mcpEnvHint => 'GITHUB_TOKEN=ghp_xxx';
 
   @override
-  String get mcpEnvHelper => 'Необов\'язково. Вставте JSON-об\'єкт із рядковими ключами, напр. одну запис TOKEN.';
+  String get mcpEnvHelper =>
+      'Необов\'язково. Вставте JSON-об\'єкт із рядковими ключами, напр. одну запис TOKEN.';
 
   @override
   String get mcpTokenLabel => 'Токен доступу';
@@ -1562,13 +1646,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get mcpTokenHint => 'Вставте лише токен (без Bearer / лапок)';
 
   @override
-  String get mcpTokenHelper => 'Необов\'язково. Залиште порожнім для публічних серверів; вставте лише токен — заголовок додається автоматично.';
+  String get mcpTokenHelper =>
+      'Необов\'язково. Залиште порожнім для публічних серверів; вставте лише токен — заголовок додається автоматично.';
 
   @override
   String get mcpAuthTypeLabel => 'Тип токена';
 
   @override
-  String get mcpAuthTypeHelper => 'Як надсилається токен: Bearer (Authorization), ApiKey (X-Api-Key) або просто Token.';
+  String get mcpAuthTypeHelper =>
+      'Як надсилається токен: Bearer (Authorization), ApiKey (X-Api-Key) або просто Token.';
 
   @override
   String get mcpHeadersLabel => 'Заголовки (JSON)';
@@ -1577,7 +1663,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get mcpHeadersHint => 'Authorization=Bearer token';
 
   @override
-  String get mcpHeadersHelper => 'Необов\'язково. Вставте JSON-об\'єкт заголовків.';
+  String get mcpHeadersHelper =>
+      'Необов\'язково. Вставте JSON-об\'єкт заголовків.';
 
   @override
   String get mcpFormTab => 'Форма';
@@ -1589,7 +1676,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get mcpRawLabel => 'Об\'єкт сервера (JSON)';
 
   @override
-  String get mcpRawHelper => 'Вставте об\'єкт сервера як у документації — ім\'я сервера — зовнішній ключ (напр. searxng). Можна вставити весь блок разом з обгорткою mcpServers.';
+  String get mcpRawHelper =>
+      'Вставте об\'єкт сервера як у документації — ім\'я сервера — зовнішній ключ (напр. searxng). Можна вставити весь блок разом з обгорткою mcpServers.';
 
   @override
   String mcpParseError(Object field, Object message) {
@@ -1626,7 +1714,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get mcpNoServers => 'MCP-сервери не налаштовано';
 
   @override
-  String get mcpNoServersHint => 'Додайте MCP-сервер для розширення інструментів';
+  String get mcpNoServersHint =>
+      'Додайте MCP-сервер для розширення інструментів';
 
   @override
   String get mcpTooltipAdd => 'Додати сервер';
@@ -1689,49 +1778,64 @@ class AppLocalizationsUk extends AppLocalizations {
   String get mcpMarketNeedsToken => 'Потрібен ключ';
 
   @override
-  String get mcpMarketDescExa => 'Exa надає можливості веб-пошуку та пошуку документації коду для робочих процесів ШІ. Її конектор забезпечує асистентів контекстною інформацією в реальному часі для пошуку релевантних веб-сторінок, технічної документації та вихідних матеріалів, коли для відповіді потрібна обґрунтована зовнішня інформація.';
+  String get mcpMarketDescExa =>
+      'Exa надає можливості веб-пошуку та пошуку документації коду для робочих процесів ШІ. Її конектор забезпечує асистентів контекстною інформацією в реальному часі для пошуку релевантних веб-сторінок, технічної документації та вихідних матеріалів, коли для відповіді потрібна обґрунтована зовнішня інформація.';
 
   @override
-  String get mcpMarketDescContext7 => 'Context7 надає актуальні приклади коду та документацію для програміс тів і редакторів коду на базі ШІ. Його MCP-конектор інтегрує поточний контекст бібліотеки у робочі процеси асистента, скорочуючи перемикання вкладок і допомагаючи згенерованому коду уникати застарілих API, неіснуючих методів і застарілих шаблонів реалізації.';
+  String get mcpMarketDescContext7 =>
+      'Context7 надає актуальні приклади коду та документацію для програміс тів і редакторів коду на базі ШІ. Його MCP-конектор інтегрує поточний контекст бібліотеки у робочі процеси асистента, скорочуючи перемикання вкладок і допомагаючи згенерованому коду уникати застарілих API, неіснуючих методів і застарілих шаблонів реалізації.';
 
   @override
-  String get mcpMarketDescHuggingFace => 'Hugging Face підключає голосових помічників до Hugging Face Hub та тисяч застосунків Gradio. Його конектор інтегрує контекст моделі, набору даних, простору та застосунку в робочі процеси ШІ для пошуку, експериментів і досліджень у машинному навчанні.';
+  String get mcpMarketDescHuggingFace =>
+      'Hugging Face підключає голосових помічників до Hugging Face Hub та тисяч застосунків Gradio. Його конектор інтегрує контекст моделі, набору даних, простору та застосунку в робочі процеси ШІ для пошуку, експериментів і досліджень у машинному навчанні.';
 
   @override
-  String get mcpMarketDescParallel => 'Parallel Search забезпечує пошук в інтернеті в реальному часі та вилучення вмісту для робочих процесів ШІ, що базуються на пошуку. Його віддалений MCP-сервер допомагає асистентам отримувати поточний контекст веб-сторінок, перевіряти сторінки та використовувати вилучений вміст під час відповіді на запитання чи дослідження тем, що потребують актуальної інформації.';
+  String get mcpMarketDescParallel =>
+      'Parallel Search забезпечує пошук в інтернеті в реальному часі та вилучення вмісту для робочих процесів ШІ, що базуються на пошуку. Його віддалений MCP-сервер допомагає асистентам отримувати поточний контекст веб-сторінок, перевіряти сторінки та використовувати вилучений вміст під час відповіді на запитання чи дослідження тем, що потребують актуальної інформації.';
 
   @override
-  String get mcpMarketDescTavily => 'Tavily надає агентам ШІ доступ до веб-ресурсів у реальному часі через API для пошуку, вилучення та дослідження інформації. Його конектор допомагає асистентам базувати відповіді на даних у реальному часі, вилучати релевантний вміст і підтримувати робочі процеси агентів у продакшені за допомогою засобів контролю безпеки.';
+  String get mcpMarketDescTavily =>
+      'Tavily надає агентам ШІ доступ до веб-ресурсів у реальному часі через API для пошуку, вилучення та дослідження інформації. Його конектор допомагає асистентам базувати відповіді на даних у реальному часі, вилучати релевантний вміст і підтримувати робочі процеси агентів у продакшені за допомогою засобів контролю безпеки.';
 
   @override
-  String get mcpMarketDescGithub => 'GitHub — це платформа для спільної роботи над кодом, задачами, запитами на злиття та історією проєктів. Її офіційний віддалений MCP-сервер надає асистентам структурований контекст репозиторію для розуміння змін у вихідному коді, оглядів, робочих процесів розробки та стану робіт за проєктами GitHub.';
+  String get mcpMarketDescGithub =>
+      'GitHub — це платформа для спільної роботи над кодом, задачами, запитами на злиття та історією проєктів. Її офіційний віддалений MCP-сервер надає асистентам структурований контекст репозиторію для розуміння змін у вихідному коді, оглядів, робочих процесів розробки та стану робіт за проєктами GitHub.';
 
   @override
-  String get mcpMarketDescPostman => 'Postman надає контекст API для агентів кодування та робочих процесів розробників. Його конектор інтегрує визначення API, документацію та контекст співпраці в роботу асистентів, дозволяючи агентам аналізувати інтеграції та деталі реалізації.';
+  String get mcpMarketDescPostman =>
+      'Postman надає контекст API для агентів кодування та робочих процесів розробників. Його конектор інтегрує визначення API, документацію та контекст співпраці в роботу асистентів, дозволяючи агентам аналізувати інтеграції та деталі реалізації.';
 
   @override
-  String get mcpMarketDescSlack => 'Slack — це центр спільної роботи, що об\'єднує командні повідомлення, канали, користувачів і спільні робочі простори. Його віддалений MCP-сервер інтегрує контекст спілкування в робочому просторі в робочі процеси асистентів, допомагаючи користувачам знаходити рішення, узагальнювати обговорення та розуміти активність у різних каналах.';
+  String get mcpMarketDescSlack =>
+      'Slack — це центр спільної роботи, що об\'єднує командні повідомлення, канали, користувачів і спільні робочі простори. Його віддалений MCP-сервер інтегрує контекст спілкування в робочому просторі в робочі процеси асистентів, допомагаючи користувачам знаходити рішення, узагальнювати обговорення та розуміти активність у різних каналах.';
 
   @override
-  String get mcpMarketDescFigma => 'Figma — це платформа для спільної розробки продуктів, призначена для проєктування інтерфейсів, прототипування та передачі результатів розробникам. Її віддалений MCP-сервер передає файли, проєкти та контекст режиму розробки в робочі процеси асистентів, дозволяючи агентам розуміти візуальну роботу та співвідносити її із завданнями реалізації.';
+  String get mcpMarketDescFigma =>
+      'Figma — це платформа для спільної розробки продуктів, призначена для проєктування інтерфейсів, прототипування та передачі результатів розробникам. Її віддалений MCP-сервер передає файли, проєкти та контекст режиму розробки в робочі процеси асистентів, дозволяючи агентам розуміти візуальну роботу та співвідносити її із завданнями реалізації.';
 
   @override
-  String get mcpMarketDescCanva => 'Canva — це платформа візуальної комунікації для створення презентацій, графіки для соцмереж, документів і фірмових матеріалів. Її віддалений MCP-сервер забезпечує доступ асистентів до проєктів, ресурсів, експортованих файлів і коментарів Canva, дозволяючи обговорювати, редагувати та готувати креативні роботи на основі отриманої інформації.';
+  String get mcpMarketDescCanva =>
+      'Canva — це платформа візуальної комунікації для створення презентацій, графіки для соцмереж, документів і фірмових матеріалів. Її віддалений MCP-сервер забезпечує доступ асистентів до проєктів, ресурсів, експортованих файлів і коментарів Canva, дозволяючи обговорювати, редагувати та готувати креативні роботи на основі отриманої інформації.';
 
   @override
-  String get mcpMarketDescStripe => 'Stripe — це платформа для платежів та фінансової інфраструктури, призначена для обробки платежів, виставлення рахунків, роботи з клієнтами та підготовки документації для розробників. Її віддалений MCP-сервер надає асистентам контекст облікових записів і реалізації, що підтримується Stripe, для розуміння клієнтських робочих процесів, питань виставлення рахунків і завдань, пов\'язаних із платежами.';
+  String get mcpMarketDescStripe =>
+      'Stripe — це платформа для платежів та фінансової інфраструктури, призначена для обробки платежів, виставлення рахунків, роботи з клієнтами та підготовки документації для розробників. Її віддалений MCP-сервер надає асистентам контекст облікових записів і реалізації, що підтримується Stripe, для розуміння клієнтських робочих процесів, питань виставлення рахунків і завдань, пов\'язаних із платежами.';
 
   @override
-  String get mcpMarketDescTrivago => 'Trivago допомагає користувачам шукати готелі та варіанти проживання за координатами, містом, країною, датами та контекстом подорожі. Його конектор надає асистентам контекст пошуку житла для знаходження підходящих варіантів проживання поряд із пунктами призначення або визначними пам\'ятками.';
+  String get mcpMarketDescTrivago =>
+      'Trivago допомагає користувачам шукати готелі та варіанти проживання за координатами, містом, країною, датами та контекстом подорожі. Його конектор надає асистентам контекст пошуку житла для знаходження підходящих варіантів проживання поряд із пунктами призначення або визначними пам\'ятками.';
 
   @override
-  String get mcpMarketDescSend => 'Send допомагає користувачам створювати документи, якими можна ділитися, односторінкові документи, презентації та слайди. Його конектор дозволяє асистентам перетворювати запитувані матеріали на опубліковані посилання, інтерактивні сторінки та відстежувані рекламні матеріали для отримувачів.';
+  String get mcpMarketDescSend =>
+      'Send допомагає користувачам створювати документи, якими можна ділитися, односторінкові документи, презентації та слайди. Його конектор дозволяє асистентам перетворювати запитувані матеріали на опубліковані посилання, інтерактивні сторінки та відстежувані рекламні матеріали для отримувачів.';
 
   @override
-  String get mcpMarketDescZiprecruiter => 'ZipRecruiter допомагає користувачам шукати актуальні вакансії за назвою, компанією, місцезнаходженням, зарплатою, відстанню, стилем роботи, типом зайнятості та датою публікації. Його конектор інтегрує контекст пошуку роботи в робочі процеси асистента, перш ніж передати заявки назад у ZipRecruiter.';
+  String get mcpMarketDescZiprecruiter =>
+      'ZipRecruiter допомагає користувачам шукати актуальні вакансії за назвою, компанією, місцезнаходженням, зарплатою, відстанню, стилем роботи, типом зайнятості та датою публікації. Його конектор інтегрує контекст пошуку роботи в робочі процеси асистента, перш ніж передати заявки назад у ZipRecruiter.';
 
   @override
-  String get mcpMarketDescAdobeCreativity => 'Adobe для творчості об\'єднує можливості Photoshop, Lightroom, Illustrator, Firefly, Premiere, Express, InDesign та Stock із творчою роботою, виконаною за допомогою штучного інтелекту. Користувачі можуть створювати, редагувати та покращувати фотографії, дизайнерські матеріали та відеопроєкти, використовуючи природну мову, тоді як робота залишається прив\'язаною до облікового запису Adobe.';
+  String get mcpMarketDescAdobeCreativity =>
+      'Adobe для творчості об\'єднує можливості Photoshop, Lightroom, Illustrator, Firefly, Premiere, Express, InDesign та Stock із творчою роботою, виконаною за допомогою штучного інтелекту. Користувачі можуть створювати, редагувати та покращувати фотографії, дизайнерські матеріали та відеопроєкти, використовуючи природну мову, тоді як робота залишається прив\'язаною до облікового запису Adobe.';
 
   @override
   String get mcpInstallToGlobal => 'Встановити глобально';
@@ -1760,7 +1864,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get mcpTokenDialogTitle => 'Автентифікація';
 
   @override
-  String get mcpTokenDialogTitleHint => 'Оберіть спосіб автентифікації з сервером';
+  String get mcpTokenDialogTitleHint =>
+      'Оберіть спосіб автентифікації з сервером';
 
   @override
   String get mcpTokenInputLabel => 'Токен';
@@ -1769,7 +1874,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get mcpTokenInputHint => 'Вставте токен доступу';
 
   @override
-  String get mcpTokenInputHelper => 'Надсилається як Authorization: Bearer <token>';
+  String get mcpTokenInputHelper =>
+      'Надсилається як Authorization: Bearer <token>';
 
   @override
   String get mcpOAuthClientIdLabel => 'Client ID';
@@ -1781,7 +1887,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get mcpOAuthClientSecretLabel => 'Client Secret';
 
   @override
-  String get mcpOAuthClientSecretHint => 'Client Secret для OAuth 2.1 (необов\'язково)';
+  String get mcpOAuthClientSecretHint =>
+      'Client Secret для OAuth 2.1 (необов\'язково)';
 
   @override
   String get mcpOAuthScopeLabel => 'Scope';
@@ -1796,7 +1903,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get agentsInstructions => 'Інструкції для агентів';
 
   @override
-  String get agentsInstructionsSubtitle => 'Керування AGENTS.md і файлами інструкцій';
+  String get agentsInstructionsSubtitle =>
+      'Керування AGENTS.md і файлами інструкцій';
 
   @override
   String get agentsMdHint => '# Правила проєкту\n- Стисло\n- Спершу тести';
@@ -1808,7 +1916,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get instructionsAutoDetectedTitle => 'Виявлені файли';
 
   @override
-  String get instructionsAutoDetectedHelper => 'Знайдені для цієї області AGENTS.md і CLAUDE.md. Натисніть, щоб переглянути або змінити.';
+  String get instructionsAutoDetectedHelper =>
+      'Знайдені для цієї області AGENTS.md і CLAUDE.md. Натисніть, щоб переглянути або змінити.';
 
   @override
   String get instructionsFileNotCreated => 'Ще не створено';
@@ -1832,7 +1941,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get instructionsSectionTitle => 'Файли інструкцій';
 
   @override
-  String get instructionsSectionHelper => 'Додаткові Markdown-файли додаються після AGENTS.md за порядком.';
+  String get instructionsSectionHelper =>
+      'Додаткові Markdown-файли додаються після AGENTS.md за порядком.';
 
   @override
   String get instructionsAdd => 'Додати інструкцію';
@@ -1847,7 +1957,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get instructionsEmpty => 'Ще немає файлів інструкцій';
 
   @override
-  String get instructionsEmptyHint => 'Додайте інструкцію вручну або завантажте Markdown-файл.';
+  String get instructionsEmptyHint =>
+      'Додайте інструкцію вручну або завантажте Markdown-файл.';
 
   @override
   String get instructionsNameLabel => 'Назва';
@@ -1896,10 +2007,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get instructionsScopeProject => 'Проєкт';
 
   @override
-  String get instructionsScopeGlobalHint => 'Застосовується всюди. Зберігається в конфігурації користувача.';
+  String get instructionsScopeGlobalHint =>
+      'Застосовується всюди. Зберігається в конфігурації користувача.';
 
   @override
-  String get instructionsScopeProjectHint => 'Застосовується до поточної теки проєкту.';
+  String get instructionsScopeProjectHint =>
+      'Застосовується до поточної теки проєкту.';
 
   @override
   String get instructionsCreateAgents => 'Створити AGENTS.md';
@@ -1916,7 +2029,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get configScopeProject => 'Проєкт';
 
   @override
-  String get configProjectOverrides => 'Налаштування проєкту перевизначають глобальні.';
+  String get configProjectOverrides =>
+      'Налаштування проєкту перевизначають глобальні.';
 
   @override
   String get configPathLabel => 'Шлях';
@@ -1940,13 +2054,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get skillsTitle => 'Навички';
 
   @override
-  String get skillsSubtitle => 'Готові набори можливостей, які асистент підключає за потреби.';
+  String get skillsSubtitle =>
+      'Готові набори можливостей, які асистент підключає за потреби.';
 
   @override
   String get skillsSectionTitle => 'Встановлені навички';
 
   @override
-  String get skillsSectionHelper => 'Кожна навичка — це тека з файлом SKILL.md. Додайте власну або встановіть за URL.';
+  String get skillsSectionHelper =>
+      'Кожна навичка — це тека з файлом SKILL.md. Додайте власну або встановіть за URL.';
 
   @override
   String get skillsNewSkill => 'Нова навичка';
@@ -2023,7 +2139,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get skillsEmpty => 'Ще немає навичок';
 
   @override
-  String get skillsEmptyHint => 'Створіть навичку або встановіть її за URL, щоб почати.';
+  String get skillsEmptyHint =>
+      'Створіть навичку або встановіть її за URL, щоб почати.';
 
   @override
   String get skillsMarketplaceTab => 'Маркетплейс';
@@ -2058,7 +2175,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get skillsTabProjectTooltip => 'Навички лише для цього проєкту';
 
   @override
-  String get skillsTabMarketplaceTooltip => 'Перегляд і встановлення готових навичок';
+  String get skillsTabMarketplaceTooltip =>
+      'Перегляд і встановлення готових навичок';
 
   @override
   String get skillsPreviewClose => 'Закрити';
@@ -2109,7 +2227,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get toolResultRestore => 'Відновити';
 
   @override
-  String get toolResultRestoredSnackbar => 'Файли відновлено до стану до редагування';
+  String get toolResultRestoredSnackbar =>
+      'Файли відновлено до стану до редагування';
 
   @override
   String get toolResultOriginalTitle => 'Оригінальний вміст перед редагуванням';
@@ -2171,10 +2290,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get autoApproveTitle => 'Автопідтвердження';
 
   @override
-  String get autoApproveSubtitle => 'Налаштування автоматичного підтвердження дозволів';
+  String get autoApproveSubtitle =>
+      'Налаштування автоматичного підтвердження дозволів';
 
   @override
-  String get autoApproveExternalDirectoryDesc => 'Дозволити доступ до зовнішніх директорій';
+  String get autoApproveExternalDirectoryDesc =>
+      'Дозволити доступ до зовнішніх директорій';
 
   @override
   String get autoApproveShellDesc => 'Дозволити виконання shell-команд';
@@ -2272,22 +2393,26 @@ class AppLocalizationsUk extends AppLocalizations {
   String get autoApprovePathPatternHint => '/home/**/*.txt';
 
   @override
-  String get autoApproveScopeHint => 'Глобальні — скрізь · Проєкт — переозначає для робочої області';
+  String get autoApproveScopeHint =>
+      'Глобальні — скрізь · Проєкт — переозначає для робочої області';
 
   @override
-  String get autoApproveNoExceptions => 'Немає винятків — для всіх шаблонів діє умовчання';
+  String get autoApproveNoExceptions =>
+      'Немає винятків — для всіх шаблонів діє умовчання';
 
   @override
   String get autoApproveBrowseDirectory => 'Вибрати директорію';
 
   @override
-  String get autoApproveScopeProjectDisabledTooltip => 'Конфігурація проекту не знайдена. Створіть .chatorai/chatorai.json для увімкнення проектних дозволів.';
+  String get autoApproveScopeProjectDisabledTooltip =>
+      'Конфігурація проекту не знайдена. Створіть .chatorai/chatorai.json для увімкнення проектних дозволів.';
 
   @override
   String get autoApproveActionLabel => 'Action';
 
   @override
-  String get autoApprovePatternHintFile => '/home/user/project/** • ~/Documents/*';
+  String get autoApprovePatternHintFile =>
+      '/home/user/project/** • ~/Documents/*';
 
   @override
   String get autoApprovePatternHintCommand => 'npm run * • git status';
@@ -2298,7 +2423,8 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get settingsMcpSubtitle => 'Manage Model Context Protocol tool servers';
+  String get settingsMcpSubtitle =>
+      'Manage Model Context Protocol tool servers';
 
   @override
   String get mcpAuthNoAuth => 'No Auth';
@@ -2325,10 +2451,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get keyboardShortcutsSubtitle => 'Налаштування гарячих клавіш додатка';
 
   @override
-  String get keybindingsReadOnlyMobile => 'Гарячі клавіші доступні лише на настільних платформах';
+  String get keybindingsReadOnlyMobile =>
+      'Гарячі клавіші доступні лише на настільних платформах';
 
   @override
-  String get keyboardShortcutsResetConfirm => 'Ви впевнені, що хочете скинути всі гарячі клавіші до значень за замовчуванням?';
+  String get keyboardShortcutsResetConfirm =>
+      'Ви впевнені, що хочете скинути всі гарячі клавіші до значень за замовчуванням?';
 
   @override
   String get bindingConflict => 'Конфлікт';

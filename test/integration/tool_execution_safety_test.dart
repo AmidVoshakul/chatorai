@@ -8,8 +8,7 @@ import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/core/chat/chat/assistant_content.dart';
-import 'package:chatorai/core/chat/chat/message_part.dart'
-    show ToolState;
+import 'package:chatorai/core/chat/chat/message_part.dart' show ToolState;
 import 'package:test/test.dart';
 
 Future<

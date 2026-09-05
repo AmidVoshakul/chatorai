@@ -6,8 +6,7 @@ import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/chat/chat/assistant_content.dart'
     show AssistantReasoning, AssistantText, AssistantTool;
-import 'package:chatorai/core/chat/chat/message_part.dart'
-    show ToolState;
+import 'package:chatorai/core/chat/chat/message_part.dart' show ToolState;
 
 void main() {
   group('SessionRunner.startSession', () {

@@ -1,5 +1,4 @@
-import 'package:chatorai/core/chat/chat_models.dart'
-    as chat_models;
+import 'package:chatorai/core/chat/chat_models.dart' as chat_models;
 import 'package:chatorai/gui/shared/utils/snackbar_utils.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/utils/logger.dart';

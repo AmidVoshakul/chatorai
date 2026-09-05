@@ -11,8 +11,7 @@ import 'package:chatorai/core/chat/chat/assistant_content.dart'
         AssistantTodo,
         AssistantFile;
 import 'package:chatorai/core/chat/chat_models.dart';
-import 'package:chatorai/core/chat/chat/message_part.dart'
-    show ToolState;
+import 'package:chatorai/core/chat/chat/message_part.dart' show ToolState;
 import 'package:chatorai/core/chat/chat/message_converter.dart';
 import 'package:chatorai/core/chat/chat/question_option.dart';
 

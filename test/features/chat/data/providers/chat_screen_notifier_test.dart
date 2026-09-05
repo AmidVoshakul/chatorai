@@ -7,8 +7,7 @@ import 'package:chatorai/core/chat/chat/assistant_content.dart'
         AssistantText,
         AssistantTool,
         AssistantTask;
-import 'package:chatorai/core/chat/chat/message_part.dart'
-    show ToolState;
+import 'package:chatorai/core/chat/chat/message_part.dart' show ToolState;
 import 'package:chatorai/core/chat/chat/message_converter.dart'
     show assistantContentToPartMaps;
 import 'package:chatorai/gui/features/chat/data/providers/chat_screen_notifier.dart';
