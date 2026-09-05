@@ -29,7 +29,7 @@ import 'package:chatorai/gui/features/sessions/providers/session_providers.dart'
     show sessionStackProvider;
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/gui/features/models/providers/model_provider.dart';
-import 'package:chatorai/gui/gui/shared/utils/project_info_provider.dart';
+import 'package:chatorai/gui/shared/utils/project_info_provider.dart';
 import 'package:chatorai/gui/features/sessions/providers/session_parts_provider.dart';
 import 'package:chatorai/providers.dart'
     show

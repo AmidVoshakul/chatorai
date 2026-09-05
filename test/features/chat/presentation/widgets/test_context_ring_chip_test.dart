@@ -9,7 +9,7 @@ import 'package:chatorai/gui/features/models/providers/model_provider.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/gui/shared/theme/app_theme.dart';
-import 'package:chatorai/gui/gui/shared/utils/project_info_provider.dart';
+import 'package:chatorai/gui/shared/utils/project_info_provider.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

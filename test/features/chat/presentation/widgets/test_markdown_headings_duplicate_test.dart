@@ -1,5 +1,5 @@
 import 'package:chatorai/gui/features/chat/presentation/widgets/markdown_with_headings.dart';
-import 'package:chatorai/gui/gui/shared/utils/markdown_parser.dart';
+import 'package:chatorai/gui/shared/utils/markdown_parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
