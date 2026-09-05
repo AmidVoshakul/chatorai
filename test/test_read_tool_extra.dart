@@ -233,4 +233,45 @@ void main() {
       expect(output.output, contains('primary'));
     });
   });
+
+  group('read tool android storage', () {
+    test(
+      'FileSystemException path asks nothing when all-files access ok',
+      () async {
+        final tool = createReadTool();
+        int askCount = 0;
+        final ctx = ToolContext(
+          toolCallId: 't',
+          sessionId: 's',
+          ask:
+              ({
+                required String permission,
+                required List<String> patterns,
+                Map<String, dynamic>? metadata,
+                List<String>? always,
+              }) async {
+                askCount++;
+              },
+          askQuestion:
+              ({
+                required question,
+                options = const [],
+                multiple = false,
+              }) async => '',
+        );
+        final file = File('test/temp/noaccess.txt');
+        await file.writeAsString('secret');
+        Process.runSync('chmod', ['000', file.path]);
+        try {
+          final output = await tool.execute({'file_path': file.path}, ctx);
+          expect(askCount, 0);
+          expect(output.metadata?['error'], isTrue);
+          expect(output.metadata?['os_permission'], isTrue);
+          expect(output.output, contains('All files access'));
+        } finally {
+          Process.runSync('chmod', ['644', file.path]);
+        }
+      },
+    );
+  });
 }

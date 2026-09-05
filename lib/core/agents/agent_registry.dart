@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/shared/utils/chatorai_roots.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:path/path.dart' as p;
@@ -73,20 +74,6 @@ class AgentDefinition {
   }
 }
 
-extension AgentDefinitionX on AgentDefinition {
-  bool isVisibleTo(AgentMode caller) {
-    if (hidden) return false;
-    if (mode == AgentMode.subagent) return true;
-    if (caller == AgentMode.primary) {
-      return mode == AgentMode.subagent || mode == AgentMode.primary;
-    }
-    if (caller == AgentMode.subagent || caller == AgentMode.all) {
-      return mode == AgentMode.subagent;
-    }
-    return false;
-  }
-}
-
 final Map<String, AgentDefinition> builtInAgents = {
   'build': const AgentDefinition(
     id: 'build',
@@ -101,6 +88,21 @@ final Map<String, AgentDefinition> builtInAgents = {
           permission: '*',
           pattern: '*',
           action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'shell',
+          pattern: '*',
+          action: PermissionAction.ask,
+        ),
+        PermissionRule(
+          permission: 'plan_enter',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
+        PermissionRule(
+          permission: 'plan_exit',
+          pattern: '*',
+          action: PermissionAction.deny,
         ),
       ],
     ),
@@ -179,7 +181,7 @@ Available subagents: explore (codebase exploration), general (general-purpose ta
           action: PermissionAction.deny,
         ),
         PermissionRule(
-          permission: 'bash',
+          permission: 'shell',
           pattern: '*',
           action: PermissionAction.ask,
         ),
@@ -221,7 +223,7 @@ Available subagents: explore (codebase exploration), general (general-purpose ta
         PermissionRule(
           permission: 'plan_enter',
           pattern: '*',
-          action: PermissionAction.allow,
+          action: PermissionAction.deny,
         ),
         PermissionRule(
           permission: 'plan_exit',
@@ -266,11 +268,11 @@ Guidelines:
 - Use Glob for broad file pattern matching
 - Use Grep for searching file contents with regex
 - Use Read when you know the specific file path you need to read
-- Use Bash for file operations like copying, moving, or listing directory contents
+- Use shell for file operations like copying, moving, or listing directory contents
 - Adapt your search approach based on the thoroughness level specified by the caller
 - Return file paths as absolute paths in your final response
 - For clear communication, avoid using emojis
-- Do not create any files, or run bash commands that modify the user's system state in any way
+- Do not create any files, or run shell commands that modify the user's system state in any way
 
 Complete the user's search request efficiently and report your findings clearly.
 ''',
@@ -282,7 +284,7 @@ Complete the user's search request efficiently and report your findings clearly.
           action: PermissionAction.allow,
         ),
         PermissionRule(
-          permission: 'bash',
+          permission: 'shell',
           pattern: '*',
           action: PermissionAction.ask,
         ),
@@ -344,6 +346,11 @@ Complete the user's search request efficiently and report your findings clearly.
           permission: '*',
           pattern: '*',
           action: PermissionAction.allow,
+        ),
+        PermissionRule(
+          permission: 'shell',
+          pattern: '*',
+          action: PermissionAction.ask,
         ),
         PermissionRule(
           permission: 'todowrite',
@@ -409,7 +416,7 @@ Your output must be:
 <rules>
 - you MUST use the same language as the user message you are summarizing
 - Title must be grammatically correct and read naturally - no word salad
-- Never include tool names in the title (e.g. "read tool", "bash tool", "edit tool")
+- Never include tool names in the title (e.g. "read tool", "shell tool", "edit tool")
 - Focus on the main topic or question the user needs to retrieve
 - Vary your phrasing - avoid repetitive patterns like always starting with "Analyzing"
 - When a file is mentioned, focus on WHAT the user wants to do WITH the file, not just that they shared it
@@ -615,24 +622,38 @@ class AgentRegistry {
 
     _initCompleter = Completer<void>();
     try {
-      // 1. Built-in fallback (always available)
-      _agents.addAll(builtInAgents);
-
-      // 2. Load custom agents (override built-in)
-      final customAgents = await _loadCustomAgents();
-      _agents.addAll(customAgents);
-
-      // 3. Apply JSON overrides
-      if (config != null) {
-        applyOverrides(_agents, config);
-      }
-
+      await _rebuild(config);
       _initialized = true;
       _initCompleter!.complete();
     } catch (e) {
       _initCompleter!.completeError(e);
       rethrow;
     }
+  }
+
+  /// Re-reads custom agent files from both the project and global directories
+  /// and re-applies config overrides. The previous set stays visible until the
+  /// rebuilt one swaps in atomically, so concurrent readers never observe an
+  /// empty registry mid-reload.
+  Future<void> reload([ChatOrAIConfig? config]) async {
+    if (!_initialized) return init(config);
+    await _rebuild(config);
+  }
+
+  Future<void> _rebuild(ChatOrAIConfig? config) async {
+    final agents = Map<String, AgentDefinition>.from(builtInAgents);
+
+    // Custom agents override built-ins.
+    agents.addAll(await _loadCustomAgents());
+
+    // JSON overrides win last.
+    if (config != null) {
+      applyOverrides(agents, config);
+    }
+
+    _agents
+      ..clear()
+      ..addAll(agents);
   }
 
   bool get isInitialized => _initialized;
@@ -661,25 +682,15 @@ class AgentRegistry {
     return _agents.values.where((a) => !a.hidden).toList();
   }
 
-  List<AgentDefinition> getDelegatableAgents() {
-    if (!_initialized) return [];
-    return _agents.values
-        .where((a) => a.mode == AgentMode.subagent && !a.hidden)
-        .toList();
-  }
-
-  List<String> getAllIds() {
-    if (!_initialized) return [];
-    return _agents.keys.toList();
-  }
-
   static Future<Map<String, AgentDefinition>> _loadCustomAgents() async {
     final agents = <String, AgentDefinition>{};
 
-    // Project agents
-    final projectDir = Directory('.chatorai/agents');
-    if (projectDir.existsSync()) {
-      await for (final entity in projectDir.list()) {
+    // Project agents: every `.chatorai` root up the directory chain,
+    // topmost first so the level closest to the working dir wins.
+    for (final root in projectChatoraiRoots()) {
+      final projectDir = Directory(p.join(root, 'agents'));
+      if (!projectDir.existsSync()) continue;
+      await for (final entity in projectDir.list(followLinks: false)) {
         if (entity is! File) continue;
         if (!entity.path.endsWith('.md')) continue;
         try {
@@ -698,7 +709,7 @@ class AgentRegistry {
     // Global agents
     final globalDir = Directory(p.join(XdgPaths.configHome, 'agents'));
     if (globalDir.existsSync()) {
-      await for (final entity in globalDir.list()) {
+      await for (final entity in globalDir.list(followLinks: false)) {
         if (entity is! File) continue;
         if (!entity.path.endsWith('.md')) continue;
         try {

@@ -23,6 +23,7 @@ class Sessions extends Table {
   IntColumn get tokensCacheRead => integer().withDefault(const Constant(0))();
   IntColumn get tokensCacheWrite => integer().withDefault(const Constant(0))();
   TextColumn? get permissionRules => text().nullable()();
+  TextColumn? get directory => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn? get archivedAt => dateTime().nullable()();
@@ -41,6 +42,9 @@ class Messages extends Table {
   TextColumn? get model => text().nullable()();
   TextColumn? get reasoning => text().nullable()();
   TextColumn? get error => text().nullable()();
+  IntColumn get tokensInput => integer().withDefault(const Constant(0))();
+  IntColumn get tokensOutput => integer().withDefault(const Constant(0))();
+  IntColumn get tokensReasoning => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime()();
 
   @override
@@ -77,6 +81,24 @@ class ContextEpochs extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@TableIndex(name: 'idx_file_snapshots_session', columns: {#sessionId})
+@TableIndex(
+  name: 'idx_file_snapshots_session_step_created',
+  columns: {#sessionId, #stepId, #createdAt},
+)
+class FileSnapshots extends Table {
+  TextColumn get id => text()();
+  TextColumn get sessionId => text()();
+  TextColumn get filePath => text()();
+  TextColumn get content => text()();
+  TextColumn? get stepId => text().nullable()();
+  TextColumn? get toolName => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @TableIndex(name: 'idx_session_snapshots_session', columns: {#sessionId})
 class SessionSnapshots extends Table {
   TextColumn get id => text()();
@@ -92,4 +114,16 @@ class SessionSnapshots extends Table {
 
   @override
   Set<Column> get primaryKey => {id};
+}
+
+@TableIndex(name: 'idx_chat_snapshots_session', columns: {#sessionId})
+class ChatSnapshots extends Table {
+  TextColumn get sessionId => text()();
+  IntColumn get eventsCount => integer()();
+  TextColumn get chatJson => text()();
+  IntColumn get updatedAt => integer()();
+  IntColumn get schemaVersion => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {sessionId};
 }

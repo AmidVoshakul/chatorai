@@ -155,7 +155,7 @@ void main() {
         PermissionRuleset(
           rules: [
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: '*',
               action: PermissionAction.ask,
             ),
@@ -165,8 +165,8 @@ void main() {
 
       final req = const PermissionRequest(
         id: 'dr-1',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['ls'],
       );
 
@@ -188,7 +188,7 @@ void main() {
         PermissionRuleset(
           rules: [
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: '*',
               action: PermissionAction.ask,
             ),
@@ -198,8 +198,8 @@ void main() {
 
       final req = const PermissionRequest(
         id: 'ra-1',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['ls'],
       );
 
@@ -402,7 +402,7 @@ void main() {
     test('seedRules with empty ruleset does not mark as seeded', () {
       service.seedRules(PermissionRuleset(rules: []));
       // After empty seed, isAllowed should still use defaults (ask)
-      expect(service.isAllowed('bash', 'anything'), isFalse);
+      expect(service.isAllowed('shell', 'anything'), isFalse);
     });
 
     test('seedRules twice with non-empty only seeds once', () {
@@ -410,7 +410,7 @@ void main() {
         PermissionRuleset(
           rules: [
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: '*',
               action: PermissionAction.deny,
             ),
@@ -421,7 +421,7 @@ void main() {
         PermissionRuleset(
           rules: [
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: '*',
               action: PermissionAction.allow,
             ),
@@ -430,7 +430,7 @@ void main() {
       );
 
       // First seed wins
-      expect(service.isAllowed('bash', 'anything'), isFalse);
+      expect(service.isAllowed('shell', 'anything'), isFalse);
     });
   });
 
@@ -480,7 +480,7 @@ void main() {
         PermissionRuleset(
           rules: [
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: '*',
               action: PermissionAction.ask,
             ),
@@ -490,22 +490,22 @@ void main() {
 
       final req1 = const PermissionRequest(
         id: 'ds-1',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['ls'],
         metadata: {'sessionId': 'sess-deny'},
       );
       final req2 = const PermissionRequest(
         id: 'ds-2',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['cat'],
         metadata: {'sessionId': 'sess-deny'},
       );
       final req3 = const PermissionRequest(
         id: 'ds-3',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['echo'],
         metadata: {'sessionId': 'sess-deny'},
       );
@@ -527,7 +527,7 @@ void main() {
         PermissionRuleset(
           rules: [
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: '*',
               action: PermissionAction.ask,
             ),
@@ -537,15 +537,15 @@ void main() {
 
       final req1 = const PermissionRequest(
         id: 'os-1',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['ls'],
         metadata: {'sessionId': 'sess-a'},
       );
       final req2 = const PermissionRequest(
         id: 'os-2',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['cat'],
         metadata: {'sessionId': 'sess-b'},
       );
@@ -586,7 +586,7 @@ void main() {
         PermissionRuleset(
           rules: [
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: 'git *',
               action: PermissionAction.allow,
             ),
@@ -594,8 +594,8 @@ void main() {
         ),
       );
 
-      expect(service.isAllowed('bash', 'git status'), isTrue);
-      expect(service.isAllowed('bash', 'git commit -m "msg"'), isTrue);
+      expect(service.isAllowed('shell', 'git status'), isTrue);
+      expect(service.isAllowed('shell', 'git commit -m "msg"'), isTrue);
     });
   });
 }

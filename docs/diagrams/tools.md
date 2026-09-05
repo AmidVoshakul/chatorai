@@ -1,6 +1,6 @@
 # Tool System Diagrams
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-08-21
 
 This file documents the tool registry, conditional registration, and execution
 lifecycle.  See also `docs/API.md` → Tools for the full input-schema table.
@@ -12,25 +12,28 @@ graph TD
     app_start["App startup\n(session_providers.dart)"]
     reg_call["registerBuiltInTools()"]
 
-    subgraph unconditional["18 unconditional (always registered)"]
-        bash["bash\n(execute shell)"]
+    subgraph unconditional["21 unconditional (always registered)"]
+        shell["shell\n(execute shell)"]
         read["read\n(file contents)"]
+        document_extract_pdf["document_extract_pdf\n(PDF text)"]
+        document_extract_docx["document_extract_docx\n(DOCX text)"]
+        document_extract_xlsx["document_extract_xlsx\n(XLSX text)"]
         edit["edit\n(text replace)"]
         write["write\n(create/overwrite)"]
         glob_["glob\n(pattern match)"]
         grep_["grep\n(content search)"]
         webfetch_["webfetch\n(url fetch)"]
         websearch_["websearch\n(SearXNG)"]
-        task_["task\n(subagent spawn)"]
-        task_container_["task_container\n(parallel subagents)"]
-        question_["question\n(user prompt)"]
-        todowrite_["todowrite\n(todo list)"]
         apply_patch_["apply_patch\n(diff apply)"]
         invalid_["invalid\n(placeholder)"]
         external_dir["external_directory\n(dir ops)"]
+        json_schema_["json_schema\n(schema validate)"]
+        todowrite_["todowrite\n(todo list)"]
+        task_["task\n(subagent spawn)"]
+        task_container_["task_container\n(parallel subagents)"]
+        question_["question\n(user prompt)"]
         plan_enter_["plan_enter\n(switch to plan agent)"]
         plan_exit_["plan_exit\n(exit plan mode)"]
-        json_schema_["json_schema\n(schema validate)"]
     end
 
     subgraph conditional["3 conditional (independent checks)"]
@@ -50,7 +53,7 @@ graph TD
     fmt_cond -->|"no"| skill_cond
     skill_cond -->|"yes"| skill_
 
-    unconditional --> tool_registry["ToolRegistry\n(18 unconditional\n+ 0–3 conditional\n= 18–21 total)"]
+    unconditional --> tool_registry["ToolRegistry\n(21 unconditional\n+ 0–3 conditional\n= 21–24 total)"]
     lsp_ --> tool_registry
     format_ --> tool_registry
     skill_ --> tool_registry

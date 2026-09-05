@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/format/built_in_formatters.dart';
 import 'package:chatorai/core/format/formatter_definition.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 
 class FormatResult {
   final String? originalContent;
@@ -200,6 +201,7 @@ class FormatService {
       exec,
       args,
       environment: environment,
+      workingDirectory: workspaceRuntimeCurrent.path,
       runInShell: Platform.isWindows,
     ).timeout(
       const Duration(seconds: 30),

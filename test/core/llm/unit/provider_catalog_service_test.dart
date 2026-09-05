@@ -587,7 +587,10 @@ void main() {
         await catalog.setApiKey('test-provider', 'sk-test');
 
         // Should not throw
-        expect(() => catalog.dispose(), returnsNormally);
+        expect(
+          () => catalog.setApiKey('test-provider', 'sk-test'),
+          returnsNormally,
+        );
       });
     });
 
@@ -1140,7 +1143,7 @@ void main() {
 
     group('canonicalId model naming', () {
       test(
-        'modelName already containing providerId is double-prefixed (OpenCode convention)',
+        'modelName already containing providerId is double-prefixed',
         () async {
           SharedPreferences.setMockInitialValues({});
           final prefs = await SharedPreferences.getInstance();
@@ -1388,23 +1391,6 @@ void main() {
           expect(stored!.description, isNot(contains('...')));
         },
       );
-    });
-
-    group('addListener/removeListener', () {
-      test('addListener and removeListener are no-ops', () async {
-        SharedPreferences.setMockInitialValues({});
-        final prefs = await SharedPreferences.getInstance();
-        mockStorage = MockSecureStorageService();
-        catalog = ProviderCatalogService(
-          secureStorage: mockStorage,
-          prefs: prefs,
-          builtInProviders: [testProvider],
-        );
-
-        // Should not throw
-        expect(() => catalog.addListener(() {}), returnsNormally);
-        expect(() => catalog.removeListener(() {}), returnsNormally);
-      });
     });
 
     group('getAllModelsRaw', () {

@@ -1,6 +1,6 @@
 # Session Core Diagrams
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-08-21
 
 This file documents the event-sourced session subsystem: Drift database schema
 (ER diagram) and the `SessionEvent` state machine.
@@ -60,7 +60,7 @@ erDiagram
         string id PK "UUID"
         string session_id FK
         string message_id FK
-        string tool_name "bash / read / …"
+        string tool_name "shell / read / …"
         string input_json "original tool input"
         string output_text "truncated to 2000 lines / 50 KB"
         string status "success / error"

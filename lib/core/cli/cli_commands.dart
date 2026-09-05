@@ -3,21 +3,21 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:path/path.dart' as p;
-import 'package:chatorai/core/cli/install_paths.dart';
-import 'package:chatorai/core/cli/cli_style.dart';
+import 'package:chatorai/core/cli/app_version.dart';
 import 'package:chatorai/core/cli/cli_spinner.dart';
-import 'package:chatorai/shared/utils/xdg_paths_cli.dart' as xdg;
-import 'package:chatorai/core/llm/providers/built_in_providers.dart';
-import 'package:chatorai/core/llm/provider_catalog_service.dart';
-import 'package:chatorai/core/llm/providers/config_provider_parser.dart';
-import 'package:chatorai/core/llm/models/model_config.dart';
+import 'package:chatorai/core/cli/cli_style.dart';
+import 'package:chatorai/core/cli/install_paths.dart';
+import 'package:chatorai/core/cli/mcp_cli.dart';
 import 'package:chatorai/core/config/config_manager.dart';
-import 'package:chatorai/shared/utils/secure_storage_service.dart';
+import 'package:chatorai/core/llm/models/model_config.dart';
+import 'package:chatorai/core/llm/provider_catalog_service.dart';
+import 'package:chatorai/core/llm/providers/built_in_providers.dart';
+import 'package:chatorai/core/llm/providers/config_provider_parser.dart';
 import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/stats/stats_service.dart';
-import 'package:chatorai/core/cli/app_version.dart';
-import 'package:chatorai/core/cli/mcp_cli.dart';
+import 'package:chatorai/shared/utils/secure_storage_service.dart';
+import 'package:chatorai/shared/utils/xdg_paths_cli.dart' as xdg;
+import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Single entry point for all non-GUI (CLI) invocations of the `chatorai`

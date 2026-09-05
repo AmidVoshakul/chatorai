@@ -1,5 +1,5 @@
 import 'package:chatorai/core/mcp/mcp_config.dart';
-import 'package:chatorai/features/settings/screens/mcp_add_server_helpers.dart';
+import 'package:chatorai/gui/features/settings/screens/mcp_add_server_helpers.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Unit tests for the pure parsing/validation helpers used by the
@@ -61,22 +61,18 @@ void main() {
 
   group('buildAuthHeaders', () {
     test('returns empty map for blank token', () {
-      expect(buildAuthHeaders('', AuthType.bearer), isEmpty);
-      expect(buildAuthHeaders('   ', AuthType.apiKey), isEmpty);
+      expect(buildAuthHeaders('', AuthType.noAuth), isEmpty);
+      expect(buildAuthHeaders('   ', AuthType.token), isEmpty);
     });
 
-    test('bearer wraps with Authorization: Bearer', () {
-      expect(buildAuthHeaders('abc', AuthType.bearer), {
+    test('token wraps with Authorization: Bearer', () {
+      expect(buildAuthHeaders('abc', AuthType.token), {
         'Authorization': 'Bearer abc',
       });
     });
 
-    test('apiKey uses X-Api-Key header', () {
-      expect(buildAuthHeaders('abc', AuthType.apiKey), {'X-Api-Key': 'abc'});
-    });
-
-    test('plain uses Authorization without scheme', () {
-      expect(buildAuthHeaders('abc', AuthType.plain), {'Authorization': 'abc'});
+    test('oauth returns empty headers', () {
+      expect(buildAuthHeaders('abc', AuthType.oauth), isEmpty);
     });
   });
 

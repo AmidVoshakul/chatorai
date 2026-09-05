@@ -1,6 +1,6 @@
 # API Reference
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-08-21
 
 This document describes the public APIs of ChatORAI for developers, contributors, and advanced users.
 
@@ -21,42 +21,41 @@ All providers are defined using Riverpod 3.x and can be accessed via `ref.watch(
 
 ### Chat Providers
 
-| Provider                   | Type                                                                     | Description                                                                      |
-| -------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| `chatListProvider`         | `NotifierProvider<ChatListNotifier, AsyncValue<List<Chat>>>`             | List of all chats with CRUD operations.                                          |
-| `chatScreenProvider`       | `NotifierProvider<ChatScreenNotifier, ChatScreenState>`                  | UI state for chat screen (streaming, suggestions, sidebar, headings).            |
-| `sessionPartsProvider`     | `StreamProvider.family<SessionState, String>`                            | Live session state (parts accumulation) for a given session ID.                  |
-| `currentChatIdProvider`    | `NotifierProvider<CurrentChatIdNotifier, String?>`                       | Currently active chat ID (router-level).                                         |
-| `currentChatProvider`      | `Provider<Chat?>`                                                        | Computed chat by ID (derived from `currentChatIdProvider` + `chatListProvider`). |
+| Provider                | Type                                                         | Description                                                                      |
+| ----------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `chatListProvider`      | `NotifierProvider<ChatListNotifier, AsyncValue<List<Chat>>>` | List of all chats with CRUD operations.                                          |
+| `chatScreenProvider`    | `NotifierProvider<ChatScreenNotifier, ChatScreenState>`      | UI state for chat screen (streaming, suggestions, sidebar, headings).            |
+| `sessionPartsProvider`  | `StreamProvider.family<SessionState, String>`                | Live session state (parts accumulation) for a given session ID.                  |
+| `sessionContextUsageProvider` | `Provider<SessionContextUsage>` | Aggregated context usage (tokens, cache, spent USD, instruction sources) for the current chat. |
+| `currentChatIdProvider` | `NotifierProvider<CurrentChatIdNotifier, String?>`           | Currently active chat ID (router-level).                                         |
+| `currentChatProvider`   | `Provider<Chat?>`                                            | Computed chat by ID (derived from `currentChatIdProvider` + `chatListProvider`). |
 
 ### Model Providers
 
 | Provider        | Type                                          | Description                                                                                                  |
 | --------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `modelProvider` | `NotifierProvider<ModelNotifier, ModelState>` | Model selection, favorites, usage tracking (`usageCounts`/`lastUsed`), available models, and `recentModels`. |
-| `themeProvider` | `NotifierProvider<ThemeNotifier, ThemeState>` | Theme, language, font size, wide screen mode.                                                               |
+| `themeProvider` | `NotifierProvider<ThemeNotifier, ThemeState>` | Theme, language, font size, wide screen mode.                                                                |
 
 ### Configuration Providers
 
-| Provider            | Type                          | Description                                       |
-| ------------------- | ----------------------------- | ------------------------------------------------- |
-| `configProvider`    | `Provider<ChatOrAIConfig>`    | Validated `chatorai.json` configuration.          |
-| `permissionProvider`| `Provider<PermissionService>` | Permission service instance (singleton).          |
+| Provider             | Type                          | Description                              |
+| -------------------- | ----------------------------- | ---------------------------------------- |
+| `configProvider`     | `Provider<ChatOrAIConfig>`    | Validated `chatorai.json` configuration. |
+| `permissionProvider` | `Provider<PermissionService>` | Permission service instance (singleton). |
 
 ### Core Services
 
-| Provider                     | Type                           | Description                                                     |
-| ---------------------------- | ------------------------------ | --------------------------------------------------------------- |
-| `chatAiServiceProvider`      | `Provider<ChatAiService>`      | AI completion service with tool execution loop.                 |
-| `sessionRunnerProvider`      | `Provider<SessionRunner>`      | Event-sourced session orchestrator.                             |
-| `sessionRepositoryProvider`  | `Provider<SessionRepository>`  | Session CRUD + event replay.                                    |
-| `sessionTreeProvider`        | `Provider<SessionTree>`        | Parent-child session navigation.                                |
-| `chatRepositoryProvider`     | `Provider<ChatRepository>`     | Chat persistence repository.                                    |
-| `chatStorageServiceProvider` | `Provider<ChatStorageService>` | Local storage abstraction (SharedPreferences).                  |
-| `toolRegistryProvider`       | `FutureProvider<ToolRegistry>` | Registry of all available tools (18 built-in + dynamic skills). |
-| `skillServiceProvider`       | `FutureProvider<SkillService>` | Skill management service for dynamic capabilities.              |
-| `mcpClientServiceProvider`   | `Provider<McpClientService>`   | MCP server connections for external tool integration.           |
-| `lspServiceProvider`         | `Provider<LspService>`         | LSP integration for code intelligence.                          |
+| Provider                    | Type                           | Description                                                     |
+| --------------------------- | ------------------------------ | --------------------------------------------------------------- |
+| `chatAiServiceProvider`     | `Provider<ChatAiService>`      | AI completion service with tool execution loop.                 |
+| `sessionRunnerProvider`     | `Provider<SessionRunner>`      | Event-sourced session orchestrator.                             |
+| `sessionRepositoryProvider` | `Provider<SessionRepository>`  | Session CRUD + event replay.                                    |
+| `sessionTreeProvider`       | `Provider<SessionTree>`        | Parent-child session navigation.                                |
+| `toolRegistryProvider`      | `FutureProvider<ToolRegistry>` | Registry of all available tools (21 built-in + dynamic skills + MCP tools). |
+| `skillServiceProvider`      | `FutureProvider<SkillService>` | Skill management service for dynamic capabilities.              |
+| `mcpClientServiceProvider`  | `Provider<McpClientService>`   | MCP server connections for external tool integration.           |
+| `lspServiceProvider`        | `Provider<LspService>`         | LSP integration for code intelligence.                          |
 
 ---
 
@@ -94,10 +93,102 @@ Stream<StreamTextEvent> streamChatCompletion({
 
 **Features:**
 
-- Unbounded retry with exponential backoff (base 2s, jitter 30%, cap 30s).
+- Unbounded retry with exponential backoff (base 500ms, factor 2.0, cap 24h).
 - Respects `Retry-After` headers from rate limits.
 - Token counting and overflow detection.
 - Cancellation via `CancellationToken` (used by emergency stop).
+
+### Link Launcher Utility
+
+`lib/shared/utils/link_launcher.dart` — pure business logic for validating and opening external links.
+
+```dart
+bool isHttpHttpsUrl(String? raw);
+enum LinkLaunchResult { opened, invalidScheme, failed }
+Future<LinkLaunchResult> launchExternalLink(
+  String href, {
+  Future<bool> Function(Uri uri, {LaunchMode mode})? launcher,
+});
+```
+
+`isHttpHttpsUrl` returns `true` only for non-null, non-empty URLs with `http` or `https` scheme. `launchExternalLink` returns `invalidScheme` for non-http URLs, `opened` on success, or `failed` if the platform launcher returns `false` or throws. The optional `launcher` parameter enables DI for tests.
+
+### Link Confirm Sheet
+
+`lib/features/chat/presentation/widgets/link_confirm_sheet.dart` — UI confirmation bottom-sheet for external links.
+
+```dart
+Future<void> showLinkConfirmSheet(
+  BuildContext context, {
+  required String href,
+  Future<LinkLaunchResult> Function(String)? launcher,
+})
+```
+
+Shows a dismissible bottom-sheet with `PremiumSheetShell`, `PremiumHandle`, `PremiumAvatar` (`Icons.open_in_new`), and `KeyboardHandlerDialog` (Enter confirms, Escape cancels). Displays the URL as selectable monospaced text with a copy button (`SnackbarUtils.showCopySnackBar`). On confirm, calls `launchExternalLink`; on failure, shows `SnackbarUtils.showErrorSnackBar` with `l10n.linkOpenFailed`. Non-http schemes are silently ignored.
+
+### Usage Tracking API
+
+#### `UsageCallback`
+
+```dart
+typedef UsageCallback = void Function(
+  int input,
+  int output,
+  int cacheRead,
+  int cacheWrite,
+  int reasoning,
+  bool cacheIncludedInInput,
+);
+```
+
+Passed to `streamChatCompletion` via the `onUsage` parameter. Called when a turn completes with per-turn token breakdown.
+
+#### `UsageCacheTokens` / `UsageRawData`
+
+```dart
+class UsageCacheTokens {
+  final int read;
+  final int write;
+  const UsageCacheTokens({this.read = 0, this.write = 0});
+}
+
+class UsageRawData {
+  final int inputTotal;
+  final int outputTotal;
+  final int cacheRead;
+  final int cacheWrite;
+  final int reasoning;
+  final bool cacheIncludedInInput;
+  const UsageRawData({
+    this.inputTotal = 0,
+    this.outputTotal = 0,
+    this.cacheRead = 0,
+    this.cacheWrite = 0,
+    this.reasoning = 0,
+    this.cacheIncludedInInput = false,
+  });
+}
+```
+
+#### `extractUsageRawData` / `resolveUsage`
+
+```dart
+UsageRawData extractUsageRawData(Object? rawUsage);
+Map<String, dynamic> resolveUsage(
+  LanguageModelV4Usage? usage,
+  Map<String, dynamic>? capturedRawUsage,
+);
+```
+
+`extractUsageRawData` maps provider-specific usage fields into a unified breakdown in one pass. Supported providers:
+
+- OpenAI Chat Completions: `prompt_tokens_details.cached_tokens`.
+- OpenAI Responses: `input_tokens_details.cached_tokens` / `cache_write_tokens`.
+- DeepSeek: `prompt_cache_hit_tokens` (miss tokens are NOT cache writes — they are billed at full input price).
+- Anthropic-compatible gateways: `cache_read_input_tokens` / `cache_creation_input_tokens`.
+
+`resolveUsage` returns a map with keys: `inputTotal`, `outputTotal`, `cacheRead`, `cacheWrite`, `reasoning`, `cacheIncludedInInput`. The dead branch for unknown cache inclusion has been removed; `cacheIncludedInInput` is always resolved from raw usage or SDK data.
 
 ### PermissionService
 
@@ -112,12 +203,12 @@ Controls tool execution based on user-defined rules from `chatorai.json` and bui
 | `grep`               | `allow`                             |
 | `webfetch`           | `allow`                             |
 | `websearch`          | `allow`                             |
-| `task`               | `allow`                             |
-| `question`           | `allow`                             |
-| `todowrite`          | `allow`                             |
+| `task`               | `deny`                             |
+| `question`           | `deny`                             |
+| `todowrite`          | `deny`                             |
 | `skill`              | `allow`                             |
 | `lsp`                | `allow`                             |
-| `bash`               | `ask`                               |
+| `shell`              | `ask`                               |
 | `edit`               | `ask`                               |
 | `write`              | `ask`                               |
 | `doom_loop`          | `ask`                               |
@@ -125,6 +216,12 @@ Controls tool execution based on user-defined rules from `chatorai.json` and bui
 | `apply_patch`        | `ask` (fallback — no ruleset entry) |
 | `format`             | `ask` (fallback — no ruleset entry) |
 | `invalid`            | `ask` (fallback — no ruleset entry) |
+| `plan_enter`         | `deny`                             |
+| `plan_exit`          | `deny`                             |
+| `json_schema`        | `ask` (fallback — no ruleset entry) |
+| `document_extract_pdf` | `ask` (fallback — no ruleset entry) |
+| `document_extract_docx` | `ask` (fallback — no ruleset entry) |
+| `document_extract_xlsx` | `ask` (fallback — no ruleset entry) |
 
 **Usage:**
 
@@ -132,8 +229,8 @@ Controls tool execution based on user-defined rules from `chatorai.json` and bui
 await permissionService.ask(
   PermissionRequest(
     id: 'unique_id',
-    toolName: 'bash',
-    permission: 'bash', // matches PermissionRule.permission name
+    toolName: 'shell',
+    permission: 'shell', // matches PermissionRule.permission name
     patterns: ['/home/**'],
     metadata: {...},
   ),
@@ -149,7 +246,7 @@ Registry for all built-in and custom tools. Converts internal `ToolDef` to `ai_s
 
 **Registration:**
 
-- All built-in tools registered in `built_in_tools.dart` via `registerBuiltInTools()` — 18 unconditional + up to 3 conditional (21 total possible).
+- All built-in tools registered in `built_in_tools.dart` via `registerBuiltInTools()` — 21 unconditional + up to 3 conditional (24 total possible).
 - Conditional: `lsp` (when `LspService` is provided), `format` (when `FormatService` is provided), `skill` (when `SkillService` is provided).
 - The `task` tool requires `chatAiService`, `toolRegistry`, and `currentSessionRunner` parameters.
 - Permission defaults defined in `PermissionRuleset.defaults()` (`lib/core/permission/ruleset.dart`).
@@ -169,6 +266,7 @@ SessionRunnerSession startSession({
   String? modelRef, // model identifier from catalog
   String? title, // optional session title (auto-generated if omitted)
   String? parentSessionId, // for hierarchical sessions
+  Duration toolCardGrace = const Duration(milliseconds: 1500),
 })
 
 // Start a re-initialization of an existing session
@@ -178,6 +276,8 @@ Future<SessionRunnerSession> startInitializedSession({
   String? title,
   String? parentSessionId,
   SessionID? sessionId, // existing session to continue
+  String? messageId, // seed assistant message ID
+  Duration toolCardGrace = const Duration(milliseconds: 1500),
 })
 
 // Run a delegated subagent task in a child session
@@ -189,7 +289,9 @@ Future<TaskChildResult> runTaskInChild({
   String? modelRef,
   String? title,
   String? taskId,
+  String? taskPartId,
   SessionRunnerHolder? holder,
+  CancellationToken? abortSignal,
 })
 ```
 
@@ -205,7 +307,7 @@ class SessionRunnerSession {
   final String? _modelRef;   // private
   final String? _title;      // private
   final SessionID? _parentId; // private
-  bool get initialized;
+  bool initialized;
   String? messageId;
 }
 ```
@@ -246,6 +348,19 @@ The message system uses a concrete `Message` class (not abstract) with `MessageR
 - `Message` — id, role, content, timestamp, isComplete, isError, model, reasoning, imageData, partsJson, etc.
 - `Chat` — id, title, messages, createdAt, updatedAt.
 - `MessageRole` — user, assistant, system, error.
+- `AssistantMessage` — assistant message with token tracking:
+  - `tokensInput`, `tokensOutput`, `tokensReasoning`
+  - `tokensCacheRead`, `tokensCacheWrite`
+  - `tokensCacheIncludedInInput` — whether cache tokens are already included in `tokensInput` (avoids double-counting)
+  - `contextLength` — model context limit at time of generation
+  - `model` — model ID used for this turn
+  - `agent` — agent name that produced this message
+  - `isCompactionSummary` — whether this message is a compaction summary
+- `SessionContextUsage` — aggregated context usage for the current chat:
+  - `usedTokens`, `outputTokens`, `reasoningTokens`, `cacheReadTokens`, `cacheWriteTokens`, `toolTokens`, `toolCallsCount`
+  - `contextLength`, `buffer`, `usable`
+  - `sources` — list of `ContextInstructionSource` (agent prompt, user system prompt, instruction blocks)
+  - `spentUsd` — session total cost in USD (null if no billable tokens)
 
 **MessageParts** (serialized as JSON with `type` field):
 
@@ -259,7 +374,7 @@ The message system uses a concrete `Message` class (not abstract) with `MessageR
 | `QuestionPart`   | Multi-question flow awaiting user response                     | `QuestionPartWidget`   |
 | `TodoPart`       | Todo list with items                                           | `TodoPartWidget`       |
 
-**ReasoningPart fields** (defined in `lib/features/chat/data/models/chat/reasoning_part.dart`):
+**ReasoningPart fields** (defined in `lib/core/chat/chat/reasoning_part.dart`):
 
 | Field         | Type        | Description                                                  |
 | ------------- | ----------- | ------------------------------------------------------------ |
@@ -280,30 +395,33 @@ The message system uses a concrete `Message` class (not abstract) with `MessageR
 
 All tools implement the `Tool` interface from `ai_sdk_dart`. The `ToolRegistry` converts internal `ToolDef` implementations to SDK tools.
 
-### Built-in Tools (21 total, 18 unconditional + 3 conditional)
+### Built-in Tools (24 total, 21 unconditional + 3 conditional)
 
-**Always registered (18):**
+**Always registered (21):**
 
-| Tool                 | Description                           | Input Schema                                                            | Default Permission          |
-| -------------------- | ------------------------------------- | ----------------------------------------------------------------------- | --------------------------- |
-| `bash`               | Execute shell command                 | `{ "command": string, "timeoutMs": number }`                            | ask                         |
-| `read`               | Read file contents                    | `{ "path": string, "offset": number, "limit": number }`                 | allow                       |
-| `edit`               | Replace text in file                  | `{ "path": string, "oldString": string, "newString": string }`          | ask                         |
-| `write`              | Create/overwrite file                 | `{ "path": string, "content": string }`                                 | ask                         |
-| `glob`               | Find files by pattern                 | `{ "pattern": string, "path": string }`                                 | allow                       |
-| `grep`               | Search file contents                  | `{ "pattern": string, "path": string, "filePattern": string }`          | allow                       |
-| `webfetch`           | Fetch URL content                     | `{ "url": string, "format": "text" \| "markdown" \| "html" }`           | allow                       |
-| `websearch`          | Search web via SearXNG                | `{ "query": string, "engines": string[], "categories": string[] }`      | allow                       |
-| `task`               | Spawn subagent via `SessionRunner`    | `{ "prompt": string, "context": object, "subagentType": string }`       | allow                       |
+| Tool                 | Description                            | Input Schema                                                            | Default Permission          |
+| -------------------- | -------------------------------------- | ----------------------------------------------------------------------- | --------------------------- |
+| `shell`              | Execute shell command                  | `{ "command": string, "timeoutMs": number }`                            | ask                         |
+| `read`               | Read file contents                     | `{ "path": string, "offset": number, "limit": number }`                 | allow                       |
+| `edit`               | Replace text in file                   | `{ "path": string, "oldString": string, "newString": string }`          | ask                         |
+| `write`              | Create/overwrite file                  | `{ "content": string, "path": string }`                                 | ask                         |
+| `glob`               | Find files by pattern                  | `{ "pattern": string, "path": string }`                                 | allow                       |
+| `grep`               | Search file contents                   | `{ "pattern": string, "path": string, "filePattern": string }`          | allow                       |
+| `webfetch`           | Fetch URL content                      | `{ "url": string, "format": "text" \| "markdown" \| "html" }`           | allow                       |
+| `websearch`          | Search web via SearXNG                 | `{ "query": string, "engines": string[], "categories": string[] }`      | allow                       |
+| `task`               | Spawn subagent via `SessionRunner`     | `{ "prompt": string, "context": object, "subagentType": string }`       | allow                       |
 | `task_container`     | Run parallel subagent tasks, aggregate | `{ "tasks": [...], "strategy": "race" \| "all" }`                       | allow                       |
-| `todowrite`          | Update todo list                      | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }` | allow                       |
-| `question`           | Ask user question (with dedup)        | `{ "question": string, "options": string[], "multiple": bool }`         | allow                       |
-| `apply_patch`        | Apply unified diff                    | `{ "patch": string, "dryRun": bool }`                                   | no default (fallback `ask`) |
-| `invalid`            | Invalid tool placeholder              | `{}`                                                                    | no default (fallback `ask`) |
-| `external_directory` | Directory operations (builtin)        | —                                                                       | ask                         |
-| `plan_enter`         | Switch to plan agent mode             | —                                                                       | no default (fallback `ask`) |
-| `plan_exit`          | Exit plan mode, switch to build agent | —                                                                       | no default (fallback `ask`) |
-| `json_schema`        | JSON schema validation                | —                                                                       | no default (fallback `ask`) |
+| `todowrite`          | Update todo list                       | `{ "todos": [{ "content": string, "status": "pending"/"completed" }] }` | allow                       |
+| `question`           | Ask user question (with dedup)         | `{ "question": string, "options": string[], "multiple": bool }`         | allow                       |
+| `apply_patch`        | Apply unified diff                     | `{ "patch": string, "dryRun": bool }`                                   | no default (fallback `ask`) |
+| `invalid`            | Invalid tool placeholder               | `{}`                                                                    | no default (fallback `ask`) |
+| `external_directory` | Directory operations (builtin)         | —                                                                       | ask                         |
+| `plan_enter`         | Switch to plan agent mode              | —                                                                       | no default (fallback `ask`) |
+| `plan_exit`          | Exit plan mode, switch to build agent  | —                                                                       | no default (fallback `ask`) |
+| `json_schema`        | JSON schema validation                 | —                                                                       | no default (fallback `ask`) |
+| `document_extract_pdf` | Extract text from PDF files           | `{ "path": string }`                                                    | no default (fallback `ask`) |
+| `document_extract_docx` | Extract text from DOCX files         | `{ "path": string }`                                                    | no default (fallback `ask`) |
+| `document_extract_xlsx` | Extract text from XLSX files         | `{ "path": string }`                                                    | no default (fallback `ask`) |
 
 **Conditionally registered (up to 3):** All three checks are independent `if` statements — all three can be active simultaneously.
 
@@ -313,9 +431,9 @@ All tools implement the `Tool` interface from `ai_sdk_dart`. The `ToolRegistry` 
 | `format` | When `FormatService` is provided | no default (fallback `ask`) |
 | `skill`  | When `SkillService` is provided  | allow                       |
 
-The actual registration in `registerBuiltInTools()` (see `lib/core/tools/built_in/built_in_tools.dart`) registers exactly **18 tools unconditionally**, plus up to 3 conditional tools (`lsp`, `format`, `skill`). Total: 18–21 built-in tools depending on available services. `skill` is **never** unconditionally registered — it requires `skillService != null`.
+The actual registration in `registerBuiltInTools()` (see `lib/core/tools/built_in/built_in_tools.dart`) registers exactly **21 tools unconditionally**, plus up to 3 conditional tools (`lsp`, `format`, `skill`). Total: 21–24 built-in tools depending on available services. `skill` is **never** unconditionally registered — it requires `skillService != null`.
 
-**Note on defaults:** `format`, `json_schema`, `apply_patch`, `invalid`, and `plan_exit` have no entry in `PermissionRuleset.defaults()`. When no rule matches the `evaluate()` function, the fallback action is `ask`.
+**Note on defaults:** `format`, `json_schema`, `apply_patch`, `invalid`, `plan_exit`, `document_extract_pdf`, `document_extract_docx`, `document_extract_xlsx` have no entry in `PermissionRuleset.defaults()`. When no rule matches the `evaluate()` function, the fallback action is `ask`.
 
 ---
 
@@ -381,7 +499,7 @@ Validated against JSON Schema in `lib/core/config/chatorai_schema.dart`.
     rules: [
       { tool: "read", action: "*", resource: "*", permission: "allow" },
       {
-        tool: "bash",
+        tool: "shell",
         action: "execute",
         resource: "/home/**",
         permission: "deny",
@@ -430,7 +548,6 @@ CHATORAI_DEBUG=true
 
 ## Internal APIs (Subject to Change)
 
-- `ChatStorageService`: `getChats()`, `getChat(id)`, `addChat()`, `updateChat()`, `deleteChat()`, etc.
 - `SessionRunner`: `startSession()`, `startInitializedSession()`, `runTaskInChild()` — orchestrates session lifecycle with event sourcing.
 - `SessionRepository`: CRUD operations for sessions; event replay.
 - `SessionTree`: Parent-child navigation in the session hierarchy.
@@ -443,6 +560,10 @@ CHATORAI_DEBUG=true
 - `TruncationService`: Singleton, `output(content)` → truncated content + outputPath.
 - `SessionState`: `Equatable` immutable model for session state reconstruction from events.
 - `SessionMessage`: `Equatable` model with JSON serialization, `SessionIDConverter`, `MessageRole`.
+- `SessionContextUsage`: Aggregated context usage (tokens, cache, spent USD, instruction sources) for the current chat.
+- `UsageCacheTokens` / `UsageRawData`: Unified token breakdown from provider usage maps.
+- `extractUsageRawData`: Maps provider-specific usage fields into unified breakdown.
+- `resolveUsage`: Resolves usage map from SDK usage or raw usage capture.
 
 ---
 

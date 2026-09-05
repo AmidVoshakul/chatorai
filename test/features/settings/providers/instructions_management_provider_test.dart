@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:chatorai/core/config/agents_file_service.dart';
 import 'package:chatorai/core/config/config_writer.dart';
-import 'package:chatorai/features/settings/providers/instructions_management_provider.dart';
+import 'package:chatorai/gui/features/settings/providers/instructions_management_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -207,6 +207,73 @@ void main() {
       final raw = await ConfigWriter.readRawConfig(globalCfgPath);
       expect(raw['instructions'], contains(entry));
     });
+
+    test('global inline instruction file lives under the global config dir, '
+        'never under the project root', () async {
+      await notifier.addInlineInstruction(
+        'Global Style',
+        'global body',
+        scope: InstructionsScope.global,
+      );
+
+      final entry = read().global.entries.first;
+
+      // The on-disk file must sit inside the global config dir, not in the
+      // project folder (this used to resolve relative to Directory.current).
+      final globalFile = File(p.join(globalDir.path, entry));
+      expect(await globalFile.exists(), isTrue);
+      expect(await globalFile.readAsString(), 'global body');
+
+      // And it must NOT have leaked into the project root.
+      expect(await File(p.join(projectRoot.path, entry)).exists(), isFalse);
+    });
+
+    test(
+      'removeInstruction deletes the global managed file from the global dir',
+      () async {
+        await notifier.addInlineInstruction(
+          'Global Style',
+          'global body',
+          scope: InstructionsScope.global,
+        );
+        final entry = read().global.entries.first;
+        final globalFile = File(p.join(globalDir.path, entry));
+        expect(await globalFile.exists(), isTrue);
+
+        await notifier.removeInstruction(
+          entry,
+          scope: InstructionsScope.global,
+        );
+
+        expect(read().global.entries, isEmpty);
+        expect(await globalFile.exists(), isFalse);
+      },
+    );
+  });
+
+  group('workspace switch', () {
+    test('project tab reloads after the active workspace changes', () async {
+      // Seed a project AGENTS.md in the initial root.
+      await File(
+        p.join(projectRoot.path, 'AGENTS.md'),
+      ).writeAsString('initial rules');
+      await refreshed();
+      expect(
+        read().project.discovered.map((f) => f.name),
+        contains('AGENTS.md'),
+      );
+
+      // Simulate a workspace switch by pointing the notifier at a fresh root
+      // that has no AGENTS.md, then reloading (mirrors the ref.listen trigger
+      // that fires on workspaceProvider changes in the real app).
+      final other = Directory(p.join(tmp.path, 'other'));
+      await other.create(recursive: true);
+      notifier.configureForTest(projectRoot: other);
+      await refreshed();
+
+      expect(read().project.discovered, isEmpty);
+      expect(read().projectRootPath, other.path);
+    });
   });
 
   group('uploaded file instructions', () {
@@ -237,5 +304,58 @@ void main() {
       final raw = await ConfigWriter.readRawConfig(projectCfgPath);
       expect(raw['instructions'], ['b.md']);
     });
+  });
+
+  group('instruction entry content edit', () {
+    test(
+      'saveInstructionEntry writes file and reload reflects content',
+      () async {
+        await notifier.addInlineInstruction('Foo', 'original');
+        final entry = read().project.entries.first;
+        final file = File(p.join(projectRoot.path, entry));
+        expect(await file.exists(), isTrue);
+
+        await notifier.saveInstructionEntry(
+          entry,
+          'updated',
+          scope: InstructionsScope.project,
+        );
+
+        expect(await file.readAsString(), 'updated');
+        expect(read().project.entries, contains(entry));
+      },
+    );
+
+    test('readInstructionEntry returns written content', () async {
+      await notifier.addInlineInstruction('Bar', 'hello world');
+      final entry = read().project.entries.first;
+
+      expect(
+        await notifier.readInstructionEntry(
+          entry,
+          scope: InstructionsScope.project,
+        ),
+        'hello world',
+      );
+    });
+
+    test(
+      'edit does not remove entry from instructions[] or chatorai.json',
+      () async {
+        await notifier.addInlineInstruction('Baz', 'body');
+        final entry = read().project.entries.first;
+
+        await notifier.saveInstructionEntry(
+          entry,
+          'new body',
+          scope: InstructionsScope.project,
+        );
+
+        final state = await refreshed();
+        expect(state.project.entries, contains(entry));
+        final raw = await ConfigWriter.readRawConfig(projectCfgPath);
+        expect(raw['instructions'], contains(entry));
+      },
+    );
   });
 }

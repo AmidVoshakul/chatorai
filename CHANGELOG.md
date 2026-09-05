@@ -2,32 +2,205 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2]
+
+### Added
+
+- **Slash command core extraction**:
+  - `lib/core/commands/` module with `SlashCommand` model, `SlashCommandCatalog` (built-ins + `fromCommandInfo` + filter + `SlashCommandLocalizations` abstract), `SlashCommandExecutor` (`/compact`, `/new`, `/thinking` via callbacks), `SlashCommandNavigator` (cyclic nav), `SkillTemplateRenderer` (template rendering, `$N`/`$ARGUMENTS`/quoted args/`[Image N]`/`$0` guard), and `SkillCommandResolver`.
+  - `command_parser.expandCommandTemplate` now delegates to `SkillTemplateRenderer`.
+  - GUI handler (`slash_command_handler.dart`) and `send_message_handler.dart` are thin orchestrators via `SlashCommandExecutor`.
+- **WorkspacePort abstraction**:
+  - `lib/core/workspace/workspace_port.dart` (`WorkspacePort` interface), `workspace_runtime.dart` (moved from `shared/`), `process_workspace_port.dart` (default).
+  - `workspacePortProvider` in `core/config` wired to `RiverpodWorkspacePort` override in `main.dart`.
+- **Shared tool registry factory**:
+  - `lib/core/tools/tool_registry_factory.dart` (`createToolRegistry` shared by app and terminal).
+  - Thin GUI wrapper in `gui/features/chat/data/providers/tool_registry_provider.dart`.
+- **Core chat services**:
+  - `lib/core/chat/services/` with `chat_ai_service.dart`, `chat_cancellation.dart`, `chat_retry_service.dart`, `tool_call_tracker.dart`.
+- **New tests**:
+  - `test/core/workspace/test_workspace_port_test.dart`
+  - `test/core/tools/test_tool_registry_factory_test.dart`
+  - `test/core/commands/` (slash_command, catalog, executor, skill_template_renderer, skill_command_resolver)
+- **Slash command UX improvements**:
+  - `/thinking` command toggles `expandReasoningByDefault` in `themeProvider`, clears input without snackbar feedback.
+  - Cyclic navigation for command and skills popups (`navigateCommandPopup`/`navigateSkillsPopup` wrap around).
+  - Full localization of built-in slash-command descriptions across 6 languages (`slashCommandSkills`, `slashCommandNew`, `slashCommandClear`, `slashCommandCompact`, `slashCommandHelp`, `slashCommandUndo`, `slashCommandRedo`, `slashCommandSessions`, `slashCommandModels`, `slashCommandTheme`, `slashCommandThinking`).
+  - `SlashCommandNavigator` helper class with unit tests (`test_slash_command_navigator.dart`).
+- **Unified chat auto-scroll**:
+  - `ChatMessagesConstants.followBand` (`150.0`) and `userScrolledAwayBand` (`25.0`) are the single source of truth for scroll thresholds across all chat views.
+  - `ChatScrollFollowController` drives auto-scroll identically for parent (`ChatMessagesArea`) and child (`SessionContextWindow`) sessions via `noteGrowth()` / `handleNotification()`.
+  - `chatIsNearBottom(controller, {threshold})` helper centralizes "is the user at the bottom" logic.
+  - `ChatMessages` now accepts an optional external `followController`; when provided, the same controller is shared between parent and child windows.
+  - Widget test added: `test_chat_messages_auto_scroll_widget_test.dart` covers parent auto-scroll, scroll-away suppression, Home/End shortcuts, unmount cleanup, and child-session auto-scroll.
+- **Support the Project**:
+  - New `AboutSupportSection` widget (`lib/gui/features/settings/widgets/about_support_section.dart`) shared by the About dialog and the About settings section.
+  - Three full-width `OutlinedButton` actions: Star on GitHub (`https://github.com/AmidVoshakul/chatorai`), Become a Sponsor (`https://github.com/sponsors/AmidVoshakul`), Share your thoughts (`https://github.com/AmidVoshakul/chatorai/issues`).
+  - GitHub icon rendered via `SvgPicture.asset('assets/provider/github.svg')` with theme-aware `ColorFiltered` recolor, matching the existing provider card pattern.
+  - Links opened through the existing `launchExternalLink` utility (`lib/shared/utils/link_launcher.dart`).
+
+### Changed
+
+- **Architecture enforcement**: `core/` is pure Dart, `gui/` is Flutter desktop/mobile, `tui/` is Nocterm terminal UI. Chat domain models moved to `core/chat/`, all GUI code to `gui/`, TUI code to `tui/`.
+- **Permission handling**: executor returns not-handled, presentation shows permission dialog (Variant A).
+- **Core barrel**: `lib/core/core.dart` extended to cover commands, tools, workspace, chat, keyboard, format.
+- **Build configuration**: `build.yaml` builder paths updated to `lib/core/chat/chat/`.
+
+### Tests
+
+- `test/core/workspace/test_workspace_port_test.dart`: WorkspacePort interface and default implementation tests.
+- `test/core/tools/test_tool_registry_factory_test.dart`: Shared tool registry factory tests.
+- `test/core/commands/`: New test suite for slash-command core:
+  - `test_slash_command_test.dart`
+  - `test_slash_command_catalog_test.dart`
+  - `test_slash_command_executor_test.dart`
+  - `test_skill_template_renderer_test.dart`
+  - `test_skill_command_resolver_test.dart`
+  - `test_command_parser.dart`
+  - `test_command_registry.dart`
+  - `test_command_service.dart`
+- `test_slash_command_navigator.dart`: 6 tests covering cyclic navigation, empty-list safety, and selection matching.
+- `test_thinking_command.dart`: 2 tests verifying `/thinking` toggles `expandReasoningByDefault` via `themeProvider` and is selectable from the navigator.
+- `session_runner_streaming_test.dart`: Updated all deferred-tool-card tests to assert immediate emission; added tests for buffered post-tool reasoning flush, parallel tool waves, and `ToolStarted` ordering.
+- `session_runner_sdk_repro_test.dart`: Updated kilo-style SSE reproduction to expect 3 reasoning parts (pre-tool, buffered post-tool, step-2 thought) with tool cards emitted immediately after the first thought.
+- `test_tool_card_after_reasoning.dart`: Removed unused `events.dart` import; assertions now cover immediate tool-card emission with `ReasoningEnded` before `ToolCalled`.
+
+### Documentation
+
+- **CHANGELOG.md**: Documented the deferred-tool-card removal and `ToolStarted` event addition.
+- **README.md / README_RU.md**: Added support/contribution mention with GitHub and Sponsors links.
+
 ## [Unreleased]
+
+### Added
+
+- **New tests**:
+  - `test/core/workspace/test_workspace_port_test.dart`
+  - `test/core/tools/test_tool_registry_factory_test.dart`
+  - `test/core/commands/` (slash_command, catalog, executor, skill_template_renderer, skill_command_resolver)
+- **Slash command UX improvements**:
+  - `/thinking` command toggles `expandReasoningByDefault` in `themeProvider`, clears input without snackbar feedback.
+  - Cyclic navigation for command and skills popups (`navigateCommandPopup`/`navigateSkillsPopup` wrap around).
+  - Full localization of built-in slash-command descriptions across 6 languages (`slashCommandSkills`, `slashCommandNew`, `slashCommandClear`, `slashCommandCompact`, `slashCommandHelp`, `slashCommandUndo`, `slashCommandRedo`, `slashCommandSessions`, `slashCommandModels`, `slashCommandTheme`, `slashCommandThinking`).
+  - `SlashCommandNavigator` helper class with unit tests (`test_slash_command_navigator.dart`).
+- **Unified chat auto-scroll**:
+  - `ChatMessagesConstants.followBand` (`150.0`) and `userScrolledAwayBand` (`25.0`) are the single source of truth for scroll thresholds across all chat views.
+  - `ChatScrollFollowController` drives auto-scroll identically for parent (`ChatMessagesArea`) and child (`SessionContextWindow`) sessions via `noteGrowth()` / `handleNotification()`.
+  - `chatIsNearBottom(controller, {threshold})` helper centralizes "is the user at the bottom" logic.
+  - `ChatMessages` now accepts an optional external `followController`; when provided, the same controller is shared between parent and child windows.
+  - Widget test added: `test_chat_messages_auto_scroll_widget_test.dart` covers parent auto-scroll, scroll-away suppression, Home/End shortcuts, unmount cleanup, and child-session auto-scroll.
+- **Support the Project**:
+  - New `AboutSupportSection` widget (`lib/gui/features/settings/widgets/about_support_section.dart`) shared by the About dialog and the About settings section.
+  - Three full-width `OutlinedButton` actions: Star on GitHub (`https://github.com/AmidVoshakul/chatorai`), Become a Sponsor (`https://github.com/sponsors/AmidVoshakul`), Share your thoughts (`https://github.com/AmidVoshakul/chatorai/issues`).
+  - GitHub icon rendered via `SvgPicture.asset('assets/provider/github.svg')` with theme-aware `ColorFiltered` recolor, matching the existing provider card pattern.
+  - Links opened through the existing `launchExternalLink` utility (`lib/shared/utils/link_launcher.dart`).
+  - 5 new localization keys added across all 6 languages (`supportProjectTitle`, `supportProjectSubtitle`, `supportStarOnGitHub`, `supportBecomeSponsor`, `supportShareThoughts`).
+
+### Changed
+
+- **Phase A layout refactoring**:
+  - New top-level layout: `lib/core/` (shared business logic, pure Dart), `lib/gui/` (all Flutter: features, shared theme/widgets/utils, keyboard), `lib/tui/` (Nocterm terminal UI, `mcp_tui.dart`), `lib/l10n/` (single localization source, 6 languages, untouched), `lib/shared/` (only pure utilities now), `lib/main.dart` + `lib/providers.dart` stay top-level as composition root.
+  - Domain chat models moved `gui/features/chat/data/models/*` → `core/chat/` (`chat_models.dart` + `chat/*`).
+  - `global_shortcut_handler` moved `core/keyboard` → `gui/keyboard`.
+  - `tool_registry_provider` moved `core/tools` → `gui/features/chat/data/providers/` (GUI wrapper).
+  - `chat_ai_service` + cancellation/retry/tracker moved `gui/services` → `core/chat/services`.
+  - `secure_storage_service` + `secret_storage` back in `shared/`.
+  - `message_utils` barrel → `gui/shared/`.
+  - `core/core.dart` barrel extended (chat, commands, workspace, tools).
+- **Popup visual polish**:
+  - Selected items in `CommandPopup` and `SkillsPopup` now use a gradient background (`ChatoraiColors.orangeJyice` → `theme.colorScheme.primaryContainer`).
+  - `PopupItemDefaults` in `app_theme.dart` centralizes selected-item decoration, icon color, name/description text styles, and dim overlay color.
+  - `AgentMentionPopup` migrated to shared `PopupItemDefaults` styles.
+  - Chat content dims with `ChatoraiColors.black30` when any input popup is open; chat input remains fully visible.
+- **Chat input button styling**:
+  - Action, stop, and agent buttons now accept an optional `BorderRadius` parameter, defaulting to circular when omitted.
+  - Desktop and mobile chat inputs use unified rounded-square buttons with `ChatoraiBorderRadius.md` (`12px`) for a cohesive premium look.
+  - Removed the desktop text-field border so the input area aligns visually with the action buttons and feels lighter.
+  - Reduced desktop text-field vertical padding to `ChatoraiSpacing.xs` for tighter visual height alignment with the 44px buttons.
+- **Event schema**: Added `ToolStarted` event (`session_runner.dart`, `events.dart`, `event_store.dart`, `projector.dart`) emitted alongside `ToolCalled` when a tool begins execution. `projectEvent` projects it as `AssistantTool(state: ToolState.pending)`.
 
 ### Fixed
 
-- **GUI launcher no longer blocks terminal** — running `chatorai` without arguments now launches the GUI in the background and returns control to the shell immediately. CLI commands (`chatorai stats`, `chatorai models`, etc.) remain foreground and preserve exit codes. Added error message if the binary is missing.
-- **Tool-output storage path**: Truncated tool output was previously written to `getApplicationDocumentsDirectory()` (`~/Documents/chatorai/` on Linux), which caused `Path denied` errors when the model later tried to read it back via `read`/`grep`/`glob` because Documents is outside the project root and the path sandbox rejected it. Output is now written to the cross-platform data directory (`~/.local/share/chatorai/tool-output` on Linux, XDG-compliant on other desktops, sandboxed Documents on mobile). The `read`/`grep`/`glob` tools now accept this directory as a managed read root (symlink-safe via `FilesystemBoundary.resolve()`), so the model can read back its own truncated output without permission prompts. Deleted the dead `tool_output_bounding_service.dart` (no callers).
+- **Phase A bugfixes**:
+  - `/new` + `/compact` + `/thinking` unified between palette and typed send via `SlashCommandExecutor`.
+  - Partial-match popup filters by first word only.
+  - `$0` placeholder guard in skill template renderer.
+  - Null-check after skill service load in `SlashCommandHandler`.
+  - Magic numbers for `/skills` parsing replaced with constants.
+  - Double filtering removed from `CommandPopup`.
+  - Chat input desktop buttons fixed to 44px (Row stretch → end alignment).
+  - Workspace test teardown restores `Directory.current`.
+- **Popup visibility propagation**: `onPopupVisibilityChanged` callback threaded from `ChatScreen` → layout widgets → `ChatLayoutContent` → dim overlay, ensuring chat content dims correctly when any input popup is open.
+- **Tool-card display order**: Tools no longer appear mid-thought. Reasoning blocks are closed before tool cards are emitted, and subsequent reasoning after a tool becomes a separate block — restoring the visual order `thought → tool → tool → thought → answer`.
+- **Child-session scroll and auto-scroll stability**:
+  - Removed auto-scroll-to-bottom on session open for child windows; pages now respect the user's saved scroll position when swiping between siblings.
+  - `PageController.keepPage: true` + `AutomaticKeepAliveClientMixin` preserve scroll position across sibling page changes.
+  - `_ensureTitle` race condition fixed: a monotonic request ID prevents stale async responses from overwriting the active title during fast swipes.
+  - `SessionContextWindow` now accepts an explicit `followController`, eliminating implicit internal instances in child sessions.
+  - `ChatMessages._signature` now hashes all messages (`id`, `content`, `isComplete`, `role`) so mid-list edits invalidate the cache correctly.
+  - `ChatScrollFollowController.noteGrowth()` schedules the snap via a post-frame callback with coalescing (`_scrollScheduled`), preventing multiple redundant scrolls per frame.
+  - Bottom snap uses `animateTo(30ms)` instead of `jumpTo()` so the scroll tracks new content dimensions after layout, eliminating the text-vs-bubble desync during streaming and after tool cards appear.
+
+### Tests
+
+- `test/core/workspace/test_workspace_port_test.dart`: WorkspacePort interface and default implementation tests.
+- `test/core/tools/test_tool_registry_factory_test.dart`: Shared tool registry factory tests.
+- `test/core/commands/`: New test suite for slash-command core:
+  - `test_slash_command_test.dart`
+  - `test_slash_command_catalog_test.dart`
+  - `test_slash_command_executor_test.dart`
+  - `test_skill_template_renderer_test.dart`
+  - `test_skill_command_resolver_test.dart`
+  - `test_command_parser.dart`
+  - `test_command_registry.dart`
+  - `test_command_service.dart`
+- `test_slash_command_navigator.dart`: 6 tests covering cyclic navigation, empty-list safety, and selection matching.
+- `test_thinking_command.dart`: 2 tests verifying `/thinking` toggles `expandReasoningByDefault` via `themeProvider` and is selectable from the navigator.
+- `session_runner_streaming_test.dart`: Updated all deferred-tool-card tests to assert immediate emission; added tests for buffered post-tool reasoning flush, parallel tool waves, and `ToolStarted` ordering.
+- `session_runner_sdk_repro_test.dart`: Updated kilo-style SSE reproduction to expect 3 reasoning parts (pre-tool, buffered post-tool, step-2 thought) with tool cards emitted immediately after the first thought.
+- `test_tool_card_after_reasoning.dart`: Removed unused `events.dart` import; assertions now cover immediate tool-card emission with `ReasoningEnded` before `ToolCalled`.
+
+### Documentation
+
+- **CHANGELOG.md**: Documented the deferred-tool-card removal and `ToolStarted` event addition.
 
 ## [0.1.1]
 
 ### Added
 
-- **Recent models** on the model-selection screen: a horizontal "stories"-style strip of the top-6 most recently and frequently used models, with a localized "Recent" header (English, Russian, Ukrainian, Chinese, Japanese, Arabic).
-- `ModelState` now tracks per-model `usageCounts` and `lastUsed` timestamps, persisted in `SharedPreferences` (`model_usage_counts`, `model_last_used`) alongside favorites. `setSelectedModel` increments the usage count and refreshes `lastUsed`.
-- `ModelState.recentModels` getter: top-6 models merged by usage count (desc) then last-used timestamp (desc), limited to currently available models.
-- Unit tests for the `recentModels` ranking logic in `test/features/models/providers/model_provider_recent_test.dart`.
+- **Skills marketplace and management UI**: Skills management screen with install/uninstall, marketplace catalog with 100+ bundled skills, skill writer for custom skills, instructions management with per-project/global instructions, MCP server management with add/edit/delete and marketplace integration.
+- **CLI expansion**: New `chatorai` CLI commands for install/uninstall/path management, MCP TUI, config writer with atomic writes, instructions resolver, agents file service, spinner and style utilities, cross-platform install/uninstall scripts for Linux/macOS/Windows.
+- **Session and context improvements**: Child-session routing for parallel task delegation, active session spinner in sidebar and workspace, session context usage provider with ring indicator and popup, token/cache math refinement (`UsageCacheTokens`, `UsageRawData`, `tokensCacheIncludedInInput`), compaction orchestrator with background service.
+- **Permission and security**: Auto-approve settings screen with 14 permission categories, live config reload via `ConfigWatcher`, wildcard-based `external_directory` permissions with recursive glob patterns, `PathDeniedException` + `isHardDenied` for dangerous paths, `DangerousCharacterPolicy` softened to `review`.
+- **Link and tool UX**: Link confirmation dialog for http/https links, document extraction tools (PDF/DOCX/XLSX), tool output truncation with managed read-back directory, tool title/path detection improvements, shell output redesign with terminal-style rendering.
+- **Localization**: 6-language ARB updates (en/ru/uk/zh/ja/ar) with 398+ keys, restored missing localization keys, new strings for auto-approve, context usage, MCP, skills, settings.
+- **Provider and model UX**: Provider catalog with 24h cache, custom provider management, model selection dialog with recent models strip, 22 SVG provider icons, Amazon Bedrock provider with auth validation, provider options pattern for headers/body merging.
+- **Tests**: 100+ new unit/widget/integration tests covering CLI, config, permissions, MCP, skills, sessions, tools, models, path sandbox, secret storage, task container, tool title widget, session runner holder.
 
-- **MCP server dialog: environment, headers and Raw JSON** — the "Add MCP server" dialog now supports optional `environment` (local) and `headers` (remote) JSON fields so token-authenticated servers (e.g. GitHub) can be added from the GUI. A "Raw JSON" tab lets users paste a single server object exactly as shown in server docs. Invalid JSON is rejected with an inline error and the server is not saved. Parsing/validation lives in `lib/features/settings/screens/mcp_add_server_helpers.dart`; added widget and unit tests in `test/features/settings/screens/mcp_add_server_helpers_test.dart` and `test/features/settings/screens/mcp_servers_screen_test.dart`.
-- `McpServerConfig.fromJson` now throws `ArgumentError` (instead of a raw cast error) when a local server has no `command` or a remote server has no `url`, giving clear validation messages for malformed server declarations.
-- **MCP spec-compliant server types**: `McpServerType.fromValue` now accepts `http`, `https`, and `sse` as aliases of `remote` (and `stdio` of `local`), case-insensitively. Spec-style configs such as `{"type": "http", "url": "https://mcp.context7.com/mcp"}` now parse correctly instead of failing with `Unknown MCP server type: http`. Remote servers connect via `StreamableHttpClientTransport`.
-- **MCP Marketplace**: the MCP servers screen now has two tabs — **Marketplace** and **Installed**. Marketplace lists 15 preconfigured, cross-platform remote servers (Exa, Context7, Hugging Face, Parallel, Tavily, GitHub, Postman, Slack, Figma, Canva, Stripe, Trivago, Send, ZipRecruiter, Adobe) with a search field, category filter chips (Search/Docs/Design/Dev/Finance/Travel/Jobs/Productivity/Social), and premium cards that expand to a full description on tap. One-tap **Install** adds the server to Installed exactly like a manual add (without a token); installed servers show an **Installed** badge and stay on the Marketplace tab. Catalog lives in `lib/core/mcp/mcp_marketplace_catalog.dart`; descriptions localized in all 6 languages.
+### Changed
 
-- **MCP add dialog simplified for end users**:
-  - **Raw JSON tab**: paste a whole server object exactly as in the docs — the server `name` is the OUTER key (e.g. `"searxng": { ... }`); no need to retype the name. Legacy form with `name` inside is still accepted.
-  - **Remote form**: replaced the free-form `headers` JSON field with a single **Access token** field plus a **Token type** selector (`Bearer` → `Authorization: Bearer …`, `ApiKey` → `X-Api-Key: …`, `Token` → `Authorization: …`). The token is wrapped into the correct header automatically — no JSON or quotes to type.
-  - Local form (name / type / command / environment) is unchanged.
-  - **Raw JSON now accepts the docs format verbatim**: the `mcpServers` wrapper (and `servers` / `mcp`) is unwrapped transparently, so users can paste the whole block from the MCP docs (`{"mcpServers": {"sequential-thinking": {...}}}`). The short form (`{"sequential-thinking": {...}}`), the legacy `name`-inside form, and one-server-per-paste rule are all preserved. Saved servers still use the existing flat `mcp` layout in `chatorai.json`.
+- **ChatScreen consolidation**: Merged 8 part files into single `chat_screen.dart`; `ChatActions` now handles compaction; `ChatAiService` migrated to `ai_sdk_dart` v2.
+- **Permission system**: `shell` default changed from `allow` to `ask`; `read`/`glob`/`grep` remain `allow`; `question`/`todowrite`/`task` default to `ask`; `external_directory` uses recursive glob patterns.
+- **Tool registry**: 21 unconditional + 3 conditional tools; `tool_output_persistence.dart` and `tool_permission.dart` removed; execution now uses `ToolExecutor` with doom-loop guard and cache deduplication.
+- **Session event schema**: Added `ToolStarted`, `TaskPartStarted/Completed/Error`, `QuestionPartStarted/Answered`, `StepStarted/Ended/Failed`, `CompactionStarted/Ended`, `ChildSessionCreated`; `SessionRunnerSession` tracks explicit part IDs.
+
+### Fixed
+
+- **Retry backoff**: `onChunkReceived` now triggered for all stream events (reasoning, tool results, tool errors, start/end signals), preventing exponentially increased delays mid-stream.
+- **Android database hang**: `createFileDatabase()` no longer imports `xdg_paths_cli.dart`; requires explicit `dataDir` parameter; Flutter-aware `xdg_paths.dart` used on Android.
+- **Tool-output storage**: Truncated output written to cross-platform data directory instead of `getApplicationDocumentsDirectory()`; `read`/`grep`/`glob` tools accept managed read roots.
+- **SelectionArea crash**: `SelectionArea` keyed on `itemCount` to prevent stale selection indices during streaming.
+- **Recursive external-directory permissions**: Single "Always" grant covers entire directory tree via `dirname(path)/*` glob; over-broad whole-disk grants prevented.
+
+### Documentation
+
+- **docs/API.md**: Added `sessionContextUsageProvider`, `UsageCallback`, `UsageCacheTokens`, `UsageRawData`, `extractUsageRawData`, `resolveUsage`. Updated `AssistantMessage` fields, tool count to 21, `SessionRunner` signatures, permission defaults.
+- **docs/COMMANDS.md**: Updated tool list and permission table to match code; removed redundant input schema column.
+- **docs/CONFIGURATION.md**: Added `skills`, `compaction`, `formatter` config sections; completed default rules table; fixed `provider` section.
+- **docs/ENVIRONMENT.md**: Updated `ai_sdk_dart` to `^2.0.0`, corrected Dart SDK to 3.11.0.
+- **docs/ROADMAP.md**: Created roadmap documenting completed milestones and future plans.
+- **docs/diagrams/**: New mermaid architecture diagrams (overview, sessions, tools, mcp) with corrected ER diagrams and state machines.
+- **ARCHITECTURE.md**: Updated file lists, tool layer description, removed references to deleted files.
 
 ## [0.1.0]
 
@@ -42,8 +215,8 @@ First public release.
 
 ### Changed
 
-- **Bash tool security policy**: Changed default `bash` permission from `allow` to `ask` in `PermissionRuleset.defaults()`. Removed `DangerousCharacterPolicy` from `lib/core/tools/built_in/bash.dart` that was overly aggressive in flagging safe shell metacharacters (`|`, `>`, `<`, `&`) as `highRisk`. Safe commands (`find`, `echo hello | cat`, etc.) now run without prompts; medium/high-risk commands (`echo foo; echo bar`, `rm -rf /`, blocked executables) trigger permission dialogs. Nothing is harshly denied — only `ask` or `allow`.
-- **Sensitive env file protection**: Added `*.env` and `*.env.*` to default `read` permission rules as `ask`. Added `ArgumentPatternPolicy` in bash tool to detect `cat/less/more/head/tail/vi/vim/nvim/nano .env` commands as `highRisk` review. `.env.example` remains `allow`.
+- **Shell tool security policy**: Changed default `shell` permission from `allow` to `ask` in `PermissionRuleset.defaults()`. Removed `DangerousCharacterPolicy` from `lib/core/tools/built_in/shell.dart` that was overly aggressive in flagging safe shell metacharacters (`|`, `>`, `<`, `&`) as `highRisk`. Safe commands (`find`, `echo hello | cat`, etc.) now run without prompts; medium/high-risk commands (`echo foo; echo bar`, `rm -rf /`, blocked executables) trigger permission dialogs. Nothing is harshly denied — only `ask` or `allow`.
+- **Sensitive env file protection**: Added `*.env` and `*.env.*` to default `read` permission rules as `ask`. Added `ArgumentPatternPolicy` in shell tool to detect `cat/less/more/head/tail/vi/vim/nvim/nano .env` commands as `highRisk` review. `.env.example` remains `allow`.
 - **Explicit Part IDs**: `SessionRunnerSession` now tracks explicit part IDs for text, reasoning, and tool-related content segments.
 - **QuestionOption Model**: New `QuestionOption` model supports richer interactive questions with `multiple` selection support.
 - **ShortcutHandler & AppShortcuts**: Centralized keyboard shortcut management widget.
@@ -55,16 +228,16 @@ First public release.
 - **AssistantQuestion Multiple Selection**: `AssistantQuestion` now supports `multiple` boolean for multi-select questions.
 - **ChatScreen Refactor**: Split into focused files (`chat_screen_ai.dart`, `chat_screen_edits.dart`, `chat_screen_build.dart`, `chat_screen_messaging.dart`, `chat_screen_management.dart`, `chat_screen_navigator.dart`, `chat_screen_part_placeholder.dart`).
 - **Widget Parts Split**: Tool body and display widgets separated into individual files:
-  `_bash_body_widget.dart`, `_read_body_widget.dart`, `_grep_body_widget.dart`,
+  `_shell_body_widget.dart`, `_read_body_widget.dart`, `_grep_body_widget.dart`,
   `_write_body_widget.dart`, `_edit_body_widget.dart`, `_lsp_body_widget.dart`,
   `_patch_body_widget.dart`, `_generic_body_widget.dart`, `_diff_line_widget.dart`,
   `_webfetch_body_widget.dart`, `_tool_icon.dart`, `_tool_title.dart`.
   49 new tests added.
-- **Widget Refactoring Phase 2**: Extracted shared formatting utilities to `lib/shared/utils/format_utils.dart` with `formatTokenCount`, `tokenDisplay`, `formatDurationMs`, `formatDuration`, and `bashPreview` to eliminate code duplication across `action_row.dart`, `task_part_widget.dart`, and `reasoning_part_widget.dart`.
+- **Widget Refactoring Phase 2**: Extracted shared formatting utilities to `lib/shared/utils/format_utils.dart` with `formatTokenCount`, `tokenDisplay`, `formatDurationMs`, `formatDuration`, and `shellPreview` to eliminate code duplication across `action_row.dart`, `task_part_widget.dart`, and `reasoning_part_widget.dart`.
 - **UserMessageEdit Widget**: Extracted user message editing interface from `ChatMessageBubble` into a dedicated `lib/features/chat/presentation/widgets/parts/user_message_edit.dart` file, reducing `ChatMessageBubble` responsibility to message dispatching only.
 - **Unified ContinuationSuggestions**: Removed duplicate `_ContinuationSuggestions` from `assistant_bubble.dart`; now uses the shared `ContinuationSuggestions` from `action_menu_button.dart`.
 - **Renamed tool body widgets** (removed underscore prefix for consistency):
-  - `_bash_body_widget.dart` → `bash_body.dart`
+  - `_shell_body_widget.dart` → `shell_body.dart`
   - `_read_body_widget.dart` → `read_body.dart`
   - `_grep_body_widget.dart` → `grep_body.dart`
   - `_write_body_widget.dart` → `write_body.dart`
@@ -76,7 +249,7 @@ First public release.
   - `_diff_line_widget.dart` → `diff_line.dart`
   - `_tool_icon.dart` → `tool_icon.dart`
   - `_tool_title.dart` → `tool_title.dart`
-- **Eliminated duplicate `bashPreview`**: Removed duplicate implementation from `tool_result_part_widget.dart`; now imports and uses the shared version from `format_utils.dart`.
+- **Eliminated duplicate `shellPreview`**: Removed duplicate implementation from `tool_result_part_widget.dart`; now imports and uses the shared version from `format_utils.dart`.
 - **Centralized duration formatting**: `task_part_widget.dart` and `reasoning_part_widget.dart` now use shared `formatDurationMs(int?)` and `formatDuration(Duration)` from `format_utils.dart`.
 - **Empty directory cleanup**: Confirmed empty `lib/features/chat/presentation/widgets/chat/` directory already removed.
 
@@ -84,7 +257,7 @@ First public release.
 
 - **Linter warnings**: Resolved unused imports and dangling library doc comments introduced during refactoring. `flutter analyze` reports zero issues.
 - **Unused imports cleaned up**: Removed stale imports from `chat_message_bubble.dart`, `user_message_edit.dart`, and `format_utils.dart`.
-- **Bash tool security policy**: Changed command_shield policies in `lib/core/tools/built_in/bash.dart` from immediate `deny` to `review` (ask-permission flow). `DangerousCharacterPolicy` now returns `review` at `highRisk` level; `ArgumentPatternPolicy` for `chmod` and redirect patterns now return `review`; `ExecutableBlockListPolicy` uses `onMatch: CommandDecision.review`; replaced `RiskThresholdPolicy` with custom `_ReviewOnlyPolicy` that never denies and always asks permission for `mediumRisk` and above. Removed duplicate blocked-executable deny check. Verified with `dart analyze` (clean) and `flutter test test/integration/bash_integration_test.dart` (15/15 passed). Goal: commands such as `curl`, `rm -rf`, and `npm` now trigger a permission dialog instead of being immediately blocked.
+- **Shell tool security policy**: Changed command_shield policies in `lib/core/tools/built_in/shell.dart` from immediate `deny` to `review` (ask-permission flow). `DangerousCharacterPolicy` now returns `review` at `highRisk` level; `ArgumentPatternPolicy` for `chmod` and redirect patterns now return `review`; `ExecutableBlockListPolicy` uses `onMatch: CommandDecision.review`; replaced `RiskThresholdPolicy` with custom `_ReviewOnlyPolicy` that never denies and always asks permission for `mediumRisk` and above. Removed duplicate blocked-executable deny check. Verified with `dart analyze` (clean) and `flutter test test/integration/shell_integration_test.dart` (15/15 passed). Goal: commands such as `curl`, `rm -rf`, and `npm` now trigger a permission dialog instead of being immediately blocked.
 
 ### Documentation
 
@@ -98,7 +271,7 @@ First public release.
   - `sessions.md`: Drift ER diagram corrected (all column names/types match `database.dart`/`schema.dart`; added missing columns: `cost`, `tokensInput/Output/Reasoning/CacheRead/CacheWrite`, `permissionRules`, `seq`, `promptText`, `agent`, `modelRef`, `status`); state machine added missing events (`StepFailed`, `TaskStarted/Completed`, `TaskPart*`, `QuestionPart*`, `TodoPart*`); removed non-existent `ToolCalled` event; noted `SessionState` is `Equatable` not `freezed`; corrected `replayEvents()` signature and `projectEvent()` as pure function.
   - `tools.md`: Corrected conditional registration — `skill` is conditional (not unconditional); all 3 conditionals are independent `if` statements (not sequential); fixed doom-loop constant to 3 steps; corrected execution flow order.
   - `mcp.md`: Fixed `McpConnectionStatus` enum values (`connected/disabled/failed/needsAuth/needsClientRegistration`, not `Disconnected/Connecting/Connected/Error`); `McpOAuthConfig` corrected (`scope` singular not `scopes`, no `tokenUrl`, added `callbackPort` and `redirectUri`); `McpCallResult.content` corrected from `dynamic` to `List<McpContentPart>`; `McpConfig.defaultTimeout` corrected to `int?`; added missing `enabled`, `timeout`, `cwd`, `environment` on `McpServerConfig`.
-- **docs/API.md** (additional corrections): Fixed `SessionRunner` section — `startSession()` is synchronous (not `Future<...>`); `startInitializedSession()` has `SessionID? sessionId` parameter; `runTaskInChild()` returns `Future<TaskChildResult>` (not `Future<void>`), has `SessionRunnerHolder? holder` parameter; removed non-existent `sdk.CancellationToken? abortSignal`; fixed Chinese character artifact (`Session跑了` → `SessionRunner`); corrected `SessionRunnerSession` fields — `sessionId` (not `id`), `createdAt` does not exist; added note that most session fields are private. Fixed `PermissionRequest` example — `permission: 'execute'` changed to `permission: 'bash'`. Fixed tool defaults table — `format`, `json_schema`, `apply_patch`, `invalid`, `plan_exit` have no `defaults()` entry (fallback `ask`); `skill` is conditional not unconditional; corrected unconditional count to 16.
+- **docs/API.md** (additional corrections): Fixed `SessionRunner` section — `startSession()` is synchronous (not `Future<...>`); `startInitializedSession()` has `SessionID? sessionId` parameter; `runTaskInChild()` returns `Future<TaskChildResult>` (not `Future<void>`), has `SessionRunnerHolder? holder` parameter; removed non-existent `sdk.CancellationToken? abortSignal`; fixed Chinese character artifact (`Session跑了` → `SessionRunner`); corrected `SessionRunnerSession` fields — `sessionId` (not `id`), `createdAt` does not exist; added note that most session fields are private. Fixed `PermissionRequest` example — `permission: 'execute'` changed to `permission: 'shell'`. Fixed tool defaults table — `format`, `json_schema`, `apply_patch`, `invalid`, `plan_exit` have no `defaults()` entry (fallback `ask`); `skill` is conditional not unconditional; corrected unconditional count to 16.
 - **docs/ENVIRONMENT.md**: Corrected Dart SDK version from 3.9 to 3.11.0 (matching `pubspec.yaml`).
 - **docs/ROADMAP.md**: Created roadmap documenting completed milestones and future plans.
 - **lib/l10n/app_en.arb / app_ru.arb**: Restored 19 missing localization keys to match the canonical 398-key set used by `app_uk.arb`, `app_zh.arb`, `app_ja.arb`, and `app_ar.arb`.
@@ -119,7 +292,7 @@ First public release.
 - **Provider options pattern**: `ProviderConfig` gained `buildProviderOptions()` and `buildProviderHeaders()` methods, for merging provider defaults, model metadata, and variant-specific fields.
 - **Compaction orchestrator**: `CompactionOrchestrator` now receives a real `CompletionProvider` via constructor injection and no longer uses the stub implementation. Integrated with `SessionRepository` for event persistence across compaction cycles.
 
-- **Tool Execution Loop**: 16 built-in tools (`bash`, `read`, `edit`, `write`, `glob`, `grep`, `webfetch`, `websearch`, `apply_patch`, `todowrite`, `task`, `question`, `invalid`, `external_directory`, `json_schema`, `plan`, `lsp`, `format`, `skill`) with `streamChatCompletion` integration via `SessionRunner`, max 5 steps per turn, auto-compaction on overflow.
+- **Tool Execution Loop**: 16 built-in tools (`shell`, `read`, `edit`, `write`, `glob`, `grep`, `webfetch`, `websearch`, `apply_patch`, `todowrite`, `task`, `question`, `invalid`, `external_directory`, `json_schema`, `plan`, `lsp`, `format`, `skill`) with `streamChatCompletion` integration via `SessionRunner`, max 5 steps per turn, auto-compaction on overflow.
 - **Permission System**: Default ruleset (`read`/`glob`/`grep` = allow, rest = ask) with `chatorai.json` configuration, last-match-wins evaluator, Once/Always/Reject modal dialog.
 - **@-mention Subagent System**: Quick agent invocation (`@explore`, `@general`, etc.) with fuzzy search dropdown above chat input. Agent registry with predefined subagents.
 - **Tool Display**: Inline icons with state indicators (pending/running/completed/error), expandable outputs, standardized title formatting.
@@ -147,6 +320,8 @@ First public release.
 
 ### Fixed
 
+- **Retry backoff not resetting mid-stream**: `ChatRetryService.onChunkReceived` was only triggered for `StreamTextTextDeltaEvent`. After receiving reasoning deltas, tool results, or tool errors, the retry attempt counter was not reset, causing subsequent retries to use exponentially increased delays (16–32 s) instead of starting from the base delay. Fixed by calling `onChunkReceived` for all meaningful stream events (`reasoning-delta`, `tool-result`, `tool-error`, `reasoning-start/end`, `tool-input-*`, `usage`, `source`, `file`, `start-step`, `finish-step`, `finish`).
+
 - **Android database hang**: `createFileDatabase()` in `lib/core/session/database.dart` no longer imports `xdg_paths_cli.dart`. The function now requires an explicit `dataDir` parameter and creates the directory inline with `Directory(dataDir).create(recursive: true)`. `session_db_provider.dart` imports the Flutter-aware `xdg_paths.dart` and passes `await XdgPaths.dataHomeAsync`, which resolves to the app's sandboxed support directory on Android. `bin/chatorai.dart` passes `XdgPaths.dataHome` from `xdg_paths_cli.dart`. Removed temporary `.timeout(10s)` debug wrapper from `chat_screen_messaging.dart`; removed unused `import 'dart:async'` from `chat_screen.dart`.
 
 ## Earlier development
@@ -170,7 +345,6 @@ First public release.
 
 - **lib/core/tools/tool_registry_provider.dart [COMPLETED]** — Fixed permission defaults merging: defaults are applied first, config overrides on top. When `config.permission` is non-empty, the merged ruleset preserves default `allow` rules for tools not explicitly overridden in the config (e.g., `websearch`, `webfetch`, `skill`, `lsp`, `task`, `question`, `todowrite`), preventing unintended fallback to `ask`.
 - **lib/core/permission/permission_service.dart [REFACTORED]** — Removed cross-session persistence from "Always allow". Session scoping added via `_sessionId` field: `_approved` is cleared automatically when `sessionId` changes in `ask()`. Removed `SharedPreferences` import and persistence methods. Deprecated `clearRateLimitHistory()` as an alias for `clearSession()`.
-- **lib/features/chat/presentation/widgets/parts/\_tool_title.dart [COMPLETED]** — Fixed path key detection by adding `file_path` fallback alongside `path` and `filePath`. Appended `$args` to the `write` case header. Bash header now shows `# $description` when a description exists, otherwise falls back to `toolName`. Fixed `skill` title to use `input['name']` instead of path. MCP/unknown tools now display `toolName [args]` when args are present.
-- **lib/features/chat/presentation/widgets/parts/tool_result_part_widget.dart [COMPLETED]** — Complete terminal-style bash output redesign: uniform background (`Colors.black26` / `Colors.white38`), monospaced `$` prompt with command on the same row, `SingleChildScrollView` with `SelectableText` for output, and copy button with "✅ Copied" timer feedback. Bash body is always visible (not hidden behind `AnimatedCrossFade`); collapsed state renders `_bashPreview` (max 10 lines / 500 chars), expanded state renders full output. Standardized all tool header opacity to `0.5`. Unified terminal color across prompt, command, and result using `onSurface` at `alpha: 0.7`.
-- **lib/core/tools/tool_registry.dart [COMPLETED]** — Fixed JSON wrapping in tool result streaming. `executeDynamic` now extracts the plain text output key from `Map<String, dynamic>` results (`'output'`, then `'message'`, then `toString()` fallback) before returning to the SDK. Eliminates the nested `{"output":"...","metadata":{...}}` JSON wrapping previously produced for all tool results (bash, read, grep, write, edit, etc.).
-
+- **lib/features/chat/presentation/widgets/parts/\_tool_title.dart [COMPLETED]** — Fixed path key detection by adding `file_path` fallback alongside `path` and `filePath`. Appended `$args` to the `write` case header. Shell header now shows `# $description` when a description exists, otherwise falls back to `toolName`. Fixed `skill` title to use `input['name']` instead of path. MCP/unknown tools now display `toolName [args]` when args are present.
+- **lib/features/chat/presentation/widgets/parts/tool_result_part_widget.dart [COMPLETED]** — Complete terminal-style sjell output redesign: uniform background (`Colors.black26` / `Colors.white38`), monospaced `$` prompt with command on the same row, `SingleChildScrollView` with `SelectableText` for output, and copy button with "✅ Copied" timer feedback. Shell body is always visible (not hidden behind `AnimatedCrossFade`); collapsed state renders `_shellPreview` (max 10 lines / 500 chars), expanded state renders full output. Standardized all tool header opacity to `0.5`. Unified terminal color across prompt, command, and result using `onSurface` at `alpha: 0.7`.
+- **lib/core/tools/tool_registry.dart [COMPLETED]** — Fixed JSON wrapping in tool result streaming. `executeDynamic` now extracts the plain text output key from `Map<String, dynamic>` results (`'output'`, then `'message'`, then `toString()` fallback) before returning to the SDK. Eliminates the nested `{"output":"...","metadata":{...}}` JSON wrapping previously produced for all tool results (shell, read, grep, write, edit, etc.).

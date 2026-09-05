@@ -1,7 +1,7 @@
 enum PermissionAction { allow, ask, deny }
 
 class PermissionRule {
-  final String permission; // "read", "edit", "bash", "webfetch", "*"
+  final String permission; // "read", "edit", "shell", "webfetch", "*"
   final String pattern; // glob-like: ".env", "*.ts", "git *"
   final PermissionAction action;
 

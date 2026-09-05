@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:chatorai/shared/theme/markdown_styles.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/gui/shared/theme/markdown_styles.dart';
+import 'package:chatorai/gui/shared/theme/app_theme.dart';
 
 void main() {
   group('ChatoraiMarkdownStyles', () {

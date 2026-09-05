@@ -33,6 +33,17 @@
   "showContinuationSuggestionsDesc": "Display suggested follow-up messages after AI responses",
   "expandReasoningByDefault": "Expand reasoning by default",
   "expandReasoningByDefaultDesc": "Show reasoning/thought blocks expanded when AI responds",
+  "slashCommandSkills": "Show available skills",
+  "slashCommandNew": "Start a new chat",
+  "slashCommandClear": "Clear current chat",
+  "slashCommandCompact": "Compress conversation context",
+  "slashCommandHelp": "Show help",
+  "slashCommandUndo": "Undo last action",
+  "slashCommandRedo": "Redo last undone action",
+  "slashCommandSessions": "List sessions",
+  "slashCommandModels": "Select model",
+  "slashCommandTheme": "Change theme",
+  "slashCommandThinking": "Toggle reasoning visibility",
   "language": "Language",
   "english": "English",
   "russian": "Russian",
@@ -45,6 +56,16 @@
   "save": "Save",
   "cancel": "Cancel",
   "close": "Close",
+  "errorLoadingChat": "Failed to load chat: {error}",
+  "@errorLoadingChat": {
+    "type": "text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmOpenLink": "Are you sure you want to open:",
   "copy": "Copy",
   "apiKeyCopied": "API key copied",
   "apiKeySaved": "API key saved",
@@ -86,6 +107,21 @@
   "refresh": "Refresh",
   "details": "Details",
   "context": "Context",
+  "contextMessages": "Context: {used} / {usable} tokens ({percent}%)",
+  "contextInstructions": "Instructions",
+  "contextAgentPrompt": "Agent prompt",
+  "contextUserPrompt": "User prompt",
+  "contextCompactSession": "Compact session",
+  "contextCompacting": "Compacting…",
+  "contextUsageBreakdown": "Usage breakdown",
+  "contextPromptTokens": "Input tokens",
+  "contextOutputTokens": "Output tokens",
+  "contextCacheRead": "Cache read",
+  "contextCacheWrite": "Cache write",
+  "contextToolTokens": "Tool tokens",
+  "contextSpentLabel": "Spent",
+  "contextTokensIncludedInPrompt": "Tool tokens included in prompt",
+  "contextAutoCompactAt": "Auto-compact at {percent}% · {buffer} tokens",
   "free": "Free",
   "paid": "Paid",
   "multimodal": "Multimodal",
@@ -140,6 +176,22 @@
   "messageShared": "Message shared",
   "failedToShareMessage": "Failed to share message",
   "edit": "Edit",
+  "editToolTitle": "Edit {path}",
+  "@editToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "patchToolTitle": "Patch {path}",
+  "@patchToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "share": "Share",
   "copyMessage": "Copy message",
   "delete": "Delete",
@@ -357,6 +409,11 @@
   "systemPrompt": "System Prompt",
   "systemPromptDescription": "Instructions that define how the AI behaves",
   "systemPromptSuggestion": "You are a helpful assistant.",
+  "supportBecomeSponsor": "Become a Sponsor",
+  "supportProjectSubtitle": "If you enjoy using ChatORAI, please consider supporting the project by:",
+  "supportProjectTitle": "Support the Project",
+  "supportShareThoughts": "Share your thoughts",
+  "supportStarOnGitHub": "Star on GitHub",
   "temperature": "Temperature",
   "temperatureDescription": "Higher values make output more random",
   "toggleNavigatorTooltip": "Toggle navigation",
@@ -397,6 +454,10 @@
   "startListening": "Start voice input",
   "stopListening": "Stop voice input",
   "listening": "Listening...",
+  "linkCancel": "Cancel",
+  "linkCopied": "Link copied",
+  "linkOpen": "Open",
+  "linkOpenFailed": "Failed to open link",
   "sendMessage": "Send message",
   "maxTokens": "Max Tokens",
   "maxTokensDescription": "Maximum length of generated response",
@@ -522,6 +583,32 @@
   "mcpMarketDescSend": "Send helps users create shareable documents, one-page docs, presentations, and slides. Its connector lets assistants turn requested materials into published links, interactive pages, and trackable deliverables for recipients.",
   "mcpMarketDescZiprecruiter": "ZipRecruiter helps users search live jobs by title, company, location, salary, distance, work style, employment type, and posting date. Its connector integrates job-search context into assistant workflows before handing applications back to ZipRecruiter.",
   "mcpMarketDescAdobeCreativity": "Adobe for Creativity unites Photoshop, Lightroom, Illustrator, Firefly, Premiere, Express, InDesign, and Stock with AI-driven creative work. Users can generate, edit, and enhance photos, design assets, and video projects using natural language while work stays tied to their Adobe account.",
+  "mcpInstallToGlobal": "Install to Global",
+  "mcpInstallToProject": "Install to Project",
+  "mcpScopeGlobal": "Global",
+  "mcpScopeProject": "Project",
+  "mcpScopeGlobalProject": "Global + Project",
+  "mcpRemoveFromScope": "Remove from {scope}",
+  "@mcpRemoveFromScope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "mcpRemoveFromAll": "Remove from all",
+  "mcpTokenDialogTitle": "Authentication",
+  "mcpTokenDialogTitleHint": "Choose how to authenticate with this server",
+  "mcpTokenInputLabel": "Token",
+  "mcpTokenInputHint": "Paste your access token",
+  "mcpTokenInputHelper": "Sent as Authorization: Bearer <token>",
+  "mcpOAuthClientIdLabel": "Client ID",
+  "mcpOAuthClientIdHint": "OAuth 2.1 client ID",
+  "mcpOAuthClientSecretLabel": "Client Secret",
+  "mcpOAuthClientSecretHint": "OAuth 2.1 client secret (optional)",
+  "mcpOAuthScopeLabel": "Scope",
+  "mcpOAuthScopeHint": "e.g. read write",
+  "mcpAuthConfirm": "Confirm",
   "agentsInstructions": "Agents Instructions",
   "agentsInstructionsSubtitle": "Manage AGENTS.md and custom instruction files",
   "agentsMdHint": "# Project rules\n- Be concise\n- Write tests first",
@@ -586,24 +673,40 @@
   "skillsReadOnly": "Read-only",
   "skillsFilesCount": "{count} files",
   "@skillsFilesCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "skillsCreated": "Skill created",
   "skillsSaved": "Skill saved",
   "skillsRemoved": "Skill removed",
   "skillsInstalled": "Installed {count} skill(s)",
   "@skillsInstalled": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "skillsInstallNone": "No skills found at that URL",
   "skillsRemoveTitle": "Remove skill",
   "skillsRemoveContent": "Remove \"{name}\"? This deletes its folder from disk.",
   "@skillsRemoveContent": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "skillsSaveError": "Could not complete: {error}",
   "@skillsSaveError": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "skillsEmpty": "No skills yet",
   "skillsEmptyHint": "Create a skill or install one from a URL to get started.",
@@ -615,7 +718,13 @@
   "skillsInstallToGlobal": "Install to Global",
   "skillsInstallToProject": "Install to Project",
   "skillsInstalledToast": "{name} · installed",
-  "@skillsInstalledToast": { "placeholders": { "name": { "type": "String" } } },
+  "@skillsInstalledToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "skillsTabGlobalTooltip": "Skills available in every project",
   "skillsTabProjectTooltip": "Skills scoped to this project",
   "skillsTabMarketplaceTooltip": "Browse and install ready-made skills",
@@ -632,5 +741,102 @@
   "commonCancel": "Cancel",
   "commonAdd": "Add",
   "commonRemove": "Remove",
-  "commonEdit": "Edit"
+  "commonEdit": "Edit",
+  "toolResultOriginal": "Original",
+  "toolResultRestore": "Restore",
+  "toolResultRestoredSnackbar": "Files restored to before-edit state",
+  "toolResultOriginalTitle": "Original content before edit",
+  "restoreFailed": "Restore failed: {error}",
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "compactingIndicator": "Compacting...",
+  "compactionAgentName": "Compaction",
+  "workspaces": "Workspaces",
+  "directoryTitle": "Directory",
+  "searchDirectories": "Search directories",
+  "addDirectory": "Add directory",
+  "removeDirectory": "Remove directory",
+  "noWorkspacesFound": "No directories found",
+  "switchWorkspaceTitle": "Switch workspace",
+  "currentSessionWillBeStopped": "The current session will be stopped.",
+  "continueText": "Continue",
+  "changeWorkingDirectory": "Change current directory",
+  "sessionsTitle": "Sessions",
+  "noSessions": "No sessions yet",
+  "searchSessions": "Search sessions",
+  "newSession": "New session",
+  "autoApproveTitle": "Auto-Approve",
+  "autoApproveSubtitle": "Configure automatic permission approvals",
+  "autoApproveExternalDirectoryDesc": "Allow access to external directories",
+  "autoApproveShellDesc": "Allow shell command execution",
+  "autoApproveReadDesc": "Allow reading files",
+  "autoApproveEditDesc": "Allow editing files",
+  "autoApproveWriteDesc": "Allow writing files",
+  "autoApproveGlobDesc": "Allow glob pattern searches",
+  "autoApproveGrepDesc": "Allow grep searches",
+  "autoApproveWebsearchDesc": "Allow web searches",
+  "autoApproveWebfetchDesc": "Allow fetching web pages",
+  "autoApproveDoomLoopDesc": "Allow doom loop detection",
+  "autoApproveSkillDesc": "Allow skill execution",
+  "autoApproveLspDesc": "Allow LSP tool usage",
+  "autoApproveTaskDesc": "Allow task tool usage",
+  "autoApproveTodowriteDesc": "Allow todo write operations",
+  "exceptionsTitle": "Exceptions",
+  "addPath": "Add path",
+  "addCommand": "Add command",
+  "scopeGlobal": "Global",
+  "scopeProject": "Project",
+  "defaultInherit": "Default (inherit)",
+  "defaultAllow": "Allow",
+  "defaultAsk": "Ask",
+  "defaultDeny": "Deny",
+  "autoApproveDefaultInherited": "Default ({action})",
+  "autoApproveGroupFileAccess": "File Access",
+  "autoApproveGroupShell": "Shell & Commands",
+  "autoApproveGroupNetwork": "Network",
+  "autoApproveGroupAgents": "Agents & Automation",
+  "autoApproveCommandPatternLabel": "Command pattern",
+  "autoApprovePathPatternLabel": "Path pattern",
+  "autoApproveCommandPatternHint": "git *",
+  "autoApprovePathPatternHint": "/home/**/*.txt",
+  "autoApproveScopeHint": "Global applies everywhere · Project overrides per workspace",
+  "autoApproveNoExceptions": "No exceptions — uses default for all patterns",
+  "autoApproveBrowseDirectory": "Browse directory",
+  "autoApproveScopeProjectDisabledTooltip": "No project configuration found. Create .chatorai/chatorai.json to enable project-scoped permissions.",
+  "autoApproveActionLabel": "Action",
+  "autoApprovePatternHintFile": "/home/user/project/** • ~/Documents/*",
+  "autoApprovePatternHintCommand": "npm run * • git status",
+  "autoApproveError": "Error: {error}",
+  "settingsMcpSubtitle": "Manage Model Context Protocol tool servers",
+  "mcpAuthNoAuth": "No Auth",
+  "mcpAuthToken": "Token",
+  "mcpAuthOAuth": "OAuth 2.1",
+  "statsInput": "Input",
+  "statsOutput": "Output",
+  "statsCacheRead": "Cache Read",
+  "keyboardShortcuts": "Keyboard Shortcuts",
+  "keyboardShortcutsSubtitle": "Customize keyboard shortcuts for the app",
+  "keybindingsReadOnlyMobile": "Keyboard shortcuts are only available on desktop",
+  "keyboardShortcutsResetConfirm": "Are you sure you want to reset all keyboard shortcuts to defaults?",
+  "bindingConflict": "Conflict",
+  "captureHint": "Press a key combination...",
+  "shortcutCancelStreaming": "Cancel AI response",
+  "shortcutCloseDialog": "Close dialog",
+  "shortcutOpenLatestChild": "Open latest child session",
+  "shortcutNavPrevSibling": "Previous sibling session",
+  "shortcutNavNextSibling": "Next sibling session",
+  "shortcutNavParent": "Go to parent session",
+  "shortcutCyclePrimaryAgent": "Cycle primary agent",
+  "shortcutToggleSidebar": "Toggle sidebar",
+  "shortcutNewChat": "New chat",
+  "shortcutOpenModelSelector": "Open model selector",
+  "shortcutOpenSettings": "Open settings",
+  "shortcutOpenWorkspace": "Open workspace",
+  "shortcutScrollToChatStart": "Scroll to top",
+  "shortcutScrollToChatEnd": "Scroll to bottom"
 }

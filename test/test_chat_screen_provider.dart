@@ -1,14 +1,27 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
-import 'package:chatorai/shared/utils/markdown_parser.dart';
+import 'package:chatorai/gui/features/chat/data/providers/chat_screen_notifier.dart';
+import 'package:chatorai/gui/shared/utils/markdown_parser.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chatorai/core/i18n/language_provider.dart';
+import 'package:chatorai/core/llm/catalog_providers.dart';
+import 'package:chatorai/shared/utils/secure_storage_service.dart';
 
 void main() {
   group('ChatScreenNotifier', () {
     late ProviderContainer container;
 
-    setUp(() {
-      container = ProviderContainer();
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      PreferencesHolder.prefs = prefs;
+      container = ProviderContainer(
+        overrides: [
+          secureStorageServiceProvider.overrideWithValue(
+            SecureStorageService(),
+          ),
+        ],
+      );
     });
 
     tearDown(() {
@@ -20,13 +33,23 @@ void main() {
       expect(state.isStreaming, false);
       expect(state.isSuggestionsLoading, false);
       expect(state.showSuggestions, false);
-      expect(state.showWelcomeSuggestions, false);
+      // Welcome suggestions are now seeded in build() from the sync locale,
+      // so showWelcomeSuggestions is true on first read.
+      expect(state.showWelcomeSuggestions, isTrue);
       expect(state.continuationSuggestions, isEmpty);
-      expect(state.welcomeSuggestions, isEmpty);
+      expect(state.welcomeSuggestions, isNotEmpty);
       expect(state.isSidebarCollapsed, false);
       expect(state.isNavigatorVisible, false);
       expect(state.navigatorHeadings, isEmpty);
       expect(state.activeHeadingIndex, -1);
+    });
+
+    test('build seeds welcome suggestions from locale without post-frame', () {
+      final state = container.read(chatScreenProvider);
+      // Welcome suggestions should be seeded on first build (no post-frame needed).
+      expect(state.welcomeSuggestions, isNotEmpty);
+      expect(state.showWelcomeSuggestions, isTrue);
+      expect(state.welcomeSuggestions.length, equals(4));
     });
 
     group('Streaming', () {

@@ -23,39 +23,10 @@ import 'dart:convert';
 
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/models/provider_config.dart';
-import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-/// Immutable state for the catalog.
-class CatalogState {
-  final List<ProviderConfig> providers;
-  final Map<String, Set<String>> selectedModelIds;
-  final Map<String, String?> apiKeyCache;
-  final bool migrated;
-
-  const CatalogState({
-    this.providers = const [],
-    this.selectedModelIds = const {},
-    this.apiKeyCache = const {},
-    this.migrated = false,
-  });
-
-  CatalogState copyWith({
-    List<ProviderConfig>? providers,
-    Map<String, Set<String>>? selectedModelIds,
-    Map<String, String?>? apiKeyCache,
-    bool? migrated,
-  }) {
-    return CatalogState(
-      providers: providers ?? this.providers,
-      selectedModelIds: selectedModelIds ?? this.selectedModelIds,
-      apiKeyCache: apiKeyCache ?? this.apiKeyCache,
-      migrated: migrated ?? this.migrated,
-    );
-  }
-}
 
 /// Prefix constants for SharedPreferences keys.
 class _PrefKeys {
@@ -586,11 +557,6 @@ class ProviderCatalogService {
     await _prefs.remove('${_PrefKeys.selectedModels}$providerId');
   }
 
-  /// Legacy compatibility: no-op for tests that expect ChangeNotifier.
-  void addListener(void Function() listener) {}
-  void removeListener(void Function() listener) {}
-  void dispose() {}
-
   /// Migrate settings from legacy SharedPreferences keys.
   Future<void> migrateFromLegacySettings() async {
     if (_migrated) return;
@@ -732,8 +698,10 @@ class ProviderCatalogService {
                 .toList();
             _providers[i] = _providers[i].copyWith(models: sanitized);
           }
-        } catch (_) {
-          // ignore bad cache
+        } catch (e) {
+          LogTags.settings.logWarning(
+            '[Catalog] _loadFromPrefs: failed to load cached models for ${prov.id}: $e',
+          );
         }
       }
 
@@ -743,15 +711,17 @@ class ProviderCatalogService {
       );
       if (selectedIds != null && selectedIds.isNotEmpty) {
         _selectedModelIds[prov.id] = selectedIds.toSet();
-        LogTags.settings.logInfo(
-          '[Catalog] _loadFromPrefs: loaded ${selectedIds.length} selected models for ${prov.id}: [${selectedIds.join(',')}]',
-        );
-      } else {
-        LogTags.settings.logInfo(
-          '[Catalog] _loadFromPrefs: NO selected models for ${prov.id} (raw=${selectedIds?.length ?? 0})',
-        );
       }
     }
+
+    // Summarize selected-model coverage in a single debug log instead of
+    // per-provider info logs (which produced ~40 log lines on every startup).
+    final withSelection = _selectedModelIds.keys.length;
+    final withoutSelection = _providers.length - withSelection;
+    LogTags.settings.logDebug(
+      '[Catalog] _loadFromPrefs: selected models loaded for $withSelection providers, '
+      '$withoutSelection without selection (total=${_providers.length})',
+    );
 
     // Load discovery timestamps
     for (final prov in _providers) {

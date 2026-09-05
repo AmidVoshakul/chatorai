@@ -539,6 +539,17 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _directoryMeta = const VerificationMeta(
+    'directory',
+  );
+  @override
+  late final GeneratedColumn<String> directory = GeneratedColumn<String>(
+    'directory',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -586,6 +597,7 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     tokensCacheRead,
     tokensCacheWrite,
     permissionRules,
+    directory,
     createdAt,
     updatedAt,
     archivedAt,
@@ -691,6 +703,12 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
         ),
       );
     }
+    if (data.containsKey('directory')) {
+      context.handle(
+        _directoryMeta,
+        directory.isAcceptableOrUnknown(data['directory']!, _directoryMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -770,6 +788,10 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
         DriftSqlType.string,
         data['${effectivePrefix}permission_rules'],
       ),
+      directory: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}directory'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -804,6 +826,7 @@ class Session extends DataClass implements Insertable<Session> {
   final int tokensCacheRead;
   final int tokensCacheWrite;
   final String? permissionRules;
+  final String? directory;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? archivedAt;
@@ -820,6 +843,7 @@ class Session extends DataClass implements Insertable<Session> {
     required this.tokensCacheRead,
     required this.tokensCacheWrite,
     this.permissionRules,
+    this.directory,
     required this.createdAt,
     required this.updatedAt,
     this.archivedAt,
@@ -844,6 +868,9 @@ class Session extends DataClass implements Insertable<Session> {
     map['tokens_cache_write'] = Variable<int>(tokensCacheWrite);
     if (!nullToAbsent || permissionRules != null) {
       map['permission_rules'] = Variable<String>(permissionRules);
+    }
+    if (!nullToAbsent || directory != null) {
+      map['directory'] = Variable<String>(directory);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -873,6 +900,9 @@ class Session extends DataClass implements Insertable<Session> {
       permissionRules: permissionRules == null && nullToAbsent
           ? const Value.absent()
           : Value(permissionRules),
+      directory: directory == null && nullToAbsent
+          ? const Value.absent()
+          : Value(directory),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       archivedAt: archivedAt == null && nullToAbsent
@@ -899,6 +929,7 @@ class Session extends DataClass implements Insertable<Session> {
       tokensCacheRead: serializer.fromJson<int>(json['tokensCacheRead']),
       tokensCacheWrite: serializer.fromJson<int>(json['tokensCacheWrite']),
       permissionRules: serializer.fromJson<String?>(json['permissionRules']),
+      directory: serializer.fromJson<String?>(json['directory']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       archivedAt: serializer.fromJson<DateTime?>(json['archivedAt']),
@@ -920,6 +951,7 @@ class Session extends DataClass implements Insertable<Session> {
       'tokensCacheRead': serializer.toJson<int>(tokensCacheRead),
       'tokensCacheWrite': serializer.toJson<int>(tokensCacheWrite),
       'permissionRules': serializer.toJson<String?>(permissionRules),
+      'directory': serializer.toJson<String?>(directory),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'archivedAt': serializer.toJson<DateTime?>(archivedAt),
@@ -939,6 +971,7 @@ class Session extends DataClass implements Insertable<Session> {
     int? tokensCacheRead,
     int? tokensCacheWrite,
     Value<String?> permissionRules = const Value.absent(),
+    Value<String?> directory = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> archivedAt = const Value.absent(),
@@ -957,6 +990,7 @@ class Session extends DataClass implements Insertable<Session> {
     permissionRules: permissionRules.present
         ? permissionRules.value
         : this.permissionRules,
+    directory: directory.present ? directory.value : this.directory,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     archivedAt: archivedAt.present ? archivedAt.value : this.archivedAt,
@@ -987,6 +1021,7 @@ class Session extends DataClass implements Insertable<Session> {
       permissionRules: data.permissionRules.present
           ? data.permissionRules.value
           : this.permissionRules,
+      directory: data.directory.present ? data.directory.value : this.directory,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       archivedAt: data.archivedAt.present
@@ -1010,6 +1045,7 @@ class Session extends DataClass implements Insertable<Session> {
           ..write('tokensCacheRead: $tokensCacheRead, ')
           ..write('tokensCacheWrite: $tokensCacheWrite, ')
           ..write('permissionRules: $permissionRules, ')
+          ..write('directory: $directory, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('archivedAt: $archivedAt')
@@ -1031,6 +1067,7 @@ class Session extends DataClass implements Insertable<Session> {
     tokensCacheRead,
     tokensCacheWrite,
     permissionRules,
+    directory,
     createdAt,
     updatedAt,
     archivedAt,
@@ -1051,6 +1088,7 @@ class Session extends DataClass implements Insertable<Session> {
           other.tokensCacheRead == this.tokensCacheRead &&
           other.tokensCacheWrite == this.tokensCacheWrite &&
           other.permissionRules == this.permissionRules &&
+          other.directory == this.directory &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.archivedAt == this.archivedAt);
@@ -1069,6 +1107,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
   final Value<int> tokensCacheRead;
   final Value<int> tokensCacheWrite;
   final Value<String?> permissionRules;
+  final Value<String?> directory;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> archivedAt;
@@ -1086,6 +1125,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.tokensCacheRead = const Value.absent(),
     this.tokensCacheWrite = const Value.absent(),
     this.permissionRules = const Value.absent(),
+    this.directory = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.archivedAt = const Value.absent(),
@@ -1104,6 +1144,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.tokensCacheRead = const Value.absent(),
     this.tokensCacheWrite = const Value.absent(),
     this.permissionRules = const Value.absent(),
+    this.directory = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.archivedAt = const Value.absent(),
@@ -1124,6 +1165,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     Expression<int>? tokensCacheRead,
     Expression<int>? tokensCacheWrite,
     Expression<String>? permissionRules,
+    Expression<String>? directory,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? archivedAt,
@@ -1142,6 +1184,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       if (tokensCacheRead != null) 'tokens_cache_read': tokensCacheRead,
       if (tokensCacheWrite != null) 'tokens_cache_write': tokensCacheWrite,
       if (permissionRules != null) 'permission_rules': permissionRules,
+      if (directory != null) 'directory': directory,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (archivedAt != null) 'archived_at': archivedAt,
@@ -1162,6 +1205,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     Value<int>? tokensCacheRead,
     Value<int>? tokensCacheWrite,
     Value<String?>? permissionRules,
+    Value<String?>? directory,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? archivedAt,
@@ -1180,6 +1224,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       tokensCacheRead: tokensCacheRead ?? this.tokensCacheRead,
       tokensCacheWrite: tokensCacheWrite ?? this.tokensCacheWrite,
       permissionRules: permissionRules ?? this.permissionRules,
+      directory: directory ?? this.directory,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       archivedAt: archivedAt ?? this.archivedAt,
@@ -1226,6 +1271,9 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     if (permissionRules.present) {
       map['permission_rules'] = Variable<String>(permissionRules.value);
     }
+    if (directory.present) {
+      map['directory'] = Variable<String>(directory.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1256,6 +1304,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
           ..write('tokensCacheRead: $tokensCacheRead, ')
           ..write('tokensCacheWrite: $tokensCacheWrite, ')
           ..write('permissionRules: $permissionRules, ')
+          ..write('directory: $directory, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('archivedAt: $archivedAt, ')
@@ -1349,6 +1398,42 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _tokensInputMeta = const VerificationMeta(
+    'tokensInput',
+  );
+  @override
+  late final GeneratedColumn<int> tokensInput = GeneratedColumn<int>(
+    'tokens_input',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _tokensOutputMeta = const VerificationMeta(
+    'tokensOutput',
+  );
+  @override
+  late final GeneratedColumn<int> tokensOutput = GeneratedColumn<int>(
+    'tokens_output',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _tokensReasoningMeta = const VerificationMeta(
+    'tokensReasoning',
+  );
+  @override
+  late final GeneratedColumn<int> tokensReasoning = GeneratedColumn<int>(
+    'tokens_reasoning',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1370,6 +1455,9 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     model,
     reasoning,
     error,
+    tokensInput,
+    tokensOutput,
+    tokensReasoning,
     createdAt,
   ];
   @override
@@ -1437,6 +1525,33 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         error.isAcceptableOrUnknown(data['error']!, _errorMeta),
       );
     }
+    if (data.containsKey('tokens_input')) {
+      context.handle(
+        _tokensInputMeta,
+        tokensInput.isAcceptableOrUnknown(
+          data['tokens_input']!,
+          _tokensInputMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tokens_output')) {
+      context.handle(
+        _tokensOutputMeta,
+        tokensOutput.isAcceptableOrUnknown(
+          data['tokens_output']!,
+          _tokensOutputMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tokens_reasoning')) {
+      context.handle(
+        _tokensReasoningMeta,
+        tokensReasoning.isAcceptableOrUnknown(
+          data['tokens_reasoning']!,
+          _tokensReasoningMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1486,6 +1601,18 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
         DriftSqlType.string,
         data['${effectivePrefix}error'],
       ),
+      tokensInput: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_input'],
+      )!,
+      tokensOutput: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_output'],
+      )!,
+      tokensReasoning: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tokens_reasoning'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1508,6 +1635,9 @@ class Message extends DataClass implements Insertable<Message> {
   final String? model;
   final String? reasoning;
   final String? error;
+  final int tokensInput;
+  final int tokensOutput;
+  final int tokensReasoning;
   final DateTime createdAt;
   const Message({
     required this.id,
@@ -1518,6 +1648,9 @@ class Message extends DataClass implements Insertable<Message> {
     this.model,
     this.reasoning,
     this.error,
+    required this.tokensInput,
+    required this.tokensOutput,
+    required this.tokensReasoning,
     required this.createdAt,
   });
   @override
@@ -1537,6 +1670,9 @@ class Message extends DataClass implements Insertable<Message> {
     if (!nullToAbsent || error != null) {
       map['error'] = Variable<String>(error);
     }
+    map['tokens_input'] = Variable<int>(tokensInput);
+    map['tokens_output'] = Variable<int>(tokensOutput);
+    map['tokens_reasoning'] = Variable<int>(tokensReasoning);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -1557,6 +1693,9 @@ class Message extends DataClass implements Insertable<Message> {
       error: error == null && nullToAbsent
           ? const Value.absent()
           : Value(error),
+      tokensInput: Value(tokensInput),
+      tokensOutput: Value(tokensOutput),
+      tokensReasoning: Value(tokensReasoning),
       createdAt: Value(createdAt),
     );
   }
@@ -1575,6 +1714,9 @@ class Message extends DataClass implements Insertable<Message> {
       model: serializer.fromJson<String?>(json['model']),
       reasoning: serializer.fromJson<String?>(json['reasoning']),
       error: serializer.fromJson<String?>(json['error']),
+      tokensInput: serializer.fromJson<int>(json['tokensInput']),
+      tokensOutput: serializer.fromJson<int>(json['tokensOutput']),
+      tokensReasoning: serializer.fromJson<int>(json['tokensReasoning']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -1590,6 +1732,9 @@ class Message extends DataClass implements Insertable<Message> {
       'model': serializer.toJson<String?>(model),
       'reasoning': serializer.toJson<String?>(reasoning),
       'error': serializer.toJson<String?>(error),
+      'tokensInput': serializer.toJson<int>(tokensInput),
+      'tokensOutput': serializer.toJson<int>(tokensOutput),
+      'tokensReasoning': serializer.toJson<int>(tokensReasoning),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -1603,6 +1748,9 @@ class Message extends DataClass implements Insertable<Message> {
     Value<String?> model = const Value.absent(),
     Value<String?> reasoning = const Value.absent(),
     Value<String?> error = const Value.absent(),
+    int? tokensInput,
+    int? tokensOutput,
+    int? tokensReasoning,
     DateTime? createdAt,
   }) => Message(
     id: id ?? this.id,
@@ -1613,6 +1761,9 @@ class Message extends DataClass implements Insertable<Message> {
     model: model.present ? model.value : this.model,
     reasoning: reasoning.present ? reasoning.value : this.reasoning,
     error: error.present ? error.value : this.error,
+    tokensInput: tokensInput ?? this.tokensInput,
+    tokensOutput: tokensOutput ?? this.tokensOutput,
+    tokensReasoning: tokensReasoning ?? this.tokensReasoning,
     createdAt: createdAt ?? this.createdAt,
   );
   Message copyWithCompanion(MessagesCompanion data) {
@@ -1625,6 +1776,15 @@ class Message extends DataClass implements Insertable<Message> {
       model: data.model.present ? data.model.value : this.model,
       reasoning: data.reasoning.present ? data.reasoning.value : this.reasoning,
       error: data.error.present ? data.error.value : this.error,
+      tokensInput: data.tokensInput.present
+          ? data.tokensInput.value
+          : this.tokensInput,
+      tokensOutput: data.tokensOutput.present
+          ? data.tokensOutput.value
+          : this.tokensOutput,
+      tokensReasoning: data.tokensReasoning.present
+          ? data.tokensReasoning.value
+          : this.tokensReasoning,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1640,6 +1800,9 @@ class Message extends DataClass implements Insertable<Message> {
           ..write('model: $model, ')
           ..write('reasoning: $reasoning, ')
           ..write('error: $error, ')
+          ..write('tokensInput: $tokensInput, ')
+          ..write('tokensOutput: $tokensOutput, ')
+          ..write('tokensReasoning: $tokensReasoning, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -1655,6 +1818,9 @@ class Message extends DataClass implements Insertable<Message> {
     model,
     reasoning,
     error,
+    tokensInput,
+    tokensOutput,
+    tokensReasoning,
     createdAt,
   );
   @override
@@ -1669,6 +1835,9 @@ class Message extends DataClass implements Insertable<Message> {
           other.model == this.model &&
           other.reasoning == this.reasoning &&
           other.error == this.error &&
+          other.tokensInput == this.tokensInput &&
+          other.tokensOutput == this.tokensOutput &&
+          other.tokensReasoning == this.tokensReasoning &&
           other.createdAt == this.createdAt);
 }
 
@@ -1681,6 +1850,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   final Value<String?> model;
   final Value<String?> reasoning;
   final Value<String?> error;
+  final Value<int> tokensInput;
+  final Value<int> tokensOutput;
+  final Value<int> tokensReasoning;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const MessagesCompanion({
@@ -1692,6 +1864,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.model = const Value.absent(),
     this.reasoning = const Value.absent(),
     this.error = const Value.absent(),
+    this.tokensInput = const Value.absent(),
+    this.tokensOutput = const Value.absent(),
+    this.tokensReasoning = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1704,6 +1879,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     this.model = const Value.absent(),
     this.reasoning = const Value.absent(),
     this.error = const Value.absent(),
+    this.tokensInput = const Value.absent(),
+    this.tokensOutput = const Value.absent(),
+    this.tokensReasoning = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1720,6 +1898,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Expression<String>? model,
     Expression<String>? reasoning,
     Expression<String>? error,
+    Expression<int>? tokensInput,
+    Expression<int>? tokensOutput,
+    Expression<int>? tokensReasoning,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -1732,6 +1913,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       if (model != null) 'model': model,
       if (reasoning != null) 'reasoning': reasoning,
       if (error != null) 'error': error,
+      if (tokensInput != null) 'tokens_input': tokensInput,
+      if (tokensOutput != null) 'tokens_output': tokensOutput,
+      if (tokensReasoning != null) 'tokens_reasoning': tokensReasoning,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1746,6 +1930,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Value<String?>? model,
     Value<String?>? reasoning,
     Value<String?>? error,
+    Value<int>? tokensInput,
+    Value<int>? tokensOutput,
+    Value<int>? tokensReasoning,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -1758,6 +1945,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       model: model ?? this.model,
       reasoning: reasoning ?? this.reasoning,
       error: error ?? this.error,
+      tokensInput: tokensInput ?? this.tokensInput,
+      tokensOutput: tokensOutput ?? this.tokensOutput,
+      tokensReasoning: tokensReasoning ?? this.tokensReasoning,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1790,6 +1980,15 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     if (error.present) {
       map['error'] = Variable<String>(error.value);
     }
+    if (tokensInput.present) {
+      map['tokens_input'] = Variable<int>(tokensInput.value);
+    }
+    if (tokensOutput.present) {
+      map['tokens_output'] = Variable<int>(tokensOutput.value);
+    }
+    if (tokensReasoning.present) {
+      map['tokens_reasoning'] = Variable<int>(tokensReasoning.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1810,6 +2009,9 @@ class MessagesCompanion extends UpdateCompanion<Message> {
           ..write('model: $model, ')
           ..write('reasoning: $reasoning, ')
           ..write('error: $error, ')
+          ..write('tokensInput: $tokensInput, ')
+          ..write('tokensOutput: $tokensOutput, ')
+          ..write('tokensReasoning: $tokensReasoning, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3455,6 +3657,846 @@ class SessionSnapshotsCompanion extends UpdateCompanion<SessionSnapshot> {
   }
 }
 
+class $FileSnapshotsTable extends FileSnapshots
+    with TableInfo<$FileSnapshotsTable, FileSnapshot> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FileSnapshotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _filePathMeta = const VerificationMeta(
+    'filePath',
+  );
+  @override
+  late final GeneratedColumn<String> filePath = GeneratedColumn<String>(
+    'file_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stepIdMeta = const VerificationMeta('stepId');
+  @override
+  late final GeneratedColumn<String> stepId = GeneratedColumn<String>(
+    'step_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _toolNameMeta = const VerificationMeta(
+    'toolName',
+  );
+  @override
+  late final GeneratedColumn<String> toolName = GeneratedColumn<String>(
+    'tool_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    sessionId,
+    filePath,
+    content,
+    stepId,
+    toolName,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'file_snapshots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FileSnapshot> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('file_path')) {
+      context.handle(
+        _filePathMeta,
+        filePath.isAcceptableOrUnknown(data['file_path']!, _filePathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_filePathMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('step_id')) {
+      context.handle(
+        _stepIdMeta,
+        stepId.isAcceptableOrUnknown(data['step_id']!, _stepIdMeta),
+      );
+    }
+    if (data.containsKey('tool_name')) {
+      context.handle(
+        _toolNameMeta,
+        toolName.isAcceptableOrUnknown(data['tool_name']!, _toolNameMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FileSnapshot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FileSnapshot(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      filePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_path'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      stepId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}step_id'],
+      ),
+      toolName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_name'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $FileSnapshotsTable createAlias(String alias) {
+    return $FileSnapshotsTable(attachedDatabase, alias);
+  }
+}
+
+class FileSnapshot extends DataClass implements Insertable<FileSnapshot> {
+  final String id;
+  final String sessionId;
+  final String filePath;
+  final String content;
+  final String? stepId;
+  final String? toolName;
+  final DateTime createdAt;
+  const FileSnapshot({
+    required this.id,
+    required this.sessionId,
+    required this.filePath,
+    required this.content,
+    this.stepId,
+    this.toolName,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['session_id'] = Variable<String>(sessionId);
+    map['file_path'] = Variable<String>(filePath);
+    map['content'] = Variable<String>(content);
+    if (!nullToAbsent || stepId != null) {
+      map['step_id'] = Variable<String>(stepId);
+    }
+    if (!nullToAbsent || toolName != null) {
+      map['tool_name'] = Variable<String>(toolName);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  FileSnapshotsCompanion toCompanion(bool nullToAbsent) {
+    return FileSnapshotsCompanion(
+      id: Value(id),
+      sessionId: Value(sessionId),
+      filePath: Value(filePath),
+      content: Value(content),
+      stepId: stepId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stepId),
+      toolName: toolName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toolName),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory FileSnapshot.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FileSnapshot(
+      id: serializer.fromJson<String>(json['id']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      filePath: serializer.fromJson<String>(json['filePath']),
+      content: serializer.fromJson<String>(json['content']),
+      stepId: serializer.fromJson<String?>(json['stepId']),
+      toolName: serializer.fromJson<String?>(json['toolName']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'filePath': serializer.toJson<String>(filePath),
+      'content': serializer.toJson<String>(content),
+      'stepId': serializer.toJson<String?>(stepId),
+      'toolName': serializer.toJson<String?>(toolName),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  FileSnapshot copyWith({
+    String? id,
+    String? sessionId,
+    String? filePath,
+    String? content,
+    Value<String?> stepId = const Value.absent(),
+    Value<String?> toolName = const Value.absent(),
+    DateTime? createdAt,
+  }) => FileSnapshot(
+    id: id ?? this.id,
+    sessionId: sessionId ?? this.sessionId,
+    filePath: filePath ?? this.filePath,
+    content: content ?? this.content,
+    stepId: stepId.present ? stepId.value : this.stepId,
+    toolName: toolName.present ? toolName.value : this.toolName,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  FileSnapshot copyWithCompanion(FileSnapshotsCompanion data) {
+    return FileSnapshot(
+      id: data.id.present ? data.id.value : this.id,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      content: data.content.present ? data.content.value : this.content,
+      stepId: data.stepId.present ? data.stepId.value : this.stepId,
+      toolName: data.toolName.present ? data.toolName.value : this.toolName,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FileSnapshot(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('filePath: $filePath, ')
+          ..write('content: $content, ')
+          ..write('stepId: $stepId, ')
+          ..write('toolName: $toolName, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    sessionId,
+    filePath,
+    content,
+    stepId,
+    toolName,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FileSnapshot &&
+          other.id == this.id &&
+          other.sessionId == this.sessionId &&
+          other.filePath == this.filePath &&
+          other.content == this.content &&
+          other.stepId == this.stepId &&
+          other.toolName == this.toolName &&
+          other.createdAt == this.createdAt);
+}
+
+class FileSnapshotsCompanion extends UpdateCompanion<FileSnapshot> {
+  final Value<String> id;
+  final Value<String> sessionId;
+  final Value<String> filePath;
+  final Value<String> content;
+  final Value<String?> stepId;
+  final Value<String?> toolName;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const FileSnapshotsCompanion({
+    this.id = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.filePath = const Value.absent(),
+    this.content = const Value.absent(),
+    this.stepId = const Value.absent(),
+    this.toolName = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FileSnapshotsCompanion.insert({
+    required String id,
+    required String sessionId,
+    required String filePath,
+    required String content,
+    this.stepId = const Value.absent(),
+    this.toolName = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sessionId = Value(sessionId),
+       filePath = Value(filePath),
+       content = Value(content),
+       createdAt = Value(createdAt);
+  static Insertable<FileSnapshot> custom({
+    Expression<String>? id,
+    Expression<String>? sessionId,
+    Expression<String>? filePath,
+    Expression<String>? content,
+    Expression<String>? stepId,
+    Expression<String>? toolName,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sessionId != null) 'session_id': sessionId,
+      if (filePath != null) 'file_path': filePath,
+      if (content != null) 'content': content,
+      if (stepId != null) 'step_id': stepId,
+      if (toolName != null) 'tool_name': toolName,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FileSnapshotsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? sessionId,
+    Value<String>? filePath,
+    Value<String>? content,
+    Value<String?>? stepId,
+    Value<String?>? toolName,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return FileSnapshotsCompanion(
+      id: id ?? this.id,
+      sessionId: sessionId ?? this.sessionId,
+      filePath: filePath ?? this.filePath,
+      content: content ?? this.content,
+      stepId: stepId ?? this.stepId,
+      toolName: toolName ?? this.toolName,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (filePath.present) {
+      map['file_path'] = Variable<String>(filePath.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (stepId.present) {
+      map['step_id'] = Variable<String>(stepId.value);
+    }
+    if (toolName.present) {
+      map['tool_name'] = Variable<String>(toolName.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FileSnapshotsCompanion(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('filePath: $filePath, ')
+          ..write('content: $content, ')
+          ..write('stepId: $stepId, ')
+          ..write('toolName: $toolName, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ChatSnapshotsTable extends ChatSnapshots
+    with TableInfo<$ChatSnapshotsTable, ChatSnapshot> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChatSnapshotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eventsCountMeta = const VerificationMeta(
+    'eventsCount',
+  );
+  @override
+  late final GeneratedColumn<int> eventsCount = GeneratedColumn<int>(
+    'events_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _chatJsonMeta = const VerificationMeta(
+    'chatJson',
+  );
+  @override
+  late final GeneratedColumn<String> chatJson = GeneratedColumn<String>(
+    'chat_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _schemaVersionMeta = const VerificationMeta(
+    'schemaVersion',
+  );
+  @override
+  late final GeneratedColumn<int> schemaVersion = GeneratedColumn<int>(
+    'schema_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sessionId,
+    eventsCount,
+    chatJson,
+    updatedAt,
+    schemaVersion,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'chat_snapshots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ChatSnapshot> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('events_count')) {
+      context.handle(
+        _eventsCountMeta,
+        eventsCount.isAcceptableOrUnknown(
+          data['events_count']!,
+          _eventsCountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_eventsCountMeta);
+    }
+    if (data.containsKey('chat_json')) {
+      context.handle(
+        _chatJsonMeta,
+        chatJson.isAcceptableOrUnknown(data['chat_json']!, _chatJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chatJsonMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('schema_version')) {
+      context.handle(
+        _schemaVersionMeta,
+        schemaVersion.isAcceptableOrUnknown(
+          data['schema_version']!,
+          _schemaVersionMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sessionId};
+  @override
+  ChatSnapshot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ChatSnapshot(
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      eventsCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}events_count'],
+      )!,
+      chatJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chat_json'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      schemaVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}schema_version'],
+      )!,
+    );
+  }
+
+  @override
+  $ChatSnapshotsTable createAlias(String alias) {
+    return $ChatSnapshotsTable(attachedDatabase, alias);
+  }
+}
+
+class ChatSnapshot extends DataClass implements Insertable<ChatSnapshot> {
+  final String sessionId;
+  final int eventsCount;
+  final String chatJson;
+  final int updatedAt;
+  final int schemaVersion;
+  const ChatSnapshot({
+    required this.sessionId,
+    required this.eventsCount,
+    required this.chatJson,
+    required this.updatedAt,
+    required this.schemaVersion,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['session_id'] = Variable<String>(sessionId);
+    map['events_count'] = Variable<int>(eventsCount);
+    map['chat_json'] = Variable<String>(chatJson);
+    map['updated_at'] = Variable<int>(updatedAt);
+    map['schema_version'] = Variable<int>(schemaVersion);
+    return map;
+  }
+
+  ChatSnapshotsCompanion toCompanion(bool nullToAbsent) {
+    return ChatSnapshotsCompanion(
+      sessionId: Value(sessionId),
+      eventsCount: Value(eventsCount),
+      chatJson: Value(chatJson),
+      updatedAt: Value(updatedAt),
+      schemaVersion: Value(schemaVersion),
+    );
+  }
+
+  factory ChatSnapshot.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ChatSnapshot(
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      eventsCount: serializer.fromJson<int>(json['eventsCount']),
+      chatJson: serializer.fromJson<String>(json['chatJson']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sessionId': serializer.toJson<String>(sessionId),
+      'eventsCount': serializer.toJson<int>(eventsCount),
+      'chatJson': serializer.toJson<String>(chatJson),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+      'schemaVersion': serializer.toJson<int>(schemaVersion),
+    };
+  }
+
+  ChatSnapshot copyWith({
+    String? sessionId,
+    int? eventsCount,
+    String? chatJson,
+    int? updatedAt,
+    int? schemaVersion,
+  }) => ChatSnapshot(
+    sessionId: sessionId ?? this.sessionId,
+    eventsCount: eventsCount ?? this.eventsCount,
+    chatJson: chatJson ?? this.chatJson,
+    updatedAt: updatedAt ?? this.updatedAt,
+    schemaVersion: schemaVersion ?? this.schemaVersion,
+  );
+  ChatSnapshot copyWithCompanion(ChatSnapshotsCompanion data) {
+    return ChatSnapshot(
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      eventsCount: data.eventsCount.present
+          ? data.eventsCount.value
+          : this.eventsCount,
+      chatJson: data.chatJson.present ? data.chatJson.value : this.chatJson,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      schemaVersion: data.schemaVersion.present
+          ? data.schemaVersion.value
+          : this.schemaVersion,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatSnapshot(')
+          ..write('sessionId: $sessionId, ')
+          ..write('eventsCount: $eventsCount, ')
+          ..write('chatJson: $chatJson, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('schemaVersion: $schemaVersion')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(sessionId, eventsCount, chatJson, updatedAt, schemaVersion);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ChatSnapshot &&
+          other.sessionId == this.sessionId &&
+          other.eventsCount == this.eventsCount &&
+          other.chatJson == this.chatJson &&
+          other.updatedAt == this.updatedAt &&
+          other.schemaVersion == this.schemaVersion);
+}
+
+class ChatSnapshotsCompanion extends UpdateCompanion<ChatSnapshot> {
+  final Value<String> sessionId;
+  final Value<int> eventsCount;
+  final Value<String> chatJson;
+  final Value<int> updatedAt;
+  final Value<int> schemaVersion;
+  final Value<int> rowid;
+  const ChatSnapshotsCompanion({
+    this.sessionId = const Value.absent(),
+    this.eventsCount = const Value.absent(),
+    this.chatJson = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.schemaVersion = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ChatSnapshotsCompanion.insert({
+    required String sessionId,
+    required int eventsCount,
+    required String chatJson,
+    required int updatedAt,
+    this.schemaVersion = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : sessionId = Value(sessionId),
+       eventsCount = Value(eventsCount),
+       chatJson = Value(chatJson),
+       updatedAt = Value(updatedAt);
+  static Insertable<ChatSnapshot> custom({
+    Expression<String>? sessionId,
+    Expression<int>? eventsCount,
+    Expression<String>? chatJson,
+    Expression<int>? updatedAt,
+    Expression<int>? schemaVersion,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sessionId != null) 'session_id': sessionId,
+      if (eventsCount != null) 'events_count': eventsCount,
+      if (chatJson != null) 'chat_json': chatJson,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (schemaVersion != null) 'schema_version': schemaVersion,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ChatSnapshotsCompanion copyWith({
+    Value<String>? sessionId,
+    Value<int>? eventsCount,
+    Value<String>? chatJson,
+    Value<int>? updatedAt,
+    Value<int>? schemaVersion,
+    Value<int>? rowid,
+  }) {
+    return ChatSnapshotsCompanion(
+      sessionId: sessionId ?? this.sessionId,
+      eventsCount: eventsCount ?? this.eventsCount,
+      chatJson: chatJson ?? this.chatJson,
+      updatedAt: updatedAt ?? this.updatedAt,
+      schemaVersion: schemaVersion ?? this.schemaVersion,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (eventsCount.present) {
+      map['events_count'] = Variable<int>(eventsCount.value);
+    }
+    if (chatJson.present) {
+      map['chat_json'] = Variable<String>(chatJson.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (schemaVersion.present) {
+      map['schema_version'] = Variable<int>(schemaVersion.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatSnapshotsCompanion(')
+          ..write('sessionId: $sessionId, ')
+          ..write('eventsCount: $eventsCount, ')
+          ..write('chatJson: $chatJson, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('schemaVersion: $schemaVersion, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3466,6 +4508,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SessionSnapshotsTable sessionSnapshots = $SessionSnapshotsTable(
     this,
   );
+  late final $FileSnapshotsTable fileSnapshots = $FileSnapshotsTable(this);
+  late final $ChatSnapshotsTable chatSnapshots = $ChatSnapshotsTable(this);
   late final Index idxEventsSessionSeq = Index(
     'idx_events_session_seq',
     'CREATE INDEX idx_events_session_seq ON events (session_id, sequence)',
@@ -3486,6 +4530,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_session_snapshots_session',
     'CREATE INDEX idx_session_snapshots_session ON session_snapshots (session_id)',
   );
+  late final Index idxFileSnapshotsSession = Index(
+    'idx_file_snapshots_session',
+    'CREATE INDEX idx_file_snapshots_session ON file_snapshots (session_id)',
+  );
+  late final Index idxFileSnapshotsSessionStepCreated = Index(
+    'idx_file_snapshots_session_step_created',
+    'CREATE INDEX idx_file_snapshots_session_step_created ON file_snapshots (session_id, step_id, created_at)',
+  );
+  late final Index idxChatSnapshotsSession = Index(
+    'idx_chat_snapshots_session',
+    'CREATE INDEX idx_chat_snapshots_session ON chat_snapshots (session_id)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3497,11 +4553,16 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     toolResults,
     contextEpochs,
     sessionSnapshots,
+    fileSnapshots,
+    chatSnapshots,
     idxEventsSessionSeq,
     idxMessagesSessionSeq,
     idxToolResultsSession,
     idxContextEpochsSession,
     idxSessionSnapshotsSession,
+    idxFileSnapshotsSession,
+    idxFileSnapshotsSessionStepCreated,
+    idxChatSnapshotsSession,
   ];
 }
 
@@ -3726,6 +4787,7 @@ typedef $$SessionsTableCreateCompanionBuilder =
       Value<int> tokensCacheRead,
       Value<int> tokensCacheWrite,
       Value<String?> permissionRules,
+      Value<String?> directory,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<DateTime?> archivedAt,
@@ -3745,6 +4807,7 @@ typedef $$SessionsTableUpdateCompanionBuilder =
       Value<int> tokensCacheRead,
       Value<int> tokensCacheWrite,
       Value<String?> permissionRules,
+      Value<String?> directory,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> archivedAt,
@@ -3817,6 +4880,11 @@ class $$SessionsTableFilterComposer
 
   ColumnFilters<String> get permissionRules => $composableBuilder(
     column: $table.permissionRules,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get directory => $composableBuilder(
+    column: $table.directory,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3905,6 +4973,11 @@ class $$SessionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get directory => $composableBuilder(
+    column: $table.directory,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -3978,6 +5051,9 @@ class $$SessionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get directory =>
+      $composableBuilder(column: $table.directory, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -4030,6 +5106,7 @@ class $$SessionsTableTableManager
                 Value<int> tokensCacheRead = const Value.absent(),
                 Value<int> tokensCacheWrite = const Value.absent(),
                 Value<String?> permissionRules = const Value.absent(),
+                Value<String?> directory = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> archivedAt = const Value.absent(),
@@ -4047,6 +5124,7 @@ class $$SessionsTableTableManager
                 tokensCacheRead: tokensCacheRead,
                 tokensCacheWrite: tokensCacheWrite,
                 permissionRules: permissionRules,
+                directory: directory,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 archivedAt: archivedAt,
@@ -4066,6 +5144,7 @@ class $$SessionsTableTableManager
                 Value<int> tokensCacheRead = const Value.absent(),
                 Value<int> tokensCacheWrite = const Value.absent(),
                 Value<String?> permissionRules = const Value.absent(),
+                Value<String?> directory = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<DateTime?> archivedAt = const Value.absent(),
@@ -4083,6 +5162,7 @@ class $$SessionsTableTableManager
                 tokensCacheRead: tokensCacheRead,
                 tokensCacheWrite: tokensCacheWrite,
                 permissionRules: permissionRules,
+                directory: directory,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 archivedAt: archivedAt,
@@ -4120,6 +5200,9 @@ typedef $$MessagesTableCreateCompanionBuilder =
       Value<String?> model,
       Value<String?> reasoning,
       Value<String?> error,
+      Value<int> tokensInput,
+      Value<int> tokensOutput,
+      Value<int> tokensReasoning,
       required DateTime createdAt,
       Value<int> rowid,
     });
@@ -4133,6 +5216,9 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<String?> model,
       Value<String?> reasoning,
       Value<String?> error,
+      Value<int> tokensInput,
+      Value<int> tokensOutput,
+      Value<int> tokensReasoning,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -4183,6 +5269,21 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<String> get error => $composableBuilder(
     column: $table.error,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensInput => $composableBuilder(
+    column: $table.tokensInput,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensOutput => $composableBuilder(
+    column: $table.tokensOutput,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokensReasoning => $composableBuilder(
+    column: $table.tokensReasoning,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4241,6 +5342,21 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get tokensInput => $composableBuilder(
+    column: $table.tokensInput,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokensOutput => $composableBuilder(
+    column: $table.tokensOutput,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokensReasoning => $composableBuilder(
+    column: $table.tokensReasoning,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -4279,6 +5395,21 @@ class $$MessagesTableAnnotationComposer
 
   GeneratedColumn<String> get error =>
       $composableBuilder(column: $table.error, builder: (column) => column);
+
+  GeneratedColumn<int> get tokensInput => $composableBuilder(
+    column: $table.tokensInput,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tokensOutput => $composableBuilder(
+    column: $table.tokensOutput,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tokensReasoning => $composableBuilder(
+    column: $table.tokensReasoning,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -4320,6 +5451,9 @@ class $$MessagesTableTableManager
                 Value<String?> model = const Value.absent(),
                 Value<String?> reasoning = const Value.absent(),
                 Value<String?> error = const Value.absent(),
+                Value<int> tokensInput = const Value.absent(),
+                Value<int> tokensOutput = const Value.absent(),
+                Value<int> tokensReasoning = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MessagesCompanion(
@@ -4331,6 +5465,9 @@ class $$MessagesTableTableManager
                 model: model,
                 reasoning: reasoning,
                 error: error,
+                tokensInput: tokensInput,
+                tokensOutput: tokensOutput,
+                tokensReasoning: tokensReasoning,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -4344,6 +5481,9 @@ class $$MessagesTableTableManager
                 Value<String?> model = const Value.absent(),
                 Value<String?> reasoning = const Value.absent(),
                 Value<String?> error = const Value.absent(),
+                Value<int> tokensInput = const Value.absent(),
+                Value<int> tokensOutput = const Value.absent(),
+                Value<int> tokensReasoning = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
               }) => MessagesCompanion.insert(
@@ -4355,6 +5495,9 @@ class $$MessagesTableTableManager
                 model: model,
                 reasoning: reasoning,
                 error: error,
+                tokensInput: tokensInput,
+                tokensOutput: tokensOutput,
+                tokensReasoning: tokensReasoning,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -5209,6 +6352,448 @@ typedef $$SessionSnapshotsTableProcessedTableManager =
       SessionSnapshot,
       PrefetchHooks Function()
     >;
+typedef $$FileSnapshotsTableCreateCompanionBuilder =
+    FileSnapshotsCompanion Function({
+      required String id,
+      required String sessionId,
+      required String filePath,
+      required String content,
+      Value<String?> stepId,
+      Value<String?> toolName,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$FileSnapshotsTableUpdateCompanionBuilder =
+    FileSnapshotsCompanion Function({
+      Value<String> id,
+      Value<String> sessionId,
+      Value<String> filePath,
+      Value<String> content,
+      Value<String?> stepId,
+      Value<String?> toolName,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$FileSnapshotsTableFilterComposer
+    extends Composer<_$AppDatabase, $FileSnapshotsTable> {
+  $$FileSnapshotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stepId => $composableBuilder(
+    column: $table.stepId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolName => $composableBuilder(
+    column: $table.toolName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FileSnapshotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FileSnapshotsTable> {
+  $$FileSnapshotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stepId => $composableBuilder(
+    column: $table.stepId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toolName => $composableBuilder(
+    column: $table.toolName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FileSnapshotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FileSnapshotsTable> {
+  $$FileSnapshotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<String> get filePath =>
+      $composableBuilder(column: $table.filePath, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<String> get stepId =>
+      $composableBuilder(column: $table.stepId, builder: (column) => column);
+
+  GeneratedColumn<String> get toolName =>
+      $composableBuilder(column: $table.toolName, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$FileSnapshotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FileSnapshotsTable,
+          FileSnapshot,
+          $$FileSnapshotsTableFilterComposer,
+          $$FileSnapshotsTableOrderingComposer,
+          $$FileSnapshotsTableAnnotationComposer,
+          $$FileSnapshotsTableCreateCompanionBuilder,
+          $$FileSnapshotsTableUpdateCompanionBuilder,
+          (
+            FileSnapshot,
+            BaseReferences<_$AppDatabase, $FileSnapshotsTable, FileSnapshot>,
+          ),
+          FileSnapshot,
+          PrefetchHooks Function()
+        > {
+  $$FileSnapshotsTableTableManager(_$AppDatabase db, $FileSnapshotsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FileSnapshotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FileSnapshotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FileSnapshotsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> sessionId = const Value.absent(),
+                Value<String> filePath = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<String?> stepId = const Value.absent(),
+                Value<String?> toolName = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FileSnapshotsCompanion(
+                id: id,
+                sessionId: sessionId,
+                filePath: filePath,
+                content: content,
+                stepId: stepId,
+                toolName: toolName,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String sessionId,
+                required String filePath,
+                required String content,
+                Value<String?> stepId = const Value.absent(),
+                Value<String?> toolName = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => FileSnapshotsCompanion.insert(
+                id: id,
+                sessionId: sessionId,
+                filePath: filePath,
+                content: content,
+                stepId: stepId,
+                toolName: toolName,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FileSnapshotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FileSnapshotsTable,
+      FileSnapshot,
+      $$FileSnapshotsTableFilterComposer,
+      $$FileSnapshotsTableOrderingComposer,
+      $$FileSnapshotsTableAnnotationComposer,
+      $$FileSnapshotsTableCreateCompanionBuilder,
+      $$FileSnapshotsTableUpdateCompanionBuilder,
+      (
+        FileSnapshot,
+        BaseReferences<_$AppDatabase, $FileSnapshotsTable, FileSnapshot>,
+      ),
+      FileSnapshot,
+      PrefetchHooks Function()
+    >;
+typedef $$ChatSnapshotsTableCreateCompanionBuilder =
+    ChatSnapshotsCompanion Function({
+      required String sessionId,
+      required int eventsCount,
+      required String chatJson,
+      required int updatedAt,
+      Value<int> schemaVersion,
+      Value<int> rowid,
+    });
+typedef $$ChatSnapshotsTableUpdateCompanionBuilder =
+    ChatSnapshotsCompanion Function({
+      Value<String> sessionId,
+      Value<int> eventsCount,
+      Value<String> chatJson,
+      Value<int> updatedAt,
+      Value<int> schemaVersion,
+      Value<int> rowid,
+    });
+
+class $$ChatSnapshotsTableFilterComposer
+    extends Composer<_$AppDatabase, $ChatSnapshotsTable> {
+  $$ChatSnapshotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get eventsCount => $composableBuilder(
+    column: $table.eventsCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chatJson => $composableBuilder(
+    column: $table.chatJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ChatSnapshotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ChatSnapshotsTable> {
+  $$ChatSnapshotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get eventsCount => $composableBuilder(
+    column: $table.eventsCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chatJson => $composableBuilder(
+    column: $table.chatJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ChatSnapshotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ChatSnapshotsTable> {
+  $$ChatSnapshotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<int> get eventsCount => $composableBuilder(
+    column: $table.eventsCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get chatJson =>
+      $composableBuilder(column: $table.chatJson, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => column,
+  );
+}
+
+class $$ChatSnapshotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ChatSnapshotsTable,
+          ChatSnapshot,
+          $$ChatSnapshotsTableFilterComposer,
+          $$ChatSnapshotsTableOrderingComposer,
+          $$ChatSnapshotsTableAnnotationComposer,
+          $$ChatSnapshotsTableCreateCompanionBuilder,
+          $$ChatSnapshotsTableUpdateCompanionBuilder,
+          (
+            ChatSnapshot,
+            BaseReferences<_$AppDatabase, $ChatSnapshotsTable, ChatSnapshot>,
+          ),
+          ChatSnapshot,
+          PrefetchHooks Function()
+        > {
+  $$ChatSnapshotsTableTableManager(_$AppDatabase db, $ChatSnapshotsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ChatSnapshotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ChatSnapshotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ChatSnapshotsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sessionId = const Value.absent(),
+                Value<int> eventsCount = const Value.absent(),
+                Value<String> chatJson = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> schemaVersion = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ChatSnapshotsCompanion(
+                sessionId: sessionId,
+                eventsCount: eventsCount,
+                chatJson: chatJson,
+                updatedAt: updatedAt,
+                schemaVersion: schemaVersion,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sessionId,
+                required int eventsCount,
+                required String chatJson,
+                required int updatedAt,
+                Value<int> schemaVersion = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ChatSnapshotsCompanion.insert(
+                sessionId: sessionId,
+                eventsCount: eventsCount,
+                chatJson: chatJson,
+                updatedAt: updatedAt,
+                schemaVersion: schemaVersion,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ChatSnapshotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ChatSnapshotsTable,
+      ChatSnapshot,
+      $$ChatSnapshotsTableFilterComposer,
+      $$ChatSnapshotsTableOrderingComposer,
+      $$ChatSnapshotsTableAnnotationComposer,
+      $$ChatSnapshotsTableCreateCompanionBuilder,
+      $$ChatSnapshotsTableUpdateCompanionBuilder,
+      (
+        ChatSnapshot,
+        BaseReferences<_$AppDatabase, $ChatSnapshotsTable, ChatSnapshot>,
+      ),
+      ChatSnapshot,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5225,4 +6810,8 @@ class $AppDatabaseManager {
       $$ContextEpochsTableTableManager(_db, _db.contextEpochs);
   $$SessionSnapshotsTableTableManager get sessionSnapshots =>
       $$SessionSnapshotsTableTableManager(_db, _db.sessionSnapshots);
+  $$FileSnapshotsTableTableManager get fileSnapshots =>
+      $$FileSnapshotsTableTableManager(_db, _db.fileSnapshots);
+  $$ChatSnapshotsTableTableManager get chatSnapshots =>
+      $$ChatSnapshotsTableTableManager(_db, _db.chatSnapshots);
 }

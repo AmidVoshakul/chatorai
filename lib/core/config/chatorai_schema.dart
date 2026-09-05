@@ -36,7 +36,10 @@ const Map<String, dynamic> chatoraiSchema = {
         ],
       },
     },
-    'keybinding': {'type': 'object'},
+    'keybinding': {
+      'type': 'object',
+      'additionalProperties': {'type': 'string'},
+    },
     'skills': {
       'type': 'object',
       'properties': {
@@ -79,6 +82,7 @@ const Map<String, dynamic> chatoraiSchema = {
           },
         },
         'buffer': {'type': 'integer', 'minimum': 0},
+        'tail_turns': {'type': 'integer', 'minimum': 1},
       },
     },
     'formatter': {
@@ -107,11 +111,46 @@ const Map<String, dynamic> chatoraiSchema = {
         },
       },
     },
+    'lsp': {
+      'type': ['object', 'boolean'],
+      'description':
+          'LSP server configuration. Set to true to enable all built-in servers, false to disable all.',
+      'properties': {
+        'servers': {
+          'type': 'object',
+          'additionalProperties': {
+            'type': 'object',
+            'properties': {
+              'disabled': {'type': 'boolean'},
+              'command': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+              'args': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+              'environment': {
+                'type': 'object',
+                'additionalProperties': {'type': 'string'},
+              },
+              'extensions': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+              'languageId': {'type': 'string'},
+              'initialization': {'type': 'object'},
+              'autoInstall': {'type': 'boolean'},
+            },
+          },
+        },
+      },
+    },
     'mcp': {
       'type': 'object',
       'description':
           'MCP server declarations. Servers may be listed directly under '
-          '"mcp" (opencode-style flat layout) or nested under "mcp.servers".',
+          '"mcp" or nested under "mcp.servers".',
       'properties': {
         'default_timeout': {'type': 'integer'},
         'defaultTimeout': {'type': 'integer'},
@@ -288,6 +327,45 @@ const Map<String, dynamic> chatoraiSchema = {
                 },
               ],
             },
+          },
+        },
+      },
+    },
+    'command': {
+      'type': 'object',
+      'description':
+          'Custom slash commands. Each key is the command name (invoked as '
+          '"/<key>"); markdown files under .chatorai/commands override '
+          'same-named entries here.',
+      'additionalProperties': {
+        'type': 'object',
+        'required': ['template'],
+        'properties': {
+          'template': {
+            'type': 'string',
+            'description':
+                'Prompt payload. Supports \$1, \$2 positional argument '
+                'placeholders, \$ARGUMENTS for the raw argument string.',
+          },
+          'description': {
+            'type': 'string',
+            'description': 'Shown in the command palette.',
+          },
+          'agent': {
+            'type': 'string',
+            'description':
+                'Agent that executes the command. Subagents run it as a '
+                'delegated task by default.',
+          },
+          'model': {
+            'type': 'string',
+            'description': 'Model override, e.g. "openai/gpt-4o".',
+          },
+          'variant': {'type': 'string'},
+          'subtask': {
+            'type': 'boolean',
+            'description':
+                'Force on/off delegated-task execution for this command.',
           },
         },
       },

@@ -114,6 +114,39 @@ class AppLocalizationsRu extends AppLocalizations {
       'Показывать блоки рассуждений развёрнутыми при ответе AI';
 
   @override
+  String get slashCommandSkills => 'Показать доступные навыки';
+
+  @override
+  String get slashCommandNew => 'Начать новый чат';
+
+  @override
+  String get slashCommandClear => 'Очистить текущий чат';
+
+  @override
+  String get slashCommandCompact => 'Сжать контекст беседы';
+
+  @override
+  String get slashCommandHelp => 'Показать справку';
+
+  @override
+  String get slashCommandUndo => 'Отменить последнее действие';
+
+  @override
+  String get slashCommandRedo => 'Повторить отменённое действие';
+
+  @override
+  String get slashCommandSessions => 'Список сессий';
+
+  @override
+  String get slashCommandModels => 'Выбрать модель';
+
+  @override
+  String get slashCommandTheme => 'Сменить тему';
+
+  @override
+  String get slashCommandThinking => 'Переключить видимость reasoning';
+
+  @override
   String get language => 'Язык';
 
   @override
@@ -149,6 +182,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get close => 'Закрыть';
+
+  @override
+  String errorLoadingChat(String error) {
+    return 'Не удалось загрузить чат: $error';
+  }
+
+  @override
+  String get confirmOpenLink => 'Вы действительно хотите открыть:';
 
   @override
   String get copy => 'Скопировать';
@@ -282,6 +323,56 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get context => 'Контекст';
+
+  @override
+  String contextMessages(Object percent, Object usable, Object used) {
+    return 'Контекст: $used / $usable токенов ($percent%)';
+  }
+
+  @override
+  String get contextInstructions => 'Инструкции';
+
+  @override
+  String get contextAgentPrompt => 'Промпт агента';
+
+  @override
+  String get contextUserPrompt => 'Промпт пользователя';
+
+  @override
+  String get contextCompactSession => 'Сжать сессию';
+
+  @override
+  String get contextCompacting => 'Сжатие…';
+
+  @override
+  String get contextUsageBreakdown => 'Использование';
+
+  @override
+  String get contextPromptTokens => 'Входные токены';
+
+  @override
+  String get contextOutputTokens => 'Токены вывода';
+
+  @override
+  String get contextCacheRead => 'Чтение кэша';
+
+  @override
+  String get contextCacheWrite => 'Запись кэша';
+
+  @override
+  String get contextToolTokens => 'Токены инструментов';
+
+  @override
+  String get contextSpentLabel => 'Потрачено';
+
+  @override
+  String get contextTokensIncludedInPrompt =>
+      'Токены инструментов включены в промпт';
+
+  @override
+  String contextAutoCompactAt(Object buffer, Object percent) {
+    return 'Автосжатие при $percent% · буфер $buffer токенов';
+  }
 
   @override
   String get free => 'Бесплатно';
@@ -440,6 +531,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get edit => 'Редактировать';
+
+  @override
+  String editToolTitle(String path) {
+    return 'Редактировать $path';
+  }
+
+  @override
+  String patchToolTitle(String path) {
+    return 'Патч $path';
+  }
 
   @override
   String get share => 'Поделиться';
@@ -1150,6 +1251,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get systemPromptSuggestion => 'Ты полезный ассистент.';
 
   @override
+  String get supportBecomeSponsor => 'Стать спонсором';
+
+  @override
+  String get supportProjectSubtitle =>
+      'Если вам нравится ChatORAI, поддержите проект:';
+
+  @override
+  String get supportProjectTitle => 'Поддержите проект';
+
+  @override
+  String get supportShareThoughts => 'Поделиться мнением';
+
+  @override
+  String get supportStarOnGitHub => 'Поставить звезду на GitHub';
+
+  @override
   String get temperature => 'Температура';
 
   @override
@@ -1276,6 +1393,18 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get listening => 'Говорите...';
+
+  @override
+  String get linkCancel => 'Отмена';
+
+  @override
+  String get linkCopied => 'Ссылка скопирована';
+
+  @override
+  String get linkOpen => 'Перейти';
+
+  @override
+  String get linkOpenFailed => 'Не удалось открыть ссылку';
 
   @override
   String get sendMessage => 'Отправить сообщение';
@@ -1702,6 +1831,68 @@ class AppLocalizationsRu extends AppLocalizations {
       'Adobe для творчества объединяет возможности Photoshop, Lightroom, Illustrator, Firefly, Premiere, Express, InDesign и Stock с творческой работой, выполняемой с помощью искусственного интеллекта. Пользователи могут создавать, редактировать и улучшать фотографии, дизайнерские материалы и видеопроекты, используя естественный язык, при этом работа остаётся привязанной к учётной записи Adobe.';
 
   @override
+  String get mcpInstallToGlobal => 'Установить глобально';
+
+  @override
+  String get mcpInstallToProject => 'Установить в проект';
+
+  @override
+  String get mcpScopeGlobal => 'Глобально';
+
+  @override
+  String get mcpScopeProject => 'Проект';
+
+  @override
+  String get mcpScopeGlobalProject => 'Глобально + Проект';
+
+  @override
+  String mcpRemoveFromScope(String scope) {
+    return 'Удалить из $scope';
+  }
+
+  @override
+  String get mcpRemoveFromAll => 'Удалить из всех';
+
+  @override
+  String get mcpTokenDialogTitle => 'Аутентификация';
+
+  @override
+  String get mcpTokenDialogTitleHint =>
+      'Выберите способ аутентификации с сервером';
+
+  @override
+  String get mcpTokenInputLabel => 'Токен';
+
+  @override
+  String get mcpTokenInputHint => 'Вставьте токен доступа';
+
+  @override
+  String get mcpTokenInputHelper =>
+      'Отправляется как Authorization: Bearer <token>';
+
+  @override
+  String get mcpOAuthClientIdLabel => 'Client ID';
+
+  @override
+  String get mcpOAuthClientIdHint => 'Client ID для OAuth 2.1';
+
+  @override
+  String get mcpOAuthClientSecretLabel => 'Client Secret';
+
+  @override
+  String get mcpOAuthClientSecretHint =>
+      'Client Secret для OAuth 2.1 (необязательно)';
+
+  @override
+  String get mcpOAuthScopeLabel => 'Scope';
+
+  @override
+  String get mcpOAuthScopeHint => 'например read write';
+
+  @override
+  String get mcpAuthConfirm => 'Подтвердить';
+
+  @override
   String get agentsInstructions => 'Инструкции для агентов';
 
   @override
@@ -2021,4 +2212,291 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get commonEdit => 'Изменить';
+
+  @override
+  String get toolResultOriginal => 'Оригинал';
+
+  @override
+  String get toolResultRestore => 'Вернуть';
+
+  @override
+  String get toolResultRestoredSnackbar =>
+      'Файлы восстановлены до состояния перед редактированием';
+
+  @override
+  String get toolResultOriginalTitle =>
+      'Исходное содержимое перед редактированием';
+
+  @override
+  String restoreFailed(String error) {
+    return 'Не удалось восстановить: $error';
+  }
+
+  @override
+  String get compactingIndicator => 'Сжатие...';
+
+  @override
+  String get compactionAgentName => 'Сжатие';
+
+  @override
+  String get workspaces => 'Рабочие директории';
+
+  @override
+  String get directoryTitle => 'Каталог';
+
+  @override
+  String get searchDirectories => 'Поиск каталогов';
+
+  @override
+  String get addDirectory => 'Добавить директорию';
+
+  @override
+  String get removeDirectory => 'Удалить директорию';
+
+  @override
+  String get noWorkspacesFound => 'Директории не найдены';
+
+  @override
+  String get switchWorkspaceTitle => 'Переключить рабочую директорию';
+
+  @override
+  String get currentSessionWillBeStopped => 'Текущая сессия будет остановлена.';
+
+  @override
+  String get continueText => 'Продолжить';
+
+  @override
+  String get changeWorkingDirectory => 'Сменить текущую директорию';
+
+  @override
+  String get sessionsTitle => 'Сессии';
+
+  @override
+  String get noSessions => 'Сессий пока нет';
+
+  @override
+  String get searchSessions => 'Поиск сессий';
+
+  @override
+  String get newSession => 'Новая сессия';
+
+  @override
+  String get autoApproveTitle => 'Автоподтверждение';
+
+  @override
+  String get autoApproveSubtitle =>
+      'Настройка автоматического подтверждения разрешений';
+
+  @override
+  String get autoApproveExternalDirectoryDesc =>
+      'Разрешить доступ к внешним директориям';
+
+  @override
+  String get autoApproveShellDesc => 'Разрешить выполнение shell-команд';
+
+  @override
+  String get autoApproveReadDesc => 'Разрешить чтение файлов';
+
+  @override
+  String get autoApproveEditDesc => 'Разрешить редактирование файлов';
+
+  @override
+  String get autoApproveWriteDesc => 'Разрешить запись файлов';
+
+  @override
+  String get autoApproveGlobDesc => 'Разрешить glob-поиск';
+
+  @override
+  String get autoApproveGrepDesc => 'Разрешить grep-поиск';
+
+  @override
+  String get autoApproveWebsearchDesc => 'Разрешить веб-поиск';
+
+  @override
+  String get autoApproveWebfetchDesc => 'Разрешить загрузку веб-страниц';
+
+  @override
+  String get autoApproveDoomLoopDesc => 'Разрешить обнаружение doom loop';
+
+  @override
+  String get autoApproveSkillDesc => 'Разрешить выполнение навыков';
+
+  @override
+  String get autoApproveLspDesc => 'Разрешить использование LSP';
+
+  @override
+  String get autoApproveTaskDesc => 'Разрешить использование task';
+
+  @override
+  String get autoApproveTodowriteDesc => 'Разрешить операции с todo';
+
+  @override
+  String get exceptionsTitle => 'Исключения';
+
+  @override
+  String get addPath => 'Добавить путь';
+
+  @override
+  String get addCommand => 'Добавить команду';
+
+  @override
+  String get scopeGlobal => 'Глобально';
+
+  @override
+  String get scopeProject => 'Проект';
+
+  @override
+  String get defaultInherit => 'По умолчанию (унаследовать)';
+
+  @override
+  String get defaultAllow => 'Разрешить';
+
+  @override
+  String get defaultAsk => 'Спрашивать';
+
+  @override
+  String get defaultDeny => 'Запретить';
+
+  @override
+  String autoApproveDefaultInherited(Object action) {
+    return 'По умолчанию ($action)';
+  }
+
+  @override
+  String get autoApproveGroupFileAccess => 'Доступ к файлам';
+
+  @override
+  String get autoApproveGroupShell => 'Оболочка и команды';
+
+  @override
+  String get autoApproveGroupNetwork => 'Сеть';
+
+  @override
+  String get autoApproveGroupAgents => 'Агенты и автоматизация';
+
+  @override
+  String get autoApproveCommandPatternLabel => 'Шаблон команды';
+
+  @override
+  String get autoApprovePathPatternLabel => 'Шаблон пути';
+
+  @override
+  String get autoApproveCommandPatternHint => 'git *';
+
+  @override
+  String get autoApprovePathPatternHint => '/home/**/*.txt';
+
+  @override
+  String get autoApproveScopeHint =>
+      'Глобальные — везде · Проект — переопределяет для рабочей области';
+
+  @override
+  String get autoApproveNoExceptions =>
+      'Нет исключений — для всех шаблонов действует умолчание';
+
+  @override
+  String get autoApproveBrowseDirectory => 'Выбрать директорию';
+
+  @override
+  String get autoApproveScopeProjectDisabledTooltip =>
+      'Конфигурация проекта не найдена. Создайте .chatorai/chatorai.json для включения проектных разрешений.';
+
+  @override
+  String get autoApproveActionLabel => 'Action';
+
+  @override
+  String get autoApprovePatternHintFile =>
+      '/home/user/project/** • ~/Documents/*';
+
+  @override
+  String get autoApprovePatternHintCommand => 'npm run * • git status';
+
+  @override
+  String autoApproveError(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get settingsMcpSubtitle =>
+      'Manage Model Context Protocol tool servers';
+
+  @override
+  String get mcpAuthNoAuth => 'No Auth';
+
+  @override
+  String get mcpAuthToken => 'Token';
+
+  @override
+  String get mcpAuthOAuth => 'OAuth 2.1';
+
+  @override
+  String get statsInput => 'Input';
+
+  @override
+  String get statsOutput => 'Output';
+
+  @override
+  String get statsCacheRead => 'Cache Read';
+
+  @override
+  String get keyboardShortcuts => 'Горячие клавиши';
+
+  @override
+  String get keyboardShortcutsSubtitle => 'Настройка горячих клавиш приложения';
+
+  @override
+  String get keybindingsReadOnlyMobile =>
+      'Горячие клавиши доступны только на настольных платформах';
+
+  @override
+  String get keyboardShortcutsResetConfirm =>
+      'Вы уверены, что хотите сбросить все горячие клавиши к значениям по умолчанию?';
+
+  @override
+  String get bindingConflict => 'Конфликт';
+
+  @override
+  String get captureHint => 'Нажмите комбинацию клавиш...';
+
+  @override
+  String get shortcutCancelStreaming => 'Отменить ответ ИИ';
+
+  @override
+  String get shortcutCloseDialog => 'Закрыть диалог';
+
+  @override
+  String get shortcutOpenLatestChild => 'Открыть последнюю дочернюю сессию';
+
+  @override
+  String get shortcutNavPrevSibling => 'Предыдущая сессия-брат';
+
+  @override
+  String get shortcutNavNextSibling => 'Следующая сессия-брат';
+
+  @override
+  String get shortcutNavParent => 'Перейти к родительской сессии';
+
+  @override
+  String get shortcutCyclePrimaryAgent => 'Переключить основного агента';
+
+  @override
+  String get shortcutToggleSidebar => 'Переключить боковую панель';
+
+  @override
+  String get shortcutNewChat => 'Новый чат';
+
+  @override
+  String get shortcutOpenModelSelector => 'Открыть выбор модели';
+
+  @override
+  String get shortcutOpenSettings => 'Открыть настройки';
+
+  @override
+  String get shortcutOpenWorkspace => 'Открыть рабочую область';
+
+  @override
+  String get shortcutScrollToChatStart => 'Прокрутить вверх';
+
+  @override
+  String get shortcutScrollToChatEnd => 'Прокрутить вниз';
 }

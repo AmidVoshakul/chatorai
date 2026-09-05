@@ -1,5 +1,7 @@
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
+import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
+import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/tools/tool.dart';
@@ -8,11 +10,77 @@ import 'package:chatorai/core/tools/built_in/task_shared.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/chat/services/chat_ai_service.dart';
+import 'package:chatorai/core/chat/services/chat_ai_service.dart';
 
 class _MockSessionRunner extends Mock implements SessionRunner {}
 
-class _MockChatAiService extends Mock implements ChatAiService {}
+class _MockChatAiService extends Mock implements ChatAiService {
+  @override
+  Future<void> runChildCompletion({
+    required List<Map<String, dynamic>> messages,
+    required String model,
+    required double temperature,
+    required Future<void> Function(String) onChunk,
+    required Future<void> Function(String) onReasoning,
+    Future<void> Function()? onReasoningEnd,
+    required Future<void> Function(String) onCompletion,
+    sdk.ToolSet tools = const {},
+    ToolStartCallback? onToolStart,
+    ToolEndCallback? onToolEnd,
+    ToolErrorCallback? onToolError,
+    UsageCallback? onUsage,
+    int maxSteps = 5,
+    String? sessionId,
+    sdk.CancellationToken? abortSignal,
+  }) async {
+    await onChunk('mock task result');
+    await onCompletion('mock task result');
+  }
+
+  @override
+  Future<void> runSubagentCompletion({
+    required SessionRunnerSession child,
+    required List<Map<String, dynamic>> messages,
+    required String model,
+    required double temperature,
+    required String sessionId,
+    required sdk.ToolSet tools,
+    required int maxSteps,
+    sdk.CancellationToken? abortSignal,
+    void Function(
+      int tokensInput,
+      int tokensOutput,
+      int tokensCacheRead,
+      int tokensCacheWrite,
+      int tokensReasoning,
+    )?
+    onUsage,
+    void Function(String childSessionId, String toolName, String? title)?
+    onChildToolTitle,
+  }) {
+    return runChildCompletion(
+      messages: messages,
+      model: model,
+      temperature: temperature,
+      sessionId: sessionId,
+      tools: tools,
+      maxSteps: maxSteps,
+      abortSignal: abortSignal,
+      onUsage: onUsage == null
+          ? null
+          : (input, output, cacheRead, cacheWrite, reasoning, _) =>
+                onUsage(input, output, cacheRead, cacheWrite, reasoning),
+      onChunk: child.onChunk,
+      onReasoning: child.onReasoning,
+      onReasoningEnd: child.onReasoningEnd,
+      onToolStart: child.onToolStart,
+      onToolEnd: child.onToolEnd,
+      onToolError: child.onToolError,
+      onCompletion: (content) =>
+          child.onCompletion(content: content, reasoning: null, model: model),
+    );
+  }
+}
 
 SessionRunnerHolder _makeRunnerHolder([String result = 'mock task result']) {
   final mock = _MockSessionRunner();
@@ -22,9 +90,12 @@ SessionRunnerHolder _makeRunnerHolder([String result = 'mock task result']) {
       taskPrompt: any(named: 'taskPrompt'),
       streamFn: any(named: 'streamFn'),
       agent: any(named: 'agent'),
+      modelRef: any(named: 'modelRef'),
       title: any(named: 'title'),
       taskId: any(named: 'taskId'),
+      taskPartId: any(named: 'taskPartId'),
       holder: any(named: 'holder'),
+      abortSignal: any(named: 'abortSignal'),
     ),
   ).thenAnswer(
     (_) async => TaskChildResult(
@@ -64,8 +135,9 @@ ToolContext _mockCtx({String? sessionId}) {
 }
 
 void main() {
-  setUpAll(() {
+  setUpAll(() async {
     registerFallbackValue(SessionID.create());
+    await AgentRegistry().init();
   });
 
   group('task tool', () {
@@ -109,8 +181,6 @@ void main() {
         'subagent_type': 'general',
       }, ctx);
 
-      expect(output.metadata?['error'], isNull);
-      expect(output.output, contains('session_id'));
       expect(output.metadata?['session_id'], isNotNull);
     });
 
@@ -121,48 +191,37 @@ void main() {
       final output = await tool.execute({
         'description': 'My test task',
         'prompt': 'Do work',
-        'subagent_type': 'build',
+        'subagent_type': 'general',
       }, ctx);
 
       expect(output.metadata?['description'], equals('My test task'));
-      expect(output.metadata?['subagent_type'], equals('build'));
+      expect(output.metadata?['subagent_type'], equals('general'));
     });
 
-    group('XML output format', () {
+    group('task tool output format', () {
       final testCases = <_XmlTestCase>[
         _XmlTestCase(
-          name: 'output contains state="completed" attribute',
-          expectedSubstring: 'state="completed"',
+          name: 'output contains runner result',
+          expectedSubstring: 'mock task result',
         ),
         _XmlTestCase(
-          name: 'output contains <summary> tag',
+          name: 'output contains custom summary text',
           runnerResult: 'My summary text',
           description: 'My summary text',
-          expectedSubstring: '<summary>My summary text</summary>',
+          expectedSubstring: 'My summary text',
         ),
         _XmlTestCase(
-          name: 'output contains <task_result> tag',
-          expectedSubstring: '<task_result>',
-          expectedEndSubstring: '</task_result>',
-        ),
-        _XmlTestCase(
-          name: 'output wraps in <task> root element',
-          expectedStartsWith: '<task ',
-          expectedEndsWith: '</task>',
-        ),
-        _XmlTestCase(
-          name: 'output includes session_id attribute in <task> tag',
-          sessionId: 'sess-abc-123',
-          expectedSubstring: 'session_id="sess-abc-123"',
-        ),
-        _XmlTestCase(
-          name: 'output includes task_id when provided',
+          name: 'output includes task_id in metadata when provided',
           inputOverrides: {'task_id': 'my-custom-id-42'},
-          expectedSubstring: 'id="my-custom-id-42"',
+          metadataAssertions: {'task_id': 'my-custom-id-42'},
         ),
         _XmlTestCase(
-          name: 'output auto-generates id when task_id not provided',
-          expectedSubstring: 'id="task_',
+          name: 'output includes session_id in metadata',
+          sessionId: 'sess-abc-123',
+        ),
+        _XmlTestCase(
+          name: 'output auto-generates task_id in metadata when not provided',
+          metadataAssertions: {'task_id': 'task_test-call-id'},
         ),
       ];
 
@@ -180,21 +239,14 @@ void main() {
 
           final output = await tool.execute(input, ctx);
 
-          final substring = tc.expectedSubstring;
-          final startsWithStr = tc.expectedStartsWith;
-          final endsWithStr = tc.expectedEndsWith;
-          final endSubstring = tc.expectedEndSubstring;
-          if (substring != null) {
-            expect(output.output, contains(substring));
+          if (tc.expectedSubstring != null) {
+            expect(output.output, contains(tc.expectedSubstring!));
           }
-          if (startsWithStr != null) {
-            expect(output.output, startsWith(startsWithStr));
+          if (tc.sessionId != null) {
+            expect(output.metadata?['session_id'], equals(tc.sessionId));
           }
-          if (endsWithStr != null) {
-            expect(output.output, endsWith(endsWithStr));
-          }
-          if (endSubstring != null) {
-            expect(output.output, contains(endSubstring));
+          for (final entry in tc.metadataAssertions.entries) {
+            expect(output.metadata?[entry.key], entry.value);
           }
         });
       }
@@ -297,10 +349,10 @@ void main() {
         final registry = ToolRegistry(PermissionService(), PermissionRuleset());
         registry.register(
           ToolDef(
-            id: 'bash',
-            description: 'Mock bash',
+            id: 'shell',
+            description: 'Mock shell',
             inputSchema: const {'type': 'object'},
-            execute: (input, ctx) async => ToolOutput('result-bash'),
+            execute: (input, ctx) async => ToolOutput('result-shell'),
           ),
         );
         registry.register(
@@ -331,7 +383,7 @@ void main() {
         final subagentTools = deriveSubagentTools(registry);
 
         expect(subagentTools.length, equals(4));
-        expect(subagentTools.containsKey('bash'), isTrue);
+        expect(subagentTools.containsKey('shell'), isTrue);
         expect(subagentTools.containsKey('read'), isTrue);
         expect(subagentTools.containsKey('write'), isTrue);
         expect(subagentTools.containsKey('grep'), isTrue);
@@ -347,9 +399,7 @@ class _XmlTestCase {
   final String description;
   final Map<String, dynamic> inputOverrides;
   final String? expectedSubstring;
-  final String? expectedStartsWith;
-  final String? expectedEndsWith;
-  final String? expectedEndSubstring;
+  final Map<String, dynamic> metadataAssertions;
 
   _XmlTestCase({
     required this.name,
@@ -358,8 +408,6 @@ class _XmlTestCase {
     this.description = 'Format test',
     this.inputOverrides = const {},
     this.expectedSubstring,
-    this.expectedStartsWith,
-    this.expectedEndsWith,
-    this.expectedEndSubstring,
+    this.metadataAssertions = const {},
   });
 }

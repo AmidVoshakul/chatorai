@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chatorai/shared/utils/xdg_paths.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 import 'package:path/path.dart' as p;
 
 /// Errors that can occur during config loading.
@@ -41,7 +42,7 @@ class ConfigValidationError extends ConfigError {
 /// The two layers are deep-merged: keys present in the project config
 /// override the global ones, while keys absent in the project config are
 /// inherited from the global config. This mirrors the convention used by
-/// tools like opencode (global base + project overlay with deep merge).
+/// tools (global base + project overlay with deep merge).
 ///
 /// If neither file exists, an empty config object `{}` is returned.
 class ConfigLoader {
@@ -59,11 +60,35 @@ class ConfigLoader {
   }
 
   static Future<String> _globalConfigPath() async {
+    // XdgPaths caches mobile paths in init(); without it, configHomeAsync
+    // throws UnsupportedError. init() is idempotent and cheap, so calling it
+    // here makes the global layer resolve on every platform.
+    await XdgPaths.init();
     final configDir = await XdgPaths.configHomeAsync;
     return p.join(configDir, 'chatorai.json');
   }
 
-  static String _projectConfigPath() => p.join('.chatorai', 'chatorai.json');
+  static String _projectConfigPath([Directory? projectRoot]) => p.join(
+    projectRoot?.path ?? workspaceRuntimeCurrent.path,
+    '.chatorai',
+    'chatorai.json',
+  );
+
+  /// Resolves the absolute path to `chatorai.json` for the given scope.
+  ///
+  /// - [global] → `<XDG_CONFIG_HOME>/chatorai.json`
+  /// - project → `<workspaceRuntimeCurrent.path>/.chatorai/chatorai.json`
+  ///
+  /// Always returns an absolute path. Never depends on `Directory.current`.
+  static Future<String> resolveConfigPath({
+    required bool global,
+    Directory? projectRoot,
+  }) async {
+    if (global) {
+      return await _globalConfigPath();
+    }
+    return _projectConfigPath(projectRoot);
+  }
 
   /// Reads and decodes a single config file into a map.
   ///
@@ -95,7 +120,7 @@ class ConfigLoader {
   ///
   /// Nested maps are merged key-by-key; lists are concatenated with duplicates
   /// removed (so a project config *adds* to the global config's arrays — e.g.
-  /// `instructions` and `skills.paths` accumulate like opencode); every other
+  /// `instructions` and `skills.paths` accumulate); every other
   /// value (scalars) is taken from [overlay] when present, otherwise from
   /// [base]. Thus the overlay layer (project config) has precedence without
   /// discarding the base layer's (global config) unrelated keys.

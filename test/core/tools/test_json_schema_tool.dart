@@ -1,4 +1,4 @@
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart'
+import 'package:chatorai/core/chat/chat/question_option.dart'
     show QuestionOption;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/tools/built_in/json_schema.dart';

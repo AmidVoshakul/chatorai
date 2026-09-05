@@ -1,4 +1,4 @@
-const Map<String, int> bashArity = {
+const Map<String, int> shellArity = {
   'cat': 1,
   'cd': 1,
   'chmod': 1,
@@ -140,9 +140,20 @@ const Map<String, int> bashArity = {
 List<String> prefix(List<String> tokens) {
   for (int len = tokens.length; len > 0; len--) {
     final prefixStr = tokens.take(len).join(' ');
-    final arity = bashArity[prefixStr];
+    final arity = shellArity[prefixStr];
     if (arity != null) return tokens.take(arity).toList();
   }
   if (tokens.isEmpty) return [];
   return tokens.take(1).toList();
+}
+
+bool checkArity(List<String> tokens) {
+  for (int len = tokens.length; len > 0; len--) {
+    final prefixStr = tokens.take(len).join(' ');
+    final arity = shellArity[prefixStr];
+    if (arity != null) {
+      return tokens.length >= arity;
+    }
+  }
+  return true;
 }

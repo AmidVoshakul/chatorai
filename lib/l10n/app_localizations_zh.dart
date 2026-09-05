@@ -110,6 +110,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get expandReasoningByDefaultDesc => 'AI 回复时默认展开思考/推理块';
 
   @override
+  String get slashCommandSkills => '显示可用技能';
+
+  @override
+  String get slashCommandNew => '开始新对话';
+
+  @override
+  String get slashCommandClear => '清空当前对话';
+
+  @override
+  String get slashCommandCompact => '压缩对话上下文';
+
+  @override
+  String get slashCommandHelp => '显示帮助';
+
+  @override
+  String get slashCommandUndo => '撤销上一步操作';
+
+  @override
+  String get slashCommandRedo => '重做上一步操作';
+
+  @override
+  String get slashCommandSessions => '列出会话';
+
+  @override
+  String get slashCommandModels => '选择模型';
+
+  @override
+  String get slashCommandTheme => '切换主题';
+
+  @override
+  String get slashCommandThinking => '切换推理可见性';
+
+  @override
   String get language => '语言';
 
   @override
@@ -144,6 +177,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get close => '关闭';
+
+  @override
+  String errorLoadingChat(String error) {
+    return '加载聊天失败：$error';
+  }
+
+  @override
+  String get confirmOpenLink => '您确定要打开：';
 
   @override
   String get copy => '复制';
@@ -276,6 +317,55 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get context => '上下文';
+
+  @override
+  String contextMessages(Object percent, Object usable, Object used) {
+    return '上下文: $used / $usable 令牌 ($percent%)';
+  }
+
+  @override
+  String get contextInstructions => '指令';
+
+  @override
+  String get contextAgentPrompt => '代理提示词';
+
+  @override
+  String get contextUserPrompt => '用户提示词';
+
+  @override
+  String get contextCompactSession => '压缩会话';
+
+  @override
+  String get contextCompacting => '压缩中…';
+
+  @override
+  String get contextUsageBreakdown => '使用情况';
+
+  @override
+  String get contextPromptTokens => '输入令牌';
+
+  @override
+  String get contextOutputTokens => '输出令牌';
+
+  @override
+  String get contextCacheRead => '缓存读取';
+
+  @override
+  String get contextCacheWrite => '缓存写入';
+
+  @override
+  String get contextToolTokens => '工具令牌';
+
+  @override
+  String get contextSpentLabel => '已花费';
+
+  @override
+  String get contextTokensIncludedInPrompt => '工具令牌已包含在提示中';
+
+  @override
+  String contextAutoCompactAt(Object buffer, Object percent) {
+    return '在 $percent% 自动压缩 · 缓冲区 $buffer 令牌';
+  }
 
   @override
   String get free => '免费';
@@ -426,6 +516,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get edit => '编辑';
+
+  @override
+  String editToolTitle(String path) {
+    return '编辑 $path';
+  }
+
+  @override
+  String patchToolTitle(String path) {
+    return '补丁 $path';
+  }
 
   @override
   String get share => '分享';
@@ -1086,6 +1186,21 @@ class AppLocalizationsZh extends AppLocalizations {
       '你是一个有用的助手。继续对话，为最后一条消息提供3个具体且合乎逻辑的延续。用中文回答。';
 
   @override
+  String get supportBecomeSponsor => '成为赞助者';
+
+  @override
+  String get supportProjectSubtitle => '如果您喜欢 ChatORAI，请考虑通过以下方式支持本项目：';
+
+  @override
+  String get supportProjectTitle => '支持本项目';
+
+  @override
+  String get supportShareThoughts => '分享您的想法';
+
+  @override
+  String get supportStarOnGitHub => '在 GitHub 上加星';
+
+  @override
   String get temperature => '温度';
 
   @override
@@ -1210,6 +1325,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get listening => '请说话...';
+
+  @override
+  String get linkCancel => '取消';
+
+  @override
+  String get linkCopied => '链接已复制';
+
+  @override
+  String get linkOpen => '打开';
+
+  @override
+  String get linkOpenFailed => '无法打开链接';
 
   @override
   String get sendMessage => '发送消息';
@@ -1626,6 +1753,65 @@ class AppLocalizationsZh extends AppLocalizations {
       'Adobe for Creativity 将 Photoshop、Lightroom、Illustrator、Firefly、Premiere、Express、InDesign 和 Stock 与 AI 驱动创意工作相结合。用户可使用自然语言生成、编辑并增强照片、设计素材和视频项目，同时作品始终关联到其 Adobe 账户。';
 
   @override
+  String get mcpInstallToGlobal => '安装到全局';
+
+  @override
+  String get mcpInstallToProject => '安装到项目';
+
+  @override
+  String get mcpScopeGlobal => '全局';
+
+  @override
+  String get mcpScopeProject => '项目';
+
+  @override
+  String get mcpScopeGlobalProject => '全局 + 项目';
+
+  @override
+  String mcpRemoveFromScope(String scope) {
+    return '从 $scope 移除';
+  }
+
+  @override
+  String get mcpRemoveFromAll => '从所有位置移除';
+
+  @override
+  String get mcpTokenDialogTitle => '身份验证';
+
+  @override
+  String get mcpTokenDialogTitleHint => '选择与此服务器的身份验证方式';
+
+  @override
+  String get mcpTokenInputLabel => '令牌';
+
+  @override
+  String get mcpTokenInputHint => '粘贴您的访问令牌';
+
+  @override
+  String get mcpTokenInputHelper => '以 Authorization: Bearer <token> 形式发送';
+
+  @override
+  String get mcpOAuthClientIdLabel => '客户端 ID';
+
+  @override
+  String get mcpOAuthClientIdHint => 'OAuth 2.1 客户端 ID';
+
+  @override
+  String get mcpOAuthClientSecretLabel => '客户端密钥';
+
+  @override
+  String get mcpOAuthClientSecretHint => 'OAuth 2.1 客户端密钥（可选）';
+
+  @override
+  String get mcpOAuthScopeLabel => '范围';
+
+  @override
+  String get mcpOAuthScopeHint => '例如 read write';
+
+  @override
+  String get mcpAuthConfirm => '确认';
+
+  @override
   String get agentsInstructions => '智能体指令';
 
   @override
@@ -1935,4 +2121,283 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get commonEdit => '编辑';
+
+  @override
+  String get toolResultOriginal => '原始';
+
+  @override
+  String get toolResultRestore => '还原';
+
+  @override
+  String get toolResultRestoredSnackbar => '文件已还原到编辑前状态';
+
+  @override
+  String get toolResultOriginalTitle => '编辑前的原始内容';
+
+  @override
+  String restoreFailed(String error) {
+    return '还原失败：$error';
+  }
+
+  @override
+  String get compactingIndicator => '压缩中...';
+
+  @override
+  String get compactionAgentName => '压缩';
+
+  @override
+  String get workspaces => '工作区';
+
+  @override
+  String get directoryTitle => '目录';
+
+  @override
+  String get searchDirectories => '搜索目录';
+
+  @override
+  String get addDirectory => '添加目录';
+
+  @override
+  String get removeDirectory => '删除目录';
+
+  @override
+  String get noWorkspacesFound => '未找到目录';
+
+  @override
+  String get switchWorkspaceTitle => '切换工作区';
+
+  @override
+  String get currentSessionWillBeStopped => '当前会话将被停止。';
+
+  @override
+  String get continueText => '继续';
+
+  @override
+  String get changeWorkingDirectory => '切换当前目录';
+
+  @override
+  String get sessionsTitle => '会话';
+
+  @override
+  String get noSessions => '暂无会话';
+
+  @override
+  String get searchSessions => '搜索会话';
+
+  @override
+  String get newSession => '新会话';
+
+  @override
+  String get autoApproveTitle => '自动批准';
+
+  @override
+  String get autoApproveSubtitle => '配置自动权限批准';
+
+  @override
+  String get autoApproveExternalDirectoryDesc => '允许访问外部目录';
+
+  @override
+  String get autoApproveShellDesc => '允许执行 shell 命令';
+
+  @override
+  String get autoApproveReadDesc => '允许读取文件';
+
+  @override
+  String get autoApproveEditDesc => '允许编辑文件';
+
+  @override
+  String get autoApproveWriteDesc => '允许写入文件';
+
+  @override
+  String get autoApproveGlobDesc => '允许 glob 搜索';
+
+  @override
+  String get autoApproveGrepDesc => '允许 grep 搜索';
+
+  @override
+  String get autoApproveWebsearchDesc => '允许网络搜索';
+
+  @override
+  String get autoApproveWebfetchDesc => '允许获取网页';
+
+  @override
+  String get autoApproveDoomLoopDesc => '允许 doom loop 检测';
+
+  @override
+  String get autoApproveSkillDesc => '允许执行技能';
+
+  @override
+  String get autoApproveLspDesc => '允许使用 LSP';
+
+  @override
+  String get autoApproveTaskDesc => '允许使用 task';
+
+  @override
+  String get autoApproveTodowriteDesc => '允许 todo 写入操作';
+
+  @override
+  String get exceptionsTitle => '例外';
+
+  @override
+  String get addPath => '添加路径';
+
+  @override
+  String get addCommand => '添加命令';
+
+  @override
+  String get scopeGlobal => '全局';
+
+  @override
+  String get scopeProject => '项目';
+
+  @override
+  String get defaultInherit => '默认（继承）';
+
+  @override
+  String get defaultAllow => '允许';
+
+  @override
+  String get defaultAsk => '询问';
+
+  @override
+  String get defaultDeny => '拒绝';
+
+  @override
+  String autoApproveDefaultInherited(Object action) {
+    return '默认（$action）';
+  }
+
+  @override
+  String get autoApproveGroupFileAccess => '文件访问';
+
+  @override
+  String get autoApproveGroupShell => 'Shell 与命令';
+
+  @override
+  String get autoApproveGroupNetwork => '网络';
+
+  @override
+  String get autoApproveGroupAgents => '代理与自动化';
+
+  @override
+  String get autoApproveCommandPatternLabel => '命令模式';
+
+  @override
+  String get autoApprovePathPatternLabel => '路径模式';
+
+  @override
+  String get autoApproveCommandPatternHint => 'git *';
+
+  @override
+  String get autoApprovePathPatternHint => '/home/**/*.txt';
+
+  @override
+  String get autoApproveScopeHint => '全局适用于所有位置 · 项目按工作区覆盖';
+
+  @override
+  String get autoApproveNoExceptions => '无例外 — 所有模式均使用默认值';
+
+  @override
+  String get autoApproveBrowseDirectory => '浏览目录';
+
+  @override
+  String get autoApproveScopeProjectDisabledTooltip =>
+      '未找到项目配置。创建 .chatorai/chatorai.json 以启用项目级权限。';
+
+  @override
+  String get autoApproveActionLabel => 'Action';
+
+  @override
+  String get autoApprovePatternHintFile =>
+      '/home/user/project/** • ~/Documents/*';
+
+  @override
+  String get autoApprovePatternHintCommand => 'npm run * • git status';
+
+  @override
+  String autoApproveError(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get settingsMcpSubtitle =>
+      'Manage Model Context Protocol tool servers';
+
+  @override
+  String get mcpAuthNoAuth => 'No Auth';
+
+  @override
+  String get mcpAuthToken => 'Token';
+
+  @override
+  String get mcpAuthOAuth => 'OAuth 2.1';
+
+  @override
+  String get statsInput => 'Input';
+
+  @override
+  String get statsOutput => 'Output';
+
+  @override
+  String get statsCacheRead => 'Cache Read';
+
+  @override
+  String get keyboardShortcuts => '键盘快捷键';
+
+  @override
+  String get keyboardShortcutsSubtitle => '自定义应用程序键盘快捷键';
+
+  @override
+  String get keybindingsReadOnlyMobile => '键盘快捷键仅在桌面端可用';
+
+  @override
+  String get keyboardShortcutsResetConfirm => '您确定要将所有键盘快捷键重置为默认值吗？';
+
+  @override
+  String get bindingConflict => '冲突';
+
+  @override
+  String get captureHint => '按下按键组合...';
+
+  @override
+  String get shortcutCancelStreaming => '取消 AI 响应';
+
+  @override
+  String get shortcutCloseDialog => '关闭对话框';
+
+  @override
+  String get shortcutOpenLatestChild => '打开最新的子会话';
+
+  @override
+  String get shortcutNavPrevSibling => '上一个同级会话';
+
+  @override
+  String get shortcutNavNextSibling => '下一个同级会话';
+
+  @override
+  String get shortcutNavParent => '转到父会话';
+
+  @override
+  String get shortcutCyclePrimaryAgent => '切换主要代理';
+
+  @override
+  String get shortcutToggleSidebar => '切换侧边栏';
+
+  @override
+  String get shortcutNewChat => '新建聊天';
+
+  @override
+  String get shortcutOpenModelSelector => '打开模型选择器';
+
+  @override
+  String get shortcutOpenSettings => '打开设置';
+
+  @override
+  String get shortcutOpenWorkspace => '打开工作区';
+
+  @override
+  String get shortcutScrollToChatStart => '滚动到顶部';
+
+  @override
+  String get shortcutScrollToChatEnd => '滚动到底部';
 }

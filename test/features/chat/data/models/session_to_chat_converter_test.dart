@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
+import 'package:chatorai/core/session/session_id.dart';
+import 'package:chatorai/core/session/session_state.dart' as session_state;
+import 'package:chatorai/core/chat/chat/assistant_content.dart'
     show
         AssistantReasoning,
         AssistantText,
@@ -8,10 +10,10 @@ import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
         AssistantQuestion,
         AssistantTodo,
         AssistantFile;
-import 'package:chatorai/features/chat/data/models/chat/message_part.dart'
-    show ToolState;
-import 'package:chatorai/features/chat/data/models/chat/session_to_chat_converter.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat_models.dart';
+import 'package:chatorai/core/chat/chat/message_part.dart' show ToolState;
+import 'package:chatorai/core/chat/chat/message_converter.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 
 void main() {
   group('assistantContentToMessagePart', () {
@@ -91,7 +93,7 @@ void main() {
         sessionId: 'ses',
         messageId: 'm',
         callId: 'tc_x',
-        tool: 'bash',
+        tool: 'shell',
         state: ToolState.completed,
         input: {'cmd': 'ls'},
         output: 'file1.txt',
@@ -105,7 +107,7 @@ void main() {
       );
       expect(
         json['toolName'],
-        'bash',
+        'shell',
         reason: 'must use "toolName" key, not "tool"',
       );
       expect(
@@ -127,7 +129,7 @@ void main() {
         sessionId: 'ses',
         messageId: 'm',
         callId: 'tc_x',
-        tool: 'bash',
+        tool: 'shell',
         state: ToolState.error,
         input: {},
         output: 'command not found',
@@ -263,7 +265,7 @@ void main() {
           sessionId: 'ses',
           messageId: 'm',
           callId: 'tc_1',
-          tool: 'bash',
+          tool: 'shell',
           state: ToolState.completed,
           input: {},
           output: 'out1',
@@ -326,6 +328,126 @@ void main() {
 
       // Note: TextPart has its own isStreaming flag (defaults false). Only
       // AssistantReasoning currently tracks streaming state via AssistantReasoning.ended.
+    });
+  });
+
+  group('filterPartsByMessage', () {
+    test('returns only parts belonging to the target messageId', () {
+      final parts = [
+        AssistantText(
+          id: 't1',
+          sessionId: 's1',
+          messageId: 'm1',
+          text: 'hello',
+        ),
+        AssistantReasoning(
+          id: 'r1',
+          sessionId: 's1',
+          messageId: 'm1',
+          text: 'thinking',
+          started: DateTime.now(),
+        ),
+        AssistantText(
+          id: 't2',
+          sessionId: 's1',
+          messageId: 'm2',
+          text: 'other',
+        ),
+      ];
+
+      final filtered = filterPartsByMessage(parts, 'm1');
+
+      expect(filtered, hasLength(2));
+      expect(filtered.whereType<AssistantText>(), hasLength(1));
+      expect(filtered.whereType<AssistantReasoning>(), hasLength(1));
+    });
+
+    test('returns empty list when no parts match the messageId', () {
+      final parts = [
+        AssistantText(
+          id: 't1',
+          sessionId: 's1',
+          messageId: 'm1',
+          text: 'hello',
+        ),
+      ];
+
+      final filtered = filterPartsByMessage(parts, 'm2');
+
+      expect(filtered, isEmpty);
+    });
+
+    test('includes tools and other part types for the target message', () {
+      final parts = [
+        AssistantTool(
+          id: 'tc1',
+          sessionId: 's1',
+          messageId: 'm1',
+          callId: 'c1',
+          tool: 'shell',
+          state: ToolState.completed,
+          input: {},
+          output: 'out',
+        ),
+        AssistantTask(
+          id: 'task1',
+          sessionId: 's1',
+          messageId: 'm1',
+          description: 'do',
+          agent: 'a',
+          state: ToolState.running,
+        ),
+        AssistantText(
+          id: 't1',
+          sessionId: 's1',
+          messageId: 'm2',
+          text: 'other',
+        ),
+      ];
+
+      final filtered = filterPartsByMessage(parts, 'm1');
+
+      expect(filtered, hasLength(2));
+      expect(filtered.whereType<AssistantTool>(), hasLength(1));
+      expect(filtered.whereType<AssistantTask>(), hasLength(1));
+    });
+  });
+
+  group('sessionStateToChat', () {
+    test('converts per-message tokens from StepEnded replay', () {
+      final now = DateTime.now();
+      final state = session_state.SessionState(
+        id: SessionID.fromString('ses_1'),
+        createdAt: now,
+        updatedAt: now,
+        messages: [
+          session_state.SessionMessage(
+            id: 'u1',
+            role: session_state.MessageRole.user,
+            content: 'hi',
+            seq: 1,
+            createdAt: now,
+          ),
+          session_state.SessionMessage(
+            id: 'a1',
+            role: session_state.MessageRole.assistant,
+            content: 'answer',
+            seq: 2,
+            createdAt: now,
+            tokensInput: 100,
+            tokensOutput: 50,
+            tokensReasoning: 10,
+          ),
+        ],
+      );
+
+      final chat = sessionStateToChat(state);
+      final assistant = chat.messages.firstWhere(
+        (m) => m.role == MessageRole.assistant,
+      );
+      expect(assistant.tokensInput, 100);
+      expect(assistant.tokensOutput, 50);
+      expect(assistant.tokensReasoning, 10);
     });
   });
 }

@@ -138,18 +138,18 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.ask,
           ),
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
         ],
       );
-      final result = evaluate('bash', 'git *', [ruleset]);
+      final result = evaluate('shell', 'git *', [ruleset]);
       expect(result.action, equals(PermissionAction.deny));
     });
 
@@ -222,9 +222,9 @@ void main() {
 
   group('PermissionRuleset.fromConfig', () {
     test('parses string values as defaultAction', () {
-      final rules = PermissionRuleset.fromConfig({'bash': 'ask'});
+      final rules = PermissionRuleset.fromConfig({'shell': 'ask'});
       expect(rules, hasLength(1));
-      expect(rules[0].permission, equals('bash'));
+      expect(rules[0].permission, equals('shell'));
       expect(rules[0].pattern, equals('*'));
       expect(rules[0].action, equals(PermissionAction.ask));
     });
@@ -252,7 +252,7 @@ void main() {
 
     test('parses mixed default and pattern actions', () {
       final rules = PermissionRuleset.fromConfig({
-        'bash': {'default': 'ask', 'git *': 'allow'},
+        'shell': {'default': 'ask', 'git *': 'allow'},
       });
       // Should have default action + pattern action
       expect(rules.length, greaterThanOrEqualTo(2));
@@ -260,7 +260,7 @@ void main() {
 
     test('throws ArgumentError for invalid action string', () {
       expect(
-        () => PermissionRuleset.fromConfig({'bash': 'invalid_action'}),
+        () => PermissionRuleset.fromConfig({'shell': 'invalid_action'}),
         throwsA(isA<ArgumentError>()),
       );
     });
@@ -274,7 +274,7 @@ void main() {
     });
 
     test('case-insensitive action parsing', () {
-      final rules = PermissionRuleset.fromConfig({'bash': 'ALLOW'});
+      final rules = PermissionRuleset.fromConfig({'shell': 'ALLOW'});
       expect(rules[0].action, equals(PermissionAction.allow));
     });
 
@@ -322,10 +322,12 @@ void main() {
       expect(envRule.action, equals(PermissionAction.allow));
     });
 
-    test('bash is allowed by default', () {
+    test('shell is ask by default (dangerous commands require approval)', () {
       final defaults = PermissionRuleset.defaults();
-      final bashRule = defaults.rules.firstWhere((r) => r.permission == 'bash');
-      expect(bashRule.action, equals(PermissionAction.allow));
+      final shellRule = defaults.rules.firstWhere(
+        (r) => r.permission == 'shell',
+      );
+      expect(shellRule.action, equals(PermissionAction.ask));
     });
 
     test('edit is ask by default', () {

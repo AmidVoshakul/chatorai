@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:test/test.dart';
+import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
@@ -29,8 +30,8 @@ void main() {
     test('ask blocks until reply', () async {
       final req = PermissionRequest(
         id: 'req-2',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['git *'],
         metadata: {'sessionId': 's1'},
       );
@@ -51,13 +52,13 @@ void main() {
       'once grant is not blocked by rate-limit on a different pattern',
       () async {
         // Regression: after replying "once", a follow-up ask for the same
-        // permission but a DIFFERENT pattern (e.g. two distinct bash commands)
+        // permission but a DIFFERENT pattern (e.g. two distinct shell commands)
         // must not be rate-limited into a PermissionDeniedError, and must not
-        // require a second reply. See logs: "RATE-LIMITED for bash:bash".
+        // require a second reply. See logs: "RATE-LIMITED for shell:shell".
         final req1 = PermissionRequest(
           id: 'req-once-1',
-          toolName: 'bash',
-          permission: 'bash',
+          toolName: 'shell',
+          permission: 'shell',
           patterns: ['git status'],
           metadata: {'sessionId': 's1'},
         );
@@ -68,13 +69,55 @@ void main() {
 
         final req2 = PermissionRequest(
           id: 'req-once-2',
-          toolName: 'bash',
-          permission: 'bash',
+          toolName: 'shell',
+          permission: 'shell',
           patterns: ['ls -la'],
           metadata: {'sessionId': 's1'},
         );
-        // Must complete without throwing and without requiring another reply.
-        await service.ask(req2, ruleset);
+        // Must NOT throw PermissionDeniedError (rate-limit on a different
+        // pattern must not trigger after a once grant). Shell now asks by
+        // default, so it blocks until a reply.
+        final f2 = service.ask(req2, ruleset);
+        await Future.delayed(Duration.zero);
+        service.reply('req-once-2', PermissionReply.once);
+        await f2;
+      },
+    );
+
+    test(
+      'shell rm with defaults + build agent rules emits PermissionRequest',
+      () async {
+        // Regression: shell was silently allowed for the default `build` agent
+        // because `*:* allow` (agent rule) matched after the `shell:* ask`
+        // default. The build agent's rules must now include an explicit
+        // `shell:* ask` override so dangerous commands ask before execution.
+        final registry = AgentRegistry();
+        await registry.init();
+        final buildRules = registry.get('build')!.permissions;
+        final effective = PermissionRuleset(
+          rules: [...ruleset.rules, ...buildRules.rules],
+        );
+
+        final req = PermissionRequest(
+          id: 'req-shell-rm',
+          toolName: 'shell',
+          permission: 'shell',
+          patterns: ['rm -rf build/'],
+          metadata: {'sessionId': 's1'},
+        );
+
+        final emitted = <PermissionRequest>[];
+        service.onAsked.listen(emitted.add);
+
+        final future = service.ask(req, effective);
+        await Future.delayed(Duration.zero);
+
+        expect(emitted, hasLength(1));
+        expect(emitted.first.permission, equals('shell'));
+        expect(emitted.first.patterns, contains('rm -rf build/'));
+
+        service.reply('req-shell-rm', PermissionReply.once);
+        await future;
       },
     );
 
@@ -82,7 +125,7 @@ void main() {
       final denyRuleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: 'rm -rf *',
             action: PermissionAction.deny,
           ),
@@ -90,8 +133,8 @@ void main() {
       );
       final req = PermissionRequest(
         id: 'req-3',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['rm -rf /'],
         metadata: {'sessionId': 's1'},
       );
@@ -136,9 +179,9 @@ void main() {
     test('reject throws PermissionRejectedError', () async {
       final req = PermissionRequest(
         id: 'req-6',
-        toolName: 'bash',
-        permission: 'bash',
-        patterns: ['npm run *'],
+        toolName: 'edit',
+        permission: 'edit',
+        patterns: ['lib/main.dart'],
         metadata: {'sessionId': 's1'},
       );
 
@@ -151,16 +194,16 @@ void main() {
     test('reject cascades to session siblings', () async {
       final req1 = PermissionRequest(
         id: 'req-7',
-        toolName: 'bash',
-        permission: 'bash',
-        patterns: ['git *'],
+        toolName: 'edit',
+        permission: 'edit',
+        patterns: ['lib/a.dart'],
         metadata: {'sessionId': 's1'},
       );
       final req2 = PermissionRequest(
         id: 'req-8',
-        toolName: 'bash',
-        permission: 'bash',
-        patterns: ['npm *'],
+        toolName: 'edit',
+        permission: 'edit',
+        patterns: ['lib/b.dart'],
         metadata: {'sessionId': 's1'},
       );
 
@@ -179,16 +222,16 @@ void main() {
       () async {
         final req1 = PermissionRequest(
           id: 'req-11',
-          toolName: 'bash',
-          permission: 'bash',
+          toolName: 'shell',
+          permission: 'shell',
           patterns: ['git *'],
           always: ['*'],
           metadata: {'sessionId': 's2'},
         );
         final req2 = PermissionRequest(
           id: 'req-12',
-          toolName: 'bash',
-          permission: 'bash',
+          toolName: 'shell',
+          permission: 'shell',
           patterns: ['npm *'],
           metadata: {'sessionId': 's2'},
         );
@@ -211,23 +254,23 @@ void main() {
       () async {
         final req1 = PermissionRequest(
           id: 'req-15',
-          toolName: 'bash',
-          permission: 'bash',
+          toolName: 'shell',
+          permission: 'shell',
           patterns: ['ls'],
           always: ['*'],
           metadata: {'sessionId': 's4'},
         );
         final req2 = PermissionRequest(
           id: 'req-16',
-          toolName: 'bash',
-          permission: 'bash',
+          toolName: 'shell',
+          permission: 'shell',
           patterns: ['cat *'],
           metadata: {'sessionId': 's4'},
         );
         final req3 = PermissionRequest(
           id: 'req-17',
-          toolName: 'bash',
-          permission: 'bash',
+          toolName: 'shell',
+          permission: 'shell',
           patterns: ['echo *'],
           metadata: {'sessionId': 's4'},
         );
@@ -249,16 +292,16 @@ void main() {
     test('cancelAllPendingRequests clears all', () async {
       final req1 = PermissionRequest(
         id: 'req-9',
-        toolName: 'bash',
-        permission: 'bash',
-        patterns: ['cmd1'],
+        toolName: 'edit',
+        permission: 'edit',
+        patterns: ['lib/a.dart'],
         metadata: {'sessionId': 's1'},
       );
       final req2 = PermissionRequest(
         id: 'req-10',
-        toolName: 'bash',
-        permission: 'bash',
-        patterns: ['cmd2'],
+        toolName: 'edit',
+        permission: 'edit',
+        patterns: ['lib/b.dart'],
         metadata: {'sessionId': 's1'},
       );
 
@@ -304,7 +347,7 @@ void main() {
       expect(gateReleased, isTrue);
     });
 
-    test('session gate is isolated per session', () async {
+    test('global dialog gate blocks all sessions until reply', () async {
       final req = PermissionRequest(
         id: 'gate-req-2',
         toolName: 'custom_tool',
@@ -315,8 +358,13 @@ void main() {
       final askFuture = service.ask(req, ruleset);
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
-      // A different session is NOT blocked while session-A dialog is open.
-      await expectLater(service.waitWhilePaused('session-B'), completes);
+      var gateReleased = false;
+      final blocked = service.waitWhilePaused('session-B').then((_) {
+        gateReleased = true;
+      });
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(gateReleased, isTrue);
 
       service.reply('gate-req-2', PermissionReply.once);
       await expectLater(askFuture, completes);

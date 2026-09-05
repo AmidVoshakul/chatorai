@@ -2,9 +2,10 @@ import 'dart:io';
 
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
-import 'package:chatorai/core/tools/filesystem_boundary.dart';
+import 'package:chatorai/core/tools/built_in/tool_path_resolve.dart';
 
 ToolDef createGlobTool() {
   return ToolDef(
@@ -33,23 +34,14 @@ ToolDef createGlobTool() {
         );
       }
 
-      final root = input['path'] as String? ?? Directory.current.path;
-      final safeRoot = resolveSafePath(root, allowedRoots: managedReadRoots);
-      final boundary = FilesystemBoundary(workspace: Directory.current);
-      final globResolution = boundary.resolve(safeRoot);
-      if (globResolution.isExternal &&
-          !isWithinAnyRoot(globResolution.path, managedReadRoots)) {
-        await ctx.ask(
-          permission: 'external_directory',
-          patterns: [globResolution.path],
-          always: [globResolution.path],
-          metadata: {
-            'filepath': globResolution.path,
-            'parentDir': p.dirname(globResolution.path),
-            'tool': 'glob',
-          },
-        );
-      }
+      final root = input['path'] as String? ?? workspaceRuntimeCurrent.path;
+      final resolved = await resolveToolPath(
+        ctx: ctx,
+        userPath: root,
+        toolName: 'glob',
+      );
+      if (resolved.isError) return resolved.error!;
+      final safeRoot = resolved.path!;
       final dir = Directory(safeRoot);
       if (!dir.existsSync()) {
         return ToolOutput(
@@ -58,7 +50,7 @@ ToolDef createGlobTool() {
         );
       }
 
-      if (!isWithinAnyRoot(globResolution.path, managedReadRoots)) {
+      if (!isWithinAnyRoot(safeRoot, managedReadRoots)) {
         await ctx.ask(permission: 'glob', patterns: [pattern]);
       }
 
@@ -66,15 +58,27 @@ ToolDef createGlobTool() {
       final matchFiles = <File>[];
       final gitignore = _loadGitignore(safeRoot);
 
-      for (final entity in dir.listSync(recursive: true, followLinks: false)) {
-        if (entity is! File) continue;
-        final rel = p.relative(entity.path, from: safeRoot);
-        final relPosix = p.posix.joinAll(p.split(rel));
-        if (gitignore.any((g) => g.matches(relPosix))) continue;
-        if (globMatcher.matches(rel) || globMatcher.matches(relPosix)) {
-          matchFiles.add(entity);
-          if (matchFiles.length >= 1000) break;
+      try {
+        for (final entity in dir.listSync(
+          recursive: true,
+          followLinks: false,
+        )) {
+          if (entity is! File) continue;
+          final rel = p.relative(entity.path, from: safeRoot);
+          final relPosix = p.posix.joinAll(p.split(rel));
+          if (gitignore.any((g) => g.matches(relPosix))) continue;
+          if (globMatcher.matches(rel) || globMatcher.matches(relPosix)) {
+            matchFiles.add(entity);
+            if (matchFiles.length >= 1000) break;
+          }
         }
+      } on FileSystemException catch (e) {
+        return ToolOutput(
+          'Error: cannot list files under $safeRoot (${e.message}). '
+          'On Android 11+, direct directory path access to shared storage is restricted. '
+          'Use the app file picker or copy files into the app folder, then search from there.',
+          metadata: {'error': true, 'os_permission': true, 'path': safeRoot},
+        );
       }
 
       if (matchFiles.isEmpty) {

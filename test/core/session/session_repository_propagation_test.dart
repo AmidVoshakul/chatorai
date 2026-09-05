@@ -31,7 +31,7 @@ void main() {
       final parentRules = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
@@ -49,7 +49,7 @@ void main() {
       expect(result.rules.length, 3);
       expect(
         result.rules.any(
-          (r) => r.permission == 'bash' && r.action == PermissionAction.deny,
+          (r) => r.permission == 'shell' && r.action == PermissionAction.deny,
         ),
         isTrue,
       );

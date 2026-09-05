@@ -1,9 +1,12 @@
 import 'dart:convert';
 
+import 'package:chatorai/core/context/token_counter.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
-import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
+import 'package:chatorai/core/chat/chat/assistant_content.dart';
+import 'package:chatorai/core/chat/chat/message_part.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
 import 'database.dart' hide ToolResult;
 import 'events.dart';
@@ -20,6 +23,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       :final agent,
       :final modelRef,
       :final permission,
+      :final directory,
     ) =>
       SessionState(
         id: sessionId,
@@ -28,6 +32,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
         agent: agent,
         modelRef: modelRef,
         permission: permission,
+        directory: directory,
         createdAt: event.timestamp,
         updatedAt: event.timestamp,
       ),
@@ -47,6 +52,11 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       updatedAt: event.timestamp,
     ),
 
+    SessionTitleUpdated(:final title) => state.copyWith(
+      title: title,
+      updatedAt: event.timestamp,
+    ),
+
     MessageAdded(:final messageId, :final role, :final content) =>
       state.copyWith(
         messages: [
@@ -62,6 +72,32 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
         updatedAt: event.timestamp,
       ),
 
+    MessageUpdated(
+      :final messageId,
+      :final content,
+      :final reasoning,
+      :final model,
+      :final error,
+    ) =>
+      state.copyWith(
+        messages: state.messages.map((m) {
+          if (m.id != messageId) return m;
+          return m.copyWith(
+            content: content ?? m.content,
+            reasoning: reasoning ?? m.reasoning,
+            model: model ?? m.model,
+            error: error ?? m.error,
+          );
+        }).toList(),
+        updatedAt: event.timestamp,
+      ),
+
+    MessageDeleted(:final messageId) => state.copyWith(
+      messages: state.messages.where((m) => m.id != messageId).toList(),
+      parts: state.parts.where((p) => p.messageId != messageId).toList(),
+      updatedAt: event.timestamp,
+    ),
+
     TextStarted(:final messageId, :final partId) => state.copyWith(
       messages: state.messages.any((m) => m.id == messageId)
           ? state.messages
@@ -76,7 +112,10 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
               ),
             ],
       parts: [
-        ..._closeOpenReasoning(state.parts, event.timestamp),
+        ..._closeOpenText(
+          _closeOpenReasoning(state.parts, event.timestamp),
+          event.timestamp,
+        ),
         AssistantText(
           id:
               partId ??
@@ -110,6 +149,13 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
                 ignored: current.ignored,
                 title: current.title,
               ),
+              create: () => AssistantText(
+                id: partId,
+                sessionId: event.sessionId.value,
+                messageId: messageId,
+                text: delta,
+                synthetic: true,
+              ),
             )
           : _updateLastTextPart(state.parts, messageId, delta),
       updatedAt: event.timestamp,
@@ -131,8 +177,8 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
                   id: current.id!,
                   sessionId: current.sessionId!,
                   messageId: current.messageId!,
-                  text: fullText,
-                  synthetic: current.synthetic,
+                  text: current.text,
+                  synthetic: false,
                   ignored: current.ignored,
                   title: current.title,
                 ),
@@ -143,8 +189,8 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
                     id: p.id!,
                     sessionId: p.sessionId!,
                     messageId: p.messageId!,
-                    text: fullText,
-                    synthetic: p.synthetic,
+                    text: p.text,
+                    synthetic: false,
                     ignored: p.ignored,
                     title: p.title,
                   );
@@ -188,13 +234,27 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
             ? _updatePartById<AssistantReasoning>(
                 state.parts,
                 partId,
-                (current) => AssistantReasoning(
-                  id: current.id!,
-                  sessionId: current.sessionId!,
-                  messageId: current.messageId!,
-                  text: current.text + delta,
-                  started: current.started,
-                  ended: current.ended,
+                (current) {
+                  // Defensive: ignore deltas for a reasoning part that has
+                  // already been closed by ReasoningEnded. This prevents a
+                  // post-Ended delta from reopening or mutating the finished
+                  // thought block.
+                  if (current.ended != null) return current;
+                  return AssistantReasoning(
+                    id: current.id!,
+                    sessionId: current.sessionId!,
+                    messageId: current.messageId!,
+                    text: current.text + delta,
+                    started: current.started,
+                    ended: current.ended,
+                  );
+                },
+                create: () => AssistantReasoning(
+                  id: partId,
+                  sessionId: event.sessionId.value,
+                  messageId: messageId,
+                  text: delta,
+                  started: event.timestamp,
                 ),
               )
             : _updateLastReasoningPart(state.parts, messageId, delta),
@@ -227,6 +287,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
                 messageId,
                 fullReasoning,
                 ended: event.timestamp,
+                append: false,
               ),
         updatedAt: event.timestamp,
       ),
@@ -237,51 +298,20 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
 
     ToolInputEnded _ => state,
 
+    ToolStarted(
+      toolCallId: final toolCallId,
+      toolName: final toolName,
+      partId: final partId,
+    ) =>
+      _projectToolStarted(state, event, toolCallId, toolName, partId),
+
     ToolCalled(
       toolCallId: final toolCallId,
       toolName: final toolName,
       input: final input,
       partId: final partId,
     ) =>
-      state.copyWith(
-        messages: [
-          ...state.messages,
-          SessionMessage(
-            id: toolCallId,
-            role: MessageRole.tool,
-            content: jsonEncode(input),
-            seq: state.messages.length + 1,
-            createdAt: event.timestamp,
-          ),
-        ],
-        toolResults: [
-          ...state.toolResults,
-          ToolResult(
-            id: toolCallId,
-            toolName: toolName,
-            input: input,
-            outputText: '',
-            durationMs: 0,
-            status: 'running',
-            createdAt: event.timestamp,
-          ),
-        ],
-        parts: [
-          ..._closeOpenReasoning(state.parts, event.timestamp),
-          AssistantTool(
-            id:
-                partId ??
-                'part_${event.timestamp.millisecondsSinceEpoch}_$toolCallId',
-            sessionId: event.sessionId.value,
-            messageId: _lastAssistantMsgId(state),
-            callId: toolCallId,
-            tool: toolName,
-            state: ToolState.running,
-            input: input,
-          ),
-        ],
-        updatedAt: event.timestamp,
-      ),
+      _projectToolCalled(state, event, toolCallId, toolName, input, partId),
 
     ToolSuccess(
       :final toolCallId,
@@ -409,20 +439,32 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       :final tokensCacheRead,
       :final tokensCacheWrite,
     ) =>
-      state.copyWith(
-        tokensInput: state.tokensInput + tokensInput,
-        tokensOutput: state.tokensOutput + tokensOutput,
-        tokensReasoning: state.tokensReasoning + tokensReasoning,
-        tokensCacheRead: state.tokensCacheRead + tokensCacheRead,
-        tokensCacheWrite: state.tokensCacheWrite + tokensCacheWrite,
-        updatedAt: event.timestamp,
+      _applyStepEnded(
+        state,
+        event,
+        tokensInput: tokensInput,
+        tokensOutput: tokensOutput,
+        tokensReasoning: tokensReasoning,
+        tokensCacheRead: tokensCacheRead,
+        tokensCacheWrite: tokensCacheWrite,
       ),
 
     StepFailed _ => state.copyWith(updatedAt: event.timestamp),
 
     CompactionStarted _ => state,
 
-    CompactionEnded _ => state.copyWith(updatedAt: event.timestamp),
+    CompactionEnded(
+      :final summary,
+      :final tailStartId,
+      :final compactedContext,
+    ) =>
+      _projectCompactionEnded(
+        state,
+        event,
+        summary,
+        tailStartId,
+        compactedContext,
+      ),
 
     ChildSessionCreated _ => state.copyWith(updatedAt: event.timestamp),
 
@@ -459,24 +501,16 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       :final agent,
       :final taskSessionId,
     ) =>
-      state.copyWith(
-        parts: [
-          ..._closeOpenReasoning(state.parts, event.timestamp),
-          AssistantTask(
-            id: partId,
-            sessionId: event.sessionId.value,
-            messageId: _lastAssistantMsgId(state),
-            description: description,
-            agent: agent,
-            state: ToolState.running,
-            taskSessionId: taskSessionId,
-            startedAt: event.timestamp,
-          ),
-        ],
-        updatedAt: event.timestamp,
+      _projectTaskPartStarted(
+        state,
+        event,
+        partId,
+        description,
+        agent,
+        taskSessionId,
       ),
 
-    TaskPartCompleted(:final partId) => state.copyWith(
+    TaskPartCompleted(:final partId, :final toolCallsCount) => state.copyWith(
       parts: _updatePartById<AssistantTask>(
         state.parts,
         partId,
@@ -492,7 +526,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
           retryAttempt: current.retryAttempt,
           currentTool: null,
           currentToolTitle: null,
-          toolCallsCount: current.toolCallsCount,
+          toolCallsCount: toolCallsCount,
           durationMs: current.durationMs,
           startedAt: current.startedAt,
           endedAt: event.timestamp,
@@ -501,45 +535,34 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
       updatedAt: event.timestamp,
     ),
 
-    TaskPartError(:final partId, :final error) => state.copyWith(
-      parts: _updatePartById<AssistantTask>(
-        state.parts,
-        partId,
-        (current) => AssistantTask(
-          id: current.id!,
-          sessionId: current.sessionId!,
-          messageId: current.messageId!,
-          description: current.description,
-          agent: current.agent,
-          state: ToolState.error,
-          taskSessionId: current.taskSessionId,
-          error: error,
-          retryAttempt: current.retryAttempt,
-          currentTool: null,
-          currentToolTitle: null,
-          toolCallsCount: current.toolCallsCount,
-          durationMs: current.durationMs,
-          startedAt: current.startedAt,
-          endedAt: event.timestamp,
-        ),
-      ),
-      updatedAt: event.timestamp,
-    ),
-
-    QuestionPartStarted(:final partId, :final questionText, :final options) =>
+    TaskPartError(:final partId, :final error, :final toolCallsCount) =>
       state.copyWith(
-        parts: [
-          ..._closeOpenReasoning(state.parts, event.timestamp),
-          AssistantQuestion(
-            id: partId,
-            sessionId: event.sessionId.value,
-            messageId: _lastAssistantMsgId(state),
-            question: questionText,
-            options: options,
+        parts: _updatePartById<AssistantTask>(
+          state.parts,
+          partId,
+          (current) => AssistantTask(
+            id: current.id!,
+            sessionId: current.sessionId!,
+            messageId: current.messageId!,
+            description: current.description,
+            agent: current.agent,
+            state: ToolState.error,
+            taskSessionId: current.taskSessionId,
+            error: error,
+            retryAttempt: current.retryAttempt,
+            currentTool: null,
+            currentToolTitle: null,
+            toolCallsCount: toolCallsCount,
+            durationMs: current.durationMs,
+            startedAt: current.startedAt,
+            endedAt: event.timestamp,
           ),
-        ],
+        ),
         updatedAt: event.timestamp,
       ),
+
+    QuestionPartStarted(:final partId, :final questionText, :final options) =>
+      _projectQuestionPartStarted(state, event, partId, questionText, options),
 
     QuestionPartAnswered(:final partId, :final answer) => state.copyWith(
       parts: _updatePartById<AssistantQuestion>(
@@ -559,7 +582,7 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
 
     TodoPartStarted(:final partId, :final todos) => state.copyWith(
       parts: [
-        ..._closeOpenReasoning(state.parts, event.timestamp),
+        ...state.parts,
         AssistantTodo(
           id: partId,
           sessionId: event.sessionId.value,
@@ -584,6 +607,7 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
       :final agent,
       :final modelRef,
       :final permission,
+      :final directory,
     ):
       await db
           .into(db.sessions)
@@ -600,6 +624,9 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
                   : const Value.absent(),
               permissionRules: permission != null
                   ? Value<String?>(jsonEncode(_serializePermission(permission)))
+                  : const Value.absent(),
+              directory: directory != null
+                  ? Value<String?>(directory)
                   : const Value.absent(),
               createdAt: event.timestamp,
               updatedAt: event.timestamp,
@@ -632,6 +659,16 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
       )..where((s) => s.id.equals(event.sessionId.value))).write(
         SessionsCompanion(
           modelRef: Value<String?>(modelRef),
+          updatedAt: Value(event.timestamp),
+        ),
+      );
+
+    case SessionTitleUpdated(:final title):
+      await (db.update(
+        db.sessions,
+      )..where((s) => s.id.equals(event.sessionId.value))).write(
+        SessionsCompanion(
+          title: Value(title),
           updatedAt: Value(event.timestamp),
         ),
       );
@@ -689,6 +726,29 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
     case ReasoningEnded(:final messageId, :final fullReasoning):
       await (db.update(db.messages)..where((t) => t.id.equals(messageId)))
           .write(MessagesCompanion(reasoning: Value<String?>(fullReasoning)));
+
+    case MessageUpdated(
+      :final messageId,
+      :final content,
+      :final reasoning,
+      :final model,
+      :final error,
+    ):
+      await (db.update(
+        db.messages,
+      )..where((t) => t.id.equals(messageId))).write(
+        MessagesCompanion(
+          content: content != null ? Value(content) : const Value.absent(),
+          reasoning: reasoning != null
+              ? Value(reasoning)
+              : const Value.absent(),
+          model: model != null ? Value(model) : const Value.absent(),
+          error: error != null ? Value(error) : const Value.absent(),
+        ),
+      );
+
+    case MessageDeleted(:final messageId):
+      await (db.delete(db.messages)..where((t) => t.id.equals(messageId))).go();
 
     case ToolCalled(
       toolCallId: final toolCallId,
@@ -832,6 +892,23 @@ Future<void> projectToDb(AppDatabase db, SessionEvent event) async {
           .write(SessionsCompanion(updatedAt: Value(event.timestamp)));
       break;
 
+    case CompactionEnded(:final summary):
+      final seq = await _nextMessageSeq(db, event.sessionId);
+      await db
+          .into(db.messages)
+          .insert(
+            MessagesCompanion.insert(
+              id: 'cmp_${const Uuid().v4()}',
+              sessionId: event.sessionId.value,
+              seq: seq,
+              role: 'assistant',
+              content: Value<String>(summary),
+              createdAt: event.timestamp,
+            ),
+            mode: InsertMode.insertOrReplace,
+          );
+      break;
+
     default:
       break;
   }
@@ -882,6 +959,7 @@ List<AssistantContent> _updateLastReasoningPart(
   String messageId,
   String text, {
   DateTime? ended,
+  bool append = true,
 }) {
   final idx = parts.lastIndexWhere(
     (p) =>
@@ -893,16 +971,11 @@ List<AssistantContent> _updateLastReasoningPart(
     id: existing.id!,
     sessionId: existing.sessionId!,
     messageId: existing.messageId!,
-    text: text,
+    text: append ? existing.text + text : text,
     started: existing.started,
     ended: ended,
   );
-  final without = List<AssistantContent>.from(parts)..removeAt(idx);
-  final textIdx = without.indexWhere(
-    (p) => p is AssistantText && p.messageId == messageId,
-  );
-  if (textIdx == -1) return without..insert(idx, updated);
-  return without..insert(textIdx, updated);
+  return [...parts.sublist(0, idx), updated, ...parts.sublist(idx + 1)];
 }
 
 // ── Helper functions for typed AssistantContent parts ──────────────────────
@@ -911,8 +984,6 @@ List<AssistantContent> _updateLastReasoningPart(
 /// [ended] timestamp to [now]. This prevents subsequent ReasoningDelta events
 /// from merging into a block that should be independent (e.g. separated by a
 /// tool call, question, or task).
-///
-/// Mirror of ChatScreenNotifier._closeOpenReasoning — both must stay in sync.
 List<AssistantContent> _closeOpenReasoning(
   List<AssistantContent> parts,
   DateTime now,
@@ -936,6 +1007,32 @@ List<AssistantContent> _closeOpenReasoning(
   ];
 }
 
+/// Closes the last open AssistantText (synthetic == true) by setting its
+/// [synthetic] flag to false. This prevents subsequent text parts from being
+/// merged into a block that should be independent (e.g. separated by a tool
+/// call, question, or task).
+List<AssistantContent> _closeOpenText(
+  List<AssistantContent> parts,
+  DateTime now,
+) {
+  final idx = parts.lastIndexWhere((p) => p is AssistantText && p.synthetic);
+  if (idx == -1) return parts;
+  final existing = parts[idx] as AssistantText;
+  return [
+    ...parts.sublist(0, idx),
+    AssistantText(
+      id: existing.id!,
+      sessionId: existing.sessionId!,
+      messageId: existing.messageId!,
+      text: existing.text,
+      synthetic: false,
+      ignored: existing.ignored,
+      title: existing.title,
+    ),
+    ...parts.sublist(idx + 1),
+  ];
+}
+
 /// Finds the last assistant message ID from [state].
 /// Used to associate tool calls with the assistant message that generated them.
 String _lastAssistantMsgId(SessionState state) {
@@ -950,10 +1047,18 @@ String _lastAssistantMsgId(SessionState state) {
 List<AssistantContent> _updatePartById<T extends AssistantContent>(
   List<AssistantContent> parts,
   String partId,
-  T Function(T current) update,
-) {
+  T Function(T current) update, {
+  T Function()? create,
+}) {
   final idx = parts.indexWhere((p) => p.id == partId);
-  if (idx == -1) return parts;
+  if (idx == -1) {
+    if (create != null) {
+      final updated = List<AssistantContent>.from(parts);
+      updated.add(create());
+      return updated;
+    }
+    return parts;
+  }
   final updated = List<AssistantContent>.from(parts);
   updated[idx] = update(updated[idx] as T);
   return updated;
@@ -981,7 +1086,208 @@ List<AssistantContent> _updateLastTextPart(
   return [...parts.sublist(0, idx), updated, ...parts.sublist(idx + 1)];
 }
 
-/// Updates a tool part in the parts list by [toolCallId].
+SessionState _projectToolStarted(
+  SessionState state,
+  SessionEvent event,
+  String toolCallId,
+  String toolName,
+  String? partId,
+) {
+  final assistantMsgId = _lastAssistantMsgId(state);
+  final messages = [
+    ...state.messages,
+    if (assistantMsgId.isEmpty)
+      SessionMessage(
+        id: 'msg_${event.timestamp.millisecondsSinceEpoch}',
+        role: MessageRole.assistant,
+        content: '',
+        seq: state.messages.length + 1,
+        createdAt: event.timestamp,
+      ),
+  ];
+  final effectiveMsgId = assistantMsgId.isEmpty
+      ? messages[messages.length - 1].id
+      : assistantMsgId;
+  return state.copyWith(
+    messages: messages,
+    parts: [
+      ...state.parts,
+      AssistantTool(
+        id:
+            partId ??
+            'part_${event.timestamp.millisecondsSinceEpoch}_$toolCallId',
+        sessionId: event.sessionId.value,
+        messageId: effectiveMsgId,
+        callId: toolCallId,
+        tool: toolName,
+        state: ToolState.pending,
+        input: const {},
+      ),
+    ],
+    updatedAt: event.timestamp,
+  );
+}
+
+SessionState _projectToolCalled(
+  SessionState state,
+  SessionEvent event,
+  String toolCallId,
+  String toolName,
+  Map<String, dynamic> input,
+  String? partId,
+) {
+  final assistantMsgId = _lastAssistantMsgId(state);
+  final messages = [
+    ...state.messages,
+    if (assistantMsgId.isEmpty)
+      SessionMessage(
+        id: 'msg_${event.timestamp.millisecondsSinceEpoch}',
+        role: MessageRole.assistant,
+        content: '',
+        seq: state.messages.length + 1,
+        createdAt: event.timestamp,
+      ),
+    SessionMessage(
+      id: toolCallId,
+      role: MessageRole.tool,
+      content: jsonEncode(input),
+      seq: state.messages.length + (assistantMsgId.isEmpty ? 2 : 1),
+      createdAt: event.timestamp,
+    ),
+  ];
+  final effectiveMsgId = assistantMsgId.isEmpty
+      ? messages[messages.length - 2].id
+      : assistantMsgId;
+  final toolPartId = partId ?? effectiveMsgId;
+  return state.copyWith(
+    messages: messages,
+    toolResults: [
+      ...state.toolResults,
+      ToolResult(
+        id: toolCallId,
+        toolName: toolName,
+        input: input,
+        outputText: '',
+        durationMs: 0,
+        status: 'running',
+        createdAt: event.timestamp,
+      ),
+    ],
+    parts: _updatePartById<AssistantTool>(
+      state.parts,
+      toolPartId,
+      (current) => current.copyWith(
+        callId: toolCallId,
+        tool: toolName,
+        state: ToolState.running,
+        input: input,
+      ),
+      create: () => AssistantTool(
+        id: toolPartId,
+        sessionId: event.sessionId.value,
+        messageId: effectiveMsgId,
+        callId: toolCallId,
+        tool: toolName,
+        state: ToolState.running,
+        input: input,
+      ),
+    ),
+    updatedAt: event.timestamp,
+  );
+}
+
+SessionState _projectTaskPartStarted(
+  SessionState state,
+  SessionEvent event,
+  String partId,
+  String description,
+  String agent,
+  String? taskSessionId,
+) {
+  final assistantMsgId = _lastAssistantMsgId(state);
+  final messages = [
+    ...state.messages,
+    if (assistantMsgId.isEmpty)
+      SessionMessage(
+        id: 'msg_${event.timestamp.millisecondsSinceEpoch}',
+        role: MessageRole.assistant,
+        content: '',
+        seq: state.messages.length + 1,
+        createdAt: event.timestamp,
+      ),
+  ];
+  final effectiveMsgId = assistantMsgId.isEmpty
+      ? messages.last.id
+      : assistantMsgId;
+  return state.copyWith(
+    messages: messages,
+    parts: _updatePartById<AssistantTask>(
+      state.parts,
+      partId,
+      (current) => AssistantTask(
+        id: current.id!,
+        sessionId: current.sessionId!,
+        messageId: current.messageId!,
+        description: description,
+        agent: agent,
+        state: ToolState.running,
+        taskSessionId: taskSessionId,
+        retryAttempt: current.retryAttempt,
+        startedAt: current.startedAt ?? event.timestamp,
+      ),
+      create: () => AssistantTask(
+        id: partId,
+        sessionId: event.sessionId.value,
+        messageId: effectiveMsgId,
+        description: description,
+        agent: agent,
+        state: ToolState.running,
+        taskSessionId: taskSessionId,
+        startedAt: event.timestamp,
+      ),
+    ),
+    updatedAt: event.timestamp,
+  );
+}
+
+SessionState _projectQuestionPartStarted(
+  SessionState state,
+  SessionEvent event,
+  String partId,
+  String questionText,
+  List<QuestionOption> options,
+) {
+  final assistantMsgId = _lastAssistantMsgId(state);
+  final messages = [
+    ...state.messages,
+    if (assistantMsgId.isEmpty)
+      SessionMessage(
+        id: 'msg_${event.timestamp.millisecondsSinceEpoch}',
+        role: MessageRole.assistant,
+        content: '',
+        seq: state.messages.length + 1,
+        createdAt: event.timestamp,
+      ),
+  ];
+  final effectiveMsgId = assistantMsgId.isEmpty
+      ? messages.last.id
+      : assistantMsgId;
+  return state.copyWith(
+    messages: messages,
+    parts: [
+      ...state.parts,
+      AssistantQuestion(
+        id: partId,
+        sessionId: event.sessionId.value,
+        messageId: effectiveMsgId,
+        question: questionText,
+        options: options,
+      ),
+    ],
+    updatedAt: event.timestamp,
+  );
+}
+
 /// Sets [state] and adds optional [outputText].
 List<AssistantContent> _updateToolPart(
   List<AssistantContent> parts,
@@ -1074,26 +1380,116 @@ Future<String?> _lookupInputJson(AppDatabase db, String toolCallId) async {
 }
 
 Map<String, dynamic>? _serializePermission(PermissionRuleset? pr) {
-  if (pr == null) return null;
-  if (pr.rules.isEmpty && pr.sessionApproved.isEmpty) return null;
-  return {
-    'rules': pr.rules
-        .map(
-          (r) => {
-            'permission': r.permission,
-            'pattern': r.pattern,
-            'action': r.action.name,
-          },
-        )
-        .toList(),
-    'sessionApproved': pr.sessionApproved
-        .map(
-          (r) => {
-            'permission': r.permission,
-            'pattern': r.pattern,
-            'action': r.action.name,
-          },
-        )
-        .toList(),
-  };
+  return PermissionRulesetCodec.toJson(pr);
+}
+
+SessionState _projectCompactionEnded(
+  SessionState state,
+  SessionEvent event,
+  String summary,
+  String? tailStartId,
+  List<Map<String, dynamic>>? compactedContext,
+) {
+  final messages = List<SessionMessage>.from(state.messages);
+  if (tailStartId != null) {
+    final idx = messages.indexWhere((m) => m.id == tailStartId);
+    if (idx >= 0) {
+      messages[idx] = messages[idx].copyWith(isCompactionTrigger: true);
+    }
+  }
+  final summaryMessage = SessionMessage(
+    // Deterministic id derived from the event
+    // MessageID.ascending()) so replay is idempotent and partsByMessage[id]
+    // stays stable across session reloads.
+    id: 'cmp_${event.sessionId.value}_${event.sequence}',
+    role: MessageRole.assistant,
+    content: summary,
+    seq: messages.length + 1,
+    isCompactionSummary: true,
+    agent: 'compaction',
+    createdAt: event.timestamp,
+  );
+  final contextMessages = <SessionMessage>[];
+  // The summary is a single source of truth stored in `messages` (above). The
+  // compacted context fed to the model is the tail only (everything after the
+  // summary), so the summary is never duplicated between the two collections.
+  // `_buildApiMessages`/`_applyCompaction` re-inject the summary from `messages`
+  // into the model context per request.
+  if (compactedContext != null && compactedContext.length > 1) {
+    final tail = compactedContext.sublist(1);
+    for (var i = 0; i < tail.length; i++) {
+      final m = tail[i];
+      final roleStr = m['role'] as String? ?? 'system';
+      final role = MessageRole.values.firstWhere(
+        (r) => r.name == roleStr,
+        orElse: () => MessageRole.system,
+      );
+      contextMessages.add(
+        SessionMessage(
+          id: 'cmp_ctx_${event.sequence}_$i',
+          role: role,
+          content: m['content'] ?? '',
+          seq: messages.length + 2 + i,
+          agent: m['agent'] as String?,
+          isCompactionSummary: m['isCompactionSummary'] == true,
+          createdAt: event.timestamp,
+        ),
+      );
+    }
+  }
+
+  // After compaction the token accounting must reflect the *compacted* context,
+  // not the full visible history (old messages stay visible but no longer count
+  // toward the session token total —  where the summary
+  // message replaces the old head). Estimate the compacted-context token count
+  // and reset the running session totals to it so the token counter UI drops to
+  // the compressed size. `SessionMessage` carries no per-message token fields,
+  // so only the session-level totals are adjusted here.
+  var estimatedTokens = TokenCounter.estimate(summary);
+  for (final m in compactedContext ?? const []) {
+    estimatedTokens += TokenCounter.estimate(m['content']?.toString() ?? '');
+  }
+
+  return state.copyWith(
+    messages: [...messages, summaryMessage],
+    compactedContext: contextMessages,
+    tokensInput: estimatedTokens,
+    tokensOutput: 0,
+    tokensReasoning: 0,
+    tokensCacheRead: 0,
+    tokensCacheWrite: 0,
+    updatedAt: event.timestamp,
+  );
+}
+
+SessionState _applyStepEnded(
+  SessionState state,
+  StepEnded event, {
+  required int tokensInput,
+  required int tokensOutput,
+  required int tokensReasoning,
+  required int tokensCacheRead,
+  required int tokensCacheWrite,
+}) {
+  final messages = List<SessionMessage>.from(state.messages);
+  final lastAssistantIdx = messages.lastIndexWhere(
+    (m) => m.role == MessageRole.assistant,
+  );
+  if (lastAssistantIdx >= 0) {
+    final current = messages[lastAssistantIdx];
+    messages[lastAssistantIdx] = current.copyWith(
+      tokensInput: (current.tokensInput ?? 0) + tokensInput,
+      tokensOutput: (current.tokensOutput ?? 0) + tokensOutput,
+      tokensReasoning: (current.tokensReasoning ?? 0) + tokensReasoning,
+    );
+  }
+  return state.copyWith(
+    tokensInput: state.tokensInput + tokensInput,
+    tokensOutput: state.tokensOutput + tokensOutput,
+    tokensReasoning: state.tokensReasoning + tokensReasoning,
+    tokensCacheRead: state.tokensCacheRead + tokensCacheRead,
+    tokensCacheWrite: state.tokensCacheWrite + tokensCacheWrite,
+    updatedAt: event.timestamp,
+    messages: messages,
+  );
 }

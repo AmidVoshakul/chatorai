@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/models/provider_config.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
-import 'package:chatorai/features/settings/widgets/model_selection_dialog.dart';
+import 'package:chatorai/gui/features/settings/widgets/model_selection_dialog.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
 
 class MockSecureStorageService extends SecureStorageService {

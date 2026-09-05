@@ -5,11 +5,13 @@ import 'package:chatorai/core/permission/evaluator.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/core/tools/doom_loop_detector.dart';
 import 'package:chatorai/core/tools/json_schema_validator.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/tool_error.dart';
 import 'package:chatorai/core/tools/truncation_service.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
+import 'package:chatorai/shared/utils/canonical_json.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 
 // ---------------------------------------------------------------------------
@@ -17,8 +19,8 @@ import 'package:chatorai/shared/utils/logger.dart';
 // doom-loop detection, and output truncation. No registration concerns.
 // ---------------------------------------------------------------------------
 class ToolExecutor {
-  static const _doomLoopThreshold = 3;
-  static const _sideEffectingTools = <String>{'bash', 'write'};
+  static const _sideEffectingTools = <String>{'shell', 'write'};
+  static const int _doomLoopMaxApprovals = 3;
 
   // Session-scoped caches (pruned on session close)
   final Map<String, Map<String, dynamic>> _resultCache = {};
@@ -28,10 +30,10 @@ class ToolExecutor {
   final Map<String, Future<Map<String, dynamic>>> _inFlightCache = {};
 
   // Doom-loop tracker: bounded per-session LRU
-  static final _doomHistory = <String?, Map<String, List<String>>>{};
-  static const _maxPerTool = 500;
+  final DoomLoopDetector _doomLoopDetector = DoomLoopDetector();
 
-  static const _maxPerSession = 2000;
+  // Doom-loop approval counter: forces deny after N repeated approvals
+  final Map<String, int> _doomLoopApprovals = {};
 
   final PermissionService _permissions;
   final PermissionRuleset _defaultRules;
@@ -39,14 +41,6 @@ class ToolExecutor {
   PermissionRuleset? agentRules;
 
   ToolExecutor(this._permissions, this._defaultRules, {this.switchAgent});
-
-  /// Bind a ToolDef to the SDK Tool type, wiring execution through this executor.
-  sdk.Tool<dynamic, dynamic> bind(
-    ToolDef def,
-    sdk.Tool<dynamic, dynamic> sdkTool,
-  ) {
-    return sdkTool;
-  }
 
   /// Core execution: cache → pending → doom-loop → permission → truncate.
   Future<Map<String, dynamic>> execute(
@@ -77,7 +71,7 @@ class ToolExecutor {
         'inputMap=$inputMap',
       );
     }
-    final ctx = options.experimentalContext;
+    final ctx = options.runtimeContext;
     final rawSessionId = ctx != null ? ctx['sessionId'] as String? : null;
     final sessionId = (rawSessionId == null || rawSessionId.isEmpty)
         ? null
@@ -104,10 +98,10 @@ class ToolExecutor {
         toolCallId ??
         requestId ??
         'invocation_${DateTime.now().microsecondsSinceEpoch}';
-    final cacheKey = '${def.id}:$cacheKeySuffix:${_normalizeInput(inputMap)}';
+    final cacheKey = '${def.id}:$cacheKeySuffix:${canonicalJson(inputMap)}';
 
     // Deduplicate in-flight requests by toolCallId (preliminary + final dispatch)
-    // This works for ALL tools including side-effecting (bash/write)
+    // This works for ALL tools including side-effecting (shell/write)
     // Register immediately to prevent race condition with concurrent calls
     if (toolCallId != null) {
       final inFlight = _inFlightCache[toolCallId];
@@ -187,6 +181,14 @@ class ToolExecutor {
               'ToolExecutor: Doom loop rejected by user ${def.id}',
             );
             return {'output': ''};
+          }
+          // Successfully approved — enforce max approval cap to terminate loops.
+          final key =
+              '${sessionId ?? '_null'}:${def.id}:${canonicalJson(inputMap)}';
+          final n = (_doomLoopApprovals[key] =
+              (_doomLoopApprovals[key] ?? 0) + 1);
+          if (n > _doomLoopMaxApprovals) {
+            throw PermissionDeniedError(def.id, '*');
           }
         }
       }
@@ -286,7 +288,7 @@ class ToolExecutor {
     final prefix = ':$sessionId:';
     _resultCache.removeWhere((k, _) => k.contains(prefix));
     _pendingCache.removeWhere((k, _) => k.contains(prefix));
-    _doomHistory.remove(sessionId);
+    _doomLoopDetector.pruneSession(sessionId);
   }
 
   // --- Private helpers ---
@@ -299,7 +301,7 @@ class ToolExecutor {
       if (signal is sdk.CancellationToken) return signal;
     } catch (_) {}
     try {
-      final ctx = (options as dynamic).experimentalContext;
+      final ctx = (options as dynamic).runtimeContext;
       if (ctx is Map) {
         final signal = ctx['abortSignal'];
         if (signal is sdk.CancellationToken) return signal;
@@ -327,40 +329,7 @@ class ToolExecutor {
     String toolName,
     Map<String, dynamic> input,
   ) {
-    _doomHistory.putIfAbsent(sessionId, () => {});
-    final perTool = _doomHistory[sessionId]!;
-    perTool.putIfAbsent(toolName, () => []);
-    final jsonInput = input.toString();
-    final count = perTool[toolName]!.where((c) => c == jsonInput).length;
-    if (count >= _doomLoopThreshold) return true;
-    perTool[toolName]!.add(jsonInput);
-
-    // LRU prune per-tool
-    if (perTool[toolName]!.length > _maxPerTool) {
-      perTool[toolName]!.removeRange(
-        0,
-        perTool[toolName]!.length - _maxPerTool,
-      );
-    }
-    // LRU prune per-session
-    var total = perTool.values.fold<int>(0, (s, e) => s + e.length);
-    if (total > _maxPerSession) {
-      final excess = total - _maxPerSession;
-      for (final key in perTool.keys.toList()) {
-        if (excess <= 0) break;
-        final entries = perTool[key]!;
-        final drop = entries.length < excess ? entries.length : excess;
-        entries.removeRange(0, drop);
-        if (entries.isEmpty) perTool.remove(key);
-      }
-    }
-    return false;
-  }
-
-  String _normalizeInput(Map<String, dynamic> input) {
-    final entries = input.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-    return entries.map((e) => '$e').join(',');
+    return _doomLoopDetector.check(sessionId, toolName, input);
   }
 }
 
@@ -397,7 +366,10 @@ class _AskContext {
     }
     return PermissionRuleset(
       rules: rules,
-      sessionApproved: permissions.approvedRules,
+      sessionApproved: [
+        ...permissions.approvedRules,
+        ...permissions.onceApprovedRules,
+      ],
     );
   }
 

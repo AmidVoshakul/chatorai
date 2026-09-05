@@ -2,9 +2,10 @@ import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
+import 'package:chatorai/core/permission/permission_storage.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 
 class MockSharedPreferences extends Mock implements SharedPreferences {}
 
@@ -17,13 +18,12 @@ void main() {
     late MockSharedPreferences prefs;
 
     setUp(() {
-      service = PermissionService();
       prefs = MockSharedPreferences();
       when(() => prefs.getStringList(any())).thenReturn(null);
       when(
         () => prefs.setStringList(any(), any()),
       ).thenAnswer((_) async => true);
-      service.attachPreferences(prefs);
+      service = PermissionService(storage: SharedPrefsPermissionStorage(prefs));
     });
 
     test('emits PermissionRequest on onAsked when ask rule matches', () async {
@@ -98,13 +98,13 @@ void main() {
 
     test('reply(reject) throws PermissionRejectedError', () async {
       service.seedRules(
-        PermissionRuleset(rules: [rule('bash', '*', PermissionAction.ask)]),
+        PermissionRuleset(rules: [rule('shell', '*', PermissionAction.ask)]),
       );
 
       final req = PermissionRequest(
         id: 'r4',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['*'],
       );
 
@@ -203,17 +203,21 @@ void main() {
   });
 
   group('PermissionService — session-scoped approved rules', () {
-    test('attachPreferences does not load any rules', () async {
-      final prefs = MockSharedPreferences();
-      when(
-        () => prefs.getStringList(any()),
-      ).thenReturn(['read|lib/**|allow', 'write|src/**|deny']);
+    test(
+      'constructor with SharedPrefsPermissionStorage does not load any rules',
+      () async {
+        final prefs = MockSharedPreferences();
+        when(
+          () => prefs.getStringList(any()),
+        ).thenReturn(['read|lib/**|allow', 'write|src/**|deny']);
 
-      final s = PermissionService();
-      s.attachPreferences(prefs);
+        final s = PermissionService(
+          storage: SharedPrefsPermissionStorage(prefs),
+        );
 
-      expect(s.approvedRules, isEmpty);
-    });
+        expect(s.approvedRules, isEmpty);
+      },
+    );
 
     test('reply(always) adds rules in memory only', () async {
       final s = PermissionService();

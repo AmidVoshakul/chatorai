@@ -20,28 +20,40 @@ ToolContext _mockCtx() {
 }
 
 void main() {
-  group('write tool — path sandbox rejection', () {
-    test('path outside project root returns error', () async {
+  group('write tool — path sandbox', () {
+    test('allows non-dangerous path outside project root', () async {
       final tool = createWriteTool();
       final ctx = _mockCtx();
+      final target = '/tmp/outside_project_chatorai_test.txt';
 
-      final output = await tool.execute({
-        'file_path': '/tmp/outside_project.txt',
-        'content': 'test',
-      }, ctx);
-      expect(output.metadata?['error'], isTrue);
-      expect(output.output, contains('Error'));
+      try {
+        final output = await tool.execute({
+          'file_path': target,
+          'content': 'test',
+        }, ctx);
+        expect(output.metadata?['error'], isNull);
+        expect(File(target).existsSync(), isTrue);
+      } finally {
+        if (File(target).existsSync()) File(target).deleteSync();
+      }
     });
 
-    test('path traversal outside project root returns error', () async {
+    test('allows path traversal to non-dangerous location', () async {
       final tool = createWriteTool();
       final ctx = _mockCtx();
+      final target =
+          '${Directory.current.path}/../outside_project_chatorai_test.txt';
 
-      final output = await tool.execute({
-        'file_path': '../../outside_project.txt',
-        'content': 'test',
-      }, ctx);
-      expect(output.metadata?['error'], isTrue);
+      try {
+        final output = await tool.execute({
+          'file_path': target,
+          'content': 'test',
+        }, ctx);
+        expect(output.metadata?['error'], isNull);
+        expect(File(target).existsSync(), isTrue);
+      } finally {
+        if (File(target).existsSync()) File(target).deleteSync();
+      }
     });
   });
 

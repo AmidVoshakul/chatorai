@@ -1,28 +1,28 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/tool_title.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/parts/tool_title.dart';
 
 void main() {
   group('toolTitle (TaskPart header)', () {
-    test('bash shows full command, not just the tool name', () {
-      final title = toolTitle('bash', {
+    test('shell shows full command, not just the tool name', () {
+      final title = toolTitle('shell', {
         'command': 'flutter test test/foo_test.dart --coverage',
       });
       // _breakablePath inserts a zero-width space after '/' for wrapping.
       expect(
         title,
-        equals('bash flutter test test/\u200Bfoo_test.dart --coverage'),
+        equals('shell flutter test test/\u200Bfoo_test.dart --coverage'),
       );
     });
 
-    test('bash falls back to description when command is absent', () {
+    test('shell falls back to description when command is absent', () {
       expect(
-        toolTitle('bash', {'description': 'Run tests'}),
+        toolTitle('shell', {'description': 'Run tests'}),
         equals('Run tests'),
       );
     });
 
-    test('bash falls back to tool name when nothing is provided', () {
-      expect(toolTitle('bash', {}), equals('bash'));
+    test('shell falls back to tool name when nothing is provided', () {
+      expect(toolTitle('shell', {}), equals('shell'));
     });
 
     test('read still shows path with args', () {

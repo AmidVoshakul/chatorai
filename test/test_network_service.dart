@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/services/network_service.dart';
+import 'package:chatorai/gui/features/chat/services/network_service.dart';
 
 void main() {
   group('NetworkState', () {

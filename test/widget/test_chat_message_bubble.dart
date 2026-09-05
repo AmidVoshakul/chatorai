@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_message_export.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/core/chat/chat/chat_message.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
+import 'package:chatorai/gui/features/chat/data/providers/chat_screen_notifier.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/bubbles/assistant_bubble.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/parts/reasoning_part_widget.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/parts/text_part_widget.dart';
+import 'package:chatorai/core/session/session_repository.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:chatorai/gui/shared/theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class MockSessionRepository extends Mock implements SessionRepository {}
 
 /// Widget tests for the ChatMessageBubble component and its sub-widgets.
 ///
@@ -150,26 +163,19 @@ void main() {
   group('MessagePart type switching', () {
     test('can verify all part types exist', () {
       // MessagePart is abstract (not sealed across files), so we verify
-      // all 7 subtypes exist and are assignable to MessagePart.
+      // all 6 subtypes exist and are assignable to MessagePart.
       final parts = <MessagePart>[
         const TextPart(content: 'text'),
         const ReasoningPart(content: 'reasoning'),
-        ToolCallPart(
-          toolCallId: 'id',
-          toolName: 'bash',
-          input: const {},
-          createdAt: DateTime(2025),
-        ),
-        const ToolResultPart(toolCallId: 'id', toolName: 'bash'),
+        const ToolResultPart(toolCallId: 'id', toolName: 'shell'),
         const TaskPart(description: 'task', agent: 'agent'),
         const QuestionPart(question: 'q'),
         const TodoPart(todos: []),
       ];
 
-      expect(parts, hasLength(7));
+      expect(parts, hasLength(6));
       expect(parts.whereType<TextPart>().length, 1);
       expect(parts.whereType<ReasoningPart>().length, 1);
-      expect(parts.whereType<ToolCallPart>().length, 1);
       expect(parts.whereType<ToolResultPart>().length, 1);
       expect(parts.whereType<TaskPart>().length, 1);
       expect(parts.whereType<QuestionPart>().length, 1);
@@ -212,7 +218,7 @@ void main() {
     test('can extract state from ToolResultPart', () {
       const part = ToolResultPart(
         toolCallId: 'id',
-        toolName: 'bash',
+        toolName: 'shell',
         state: ToolState.error,
       );
       final state = switch (part) {
@@ -390,7 +396,7 @@ void main() {
     test('pending → running → completed lifecycle', () {
       const initial = ToolResultPart(
         toolCallId: 'tool-1',
-        toolName: 'bash',
+        toolName: 'shell',
         state: ToolState.running,
       );
 
@@ -667,5 +673,226 @@ void main() {
       expect(find.text('Explain'), findsOneWidget);
       expect(find.byType(Chip), findsNWidgets(3));
     });
+  });
+
+  group('assistantVisibleParts filtering', () {
+    test('hides raw JSON tool result for the question tool', () {
+      const parts = [
+        TextPart(content: 'Hello'),
+        QuestionPart(question: 'Proceed?', answer: '{"output":"yes"}'),
+        ToolResultPart(
+          toolCallId: 'q1',
+          toolName: 'question',
+          result: '{"output":"yes","metadata":{}}',
+          state: ToolState.completed,
+        ),
+        ToolResultPart(
+          toolCallId: 'r1',
+          toolName: 'read',
+          result: 'file content',
+          state: ToolState.completed,
+        ),
+      ];
+
+      final visible = assistantVisibleParts(parts, reasoningEnabled: true);
+
+      expect(visible.whereType<QuestionPart>(), hasLength(1));
+      expect(visible.whereType<TextPart>(), hasLength(1));
+      final toolResults = visible.whereType<ToolResultPart>().toList();
+      expect(toolResults, hasLength(1));
+      expect(toolResults.single.toolName, 'read');
+    });
+
+    test('keeps tool results for tools other than question', () {
+      const parts = [
+        ToolResultPart(
+          toolCallId: 'g1',
+          toolName: 'grep',
+          result: 'match',
+          state: ToolState.completed,
+        ),
+      ];
+
+      final visible = assistantVisibleParts(parts, reasoningEnabled: true);
+
+      expect(visible, hasLength(1));
+      expect(visible.single, isA<ToolResultPart>());
+    });
+
+    test('hides synthetic parts and hidden reasoning', () {
+      const parts = [
+        TextPart(content: 'visible'),
+        TextPart(content: 'synthetic', synthetic: true),
+        ReasoningPart(content: 'thinking'),
+      ];
+
+      final visible = assistantVisibleParts(parts, reasoningEnabled: false);
+
+      expect(visible, hasLength(1));
+      expect((visible.single as TextPart).content, 'visible');
+    });
+  });
+
+  group('AssistantMessageBubble consecutive part merging', () {
+    testWidgets(
+      'two consecutive ReasoningParts render as one ReasoningPartWidget',
+      (tester) async {
+        final message = AssistantMessage(
+          id: 'a1',
+          parts: const [
+            ReasoningPart(content: 'thought A', isStreaming: false),
+            ReasoningPart(content: 'thought B', isStreaming: false),
+          ],
+          timestamp: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              chatScreenProvider.overrideWith(() => ChatScreenNotifier()),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(
+                body: AssistantMessageBubble(
+                  message: message,
+                  chatId: 'c1',
+                  messageId: 'a1',
+                  reasoningEnabled: true,
+                  expandReasoningByDefault: true,
+                  sessionRepository: MockSessionRepository(),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.byType(ReasoningPartWidget), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'two ReasoningParts separated by ToolResultPart render as two widgets',
+      (tester) async {
+        final message = AssistantMessage(
+          id: 'a1',
+          parts: const [
+            ReasoningPart(content: 'thought A', isStreaming: false),
+            ToolResultPart(
+              toolCallId: 't1',
+              toolName: 'shell',
+              state: ToolState.completed,
+            ),
+            ReasoningPart(content: 'thought B', isStreaming: false),
+          ],
+          timestamp: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              chatScreenProvider.overrideWith(() => ChatScreenNotifier()),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(
+                body: AssistantMessageBubble(
+                  message: message,
+                  chatId: 'c1',
+                  messageId: 'a1',
+                  reasoningEnabled: true,
+                  expandReasoningByDefault: true,
+                  sessionRepository: MockSessionRepository(),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.byType(ReasoningPartWidget), findsNWidgets(2));
+      },
+    );
+
+    testWidgets('two consecutive TextParts render as one TextPartWidget', (
+      tester,
+    ) async {
+      final message = AssistantMessage(
+        id: 'a1',
+        parts: const [
+          TextPart(content: 'line 1'),
+          TextPart(content: 'line 2'),
+        ],
+        timestamp: DateTime.now(),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            chatScreenProvider.overrideWith(() => ChatScreenNotifier()),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: AssistantMessageBubble(
+                message: message,
+                chatId: 'c1',
+                messageId: 'a1',
+                reasoningEnabled: true,
+                expandReasoningByDefault: true,
+                sessionRepository: MockSessionRepository(),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(TextPartWidget), findsOneWidget);
+    });
+
+    testWidgets(
+      'closed reasoning run shows Thought header without spinner while text streams',
+      (tester) async {
+        final message = AssistantMessage(
+          id: 'a1',
+          parts: const [
+            ReasoningPart(content: 'done thinking', isStreaming: false),
+            TextPart(content: 'answer', isStreaming: true),
+          ],
+          timestamp: DateTime.now(),
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              chatScreenProvider.overrideWith(() => ChatScreenNotifier()),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(
+                body: AssistantMessageBubble(
+                  message: message,
+                  chatId: 'c1',
+                  messageId: 'a1',
+                  reasoningEnabled: true,
+                  expandReasoningByDefault: true,
+                  sessionRepository: MockSessionRepository(),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Thought:'), findsOneWidget);
+        expect(find.byType(SpinKitCircle), findsNothing);
+      },
+    );
   });
 }

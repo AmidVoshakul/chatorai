@@ -4,7 +4,7 @@ library;
 import 'package:chatorai/core/llm/models/auth_config.dart';
 import 'package:chatorai/core/llm/models/provider_config.dart';
 
-/// OpenCode Zen — unified API from the OpenCode project.
+/// OpenCode Zen — unified API endpoint.
 ProviderConfig opencodeProvider() => ProviderConfig.basic(
   id: 'opencode',
   name: 'OpenCode Zen',

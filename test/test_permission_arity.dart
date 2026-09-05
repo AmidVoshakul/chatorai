@@ -1,83 +1,83 @@
 import 'package:test/test.dart';
 import 'package:chatorai/core/permission/arity.dart';
 
-/// Tests for bashArity map and prefix() function.
+/// Tests for shellArity map and prefix() function.
 void main() {
-  group('bashArity', () {
+  group('shellArity', () {
     test('contains single-word commands with arity 1', () {
-      expect(bashArity['cat'], equals(1));
-      expect(bashArity['cd'], equals(1));
-      expect(bashArity['echo'], equals(1));
-      expect(bashArity['grep'], equals(1));
-      expect(bashArity['ls'], equals(1));
-      expect(bashArity['mkdir'], equals(1));
-      expect(bashArity['pwd'], equals(1));
-      expect(bashArity['rm'], equals(1));
-      expect(bashArity['touch'], equals(1));
+      expect(shellArity['cat'], equals(1));
+      expect(shellArity['cd'], equals(1));
+      expect(shellArity['echo'], equals(1));
+      expect(shellArity['grep'], equals(1));
+      expect(shellArity['ls'], equals(1));
+      expect(shellArity['mkdir'], equals(1));
+      expect(shellArity['pwd'], equals(1));
+      expect(shellArity['rm'], equals(1));
+      expect(shellArity['touch'], equals(1));
     });
 
     test('contains two-word prefixes with arity 2', () {
-      expect(bashArity['git'], equals(2));
-      expect(bashArity['npm'], equals(2));
-      expect(bashArity['yarn'], equals(2));
-      expect(bashArity['cargo'], equals(2));
-      expect(bashArity['docker'], equals(2));
-      expect(bashArity['kubectl'], equals(2));
-      expect(bashArity['python'], equals(2));
-      expect(bashArity['go'], equals(2));
+      expect(shellArity['git'], equals(2));
+      expect(shellArity['npm'], equals(2));
+      expect(shellArity['yarn'], equals(2));
+      expect(shellArity['cargo'], equals(2));
+      expect(shellArity['docker'], equals(2));
+      expect(shellArity['kubectl'], equals(2));
+      expect(shellArity['python'], equals(2));
+      expect(shellArity['go'], equals(2));
     });
 
     test('contains three-word prefixes with arity 3', () {
       // 'git commit' is NOT in the map, only 'git config', 'git remote', 'git stash'
-      expect(bashArity['git config'], equals(3));
-      expect(bashArity['git remote'], equals(3));
-      expect(bashArity['git stash'], equals(3));
-      expect(bashArity['npm run'], equals(3));
-      expect(bashArity['npm exec'], equals(3));
-      expect(bashArity['yarn run'], equals(3));
-      expect(bashArity['yarn dlx'], equals(3));
-      expect(bashArity['docker compose'], equals(3));
-      expect(bashArity['docker container'], equals(3));
-      expect(bashArity['docker image'], equals(3));
+      expect(shellArity['git config'], equals(3));
+      expect(shellArity['git remote'], equals(3));
+      expect(shellArity['git stash'], equals(3));
+      expect(shellArity['npm run'], equals(3));
+      expect(shellArity['npm exec'], equals(3));
+      expect(shellArity['yarn run'], equals(3));
+      expect(shellArity['yarn dlx'], equals(3));
+      expect(shellArity['docker compose'], equals(3));
+      expect(shellArity['docker container'], equals(3));
+      expect(shellArity['docker image'], equals(3));
       // 'aws s3' is NOT in the map, only 'aws' with arity 3
-      expect(bashArity['aws'], equals(3));
-      expect(bashArity['gcloud'], equals(3));
-      expect(bashArity['gh'], equals(3));
+      expect(shellArity['aws'], equals(3));
+      expect(shellArity['gcloud'], equals(3));
+      expect(shellArity['gh'], equals(3));
     });
 
     test('contains four-word prefixes with arity 3', () {
-      expect(bashArity['docker builder'], equals(3));
-      expect(bashArity['docker network'], equals(3));
-      expect(bashArity['docker volume'], equals(3));
-      expect(bashArity['eksctl create'], equals(3));
-      expect(bashArity['kubectl kustomize'], equals(3));
-      expect(bashArity['kubectl rollout'], equals(3));
-      expect(bashArity['podman container'], equals(3));
-      expect(bashArity['podman image'], equals(3));
-      expect(bashArity['ip addr'], equals(3));
-      expect(bashArity['ip link'], equals(3));
-      expect(bashArity['ip netns'], equals(3));
-      expect(bashArity['ip route'], equals(3));
-      expect(bashArity['mc admin'], equals(3));
-      expect(bashArity['vault auth'], equals(3));
-      expect(bashArity['vault kv'], equals(3));
-      expect(bashArity['consul kv'], equals(3));
-      expect(bashArity['terraform workspace'], equals(3));
-      expect(bashArity['pulumi stack'], equals(3));
-      expect(bashArity['openssl req'], equals(3));
-      expect(bashArity['openssl x509'], equals(3));
-      expect(bashArity['pnpm dlx'], equals(3));
-      expect(bashArity['pnpm exec'], equals(3));
-      expect(bashArity['pnpm run'], equals(3));
+      expect(shellArity['docker builder'], equals(3));
+      expect(shellArity['docker network'], equals(3));
+      expect(shellArity['docker volume'], equals(3));
+      expect(shellArity['eksctl create'], equals(3));
+      expect(shellArity['kubectl kustomize'], equals(3));
+      expect(shellArity['kubectl rollout'], equals(3));
+      expect(shellArity['podman container'], equals(3));
+      expect(shellArity['podman image'], equals(3));
+      expect(shellArity['ip addr'], equals(3));
+      expect(shellArity['ip link'], equals(3));
+      expect(shellArity['ip netns'], equals(3));
+      expect(shellArity['ip route'], equals(3));
+      expect(shellArity['mc admin'], equals(3));
+      expect(shellArity['vault auth'], equals(3));
+      expect(shellArity['vault kv'], equals(3));
+      expect(shellArity['consul kv'], equals(3));
+      expect(shellArity['terraform workspace'], equals(3));
+      expect(shellArity['pulumi stack'], equals(3));
+      expect(shellArity['openssl req'], equals(3));
+      expect(shellArity['openssl x509'], equals(3));
+      expect(shellArity['pnpm dlx'], equals(3));
+      expect(shellArity['pnpm exec'], equals(3));
+      expect(shellArity['pnpm run'], equals(3));
     });
 
     test('map is not empty', () {
-      expect(bashArity, isNotEmpty);
-      expect(bashArity.length, greaterThan(50));
+      expect(shellArity, isNotEmpty);
+      expect(shellArity.length, greaterThan(50));
     });
 
     test('all values are positive integers', () {
-      for (final entry in bashArity.entries) {
+      for (final entry in shellArity.entries) {
         expect(
           entry.value,
           greaterThan(0),
@@ -87,7 +87,7 @@ void main() {
     });
 
     test('keys are lowercase', () {
-      for (final key in bashArity.keys) {
+      for (final key in shellArity.keys) {
         expect(
           key,
           equals(key.toLowerCase()),
@@ -137,7 +137,7 @@ void main() {
     });
 
     test('returns first token when no prefix matches', () {
-      // "xyzunknown" is not in bashArity
+      // "xyzunknown" is not in shellArity
       final result = prefix(['xyzunknown', 'arg1', 'arg2']);
       expect(result, equals(['xyzunknown']));
     });
@@ -147,12 +147,12 @@ void main() {
       expect(result, isEmpty);
     });
 
-    test('handles single token that is in bashArity', () {
+    test('handles single token that is in shellArity', () {
       final result = prefix(['cat']);
       expect(result, equals(['cat']));
     });
 
-    test('handles single token not in bashArity', () {
+    test('handles single token not in shellArity', () {
       final result = prefix(['unknowncmd']);
       expect(result, equals(['unknowncmd']));
     });

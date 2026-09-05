@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 import 'package:path/path.dart' as p;
-import 'package:chatorai/core/tools/filesystem_boundary.dart';
+import 'package:chatorai/shared/utils/logger.dart';
+import 'package:chatorai/core/tools/built_in/tool_path_resolve.dart';
 
 ToolDef createGrepTool() {
   return ToolDef(
@@ -42,7 +45,7 @@ ToolDef createGrepTool() {
         );
       }
 
-      final root = input['path'] as String? ?? Directory.current.path;
+      final root = input['path'] as String? ?? workspaceRuntimeCurrent.path;
       final includePattern = input['include'] as String?;
       final regex = RegExp(
         pattern,
@@ -51,23 +54,14 @@ ToolDef createGrepTool() {
       final maxMatches = input['max_matches'] as int? ?? 50;
 
       final results = <String>[];
-      final safeRoot = resolveSafePath(root, allowedRoots: managedReadRoots);
-      final boundary = FilesystemBoundary(workspace: Directory.current);
-      final grepResolution = boundary.resolve(safeRoot);
-      if (grepResolution.isExternal &&
-          !isWithinAnyRoot(grepResolution.path, managedReadRoots)) {
-        await ctx.ask(
-          permission: 'external_directory',
-          patterns: [grepResolution.path],
-          always: [grepResolution.path],
-          metadata: {
-            'filepath': grepResolution.path,
-            'parentDir': p.dirname(grepResolution.path),
-            'tool': 'grep',
-          },
-        );
-      }
-      if (!isWithinAnyRoot(grepResolution.path, managedReadRoots)) {
+      final resolved = await resolveToolPath(
+        ctx: ctx,
+        userPath: root,
+        toolName: 'grep',
+      );
+      if (resolved.isError) return resolved.error!;
+      final safeRoot = resolved.path!;
+      if (!isWithinAnyRoot(safeRoot, managedReadRoots)) {
         await ctx.ask(permission: 'grep', patterns: [pattern]);
       }
       final dir = Directory(safeRoot);
@@ -84,28 +78,33 @@ ToolDef createGrepTool() {
       )) {
         if (results.length >= maxMatches) break;
         if (entity is File) {
-          // Apply include filter if provided
           if (includePattern != null) {
             final relative = p.relative(entity.path, from: safeRoot);
-            // Simple glob matching: convert glob to regex
             final globRegex = _globToRegex(includePattern);
             if (!RegExp(globRegex).hasMatch(relative)) {
               continue;
             }
           }
+          String content;
           try {
-            final content = await entity.readAsString(encoding: utf8);
-            final lines = content.split('\n');
-            for (int lineNum = 0; lineNum < lines.length; lineNum++) {
-              if (results.length >= maxMatches) break;
-              final line = lines[lineNum];
-              if (regex.hasMatch(line)) {
-                final relative = p.relative(entity.path, from: safeRoot);
-                // Format: path:lineNumber: line (1-indexed line numbers)
-                results.add('$relative:${lineNum + 1}: $line');
-              }
+            content = await entity.readAsString(encoding: utf8);
+          } on FileSystemException catch (e) {
+            if (kDebugMode) {
+              LogTags.permission.logWarning(
+                'grep: skipping $entity — ${e.message}',
+              );
             }
-          } catch (_) {}
+            continue;
+          }
+          final lines = content.split('\n');
+          for (int lineNum = 0; lineNum < lines.length; lineNum++) {
+            if (results.length >= maxMatches) break;
+            final line = lines[lineNum];
+            if (regex.hasMatch(line)) {
+              final relative = p.relative(entity.path, from: safeRoot);
+              results.add('$relative:${lineNum + 1}: $line');
+            }
+          }
         }
       }
 

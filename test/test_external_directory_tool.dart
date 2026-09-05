@@ -1,4 +1,4 @@
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/tools/tool.dart';
@@ -91,8 +91,8 @@ void main() {
       expect(result.output, equals('ok'));
       expect(asks.length, equals(1));
       expect(asks.first.permission, equals('external_directory'));
-      expect(asks.first.patterns, contains('/tmp/external_file.txt'));
-      expect(asks.first.always, contains('/tmp/external_file.txt'));
+      expect(asks.first.patterns, contains('/tmp/*'));
+      expect(asks.first.always, contains('/tmp/*'));
       expect(asks.first.metadata['filepath'], equals('/tmp/external_file.txt'));
       expect(asks.first.metadata['rule'], equals('ask'));
     });

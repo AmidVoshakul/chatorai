@@ -1,5 +1,6 @@
 import 'package:chatorai/core/session/database.dart' hide ToolResult;
 import 'package:chatorai/core/session/database_manager.dart';
+import 'package:chatorai/core/session/file_snapshot_service.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,4 +17,12 @@ final sessionRepositoryProvider = FutureProvider<SessionRepository>((
 ) async {
   final db = await ref.watch(sessionDatabaseProvider.future);
   return SessionRepository(db);
+});
+
+/// Provides the [FileSnapshotService] for snapshotting file state before mutations.
+final fileSnapshotServiceProvider = FutureProvider<FileSnapshotService>((
+  ref,
+) async {
+  final db = await ref.watch(sessionDatabaseProvider.future);
+  return FileSnapshotService(db);
 });

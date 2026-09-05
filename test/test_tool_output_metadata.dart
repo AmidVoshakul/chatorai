@@ -32,7 +32,7 @@ void main() {
       final o = _out(null);
       expect(o.isError, isFalse);
       expect(o.isAborted, isFalse);
-      expect(o.bashExitCode, isNull);
+      expect(o.shellExitCode, isNull);
       expect(o.readTotalLines, isNull);
       expect(o.writePath, isNull);
       expect(o.globCount, isNull);
@@ -42,14 +42,14 @@ void main() {
     });
   });
 
-  group('ToolOutputMetadata — bash', () {
-    test('bashExitCode returns int value', () {
-      expect(_out({'exit_code': 0}).bashExitCode, 0);
-      expect(_out({'exit_code': 127}).bashExitCode, 127);
+  group('ToolOutputMetadata — shell', () {
+    test('shellExitCode returns int value', () {
+      expect(_out({'exit_code': 0}).shellExitCode, 0);
+      expect(_out({'exit_code': 127}).shellExitCode, 127);
     });
 
-    test('bashBannedCommand returns string', () {
-      expect(_out({'banned': 'rm -rf'}).bashBannedCommand, 'rm -rf');
+    test('shellBannedCommand returns string', () {
+      expect(_out({'banned': 'rm -rf'}).shellBannedCommand, 'rm -rf');
     });
   });
 
@@ -243,13 +243,13 @@ void main() {
       () {
         final o = _out({
           'toolCallId': 'tc_1',
-          'toolName': 'bash',
+          'toolName': 'shell',
           'sessionId': 'ses_p',
           'durationMs': 120,
           'status': 'success',
         });
         expect(o.persistenceToolCallId, 'tc_1');
-        expect(o.persistenceToolName, 'bash');
+        expect(o.persistenceToolName, 'shell');
         expect(o.persistenceSessionId, 'ses_p');
         expect(o.persistenceDurationMs, 120);
         expect(o.persistenceStatus, 'success');

@@ -1,6 +1,6 @@
 # Architecture Overview Diagrams
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-08-21
 
 This file contains high-level mermaid diagrams for data flow, session pipeline,
 tool execution, MCP topology, and config resolution.  Each diagram is
@@ -252,7 +252,7 @@ graph TD
 
 | Diagram | Described in | Source files |
 |---------|-------------|--------------|
-| High-Level Data Flow | `ARCHITECTURE.md` | `main.dart`, `lib/features/`, `lib/core/` |
+| High-Level Data Flow | `ARCHITECTURE.md` | `main.dart`, `lib/core/`, `lib/gui/`, `lib/tui/` |
 | Session Event Pipeline | `docs/API.md` → SessionRunner | `lib/core/session/session_runner.dart`, `event_store.dart`, `projector.dart` |
 | Tool Execution Lifecycle | `docs/API.md` → Tools | `lib/core/tools/tool_registry.dart`, `tool_execution.dart` |
 | MCP Connection Architecture | `docs/API.md` → McpClientService | `lib/core/mcp/mcp_client_service.dart` |

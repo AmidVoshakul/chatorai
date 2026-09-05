@@ -33,6 +33,87 @@ class FormatterEntryConfig {
   };
 }
 
+class LspServerEntryConfig {
+  final bool? disabled;
+  final List<String>? command;
+  final List<String>? args;
+  final Map<String, String>? environment;
+  final List<String>? extensions;
+  final String? languageId;
+  final Map<String, dynamic>? initialization;
+  final bool? autoInstall;
+
+  const LspServerEntryConfig({
+    this.disabled,
+    this.command,
+    this.args,
+    this.environment,
+    this.extensions,
+    this.languageId,
+    this.initialization,
+    this.autoInstall,
+  });
+
+  factory LspServerEntryConfig.fromJson(Map<String, dynamic> json) {
+    return LspServerEntryConfig(
+      disabled: json['disabled'] as bool?,
+      command: (json['command'] as List<dynamic>?)?.cast<String>(),
+      args: (json['args'] as List<dynamic>?)?.cast<String>(),
+      environment: (json['environment'] as Map<String, dynamic>?)
+          ?.cast<String, String>(),
+      extensions: (json['extensions'] as List<dynamic>?)?.cast<String>(),
+      languageId: json['languageId'] as String?,
+      initialization: json['initialization'] as Map<String, dynamic>?,
+      autoInstall: json['autoInstall'] as bool?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    if (disabled != null) 'disabled': disabled,
+    if (command != null) 'command': command,
+    if (args != null) 'args': args,
+    if (environment != null) 'environment': environment,
+    if (extensions != null) 'extensions': extensions,
+    if (languageId != null) 'languageId': languageId,
+    if (initialization != null) 'initialization': initialization,
+    if (autoInstall != null) 'autoInstall': autoInstall,
+  };
+}
+
+class LspConfig {
+  final bool enabled;
+  final Map<String, LspServerEntryConfig> servers;
+
+  const LspConfig({this.enabled = true, this.servers = const {}});
+
+  factory LspConfig.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const LspConfig();
+    final servers = <String, LspServerEntryConfig>{};
+    for (final entry in json.entries) {
+      if (entry.key == 'enabled') continue;
+      if (entry.value is Map<String, dynamic>) {
+        servers[entry.key] = LspServerEntryConfig.fromJson(
+          entry.value as Map<String, dynamic>,
+        );
+      }
+    }
+    final enabled = json['enabled'];
+    return LspConfig(
+      enabled: enabled is bool ? enabled : true,
+      servers: servers,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    if (!enabled) map['enabled'] = enabled;
+    for (final entry in servers.entries) {
+      map[entry.key] = entry.value.toJson();
+    }
+    return map;
+  }
+}
+
 class FormatterConfig {
   final Map<String, FormatterEntryConfig> formatters;
 
@@ -67,8 +148,10 @@ class ChatOrAIConfig {
   final SkillConfig? skills;
   final CompactionConfig? compaction;
   final FormatterConfig? formatter;
+  final LspConfig? lsp;
   final McpConfig? mcp;
   final AgentSectionConfig? agent;
+  final CommandSectionConfig? command;
   final Map<String, dynamic>? tools;
   final List<String> instructions;
   final ProviderSectionConfig? provider;
@@ -80,8 +163,10 @@ class ChatOrAIConfig {
     this.skills,
     this.compaction,
     this.formatter,
+    this.lsp,
     this.mcp,
     this.agent,
+    this.command,
     this.tools,
     this.instructions = const [],
     this.provider,
@@ -94,6 +179,7 @@ class ChatOrAIConfig {
     for (final entry in permissionJson.entries) {
       permission[entry.key] = PermissionRuleConfig.fromJson(entry.value);
     }
+    final lspRaw = json['lsp'];
     return ChatOrAIConfig(
       version: json['version'] as int? ?? 0,
       permission: permission,
@@ -109,11 +195,23 @@ class ChatOrAIConfig {
       formatter: json['formatter'] != null
           ? FormatterConfig.fromJson(json['formatter'] as Map<String, dynamic>?)
           : null,
+      lsp: lspRaw == null
+          ? null
+          : (lspRaw is bool
+                ? LspConfig(enabled: lspRaw)
+                : (lspRaw is Map
+                      ? LspConfig.fromJson(Map<String, dynamic>.from(lspRaw))
+                      : null)),
       mcp: json['mcp'] != null
           ? McpConfig.fromJson(json['mcp'] as Map<String, dynamic>?)
           : null,
       agent: json['agent'] != null
           ? AgentSectionConfig.fromJson(json['agent'] as Map<String, dynamic>)
+          : null,
+      command: json['command'] != null
+          ? CommandSectionConfig.fromJson(
+              json['command'] as Map<String, dynamic>,
+            )
           : null,
       tools: json['tools'] is Map
           ? Map<String, dynamic>.from(json['tools'] as Map)
@@ -136,8 +234,10 @@ class ChatOrAIConfig {
     if (skills != null) 'skills': skills!.toJson(),
     if (compaction != null) 'compaction': compaction!.toJson(),
     if (formatter != null) 'formatter': formatter!.toJson(),
+    if (lsp != null) 'lsp': lsp!.toJson(),
     if (mcp != null) 'mcp': mcp!.toJson(),
     if (agent != null) 'agent': agent!.toJson(),
+    if (command != null) 'command': command!.toJson(),
     if (tools != null) 'tools': tools,
     if (instructions.isNotEmpty) 'instructions': instructions,
     if (provider != null) 'provider': provider!.toJson(),
@@ -149,36 +249,40 @@ class ChatOrAIConfig {
 /// Mirrors fields:
 /// - `auto` — enable automatic pre-send overflow compaction
 /// - `prune` — enable post-compaction tool-output pruning
-/// - `keep.tokens` — minimum recent tokens to preserve verbatim
 /// - `buffer` — reserved tokens for the next model response
+/// - `tail_turns` — number of recent user–assistant pairs to keep verbatim
+///
+/// Note: the legacy `keep.tokens` key is still accepted on read for backward
+/// compatibility (see [fromJson]) but is no longer stored or used.
 class CompactionConfig {
   final bool auto;
   final bool prune;
-  final int keepTokens;
   final int buffer;
+  final int tailTurns;
 
   const CompactionConfig({
     this.auto = true,
     this.prune = false,
-    this.keepTokens = 8000,
     this.buffer = 20000,
+    this.tailTurns = 2,
   });
 
   factory CompactionConfig.fromJson(Map<String, dynamic> json) {
-    final keep = json['keep'] as Map<String, dynamic>? ?? {};
     return CompactionConfig(
       auto: json['auto'] as bool? ?? true,
       prune: json['prune'] as bool? ?? false,
-      keepTokens: keep['tokens'] as int? ?? 8000,
+      // `keep.tokens` is retained only for backward compatibility; the value
+      // is intentionally ignored (dead config).
       buffer: json['buffer'] as int? ?? 20000,
+      tailTurns: json['tail_turns'] as int? ?? 2,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'auto': auto,
     'prune': prune,
-    'keep': {'tokens': keepTokens},
     'buffer': buffer,
+    'tail_turns': tailTurns,
   };
 }
 
@@ -299,6 +403,72 @@ class AgentSectionConfig {
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
     for (final entry in agents.entries) {
+      map[entry.key] = entry.value.toJson();
+    }
+    return map;
+  }
+}
+
+/// A single command defined in the chatorai.json `command` section.
+class CommandConfigEntry {
+  final String template;
+  final String? description;
+  final String? agent;
+  final String? model;
+  final String? variant;
+  final bool? subtask;
+
+  const CommandConfigEntry({
+    required this.template,
+    this.description,
+    this.agent,
+    this.model,
+    this.variant,
+    this.subtask,
+  });
+
+  factory CommandConfigEntry.fromJson(Map<String, dynamic> json) {
+    return CommandConfigEntry(
+      template: json['template'] as String? ?? '',
+      description: json['description'] as String?,
+      agent: json['agent'] as String?,
+      model: json['model'] as String?,
+      variant: json['variant'] as String?,
+      subtask: json['subtask'] is bool ? json['subtask'] as bool : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'template': template,
+    if (description != null) 'description': description,
+    if (agent != null) 'agent': agent,
+    if (model != null) 'model': model,
+    if (variant != null) 'variant': variant,
+    if (subtask != null) 'subtask': subtask,
+  };
+}
+
+/// Command section in chatorai.json.
+class CommandSectionConfig {
+  final Map<String, CommandConfigEntry> commands;
+
+  const CommandSectionConfig({this.commands = const {}});
+
+  factory CommandSectionConfig.fromJson(Map<String, dynamic> json) {
+    final commands = <String, CommandConfigEntry>{};
+    for (final entry in json.entries) {
+      if (entry.value is Map<String, dynamic>) {
+        commands[entry.key] = CommandConfigEntry.fromJson(
+          entry.value as Map<String, dynamic>,
+        );
+      }
+    }
+    return CommandSectionConfig(commands: commands);
+  }
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    for (final entry in commands.entries) {
       map[entry.key] = entry.value.toJson();
     }
     return map;

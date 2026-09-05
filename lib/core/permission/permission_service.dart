@@ -1,7 +1,9 @@
 import 'dart:async';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+
+import 'package:chatorai/core/permission/permission_storage.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 import 'package:chatorai/shared/utils/logger.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'evaluator.dart';
 import 'rule.dart';
 import 'ruleset.dart';
@@ -27,16 +29,19 @@ class PermissionRequest {
 class PermissionService {
   final _pending = <String, _PendingEntry>{};
   final _approved = <PermissionRule>[];
+  static const _maxApproved = 200;
+  final _onceApproved = <PermissionRule>[];
+  static const _maxOnceApproved = 200;
   final _defaultRules = <PermissionRule>[];
-
-  // Cache of "once" grants to handle SDK retries before result cache is populated.
-  // Key: "permission:pattern" normalized, Value: timestamp (expires with session).
-  // This allows retry calls to skip permission dialogs when "Once" was already granted.
-  final _onceGranted = <String, DateTime>{};
 
   final _controller = StreamController<PermissionRequest>.broadcast();
   bool _rulesSeeded = false;
   String? _sessionId;
+  String? _currentWorkspacePath;
+
+  final PermissionStorage _storage;
+  PermissionService({PermissionStorage? storage})
+    : _storage = storage ?? const NoopPermissionStorage();
 
   /// Per-session pause gates. When a permission dialog is shown for a session,
   /// every other tool execution in that same session is blocked at the start
@@ -45,10 +50,8 @@ class PermissionService {
   /// is deciding on one action, no other action in the session runs ahead.
   final Map<String, Completer<void>> _sessionGates = {};
 
-  // Rate-limit tracking for repeated permission requests
+  // Rate-limit tracking for repeated permission requests (telemetry only)
   final _askHistory = <String, List<DateTime>>{};
-  static const _askLimitWindow = Duration(minutes: 5);
-  static const _askLimitMax = 10;
 
   // Question tracking (interactive user questions, not permissions)
   final _questionPending = <String, _QuestionEntry>{};
@@ -60,13 +63,39 @@ class PermissionService {
   Stream<PermissionRequest> get onAsked => _controller.stream;
   Stream<QuestionRequest> get onQuestionAsked => _questionController.stream;
   List<PermissionRule> get approvedRules => List.unmodifiable(_approved);
+  List<PermissionRule> get onceApprovedRules =>
+      List.unmodifiable(_onceApproved);
 
-  void attachPreferences(SharedPreferences prefs) {
-    // Session-scoped: "Always allow" rules live in memory for the current
-    // session only. No persistence needed.
+  /// Load persisted "always" approvals for [workspacePath] into the in-memory
+  /// cache. Call this after a workspace switch so the new workspace sees its
+  /// previously approved rules.
+  Future<void> attachWorkspace(String workspacePath) async {
+    _currentWorkspacePath = workspacePath;
+    _approved.clear();
+    _onceApproved.clear();
+    final loaded = await _storage.loadAlways(workspacePath);
+    for (final entry in loaded.entries) {
+      final parts = entry.key.split(':');
+      if (parts.length >= 2) {
+        final permission = parts[0];
+        final pattern = parts.sublist(1).join(':');
+        _approved.add(
+          PermissionRule(
+            permission: permission,
+            pattern: pattern,
+            action: PermissionAction.allow,
+          ),
+        );
+      }
+    }
+    // Cap list size to prevent unbounded growth
+    if (_approved.length > _maxApproved) {
+      _approved.removeRange(0, _approved.length - _maxApproved);
+    }
   }
 
-  /// Seed the default rules from configuration.
+  /// Seed the default rules from configuration (idempotent: only the first
+  /// non-empty seed takes effect).
   void seedRules(PermissionRuleset ruleset) {
     if (!_rulesSeeded && ruleset.rules.isNotEmpty) {
       _defaultRules.addAll(ruleset.rules);
@@ -77,11 +106,33 @@ class PermissionService {
     }
   }
 
+  /// Clears the in-memory rate-limit history so subsequent [ask] calls are not
+  /// throttled by earlier ones. Primarily used by tests and diagnostics.
+  void clearRateLimitHistory() {
+    _askHistory.clear();
+    _questionAskHistory.clear();
+  }
+
+  /// Replace the built-in default rules with [ruleset] and mark the service as
+  /// seeded.
+  ///
+  /// Called on every (re)load of `chatorai.json` so live edits to the
+  /// `permission` section take effect without a restart. Session-scoped grants
+  /// ([_approved] / [_onceApproved]) are preserved so in-flight permission
+  /// dialogs are not affected by a live config reload.
+  void replaceDefaultRules(PermissionRuleset ruleset) {
+    _defaultRules
+      ..clear()
+      ..addAll(ruleset.rules);
+    _rulesSeeded = true;
+  }
+
   bool isAllowed(String permission, String pattern) {
     final normalized = _validatePattern(pattern);
     final rule = evaluate(permission, normalized, [
       PermissionRuleset(rules: _defaultRules),
       PermissionRuleset(sessionApproved: _approved),
+      PermissionRuleset(sessionApproved: _onceApproved),
     ]);
     return rule.action == PermissionAction.allow;
   }
@@ -141,21 +192,23 @@ class PermissionService {
 
     final reqSessionId = req.metadata['sessionId'] as String?;
     if (reqSessionId != null && reqSessionId != _sessionId) {
+      // Grants are workspace-scoped, not session-scoped: a subagent (task tool)
+      // passing its own sessionId must not wipe the parent's approvals. Caches
+      // are cleared only on workspace change (onWorkspaceChanged/attachWorkspace).
       _sessionId = reqSessionId;
-      _approved.clear();
-      _onceGranted.clear();
       LogTags.permission.logInfo(
-        'PermissionService: session changed to $reqSessionId, cleared caches',
+        'PermissionService: session changed to $reqSessionId',
       );
     }
 
     var needsAsk = false;
 
     for (final pattern in req.patterns) {
-      final normalized = _validatePattern(pattern);
+      final normalized = pattern.trim().isEmpty ? '*' : pattern.trim();
       final rule = evaluate(req.permission, normalized, [
         ruleset,
         PermissionRuleset(sessionApproved: _approved),
+        PermissionRuleset(sessionApproved: _onceApproved),
       ]);
 
       if (rule.action == PermissionAction.deny) {
@@ -180,24 +233,6 @@ class PermissionService {
       return;
     }
 
-    // Check "once" cache - handles SDK retries that come after "Once" was granted
-    // but before the result is cached. Must check BEFORE creating dialog.
-    var allOnceGranted = true;
-    for (final pattern in req.patterns) {
-      final normalized = pattern.trim().isEmpty ? '*' : pattern.trim();
-      final key = '${req.permission}:$normalized';
-      if (!_onceGranted.containsKey(key)) {
-        allOnceGranted = false;
-        break;
-      }
-      LogTags.permission.logInfo(
-        'PermissionService.ask: ONCE-CACHE HIT for $key',
-      );
-    }
-    if (allOnceGranted) {
-      return; // Permission already granted once for all patterns
-    }
-
     // Check for existing in-flight request with same ID (preliminary + final dispatch)
     final existing = _pending[req.id];
     if (existing != null) {
@@ -209,22 +244,9 @@ class PermissionService {
     }
 
     final rateKey = '${req.toolName}:${req.permission}';
-
-    // If this permission was granted "once" for any pattern, never rate-limit
-    // it — the user already approved it and SDK retries must not be denied.
-    final onceGrantedForPermission = _onceGranted.keys.any(
-      (k) => k.startsWith('${req.permission}:'),
-    );
-    if (!onceGrantedForPermission && _isRateLimited(rateKey)) {
-      // Soft limit: rate-limiting must never deny a request that was already
-      // granted once, and must never throw into the agent stream (which caused
-      // unhandled `PermissionDeniedError: bash cannot access "bash"`). Log the
-      // condition and fall through to the dialog/grant path instead.
-      LogTags.permission.logWarning(
-        'PermissionService.ask: RATE-LIMITED for $rateKey, allowing to avoid stream break',
-      );
-      return;
-    }
+    // Telemetry only: record the ask so diagnostics can surface repeated
+    // prompts. Rate-limiting must never auto-allow a request past the user
+    // gate (security), so it has no effect on the allow/deny decision below.
     _recordAsk(rateKey);
 
     if (!_rulesSeeded && ruleset.rules.isNotEmpty) {
@@ -276,6 +298,7 @@ class PermissionService {
       );
       return '';
     }
+    _recordQuestionAsk('question');
 
     final completer = Completer<String>();
     _questionPending[id] = _QuestionEntry(
@@ -323,20 +346,16 @@ class PermissionService {
     }
   }
 
-  bool _isRateLimited(String key) {
-    final now = DateTime.now();
-    final history = _askHistory[key] ??= [];
-    history.removeWhere((t) => now.difference(t) > _askLimitWindow);
-    return history.length >= _askLimitMax;
-  }
-
   bool _isQuestionRateLimited(String key) {
     final now = DateTime.now();
     final history = _questionAskHistory[key] ??= [];
     history.removeWhere((t) => now.difference(t) > _questionLimitWindow);
-    if (history.length >= _questionLimitMax) return true;
-    history.add(now);
-    return false;
+    return history.length >= _questionLimitMax;
+  }
+
+  void _recordQuestionAsk(String key) {
+    final now = DateTime.now();
+    _questionAskHistory.putIfAbsent(key, () => []).add(now);
   }
 
   void _recordAsk(String key) {
@@ -344,7 +363,11 @@ class PermissionService {
     _askHistory.putIfAbsent(key, () => []).add(now);
   }
 
-  void reply(String requestId, PermissionReply reply, {String? message}) {
+  Future<void> reply(
+    String requestId,
+    PermissionReply reply, {
+    String? message,
+  }) async {
     final entry = _pending[requestId];
     if (entry == null) return;
 
@@ -371,24 +394,41 @@ class PermissionService {
             in entry.request.always.isNotEmpty
                 ? entry.request.always
                 : entry.request.patterns) {
+          final normalized = pattern.trim().isEmpty ? '*' : pattern.trim();
           newRules.add(
             PermissionRule(
               permission: entry.request.permission,
-              pattern: pattern,
+              pattern: normalized,
               action: PermissionAction.allow,
             ),
           );
         }
         _approved.addAll(newRules);
+        // Cap list size to prevent unbounded growth in long sessions
+        if (_approved.length > _maxApproved) {
+          _approved.removeRange(0, _approved.length - _maxApproved);
+        }
         _resolveSiblings(entry, newRules);
+        // Persist the updated always-approved rules for the current workspace
+        if (_currentWorkspacePath != null) {
+          await _persistAlways();
+        }
       }
       // Cache "once" grants for patterns to handle SDK retries
       if (reply == PermissionReply.once) {
-        final now = DateTime.now();
         for (final pattern in entry.request.patterns) {
           final normalized = pattern.trim().isEmpty ? '*' : pattern.trim();
-          final key = '${entry.request.permission}:$normalized';
-          _onceGranted[key] = now;
+          _onceApproved.add(
+            PermissionRule(
+              permission: entry.request.permission,
+              pattern: normalized,
+              action: PermissionAction.allow,
+            ),
+          );
+        }
+        // Cap list size to prevent unbounded growth in long sessions
+        if (_onceApproved.length > _maxOnceApproved) {
+          _onceApproved.removeRange(0, _onceApproved.length - _maxOnceApproved);
         }
         LogTags.permission.logInfo(
           'PermissionService.reply: Cached once grants for patterns: ${entry.request.patterns}',
@@ -409,7 +449,7 @@ class PermissionService {
 
     final mergedRuleset = PermissionRuleset(
       rules: [..._defaultRules, ..._approved],
-      sessionApproved: const [],
+      sessionApproved: _onceApproved,
     );
 
     final siblingsToResolve = <_PendingEntry>[];
@@ -419,7 +459,8 @@ class PermissionService {
       if (pending.rejected) continue;
 
       final allAllowed = pending.request.patterns.every((pattern) {
-        final rule = evaluate(pending.request.permission, pattern, [
+        final normalized = pattern.trim().isEmpty ? '*' : pattern.trim();
+        final rule = evaluate(pending.request.permission, normalized, [
           mergedRuleset,
         ]);
         return rule.action == PermissionAction.allow;
@@ -437,34 +478,90 @@ class PermissionService {
   }
 
   void cancelAllPendingRequests() {
-    for (final entry in _pending.values) {
-      entry.completer.completeError(
-        PermissionRejectedError(entry.request.toolName),
-      );
-    }
-    _pending.clear();
-    _onceGranted.clear();
-    _askHistory.clear();
-    for (final entry in _questionPending.values) {
-      if (!entry.completer.isCompleted) {
-        entry.completer.complete('');
-      }
-    }
-    _questionPending.clear();
-    _questionAskHistory.clear();
+    _clearAll(
+      includePending: true,
+      includeGates: true,
+      includeRules: true,
+      includeQuestions: true,
+    );
   }
 
   /// Clear rate-limit history and session-approved rules.
   void clearSession() {
-    _askHistory.clear();
-    _questionAskHistory.clear();
-    _approved.clear();
-    _onceGranted.clear();
-    _sessionId = null;
+    _clearAll(
+      includePending: false,
+      includeGates: false,
+      includeRules: true,
+      includeQuestions: false,
+    );
   }
 
-  @Deprecated('Use clearSession() instead')
-  void clearRateLimitHistory() => clearSession();
+  /// Called when workspace changes to clear permission caches.
+  void onWorkspaceChanged() {
+    _clearAll(
+      includePending: true,
+      includeGates: true,
+      includeRules: true,
+      includeQuestions: true,
+      includeDefaultRules: true,
+    );
+  }
+
+  void _clearAll({
+    bool includePending = true,
+    bool includeGates = true,
+    bool includeRules = true,
+    bool includeQuestions = true,
+    bool includeDefaultRules = false,
+  }) {
+    if (includePending) {
+      for (final entry in _pending.values) {
+        if (!entry.completer.isCompleted) {
+          entry.completer.completeError(
+            PermissionRejectedError(entry.request.toolName),
+          );
+        }
+      }
+      _pending.clear();
+    }
+    if (includeGates) {
+      for (final gate in _sessionGates.values) {
+        if (!gate.isCompleted) {
+          gate.completeError(StateError('Workspace changed'));
+        }
+      }
+      _sessionGates.clear();
+    }
+    if (includeRules) {
+      _approved.clear();
+      _onceApproved.clear();
+      _askHistory.clear();
+      _questionAskHistory.clear();
+      _sessionId = null;
+    }
+    if (includeQuestions) {
+      for (final entry in _questionPending.values) {
+        if (!entry.completer.isCompleted) {
+          entry.completer.complete('');
+        }
+      }
+      _questionPending.clear();
+      _questionAskHistory.clear();
+    }
+    if (includeDefaultRules) {
+      _defaultRules.clear();
+      _rulesSeeded = false;
+    }
+  }
+
+  Future<void> _persistAlways() async {
+    if (_currentWorkspacePath == null) return;
+    final map = <String, String>{};
+    for (final rule in _approved) {
+      map['${rule.permission}:${rule.pattern}'] = rule.action.name;
+    }
+    await _storage.saveAlways(_currentWorkspacePath!, map);
+  }
 }
 
 class _PendingEntry {

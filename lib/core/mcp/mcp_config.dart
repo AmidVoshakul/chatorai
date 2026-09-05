@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 /// MCP server type discriminator.
 enum McpServerType {
   local('local'),
@@ -53,6 +55,21 @@ class McpOAuthConfig {
     if (redirectUri != null) map['redirect_uri'] = redirectUri;
     return map;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is McpOAuthConfig &&
+          runtimeType == other.runtimeType &&
+          clientId == other.clientId &&
+          clientSecret == other.clientSecret &&
+          scope == other.scope &&
+          callbackPort == other.callbackPort &&
+          redirectUri == other.redirectUri;
+
+  @override
+  int get hashCode =>
+      Object.hash(clientId, clientSecret, scope, callbackPort, redirectUri);
 }
 
 /// Configuration for a single MCP server (local stdio or remote HTTP/SSE).
@@ -185,7 +202,9 @@ class McpServerConfig {
         command: command,
         args: args,
         cwd: json['cwd'] as String?,
-        environment: Map<String, String>.from(json['environment'] ?? const {}),
+        environment: Map<String, String>.from(
+          json['environment'] ?? json['env'] ?? const {},
+        ),
         enabled: enabled,
         timeout: timeout,
       );
@@ -228,6 +247,42 @@ class McpServerConfig {
 
     return base;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is McpServerConfig &&
+          runtimeType == other.runtimeType &&
+          type == other.type &&
+          enabled == other.enabled &&
+          timeout == other.timeout &&
+          command == other.command &&
+          const ListEquality<String>().equals(args, other.args) &&
+          cwd == other.cwd &&
+          const MapEquality<String, String>().equals(
+            environment,
+            other.environment,
+          ) &&
+          url == other.url &&
+          const MapEquality<String, String>().equals(
+            headers ?? const {},
+            other.headers ?? const {},
+          ) &&
+          oauth == other.oauth;
+
+  @override
+  int get hashCode => Object.hash(
+    type,
+    enabled,
+    timeout,
+    command,
+    Object.hashAll(args),
+    cwd,
+    const MapEquality<String, String>().hash(environment),
+    url,
+    const MapEquality<String, String>().hash(headers ?? const {}),
+    oauth,
+  );
 }
 
 /// Top-level MCP configuration.

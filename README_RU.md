@@ -1,6 +1,7 @@
-# ChatORAI — Русская версия
+# ChatORAI  (Русская версия)
 
-Современный AI-чат на Flutter с поддержкой множества моделей, агентов и инструментов.
+Персональная рабочая станция с искусственным интеллектом для работы над проектами с помощью интеллектуальных агентов на настольных компьютерах, терминалах и мобильных устройствах.
+Одно ядро. Множество интерфейсов. Ваши проекты, ваши модели, ваши агенты.
 
 ## ✨ Возможности
 
@@ -77,9 +78,8 @@ LIBGL_ALWAYS_SOFTWARE=1 flutter run -d linux  # Linux software rendering
 - [API Reference](docs/API.md) — Провайдеры, сервисы, модели, инструменты
 - [Commands](docs/COMMANDS.md) — CLI-команды и `@`-упоминания агентов
 - [Environment](docs/ENVIRONMENT.md) — Настройка окружения и зависимости
-- [Roadmap](docs/ROADMAP.md) — Выполненные milestones и планы
-- [Configuration](docs/configuration.md) — Схема chatorai.json и опции
-- [Security](docs/security.md) — Система разрешений, работа с секретами, границы доверия
+- [Configuration](docs/CONFIGURATION.md) — Схема chatorai.json и опции
+- [Security](docs/SECURITY.md) — Система разрешений, работа с секретами, границы доверия
 - [Platform Paths](docs/xdg-paths.md) — Пути для Linux/macOS/Windows/mobile
 
 ### Диаграммы
@@ -136,16 +136,6 @@ chatorai uninstall
 
 ChatORAI — единый бинарник. `chatorai --help` выводит команды (`stats`, `models`, `upgrade`, `--version`); `chatorai` без аргументов запускает GUI.
 
-## 🔧 Разработка
-
-```bash
-flutter pub get
-flutter gen-l10n
-flutter analyze
-flutter test
-flutter run -d linux
-```
-
 ## 🛡️ Безопасность и разрешения
 
 - **Dev vs Runtime**: `.env` только для разработки; в релизе пользователи вводят credentials в приложении.
@@ -156,6 +146,8 @@ flutter run -d linux
 ## 🤝 Вклад в проект
 
 См. [CONTRIBUTING.md](CONTRIBUTING.md) для информации о workflow, стиле кода и тестировании.
+
+Если вам нравится ChatORAI, вы можете поддержать проект, поставив звезду на [GitHub](https://github.com/AmidVoshakul/chatorai) или став спонсором [AmidVoshakul](https://github.com/sponsors/AmidVoshakul).
 
 ## 📄 Лицензия
 

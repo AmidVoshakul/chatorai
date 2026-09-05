@@ -3,6 +3,9 @@ import 'dart:convert';
 
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/core/chat/chat/chat_message.dart';
+import 'package:chatorai/core/chat/chat/chat_snapshot_codec.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:drift/drift.dart';
 
 import 'database.dart' as db show ToolResult;
@@ -17,6 +20,7 @@ import 'session_tree.dart';
 class SessionRepository {
   static const _stateCacheLimit = 200;
   static const _stateCacheTtl = Duration(hours: 24);
+  static const int kChatSnapshotSchemaVersion = 1;
   final AppDatabase _db;
   final EventStore _eventStore;
   final LinkedHashMap<SessionID, SessionState> _stateCache =
@@ -90,6 +94,7 @@ class SessionRepository {
     String agent = 'general',
     String? modelRef,
     PermissionRuleset? permission,
+    String? directory,
   }) async {
     final sessionId = id ?? SessionID.create();
     final event = SessionCreated(
@@ -99,6 +104,7 @@ class SessionRepository {
       agent: agent,
       modelRef: modelRef,
       permission: permission,
+      directory: directory,
       timestamp: DateTime.now(),
     );
 
@@ -114,6 +120,7 @@ class SessionRepository {
       agent: agent,
       modelRef: modelRef,
       permission: permission,
+      directory: directory,
       createdAt: event.timestamp,
       updatedAt: event.timestamp,
     );
@@ -127,6 +134,11 @@ class SessionRepository {
     final events = await _eventStore.getEvents(sessionId);
     if (events.isEmpty) return null;
     return replayEvents(events);
+  }
+
+  /// Batch raw event rows for many sessions in a single query (no decode).
+  Future<List<Event>> getEventRowsForSessions(List<SessionID> sessionIds) {
+    return _eventStore.getEventRowsForSessions(sessionIds);
   }
 
   Future<SessionState?> getSessionMeta(SessionID sessionId) async {
@@ -150,14 +162,8 @@ class SessionRepository {
     return state;
   }
 
-  String _stripSesPrefix(String value) {
-    if (value.startsWith('ses_')) return value;
-    return 'ses_$value';
-  }
-
   Future<SessionState?> getSessionMetaFromId(String sessionId) async {
-    final stripped = _stripSesPrefix(sessionId);
-    return getSessionMeta(SessionID.fromString(stripped));
+    return getSessionMeta(SessionID.fromRaw(sessionId));
   }
 
   /// Returns all active (non-archived) sessions sorted by [updatedAt] descending.
@@ -165,6 +171,23 @@ class SessionRepository {
     final rows =
         await (_db.select(_db.sessions)
               ..where((s) => s.archivedAt.isNull())
+              ..orderBy([
+                (s) => OrderingTerm(
+                  expression: s.updatedAt,
+                  mode: OrderingMode.desc,
+                ),
+              ]))
+            .get();
+    return rows.map(_rowToState).toList();
+  }
+
+  /// Parent (root) sessions created in [directory], newest first.
+  Future<List<SessionState>> findSessionsByDirectory(String directory) async {
+    final rows =
+        await (_db.select(_db.sessions)
+              ..where(
+                (s) => s.parentId.isNull() & s.directory.equals(directory),
+              )
               ..orderBy([
                 (s) => OrderingTerm(
                   expression: s.updatedAt,
@@ -261,6 +284,35 @@ class SessionRepository {
     });
   }
 
+  /// Finds sessions with an empty title and zero messages, and deletes them.
+  ///
+  /// These "orphan" sessions are created as a side effect of a bug where
+  /// [SessionRunner.startInitializedSession] creates a second session when
+  /// no session ID is passed. Call this once at startup to clean up any
+  /// such stale rows left over from previous versions.
+  ///
+  /// Returns the number of deleted sessions.
+  Future<int> cleanupOrphanSessions() async {
+    final emptyTitleRows = await (_db.select(
+      _db.sessions,
+    )..where((s) => s.title.equals(''))).get();
+
+    if (emptyTitleRows.isEmpty) return 0;
+
+    var deleted = 0;
+    for (final row in emptyTitleRows) {
+      final msgCount = await (_db.select(
+        _db.messages,
+      )..where((m) => m.sessionId.equals(row.id))).get().then((r) => r.length);
+
+      if (msgCount == 0) {
+        await deleteSession(SessionID.fromString(row.id));
+        deleted++;
+      }
+    }
+    return deleted;
+  }
+
   Future<void> deleteSession(SessionID sessionId) async {
     await _db.transaction(() async {
       await (_db.delete(
@@ -272,6 +324,9 @@ class SessionRepository {
       await (_db.delete(
         _db.contextEpochs,
       )..where((c) => c.sessionId.equals(sessionId.value))).go();
+      await (_db.delete(
+        _db.chatSnapshots,
+      )..where((s) => s.sessionId.equals(sessionId.value))).go();
       await _eventStore.deleteSessionEvents(sessionId);
       await (_db.delete(
         _db.sessions,
@@ -334,6 +389,7 @@ class SessionRepository {
     final effectiveTitle =
         title ??
         (parentState != null ? '${parentState.title} Sub-task' : 'Sub-task');
+    final effectiveDirectory = parentState?.directory;
 
     // Derive permissions from parent unless explicitly overridden
     final childPermission =
@@ -350,6 +406,7 @@ class SessionRepository {
       agent: effectiveAgent,
       modelRef: effectiveModelRef,
       permission: childPermission,
+      directory: effectiveDirectory,
       timestamp: now,
     );
     await _db.transaction(() async {
@@ -377,6 +434,7 @@ class SessionRepository {
       agent: effectiveAgent,
       modelRef: effectiveModelRef,
       permission: childPermission,
+      directory: effectiveDirectory,
       createdAt: now,
       updatedAt: now,
     );
@@ -435,8 +493,7 @@ class SessionRepository {
   }
 
   Future<List<SessionState>> getChildSessionsFromId(String parentId) async {
-    final stripped = _stripSesPrefix(parentId);
-    return getChildSessions(SessionID.fromString(stripped));
+    return getChildSessions(SessionID.fromRaw(parentId));
   }
 
   Future<Map<String, int>> getAggregateUsage(SessionID sessionId) async {
@@ -508,6 +565,9 @@ class SessionRepository {
       reasoning: row.reasoning,
       error: row.error,
       createdAt: row.createdAt,
+      tokensInput: row.tokensInput,
+      tokensOutput: row.tokensOutput,
+      tokensReasoning: row.tokensReasoning,
     );
   }
 
@@ -528,6 +588,44 @@ class SessionRepository {
     return replayEvents(events);
   }
 
+  /// Loads a cached chat snapshot for [sessionId] if it exists and is still
+  /// valid (its `events_count` matches the current number of events in the
+  /// store). Returns `null` when there is no snapshot or it is stale, signaling
+  /// the caller to replay events from scratch.
+  Future<List<ChatMessage>?> readChatSnapshot(SessionID sessionId) async {
+    final eventCount = await _eventStore.countEventsForSession(sessionId);
+    final row = await (_db.select(
+      _db.chatSnapshots,
+    )..where((s) => s.sessionId.equals(sessionId.value))).getSingleOrNull();
+    if (row == null) return null;
+    if (row.eventsCount != eventCount) return null;
+    if (row.schemaVersion != kChatSnapshotSchemaVersion) return null;
+    return decodeChatSnapshot(row.chatJson);
+  }
+
+  /// Writes (upserts) a chat snapshot for [sessionId] with the current event
+  /// count, so that subsequent loads can short-circuit when the history has
+  /// not changed.
+  Future<void> writeChatSnapshot(
+    SessionID sessionId,
+    List<ChatMessage> messages,
+  ) async {
+    final eventCount = await _eventStore.countEventsForSession(sessionId);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await _db
+        .into(_db.chatSnapshots)
+        .insert(
+          ChatSnapshotsCompanion.insert(
+            sessionId: sessionId.value,
+            eventsCount: eventCount,
+            chatJson: encodeChatSnapshot(messages),
+            updatedAt: now,
+            schemaVersion: const Value(kChatSnapshotSchemaVersion),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+  }
+
   SessionState _rowToState(Session row) {
     return SessionState(
       id: SessionID.fromString(row.id),
@@ -545,6 +643,7 @@ class SessionRepository {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       archivedAt: row.archivedAt,
+      directory: row.directory,
     );
   }
 }
@@ -552,32 +651,13 @@ class SessionRepository {
 PermissionRuleset? _deserializePermission(String? raw) {
   if (raw == null || raw.isEmpty) return null;
   try {
-    final data = jsonDecode(raw) as Map<String, dynamic>;
-    return PermissionRuleset(
-      rules:
-          (data['rules'] as List<dynamic>?)
-              ?.map(
-                (r) => PermissionRule(
-                  permission: r['permission'] as String,
-                  pattern: r['pattern'] as String,
-                  action: PermissionAction.values.byName(r['action'] as String),
-                ),
-              )
-              .toList() ??
-          [],
-      sessionApproved:
-          (data['sessionApproved'] as List<dynamic>?)
-              ?.map(
-                (r) => PermissionRule(
-                  permission: r['permission'] as String,
-                  pattern: r['pattern'] as String,
-                  action: PermissionAction.values.byName(r['action'] as String),
-                ),
-              )
-              .toList() ??
-          [],
-    );
-  } catch (_) {
+    final data = jsonDecode(raw) as Map<String, dynamic>?;
+    return PermissionRulesetCodec.fromJson(data);
+  } on FormatException catch (e) {
+    LogTags.permission.logWarning('Bad permission JSON in session row: $e');
+    return null;
+  } on Object catch (e) {
+    LogTags.permission.logWarning('Failed to deserialize permission rules: $e');
     return null;
   }
 }

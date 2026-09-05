@@ -113,6 +113,39 @@ class AppLocalizationsEn extends AppLocalizations {
       'Show reasoning/thought blocks expanded when AI responds';
 
   @override
+  String get slashCommandSkills => 'Show available skills';
+
+  @override
+  String get slashCommandNew => 'Start a new chat';
+
+  @override
+  String get slashCommandClear => 'Clear current chat';
+
+  @override
+  String get slashCommandCompact => 'Compress conversation context';
+
+  @override
+  String get slashCommandHelp => 'Show help';
+
+  @override
+  String get slashCommandUndo => 'Undo last action';
+
+  @override
+  String get slashCommandRedo => 'Redo last undone action';
+
+  @override
+  String get slashCommandSessions => 'List sessions';
+
+  @override
+  String get slashCommandModels => 'Select model';
+
+  @override
+  String get slashCommandTheme => 'Change theme';
+
+  @override
+  String get slashCommandThinking => 'Toggle reasoning visibility';
+
+  @override
   String get language => 'Language';
 
   @override
@@ -147,6 +180,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get close => 'Close';
+
+  @override
+  String errorLoadingChat(String error) {
+    return 'Failed to load chat: $error';
+  }
+
+  @override
+  String get confirmOpenLink => 'Are you sure you want to open:';
 
   @override
   String get copy => 'Copy';
@@ -279,6 +320,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get context => 'Context';
+
+  @override
+  String contextMessages(Object percent, Object usable, Object used) {
+    return 'Context: $used / $usable tokens ($percent%)';
+  }
+
+  @override
+  String get contextInstructions => 'Instructions';
+
+  @override
+  String get contextAgentPrompt => 'Agent prompt';
+
+  @override
+  String get contextUserPrompt => 'User prompt';
+
+  @override
+  String get contextCompactSession => 'Compact session';
+
+  @override
+  String get contextCompacting => 'Compacting…';
+
+  @override
+  String get contextUsageBreakdown => 'Usage breakdown';
+
+  @override
+  String get contextPromptTokens => 'Input tokens';
+
+  @override
+  String get contextOutputTokens => 'Output tokens';
+
+  @override
+  String get contextCacheRead => 'Cache read';
+
+  @override
+  String get contextCacheWrite => 'Cache write';
+
+  @override
+  String get contextToolTokens => 'Tool tokens';
+
+  @override
+  String get contextSpentLabel => 'Spent';
+
+  @override
+  String get contextTokensIncludedInPrompt => 'Tool tokens included in prompt';
+
+  @override
+  String contextAutoCompactAt(Object buffer, Object percent) {
+    return 'Auto-compact at $percent% · $buffer tokens';
+  }
 
   @override
   String get free => 'Free';
@@ -434,6 +524,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get edit => 'Edit';
+
+  @override
+  String editToolTitle(String path) {
+    return 'Edit $path';
+  }
+
+  @override
+  String patchToolTitle(String path) {
+    return 'Patch $path';
+  }
 
   @override
   String get share => 'Share';
@@ -1145,6 +1245,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get systemPromptSuggestion => 'You are a helpful assistant.';
 
   @override
+  String get supportBecomeSponsor => 'Become a Sponsor';
+
+  @override
+  String get supportProjectSubtitle =>
+      'If you enjoy using ChatORAI, please consider supporting the project by:';
+
+  @override
+  String get supportProjectTitle => 'Support the Project';
+
+  @override
+  String get supportShareThoughts => 'Share your thoughts';
+
+  @override
+  String get supportStarOnGitHub => 'Star on GitHub';
+
+  @override
   String get temperature => 'Temperature';
 
   @override
@@ -1270,6 +1386,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get listening => 'Listening...';
+
+  @override
+  String get linkCancel => 'Cancel';
+
+  @override
+  String get linkCopied => 'Link copied';
+
+  @override
+  String get linkOpen => 'Open';
+
+  @override
+  String get linkOpenFailed => 'Failed to open link';
 
   @override
   String get sendMessage => 'Send message';
@@ -1694,6 +1822,66 @@ class AppLocalizationsEn extends AppLocalizations {
       'Adobe for Creativity unites Photoshop, Lightroom, Illustrator, Firefly, Premiere, Express, InDesign, and Stock with AI-driven creative work. Users can generate, edit, and enhance photos, design assets, and video projects using natural language while work stays tied to their Adobe account.';
 
   @override
+  String get mcpInstallToGlobal => 'Install to Global';
+
+  @override
+  String get mcpInstallToProject => 'Install to Project';
+
+  @override
+  String get mcpScopeGlobal => 'Global';
+
+  @override
+  String get mcpScopeProject => 'Project';
+
+  @override
+  String get mcpScopeGlobalProject => 'Global + Project';
+
+  @override
+  String mcpRemoveFromScope(String scope) {
+    return 'Remove from $scope';
+  }
+
+  @override
+  String get mcpRemoveFromAll => 'Remove from all';
+
+  @override
+  String get mcpTokenDialogTitle => 'Authentication';
+
+  @override
+  String get mcpTokenDialogTitleHint =>
+      'Choose how to authenticate with this server';
+
+  @override
+  String get mcpTokenInputLabel => 'Token';
+
+  @override
+  String get mcpTokenInputHint => 'Paste your access token';
+
+  @override
+  String get mcpTokenInputHelper => 'Sent as Authorization: Bearer <token>';
+
+  @override
+  String get mcpOAuthClientIdLabel => 'Client ID';
+
+  @override
+  String get mcpOAuthClientIdHint => 'OAuth 2.1 client ID';
+
+  @override
+  String get mcpOAuthClientSecretLabel => 'Client Secret';
+
+  @override
+  String get mcpOAuthClientSecretHint => 'OAuth 2.1 client secret (optional)';
+
+  @override
+  String get mcpOAuthScopeLabel => 'Scope';
+
+  @override
+  String get mcpOAuthScopeHint => 'e.g. read write';
+
+  @override
+  String get mcpAuthConfirm => 'Confirm';
+
+  @override
   String get agentsInstructions => 'Agents Instructions';
 
   @override
@@ -2014,4 +2202,291 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonEdit => 'Edit';
+
+  @override
+  String get toolResultOriginal => 'Original';
+
+  @override
+  String get toolResultRestore => 'Restore';
+
+  @override
+  String get toolResultRestoredSnackbar =>
+      'Files restored to before-edit state';
+
+  @override
+  String get toolResultOriginalTitle => 'Original content before edit';
+
+  @override
+  String restoreFailed(String error) {
+    return 'Restore failed: $error';
+  }
+
+  @override
+  String get compactingIndicator => 'Compacting...';
+
+  @override
+  String get compactionAgentName => 'Compaction';
+
+  @override
+  String get workspaces => 'Workspaces';
+
+  @override
+  String get directoryTitle => 'Directory';
+
+  @override
+  String get searchDirectories => 'Search directories';
+
+  @override
+  String get addDirectory => 'Add directory';
+
+  @override
+  String get removeDirectory => 'Remove directory';
+
+  @override
+  String get noWorkspacesFound => 'No directories found';
+
+  @override
+  String get switchWorkspaceTitle => 'Switch workspace';
+
+  @override
+  String get currentSessionWillBeStopped =>
+      'The current session will be stopped.';
+
+  @override
+  String get continueText => 'Continue';
+
+  @override
+  String get changeWorkingDirectory => 'Change current directory';
+
+  @override
+  String get sessionsTitle => 'Sessions';
+
+  @override
+  String get noSessions => 'No sessions yet';
+
+  @override
+  String get searchSessions => 'Search sessions';
+
+  @override
+  String get newSession => 'New session';
+
+  @override
+  String get autoApproveTitle => 'Auto-Approve';
+
+  @override
+  String get autoApproveSubtitle => 'Configure automatic permission approvals';
+
+  @override
+  String get autoApproveExternalDirectoryDesc =>
+      'Allow access to external directories';
+
+  @override
+  String get autoApproveShellDesc => 'Allow shell command execution';
+
+  @override
+  String get autoApproveReadDesc => 'Allow reading files';
+
+  @override
+  String get autoApproveEditDesc => 'Allow editing files';
+
+  @override
+  String get autoApproveWriteDesc => 'Allow writing files';
+
+  @override
+  String get autoApproveGlobDesc => 'Allow glob pattern searches';
+
+  @override
+  String get autoApproveGrepDesc => 'Allow grep searches';
+
+  @override
+  String get autoApproveWebsearchDesc => 'Allow web searches';
+
+  @override
+  String get autoApproveWebfetchDesc => 'Allow fetching web pages';
+
+  @override
+  String get autoApproveDoomLoopDesc => 'Allow doom loop detection';
+
+  @override
+  String get autoApproveSkillDesc => 'Allow skill execution';
+
+  @override
+  String get autoApproveLspDesc => 'Allow LSP tool usage';
+
+  @override
+  String get autoApproveTaskDesc => 'Allow task tool usage';
+
+  @override
+  String get autoApproveTodowriteDesc => 'Allow todo write operations';
+
+  @override
+  String get exceptionsTitle => 'Exceptions';
+
+  @override
+  String get addPath => 'Add path';
+
+  @override
+  String get addCommand => 'Add command';
+
+  @override
+  String get scopeGlobal => 'Global';
+
+  @override
+  String get scopeProject => 'Project';
+
+  @override
+  String get defaultInherit => 'Default (inherit)';
+
+  @override
+  String get defaultAllow => 'Allow';
+
+  @override
+  String get defaultAsk => 'Ask';
+
+  @override
+  String get defaultDeny => 'Deny';
+
+  @override
+  String autoApproveDefaultInherited(Object action) {
+    return 'Default ($action)';
+  }
+
+  @override
+  String get autoApproveGroupFileAccess => 'File Access';
+
+  @override
+  String get autoApproveGroupShell => 'Shell & Commands';
+
+  @override
+  String get autoApproveGroupNetwork => 'Network';
+
+  @override
+  String get autoApproveGroupAgents => 'Agents & Automation';
+
+  @override
+  String get autoApproveCommandPatternLabel => 'Command pattern';
+
+  @override
+  String get autoApprovePathPatternLabel => 'Path pattern';
+
+  @override
+  String get autoApproveCommandPatternHint => 'git *';
+
+  @override
+  String get autoApprovePathPatternHint => '/home/**/*.txt';
+
+  @override
+  String get autoApproveScopeHint =>
+      'Global applies everywhere · Project overrides per workspace';
+
+  @override
+  String get autoApproveNoExceptions =>
+      'No exceptions — uses default for all patterns';
+
+  @override
+  String get autoApproveBrowseDirectory => 'Browse directory';
+
+  @override
+  String get autoApproveScopeProjectDisabledTooltip =>
+      'No project configuration found. Create .chatorai/chatorai.json to enable project-scoped permissions.';
+
+  @override
+  String get autoApproveActionLabel => 'Action';
+
+  @override
+  String get autoApprovePatternHintFile =>
+      '/home/user/project/** • ~/Documents/*';
+
+  @override
+  String get autoApprovePatternHintCommand => 'npm run * • git status';
+
+  @override
+  String autoApproveError(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get settingsMcpSubtitle =>
+      'Manage Model Context Protocol tool servers';
+
+  @override
+  String get mcpAuthNoAuth => 'No Auth';
+
+  @override
+  String get mcpAuthToken => 'Token';
+
+  @override
+  String get mcpAuthOAuth => 'OAuth 2.1';
+
+  @override
+  String get statsInput => 'Input';
+
+  @override
+  String get statsOutput => 'Output';
+
+  @override
+  String get statsCacheRead => 'Cache Read';
+
+  @override
+  String get keyboardShortcuts => 'Keyboard Shortcuts';
+
+  @override
+  String get keyboardShortcutsSubtitle =>
+      'Customize keyboard shortcuts for the app';
+
+  @override
+  String get keybindingsReadOnlyMobile =>
+      'Keyboard shortcuts are only available on desktop';
+
+  @override
+  String get keyboardShortcutsResetConfirm =>
+      'Are you sure you want to reset all keyboard shortcuts to defaults?';
+
+  @override
+  String get bindingConflict => 'Conflict';
+
+  @override
+  String get captureHint => 'Press a key combination...';
+
+  @override
+  String get shortcutCancelStreaming => 'Cancel AI response';
+
+  @override
+  String get shortcutCloseDialog => 'Close dialog';
+
+  @override
+  String get shortcutOpenLatestChild => 'Open latest child session';
+
+  @override
+  String get shortcutNavPrevSibling => 'Previous sibling session';
+
+  @override
+  String get shortcutNavNextSibling => 'Next sibling session';
+
+  @override
+  String get shortcutNavParent => 'Go to parent session';
+
+  @override
+  String get shortcutCyclePrimaryAgent => 'Cycle primary agent';
+
+  @override
+  String get shortcutToggleSidebar => 'Toggle sidebar';
+
+  @override
+  String get shortcutNewChat => 'New chat';
+
+  @override
+  String get shortcutOpenModelSelector => 'Open model selector';
+
+  @override
+  String get shortcutOpenSettings => 'Open settings';
+
+  @override
+  String get shortcutOpenWorkspace => 'Open workspace';
+
+  @override
+  String get shortcutScrollToChatStart => 'Scroll to top';
+
+  @override
+  String get shortcutScrollToChatEnd => 'Scroll to bottom';
 }

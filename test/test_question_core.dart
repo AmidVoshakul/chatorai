@@ -7,9 +7,9 @@ import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/tools/built_in/question.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/tool_execution.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_part.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_part.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -256,7 +256,7 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.ask,
           ),
@@ -267,8 +267,8 @@ void main() {
       final askFuture = service.ask(
         PermissionRequest(
           id: 'cancel-perm-1',
-          toolName: 'bash',
-          permission: 'bash',
+          toolName: 'shell',
+          permission: 'shell',
           patterns: ['dangerous-command'],
           metadata: {'sessionId': 's1'},
         ),
@@ -817,7 +817,7 @@ void main() {
       }
 
       // Clear rate limit history
-      service.clearRateLimitHistory();
+      service.clearSession();
 
       // Now questions should work without rate limit issues
       final fresh = service.askQuestion(

@@ -29,7 +29,7 @@ void main() {
       final permission = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
@@ -57,7 +57,7 @@ void main() {
       expect(restored.modelRef, 'gpt-4');
       expect(restored.permission, isNotNull);
       expect(restored.permission!.rules.length, 1);
-      expect(restored.permission!.rules.first.permission, 'bash');
+      expect(restored.permission!.rules.first.permission, 'shell');
       expect(restored.timestamp, ts);
     });
 
@@ -252,14 +252,14 @@ void main() {
         ToolCalled(
           sessionId: sid,
           toolCallId: 'tc-2',
-          toolName: 'bash',
+          toolName: 'shell',
           input: {'command': 'ls'},
           timestamp: ts,
         ),
       );
       final events = await store.getEvents(sid);
       final restored = events.first as ToolCalled;
-      expect(restored.toolName, 'bash');
+      expect(restored.toolName, 'shell');
       expect(restored.input, {'command': 'ls'});
     });
 
@@ -453,7 +453,7 @@ void main() {
       final permission = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),

@@ -39,27 +39,27 @@ void main() {
     });
 
     test(
-      'disabled tool filtered (bash has deny-all rule → not in available)',
+      'disabled tool filtered (shell has deny-all rule → not in available)',
       () {
         final service = PermissionService();
         final denyRuleset = PermissionRuleset(
           rules: [
             PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: '*',
               action: PermissionAction.deny,
             ),
           ],
         );
         final registry = ToolRegistry(service, denyRuleset);
-        final bashTool = _fakeTool('bash', description: 'Bash tool');
+        final shellTool = _fakeTool('shell', description: 'shell tool');
         final readTool = _fakeTool('read', description: 'Read tool');
 
-        registry.register(bashTool);
+        registry.register(shellTool);
         registry.register(readTool);
 
         final available = registry.available;
-        expect(available.any((t) => t.id == 'bash'), isFalse);
+        expect(available.any((t) => t.id == 'shell'), isFalse);
         expect(available.any((t) => t.id == 'read'), isTrue);
       },
     );

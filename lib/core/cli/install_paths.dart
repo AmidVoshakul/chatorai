@@ -5,8 +5,8 @@ import 'package:path/path.dart' as p;
 /// Platform-aware installation paths for uninstall/upgrade operations.
 ///
 /// Installs into per-user directories (no administrator/sudo required),
-/// matching the approach used by opencode / Claude / Kilo Code. This keeps the
-/// app isolated from the system and lets `uninstall` run without elevation.
+/// which keeps the app isolated from the system and lets `uninstall` run
+/// without elevation.
 class InstallPaths {
   InstallPaths._();
 

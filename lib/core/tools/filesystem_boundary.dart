@@ -73,7 +73,7 @@ class FilesystemBoundary {
     final expanded = _expandTilde(path);
     final absolute = p.isAbsolute(expanded)
         ? expanded
-        : p.join(Directory.current.path, expanded);
+        : p.join(workspace.path, expanded);
     return p.normalize(absolute);
   }
 

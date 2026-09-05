@@ -1,4 +1,5 @@
 import 'package:chatorai/core/config/models/permission_section.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/xdg_paths.dart';
 
 import 'evaluator.dart';
@@ -98,9 +99,9 @@ class PermissionRuleset {
           action: PermissionAction.allow,
         ),
         const PermissionRule(
-          permission: 'bash',
+          permission: 'shell',
           pattern: '*',
-          action: PermissionAction.allow,
+          action: PermissionAction.ask,
         ),
         const PermissionRule(
           permission: 'edit',
@@ -168,6 +169,66 @@ class PermissionRuleset {
           action: PermissionAction.deny,
         ),
       ],
+    );
+  }
+}
+
+class PermissionRulesetCodec {
+  static Map<String, dynamic>? toJson(PermissionRuleset? pr) {
+    if (pr == null) return null;
+    if (pr.rules.isEmpty && pr.sessionApproved.isEmpty) return null;
+    return {
+      'rules': pr.rules
+          .map(
+            (r) => {
+              'permission': r.permission,
+              'pattern': r.pattern,
+              'action': r.action.name,
+            },
+          )
+          .toList(),
+      'sessionApproved': pr.sessionApproved
+          .map(
+            (r) => {
+              'permission': r.permission,
+              'pattern': r.pattern,
+              'action': r.action.name,
+            },
+          )
+          .toList(),
+    };
+  }
+
+  static PermissionRuleset? fromJson(Map<String, dynamic>? json) {
+    if (json == null) return null;
+    final rules = (json['rules'] as List<dynamic>?)
+        ?.map((r) => _ruleFromJson(r as Map<String, dynamic>))
+        .toList();
+    final sessionApproved = (json['sessionApproved'] as List<dynamic>?)
+        ?.map((r) => _ruleFromJson(r as Map<String, dynamic>))
+        .toList();
+    return PermissionRuleset(
+      rules: rules ?? const [],
+      sessionApproved: sessionApproved ?? const [],
+    );
+  }
+
+  static PermissionRule _ruleFromJson(Map<String, dynamic> json) {
+    final actionName = json['action'] as String?;
+    PermissionAction action;
+    if (actionName != null &&
+        PermissionAction.values.any((a) => a.name == actionName)) {
+      action = PermissionAction.values.byName(actionName);
+    } else {
+      action = PermissionAction.ask;
+      LogTags.permission.logWarning(
+        'Unknown permission action "$actionName", falling back to ask',
+      );
+    }
+    return PermissionRule(
+      permission: json['permission'] as String,
+      pattern: json['pattern'] as String,
+      action: action,
     );
   }
 }

@@ -1,7 +1,6 @@
 import 'package:chatorai/core/mcp/mcp_config.dart';
-import 'package:chatorai/features/settings/providers/mcp_management_provider.dart';
-import 'package:chatorai/features/settings/screens/mcp_add_server_helpers.dart';
-import 'package:chatorai/features/settings/screens/mcp_servers_screen.dart';
+import 'package:chatorai/gui/features/settings/providers/mcp_management_provider.dart';
+import 'package:chatorai/gui/features/settings/screens/mcp_servers_screen.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -15,11 +14,14 @@ class _FakeMcpManagementNotifier extends McpManagementNotifier {
   McpServerConfig? capturedConfig;
 
   @override
-  Future<McpManagementState> build() async =>
-      const McpManagementState(servers: {});
+  Future<McpManagementState> build() async => const McpManagementState();
 
   @override
-  Future<void> addServer(String name, McpServerConfig config) async {
+  Future<void> addServer(
+    String name,
+    McpServerConfig config, {
+    McpScope scope = McpScope.global,
+  }) async {
     capturedName = name;
     capturedConfig = config;
   }
@@ -103,9 +105,7 @@ void main() {
       expect(config.headers, {'Authorization': 'Bearer tok'});
     });
 
-    testWidgets('remote server wraps an ApiKey token in X-Api-Key', (
-      tester,
-    ) async {
+    testWidgets('remote server wraps a token in Bearer', (tester) async {
       await openDialog(tester);
 
       await tester.tap(find.text('Remote'));
@@ -120,16 +120,13 @@ void main() {
         find.widgetWithText(TextField, 'Access token'),
         'tok',
       );
-      await tester.tap(find.byType(DropdownButton<AuthType>));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('ApiKey').last);
-      await tester.pumpAndSettle();
+      // AuthType defaults to Token (Bearer), so no dropdown change needed.
       await tester.tap(find.widgetWithText(FilledButton, 'Add'));
       await tester.pumpAndSettle();
 
       expect(fake.capturedName, 'api');
       final config = fake.capturedConfig!;
-      expect(config.headers, {'X-Api-Key': 'tok'});
+      expect(config.headers, {'Authorization': 'Bearer tok'});
     });
 
     testWidgets('remote server can be added without a token', (tester) async {

@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class ShortcutHandler extends ConsumerStatefulWidget {
   final List<KeyboardShortcut> shortcuts;
   final Widget child;
+  final bool autofocus;
 
   const ShortcutHandler({
     super.key,
     required this.shortcuts,
     required this.child,
+    this.autofocus = false,
   });
 
   @override
@@ -19,6 +21,11 @@ class ShortcutHandler extends ConsumerStatefulWidget {
 class _ShortcutHandlerState extends ConsumerState<ShortcutHandler> {
   DateTime? _doublePressTimestamp;
   final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -40,9 +47,9 @@ class _ShortcutHandlerState extends ConsumerState<ShortcutHandler> {
         if (doublePressed) {
           _doublePressTimestamp = null;
           shortcut.onExecute(context, ref);
-          return KeyEventResult.handled;
+        } else {
+          _doublePressTimestamp = now;
         }
-        _doublePressTimestamp = now;
         return KeyEventResult.handled;
       }
 
@@ -56,7 +63,7 @@ class _ShortcutHandlerState extends ConsumerState<ShortcutHandler> {
   Widget build(BuildContext context) {
     return Focus(
       focusNode: _focusNode,
-      autofocus: true,
+      autofocus: widget.autofocus,
       onKeyEvent: _onKeyEvent,
       child: widget.child,
     );

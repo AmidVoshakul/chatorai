@@ -4,8 +4,8 @@ import 'package:chatorai/core/skills/skill_error.dart';
 import 'package:chatorai/core/skills/skill_info.dart';
 import 'package:chatorai/core/skills/skill_parser.dart';
 import 'package:chatorai/core/skills/skill_source.dart';
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
+import 'package:chatorai/shared/utils/logger.dart';
 
 /// Security helper for path validation.
 class _PathSecurity {
@@ -105,9 +105,11 @@ class DirectorySource implements SkillSource {
         );
         skills.add(skillInfo);
       } on ParseError catch (e) {
-        debugPrint('[DirectorySource] Parse error in ${file.path}: $e');
+        LogTags.skills.logWarning(
+          '[DirectorySource] Parse error in ${file.path}: $e',
+        );
       } catch (e) {
-        debugPrint(
+        LogTags.skills.logWarning(
           '[DirectorySource] Unexpected error reading ${file.path}: $e',
         );
       }

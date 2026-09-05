@@ -2,7 +2,7 @@
 ///
 /// Resolves model identifiers (e.g., 'openrouter/openai/gpt-4o')
 /// to [ModelConfig] objects and constructs the corresponding ai_sdk_dart
-/// [LanguageModelV3] instances with proper provider, API key, and base URL.
+/// [LanguageModelV4] instances with proper provider, API key, and base URL.
 ///
 ///  catalog patterns where each provider definition includes
 /// a model factory and the resolver handles provider-specific SDK creation.
@@ -10,13 +10,14 @@ library;
 
 import 'package:ai_sdk_anthropic/ai_sdk_anthropic.dart' as anthro;
 import 'package:ai_sdk_google/ai_sdk_google.dart';
-import 'package:ai_sdk_openai/ai_sdk_openai.dart';
+import 'package:ai_sdk_openai_compatible/ai_sdk_openai_compatible.dart';
 import 'package:ai_sdk_provider/ai_sdk_provider.dart';
 import 'package:chatorai/core/llm/models/auth_config.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/models/provider_config.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
+import 'package:dio/dio.dart';
 
 /// Error thrown when a model cannot be resolved.
 class ModelResolutionError implements Exception {
@@ -97,20 +98,20 @@ class ModelResolver {
   // LanguageModel BUILDING
   // ===========================================================================
 
-  /// Build an ai_sdk_dart [LanguageModelV3] from a [ModelConfig].
+  /// Build an ai_sdk_dart [LanguageModelV4] from a [ModelConfig].
   ///
-  /// The returned [LanguageModelV3] is configured with the provider's API key
+  /// The returned [LanguageModelV4] is configured with the provider's API key
   /// and base URL. Custom headers and body parameters must be passed at call
   /// time via `streamText(..., headers: ...)` / `generateText(..., headers: ...)`.
   ///
   /// Use [getHeadersForModel] to resolve the effective headers for a model call,
   /// which merges provider default headers, variant headers, and overrides.
   ///
-  /// NOTE: The current implementation uses `OpenAIProvider` for all providers.
-  /// This works for OpenAI-compatible APIs (OpenRouter, Groq, Ollama, etc.)
-  /// but may not support native Anthropic or Google APIs fully.
-  /// Native SDK support is planned for a future phase.
-  Future<LanguageModelV3> buildLanguageModel(
+  /// NOTE: Uses [OpenAICompatibleChatLanguageModel] for OpenAI-compatible
+  /// providers, [AnthropicProvider] for Anthropic, and [GoogleGenerativeAIProvider]
+  /// for Google. Reasoning is handled natively by the SDK v4 (no custom
+  /// interceptor or middleware required).
+  Future<LanguageModelV4> buildLanguageModel(
     ModelConfig model, {
     ModelVariant? variant,
     String? overrideApiKey,
@@ -175,7 +176,7 @@ class ModelResolver {
         );
       }
       // Bedrock requires native SDK integration (AWS SigV4 signing + Converse API).
-      // A custom LanguageModelV3 implementation is needed to handle
+      // A custom LanguageModelV4 implementation is needed to handle
       // AWS authentication and Bedrock-specific request/response format.
       throw ModelResolutionError(
         'Bedrock provider (${provider.id}) requires native AWS SigV4 integration. '
@@ -204,9 +205,29 @@ class ModelResolver {
         return google.call(effectiveModelName);
       }
 
-      // Default: OpenAI-compatible provider
-      final openAI = OpenAIProvider(apiKey: apiKey, baseUrl: baseUrl);
-      return openAI.call(effectiveModelName);
+      // Default: OpenAI-compatible provider.
+      // Reasoning is handled natively by the SDK v4 via `reasoningKeys`.
+      final authHeaders = <String, String>{
+        if (apiKey != null && apiKey.isNotEmpty)
+          'Authorization': 'Bearer $apiKey',
+      };
+
+      final model = OpenAICompatibleChatLanguageModel(
+        modelId: effectiveModelName,
+        config: OpenAICompatibleConfig(
+          provider: 'openai-compatible',
+          baseUrl: baseUrl,
+          headers: () => authHeaders,
+          client: Dio(
+            BaseOptions(
+              baseUrl: baseUrl,
+              headers: {'Content-Type': 'application/json', ...authHeaders},
+              responseType: ResponseType.json,
+            ),
+          ),
+        ),
+      );
+      return model;
     } catch (e) {
       LogTags.network.logError(
         '[Resolver] buildLanguageModel fallback suppressed for ${provider.id}',
@@ -217,7 +238,7 @@ class ModelResolver {
   }
 
   /// Build a LanguageModel with graceful failure (returns null on error).
-  Future<LanguageModelV3?> tryBuildLanguageModel(
+  Future<LanguageModelV4?> tryBuildLanguageModel(
     ModelConfig model, {
     ModelVariant? variant,
   }) async {

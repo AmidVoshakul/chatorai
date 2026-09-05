@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
+import 'package:chatorai/core/permission/permission_storage.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 
@@ -21,7 +22,7 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
@@ -31,14 +32,14 @@ void main() {
       service.seedRules(ruleset);
 
       // After seeding, isAllowed should reflect the seeded rule
-      expect(service.isAllowed('bash', 'any-command'), isFalse);
+      expect(service.isAllowed('shell', 'any-command'), isFalse);
     });
 
     test('does not re-seed on subsequent calls', () {
       final ruleset1 = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
@@ -47,7 +48,7 @@ void main() {
       final ruleset2 = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.allow,
           ),
@@ -58,7 +59,7 @@ void main() {
       service.seedRules(ruleset2);
 
       // First seed wins
-      expect(service.isAllowed('bash', 'any-command'), isFalse);
+      expect(service.isAllowed('shell', 'any-command'), isFalse);
     });
 
     test('does not seed empty ruleset', () {
@@ -66,7 +67,7 @@ void main() {
       service.seedRules(ruleset);
 
       // No rules seeded, isAllowed should use defaults (ask → not allowed)
-      expect(service.isAllowed('bash', 'any-command'), isFalse);
+      expect(service.isAllowed('shell', 'any-command'), isFalse);
     });
   });
 
@@ -90,7 +91,7 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
@@ -98,7 +99,7 @@ void main() {
       );
       service.seedRules(ruleset);
 
-      expect(service.isAllowed('bash', 'rm -rf /'), isFalse);
+      expect(service.isAllowed('shell', 'rm -rf /'), isFalse);
     });
 
     test('returns false when rule asks (ask is not allow)', () {
@@ -158,7 +159,7 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.deny,
           ),
@@ -167,8 +168,8 @@ void main() {
 
       final req = const PermissionRequest(
         id: 'test-deny',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['rm -rf /'],
       );
 
@@ -289,7 +290,7 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.ask,
           ),
@@ -301,8 +302,8 @@ void main() {
       for (var i = 0; i < 10; i++) {
         final req = PermissionRequest(
           id: 'rate-$i',
-          toolName: 'bash',
-          permission: 'bash',
+          toolName: 'shell',
+          permission: 'shell',
           patterns: ['cmd-$i'],
         );
         futures.add(service.ask(req, ruleset));
@@ -311,18 +312,17 @@ void main() {
       // Give time for all to register
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      // The 11th ask should be rate-limited (throws PermissionDeniedError)
+      // The 11th ask is soft-rate-limited: it must NOT throw into the agent
+      // stream. The implementation logs and falls through instead of raising
+      // PermissionDeniedError (which would break the tool execution stream).
       final req11 = const PermissionRequest(
         id: 'rate-10',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['cmd-10'],
       );
 
-      expect(
-        () => service.ask(req11, ruleset),
-        throwsA(isA<PermissionDeniedError>()),
-      );
+      await expectLater(service.ask(req11, ruleset), completes);
 
       // Clean up pending requests
       for (var i = 0; i < 10; i++) {
@@ -335,7 +335,7 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.ask,
           ),
@@ -347,8 +347,8 @@ void main() {
       for (var i = 0; i < 10; i++) {
         final req = PermissionRequest(
           id: 'reset-$i',
-          toolName: 'bash',
-          permission: 'bash',
+          toolName: 'shell',
+          permission: 'shell',
           patterns: ['cmd-$i'],
         );
         futures.add(service.ask(req, ruleset));
@@ -362,8 +362,8 @@ void main() {
       // Now a new ask should work (not rate limited)
       final reqNew = const PermissionRequest(
         id: 'reset-new',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['cmd-new'],
       );
 
@@ -419,7 +419,7 @@ void main() {
       final ruleset = PermissionRuleset(
         rules: [
           const PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: '*',
             action: PermissionAction.ask,
           ),
@@ -431,8 +431,8 @@ void main() {
       for (var i = 0; i < 5; i++) {
         final req = PermissionRequest(
           id: 'clear-$i',
-          toolName: 'bash',
-          permission: 'bash',
+          toolName: 'shell',
+          permission: 'shell',
           patterns: ['cmd-$i'],
         );
         futures.add(service.ask(req, ruleset));
@@ -455,8 +455,8 @@ void main() {
       // (we can't directly verify, but we can check that new asks work)
       final reqNew = const PermissionRequest(
         id: 'clear-new',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['cmd-new'],
       );
 
@@ -468,16 +468,16 @@ void main() {
     });
   });
 
-  group('PermissionService.attachPreferences', () {
-    test('session-scoped: does not load any rules', () async {
+  group('PermissionService constructor with SharedPrefsPermissionStorage', () {
+    test('does not auto-load rules on construction', () async {
       SharedPreferences.setMockInitialValues({
-        'permission_approved_rules': ['read|*.txt|allow', 'bash|git *|allow'],
+        'permission_approved_rules': ['read|*.txt|allow', 'shell|git *|allow'],
       });
 
       final prefs = await SharedPreferences.getInstance();
-      service.attachPreferences(prefs);
+      final s = PermissionService(storage: SharedPrefsPermissionStorage(prefs));
 
-      expect(service.approvedRules, isEmpty);
+      expect(s.approvedRules, isEmpty);
     });
   });
 }

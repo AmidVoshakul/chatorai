@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 
 /// Tests for PermissionAction enum, PermissionRule model, PermissionRequest,
 /// QuestionRequest, PermissionReply, and error classes.
@@ -78,12 +78,12 @@ void main() {
 
     test('const constructor with complex pattern', () {
       const rule = PermissionRule(
-        permission: 'bash',
+        permission: 'shell',
         pattern: 'git commit -m "*"',
         action: PermissionAction.ask,
       );
 
-      expect(rule.permission, equals('bash'));
+      expect(rule.permission, equals('shell'));
       expect(rule.pattern, equals('git commit -m "*"'));
       expect(rule.action, equals(PermissionAction.ask));
     });
@@ -150,12 +150,12 @@ void main() {
 
     test('hashCode is consistent for identical rules', () {
       const rule1 = PermissionRule(
-        permission: 'bash',
+        permission: 'shell',
         pattern: 'rm *',
         action: PermissionAction.deny,
       );
       const rule2 = PermissionRule(
-        permission: 'bash',
+        permission: 'shell',
         pattern: 'rm *',
         action: PermissionAction.deny,
       );
@@ -199,8 +199,8 @@ void main() {
     test('const constructor with metadata', () {
       const req = PermissionRequest(
         id: 'req-2',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['git *'],
         metadata: {'sessionId': 'sess-abc', 'depth': 2},
       );
@@ -244,8 +244,8 @@ void main() {
     test('multiple patterns', () {
       const req = PermissionRequest(
         id: 'req-5',
-        toolName: 'bash',
-        permission: 'bash',
+        toolName: 'shell',
+        permission: 'shell',
         patterns: ['git status', 'git log', 'git diff'],
       );
 
@@ -369,8 +369,8 @@ void main() {
     });
 
     test('toString with empty pattern', () {
-      final error = PermissionDeniedError('bash', '');
-      expect(error.toString(), 'Permission denied: bash cannot access ""');
+      final error = PermissionDeniedError('shell', '');
+      expect(error.toString(), 'Permission denied: shell cannot access ""');
     });
 
     test('stores toolName', () {
@@ -393,8 +393,8 @@ void main() {
 
   group('PermissionRejectedError', () {
     test('toString formats message correctly', () {
-      final error = PermissionRejectedError('bash');
-      expect(error.toString(), 'Permission rejected by user: bash');
+      final error = PermissionRejectedError('shell');
+      expect(error.toString(), 'Permission rejected by user: shell');
     });
 
     test('stores toolName', () {
@@ -437,7 +437,7 @@ void main() {
       const ruleset = PermissionRuleset(
         sessionApproved: [
           PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: 'git *',
             action: PermissionAction.allow,
           ),
@@ -459,7 +459,7 @@ void main() {
         ],
         sessionApproved: [
           PermissionRule(
-            permission: 'bash',
+            permission: 'shell',
             pattern: 'git *',
             action: PermissionAction.allow,
           ),

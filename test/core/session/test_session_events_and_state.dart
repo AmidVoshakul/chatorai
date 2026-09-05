@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_state.dart';
+import 'package:chatorai/core/session/projector.dart';
 
 void main() {
   // ── SessionEvent hierarchy ─────────────────────────────────────────────
@@ -141,7 +142,7 @@ void main() {
       final called = ToolCalled(
         sessionId: testSid,
         toolCallId: 'tc-2',
-        toolName: 'bash',
+        toolName: 'shell',
         input: {'command': 'ls'},
         timestamp: ts,
       );
@@ -158,7 +159,7 @@ void main() {
         timestamp: ts,
       );
 
-      expect(called.toolName, equals('bash'));
+      expect(called.toolName, equals('shell'));
       expect(called.input, equals({'command': 'ls'}));
       expect(success.outputText, equals('file1.txt'));
       expect(failed.error, equals('Command not found'));
@@ -200,6 +201,63 @@ void main() {
       );
       expect(ended.summary, equals('Conversation about X'));
     });
+
+    test(
+      'CompactionEnded resets session token totals to compacted context size',
+      () {
+        final now = DateTime.now();
+        final state = SessionState(
+          id: testSid,
+          title: 'Test',
+          tokensInput: 5000,
+          tokensOutput: 2000,
+          tokensReasoning: 500,
+          messages: [
+            SessionMessage(
+              id: 'm1',
+              role: MessageRole.user,
+              content: 'old message one',
+              seq: 1,
+              createdAt: DateTime(2024),
+            ),
+            SessionMessage(
+              id: 'm2',
+              role: MessageRole.assistant,
+              content: 'old message two',
+              seq: 2,
+              createdAt: DateTime(2024),
+            ),
+          ],
+          createdAt: now,
+          updatedAt: now,
+        );
+        final event = CompactionEnded(
+          sessionId: testSid,
+          summary: 'Summary of the conversation',
+          compactedContext: [
+            {
+              'role': 'assistant',
+              'content': 'Summary of the conversation',
+              'isCompactionSummary': true,
+            },
+            {'role': 'user', 'content': 'latest message after compaction'},
+          ],
+          timestamp: now,
+        );
+
+        final result = projectEvent(state, event);
+
+        // Old running totals must be cleared and replaced with the estimated
+        // compacted-context size (summary + tail), so the token counter reflects
+        // the compressed context rather than the full history.
+        expect(result.tokensInput, greaterThan(0));
+        expect(result.tokensInput, lessThan(state.tokensInput));
+        expect(result.tokensOutput, equals(0));
+        expect(result.tokensReasoning, equals(0));
+        // Summary message is added to the visible history.
+        expect(result.messages.any((m) => m.isCompactionSummary), isTrue);
+      },
+    );
 
     test('ChildSessionCreated', () {
       final event = ChildSessionCreated(
@@ -427,7 +485,7 @@ void main() {
       final now = DateTime.now();
       final result = ToolResult(
         id: 'tr-1',
-        toolName: 'bash',
+        toolName: 'shell',
         input: {'command': 'ls'},
         outputText: 'file.txt',
         durationMs: 100,
@@ -439,7 +497,7 @@ void main() {
       final restored = ToolResult.fromJson(json);
 
       expect(restored.id, equals('tr-1'));
-      expect(restored.toolName, equals('bash'));
+      expect(restored.toolName, equals('shell'));
       expect(restored.outputText, equals('file.txt'));
       expect(restored.durationMs, equals(100));
     });

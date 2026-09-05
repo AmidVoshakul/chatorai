@@ -16,10 +16,10 @@ void main() {
     });
 
     test('parses string action (deny)', () {
-      final rules = PermissionRuleset.fromConfig({'bash': 'deny'});
+      final rules = PermissionRuleset.fromConfig({'shell': 'deny'});
 
       expect(rules, hasLength(1));
-      expect(rules[0].permission, equals('bash'));
+      expect(rules[0].permission, equals('shell'));
       expect(rules[0].action, equals(PermissionAction.deny));
     });
 
@@ -35,11 +35,11 @@ void main() {
       // PermissionRuleConfig.fromJson treats a Map as patternActions directly.
       // Each key is a pattern, each value is an action.
       final rules = PermissionRuleset.fromConfig({
-        'bash': {'git *': 'allow', 'rm *': 'deny'},
+        'shell': {'git *': 'allow', 'rm *': 'deny'},
       });
 
       expect(rules, hasLength(2));
-      expect(rules[0].permission, equals('bash'));
+      expect(rules[0].permission, equals('shell'));
       expect(rules[0].pattern, equals('git *'));
       expect(rules[0].action, equals(PermissionAction.allow));
       expect(rules[1].pattern, equals('rm *'));
@@ -81,14 +81,14 @@ void main() {
     test('handles multiple permissions', () {
       final rules = PermissionRuleset.fromConfig({
         'read': 'allow',
-        'bash': 'ask',
+        'shell': 'ask',
         'write': 'deny',
       });
 
       expect(rules, hasLength(3));
       expect(
         rules.map((r) => r.permission).toSet(),
-        equals({'read', 'bash', 'write'}),
+        equals({'read', 'shell', 'write'}),
       );
     });
 
@@ -133,12 +133,12 @@ void main() {
       );
     });
 
-    test('defaults include bash as ask', () {
+    test('defaults include shell as allow', () {
       final defaults = PermissionRuleset.defaults();
 
       expect(
         defaults.rules.any(
-          (r) => r.permission == 'bash' && r.action == PermissionAction.ask,
+          (r) => r.permission == 'shell' && r.action == PermissionAction.allow,
         ),
         isTrue,
       );

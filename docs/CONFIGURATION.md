@@ -1,6 +1,6 @@
 # Configuration
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-08-21
 
 ChatORAI can be configured via a JSON file (`chatorai.json`) to customize permissions, keybindings, provider settings, MCP servers, and more.
 
@@ -24,7 +24,7 @@ If both locations exist, they are deep-merged: the project config overrides the
 global config's keys, while keys absent in the project config are inherited from
 the global config. **List-valued keys** (`instructions`, `skills.paths`,
 `skills.urls`) are **concatenated with duplicates removed** — so a project
-config *adds* to the global config's arrays rather than replacing them.
+config _adds_ to the global config's arrays rather than replacing them.
 
 ## JSON Schema
 
@@ -70,7 +70,7 @@ Controls which tools are allowed, denied, or require user confirmation. Supports
 - **String** — sets a default action for all permissions: `"allow"`, `"ask"`, or `"deny"`.
 - **Object** — maps permission names to either a default action (string) or per-pattern actions (object).
 
-Permission names correspond to tool IDs: `read`, `edit`, `write`, `bash`, `glob`, `grep`, `webfetch`, `websearch`, `task`, `todowrite`, `question`, `skill`, `lsp`, `doom_loop`, `external_directory`, etc.
+Permission names correspond to tool IDs: `read`, `edit`, `write`, `shell`, `glob`, `grep`, `webfetch`, `websearch`, `task`, `todowrite`, `question`, `skill`, `lsp`, `doom_loop`, `external_directory`, etc.
 
 #### Per-Pattern Rules
 
@@ -100,21 +100,23 @@ If no permission configuration is provided, the following defaults apply (source
     "grep": "allow",
     "webfetch": "allow",
     "websearch": "allow",
-    "task": "allow",
-    "question": "allow",
-    "todowrite": "allow",
+    "task": "deny",
+    "question": "deny",
+    "todowrite": "deny",
     "skill": "allow",
     "lsp": "allow",
-    "bash": "ask",
+    "shell": "ask",
     "edit": "ask",
     "write": "ask",
     "doom_loop": "ask",
-    "external_directory": "ask"
+    "external_directory": "ask",
+    "plan_enter": "deny",
+    "plan_exit": "deny"
   }
 }
 ```
 
-Tools without a ruleset entry (e.g. `apply_patch`, `format`, `invalid`, `plan_exit`, `json_schema`) fall back to `ask` via the evaluator.
+Tools without a ruleset entry (e.g. `apply_patch`, `format`, `invalid`, `json_schema`, `document_extract_pdf`, `document_extract_docx`, `document_extract_xlsx`) fall back to `ask` via the evaluator.
 
 ### `keybinding`
 
@@ -174,8 +176,8 @@ Controls automatic context compaction when token budget is exceeded.
   "compaction": {
     "auto": true,
     "prune": true,
-    "keep": { "tokens": 4000 },
-    "buffer": 2000
+    "buffer": 2000,
+    "tail_turns": 2
   }
 }
 ```
@@ -184,8 +186,10 @@ Controls automatic context compaction when token budget is exceeded.
 | ------------- | ------ | ----------------------------------------- |
 | `auto`        | `bool` | Enable automatic compaction               |
 | `prune`       | `bool` | Prune old tool outputs                    |
-| `keep.tokens` | `int`  | Tokens to preserve as recent context      |
 | `buffer`      | `int`  | Token buffer before triggering compaction |
+| `tail_turns`  | `int`  | Recent user-assistant pairs to keep verbatim |
+
+> **Note:** The legacy `keep.tokens` key is accepted for backward compatibility but is ignored.
 
 ### `formatter`
 
@@ -204,6 +208,75 @@ Configures external code formatters (e.g. `dart format`).
   }
 }
 ```
+
+### `lsp`
+
+Configures LSP (Language Server Protocol) diagnostics support. ChatORAI ships with 15 built-in servers for popular languages. Servers are started lazily when a matching file extension is first detected, and auto-installed if missing.
+
+#### Enabling / Disabling
+
+```json
+{
+  "lsp": true
+}
+```
+
+- `lsp: true` (or omitting the section) — built-in servers are active.
+- `lsp: false` — disables all LSP diagnostics, regardless of available servers.
+
+#### Built-in Servers
+
+| ID           | Language                | Extensions                                             | Auto-install                                |
+| ------------ | ----------------------- | ------------------------------------------------------ | ------------------------------------------- |
+| `dart`       | Dart                    | `.dart`                                                | —                                           |
+| `typescript` | TypeScript / JavaScript | `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`           | `npm install -g typescript-language-server` |
+| `python`     | Python                  | `.py`, `.pyi`                                          | `pip install pyright`                       |
+| `java`       | Java                    | `.java`                                                | —                                           |
+| `kotlin`     | Kotlin                  | `.kt`, `.kts`                                          | —                                           |
+| `go`         | Go                      | `.go`                                                  | —                                           |
+| `rust`       | Rust                    | `.rs`                                                  | —                                           |
+| `csharp`     | C#                      | `.cs`, `.csx`                                          | —                                           |
+| `yaml`       | YAML                    | `.yaml`, `.yml`                                        | `npm install -g yaml-language-server`       |
+| `shell`      | Shell / Bash            | `.sh`, `.bash`, `.zsh`, `.ksh`                         | `npm install -g bash-language-server`       |
+| `clangd`     | C/C++                   | `.c`, `.cpp`, `.cc`, `.cxx`, `.c++`, `.h`, `.hpp`, ... | —                                           |
+| `lua`        | Lua                     | `.lua`                                                 | —                                           |
+| `markdown`   | Markdown                | `.md`, `.markdown`                                     | `npm install -g marksman`                   |
+| `swift`      | Swift                   | `.swift`                                               | —                                           |
+| `zig`        | Zig                     | `.zig`, `.zon`                                         | —                                           |
+
+Servers without auto-install entries require manual installation on PATH before diagnostics are available.
+
+#### Per-Server Overrides
+
+```json
+{
+  "lsp": {
+    "servers": {
+      "my-typescript": {
+        "command": "node_modules/.bin/typescript-language-server",
+        "args": ["--stdio"],
+        "extensions": [".ts", ".tsx"],
+        "languageId": "typescript",
+        "autoInstall": true
+      },
+      "legacy-lua": {
+        "disabled": true
+      }
+    }
+  }
+}
+```
+
+| Field            | Type       | Description                                                                   |
+| ---------------- | ---------- | ----------------------------------------------------------------------------- |
+| `disabled`       | `boolean`  | If `true`, skip this server entirely.                                         |
+| `command`        | `string[]` | Executable to launch. First element is the binary.                            |
+| `args`           | `string[]` | Arguments passed to the binary.                                               |
+| `extensions`     | `string[]` | File extensions this server handles (e.g. `[".ts", ".tsx"]`).                 |
+| `languageId`     | `string`   | LSP language ID sent in `textDocument/didOpen`.                               |
+| `environment`    | `object`   | Extra environment variables for the server process.                           |
+| `initialization` | `object`   | Extra fields merged into the LSP `initialize` params.                         |
+| `autoInstall`    | `boolean`  | If `true`, attempt package-manager install if the command is missing on PATH. |
 
 ### `agent`
 
@@ -224,18 +297,18 @@ Configures per-agent overrides and customizations. Each key is an agent name (e.
 }
 ```
 
-| Field       | Type     | Description                                                |
-| ----------- | -------- | ---------------------------------------------------------- |
-| `prompt`    | `string` | Override the agent system prompt                           |
-| `name`      | `string` | Override the agent display name                            |
-| `description` | `string` | Override the agent description shown in UI                |
-| `model`     | `string` | Override the default model for this agent                  |
-| `temperature` | `number` | Override the default sampling temperature                 |
-| `permission` | `string` | Override default permission for this agent (`allow`, `ask`, `deny`) |
-| `disabled`  | `bool`   | Remove this agent from registry                            |
-| `hidden`    | `bool`   | Hide this agent from UI                                    |
-| `max_steps` | `int?`   | Override max steps for agent execution. `null` = unlimited |
-| `maxSteps`  | `int?`   | Alias for `max_steps`. `null` = unlimited                  |
+| Field         | Type     | Description                                                         |
+| ------------- | -------- | ------------------------------------------------------------------- |
+| `prompt`      | `string` | Override the agent system prompt                                    |
+| `name`        | `string` | Override the agent display name                                     |
+| `description` | `string` | Override the agent description shown in UI                          |
+| `model`       | `string` | Override the default model for this agent                           |
+| `temperature` | `number` | Override the default sampling temperature                           |
+| `permission`  | `string` | Override default permission for this agent (`allow`, `ask`, `deny`) |
+| `disabled`    | `bool`   | Remove this agent from registry                                     |
+| `hidden`      | `bool`   | Hide this agent from UI                                             |
+| `max_steps`   | `int?`   | Override max steps for agent execution. `null` = unlimited          |
+| `maxSteps`    | `int?`   | Alias for `max_steps`. `null` = unlimited                           |
 
 ### `mcp`
 
@@ -304,7 +377,7 @@ Global tool visibility overrides. Glob patterns map to `true` (allow),
 ```json
 {
   "tools": {
-    "bash": "ask",
+    "shell": "ask",
     "websearch": "allow",
     "read": true
   }
@@ -313,8 +386,7 @@ Global tool visibility overrides. Glob patterns map to `true` (allow),
 
 ### `instructions`
 
-A list of instruction files or URLs merged into the system prompt (like
-opencode). Each entry is one of:
+A list of instruction files or URLs merged into the system prompt. Each entry is one of:
 
 - A **relative glob** resolved from the project root, e.g. `.chatorai/instructions/*.md`
 - A **filename** searched upward from the project root, e.g. `AGENTS.md`
@@ -404,13 +476,13 @@ On startup, the configuration is loaded and validated. If the JSON is malformed 
 }
 ```
 
-### Restrict Bash and Edit
+### Restrict Shell and Edit
 
 ```json
 {
   "version": 1,
   "permission": {
-    "bash": "deny",
+    "shell": "deny",
     "edit": "deny"
   }
 }

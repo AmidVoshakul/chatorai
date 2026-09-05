@@ -304,6 +304,72 @@ abstract class AppLocalizations {
   /// **'Show reasoning/thought blocks expanded when AI responds'**
   String get expandReasoningByDefaultDesc;
 
+  /// No description provided for @slashCommandSkills.
+  ///
+  /// In en, this message translates to:
+  /// **'Show available skills'**
+  String get slashCommandSkills;
+
+  /// No description provided for @slashCommandNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new chat'**
+  String get slashCommandNew;
+
+  /// No description provided for @slashCommandClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear current chat'**
+  String get slashCommandClear;
+
+  /// No description provided for @slashCommandCompact.
+  ///
+  /// In en, this message translates to:
+  /// **'Compress conversation context'**
+  String get slashCommandCompact;
+
+  /// No description provided for @slashCommandHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Show help'**
+  String get slashCommandHelp;
+
+  /// No description provided for @slashCommandUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo last action'**
+  String get slashCommandUndo;
+
+  /// No description provided for @slashCommandRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo last undone action'**
+  String get slashCommandRedo;
+
+  /// No description provided for @slashCommandSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'List sessions'**
+  String get slashCommandSessions;
+
+  /// No description provided for @slashCommandModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Select model'**
+  String get slashCommandModels;
+
+  /// No description provided for @slashCommandTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Change theme'**
+  String get slashCommandTheme;
+
+  /// No description provided for @slashCommandThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle reasoning visibility'**
+  String get slashCommandThinking;
+
   /// No description provided for @language.
   ///
   /// In en, this message translates to:
@@ -375,6 +441,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get close;
+
+  /// No description provided for @errorLoadingChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load chat: {error}'**
+  String errorLoadingChat(String error);
+
+  /// No description provided for @confirmOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to open:'**
+  String get confirmOpenLink;
 
   /// No description provided for @copy.
   ///
@@ -621,6 +699,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Context'**
   String get context;
+
+  /// No description provided for @contextMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Context: {used} / {usable} tokens ({percent}%)'**
+  String contextMessages(Object percent, Object usable, Object used);
+
+  /// No description provided for @contextInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions'**
+  String get contextInstructions;
+
+  /// No description provided for @contextAgentPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent prompt'**
+  String get contextAgentPrompt;
+
+  /// No description provided for @contextUserPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'User prompt'**
+  String get contextUserPrompt;
+
+  /// No description provided for @contextCompactSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Compact session'**
+  String get contextCompactSession;
+
+  /// No description provided for @contextCompacting.
+  ///
+  /// In en, this message translates to:
+  /// **'Compacting…'**
+  String get contextCompacting;
+
+  /// No description provided for @contextUsageBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage breakdown'**
+  String get contextUsageBreakdown;
+
+  /// No description provided for @contextPromptTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Input tokens'**
+  String get contextPromptTokens;
+
+  /// No description provided for @contextOutputTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Output tokens'**
+  String get contextOutputTokens;
+
+  /// No description provided for @contextCacheRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache read'**
+  String get contextCacheRead;
+
+  /// No description provided for @contextCacheWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache write'**
+  String get contextCacheWrite;
+
+  /// No description provided for @contextToolTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool tokens'**
+  String get contextToolTokens;
+
+  /// No description provided for @contextSpentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Spent'**
+  String get contextSpentLabel;
+
+  /// No description provided for @contextTokensIncludedInPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool tokens included in prompt'**
+  String get contextTokensIncludedInPrompt;
+
+  /// No description provided for @contextAutoCompactAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-compact at {percent}% · {buffer} tokens'**
+  String contextAutoCompactAt(Object buffer, Object percent);
 
   /// No description provided for @free.
   ///
@@ -909,6 +1077,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit'**
   String get edit;
+
+  /// No description provided for @editToolTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit {path}'**
+  String editToolTitle(String path);
+
+  /// No description provided for @patchToolTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Patch {path}'**
+  String patchToolTitle(String path);
 
   /// No description provided for @share.
   ///
@@ -2212,6 +2392,36 @@ abstract class AppLocalizations {
   /// **'You are a helpful assistant.'**
   String get systemPromptSuggestion;
 
+  /// No description provided for @supportBecomeSponsor.
+  ///
+  /// In en, this message translates to:
+  /// **'Become a Sponsor'**
+  String get supportBecomeSponsor;
+
+  /// No description provided for @supportProjectSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'If you enjoy using ChatORAI, please consider supporting the project by:'**
+  String get supportProjectSubtitle;
+
+  /// No description provided for @supportProjectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Support the Project'**
+  String get supportProjectTitle;
+
+  /// No description provided for @supportShareThoughts.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your thoughts'**
+  String get supportShareThoughts;
+
+  /// No description provided for @supportStarOnGitHub.
+  ///
+  /// In en, this message translates to:
+  /// **'Star on GitHub'**
+  String get supportStarOnGitHub;
+
   /// No description provided for @temperature.
   ///
   /// In en, this message translates to:
@@ -2451,6 +2661,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Listening...'**
   String get listening;
+
+  /// No description provided for @linkCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get linkCancel;
+
+  /// No description provided for @linkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get linkCopied;
+
+  /// No description provided for @linkOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get linkOpen;
+
+  /// No description provided for @linkOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to open link'**
+  String get linkOpenFailed;
 
   /// No description provided for @sendMessage.
   ///
@@ -3202,6 +3436,120 @@ abstract class AppLocalizations {
   /// **'Adobe for Creativity unites Photoshop, Lightroom, Illustrator, Firefly, Premiere, Express, InDesign, and Stock with AI-driven creative work. Users can generate, edit, and enhance photos, design assets, and video projects using natural language while work stays tied to their Adobe account.'**
   String get mcpMarketDescAdobeCreativity;
 
+  /// No description provided for @mcpInstallToGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Install to Global'**
+  String get mcpInstallToGlobal;
+
+  /// No description provided for @mcpInstallToProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Install to Project'**
+  String get mcpInstallToProject;
+
+  /// No description provided for @mcpScopeGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Global'**
+  String get mcpScopeGlobal;
+
+  /// No description provided for @mcpScopeProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Project'**
+  String get mcpScopeProject;
+
+  /// No description provided for @mcpScopeGlobalProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Global + Project'**
+  String get mcpScopeGlobalProject;
+
+  /// No description provided for @mcpRemoveFromScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from {scope}'**
+  String mcpRemoveFromScope(String scope);
+
+  /// No description provided for @mcpRemoveFromAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from all'**
+  String get mcpRemoveFromAll;
+
+  /// No description provided for @mcpTokenDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication'**
+  String get mcpTokenDialogTitle;
+
+  /// No description provided for @mcpTokenDialogTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how to authenticate with this server'**
+  String get mcpTokenDialogTitleHint;
+
+  /// No description provided for @mcpTokenInputLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Token'**
+  String get mcpTokenInputLabel;
+
+  /// No description provided for @mcpTokenInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste your access token'**
+  String get mcpTokenInputHint;
+
+  /// No description provided for @mcpTokenInputHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent as Authorization: Bearer <token>'**
+  String get mcpTokenInputHelper;
+
+  /// No description provided for @mcpOAuthClientIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Client ID'**
+  String get mcpOAuthClientIdLabel;
+
+  /// No description provided for @mcpOAuthClientIdHint.
+  ///
+  /// In en, this message translates to:
+  /// **'OAuth 2.1 client ID'**
+  String get mcpOAuthClientIdHint;
+
+  /// No description provided for @mcpOAuthClientSecretLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Client Secret'**
+  String get mcpOAuthClientSecretLabel;
+
+  /// No description provided for @mcpOAuthClientSecretHint.
+  ///
+  /// In en, this message translates to:
+  /// **'OAuth 2.1 client secret (optional)'**
+  String get mcpOAuthClientSecretHint;
+
+  /// No description provided for @mcpOAuthScopeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Scope'**
+  String get mcpOAuthScopeLabel;
+
+  /// No description provided for @mcpOAuthScopeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. read write'**
+  String get mcpOAuthScopeHint;
+
+  /// No description provided for @mcpAuthConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get mcpAuthConfirm;
+
   /// No description provided for @agentsInstructions.
   ///
   /// In en, this message translates to:
@@ -3789,6 +4137,546 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit'**
   String get commonEdit;
+
+  /// No description provided for @toolResultOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get toolResultOriginal;
+
+  /// No description provided for @toolResultRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get toolResultRestore;
+
+  /// No description provided for @toolResultRestoredSnackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'Files restored to before-edit state'**
+  String get toolResultRestoredSnackbar;
+
+  /// No description provided for @toolResultOriginalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Original content before edit'**
+  String get toolResultOriginalTitle;
+
+  /// No description provided for @restoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore failed: {error}'**
+  String restoreFailed(String error);
+
+  /// No description provided for @compactingIndicator.
+  ///
+  /// In en, this message translates to:
+  /// **'Compacting...'**
+  String get compactingIndicator;
+
+  /// No description provided for @compactionAgentName.
+  ///
+  /// In en, this message translates to:
+  /// **'Compaction'**
+  String get compactionAgentName;
+
+  /// No description provided for @workspaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspaces'**
+  String get workspaces;
+
+  /// No description provided for @directoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory'**
+  String get directoryTitle;
+
+  /// No description provided for @searchDirectories.
+  ///
+  /// In en, this message translates to:
+  /// **'Search directories'**
+  String get searchDirectories;
+
+  /// No description provided for @addDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add directory'**
+  String get addDirectory;
+
+  /// No description provided for @removeDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove directory'**
+  String get removeDirectory;
+
+  /// No description provided for @noWorkspacesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No directories found'**
+  String get noWorkspacesFound;
+
+  /// No description provided for @switchWorkspaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch workspace'**
+  String get switchWorkspaceTitle;
+
+  /// No description provided for @currentSessionWillBeStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'The current session will be stopped.'**
+  String get currentSessionWillBeStopped;
+
+  /// No description provided for @continueText.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueText;
+
+  /// No description provided for @changeWorkingDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Change current directory'**
+  String get changeWorkingDirectory;
+
+  /// No description provided for @sessionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get sessionsTitle;
+
+  /// No description provided for @noSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'No sessions yet'**
+  String get noSessions;
+
+  /// No description provided for @searchSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Search sessions'**
+  String get searchSessions;
+
+  /// No description provided for @newSession.
+  ///
+  /// In en, this message translates to:
+  /// **'New session'**
+  String get newSession;
+
+  /// No description provided for @autoApproveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-Approve'**
+  String get autoApproveTitle;
+
+  /// No description provided for @autoApproveSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure automatic permission approvals'**
+  String get autoApproveSubtitle;
+
+  /// No description provided for @autoApproveExternalDirectoryDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow access to external directories'**
+  String get autoApproveExternalDirectoryDesc;
+
+  /// No description provided for @autoApproveShellDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow shell command execution'**
+  String get autoApproveShellDesc;
+
+  /// No description provided for @autoApproveReadDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow reading files'**
+  String get autoApproveReadDesc;
+
+  /// No description provided for @autoApproveEditDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow editing files'**
+  String get autoApproveEditDesc;
+
+  /// No description provided for @autoApproveWriteDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow writing files'**
+  String get autoApproveWriteDesc;
+
+  /// No description provided for @autoApproveGlobDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow glob pattern searches'**
+  String get autoApproveGlobDesc;
+
+  /// No description provided for @autoApproveGrepDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow grep searches'**
+  String get autoApproveGrepDesc;
+
+  /// No description provided for @autoApproveWebsearchDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow web searches'**
+  String get autoApproveWebsearchDesc;
+
+  /// No description provided for @autoApproveWebfetchDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow fetching web pages'**
+  String get autoApproveWebfetchDesc;
+
+  /// No description provided for @autoApproveDoomLoopDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow doom loop detection'**
+  String get autoApproveDoomLoopDesc;
+
+  /// No description provided for @autoApproveSkillDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow skill execution'**
+  String get autoApproveSkillDesc;
+
+  /// No description provided for @autoApproveLspDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow LSP tool usage'**
+  String get autoApproveLspDesc;
+
+  /// No description provided for @autoApproveTaskDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow task tool usage'**
+  String get autoApproveTaskDesc;
+
+  /// No description provided for @autoApproveTodowriteDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow todo write operations'**
+  String get autoApproveTodowriteDesc;
+
+  /// No description provided for @exceptionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exceptions'**
+  String get exceptionsTitle;
+
+  /// No description provided for @addPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Add path'**
+  String get addPath;
+
+  /// No description provided for @addCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'Add command'**
+  String get addCommand;
+
+  /// No description provided for @scopeGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Global'**
+  String get scopeGlobal;
+
+  /// No description provided for @scopeProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Project'**
+  String get scopeProject;
+
+  /// No description provided for @defaultInherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Default (inherit)'**
+  String get defaultInherit;
+
+  /// No description provided for @defaultAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get defaultAllow;
+
+  /// No description provided for @defaultAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask'**
+  String get defaultAsk;
+
+  /// No description provided for @defaultDeny.
+  ///
+  /// In en, this message translates to:
+  /// **'Deny'**
+  String get defaultDeny;
+
+  /// No description provided for @autoApproveDefaultInherited.
+  ///
+  /// In en, this message translates to:
+  /// **'Default ({action})'**
+  String autoApproveDefaultInherited(Object action);
+
+  /// No description provided for @autoApproveGroupFileAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'File Access'**
+  String get autoApproveGroupFileAccess;
+
+  /// No description provided for @autoApproveGroupShell.
+  ///
+  /// In en, this message translates to:
+  /// **'Shell & Commands'**
+  String get autoApproveGroupShell;
+
+  /// No description provided for @autoApproveGroupNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network'**
+  String get autoApproveGroupNetwork;
+
+  /// No description provided for @autoApproveGroupAgents.
+  ///
+  /// In en, this message translates to:
+  /// **'Agents & Automation'**
+  String get autoApproveGroupAgents;
+
+  /// No description provided for @autoApproveCommandPatternLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Command pattern'**
+  String get autoApproveCommandPatternLabel;
+
+  /// No description provided for @autoApprovePathPatternLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Path pattern'**
+  String get autoApprovePathPatternLabel;
+
+  /// No description provided for @autoApproveCommandPatternHint.
+  ///
+  /// In en, this message translates to:
+  /// **'git *'**
+  String get autoApproveCommandPatternHint;
+
+  /// No description provided for @autoApprovePathPatternHint.
+  ///
+  /// In en, this message translates to:
+  /// **'/home/**/*.txt'**
+  String get autoApprovePathPatternHint;
+
+  /// No description provided for @autoApproveScopeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Global applies everywhere · Project overrides per workspace'**
+  String get autoApproveScopeHint;
+
+  /// No description provided for @autoApproveNoExceptions.
+  ///
+  /// In en, this message translates to:
+  /// **'No exceptions — uses default for all patterns'**
+  String get autoApproveNoExceptions;
+
+  /// No description provided for @autoApproveBrowseDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse directory'**
+  String get autoApproveBrowseDirectory;
+
+  /// No description provided for @autoApproveScopeProjectDisabledTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'No project configuration found. Create .chatorai/chatorai.json to enable project-scoped permissions.'**
+  String get autoApproveScopeProjectDisabledTooltip;
+
+  /// No description provided for @autoApproveActionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Action'**
+  String get autoApproveActionLabel;
+
+  /// No description provided for @autoApprovePatternHintFile.
+  ///
+  /// In en, this message translates to:
+  /// **'/home/user/project/** • ~/Documents/*'**
+  String get autoApprovePatternHintFile;
+
+  /// No description provided for @autoApprovePatternHintCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'npm run * • git status'**
+  String get autoApprovePatternHintCommand;
+
+  /// No description provided for @autoApproveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String autoApproveError(Object error);
+
+  /// No description provided for @settingsMcpSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Model Context Protocol tool servers'**
+  String get settingsMcpSubtitle;
+
+  /// No description provided for @mcpAuthNoAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'No Auth'**
+  String get mcpAuthNoAuth;
+
+  /// No description provided for @mcpAuthToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Token'**
+  String get mcpAuthToken;
+
+  /// No description provided for @mcpAuthOAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'OAuth 2.1'**
+  String get mcpAuthOAuth;
+
+  /// No description provided for @statsInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Input'**
+  String get statsInput;
+
+  /// No description provided for @statsOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Output'**
+  String get statsOutput;
+
+  /// No description provided for @statsCacheRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache Read'**
+  String get statsCacheRead;
+
+  /// No description provided for @keyboardShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard Shortcuts'**
+  String get keyboardShortcuts;
+
+  /// No description provided for @keyboardShortcutsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize keyboard shortcuts for the app'**
+  String get keyboardShortcutsSubtitle;
+
+  /// No description provided for @keybindingsReadOnlyMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts are only available on desktop'**
+  String get keybindingsReadOnlyMobile;
+
+  /// No description provided for @keyboardShortcutsResetConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to reset all keyboard shortcuts to defaults?'**
+  String get keyboardShortcutsResetConfirm;
+
+  /// No description provided for @bindingConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict'**
+  String get bindingConflict;
+
+  /// No description provided for @captureHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Press a key combination...'**
+  String get captureHint;
+
+  /// No description provided for @shortcutCancelStreaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel AI response'**
+  String get shortcutCancelStreaming;
+
+  /// No description provided for @shortcutCloseDialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Close dialog'**
+  String get shortcutCloseDialog;
+
+  /// No description provided for @shortcutOpenLatestChild.
+  ///
+  /// In en, this message translates to:
+  /// **'Open latest child session'**
+  String get shortcutOpenLatestChild;
+
+  /// No description provided for @shortcutNavPrevSibling.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous sibling session'**
+  String get shortcutNavPrevSibling;
+
+  /// No description provided for @shortcutNavNextSibling.
+  ///
+  /// In en, this message translates to:
+  /// **'Next sibling session'**
+  String get shortcutNavNextSibling;
+
+  /// No description provided for @shortcutNavParent.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to parent session'**
+  String get shortcutNavParent;
+
+  /// No description provided for @shortcutCyclePrimaryAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Cycle primary agent'**
+  String get shortcutCyclePrimaryAgent;
+
+  /// No description provided for @shortcutToggleSidebar.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle sidebar'**
+  String get shortcutToggleSidebar;
+
+  /// No description provided for @shortcutNewChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get shortcutNewChat;
+
+  /// No description provided for @shortcutOpenModelSelector.
+  ///
+  /// In en, this message translates to:
+  /// **'Open model selector'**
+  String get shortcutOpenModelSelector;
+
+  /// No description provided for @shortcutOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get shortcutOpenSettings;
+
+  /// No description provided for @shortcutOpenWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Open workspace'**
+  String get shortcutOpenWorkspace;
+
+  /// No description provided for @shortcutScrollToChatStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll to top'**
+  String get shortcutScrollToChatStart;
+
+  /// No description provided for @shortcutScrollToChatEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll to bottom'**
+  String get shortcutScrollToChatEnd;
 }
 
 class _AppLocalizationsDelegate

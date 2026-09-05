@@ -1,3 +1,4 @@
+import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/lsp/lsp_client.dart';
 import 'package:chatorai/core/lsp/lsp_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// when the provider is disposed (app shutdown or hot reload).
 final lspServiceProvider = FutureProvider.autoDispose<LspService>((ref) async {
   final service = LspService();
+
+  final config = await ref.watch(configProvider.future);
+  if (config.lsp != null) {
+    service.loadUserServers(config.lsp!);
+  }
+
   ref.onDispose(service.shutdownAll);
   return service;
 });

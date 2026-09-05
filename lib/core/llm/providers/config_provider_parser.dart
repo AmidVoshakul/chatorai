@@ -15,7 +15,7 @@ import 'package:path/path.dart' as p;
 /// The `apiKey` field supports three forms:
 ///   * a literal key string — used as-is,
 ///   * `"{env:VAR}"` — resolved from the process environment, falling back to
-///     shell rc files (`~/.bashrc`, `~/.zshrc`, `~/.profile`) on desktop so the
+///     shell rc files (`~/.shellrc`, `~/.zshrc`, `~/.profile`) on desktop so the
 ///     key is found even when the app is launched from a GUI launcher,
 ///   * the literal `"public"` — a key-less provider ([AuthConfig.none]).
 class ConfigProviderParser {
@@ -30,7 +30,7 @@ class ConfigProviderParser {
   final String? homeDirectory;
 
   static final RegExp _envPattern = RegExp(r'^\{env:([^}]+)\}$');
-  static const List<String> _rcFiles = ['.bashrc', '.zshrc', '.profile'];
+  static const List<String> _rcFiles = ['.shellrc', '.zshrc', '.profile'];
 
   /// Parses every provider entry into a [ProviderConfig].
   ///

@@ -43,13 +43,13 @@ void main() {
 
     test('fromJson with description', () {
       final json = {
-        'name': 'bash',
-        'description': 'Execute a bash command',
+        'name': 'shell',
+        'description': 'Execute a shell command',
         'inputSchema': {'type': 'object'},
       };
       final tool = McpToolInfo.fromJson(json);
-      expect(tool.name, 'bash');
-      expect(tool.description, 'Execute a bash command');
+      expect(tool.name, 'shell');
+      expect(tool.description, 'Execute a shell command');
     });
 
     test('fromJson with empty inputSchema when missing', () {

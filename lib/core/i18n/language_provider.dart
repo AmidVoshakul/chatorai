@@ -1,5 +1,7 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 
 final _logger = LogTags.settings;
@@ -40,6 +42,15 @@ class LanguageState {
     'ar',
   ];
 
+  static const List<Locale> supportedLocales = [
+    Locale('en'),
+    Locale('ru'),
+    Locale('uk'),
+    Locale('zh'),
+    Locale('ja'),
+    Locale('ar'),
+  ];
+
   static const List<String> rtlLanguages = ['ar', 'he', 'fa', 'ur'];
 
   static bool isRTLanguage(String languageCode) {
@@ -60,6 +71,28 @@ class LanguageState {
         return '日本語';
       case 'ar':
         return 'العربية';
+      default:
+        return languageCode.toUpperCase();
+    }
+  }
+
+  static String getLocalizedLanguageName(
+    String languageCode,
+    AppLocalizations localizations,
+  ) {
+    switch (languageCode) {
+      case 'en':
+        return localizations.english;
+      case 'ru':
+        return localizations.russian;
+      case 'uk':
+        return localizations.ukrainian;
+      case 'zh':
+        return localizations.chinese;
+      case 'ja':
+        return localizations.japanese;
+      case 'ar':
+        return localizations.arabic;
       default:
         return languageCode.toUpperCase();
     }

@@ -110,6 +110,39 @@ class AppLocalizationsJa extends AppLocalizations {
   String get expandReasoningByDefaultDesc => 'AIの応答時に思考ブロックを展開して表示します';
 
   @override
+  String get slashCommandSkills => '利用可能なスキルを表示';
+
+  @override
+  String get slashCommandNew => '新しいチャットを開始';
+
+  @override
+  String get slashCommandClear => '現在のチャットをクリア';
+
+  @override
+  String get slashCommandCompact => '会話コンテキストを圧縮';
+
+  @override
+  String get slashCommandHelp => 'ヘルプを表示';
+
+  @override
+  String get slashCommandUndo => '元に戻す';
+
+  @override
+  String get slashCommandRedo => 'やり直し';
+
+  @override
+  String get slashCommandSessions => 'セッション一覧';
+
+  @override
+  String get slashCommandModels => 'モデルを選択';
+
+  @override
+  String get slashCommandTheme => 'テーマを変更';
+
+  @override
+  String get slashCommandThinking => '推論の表示を切り替え';
+
+  @override
   String get language => '言語';
 
   @override
@@ -144,6 +177,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get close => '閉じる';
+
+  @override
+  String errorLoadingChat(String error) {
+    return 'チャットの読み込みに失敗しました：$error';
+  }
+
+  @override
+  String get confirmOpenLink => '本当に開きますか：';
 
   @override
   String get copy => 'コピー';
@@ -276,6 +317,55 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get context => 'コンテキスト';
+
+  @override
+  String contextMessages(Object percent, Object usable, Object used) {
+    return 'コンテキスト: $used / $usable トークン ($percent%)';
+  }
+
+  @override
+  String get contextInstructions => '指示';
+
+  @override
+  String get contextAgentPrompt => 'エージェントプロンプト';
+
+  @override
+  String get contextUserPrompt => 'ユーザープロンプト';
+
+  @override
+  String get contextCompactSession => 'セッションを圧縮';
+
+  @override
+  String get contextCompacting => '圧縮中…';
+
+  @override
+  String get contextUsageBreakdown => '使用状況';
+
+  @override
+  String get contextPromptTokens => '入力トークン';
+
+  @override
+  String get contextOutputTokens => '出力トークン';
+
+  @override
+  String get contextCacheRead => 'キャッシュ読み取り';
+
+  @override
+  String get contextCacheWrite => 'キャッシュ書き込み';
+
+  @override
+  String get contextToolTokens => 'ツールトークン';
+
+  @override
+  String get contextSpentLabel => '使用額';
+
+  @override
+  String get contextTokensIncludedInPrompt => 'ツールトークンはプロンプトに含まれています';
+
+  @override
+  String contextAutoCompactAt(Object buffer, Object percent) {
+    return '$percent% で自動圧縮 · バッファ $buffer トークン';
+  }
 
   @override
   String get free => '無料';
@@ -429,6 +519,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get edit => '編集';
+
+  @override
+  String editToolTitle(String path) {
+    return '編集 $path';
+  }
+
+  @override
+  String patchToolTitle(String path) {
+    return 'パッチ $path';
+  }
 
   @override
   String get share => '共有';
@@ -1089,6 +1189,21 @@ class AppLocalizationsJa extends AppLocalizations {
       'あなたは有用なアシスタントです。会話を続け、最後のメッセージに対して3つの具体的で論理的な続きを提案してください。ユーザーと同じ言語で回答してください。';
 
   @override
+  String get supportBecomeSponsor => 'スポンサーになる';
+
+  @override
+  String get supportProjectSubtitle => 'ChatORAIをお楽しみの方は、ぜひプロジェクトの支援をご検討ください：';
+
+  @override
+  String get supportProjectTitle => 'プロジェクトを支援';
+
+  @override
+  String get supportShareThoughts => '感想を共有する';
+
+  @override
+  String get supportStarOnGitHub => 'GitHubでスターをつける';
+
+  @override
   String get temperature => '温度';
 
   @override
@@ -1215,6 +1330,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get listening => '話してください...';
+
+  @override
+  String get linkCancel => 'キャンセル';
+
+  @override
+  String get linkCopied => 'リンクをコピーしました';
+
+  @override
+  String get linkOpen => '開く';
+
+  @override
+  String get linkOpenFailed => 'リンクを開けませんでした';
 
   @override
   String get sendMessage => 'メッセージを送信';
@@ -1633,6 +1760,65 @@ class AppLocalizationsJa extends AppLocalizations {
       'Adobe for Creativity は Photoshop、Lightroom、Illustrator、Firefly、Premiere、Express、InDesign、Stock の能力を AI 主導のクリエイティブ作業と結びつけます。ユーザーは自然言語を用いて写真、デザイン素材、映像プロジェクトを生成・編集・強化でき、作業は Adobe アカウントに紐付いたままです。';
 
   @override
+  String get mcpInstallToGlobal => 'グローバルにインストール';
+
+  @override
+  String get mcpInstallToProject => 'プロジェクトにインストール';
+
+  @override
+  String get mcpScopeGlobal => 'グローバル';
+
+  @override
+  String get mcpScopeProject => 'プロジェクト';
+
+  @override
+  String get mcpScopeGlobalProject => 'グローバル + プロジェクト';
+
+  @override
+  String mcpRemoveFromScope(String scope) {
+    return '$scope から削除';
+  }
+
+  @override
+  String get mcpRemoveFromAll => 'すべての場所から削除';
+
+  @override
+  String get mcpTokenDialogTitle => '認証';
+
+  @override
+  String get mcpTokenDialogTitleHint => 'このサーバーとの認証方法を選択してください';
+
+  @override
+  String get mcpTokenInputLabel => 'トークン';
+
+  @override
+  String get mcpTokenInputHint => 'アクセストークンを貼り付けてください';
+
+  @override
+  String get mcpTokenInputHelper => 'Authorization: Bearer <token> として送信されます';
+
+  @override
+  String get mcpOAuthClientIdLabel => 'クライアント ID';
+
+  @override
+  String get mcpOAuthClientIdHint => 'OAuth 2.1 クライアント ID';
+
+  @override
+  String get mcpOAuthClientSecretLabel => 'クライアントシークレット';
+
+  @override
+  String get mcpOAuthClientSecretHint => 'OAuth 2.1 クライアントシークレット（オプション）';
+
+  @override
+  String get mcpOAuthScopeLabel => 'スコープ';
+
+  @override
+  String get mcpOAuthScopeHint => '例: read write';
+
+  @override
+  String get mcpAuthConfirm => '確認';
+
+  @override
   String get agentsInstructions => 'エージェント指示';
 
   @override
@@ -1944,4 +2130,284 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get commonEdit => '編集';
+
+  @override
+  String get toolResultOriginal => 'オリジナル';
+
+  @override
+  String get toolResultRestore => '復元';
+
+  @override
+  String get toolResultRestoredSnackbar => '編集前の状態にファイルを復元しました';
+
+  @override
+  String get toolResultOriginalTitle => '編集前の元のコンテンツ';
+
+  @override
+  String restoreFailed(String error) {
+    return '復元に失敗しました：$error';
+  }
+
+  @override
+  String get compactingIndicator => '圧縮中...';
+
+  @override
+  String get compactionAgentName => '圧縮';
+
+  @override
+  String get workspaces => 'ワークスペース';
+
+  @override
+  String get directoryTitle => 'ディレクトリ';
+
+  @override
+  String get searchDirectories => 'ディレクトリを検索';
+
+  @override
+  String get addDirectory => 'ディレクトリを追加';
+
+  @override
+  String get removeDirectory => 'ディレクトリを削除';
+
+  @override
+  String get noWorkspacesFound => 'ディレクトリが見つかりません';
+
+  @override
+  String get switchWorkspaceTitle => 'ワークスペースを切り替え';
+
+  @override
+  String get currentSessionWillBeStopped => '現在のセッションは停止されます。';
+
+  @override
+  String get continueText => '続行';
+
+  @override
+  String get changeWorkingDirectory => '現在のディレクトリを変更';
+
+  @override
+  String get sessionsTitle => 'セッション';
+
+  @override
+  String get noSessions => 'セッションはまだありません';
+
+  @override
+  String get searchSessions => 'セッションを検索';
+
+  @override
+  String get newSession => '新しいセッション';
+
+  @override
+  String get autoApproveTitle => '自動承認';
+
+  @override
+  String get autoApproveSubtitle => '自動権限承認の設定';
+
+  @override
+  String get autoApproveExternalDirectoryDesc => '外部ディレクトリへのアクセスを許可';
+
+  @override
+  String get autoApproveShellDesc => 'シェルコマンドの実行を許可';
+
+  @override
+  String get autoApproveReadDesc => 'ファイルの読み取りを許可';
+
+  @override
+  String get autoApproveEditDesc => 'ファイルの編集を許可';
+
+  @override
+  String get autoApproveWriteDesc => 'ファイルの書き込みを許可';
+
+  @override
+  String get autoApproveGlobDesc => 'Glob 検索を許可';
+
+  @override
+  String get autoApproveGrepDesc => 'Grep 検索を許可';
+
+  @override
+  String get autoApproveWebsearchDesc => 'ウェブ検索を許可';
+
+  @override
+  String get autoApproveWebfetchDesc => 'ウェブページの取得を許可';
+
+  @override
+  String get autoApproveDoomLoopDesc => 'Doom loop 検出を許可';
+
+  @override
+  String get autoApproveSkillDesc => 'スキルの実行を許可';
+
+  @override
+  String get autoApproveLspDesc => 'LSP の使用を許可';
+
+  @override
+  String get autoApproveTaskDesc => 'Task の使用を許可';
+
+  @override
+  String get autoApproveTodowriteDesc => 'Todo 書き込み操作を許可';
+
+  @override
+  String get exceptionsTitle => '例外';
+
+  @override
+  String get addPath => 'パスを追加';
+
+  @override
+  String get addCommand => 'コマンドを追加';
+
+  @override
+  String get scopeGlobal => 'グローバル';
+
+  @override
+  String get scopeProject => 'プロジェクト';
+
+  @override
+  String get defaultInherit => 'デフォルト（継承）';
+
+  @override
+  String get defaultAllow => '許可';
+
+  @override
+  String get defaultAsk => '確認';
+
+  @override
+  String get defaultDeny => '拒否';
+
+  @override
+  String autoApproveDefaultInherited(Object action) {
+    return 'デフォルト（$action）';
+  }
+
+  @override
+  String get autoApproveGroupFileAccess => 'ファイルアクセス';
+
+  @override
+  String get autoApproveGroupShell => 'シェルとコマンド';
+
+  @override
+  String get autoApproveGroupNetwork => 'ネットワーク';
+
+  @override
+  String get autoApproveGroupAgents => 'エージェントと自動化';
+
+  @override
+  String get autoApproveCommandPatternLabel => 'コマンドパターン';
+
+  @override
+  String get autoApprovePathPatternLabel => 'パスパターン';
+
+  @override
+  String get autoApproveCommandPatternHint => 'git *';
+
+  @override
+  String get autoApprovePathPatternHint => '/home/**/*.txt';
+
+  @override
+  String get autoApproveScopeHint => 'グローバルはすべてに適用 · プロジェクトはワークスペースごとに上書き';
+
+  @override
+  String get autoApproveNoExceptions => '例外なし — すべてのパターンにデフォルトを使用';
+
+  @override
+  String get autoApproveBrowseDirectory => 'ディレクトリを選択';
+
+  @override
+  String get autoApproveScopeProjectDisabledTooltip =>
+      'プロジェクト設定が見つかりません。.chatorai/chatorai.json を作成してプロジェクト権限を有効にしてください。';
+
+  @override
+  String get autoApproveActionLabel => 'Action';
+
+  @override
+  String get autoApprovePatternHintFile =>
+      '/home/user/project/** • ~/Documents/*';
+
+  @override
+  String get autoApprovePatternHintCommand => 'npm run * • git status';
+
+  @override
+  String autoApproveError(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get settingsMcpSubtitle =>
+      'Manage Model Context Protocol tool servers';
+
+  @override
+  String get mcpAuthNoAuth => 'No Auth';
+
+  @override
+  String get mcpAuthToken => 'Token';
+
+  @override
+  String get mcpAuthOAuth => 'OAuth 2.1';
+
+  @override
+  String get statsInput => 'Input';
+
+  @override
+  String get statsOutput => 'Output';
+
+  @override
+  String get statsCacheRead => 'Cache Read';
+
+  @override
+  String get keyboardShortcuts => 'キーボードショートカット';
+
+  @override
+  String get keyboardShortcutsSubtitle => 'アプリのキーボードショートカットをカスタマイズ';
+
+  @override
+  String get keybindingsReadOnlyMobile => 'キーボードショートカットはデスクトップでのみ利用可能です';
+
+  @override
+  String get keyboardShortcutsResetConfirm =>
+      'すべてのキーボードショートカットをデフォルトにリセットしますか？';
+
+  @override
+  String get bindingConflict => '競合';
+
+  @override
+  String get captureHint => 'キーの組み合わせを押してください...';
+
+  @override
+  String get shortcutCancelStreaming => 'AI応答をキャンセル';
+
+  @override
+  String get shortcutCloseDialog => 'ダイアログを閉じる';
+
+  @override
+  String get shortcutOpenLatestChild => '最新の子セッションを開く';
+
+  @override
+  String get shortcutNavPrevSibling => '前の兄弟セッション';
+
+  @override
+  String get shortcutNavNextSibling => '次の兄弟セッション';
+
+  @override
+  String get shortcutNavParent => '親セッションに移動';
+
+  @override
+  String get shortcutCyclePrimaryAgent => 'プライマリエージェントを切り替え';
+
+  @override
+  String get shortcutToggleSidebar => 'サイドバーを切り替え';
+
+  @override
+  String get shortcutNewChat => '新しいチャット';
+
+  @override
+  String get shortcutOpenModelSelector => 'モデルセレクタを開く';
+
+  @override
+  String get shortcutOpenSettings => '設定を開く';
+
+  @override
+  String get shortcutOpenWorkspace => 'ワークスペースを開く';
+
+  @override
+  String get shortcutScrollToChatStart => '一番上にスクロール';
+
+  @override
+  String get shortcutScrollToChatEnd => '一番下にスクロール';
 }

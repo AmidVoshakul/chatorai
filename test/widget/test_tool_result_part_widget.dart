@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
+import 'package:chatorai/core/chat/chat/chat_message.dart';
+import 'package:chatorai/gui/shared/theme/app_theme.dart';
 
 void main() {
   const String shortText = 'Short output';
@@ -38,7 +41,7 @@ void main() {
   group('ToolResultPartWidget UI Tests', () {
     testWidgets('shows correct line and char counts in footer', (tester) async {
       await tester.pumpWidget(
-        createTestWidget(toolName: 'bash', result: shortText),
+        createTestWidget(toolName: 'shell', result: shortText),
       );
       expect(find.textContaining('lines,'), findsOneWidget);
       expect(find.textContaining('chars'), findsOneWidget);
@@ -47,35 +50,35 @@ void main() {
     testWidgets('footer shows (truncated) when truncated', (tester) async {
       final longText = 'x' * 60000;
       await tester.pumpWidget(
-        createTestWidget(toolName: 'bash', result: longText),
+        createTestWidget(toolName: 'shell', result: longText),
       );
       expect(find.textContaining('(truncated)'), findsOneWidget);
     });
 
     testWidgets('copy button is present', (tester) async {
       await tester.pumpWidget(
-        createTestWidget(toolName: 'bash', result: 'test'),
+        createTestWidget(toolName: 'shell', result: 'test'),
       );
       expect(find.text('Copy'), findsOneWidget);
     });
 
     testWidgets('short output shows no truncation indicator', (tester) async {
       await tester.pumpWidget(
-        createTestWidget(toolName: 'bash', result: shortText),
+        createTestWidget(toolName: 'shell', result: shortText),
       );
       expect(find.textContaining('[...truncated...]'), findsNothing);
       expect(find.text(shortText), findsOneWidget);
     });
 
     testWidgets('empty output shows no truncation', (tester) async {
-      await tester.pumpWidget(createTestWidget(toolName: 'bash', result: ''));
+      await tester.pumpWidget(createTestWidget(toolName: 'shell', result: ''));
       expect(find.textContaining('[...truncated...]'), findsNothing);
     });
 
     testWidgets('error state shows error message, not result', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'should not show',
           error: 'Something went wrong',
           state: ToolState.error,
@@ -88,7 +91,7 @@ void main() {
     testWidgets('running state shows spinner', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'should not show yet',
           state: ToolState.running,
         ),
@@ -99,7 +102,7 @@ void main() {
     testWidgets('duration shown only for completed state', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'output',
           state: ToolState.completed,
           duration: const Duration(milliseconds: 150),
@@ -111,7 +114,7 @@ void main() {
     testWidgets('duration not shown for running state', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'output',
           state: ToolState.running,
           duration: const Duration(milliseconds: 150),
@@ -123,22 +126,39 @@ void main() {
     testWidgets('truncation marker appears for long text', (tester) async {
       final longText = 'x' * 60000;
       await tester.pumpWidget(
-        createTestWidget(toolName: 'bash', result: longText),
+        createTestWidget(toolName: 'shell', result: longText),
       );
       expect(find.textContaining('[...truncated...]'), findsOneWidget);
     });
 
-    testWidgets('bash tool shows command and description', (tester) async {
+    testWidgets('shell tool shows prompt and command without header', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'output',
           input: {'command': 'ls -la', 'description': 'List files'},
         ),
       );
-      // Command appears in both title and body, so at least one is fine
-      expect(find.textContaining(r'$ ls -la'), findsAtLeast(1));
-      expect(find.textContaining('# List files'), findsOneWidget);
+      expect(find.text(r'$ '), findsOneWidget);
+      expect(find.text('ls -la'), findsOneWidget);
+      expect(find.textContaining('shell ls -la'), findsNothing);
+    });
+
+    testWidgets('shell tool shows spinner at prompt while running', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestWidget(
+          toolName: 'shell',
+          state: ToolState.running,
+          input: {'command': 'ls -la'},
+        ),
+      );
+      expect(find.text(r'$ '), findsNothing);
+      expect(find.byType(SpinKitCircle), findsOneWidget);
+      expect(find.text('ls -la'), findsOneWidget);
     });
 
     testWidgets('read tool shows offset and limit', (tester) async {
@@ -181,7 +201,7 @@ void main() {
     testWidgets('no expand icon when running', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'output',
           state: ToolState.running,
         ),
@@ -193,7 +213,7 @@ void main() {
     testWidgets('expand icon present when completed', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          toolName: 'bash',
+          toolName: 'shell',
           result: 'output',
           state: ToolState.completed,
         ),
@@ -233,12 +253,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Edit lib/main.dart'), findsOneWidget);
       await tester.tap(find.byType(ToolResultPartWidget));
       await tester.pumpAndSettle();
       expect(find.textContaining('new line 1'), findsOneWidget);
       expect(find.textContaining('old line 2'), findsOneWidget);
-      expect(find.textContaining('old line 1'), findsOneWidget);
     });
 
     testWidgets('edit diff lines display with color and prefix', (
@@ -272,15 +290,18 @@ void main() {
 +line2b
  line3
 ''';
+      final resultJson = jsonEncode({'message': 'ok', 'patch': patch});
       await tester.pumpWidget(
         createTestWidget(
           toolName: 'apply_patch',
           state: ToolState.completed,
+          result: resultJson,
           input: {'file_path': 'test.dart', 'patch': patch},
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Patch test.dart'), findsOneWidget);
+      await tester.tap(find.byType(ToolResultPartWidget));
+      await tester.pumpAndSettle();
       expect(find.textContaining('line2'), findsAtLeast(1));
     });
 
@@ -297,12 +318,12 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Edit empty.dart'), findsOneWidget);
+      await tester.tap(find.byType(ToolResultPartWidget));
+      await tester.pumpAndSettle();
+      expect(find.text('empty.dart'), findsNothing);
     });
 
-    testWidgets('edit summary line shows additions and deletions count', (
-      tester,
-    ) async {
+    testWidgets('edit diff shows +/- markers on changed lines', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
           toolName: 'edit',
@@ -315,8 +336,92 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('+'), findsOneWidget);
-      expect(find.textContaining('-'), findsOneWidget);
+      await tester.tap(find.byType(ToolResultPartWidget));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('+'), findsAtLeast(1));
+      expect(find.textContaining('-'), findsAtLeast(1));
+    });
+
+    testWidgets(
+      'edit renders patch from result when LSP "no errors" text is appended',
+      (tester) async {
+        const patch = '''--- a/test.dart
++++ b/test.dart
+@@ -1,3 +1,4 @@
+ line1
+-line2
++line2 modified
++line2b
+ line3
+''';
+        final resultJson = jsonEncode({'message': 'ok', 'patch': patch});
+        await tester.pumpWidget(
+          createTestWidget(
+            toolName: 'edit',
+            state: ToolState.completed,
+            result: '$resultJson\n\nNo LSP errors detected.',
+            input: {'file_path': 'test.dart'},
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('line2 modified'), findsOneWidget);
+        expect(find.text('line2b'), findsOneWidget);
+        expect(find.text('line1'), findsAtLeast(1));
+      },
+    );
+
+    testWidgets(
+      'edit renders patch from result when LSP diagnostics block is appended',
+      (tester) async {
+        const patch = '''--- a/test.dart
++++ b/test.dart
+@@ -1,3 +1,4 @@
+ line1
+-line2
++line2 modified
++line2b
+ line3
+''';
+        final resultJson = jsonEncode({'message': 'ok', 'patch': patch});
+        final lspResult =
+            '$resultJson\n\nLSP errors detected in this file, please fix:\n'
+            '[ ERROR ] 5:10 — some error message\n';
+        await tester.pumpWidget(
+          createTestWidget(
+            toolName: 'edit',
+            state: ToolState.completed,
+            result: lspResult,
+            input: {'file_path': 'test.dart'},
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('line2 modified'), findsOneWidget);
+        expect(find.text('line2b'), findsOneWidget);
+        expect(find.textContaining('1 error'), findsOneWidget);
+      },
+    );
+
+    testWidgets('edit renders patch from pure JSON result', (tester) async {
+      const patch = '''--- a/test.dart
++++ b/test.dart
+@@ -1,3 +1,4 @@
+ line1
+-line2
++line2 modified
++line2b
+ line3
+''';
+      await tester.pumpWidget(
+        createTestWidget(
+          toolName: 'edit',
+          state: ToolState.completed,
+          result: jsonEncode({'message': 'ok', 'patch': patch}),
+          input: {'file_path': 'test.dart'},
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('line2 modified'), findsOneWidget);
+      expect(find.text('line2b'), findsOneWidget);
     });
   });
 }

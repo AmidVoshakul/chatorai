@@ -1,5 +1,5 @@
 import 'package:chatorai/core/tools/tool.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 
 /// Tracks recently asked questions to prevent repeat prompts within cooldown window.

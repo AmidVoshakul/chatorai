@@ -2,7 +2,8 @@
 
 ![Screenshot of ChatORAI interface](https://github.com/AmidVoshakul/chatorai/raw/main/screenshots/Screenshot_2025-12-30_01-04-32.png)
 
-A modern AI chat application built with Flutter and Riverpod. Connect to any OpenAI-compatible API (OpenRouter, local models, custom endpoints) and chat with powerful language models.
+A personal AI workstation for working with projects through intelligent agents across desktop, terminal, and mobile.
+Once core. Multiple interfaces. Your projects, your models, your agents.
 
 **🇷🇺 Русская версия**: [README_RU.md](README_RU.md)
 
@@ -16,6 +17,7 @@ A modern AI chat application built with Flutter and Riverpod. Connect to any Ope
 - **Dark & light themes** — Adaptive UI with smooth transitions
 - **Multi-language** — 6 languages (en, ru, uk, zh, ja, ar) with RTL support
 - **Recent models** — A horizontal strip of your top-6 most recently and frequently used models on the model-selection screen
+- **Context usage indicator** — Ring chip in the chat input status bar shows context usage; tap/hover for a detailed popup with token breakdown (input, output, reasoning, cache read/write, tool tokens), spent USD, and a compact session button
 - **Local storage** — Chat history and settings persisted
 
 ## 🚀 Quick Start
@@ -83,9 +85,8 @@ That's it! The app will launch and you can start chatting.
 - [API Reference](docs/API.md) — Providers, services, models, and tools
 - [Commands](docs/COMMANDS.md) — CLI commands and `@` agent mentions
 - [Environment](docs/ENVIRONMENT.md) — Setup, dependencies, and platform notes
-- [Roadmap](docs/ROADMAP.md) — Completed milestones and future plans
-- [Configuration](docs/configuration.md) — chatorai.json schema and options
-- [Security](docs/security.md) — Permission system, secret handling, and trust boundaries
+- [Configuration](docs/CONFIGURATION.md) — chatorai.json schema and options
+- [Security](docs/SECURITY.md) — Permission system, secret handling, and trust boundaries
 - [Platform Paths](docs/xdg-paths.md) — XDG-aware path resolution (Linux/macOS/Windows/mobile)
 
 ### Diagrams
@@ -142,16 +143,6 @@ chatorai uninstall
 
 ChatORAI is a single binary. `chatorai --help` lists commands (`stats`, `models`, `upgrade`, `--version`); `chatorai` with no args launches the GUI.
 
-## 🔧 Development Commands
-
-```bash
-flutter pub get              # fetch dependencies
-flutter gen-l10n             # regenerate localization strings
-flutter analyze             # lint (tests excluded)
-flutter test                # run unit and widget tests
-flutter build <platform>    # build release bundle
-```
-
 ## 🛡️ Security & Permissions
 
 - **Dev vs Runtime**: `.env` is for development only; release users enter credentials in-app.
@@ -162,6 +153,8 @@ flutter build <platform>    # build release bundle
 ## 🤝 Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for git workflow, code style, and testing requirements.
+
+If you enjoy using ChatORAI, you can also support the project by starring it on [GitHub](https://github.com/AmidVoshakul/chatorai) or sponsoring [AmidVoshakul](https://github.com/sponsors/AmidVoshakul).
 
 ## 📄 License
 

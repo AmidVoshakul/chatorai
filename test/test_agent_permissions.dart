@@ -152,4 +152,42 @@ void main() {
       expect(rule.action, equals(PermissionAction.deny));
     });
   });
+
+  group('AgentRegistry shell permission (dangerous commands ask)', () {
+    test('build agent asks for shell rm (defaults + agent rules)', () {
+      final build = AgentRegistry().get('build');
+      expect(build, isNotNull);
+
+      final rule = evaluate('shell', 'rm -rf build/', [
+        PermissionRuleset.defaults(),
+        PermissionRuleset(rules: build!.permissions.rules),
+      ]);
+
+      expect(rule.action, equals(PermissionAction.ask));
+    });
+
+    test('general agent asks for shell rm (defaults + agent rules)', () {
+      final general = AgentRegistry().get('general');
+      expect(general, isNotNull);
+
+      final rule = evaluate('shell', 'rm -rf build/', [
+        PermissionRuleset.defaults(),
+        PermissionRuleset(rules: general!.permissions.rules),
+      ]);
+
+      expect(rule.action, equals(PermissionAction.ask));
+    });
+
+    test('explore agent asks for shell rm (defaults + agent rules)', () {
+      final explore = AgentRegistry().get('explore');
+      expect(explore, isNotNull);
+
+      final rule = evaluate('shell', 'rm -rf build/', [
+        PermissionRuleset.defaults(),
+        PermissionRuleset(rules: explore!.permissions.rules),
+      ]);
+
+      expect(rule.action, equals(PermissionAction.ask));
+    });
+  });
 }

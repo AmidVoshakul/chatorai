@@ -13,6 +13,12 @@ class SessionID {
     return SessionID._(value);
   }
 
+  /// Single source of truth for normalizing a raw id that may be missing the
+  /// `ses_` prefix (e.g. legacy chat ids). Never throws; only prepends.
+  factory SessionID.fromRaw(String value) {
+    return SessionID._(value.startsWith('ses_') ? value : 'ses_$value');
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) || (other is SessionID && value == other.value);

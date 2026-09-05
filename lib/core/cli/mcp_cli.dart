@@ -2,7 +2,8 @@
 
 import 'dart:io';
 
-import 'package:chatorai/core/cli/mcp_tui.dart';
+// ANSI styling helpers for a premium CLI render (shared with other commands).
+import 'package:chatorai/core/cli/cli_style.dart' as style;
 import 'package:chatorai/core/config/config_loader.dart';
 import 'package:chatorai/core/config/config_manager.dart';
 import 'package:chatorai/core/config/config_writer.dart';
@@ -10,10 +11,8 @@ import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/mcp/mcp_client_service.dart';
 import 'package:chatorai/core/mcp/mcp_config.dart';
 import 'package:chatorai/core/mcp/mcp_types.dart';
+import 'package:chatorai/tui/mcp_tui.dart';
 import 'package:mcp_dart/mcp_dart.dart';
-
-// ANSI styling helpers for a premium CLI render (shared with other commands).
-import 'package:chatorai/core/cli/cli_style.dart' as style;
 
 const _cReset = style.CliStyle.reset;
 const _cGray = style.CliStyle.gray;
@@ -31,6 +30,10 @@ String _gray(String s) => style.CliStyle.gray_(s);
 /// This is the scriptable surface of MCP management. The full-screen TUI
 /// (added in a later stage) and the GUI pages all read/write the same
 /// `chatorai.json`, so what is shown here always reflects that file.
+///
+/// Note: `core/cli` is the binary entry router (like `main.dart` for GUI),
+/// so it is allowed to reference `tui` screens to launch them. Business
+/// logic modules under `core` must not depend on `gui`/`tui`.
 Future<void> runMcp(List<String> args, {String? configPath}) async {
   if (args.isNotEmpty && (args.first == '--help' || args.first == '-h')) {
     _printMcpHelp();
@@ -40,7 +43,7 @@ Future<void> runMcp(List<String> args, {String? configPath}) async {
   final sub = args.isEmpty ? 'tui' : args.first;
   final subArgs = args.skip(1).toList();
   // By default the MCP SDK diagnostics are silenced so `list` stays scriptable.
-  // `--print-log` (opencode-style) re-enables full transport/protocol logging.
+  // `--print-log` re-enables full transport/protocol logging.
   final printLog = subArgs.contains('--print-log');
   if (!printLog) silenceMcpLogs();
 
@@ -71,7 +74,7 @@ Future<void> runMcp(List<String> args, {String? configPath}) async {
 /// user config when no explicit [configPath] was supplied.
 Future<String> _targetConfigPath({String? configPath}) async {
   if (configPath != null) return configPath;
-  return ConfigWriter.resolveConfigPath(global: true);
+  return ConfigLoader.resolveConfigPath(global: true);
 }
 
 Future<void> _runAdd(List<String> args, {String? configPath}) async {

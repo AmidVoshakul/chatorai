@@ -117,6 +117,5 @@ Use async getters when targeting mobile or when running before the platform cont
 | `lib/core/session/database.dart`                 | Drift SQLite database in `dataHomeAsync`             |
 | `lib/core/skills/providers/skill_providers.dart` | Skills directory under `configHome`                   |
 | `lib/core/skills/url_source.dart`                | URL-skill cache in `cacheHomeAsync`                   |
-| `lib/core/tools/tool_output_persistence.dart`    | Tool output in `dataSubdirAsync('tool-output')`       |
 | `lib/core/permission/ruleset.dart`               | Expands `~` in permission patterns via `expandHome()` |
 | `lib/shared/utils/xdg_paths_cli.dart`            | CLI paths including `prefsHome` (used by `uninstall`) |

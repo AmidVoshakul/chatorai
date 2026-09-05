@@ -56,7 +56,7 @@ void main() {
 
       // After seeding, isAllowed should work
       expect(service.isAllowed('read', '/any/file.txt'), isTrue);
-      expect(service.isAllowed('bash', 'rm -rf /'), isFalse);
+      expect(service.isAllowed('shell', 'rm -rf /'), isFalse);
     });
 
     test('returned service can attach preferences', () async {

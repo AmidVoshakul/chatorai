@@ -16,6 +16,12 @@ SessionMessage _$SessionMessageFromJson(Map<String, dynamic> json) =>
       reasoning: json['reasoning'] as String?,
       error: json['error'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
+      isCompactionTrigger: json['isCompactionTrigger'] as bool? ?? false,
+      isCompactionSummary: json['isCompactionSummary'] as bool? ?? false,
+      agent: json['agent'] as String?,
+      tokensInput: (json['tokensInput'] as num?)?.toInt(),
+      tokensOutput: (json['tokensOutput'] as num?)?.toInt(),
+      tokensReasoning: (json['tokensReasoning'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$SessionMessageToJson(SessionMessage instance) =>
@@ -28,6 +34,12 @@ Map<String, dynamic> _$SessionMessageToJson(SessionMessage instance) =>
       'reasoning': instance.reasoning,
       'error': instance.error,
       'createdAt': instance.createdAt.toIso8601String(),
+      'isCompactionTrigger': instance.isCompactionTrigger,
+      'isCompactionSummary': instance.isCompactionSummary,
+      'agent': instance.agent,
+      'tokensInput': instance.tokensInput,
+      'tokensOutput': instance.tokensOutput,
+      'tokensReasoning': instance.tokensReasoning,
     };
 
 const _$MessageRoleEnumMap = {
@@ -85,6 +97,10 @@ SessionState _$SessionStateFromJson(Map<String, dynamic> json) => SessionState(
           ?.map((e) => ToolResult.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
+  compactedContext: (json['compactedContext'] as List<dynamic>?)
+      ?.map((e) => SessionMessage.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  directory: json['directory'] as String?,
   createdAt: DateTime.parse(json['createdAt'] as String),
   updatedAt: DateTime.parse(json['updatedAt'] as String),
   archivedAt: json['archivedAt'] == null
@@ -108,6 +124,8 @@ Map<String, dynamic> _$SessionStateToJson(SessionState instance) =>
       'permission': SessionState._permissionToJson(instance.permission),
       'messages': instance.messages,
       'toolResults': instance.toolResults,
+      'compactedContext': instance.compactedContext,
+      'directory': instance.directory,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
       'archivedAt': instance.archivedAt?.toIso8601String(),

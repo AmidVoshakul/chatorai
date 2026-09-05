@@ -147,12 +147,12 @@ void main() {
         PermissionRuleset(
           rules: [
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: '*',
               action: PermissionAction.allow,
             ),
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: 'rm *',
               action: PermissionAction.deny,
             ),
@@ -160,7 +160,7 @@ void main() {
         ),
       ];
 
-      final result = evaluate('bash', 'rm -rf /', rulesets);
+      final result = evaluate('shell', 'rm -rf /', rulesets);
       expect(result.action, equals(PermissionAction.deny));
     });
 
@@ -177,14 +177,14 @@ void main() {
         PermissionRuleset(
           rules: [
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: '*',
               action: PermissionAction.deny,
             ),
           ],
           sessionApproved: [
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: 'git *',
               action: PermissionAction.allow,
             ),
@@ -193,7 +193,7 @@ void main() {
       ];
 
       // Session approved rule should win (it's last in the flat list)
-      final result = evaluate('bash', 'git status', rulesets);
+      final result = evaluate('shell', 'git status', rulesets);
       expect(result.action, equals(PermissionAction.allow));
     });
 
@@ -210,8 +210,8 @@ void main() {
         ),
       ];
 
-      // Looking for 'bash' permission, but rule is for 'read'
-      final result = evaluate('bash', 'anything', rulesets);
+      // Looking for 'shell' permission, but rule is for 'read'
+      final result = evaluate('shell', 'anything', rulesets);
       expect(result.action, equals(PermissionAction.ask));
     });
 
@@ -237,7 +237,7 @@ void main() {
         PermissionRuleset(
           rules: [
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: '*',
               action: PermissionAction.allow,
             ),
@@ -246,7 +246,7 @@ void main() {
         PermissionRuleset(
           rules: [
             const PermissionRule(
-              permission: 'bash',
+              permission: 'shell',
               pattern: 'rm *',
               action: PermissionAction.deny,
             ),
@@ -255,7 +255,7 @@ void main() {
       ];
 
       // Second ruleset's rule should win (last match)
-      final result = evaluate('bash', 'rm -rf /', rulesets);
+      final result = evaluate('shell', 'rm -rf /', rulesets);
       expect(result.action, equals(PermissionAction.deny));
     });
   });

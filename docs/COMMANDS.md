@@ -1,6 +1,6 @@
 # Commands Reference
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-08-21
 
 ChatORAI supports:
 
@@ -209,31 +209,34 @@ review this function for security issues use @explore
 
 When the AI invokes tools, they appear inline in the chat stream with icons and status.
 
-| Tool             | Description                                       | Default Permission |
-| ---------------- | ------------------------------------------------- | ------------------ |
-| `bash`           | Execute shell command                             | ask                |
-| `read`           | Read file contents                                | allow              |
-| `edit`           | Replace text in file                              | ask                |
-| `write`          | Create/overwrite file                             | ask                |
-| `glob`           | Find files by pattern                             | allow              |
-| `grep`           | Search file contents                              | allow              |
-| `webfetch`       | Fetch URL content                                 | allow              |
-| `websearch`      | Search web via SearXNG                            | allow              |
-| `task`           | Spawn subagent via `SessionRunner`                | allow              |
-| `task_container` | Run parallel subagent tasks, aggregate            | allow              |
-| `question`       | Ask user question (with dedup)                    | allow              |
-| `todowrite`      | Update todo list                                  | allow              |
-| `skill`          | Load specialized skill                            | allow              |
-| `apply_patch`    | Apply unified diff                                | ask                |
-| `lsp`            | LSP hover/signature help                          | allow              |
-| `format`         | Code formatting                                   | ask                |
-| `plan_enter`     | Switch to plan agent mode                         | ask                |
-| `plan_exit`      | Exit plan mode, switch to build agent             | ask                |
-| `json_schema`    | JSON schema validation                            | ask                |
-| `invalid`        | Invalid tool placeholder                          | ask                |
-| `external_directory` | Directory operations (builtin)              | ask                |
+| Tool                       | Description                            | Default Permission |
+| -------------------------- | -------------------------------------- | ------------------ |
+| `shell`                    | Execute shell command                  | ask                |
+| `read`                     | Read file contents                     | allow              |
+| `edit`                     | Replace text in file                   | ask                |
+| `write`                    | Create/overwrite file                  | ask                |
+| `glob`                     | Find files by pattern                  | allow              |
+| `grep`                     | Search file contents                   | allow              |
+| `webfetch`                 | Fetch URL content                      | allow              |
+| `websearch`                | Search web via SearXNG                 | allow              |
+| `task`                     | Spawn subagent via `SessionRunner`     | deny                |
+| `task_container`           | Run parallel subagent tasks, aggregate | allow              |
+| `question`                 | Ask user question (with dedup)         | deny                |
+| `todowrite`                | Update todo list                       | deny                |
+| `skill`                    | Load specialized skill                 | allow              |
+| `apply_patch`              | Apply unified diff                     | ask                |
+| `lsp`                      | LSP hover/signature help               | allow              |
+| `format`                   | Code formatting                        | ask                |
+| `plan_enter`               | Switch to plan agent mode              | deny                |
+| `plan_exit`                | Exit plan mode, switch to build agent  | deny                |
+| `json_schema`              | JSON schema validation                 | ask                |
+| `invalid`                  | Invalid tool placeholder               | ask                |
+| `external_directory`       | Directory operations (builtin)         | ask                |
+| `document_extract_pdf`     | Extract text from PDF                  | ask                |
+| `document_extract_docx`    | Extract text from DOCX                 | ask                |
+| `document_extract_xlsx`    | Extract text from XLSX                 | ask                |
 
-**Conditionally registered:** `lsp` (when `LspService` available), `format` (when `FormatService` available), `skill` (when `SkillService` available).
+**Conditionally registered:** `lsp` (when `LspService` available), `format` (when `FormatService` available), `skill` (when `SkillService` available). Total: 21 unconditional + up to 3 conditional (24 max).
 
 **States:** `pending` (∼), `running` (spinner), `completed` (✓), `error` (✗). Tool results can be expanded to show full output.
 
@@ -257,7 +260,7 @@ These are not interactive commands but JSON configuration options.
     rules: [
       { tool: "read", action: "*", resource: "*", permission: "allow" },
       {
-        tool: "bash",
+        tool: "shell",
         action: "execute",
         resource: "/home/**",
         permission: "deny",
@@ -269,7 +272,7 @@ These are not interactive commands but JSON configuration options.
 
 **Rule fields:**
 
-- `tool`: Tool name (e.g., `bash`, `edit`).
+- `tool`: Tool name (e.g., `shell`, `edit`).
 - `action`: Action string (usually `"execute"`).
 - `resource`: Resource pattern (path, URL, regex). Wildcards supported via `*` and `?`.
 - `permission`: `allow`, `deny`, or `ask`.
@@ -278,7 +281,7 @@ These are not interactive commands but JSON configuration options.
 
 - `*` matches any sequence (except `/` for paths).
 - `?` matches a single character.
-- Patterns are matched against the tool's primary input (e.g., `path` for read/edit, `command` for bash).
+- Patterns are matched against the tool's primary input (e.g., `path` for read/edit, `command` for shell).
 
 For environment variables and system dependencies, see `docs/ENVIRONMENT.md`.
 For API reference, see `docs/API.md`.

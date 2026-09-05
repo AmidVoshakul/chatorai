@@ -113,6 +113,39 @@ class AppLocalizationsAr extends AppLocalizations {
       'عرض كتل الاستدلال/التفكير مفتوحة عند رد الذكاء الاصطناعي';
 
   @override
+  String get slashCommandSkills => 'إظهار المهارات المتاحة';
+
+  @override
+  String get slashCommandNew => 'بدء محادثة جديدة';
+
+  @override
+  String get slashCommandClear => 'مسح المحادثة الحالية';
+
+  @override
+  String get slashCommandCompact => 'ضغط سياق المحادثة';
+
+  @override
+  String get slashCommandHelp => 'عرض المساعدة';
+
+  @override
+  String get slashCommandUndo => 'تراجع عن الإجراء الأخير';
+
+  @override
+  String get slashCommandRedo => 'إعادة الإجراء الأخير';
+
+  @override
+  String get slashCommandSessions => 'قائمة الجلسات';
+
+  @override
+  String get slashCommandModels => 'اختيار النموذج';
+
+  @override
+  String get slashCommandTheme => 'تغيير المظهر';
+
+  @override
+  String get slashCommandThinking => 'تبديل رؤية الاستدلال';
+
+  @override
   String get language => 'اللغة';
 
   @override
@@ -148,6 +181,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get close => 'إغلاق';
+
+  @override
+  String errorLoadingChat(String error) {
+    return 'فشل تحميل الدردشة: $error';
+  }
+
+  @override
+  String get confirmOpenLink => 'هل تريد حقًا فتح:';
 
   @override
   String get copy => 'نسخ';
@@ -281,6 +322,55 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get context => 'السياق';
+
+  @override
+  String contextMessages(Object percent, Object usable, Object used) {
+    return 'السياق: $used / $usable رمز ($percent%)';
+  }
+
+  @override
+  String get contextInstructions => 'التعليمات';
+
+  @override
+  String get contextAgentPrompt => 'موجه الوكيل';
+
+  @override
+  String get contextUserPrompt => 'موجه المستخدم';
+
+  @override
+  String get contextCompactSession => 'ضغط الجلسة';
+
+  @override
+  String get contextCompacting => 'جاري الضغط…';
+
+  @override
+  String get contextUsageBreakdown => 'تفاصيل الاستخدام';
+
+  @override
+  String get contextPromptTokens => 'رموز الإدخال';
+
+  @override
+  String get contextOutputTokens => 'رموز الإخراج';
+
+  @override
+  String get contextCacheRead => 'قراءة الذاكرة المؤقتة';
+
+  @override
+  String get contextCacheWrite => 'كتابة الذاكرة المؤقتة';
+
+  @override
+  String get contextToolTokens => 'رموز الأدوات';
+
+  @override
+  String get contextSpentLabel => 'المبلغ المنفق';
+
+  @override
+  String get contextTokensIncludedInPrompt => 'رموز الأدوات مشمولة في الموجه';
+
+  @override
+  String contextAutoCompactAt(Object buffer, Object percent) {
+    return 'ضغط تلقائي عند $percent% · مخزن $buffer رمز';
+  }
 
   @override
   String get free => 'مجاني';
@@ -436,6 +526,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get edit => 'تعديل';
+
+  @override
+  String editToolTitle(String path) {
+    return 'تعديل $path';
+  }
+
+  @override
+  String patchToolTitle(String path) {
+    return 'رقع $path';
+  }
 
   @override
   String get share => 'مشاركة';
@@ -1109,6 +1209,22 @@ class AppLocalizationsAr extends AppLocalizations {
       'أنت مساعد مفيد. استمر في المحادثة من خلال تقديم 3 استمرارات محددة ومنطقية لآخر رسالة. رد باللغة نفسها التي يستخدمها المستخدم.';
 
   @override
+  String get supportBecomeSponsor => 'كن راعيًا';
+
+  @override
+  String get supportProjectSubtitle =>
+      'إذا كنت تستمتع باستخدام ChatORAI، فكّر في دعم المشروع عبر:';
+
+  @override
+  String get supportProjectTitle => 'ادعم المشروع';
+
+  @override
+  String get supportShareThoughts => 'شارك رأيك';
+
+  @override
+  String get supportStarOnGitHub => 'ضع نجمة على GitHub';
+
+  @override
   String get temperature => 'درجة الحرارة';
 
   @override
@@ -1236,6 +1352,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get listening => 'تحدث الآن...';
+
+  @override
+  String get linkCancel => 'إلغاء';
+
+  @override
+  String get linkCopied => 'تم نسخ الرابط';
+
+  @override
+  String get linkOpen => 'فتح';
+
+  @override
+  String get linkOpenFailed => 'تعذر فتح الرابط';
 
   @override
   String get sendMessage => 'إرسال الرسالة';
@@ -1657,6 +1785,65 @@ class AppLocalizationsAr extends AppLocalizations {
       'يجمع Adobe for Creativity قدرات Photoshop وLightroom وIllustrator وFirefly وPremiere وExpress وInDesign وStock مع العمل الإبداعي المدفوع بالذكاء الاصطناعي. يمكن للمستخدمين إنشاء الصور وتحريرها وتحسينها والأصول التصميمية والمشاريع المرئية بلغة طبيعية مع بقاء العمل مرتبطًا بحساب Adobe.';
 
   @override
+  String get mcpInstallToGlobal => 'تثبيت عالمي';
+
+  @override
+  String get mcpInstallToProject => 'تثبيت في المشروع';
+
+  @override
+  String get mcpScopeGlobal => 'عالمي';
+
+  @override
+  String get mcpScopeProject => 'المشروع';
+
+  @override
+  String get mcpScopeGlobalProject => 'عالمي + المشروع';
+
+  @override
+  String mcpRemoveFromScope(String scope) {
+    return 'إزالة من $scope';
+  }
+
+  @override
+  String get mcpRemoveFromAll => 'إزالة من الكل';
+
+  @override
+  String get mcpTokenDialogTitle => 'المصادقة';
+
+  @override
+  String get mcpTokenDialogTitleHint => 'اختر كيفية المصادقة مع هذا الخادم';
+
+  @override
+  String get mcpTokenInputLabel => 'الرمز';
+
+  @override
+  String get mcpTokenInputHint => 'الصق رمز الوصول';
+
+  @override
+  String get mcpTokenInputHelper => 'يُرسل كـ Authorization: Bearer <token>';
+
+  @override
+  String get mcpOAuthClientIdLabel => 'Client ID';
+
+  @override
+  String get mcpOAuthClientIdHint => 'معرف عميل OAuth 2.1';
+
+  @override
+  String get mcpOAuthClientSecretLabel => 'Client Secret';
+
+  @override
+  String get mcpOAuthClientSecretHint => 'سر العميل OAuth 2.1 (اختياري)';
+
+  @override
+  String get mcpOAuthScopeLabel => 'النطاق';
+
+  @override
+  String get mcpOAuthScopeHint => 'مثال read write';
+
+  @override
+  String get mcpAuthConfirm => 'تأكيد';
+
+  @override
   String get agentsInstructions => 'تعليمات الوكلاء';
 
   @override
@@ -1974,4 +2161,290 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get commonEdit => 'تعديل';
+
+  @override
+  String get toolResultOriginal => 'الأصلي';
+
+  @override
+  String get toolResultRestore => 'استعادة';
+
+  @override
+  String get toolResultRestoredSnackbar =>
+      'تم استعادة الملفات إلى الحالة قبل التعديل';
+
+  @override
+  String get toolResultOriginalTitle => 'المحتوى الأصلي قبل التعديل';
+
+  @override
+  String restoreFailed(String error) {
+    return 'فشلت الاستعادة: $error';
+  }
+
+  @override
+  String get compactingIndicator => 'جارِ الضغط...';
+
+  @override
+  String get compactionAgentName => 'ضغط';
+
+  @override
+  String get workspaces => 'مساحات العمل';
+
+  @override
+  String get directoryTitle => 'الدليل';
+
+  @override
+  String get searchDirectories => 'البحث في الدلائل';
+
+  @override
+  String get addDirectory => 'إضافة دليل';
+
+  @override
+  String get removeDirectory => 'إزالة دليل';
+
+  @override
+  String get noWorkspacesFound => 'لم يتم العثور على أدلة';
+
+  @override
+  String get switchWorkspaceTitle => 'تبديل مساحة العمل';
+
+  @override
+  String get currentSessionWillBeStopped => 'سيتم إيقاف الجلسة الحالية.';
+
+  @override
+  String get continueText => 'متابعة';
+
+  @override
+  String get changeWorkingDirectory => 'تغيير الدليل الحالي';
+
+  @override
+  String get sessionsTitle => 'الجلسات';
+
+  @override
+  String get noSessions => 'لا توجد جلسات بعد';
+
+  @override
+  String get searchSessions => 'البحث في الجلسات';
+
+  @override
+  String get newSession => 'جلسة جديدة';
+
+  @override
+  String get autoApproveTitle => 'الموافقة التلقائية';
+
+  @override
+  String get autoApproveSubtitle => 'تكوين الموافقة التلقائية على الأذونات';
+
+  @override
+  String get autoApproveExternalDirectoryDesc =>
+      'السماح بالوصول إلى الأدلة الخارجية';
+
+  @override
+  String get autoApproveShellDesc => 'السماح بتنفيذ أوامر الشل';
+
+  @override
+  String get autoApproveReadDesc => 'السماح بقراءة الملفات';
+
+  @override
+  String get autoApproveEditDesc => 'السماح بتعديل الملفات';
+
+  @override
+  String get autoApproveWriteDesc => 'السماح بكتابة الملفات';
+
+  @override
+  String get autoApproveGlobDesc => 'السماح بالبحث بنمط glob';
+
+  @override
+  String get autoApproveGrepDesc => 'السماح بالبحث بـ grep';
+
+  @override
+  String get autoApproveWebsearchDesc => 'السماح بالبحث على الويب';
+
+  @override
+  String get autoApproveWebfetchDesc => 'السماح بجلب صفحات الويب';
+
+  @override
+  String get autoApproveDoomLoopDesc => 'السماح بالكشف عن doom loop';
+
+  @override
+  String get autoApproveSkillDesc => 'السماح بتنفيذ المهارات';
+
+  @override
+  String get autoApproveLspDesc => 'السماح باستخدام LSP';
+
+  @override
+  String get autoApproveTaskDesc => 'السماح باستخدام task';
+
+  @override
+  String get autoApproveTodowriteDesc => 'السماح بعمليات كتابة todo';
+
+  @override
+  String get exceptionsTitle => 'استثناءات';
+
+  @override
+  String get addPath => 'إضافة مسار';
+
+  @override
+  String get addCommand => 'إضافة أمر';
+
+  @override
+  String get scopeGlobal => 'عام';
+
+  @override
+  String get scopeProject => 'مشروع';
+
+  @override
+  String get defaultInherit => 'افتراضي (وراثة)';
+
+  @override
+  String get defaultAllow => 'سماح';
+
+  @override
+  String get defaultAsk => 'سؤال';
+
+  @override
+  String get defaultDeny => 'رفض';
+
+  @override
+  String autoApproveDefaultInherited(Object action) {
+    return 'الافتراضي ($action)';
+  }
+
+  @override
+  String get autoApproveGroupFileAccess => 'الوصول للملفات';
+
+  @override
+  String get autoApproveGroupShell => 'الصدفة والأوامر';
+
+  @override
+  String get autoApproveGroupNetwork => 'الشبكة';
+
+  @override
+  String get autoApproveGroupAgents => 'الوكلاء والأتمتة';
+
+  @override
+  String get autoApproveCommandPatternLabel => 'نمط الأمر';
+
+  @override
+  String get autoApprovePathPatternLabel => 'نمط المسار';
+
+  @override
+  String get autoApproveCommandPatternHint => 'git *';
+
+  @override
+  String get autoApprovePathPatternHint => '/home/**/*.txt';
+
+  @override
+  String get autoApproveScopeHint =>
+      'العام يطبق في كل مكان · المشروع يتجاوز حسب مساحة العمل';
+
+  @override
+  String get autoApproveNoExceptions =>
+      'لا استثناءات — يُستخدم الافتراضي لجميع الأنماط';
+
+  @override
+  String get autoApproveBrowseDirectory => 'تصفح الدليل';
+
+  @override
+  String get autoApproveScopeProjectDisabledTooltip =>
+      'لم يتم العثور على تكوين المشروع. أنشئ .chatorai/chatorai.json لتمكين أذونات المشروع.';
+
+  @override
+  String get autoApproveActionLabel => 'Action';
+
+  @override
+  String get autoApprovePatternHintFile =>
+      '/home/user/project/** • ~/Documents/*';
+
+  @override
+  String get autoApprovePatternHintCommand => 'npm run * • git status';
+
+  @override
+  String autoApproveError(Object error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get settingsMcpSubtitle =>
+      'Manage Model Context Protocol tool servers';
+
+  @override
+  String get mcpAuthNoAuth => 'No Auth';
+
+  @override
+  String get mcpAuthToken => 'Token';
+
+  @override
+  String get mcpAuthOAuth => 'OAuth 2.1';
+
+  @override
+  String get statsInput => 'Input';
+
+  @override
+  String get statsOutput => 'Output';
+
+  @override
+  String get statsCacheRead => 'Cache Read';
+
+  @override
+  String get keyboardShortcuts => 'اختصارات لوحة المفاتيح';
+
+  @override
+  String get keyboardShortcutsSubtitle =>
+      'تخصيص اختصارات لوحة المفاتيح للتطبيق';
+
+  @override
+  String get keybindingsReadOnlyMobile =>
+      'اختصارات لوحة المفاتيح متوفرة فقط على سطح المكتب';
+
+  @override
+  String get keyboardShortcutsResetConfirm =>
+      'هل أنت متأكد أنك تريد إعادة تعيين جميع اختصارات لوحة المفاتيح إلى القيم الافتراضية؟';
+
+  @override
+  String get bindingConflict => 'تعارض';
+
+  @override
+  String get captureHint => 'اضغط على مزيج مفاتيح...';
+
+  @override
+  String get shortcutCancelStreaming => 'إلغاء استجابة الذكاء الاصطناعي';
+
+  @override
+  String get shortcutCloseDialog => 'إغلاق الحوار';
+
+  @override
+  String get shortcutOpenLatestChild => 'فتح أحدث جلسة فرعية';
+
+  @override
+  String get shortcutNavPrevSibling => 'الجلسة السابقة';
+
+  @override
+  String get shortcutNavNextSibling => 'الجلسة التالية';
+
+  @override
+  String get shortcutNavParent => 'الانتقال إلى الجلسة الأب';
+
+  @override
+  String get shortcutCyclePrimaryAgent => 'تبديل الوكيل الأساسي';
+
+  @override
+  String get shortcutToggleSidebar => 'تبديل الشريط الجانبي';
+
+  @override
+  String get shortcutNewChat => 'دردشة جديدة';
+
+  @override
+  String get shortcutOpenModelSelector => 'فتح منتقي النموذج';
+
+  @override
+  String get shortcutOpenSettings => 'فتح الإعدادات';
+
+  @override
+  String get shortcutOpenWorkspace => 'فتح مساحة العمل';
+
+  @override
+  String get shortcutScrollToChatStart => 'التمرير إلى الأعلى';
+
+  @override
+  String get shortcutScrollToChatEnd => 'التمرير إلى الأسفل';
 }

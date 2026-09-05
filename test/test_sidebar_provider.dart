@@ -1,6 +1,14 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'dart:async';
+
+import 'package:chatorai/core/session/session_db_provider.dart';
+import 'package:chatorai/core/session/session_repository.dart';
+import 'package:chatorai/core/session/session_state.dart';
+import 'package:chatorai/gui/features/sessions/providers/sidebar_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/features/sessions/providers/sidebar_provider.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+class _MockSessionRepository extends Mock implements SessionRepository {}
 
 void main() {
   group('SidebarNotifier', () {
@@ -78,8 +86,25 @@ void main() {
   group('chatListLoadingProvider', () {
     late ProviderContainer container;
 
+    ProviderContainer buildContainer({bool hangLoad = false}) {
+      final mock = _MockSessionRepository();
+      when(() => mock.cleanupOrphanSessions()).thenAnswer((_) async => 0);
+      if (hangLoad) {
+        when(
+          () => mock.findAll(),
+        ).thenAnswer((_) => Completer<List<SessionState>>().future);
+      } else {
+        when(() => mock.findAll()).thenAnswer((_) async => <SessionState>[]);
+      }
+      return ProviderContainer(
+        overrides: [
+          sessionRepositoryProvider.overrideWith((ref) async => mock),
+        ],
+      );
+    }
+
     setUp(() {
-      container = ProviderContainer();
+      container = buildContainer();
     });
 
     tearDown(() {
@@ -87,8 +112,22 @@ void main() {
     });
 
     test('returns true when chat list is loading', () {
+      container.dispose();
+      container = buildContainer(hangLoad: true);
+      addTearDown(container.dispose);
+
       final isLoading = container.read(chatListLoadingProvider);
       expect(isLoading, true);
+    });
+
+    test('returns false after chat list finishes loading', () async {
+      for (var i = 0; i < 50; i++) {
+        if (!container.read(chatListLoadingProvider)) break;
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+
+      final isLoading = container.read(chatListLoadingProvider);
+      expect(isLoading, false);
     });
   });
 }

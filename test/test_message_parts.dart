@@ -1,7 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_message_export.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
-import 'package:chatorai/features/chat/data/models/chat_models.dart';
+import 'package:chatorai/core/chat/chat/chat_message.dart';
+import 'package:chatorai/core/chat/chat/message_converter.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat_models.dart';
 
 void main() {
   // ── Enums ──────────────────────────────────────────────────
@@ -171,96 +172,11 @@ void main() {
     });
   });
 
-  // ── ToolCallPart ───────────────────────────────────────────
-
-  group('ToolCallPart', () {
-    test('creates with required fields', () {
-      final created = DateTime(2025, 1, 1, 12, 0);
-      final part = ToolCallPart(
-        toolCallId: 'call-123',
-        toolName: 'bash',
-        input: const {'command': 'echo hello'},
-        createdAt: created,
-      );
-      expect(part.toolCallId, 'call-123');
-      expect(part.toolName, 'bash');
-      expect(part.input, {'command': 'echo hello'});
-      expect(part.createdAt, created);
-    });
-
-    test('copyWith updates toolName', () {
-      final created = DateTime(2025, 1, 1);
-      final part = ToolCallPart(
-        toolCallId: 'id',
-        toolName: 'bash',
-        input: const {},
-        createdAt: created,
-      );
-      final updated = part.copyWith(toolName: 'read');
-      expect(updated.toolName, 'read');
-      expect(updated.toolCallId, 'id'); // unchanged
-    });
-
-    test('toJson serializes createdAt as ISO8601', () {
-      final created = DateTime(2025, 6, 15, 10, 30);
-      final part = ToolCallPart(
-        toolCallId: 'id',
-        toolName: 'grep',
-        input: const {'pattern': 'test'},
-        createdAt: created,
-      );
-      final json = part.toJson();
-      expect(json['type'], 'tool_call');
-      expect(json['toolCallId'], 'id');
-      expect(json['toolName'], 'grep');
-      expect(json['createdAt'], created.toIso8601String());
-    });
-
-    test('fromJson parses ISO8601 createdAt', () {
-      final created = DateTime(2025, 6, 15, 10, 30);
-      final json = {
-        'type': 'tool_call',
-        'toolCallId': 'id',
-        'toolName': 'grep',
-        'input': {'pattern': 'test'},
-        'createdAt': created.toIso8601String(),
-      };
-      final part = ToolCallPart.fromJson(json);
-      expect(part.createdAt, created);
-    });
-
-    test('fromJson defaults input to empty map', () {
-      final json = {
-        'type': 'tool_call',
-        'toolCallId': 'id',
-        'toolName': 'read',
-        'createdAt': DateTime.now().toIso8601String(),
-      };
-      final part = ToolCallPart.fromJson(json);
-      expect(part.input, {});
-    });
-
-    test('roundtrip serialization', () {
-      final created = DateTime(2025, 3, 15, 8, 0);
-      final original = ToolCallPart(
-        toolCallId: 'tc-1',
-        toolName: 'write',
-        input: const {'path': 'file.txt', 'content': 'hello'},
-        createdAt: created,
-      );
-      final restored = ToolCallPart.fromJson(original.toJson());
-      expect(restored.toolCallId, original.toolCallId);
-      expect(restored.toolName, original.toolName);
-      expect(restored.input, original.input);
-      expect(restored.createdAt, original.createdAt);
-    });
-  });
-
   // ── ToolResultPart ─────────────────────────────────────────
 
   group('ToolResultPart', () {
     test('creates with running state by default', () {
-      const part = ToolResultPart(toolCallId: 'call-1', toolName: 'bash');
+      const part = ToolResultPart(toolCallId: 'call-1', toolName: 'shell');
       expect(part.state, ToolState.running);
       expect(part.result, isNull);
       expect(part.error, isNull);
@@ -290,7 +206,7 @@ void main() {
     test('copyWith updates state to completed', () {
       const part = ToolResultPart(
         toolCallId: 'call-1',
-        toolName: 'bash',
+        toolName: 'shell',
         state: ToolState.running,
       );
       final updated = part.copyWith(
@@ -305,7 +221,7 @@ void main() {
     test('copyWith updates error', () {
       const part = ToolResultPart(
         toolCallId: 'call-1',
-        toolName: 'bash',
+        toolName: 'shell',
         state: ToolState.running,
       );
       final updated = part.copyWith(
@@ -319,7 +235,7 @@ void main() {
     test('toJson serializes state as name and duration as ms', () {
       const part = ToolResultPart(
         toolCallId: 'call-1',
-        toolName: 'bash',
+        toolName: 'shell',
         result: 'output',
         state: ToolState.completed,
         duration: Duration(milliseconds: 200),
@@ -329,7 +245,7 @@ void main() {
       final json = part.toJson();
       expect(json['type'], 'tool_result');
       expect(json['toolCallId'], 'call-1');
-      expect(json['toolName'], 'bash');
+      expect(json['toolName'], 'shell');
       expect(json['result'], 'output');
       expect(json['state'], 'completed');
       expect(json['duration'], 200);
@@ -341,7 +257,7 @@ void main() {
       final json = {
         'type': 'tool_result',
         'toolCallId': 'call-1',
-        'toolName': 'bash',
+        'toolName': 'shell',
         'result': 'out',
         'state': 'completed',
         'duration': 300,
@@ -356,7 +272,7 @@ void main() {
       final json = {
         'type': 'tool_result',
         'toolCallId': 'call-1',
-        'toolName': 'bash',
+        'toolName': 'shell',
         'result': 'out',
         'isStreaming': false,
       };
@@ -368,7 +284,7 @@ void main() {
       final json = {
         'type': 'tool_result',
         'toolCallId': 'call-1',
-        'toolName': 'bash',
+        'toolName': 'shell',
         'state': 'error',
         'duration': null,
         'isStreaming': false,
@@ -488,12 +404,14 @@ void main() {
       const part = QuestionPart(
         question: 'Choose one',
         options: [
-          const QuestionOption(label: 'Option A', description: null),
-          const QuestionOption(label: 'Option B', description: null),
+          QuestionOption(label: 'Option A', description: null),
+          QuestionOption(label: 'Option B', description: null),
         ],
         answer: 'Option A',
       );
-      expect(part.options, ['Option A', 'Option B']);
+      expect(part.options.length, 2);
+      expect(part.options[0].label, 'Option A');
+      expect(part.options[1].label, 'Option B');
       expect(part.answer, 'Option A');
     });
 
@@ -507,7 +425,7 @@ void main() {
     test('copyWith updates options', () {
       const part = QuestionPart(
         question: 'Q',
-        options: [const QuestionOption(label: 'old', description: null)],
+        options: [QuestionOption(label: 'old', description: null)],
       );
       final updated = part.copyWith(
         options: const [
@@ -515,18 +433,17 @@ void main() {
           QuestionOption(label: 'new2', description: null),
         ],
       );
-      expect(updated.options, [
-        const QuestionOption(label: 'new1', description: null),
-        QuestionOption(label: 'new2', description: null),
-      ]);
+      expect(updated.options.length, 2);
+      expect(updated.options[0].label, 'new1');
+      expect(updated.options[1].label, 'new2');
     });
 
     test('toJson roundtrip', () {
       const original = QuestionPart(
         question: 'Proceed?',
         options: [
-          const QuestionOption(label: 'Yes', description: null),
-          const QuestionOption(label: 'No', description: null),
+          QuestionOption(label: 'Yes', description: null),
+          QuestionOption(label: 'No', description: null),
         ],
         answer: 'Yes',
       );
@@ -534,7 +451,14 @@ void main() {
       expect(json['type'], 'question');
       final restored = QuestionPart.fromJson(json);
       expect(restored.question, original.question);
-      expect(restored.options, original.options);
+      expect(restored.options.length, original.options.length);
+      for (var i = 0; i < restored.options.length; i++) {
+        expect(restored.options[i].label, original.options[i].label);
+        expect(
+          restored.options[i].description,
+          original.options[i].description,
+        );
+      }
       expect(restored.answer, original.answer);
     });
 
@@ -697,36 +621,22 @@ void main() {
 
   group('MessagePart sealed class', () {
     test('all parts are MessagePart subtypes', () {
-      // Note: ToolCallPart uses non-const DateTime, so we build the list differently
-      final toolCall = ToolCallPart(
-        toolCallId: 'id',
-        toolName: 'bash',
-        input: const {},
-        createdAt: DateTime(2025),
-      );
       final parts = <MessagePart>[
         const TextPart(content: 'text'),
         const ReasoningPart(content: 'reasoning'),
-        toolCall,
-        const ToolResultPart(toolCallId: 'id', toolName: 'bash'),
+        const ToolResultPart(toolCallId: 'id', toolName: 'shell'),
         const TaskPart(description: 'task', agent: 'agent'),
         const QuestionPart(question: 'q'),
         const TodoPart(todos: []),
       ];
-      expect(parts.length, 7); // 7 part types (ToolCallPart included above)
+      expect(parts.length, 6);
     });
 
     test('toJson on each part produces type discriminator', () {
       final parts = <MessagePart>[
         const TextPart(content: 'text'),
         const ReasoningPart(content: 'reasoning'),
-        ToolCallPart(
-          toolCallId: 'id',
-          toolName: 'bash',
-          input: const {},
-          createdAt: DateTime(2025),
-        ),
-        const ToolResultPart(toolCallId: 'id', toolName: 'bash'),
+        const ToolResultPart(toolCallId: 'id', toolName: 'shell'),
         const TaskPart(description: 'task', agent: 'agent'),
         const QuestionPart(question: 'q'),
         const TodoPart(todos: []),
@@ -735,7 +645,6 @@ void main() {
       expect(types, {
         'text',
         'reasoning',
-        'tool_call',
         'tool_result',
         'task',
         'question',
@@ -788,7 +697,7 @@ void main() {
           {
             'type': 'tool_result',
             'toolCallId': 'id',
-            'toolName': 'bash',
+            'toolName': 'shell',
             'isStreaming': false,
           },
         ],
@@ -1200,6 +1109,47 @@ void main() {
       final converted = messageToChatMessage(legacy);
       expect(converted.id, 'legacy-id-123');
       expect(converted.timestamp, ts);
+    });
+  });
+
+  // ── messageToChatMessage defensive fallback ──────────────────
+
+  group('messageToChatMessage content fallback', () {
+    test('keeps non-empty content when text parts are empty', () {
+      final msg = Message(
+        id: 'm1',
+        role: MessageRole.assistant,
+        content: 'real answer',
+        timestamp: DateTime.now(),
+        partsJson: [
+          {'type': 'text', 'content': '', 'isStreaming': true},
+        ],
+      );
+      final converted = messageToChatMessage(msg) as AssistantMessage;
+      final text = converted.parts
+          .whereType<TextPart>()
+          .map((p) => p.content)
+          .join();
+      expect(text, 'real answer');
+    });
+
+    test('does not duplicate content when text part is non-empty', () {
+      final msg = Message(
+        id: 'm1',
+        role: MessageRole.assistant,
+        content: 'real answer',
+        timestamp: DateTime.now(),
+        partsJson: [
+          {'type': 'text', 'content': 'real answer', 'isStreaming': false},
+        ],
+      );
+      final converted = messageToChatMessage(msg) as AssistantMessage;
+      final text = converted.parts
+          .whereType<TextPart>()
+          .map((p) => p.content)
+          .join();
+      expect(text, 'real answer');
+      expect(converted.parts.whereType<TextPart>().length, 1);
     });
   });
 }

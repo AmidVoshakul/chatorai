@@ -1,7 +1,7 @@
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/todo_part.dart';
 
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
-import 'package:chatorai/features/chat/data/models/chat/todo_part.dart';
 import 'session_id.dart';
 
 sealed class SessionEvent {
@@ -22,6 +22,7 @@ class SessionCreated extends SessionEvent {
   final String agent;
   final String? modelRef;
   final PermissionRuleset? permission;
+  final String? directory;
 
   const SessionCreated({
     required super.sessionId,
@@ -30,6 +31,7 @@ class SessionCreated extends SessionEvent {
     this.agent = 'general',
     this.modelRef,
     this.permission,
+    this.directory,
     required super.timestamp,
     super.sequence,
   });
@@ -179,6 +181,23 @@ class ToolInputStarted extends SessionEvent {
   });
 }
 
+/// Emitted immediately when a tool starts, before execution begins.
+/// Creates a lightweight placeholder (pending → running → completed).
+class ToolStarted extends SessionEvent {
+  final String toolCallId;
+  final String toolName;
+  final String? partId;
+
+  const ToolStarted({
+    required super.sessionId,
+    required this.toolCallId,
+    required this.toolName,
+    this.partId,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
 class ToolInputDelta extends SessionEvent {
   final String toolCallId;
   final String delta;
@@ -315,10 +334,14 @@ class CompactionStarted extends SessionEvent {
 
 class CompactionEnded extends SessionEvent {
   final String summary;
+  final String? tailStartId;
+  final List<Map<String, dynamic>>? compactedContext;
 
   const CompactionEnded({
     required super.sessionId,
     required this.summary,
+    this.tailStartId,
+    this.compactedContext,
     required super.timestamp,
     super.sequence,
   });
@@ -388,10 +411,12 @@ class TaskPartStarted extends SessionEvent {
 
 class TaskPartCompleted extends SessionEvent {
   final String partId;
+  final int toolCallsCount;
 
   const TaskPartCompleted({
     required super.sessionId,
     required this.partId,
+    this.toolCallsCount = 0,
     required super.timestamp,
     super.sequence,
   });
@@ -400,11 +425,54 @@ class TaskPartCompleted extends SessionEvent {
 class TaskPartError extends SessionEvent {
   final String partId;
   final String error;
+  final int toolCallsCount;
 
   const TaskPartError({
     required super.sessionId,
     required this.partId,
     required this.error,
+    this.toolCallsCount = 0,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
+class MessageUpdated extends SessionEvent {
+  final String messageId;
+  final String? content;
+  final String? reasoning;
+  final String? model;
+  final String? error;
+
+  const MessageUpdated({
+    required super.sessionId,
+    required this.messageId,
+    this.content,
+    this.reasoning,
+    this.model,
+    this.error,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
+class MessageDeleted extends SessionEvent {
+  final String messageId;
+
+  const MessageDeleted({
+    required super.sessionId,
+    required this.messageId,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
+class SessionTitleUpdated extends SessionEvent {
+  final String title;
+
+  const SessionTitleUpdated({
+    required super.sessionId,
+    required this.title,
     required super.timestamp,
     super.sequence,
   });

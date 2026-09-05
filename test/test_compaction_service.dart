@@ -29,10 +29,27 @@ void main() {
       fakeAi = const FakeCompletionProvider();
     });
 
-    test('returns original messages when count < 4', () async {
+    test('strips system prompts when count < 4', () async {
       final messages = [
+        {'role': 'system', 'content': 'Agent prompt'},
         {'role': 'user', 'content': 'Hi'},
         {'role': 'assistant', 'content': 'Hello'},
+      ];
+      final result = await service.compact(
+        messages: messages,
+        aiService: fakeAi,
+        model: 'test',
+      );
+      expect(result, [
+        {'role': 'user', 'content': 'Hi'},
+        {'role': 'assistant', 'content': 'Hello'},
+      ]);
+    });
+
+    test('keeps compaction summary when count < 4', () async {
+      final messages = [
+        {'role': 'system', 'content': '## Goal\n- Previous summary'},
+        {'role': 'user', 'content': 'Hi'},
       ];
       final result = await service.compact(
         messages: messages,
@@ -42,7 +59,7 @@ void main() {
       expect(result, equals(messages));
     });
 
-    test('compacts head into system summary and preserves tail', () async {
+    test('compacts head into assistant summary and preserves tail', () async {
       final messages = List.generate(6, (i) {
         final role = i.isEven ? 'user' : 'assistant';
         return {'role': role, 'content': 'Msg $i'};
@@ -52,9 +69,12 @@ void main() {
         aiService: fakeAi,
         model: 'test',
       );
-      // tailTurns=2 => last 4 messages kept, head (2 pairs) replaced by system
-      expect(result.length, 5); // system + 4 tail
-      expect(result[0]['role'], 'system');
+      // tailTurns=2 => last 4 messages kept, head (2 pairs) replaced by the
+      // compaction summary as an assistant message from the `compaction`
+      expect(result.length, 5); // summary + 4 tail
+      expect(result[0]['role'], 'assistant');
+      expect(result[0]['isCompactionSummary'], isTrue);
+      expect(result[0]['agent'], 'compaction');
       expect(result[0]['content'], contains('Summary generated'));
       expect(result[1]['content'], 'Msg 2');
       expect(result[4]['content'], 'Msg 5');

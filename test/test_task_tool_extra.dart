@@ -7,11 +7,12 @@ import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/llm/model_resolver.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
-import 'package:chatorai/core/tools/tool.dart';
+import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/tools/built_in/task.dart';
+import 'package:chatorai/core/tools/built_in/task_shared.dart';
+import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
-import 'package:chatorai/features/chat/services/chat_ai_service.dart';
-import 'package:chatorai/features/chat/services/chat_retry_service.dart';
+import 'package:chatorai/core/chat/services/chat_ai_service.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 
@@ -27,11 +28,17 @@ SessionRunnerHolder _makeRunnerHolderExtra([
       taskPrompt: any(named: 'taskPrompt'),
       streamFn: any(named: 'streamFn'),
       agent: any(named: 'agent'),
+      modelRef: any(named: 'modelRef'),
       title: any(named: 'title'),
       taskId: any(named: 'taskId'),
+      taskPartId: any(named: 'taskPartId'),
+      holder: any(named: 'holder'),
       abortSignal: any(named: 'abortSignal'),
     ),
-  ).thenAnswer((_) async => TaskChildResult(result));
+  ).thenAnswer(
+    (_) async =>
+        TaskChildResult(result, sessionId: SessionID.fromString('ses_mock')),
+  );
   return SessionRunnerHolder(mock);
 }
 
@@ -75,29 +82,30 @@ class _FakeChatAiService extends ChatAiService {
   double? get currentTemperature => 0.7;
 
   @override
-  Future<void> streamChatCompletion({
+  Future<void> runChildCompletion({
     required List<Map<String, dynamic>> messages,
     required String model,
     required double temperature,
-    required Function(String) onChunk,
-    required Function(String) onReasoning,
-    required Function(String) onCompletion,
+    required Future<void> Function(String) onChunk,
+    required Future<void> Function(String) onReasoning,
+    Future<void> Function()? onReasoningEnd,
+    required Future<void> Function(String) onCompletion,
     ToolSet tools = const {},
     ToolStartCallback? onToolStart,
     ToolEndCallback? onToolEnd,
     ToolErrorCallback? onToolError,
     UsageCallback? onUsage,
     int maxSteps = 5,
-    void Function(RichRetryInfo info)? onRetry,
-    void Function(List<Map<String, dynamic>> messages)? onOverflow,
     String? sessionId,
+    CancellationToken? abortSignal,
   }) async {
     onChunk(completionResult);
     onReasoning('mock reasoning');
+    onReasoningEnd?.call();
     onCompletion(completionResult);
-    onToolStart?.call('call-id', 'bash', {'cmd': 'ls'});
-    onToolEnd?.call('call-id', 'bash', 'file1.txt');
-    onToolError?.call('call-id', 'bash', 'error msg');
+    onToolStart?.call('call-id', 'shell', {'cmd': 'ls'});
+    onToolEnd?.call('call-id', 'shell', 'file1.txt');
+    onToolError?.call('call-id', 'shell', 'error msg');
   }
 }
 
@@ -133,7 +141,7 @@ ToolRegistry _makeToolRegistry() {
   registry.register(_makeToolDef('write'));
   registry.register(_makeToolDef('glob'));
   registry.register(_makeToolDef('grep'));
-  registry.register(_makeToolDef('bash'));
+  registry.register(_makeToolDef('shell'));
   registry.register(_makeToolDef('webfetch'));
   registry.register(_makeToolDef('websearch'));
   registry.register(_makeToolDef('apply_patch'));
@@ -142,8 +150,9 @@ ToolRegistry _makeToolRegistry() {
 }
 
 void main() {
-  setUpAll(() {
+  setUpAll(() async {
     registerFallbackValue(SessionID.create());
+    await AgentRegistry().init();
   });
 
   group('task tool — error when no runner', () {
@@ -180,9 +189,6 @@ void main() {
         'subagent_type': 'general',
       }, ctx);
 
-      expect(output.output, contains('state="completed"'));
-      expect(output.output, contains('<summary>mock task result</summary>'));
-      expect(output.output, contains('<task_result>'));
       expect(output.output, contains('mock task result'));
       expect(output.metadata?['error'], isNull);
     });
@@ -202,7 +208,7 @@ void main() {
         'subagent_type': 'explore',
       }, ctx);
 
-      expect(output.metadata?['agent_name'], equals('Explore'));
+      expect(output.metadata?['agent_name'], equals('explore'));
       expect(output.metadata?['subagent_type'], equals('explore'));
     });
 
@@ -260,7 +266,6 @@ void main() {
         'subagent_type': 'general',
       }, ctx);
 
-      expect(output.output, contains('state="completed"'));
       expect(output.output, contains('final output'));
       expect(output.metadata?['error'], isNull);
     });
@@ -273,7 +278,7 @@ void main() {
         final tool = createTaskTool(
           chatAiService: chatAi,
           toolRegistry: registry,
-          currentSessionRunner: _makeRunnerHolderExtra(),
+          currentSessionRunner: _makeRunnerHolderExtra(callbackCase.result),
         );
 
         final ctx = _mockCtx();
@@ -283,7 +288,7 @@ void main() {
           'subagent_type': 'general',
         }, ctx);
 
-        expect(output.output, contains('state="completed"'));
+        expect(output.output, contains(callbackCase.result));
         expect(output.metadata?['error'], isNull);
       });
     }
@@ -322,10 +327,8 @@ void main() {
         'subagent_type': 'general',
       }, ctx);
 
-      expect(output.output, startsWith('<task '));
-      expect(output.output, endsWith('</task>'));
-      expect(output.output, contains('<summary>'));
-      expect(output.output, contains('<task_result>'));
+      expect(output.output, contains('mock task result'));
+      expect(output.output, isNotEmpty);
     });
 
     test('error when no runner returns error metadata', () async {
@@ -365,14 +368,14 @@ void main() {
 
     test('preserves all non-denied tools', () {
       final registry = ToolRegistry(PermissionService(), PermissionRuleset());
-      registry.register(_makeToolDef('bash'));
+      registry.register(_makeToolDef('shell'));
       registry.register(_makeToolDef('read'));
       registry.register(_makeToolDef('write'));
       registry.register(_makeToolDef('grep'));
 
       final subagentTools = deriveSubagentTools(registry);
       expect(subagentTools.length, equals(4));
-      expect(subagentTools.containsKey('bash'), isTrue);
+      expect(subagentTools.containsKey('shell'), isTrue);
       expect(subagentTools.containsKey('read'), isTrue);
       expect(subagentTools.containsKey('write'), isTrue);
       expect(subagentTools.containsKey('grep'), isTrue);

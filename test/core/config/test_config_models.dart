@@ -18,7 +18,7 @@ void main() {
     test('parses full config with all fields', () {
       final json = {
         'version': 1,
-        'permission': {'bash': 'ask', 'read': 'allow'},
+        'permission': {'shell': 'ask', 'read': 'allow'},
         'keybinding': {'session_child_next': 'ctrl+right'},
         'skills': {
           'paths': ['/path/to/skills'],
@@ -37,7 +37,7 @@ void main() {
       final config = ChatOrAIConfig.fromJson(json);
 
       expect(config.version, equals(1));
-      expect(config.permission['bash']?.defaultAction, equals('ask'));
+      expect(config.permission['shell']?.defaultAction, equals('ask'));
       expect(config.permission['read']?.defaultAction, equals('allow'));
       expect(config.keybinding?['session_child_next'], equals('ctrl+right'));
       expect(config.skills, isNotNull);
@@ -45,7 +45,6 @@ void main() {
       expect(config.compaction, isNotNull);
       expect(config.compaction!.auto, isTrue);
       expect(config.compaction!.prune, isTrue);
-      expect(config.compaction!.keepTokens, equals(10000));
       expect(config.compaction!.buffer, equals(30000));
     });
 
@@ -53,16 +52,16 @@ void main() {
       final json = {
         'version': 1,
         'permission': {
-          'bash': {'git *': 'allow', 'rm *': 'deny'},
+          'shell': {'git *': 'allow', 'rm *': 'deny'},
         },
       };
 
       final config = ChatOrAIConfig.fromJson(json);
-      final bashConfig = config.permission['bash'];
-      expect(bashConfig, isNotNull);
-      expect(bashConfig!.defaultAction, isNull);
-      expect(bashConfig.patternActions?['git *'], equals('allow'));
-      expect(bashConfig.patternActions?['rm *'], equals('deny'));
+      final shellConfig = config.permission['shell'];
+      expect(shellConfig, isNotNull);
+      expect(shellConfig!.defaultAction, isNull);
+      expect(shellConfig.patternActions?['git *'], equals('allow'));
+      expect(shellConfig.patternActions?['rm *'], equals('deny'));
     });
 
     test('handles missing permission section gracefully', () {
@@ -128,7 +127,7 @@ void main() {
       final original = ChatOrAIConfig(
         version: 1,
         permission: {
-          'bash': const PermissionRuleConfig(defaultAction: 'ask'),
+          'shell': const PermissionRuleConfig(defaultAction: 'ask'),
           'edit': const PermissionRuleConfig(
             patternActions: {'*.dart': 'allow'},
           ),
@@ -138,7 +137,6 @@ void main() {
         compaction: const CompactionConfig(
           auto: true,
           prune: false,
-          keepTokens: 8000,
           buffer: 20000,
         ),
       );
@@ -147,7 +145,7 @@ void main() {
       final restored = ChatOrAIConfig.fromJson(json);
 
       expect(restored.version, equals(original.version));
-      expect(restored.permission['bash']?.defaultAction, equals('ask'));
+      expect(restored.permission['shell']?.defaultAction, equals('ask'));
       expect(
         restored.permission['edit']?.patternActions?['*.dart'],
         equals('allow'),
@@ -155,7 +153,6 @@ void main() {
       expect(restored.keybinding?['session_child_next'], equals('ctrl+right'));
       expect(restored.skills?.paths, equals(['/skills']));
       expect(restored.compaction?.auto, isTrue);
-      expect(restored.compaction?.keepTokens, equals(8000));
     });
 
     test('omits null fields from toJson', () {
@@ -175,7 +172,6 @@ void main() {
       const config = CompactionConfig();
       expect(config.auto, isTrue);
       expect(config.prune, isFalse);
-      expect(config.keepTokens, equals(8000));
       expect(config.buffer, equals(20000));
     });
 
@@ -190,7 +186,7 @@ void main() {
       final config = CompactionConfig.fromJson(json);
       expect(config.auto, isFalse);
       expect(config.prune, isTrue);
-      expect(config.keepTokens, equals(5000));
+      // Legacy `keep.tokens` is accepted for backward compatibility but ignored.
       expect(config.buffer, equals(15000));
     });
 
@@ -198,7 +194,6 @@ void main() {
       final config = CompactionConfig.fromJson({});
       expect(config.auto, isTrue);
       expect(config.prune, isFalse);
-      expect(config.keepTokens, equals(8000));
       expect(config.buffer, equals(20000));
     });
 
@@ -206,7 +201,6 @@ void main() {
       const original = CompactionConfig(
         auto: false,
         prune: true,
-        keepTokens: 12000,
         buffer: 25000,
       );
       final json = original.toJson();
@@ -214,17 +208,17 @@ void main() {
 
       expect(restored.auto, equals(original.auto));
       expect(restored.prune, equals(original.prune));
-      expect(restored.keepTokens, equals(original.keepTokens));
       expect(restored.buffer, equals(original.buffer));
     });
 
     test('toJson produces correct structure', () {
-      const config = CompactionConfig(keepTokens: 9999);
+      const config = CompactionConfig();
       final json = config.toJson();
 
       expect(json['auto'], isTrue);
       expect(json['prune'], isFalse);
-      expect(json['keep'], equals({'tokens': 9999}));
+      // Legacy `keep.tokens` is no longer written.
+      expect(json.containsKey('keep'), isFalse);
       expect(json['buffer'], equals(20000));
     });
   });
@@ -308,11 +302,11 @@ void main() {
     test('parses global tools config with string actions', () {
       final config = ChatOrAIConfig.fromJson(<String, dynamic>{
         'version': 1,
-        'tools': {'mcp__server_tool': 'deny', 'bash': 'ask'},
+        'tools': {'mcp__server_tool': 'deny', 'shell': 'ask'},
       });
       expect(config.tools, isNotNull);
       expect(config.tools!['mcp__server_tool'], equals('deny'));
-      expect(config.tools!['bash'], equals('ask'));
+      expect(config.tools!['shell'], equals('ask'));
     });
 
     test('roundtrip preserves tools field', () {

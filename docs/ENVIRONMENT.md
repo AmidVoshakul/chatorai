@@ -1,6 +1,6 @@
 # Environment & System Requirements
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-08-21
 
 This document describes the software and hardware requirements, environment variables, and system dependencies needed to develop, build, and run ChatORAI.
 
@@ -160,7 +160,7 @@ Where `<package>` is the runtime bundle ID (e.g. `com.chatorai.app`). A project-
     rules: [
       { tool: "read", action: "*", resource: "*", permission: "allow" },
       {
-        tool: "bash",
+        tool: "shell",
         action: "execute",
         resource: "/home/**",
         permission: "deny",
@@ -223,11 +223,11 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.3.1
-  ai_sdk_dart: ^1.2.0
-  ai_sdk_openai: ^1.1.0
-  ai_sdk_provider: ^1.1.0
-  ai_sdk_anthropic: ^1.1.0
-  ai_sdk_google: ^1.1.0
+  ai_sdk_dart: ^2.0.0
+  ai_sdk_openai_compatible: ^2.0.0
+  ai_sdk_provider: ^2.0.0
+  ai_sdk_anthropic: ^2.0.0
+  ai_sdk_google: ^2.0.0
   dio: ^5.9.0
   shared_preferences: ^2.5.4
   flutter_markdown_plus: ^1.0.5
@@ -256,11 +256,9 @@ dependencies:
   flutter_spinkit: ^5.2.2
   connectivity_plus: ^7.0.0
   share_plus: ^10.1.4
-  flutter_dotenv: ^6.0.0
   file_picker: ^10.3.10
   permission_handler: ^12.0.1
   package_info_plus: ^9.0.0
-  retry: ^3.1.2
   html: ^0.15.6
   command_shield: ^1.1.0
   nocterm: ^0.8.0

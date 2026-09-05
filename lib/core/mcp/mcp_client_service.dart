@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:chatorai/core/mcp/mcp_config.dart';
@@ -25,77 +24,42 @@ class McpClientService {
   final Map<String, McpServerStatus> _statuses = {};
   final Map<String, List<McpToolInfo>> _discoveredTools = {};
 
-  bool _initialized = false;
-  Completer<void>? _initCompleter;
+  int _generation = 0;
 
   /// Initialize service from config — discovers tools for all enabled servers.
   ///
-  /// Idempotent: if already initialized or initializing, returns the existing
-  /// future. Safe to call from multiple consumers (e.g. eager start in
-  /// [main] and lazy start in [toolRegistryProvider]).
-  Future<void> initialize(McpConfig config) async {
-    if (_initialized) {
-      return _initCompleter?.future;
-    }
-    if (_initCompleter != null) {
-      return _initCompleter!.future;
-    }
-
-    _initCompleter = Completer<void>();
-
-    try {
-      final futures = <Future<McpServerStatus>>[];
-      for (final entry in config.servers.entries) {
-        final name = entry.key;
-        final serverConfig = entry.value;
-        _configs[name] = serverConfig;
-        _statuses[name] = serverConfig.enabled
-            ? McpServerStatus.connected()
-            : McpServerStatus.disabled();
-
-        if (serverConfig.enabled) {
-          futures.add(_connectServer(name, serverConfig));
-        }
-      }
-
-      for (final future in futures) {
-        await future;
-      }
-
-      _initialized = true;
-      _initCompleter!.complete();
-    } catch (e, st) {
-      LogTags.mcp.logError('McpClientService.initialize failed', e, st);
-      _initialized = false;
-      _initCompleter = null;
-      rethrow;
-    }
-
-    return _initCompleter!.future;
-  }
+  /// Delegates to [reload], which diffs the desired [config] against the
+  /// current connections, so repeated calls with an unchanged config are
+  /// no-ops while changed configs are applied in place.
+  Future<void> initialize(McpConfig config) => reload(config);
 
   /// Reconcile live connections with the latest [config] without a full
   /// re-initialization.
   ///
   /// Safe to call after a runtime config change (e.g. the GUI adds/removes an
-  /// MCP server). Unlike [initialize], this does NOT early-return when already
-  /// initialized — it diffs the desired [config] against current connections:
+  /// MCP server or the user switches workspace). It diffs the desired [config]
+  /// against current connections:
   ///
   /// - New or enabled servers with no active client are connected.
   /// - Disabled servers with an active client are disconnected.
+  /// - Enabled servers whose config drifted (same name, different settings)
+  ///   are reconnected with the new settings.
   /// - Servers absent from [config] but still connected are disconnected.
   ///
-  /// Callers should pair this with invalidating `mcpStatusesProvider` (and
-  /// `toolRegistryProvider` if MCP tools must refresh in the active chat).
+  /// Each call bumps a generation counter; any connection work from an older
+  /// call that is still in flight aborts its writes, so a config change never
+  /// races with a previous connection pass and stale servers cannot leak into
+  /// a newer config.
   Future<void> reload(McpConfig config) async {
-    // Adopt the new config so that connect() can resolve server definitions
-    // for servers that did not exist during the initial initialize().
+    _generation++;
+
+    final previousConfigs = Map<String, McpServerConfig>.of(_configs);
     for (final entry in config.servers.entries) {
       _configs[entry.key] = entry.value;
     }
 
     // Drop servers removed from the config entirely (not just disabled).
-    final removed = _configs.keys
+    final removed = previousConfigs.keys
         .where((n) => !config.servers.containsKey(n))
         .toList();
     for (final name in removed) {
@@ -104,16 +68,21 @@ class McpClientService {
       _configs.remove(name);
     }
 
-    // Connect newly enabled servers, disconnect newly disabled ones.
+    // Connect newly enabled servers, disconnect newly disabled ones, and
+    // reconnect servers whose settings drifted.
     for (final entry in config.servers.entries) {
       final name = entry.key;
       final serverConfig = entry.value;
       final hasClient = _clients.containsKey(name);
+      final drifted = hasClient && previousConfigs[name] != serverConfig;
 
       if (serverConfig.enabled && !hasClient) {
         await connect(name);
       } else if (!serverConfig.enabled && hasClient) {
         await disconnect(name);
+      } else if (serverConfig.enabled && drifted) {
+        await disconnect(name);
+        await connect(name);
       } else {
         // Keep status in sync even when no connection change is needed.
         _statuses[name] = serverConfig.enabled
@@ -133,7 +102,7 @@ class McpClientService {
     // Disconnect existing client first
     await disconnect(name);
 
-    return _connectServer(name, config);
+    return _connectServer(name, config, _generation);
   }
 
   /// Disconnect from a server by name.
@@ -165,13 +134,16 @@ class McpClientService {
 
   /// Discover tools from a connected server.
   ///
-  /// Returns empty list if not connected or discovery fails.
-  Future<List<McpToolInfo>> listTools(String name) async {
+  /// Returns empty list if not connected or discovery fails. When
+  /// [generation] is provided, a stale discovery (superseded by a newer
+  /// config) does not write into the service.
+  Future<List<McpToolInfo>> listTools(String name, {int? generation}) async {
     final client = _clients[name];
     if (client == null) return [];
 
     try {
       final result = await client.listTools();
+      if (generation != null && generation != _generation) return [];
       final tools = result.tools
           .map(
             (t) => McpToolInfo(
@@ -280,14 +252,13 @@ class McpClientService {
 
   /// Close all clients and reset state.
   Future<void> dispose() async {
+    _generation++;
     for (final name in _clients.keys.toList()) {
       await disconnect(name);
     }
     _configs.clear();
     _statuses.clear();
     _discoveredTools.clear();
-    _initialized = false;
-    _initCompleter = null;
   }
 
   // ---------------------------------------------------------------------------
@@ -297,6 +268,7 @@ class McpClientService {
   Future<McpServerStatus> _connectServer(
     String name,
     McpServerConfig config,
+    int generation,
   ) async {
     try {
       late final McpClient client;
@@ -307,11 +279,16 @@ class McpClientService {
         client = await _connectRemote(name, config);
       }
 
+      if (generation != _generation) {
+        await client.close();
+        return McpServerStatus.failed('Connection superseded by newer config');
+      }
+
       _clients[name] = client;
       _statuses[name] = McpServerStatus.connected();
 
       // Discover tools
-      final tools = await listTools(name);
+      final tools = await listTools(name, generation: generation);
       LogTags.mcp.logInfo(
         'McpClientService: server $name connected, ${tools.length} tools discovered',
       );
@@ -326,6 +303,9 @@ class McpClientService {
         'McpClientService: server "$name" failed to start — skipped. '
         'Check the command/args in chatorai.json. ($e)',
       );
+      if (generation != _generation) {
+        return McpServerStatus.failed('Connection superseded by newer config');
+      }
       final errorMsg = e.toString();
       _statuses[name] = McpServerStatus.failed(errorMsg);
       return McpServerStatus.failed(errorMsg);
@@ -359,7 +339,11 @@ class McpClientService {
 
     final transport = StreamableHttpClientTransport(
       uri,
-      opts: StreamableHttpClientTransportOptions(requestInit: config.headers),
+      opts: StreamableHttpClientTransportOptions(
+        requestInit: config.headers != null && config.headers!.isNotEmpty
+            ? {'headers': config.headers}
+            : null,
+      ),
     );
 
     final client = McpClient(

@@ -3,7 +3,7 @@ import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/core/tools/tool_execution.dart';
-import 'package:chatorai/core/tools/tool_definition.dart';
+
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/tools/built_in/built_in_tools.dart';
 import 'package:chatorai/core/skills/skill_service.dart';
@@ -43,16 +43,6 @@ class MockToolRegistry implements ToolRegistry {
 
   @override
   ToolDef? get read => throw UnimplementedError();
-
-  @override
-  void registerDefinition(ToolDefinition definition) {
-    // no-op for tests
-  }
-
-  @override
-  Future<void> resolveAll() async {
-    // no-op for tests
-  }
 
   @override
   ToolDef? get task => throw UnimplementedError();
@@ -103,8 +93,11 @@ void main() {
       expect(
         registry.registered,
         containsAll([
-          'bash',
+          'shell',
           'read',
+          'document_extract_pdf',
+          'document_extract_docx',
+          'document_extract_xlsx',
           'glob',
           'grep',
           'edit',
@@ -112,8 +105,12 @@ void main() {
           'webfetch',
           'websearch',
           'apply_patch',
+          'invalid',
+          'external-directory',
+          'json_schema',
           'todowrite',
           'task',
+          'task_container',
           'question',
           'plan_enter',
           'plan_exit',

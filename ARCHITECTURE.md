@@ -1,18 +1,19 @@
 # ChatORAI Architecture
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-09-05
 
 ## Project Overview
 
-ChatORAI is a multi-platform AI chat application built with Flutter 3.44.0 and Riverpod 3.x. It supports any OpenAI-compatible API (OpenRouter, local models, custom endpoints) via `ai_sdk_dart` v1.1.0. Drift (SQLite) provides event-sourced session persistence; MCP (Model Context Protocol) enables integration with external tool servers.
+ChatORAI is a multi-platform AI chat application built with Flutter 3.44.0 and Riverpod 3.x. It supports any OpenAI-compatible API (OpenRouter, local models, custom endpoints) via `ai_sdk_dart` v2.0.0. Drift (SQLite) provides event-sourced session persistence; MCP (Model Context Protocol) enables integration with external tool servers.
 
 Key characteristics:
 
-- Feature-first directory structure
+- Shared-core layout: `lib/core/` (pure Dart business logic), `lib/gui/` (Flutter desktop/mobile), `lib/tui/` (Nocterm terminal UI), `lib/l10n/` (localization), `lib/shared/` (pure utilities only)
+- Composition root: `lib/main.dart` + `lib/providers.dart` wire the app
+- `core/` never imports `gui/` or `tui/`; CLI entry router is the only exception
 - MVVM pattern with Riverpod providers
-- Layered architecture: Presentation → Domain → Data
 - Event-sourced Session Core with Drift persistence
-- Tool execution system with granular permissions and 16 built-in tools
+- Tool execution system with granular permissions and 21 unconditional + 3 conditional built-in tools
 - MCP (Model Context Protocol) support for external tool servers
 - Internationalization with 6 languages (en, ru, uk, zh, ja, ar)
 
@@ -20,25 +21,61 @@ Key characteristics:
 
 ```
 lib/
-├── core/                    # Application core, cross-cutting concerns
+├── core/                    # Shared business logic (pure Dart, no Flutter UI)
 │   ├── agents/              # Agent registry (static definitions for @-mention)
 │   ├── background/          # Background task management
+│   ├── chat/                # Chat domain models and services
+│   │   ├── chat_models.dart # Message, Chat, MessageRole, AssistantMessage, SessionContextUsage
+│   │   ├── chat/            # MessagePart hierarchy (Text, Reasoning, ToolCall, ToolResult, Task, Question, Todo)
+│   │   └── services/        # ChatAiService, ChatCancellation, ChatRetryService, ToolCallTracker
+│   ├── cli/                 # CLI entry points and overrides (cwd_override, mcp_cli)
+│   ├── commands/            # Slash-command core (shared by GUI and TUI)
+│   │   ├── slash_command.dart         # SlashCommand model
+│   │   ├── slash_command_catalog.dart # Built-ins + fromCommandInfo + filter + SlashCommandLocalizations
+│   │   ├── slash_command_executor.dart # /compact, /new, /thinking via callbacks
+│   │   ├── slash_command_navigator.dart # Cyclic nav
+│   │   ├── skill_template_renderer.dart # Template rendering, $N/$ARGUMENTS/quoted args/[Image N]/$0 guard
+│   │   ├── skill_command_resolver.dart  # Template resolution
+│   │   ├── command_parser.dart          # expandCommandTemplate delegates to SkillTemplateRenderer
+│   │   ├── command_providers.dart       # Riverpod providers for commands
+│   │   ├── command_registry.dart        # Command registry
+│   │   └── command_service.dart         # Command service
 │   ├── config/              # Configuration management (chatorai.json, schema, loader)
 │   ├── constants/           # App-wide constants, enums, themes
 │   ├── context/             # Token counting, overflow detection, compaction
+│   │   ├── background_compaction_service.dart
+│   │   ├── compaction_agent.dart
+│   │   ├── compaction_orchestrator.dart
+│   │   └── compaction_service.dart
+│   ├── core.dart            # Barrel export for core (chat, commands, workspace, tools, etc.)
 │   ├── error/               # Error classification and handling (sealed classes)
 │   ├── format/              # Code formatting service (dart-mcp-server integration)
-│   ├── i18n/                # Internationalization helpers
-│   ├── keyboard/            # Centralized keyboard shortcuts (ShortcutHandler, AppShortcuts)
+│   ├── i18n/                # Internationalization core
+│   ├── keyboard/            # Keyboard shortcut abstractions (ShortcutHandler, AppShortcuts, shortcuts)
+│   │   ├── keybinding_provider.dart
+│   │   ├── keyboard_shortcut.dart
+│   │   ├── shortcut_handler.dart
+│   │   └── shortcuts.dart
 │   ├── llm/                 # LLM catalog system
 │   │   ├── models/          # ProviderConfig, ModelConfig, AuthConfig, ModelVariant
 │   │   ├── providers/       # Built-in provider definitions + catalog barrel
 │   │   ├── catalog_providers.dart
-│   │   └── provider_catalog_service.dart  # Centralized catalog with 24h cache
-│   │   └── model_resolver.dart            # Resolves provider + model + auth headers
+│   │   ├── model_resolver.dart            # Resolves provider + model + auth headers
+│   │   ├── provider_catalog_service.dart  # Centralized catalog with 24h cache
+│   │   └── usage_cache_mapper.dart        # Unified cache/reasoning token extraction
 │   ├── lsp/                 # LSP service (dart-mcp-server_lsp integration)
+│   │   ├── lsp_service.dart    # LspService: 15-language server table, auto-install dispatch, lazy file-driven client lifecycle
+│   │   ├── lsp_client.dart     # LspClient: JSON-RPC adapter, didOpen/didChange/didClose lifecycle, stream controller
+│   │   ├── lsp_types.dart      # LSP types (LspDiagnostic, LspRange, LspPosition, LspPublishDiagnosticsParams, ...)
+│   │   ├── lsp_methods.dart    # LspMethod constants + state enums
+│   │   ├── lsp_provider.dart   # Riverpod providers (lspServiceProvider, lspClientProvider)
+│   │   └── lsp_diagnostics_format.dart
 │   ├── mcp/                 # MCP support (McpClientService, McpConfig, McpTypes)
-│   ├── permission/          # Permission service and models (PermissionBridge)
+│   │   ├── mcp_config.dart           — McpConfig, McpServerConfig, McpOAuthConfig models
+│   │   ├── mcp_types.dart            — McpToolInfo, McpCallResult, McpContentPart, etc.
+│   │   ├── mcp_client_service.dart   — McpClientService (singleton)
+│   │   └── mcp_marketplace_catalog.dart
+│   ├── permission/          # Permission service and models
 │   ├── session/             # Event-sourced session core (Drift)
 │   │   ├── schema.dart      # Drift table definitions
 │   │   ├── database.dart    # Drift database class
@@ -49,50 +86,102 @@ lib/
 │   │   ├── session_repository.dart # CRUD + replay
 │   │   ├── session_runner.dart  # Session lifecycle orchestrator
 │   │   ├── session_tree.dart    # Parent-child navigation
-│   │   ├── session_stack.dart   # Hierarchical session navigation
 │   │   ├── session_id.dart     # Branded SessionID type
-│   │   └── session_db_provider.dart # Riverpod provider for database
+│   │   ├── session_db_provider.dart # Riverpod provider for database
+│   │   ├── event_bus.dart
+│   │   ├── file_snapshot_service.dart
+│   │   └── session_snapshot_service.dart
 │   ├── skills/              # SkillService for dynamic capability loading
 │   │   ├── directory_source.dart
-│   │   ├── url_source.dart
-│   │   ├── skill_cache.dart
 │   │   ├── skill_discovery.dart
-│   │   ├── skill_service.dart
+│   │   ├── skill_marketplace_catalog.dart
+│   │   └── skill_service.dart
+│   ├── stats/               # Statistics and usage tracking
+│   ├── tools/               # Tool system (shared by app and terminal)
+│   │   ├── built_in/        # Individual tool implementations
+│   │   │   ├── shell.dart                 # Shell command execution (renamed from bash)
+│   │   │   ├── read.dart                 # File reading
+│   │   │   ├── write.dart                # File creation/overwrite
+│   │   │   ├── edit.dart                 # In-file text replacement
+│   │   │   ├── glob.dart                 # File pattern matching
+│   │   │   ├── grep.dart                 # Content search
+│   │   │   ├── webfetch.dart             # URL content fetching
+│   │   │   ├── websearch.dart            # Web search via SearXNG
+│   │   │   ├── apply_patch.dart          # Unified diff application
+│   │   │   ├── task.dart                 # Subagent delegation (needs SessionRunner)
+│   │   │   ├── task_container.dart        # Parallel subagent task aggregation
+│   │   │   ├── question.dart             # Interactive question with cooldown dedup
+│   │   │   ├── todowrite.dart           # Todo list management
+│   │   │   ├── skill.dart                # Skill loading via SkillService
+│   │   │   ├── lsp.dart                  # LSP hover/info via dart-mcp-server_lsp
+│   │   │   ├── format.dart               # Code formatting via FormatService
+│   │   │   ├── invalid.dart              # Invalid tool placeholder (for unknown tool IDs)
+│   │   │   ├── external_directory.dart   # External directory reference
+│   │   │   ├── json_schema.dart          # JSON schema validation
+│   │   │   ├── plan.dart                 # Plan enter/exit tools
+│   │   │   ├── document_extract.dart     # PDF/DOCX/XLSX text extraction
+│   │   │   └── built_in_tools.dart       # Registration barrel (registers 21+ tools)
+│   │   ├── tool_execution.dart           # Execution context with doom-loop guard
+│   │   ├── tool_registry.dart            # Singleton registry, toSDKTools()
+│   │   ├── tool_registry_factory.dart    # Shared factory for app and terminal
+│   │   ├── tool_title.dart               # Tool title formatting
+│   │   ├── tool_output_metadata.dart     # Output metadata tracking
+│   │   ├── doom_loop_detector.dart
+│   │   ├── truncation_service.dart
+│   │   ├── json_schema_validator.dart
+│   │   ├── lsp_diagnostics_format.dart   # LSP diagnostics formatting
+│   │   ├── file_edit_guard.dart          # File edit permission boundary checks
+│   │   └── filesystem_boundary.dart      # Path sandboxing enforcement
+│   └── workspace/           # Workspace port abstraction
+│       ├── workspace_port.dart       # WorkspacePort interface
+│       ├── workspace_runtime.dart    # Runtime workspace implementation
+│       └── process_workspace_port.dart # Default process-based port
+├── gui/                     # Flutter UI layer (desktop + mobile)
+│   ├── features/            # Feature modules
+│   │   ├── bootstrap/       # App bootstrap and initialization
+│   │   ├── chat/            # Chat feature (Flutter widgets + providers)
+│   │   │   ├── data/
+│   │   │   │   ├── models/  # (empty — models moved to core/chat/)
+│   │   │   │   ├── providers/ # Riverpod providers (session, streaming, screen, tool_registry GUI wrapper)
+│   │   │   │   └── services/ # Chat actions, context builder (GUI-specific)
+│   │   │   └── presentation/
+│   │   │       ├── screens/     # ChatScreen, child_session_screen
+│   │   │       ├── widgets/     # ChatMessages, ChatInput, parts/, etc.
+│   │   │       │   ├── chat_input/ # Input sub-components (slash_command_handler, send_message_handler, etc.)
+│   │   │       │   └── parts/  # One widget per MessagePart type
+│   │   │       └── providers/  # chat_stream_actions.dart
+│   │   ├── models/          # Model selection and provider management
+│   │   │   ├── providers/
+│   │   │   ├── screens/
+│   │   │   └── widgets/
+│   │   ├── sessions/        # Session management UI
+│   │   ├── settings/        # App settings, theme, language, API key
+│   │   │   ├── providers/
+│   │   │   ├── screens/
+│   │   │   └── widgets/
 │   │   └── ...
-│   └── tools/               # Built-in tool implementations (16 tools + 3 conditional)
-│       ├── built_in/        # Individual tool implementations
-│       ├── permission_bridge.dart        # Integrates tool permission requests
-│       ├── secure_file_service.dart      # Filesystem boundary enforcement
-│       ├── truncation_service.dart      # Context-overflow prevention (truncates + persists large outputs to the managed data dir)
-│       ├── tool_execution.dart  # Execution context with doom-loop guard
-│       │   ├── file_edit_guard.dart     # File edit permission checks
-│       │   ├── filesystem_boundary.dart # Path sandboxing
-│       │   utils/               # Shared utilities (logger, formatters, secure storage, xdg_paths)
-├── features/                # Feature-based modules (primary organization)
-│   ├── agents/              # Subagent system and registry
-│   ├── chat/                # Main chat feature (domain, data, presentation)
-│   │   ├── domain/
-│   │   │   └── services/    # ChatAiService, SessionRunner integration
-│   │   ├── data/
-│   │   │   ├── models/
-│   │   │   │   └── chat/    # Message and parts hierarchy
-│   │   │   ├── repositories/
-│   │   │   └── providers/   # Riverpod providers (session, streaming, screen)
-│   │   └── presentation/
-│   │       ├── screens/     # ChatScreen (split into parts)
-│   │       ├── widgets/     # ChatMessages, ChatInput, parts/
-│   │       └── chat_input/  # Subdirectory for input components (agent_mention_popup)
-│   ├── models/              # Model selection and provider management
-│   │   ├── providers/       # ModelProvider
-│   │   ├── screens/         # ModelsScreen
-│   │   └── widgets/         # ProviderIcon, ModelCard, ModelDetailsDialog, etc.
-│   ├── settings/            # App settings, theme, language, API key
-│   │   ├── providers/       # Model settings provider
-│   │   ├── screens/         # SettingsScreen, ProviderSettingsScreen
-│   │   └── widgets/         # AddProviderDialog, ModelSelectionDialog, etc.
-│   └── skills/              # Skill-based agent capabilities and SkillService
+│   ├── keyboard/            # GUI-specific keyboard handlers (global_shortcut_handler.dart)
+│   ├── shared/              # Shared GUI utilities
+│   │   ├── theme/           # App theme, colors, typography
+│   │   ├── utils/           # Snackbar, format, chat utilities
+│   │   ├── widgets/         # Reusable Flutter widgets
+│   │   └── workspace/       # Workspace dialog utilities
+│   └── ...
+├── l10n/                    # ARB files for translation (6 languages)
+│   ├── app_en.arb
+│   ├── app_ru.arb
+│   ├── app_uk.arb
+│   ├── app_zh.arb
+│   ├── app_ja.arb
+│   └── app_ar.arb
 ├── generated/               # Auto-generated localization (app_localizations.dart)
-└── l10n/                    # ARB files for translation (6 languages)
+├── shared/                  # Pure utilities (no Flutter, no feature dependencies)
+│   ├── utils/               # Format, path, storage, image, link utilities
+│   └── workspace/           # Workspace path resolver
+├── tui/                     # Nocterm terminal UI
+│   └── mcp_tui.dart         # MCP TUI entry point
+├── main.dart                # Composition root (Flutter entry)
+└── providers.dart           # Provider scope composition
 ```
 
 ## Architectural Patterns
@@ -135,7 +224,7 @@ Each feature follows a multi-layer structure:
 `ChatRetryService` wraps child completions and API calls with unbounded retry logic:
 
 - Infinite retries for retryable errors (network failures, rate limits).
-- Exponential backoff with jitter (base 2s, cap 30s).
+- Exponential backoff (base 500ms, factor 2.0, cap 24h).
 - Respects `Retry-After` headers from providers.
 - Non-retryable errors (auth, content policy) fail immediately.
 
@@ -149,7 +238,7 @@ Each feature follows a multi-layer structure:
 ### Permission System
 
 - Configured via `chatorai.json` (section `permission`).
-- Default ruleset: `read`, `glob`, `grep` → `allow`; others → `ask`.
+- Default ruleset: `read`, `glob`, `grep`, `webfetch`, `websearch`, `skill`, `lsp` → `allow`; `shell`, `edit`, `write`, `doom_loop`, `external_directory` → `ask`; `task`, `question`, `plan_enter`, `plan_exit`, `todowrite` → `deny`.
 - Evaluator: last-match-wins, default=`ask`.
 - UI Modal: Once / Always allow / Reject. "Always" promotes to runtime ruleset.
 - Integration: `tool.preExecute()` → `PermissionService.ask()` → `tool.execute()`.
@@ -168,6 +257,7 @@ Each feature follows a multi-layer structure:
 - RTL support for Arabic.
 - After editing any ARB: `flutter gen-l10n`.
 - Generated output: `lib/generated/app_localizations.dart` (do not edit manually).
+- Context popup keys: `contextMessages`, `contextInstructions`, `contextUsageBreakdown`, `contextPromptTokens`, `contextOutputTokens`, `contextToolTokens`, `contextCacheRead`, `contextCacheWrite`, `contextSpentLabel`, `contextAutoCompactAt`.
 
 ### Platform Specifics
 
@@ -258,9 +348,34 @@ Message chunks streamed:
   - ToolCallPart / ToolResultPart (tool execution)
   - TaskPart / QuestionPart / TodoPart (special workflows)
   ↓
-ChatStorageService.addMessageToChat() persists messages
+  SessionRepository.appendEvent() persists events
   ↓
-Providers update state → UI rebuilds (ChatMessages, ChatMessageBubble)
+  Providers update state → UI rebuilds (ChatMessages, ChatMessageBubble)
+```
+
+### Context Usage Flow
+
+```
+SessionContextUsageProvider
+  ↓
+Aggregates latest assistant message tokens:
+  - usedTokens (tokensInput)
+  - outputTokens (tokensOutput)
+  - reasoningTokens (tokensReasoning)
+  - cacheReadTokens (tokensCacheRead)
+  - cacheWriteTokens (tokensCacheWrite)
+  - toolTokens (estimated from AssistantTool parts)
+  - toolCallsCount
+  ↓
+Calculates contextLength, buffer, usable ratio
+  ↓
+Aggregates instruction sources (agent prompt, user system prompt, instruction blocks)
+  ↓
+Computes spentUsd (session total across all assistant messages, per-message pricing)
+  ↓
+ChatInputStatusBar renders ring chip (color-calibrated via usableRatio)
+  ↓
+On hover/tap: _ContextPopup shows breakdown, sources, spent USD, compact button
 ```
 
 ### Streaming & Auto-scroll
@@ -274,93 +389,96 @@ Providers update state → UI rebuilds (ChatMessages, ChatMessageBubble)
 
 ## Component Boundaries
 
-### Chat Feature Module
+### Chat Domain Models (`core/chat/`)
 
 ```
-lib/features/chat/
-├── domain/
-│   ├── services/
-│   │   └── chat_ai_service.dart    # AI completion with tool loop (legacy; SessionRunner preferred)
+lib/core/chat/
+├── chat_models.dart         # Message, Chat, MessageRole, AssistantMessage, SessionContextUsage
+├── chat/                    # MessagePart hierarchy
+│   ├── message_part.dart    # Abstract part base
+│   ├── text_part.dart
+│   ├── reasoning_part.dart
+│   ├── tool_call_part.dart
+│   ├── tool_result_part.dart
+│   ├── task_part.dart
+│   ├── question_part.dart
+│   ├── todo_part.dart
+│   ├── assistant_content.dart
+│   └── chat_snapshot_codec.dart
+└── services/
+    ├── chat_ai_service.dart
+    ├── chat_cancellation.dart
+    ├── chat_retry_service.dart
+    └── tool_call_tracker.dart
+```
+
+**Note:** Chat domain models live in `core/chat/` so both GUI and TUI can share them without importing Flutter. The `gui/features/chat/data/models/` directory is retained as an empty placeholder for structural consistency; all model code is in `core/chat/`.
+
+### Chat GUI Layer (`gui/features/chat/`)
+
+```
+lib/gui/features/chat/
 ├── data/
-│   ├── models/
-│   │   └── chat/                  # Message and parts hierarchy
-│   │       ├── chat_message.dart  # UserMessage, AssistantMessage, SystemMessage, ErrorMessage
-│   │       ├── message_part.dart  # Abstract part base
-│   │       ├── text_part.dart
-│   │       ├── reasoning_part.dart
-│   │       ├── tool_call_part.dart
-│   │       ├── tool_result_part.dart
-│   │       ├── task_part.dart
-│   │       ├── question_part.dart
-│   │       ├── todo_part.dart
-│   │       ├── chat_message_export.dart
-│   │       └── message_converter.dart
-│   ├── repositories/
-│   │   └── chat_repository_impl.dart
-│   └── providers/
-│       ├── session_providers.dart    # Session-based providers (new architecture)
-│       ├── session_parts_provider.dart # Unified reactive session streaming
-│       ├── chat_screen_notifier.dart
-│       ├── chat_input_provider.dart
-│       └── sidebar_provider.dart
+│   ├── models/              # (empty — models moved to core/chat/)
+│   ├── providers/           # Riverpod providers (session, streaming, screen, tool_registry GUI wrapper)
+│   │   ├── chat_input_provider.dart
+│   │   ├── chat_screen_notifier.dart
+│   │   ├── chat_scroll_intent_provider.dart
+│   │   ├── session_context_usage_provider.dart
+│   │   └── tool_registry_provider.dart  # GUI wrapper over core tool_registry_factory
+│   └── services/            # Chat actions, context builder (GUI-specific)
+│       ├── chat_actions.dart
+│       └── chat_context_builder.dart
 └── presentation/
-    ├── screens/
-    │   ├── chat_screen.dart
-    │   ├── chat_screen_ai.dart
-    │   ├── chat_screen_build.dart
-    │   ├── chat_screen_edits.dart
-    │   ├── chat_screen_management.dart
-    │   ├── chat_screen_messaging.dart
-    │   ├── chat_screen_navigator.dart
-    │   ├── chat_screen_part_placeholder.dart
-    │   ├── chat_screen_scroll.dart
-    │   ├── chat_screen_streaming.dart
-    │   └── child_session_screen.dart
-    ├── widgets/
-    │   ├── chat_messages.dart
-    │   ├── chat_message_bubble.dart
-    │   ├── chat_input.dart          # @-mention triggers implemented; # and / planned
-    │   ├── chat_input/             # Input sub-components
-    │   │   ├── agent_mention_handler.dart
-    │   │   ├── agent_mention_popup.dart
-    │   │   ├── attachment_input_handler.dart
+    ├── screens/             # ChatScreen, child_session_screen
+    ├── widgets/             # ChatMessages, ChatInput, parts/, etc.
+    │   ├── chat_input/      # Input sub-components
+    │   │   ├── slash_command_handler.dart  # Thin orchestrator via SlashCommandExecutor
+    │   │   ├── send_message_handler.dart   # Thin orchestrator via SlashCommandExecutor
     │   │   ├── command_popup.dart
-    │   │   ├── file_helpers.dart
-    │   │   ├── input_layout_builder.dart
-    │   │   ├── input_widget_builders.dart
-    │   │   ├── message_data.dart
-    │   │   ├── popup_controller.dart
-    │   │   ├── send_message_handler.dart
     │   │   ├── skills_popup.dart
-    │   │   ├── slash_command_handler.dart
-    │   │   └── speech_input_handler.dart
-    │   ├── parts/                  # One widget per MessagePart type
-    │   │   ├── text_part_widget.dart
-    │   │   ├── reasoning_part_widget.dart
-    │   │   ├── tool_call_part_widget.dart
-    │   │   ├── tool_result_part_widget.dart
-    │   │   ├── task_part_widget.dart
-    │   │   ├── question_part_widget.dart
-    │   │   └── todo_part_widget.dart
-    │   ├── permission_dialog.dart
-    │   ├── permission_overlay.dart
-    │   ├── sidebar.dart
-    │   ├── sidebar_wrapper.dart
-    │   ├── markdown_navigator_sidebar.dart
-    │   ├── model_settings_header.dart
-    │   ├── chat_app_bar.dart
-    │   └── ...
-    └── view_models/                # Not used; logic in providers
+    │   │   └── ...
+    │   └── parts/           # One widget per MessagePart type
+    └── providers/           # chat_stream_actions.dart
 ```
 
-**Note:** Message models are in `data/models/chat/`. The `apply_patch_part_widget.dart` does not exist; `ApplyPatchPart` is not a recognized message part type. Only `@` triggers are currently implemented in `chat_input.dart`; `#` (file references) and `/` (slash commands) are planned. The `QuestionPart` widget is rendered inline in the chat stream for interactive user prompts.
+**Note:** The `apply_patch_part_widget.dart` does not exist; `ApplyPatchPart` is not a recognized message part type. Only `@` triggers are currently implemented in `chat_input.dart`; `#` (file references) and `/` (slash commands) are planned. The `QuestionPart` widget is rendered inline in the chat stream for interactive user prompts.
+
+### Slash Commands (`core/commands/`)
+
+```
+lib/core/commands/
+├── slash_command.dart         # SlashCommand model (shared by GUI and TUI)
+├── slash_command_catalog.dart # Built-ins + fromCommandInfo + filter + SlashCommandLocalizations
+├── slash_command_executor.dart # /compact, /new, /thinking via callbacks
+├── slash_command_navigator.dart # Cyclic nav
+├── skill_template_renderer.dart # Template rendering, $N/$ARGUMENTS/quoted args/[Image N]/$0 guard
+├── skill_command_resolver.dart  # Template resolution
+├── command_parser.dart          # expandCommandTemplate delegates to SkillTemplateRenderer
+├── command_providers.dart       # Riverpod providers for commands
+├── command_registry.dart        # Command registry
+└── command_service.dart         # Command service
+```
+
+Slash-command logic is extracted from GUI into `core/commands/` so both Flutter and Nocterm can share the same business logic. `SlashCommandExecutor` handles `/compact`, `/new`, and `/thinking` via callbacks. `SlashCommandCatalog` provides built-ins plus file-defined commands with filtering. `SkillTemplateRenderer` handles template rendering with `$N`, `$ARGUMENTS`, quoted args, `[Image N]`, and `$0` placeholder guard.
+
+### Workspace (`core/workspace/`)
+
+```
+lib/core/workspace/
+├── workspace_port.dart       # WorkspacePort interface
+├── workspace_runtime.dart    # Runtime workspace implementation
+└── process_workspace_port.dart # Default process-based port
+```
+
+`WorkspacePort` abstracts workspace operations. `workspacePortProvider` in `core/config` is wired to `RiverpodWorkspacePort` override in `main.dart`. The default implementation (`process_workspace_port.dart`) uses process-based workspace resolution.
 
 ### Tools Module (`lib/core/tools/`)
 
 ```
 lib/core/tools/
-├── built_in/                      # 16+ built-in tool implementations
-│   ├── bash.dart                 # Shell command execution
+├── built_in/                      # 21+ built-in tool implementations
+│   ├── shell.dart                 # Shell command execution (renamed from bash)
 │   ├── read.dart                 # File reading
 │   ├── write.dart                # File creation/overwrite
 │   ├── edit.dart                 # In-file text replacement
@@ -370,6 +488,7 @@ lib/core/tools/
 │   ├── websearch.dart            # Web search via SearXNG
 │   ├── apply_patch.dart          # Unified diff application
 │   ├── task.dart                 # Subagent delegation (needs SessionRunner)
+│   ├── task_container.dart        # Parallel subagent task aggregation
 │   ├── question.dart             # Interactive question with cooldown dedup
 │   ├── todowrite.dart           # Todo list management
 │   ├── skill.dart                # Skill loading via SkillService
@@ -378,27 +497,25 @@ lib/core/tools/
 │   ├── invalid.dart              # Invalid tool placeholder (for unknown tool IDs)
 │   ├── external_directory.dart   # External directory reference
 │   ├── json_schema.dart          # JSON schema validation
-│   ├── plan.dart                 # Plan exit tool
-│   └── built_in_tools.dart       # Registration barrel (registers 16+ tools)
-├── permission_bridge.dart        # Integrates tool permission requests with PermissionService
-├── secure_file_service.dart      # Filesystem boundary checks and external directory access
-├── truncation_service.dart       # Prevents context overflow; truncates + saves large outputs to the managed data dir
-├── tool_permission.dart          # Tool permission metadata and helpers
-├── tool.dart                     # Tool interface
-├── tool_definition.dart          # ToolDef model
-├── tool_error.dart               # Tool error types (sealed ToolError)
+│   ├── plan.dart                 # Plan enter/exit tools
+│   ├── document_extract.dart     # PDF/DOCX/XLSX text extraction
+│   └── built_in_tools.dart       # Registration barrel (registers 21+ tools)
 ├── tool_execution.dart           # Execution context with doom-loop guard
-├── tool_output_persistence.dart  # Persistent tool output storage
-├── tool_output_metadata.dart     # Output metadata tracking
 ├── tool_registry.dart            # Singleton registry, toSDKTools()
-├── tool_registry_provider.dart   # Riverpod provider
+├── tool_registry_factory.dart    # Shared factory for app and terminal
 ├── tool_title.dart               # Tool title formatting
+├── tool_output_metadata.dart     # Output metadata tracking
+├── doom_loop_detector.dart
+├── truncation_service.dart
+├── json_schema_validator.dart
+├── lsp_diagnostics_format.dart   # LSP diagnostics formatting
 ├── file_edit_guard.dart          # File edit permission boundary checks
-├── filesystem_boundary.dart      # Path sandboxing enforcement
-└── json_schema_validator.dart    # JSON schema validation logic
+└── filesystem_boundary.dart      # Path sandboxing enforcement
 ```
 
-**Registration details:** `registerBuiltInTools()` accepts optional `chatAiService`, `toolRegistry`, `skillService`, `lspService`, `formatService`, `formatterConfig`, and `currentSessionRunner` parameters. The `question` tool is now registered. The `lsp` and `format` tools are conditionally registered when their services are provided.
+`tool_registry_factory.dart` provides `createToolRegistry()`, a shared assembly of the tool list used by both the app and the terminal. The GUI wrapper (`gui/features/chat/data/providers/tool_registry_provider.dart`) calls this factory with Riverpod-provided services.
+
+**Registration details:** `registerBuiltInTools()` accepts optional `chatAiService`, `toolRegistry`, `skillService`, `lspService`, `formatService`, `formatterConfig`, and `currentSessionRunner` parameters. The `question` tool is registered unconditionally. The `lsp` and `format` tools are conditionally registered when their services are provided. The `skill` tool is conditionally registered when `SkillService` is provided. Total: 21 unconditional + up to 3 conditional (24 total possible).
 
 ### MCP (Model Context Protocol) Module
 
@@ -406,7 +523,8 @@ lib/core/tools/
 lib/core/mcp/
 ├── mcp_config.dart           — McpConfig, McpServerConfig, McpOAuthConfig models
 ├── mcp_types.dart            — McpToolInfo, McpCallResult, McpContentPart, etc.
-└── mcp_client_service.dart   — McpClientService (singleton)
+├── mcp_client_service.dart   — McpClientService (singleton)
+└── mcp_marketplace_catalog.dart
 ```
 
 `McpClientService` manages connections to external MCP servers:
@@ -421,17 +539,33 @@ lib/core/mcp/
 
 ```
 lib/core/lsp/
-└── lsp_service.dart         — LspService wrapping dart-mcp-server_lsp
+├── lsp_service.dart    — LspService: 15-language server table, auto-install dispatch, lazy file-driven client lifecycle
+├── lsp_client.dart     — LspClient: JSON-RPC adapter, didOpen/didChange/didClose lifecycle, stream controller
+├── lsp_types.dart      — LSP types (LspDiagnostic, LspRange, LspPosition, LspPublishDiagnosticsParams, ...)
+├── lsp_methods.dart    — LspMethod constants + state enums
+├── lsp_provider.dart   — Riverpod providers (lspServiceProvider, lspClientProvider)
+└── lsp_diagnostics_format.dart
 ```
 
-The `lsp` tool provides hover information and code intelligence via LSP. It is conditionally registered when an LSP server is available.
+`LspService` manages a cache of `LspClient` instances keyed by `(rootUri, serverId)`.
+
+- **Built-in table**: 15 `LspServerDefinition` entries in `_builtInServers` (dart, typescript, python, java, kotlin, go, rust, csharp, yaml, shell, clangd, lua, markdown, swift, zig). Each entry specifies `command`, `args`, `extensions`, optional `autoInstall` hint, and optional `env`.
+- **Auto-install**: When a command is missing on PATH, `LspService.clientForFile()` checks the built-in `AutoInstallHint` and invokes the platform package manager (`npm`, `cargo`, `brew`, `pip`, `go`) once per server ID. Path checks are bounded by a 5-second `Process.run` timeout.
+- **Config models**: `LspConfig` (top-level `lsp` section) and `LspServerEntryConfig` (per-server overrides) in `lib/core/config/models/chatorai_config.dart`. `LspConfig.fromJson` accepts both `lsp: true/false` and `lsp: { servers: { ... } }`.
+- **Provider wiring**: `lspServiceProvider` (FutureProvider) loads user overrides via `service.loadUserServers(config.lsp!)` at startup and calls `service.shutdownAll()` on dispose.
+- **Concurrency**: `_activeCreation` map guards against duplicate client creation per cache key.
+- **Diagnostics lifecycle**: `diagnostics()` opens a file, subscribes to the diagnostics stream, and sends `textDocument/didClose` in the `finally` block. `diagnosticsForFile()` follows the same pattern with a configurable 3-second timeout. `_openedFiles` is cleared in `shutdownAll()`.
+- **Dead code removed**: `_legacyFallback` path removed.
+
+The `lsp` tool is registered conditionally when `LspService` is provided.
 
 ### Models & Settings Feature Modules
 
 ```
 lib/features/models/
 ├── providers/
-│   └── model_provider.dart    # Riverpod Notifier for model state
+│   ├── model_provider.dart    # Riverpod Notifier for model state
+│   └── models_provider.dart   # Aggregated models provider
 ├── screens/
 │   └── models_screen.dart     # Model selection screen (incl. Recent strip)
 └── widgets/
@@ -439,21 +573,35 @@ lib/features/models/
     ├── model_card_widget.dart
     ├── model_details_dialog_widget.dart
     ├── model_features_widget.dart
+    ├── mcp_server_icon.dart
     └── models_empty_state_widget.dart
 
 lib/features/settings/
 ├── providers/
-│   └── model_settings_provider.dart
+│   ├── model_settings_provider.dart
+│   ├── mcp_management_provider.dart
+│   └── skills_management_provider.dart
 ├── screens/
 │   ├── settings_screen.dart
 │   ├── provider_settings_screen.dart
-│   ├── provider_settings_actions.dart
-│   └── provider_settings_dialogs.dart
+│   ├── config_screen.dart
+│   ├── mcp_servers_screen.dart
+│   ├── mcp_add_server_helpers.dart
+│   ├── agents_instructions_screen.dart
+│   ├── skills_screen.dart
+│   ├── stats_screen.dart
+│   └── ...
 └── widgets/
-    ├── add_provider_dialog.dart      # Provider selection + custom provider flow
-    ├── model_selection_dialog.dart   # Model discovery via catalog (no direct Dio)
-    ├── provider_card.dart
-    └── ... (other settings widgets)
+    ├── settings_window.dart        # Desktop settings window
+    ├── settings_modal.dart
+    ├── model_settings_sheet.dart
+    ├── model_settings_header.dart
+    ├── model_settings_parameter_field.dart
+    ├── model_settings_system_prompt.dart
+    ├── settings_about_section.dart
+    ├── settings_accessibility_section.dart
+    ├── settings_appearance_section.dart
+    └── ...
 ```
 
 `ModelState` (`model_provider.dart`) tracks `favoriteModelIds`, `usageCounts` (per-model `int`), and `lastUsed` (per-model timestamp), all persisted in `SharedPreferences` alongside the selected model. `setSelectedModel` increments the usage count and refreshes `lastUsed`. The `recentModels` getter returns the top-6 models merged by usage count (desc) then last-used timestamp (desc), limited to currently available models. `ModelsScreen` renders these in a horizontal "stories"-style `_RecentModelsSection` above the grouped provider list, with a localized "Recent" header (6 languages).
@@ -482,13 +630,13 @@ flutter gen-l10n             # ONLY after editing lib/l10n/*.arb
 flutter analyze             # lint (tests excluded via analysis_options.yaml)
 dart analyze <file1> <file2>  # targeted lint on specific files
 flutter test                # unit + widget tests
-dart test test/core/ai/catalog/unit/provider_catalog_service_test.dart  # catalog tests (43 cases)
+dart test test/core/llm/unit/provider_catalog_service_test.dart  # catalog tests
 LIBGL_ALWAYS_SOFTWARE=1 flutter run -d linux  # Linux software rendering
 ```
 
 ## Testing Strategy
 
-- Unit tests: Business logic, services, providers. Key suite: `test/core/ai/catalog/unit/provider_catalog_service_test.dart` (43 tests covering cache, persistence, custom providers, edge cases).
+- Unit tests: Business logic, services, providers. Key suite: `test/core/llm/unit/provider_catalog_service_test.dart` (43 tests covering cache, persistence, custom providers, edge cases).
 - Widget tests: UI components, auto-scroll behavior, rendering.
 - Integration tests: Currently problematic; run via standalone scripts (e.g., `integration_test/api_test.dart`).
 - `flutter analyze` clean required; tests do not block lint.

@@ -1,7 +1,8 @@
 import 'package:path/path.dart' as p;
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
-import 'dart:io';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
+import 'package:chatorai/shared/utils/path_sandbox.dart';
 
 ToolDef createExternalDirectoryTool() {
   return ToolDef(
@@ -30,17 +31,22 @@ ToolDef createExternalDirectoryTool() {
       }
 
       final bypass = input['bypass'] as bool? ?? false;
-      final boundary = FilesystemBoundary(workspace: Directory.current);
+      final boundary = FilesystemBoundary(workspace: workspaceRuntimeCurrent);
       final resolution = boundary.resolve(target);
 
       if (!resolution.isExternal || bypass) {
         return const ToolOutput('ok');
       }
 
+      final patterns = externalDirectoryGlobPatterns(
+        p.dirname(resolution.path),
+        workspacePath: workspaceRuntimeCurrent.path,
+        fallback: resolution.path,
+      );
       await ctx.ask(
         permission: 'external_directory',
-        patterns: [resolution.path],
-        always: [resolution.path],
+        patterns: patterns,
+        always: patterns,
         metadata: {
           'filepath': resolution.path,
           'parentDir': p.dirname(resolution.path),

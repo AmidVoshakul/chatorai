@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
-import 'package:chatorai/features/chat/data/models/chat/todo_part.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/todo_part.dart';
 import 'package:drift/drift.dart';
+
 import 'database.dart' as db;
 import 'events.dart';
 import 'session_id.dart';
@@ -79,7 +79,7 @@ class EventStore {
               ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
             .get();
 
-    return rows.map<SessionEvent>(_deserialize).toList();
+    return rows.map<SessionEvent>(EventStore.deserializeEvent).toList();
   }
 
   /// Returns all events for the given [sessionIds] in a single query, ordered
@@ -94,7 +94,20 @@ class EventStore {
               ..where((e) => e.sessionId.isIn(sessionIds.map((s) => s.value)))
               ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
             .get();
-    return rows.map<SessionEvent>(_deserialize).toList();
+    return rows.map<SessionEvent>(EventStore.deserializeEvent).toList();
+  }
+
+  /// Returns all raw event rows for the given [sessionIds] in a single query,
+  /// ordered by [sequence]. No deserialization — callers can decode off the
+  /// main isolate (e.g. inside `Isolate.run`).
+  Future<List<db.Event>> getEventRowsForSessions(
+    List<SessionID> sessionIds,
+  ) async {
+    if (sessionIds.isEmpty) return const [];
+    final query = _db.select(_db.events)
+      ..where((e) => e.sessionId.isIn(sessionIds.map((s) => s.value)));
+    query.orderBy([(e) => OrderingTerm(expression: e.sequence)]);
+    return query.get();
   }
 
   /// Stream events for a session — emits the full ordered list on every
@@ -104,7 +117,10 @@ class EventStore {
           ..where((e) => e.sessionId.equals(sessionId.value))
           ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
         .watch()
-        .map((rows) => rows.map<SessionEvent>(_deserialize).toList());
+        .map(
+          (rows) =>
+              rows.map<SessionEvent>(EventStore.deserializeEvent).toList(),
+        );
   }
 
   /// Same as [streamEvents] but filters out ephemeral delta events
@@ -134,7 +150,10 @@ class EventStore {
           ..where((e) => e.sequence.isBiggerThanValue(afterSeq))
           ..orderBy([(e) => OrderingTerm(expression: e.sequence)]))
         .watch()
-        .map((rows) => rows.map<SessionEvent>(_deserialize).toList());
+        .map(
+          (rows) =>
+              rows.map<SessionEvent>(EventStore.deserializeEvent).toList(),
+        );
   }
 
   /// Returns all durable (non-delta) events for a session ordered by sequence.
@@ -178,6 +197,16 @@ class EventStore {
     return rows.isEmpty ? 0 : rows.first.sequence;
   }
 
+  /// Returns the number of events for [sessionId].
+  Future<int> countEventsForSession(SessionID sessionId) async {
+    final count =
+        await (_db.selectOnly(_db.events)
+              ..where(_db.events.sessionId.equals(sessionId.value))
+              ..addColumns([_db.events.id.count()]))
+            .getSingle();
+    return count.read(_db.events.id.count()) ?? 0;
+  }
+
   /// Delete all events belonging to [sessionId].
   Future<void> deleteSessionEvents(SessionID sessionId) async {
     await (_db.delete(
@@ -198,6 +227,7 @@ class EventStore {
         'agent': e.agent,
         'modelRef': e.modelRef,
         'permission': _serializePermission(e.permission),
+        'directory': e.directory,
       },
       SessionArchived _ => {'type': 'SessionArchived'},
       SessionAgentSwitched e => {
@@ -268,16 +298,23 @@ class EventStore {
         'toolCallId': e.toolCallId,
         'toolName': e.toolName,
         'input': e.input,
+        if (e.partId != null) 'partId': e.partId,
       },
       ToolSuccess e => {
         'type': 'ToolSuccess',
         'toolCallId': e.toolCallId,
         'outputText': e.outputText,
+        if (e.input != null) 'input': e.input,
+        if (e.partId != null) 'partId': e.partId,
+        if (e.durationMs != 0) 'durationMs': e.durationMs,
       },
       ToolFailed e => {
         'type': 'ToolFailed',
         'toolCallId': e.toolCallId,
         'error': e.error,
+        if (e.input != null) 'input': e.input,
+        if (e.partId != null) 'partId': e.partId,
+        if (e.durationMs != 0) 'durationMs': e.durationMs,
       },
       StepStarted e => {'type': 'StepStarted', 'stepNumber': e.stepNumber},
       StepEnded e => {
@@ -293,7 +330,12 @@ class EventStore {
         'error': e.error,
       },
       CompactionStarted _ => {'type': 'CompactionStarted'},
-      CompactionEnded e => {'type': 'CompactionEnded', 'summary': e.summary},
+      CompactionEnded e => {
+        'type': 'CompactionEnded',
+        'summary': e.summary,
+        'tailStartId': e.tailStartId,
+        'compactedContext': e.compactedContext,
+      },
       ChildSessionCreated e => {
         'type': 'ChildSessionCreated',
         'parentSessionId': e.parentSessionId.value,
@@ -319,11 +361,29 @@ class EventStore {
         'agent': e.agent,
         'taskSessionId': e.taskSessionId,
       },
-      TaskPartCompleted e => {'type': 'TaskPartCompleted', 'partId': e.partId},
+      TaskPartCompleted e => {
+        'type': 'TaskPartCompleted',
+        'partId': e.partId,
+        'toolCallsCount': e.toolCallsCount,
+      },
       TaskPartError e => {
         'type': 'TaskPartError',
         'partId': e.partId,
         'error': e.error,
+        'toolCallsCount': e.toolCallsCount,
+      },
+      MessageUpdated e => {
+        'type': 'MessageUpdated',
+        'messageId': e.messageId,
+        if (e.content != null) 'content': e.content,
+        if (e.reasoning != null) 'reasoning': e.reasoning,
+        if (e.model != null) 'model': e.model,
+        if (e.error != null) 'error': e.error,
+      },
+      MessageDeleted e => {'type': 'MessageDeleted', 'messageId': e.messageId},
+      SessionTitleUpdated e => {
+        'type': 'SessionTitleUpdated',
+        'title': e.title,
       },
       QuestionPartStarted e => {
         'type': 'QuestionPartStarted',
@@ -342,10 +402,16 @@ class EventStore {
         'todos': e.todos,
       },
       TodoPartCompleted e => {'type': 'TodoPartCompleted', 'partId': e.partId},
+      ToolStarted e => {
+        'type': 'ToolStarted',
+        'toolCallId': e.toolCallId,
+        'toolName': e.toolName,
+        if (e.partId != null) 'partId': e.partId,
+      },
     };
   }
 
-  SessionEvent _deserialize(db.Event row) {
+  static SessionEvent deserializeEvent(db.Event row) {
     final data = jsonDecode(row.eventData) as Map<String, dynamic>;
     final type = data['type'] as String;
 
@@ -363,6 +429,7 @@ class EventStore {
         permission: _deserializePermission(
           data['permission'] as Map<String, dynamic>?,
         ),
+        directory: data['directory'] as String?,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -458,6 +525,14 @@ class EventStore {
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
+      'ToolStarted' => ToolStarted(
+        sessionId: sid,
+        toolCallId: data['toolCallId'] as String,
+        toolName: data['toolName'] as String,
+        partId: data['partId'] as String?,
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
       'ToolCalled' => ToolCalled(
         sessionId: sid,
         toolCallId: data['toolCallId'] as String,
@@ -472,6 +547,10 @@ class EventStore {
         toolCallId: data['toolCallId'] as String,
         outputText: data['outputText'] as String,
         partId: data['partId'] as String?,
+        input: data['input'] is Map
+            ? Map<String, dynamic>.from(data['input'] as Map)
+            : null,
+        durationMs: data['durationMs'] as int? ?? 0,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -480,6 +559,10 @@ class EventStore {
         toolCallId: data['toolCallId'] as String,
         error: data['error'] as String,
         partId: data['partId'] as String?,
+        input: data['input'] is Map
+            ? Map<String, dynamic>.from(data['input'] as Map)
+            : null,
+        durationMs: data['durationMs'] as int? ?? 0,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -515,6 +598,9 @@ class EventStore {
       'CompactionEnded' => CompactionEnded(
         sessionId: sid,
         summary: data['summary'] as String,
+        tailStartId: data['tailStartId'] as String?,
+        compactedContext: (data['compactedContext'] as List<dynamic>?)
+            ?.cast<Map<String, dynamic>>(),
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -556,6 +642,7 @@ class EventStore {
       'TaskPartCompleted' => TaskPartCompleted(
         sessionId: sid,
         partId: data['partId'] as String,
+        toolCallsCount: data['toolCallsCount'] as int? ?? 0,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -563,6 +650,29 @@ class EventStore {
         sessionId: sid,
         partId: data['partId'] as String,
         error: data['error'] as String,
+        toolCallsCount: data['toolCallsCount'] as int? ?? 0,
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'MessageUpdated' => MessageUpdated(
+        sessionId: sid,
+        messageId: data['messageId'] as String,
+        content: data['content'] as String?,
+        reasoning: data['reasoning'] as String?,
+        model: data['model'] as String?,
+        error: data['error'] as String?,
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'MessageDeleted' => MessageDeleted(
+        sessionId: sid,
+        messageId: data['messageId'] as String,
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'SessionTitleUpdated' => SessionTitleUpdated(
+        sessionId: sid,
+        title: data['title'] as String,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),
@@ -610,56 +720,11 @@ class EventStore {
   }
 
   Map<String, dynamic>? _serializePermission(PermissionRuleset? pr) {
-    if (pr == null) return null;
-    if (pr.rules.isEmpty && pr.sessionApproved.isEmpty) return null;
-    return {
-      'rules': pr.rules
-          .map(
-            (r) => {
-              'permission': r.permission,
-              'pattern': r.pattern,
-              'action': r.action.name,
-            },
-          )
-          .toList(),
-      'sessionApproved': pr.sessionApproved
-          .map(
-            (r) => {
-              'permission': r.permission,
-              'pattern': r.pattern,
-              'action': r.action.name,
-            },
-          )
-          .toList(),
-    };
+    return PermissionRulesetCodec.toJson(pr);
   }
 
-  PermissionRuleset? _deserializePermission(Map<String, dynamic>? data) {
-    if (data == null) return null;
-    return PermissionRuleset(
-      rules:
-          (data['rules'] as List<dynamic>?)
-              ?.map(
-                (r) => PermissionRule(
-                  permission: r['permission'] as String,
-                  pattern: r['pattern'] as String,
-                  action: PermissionAction.values.byName(r['action'] as String),
-                ),
-              )
-              .toList() ??
-          [],
-      sessionApproved:
-          (data['sessionApproved'] as List<dynamic>?)
-              ?.map(
-                (r) => PermissionRule(
-                  permission: r['permission'] as String,
-                  pattern: r['pattern'] as String,
-                  action: PermissionAction.values.byName(r['action'] as String),
-                ),
-              )
-              .toList() ??
-          [],
-    );
+  static PermissionRuleset? _deserializePermission(Map<String, dynamic>? data) {
+    return PermissionRulesetCodec.fromJson(data);
   }
 
   /// Compute the next sequence number for a session by reading the current

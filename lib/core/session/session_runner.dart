@@ -1,14 +1,18 @@
+import 'dart:async';
+
+import 'package:ai_sdk_dart/ai_sdk_dart.dart';
 import 'package:chatorai/core/agents/agent_registry.dart';
-import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:chatorai/core/permission/rule.dart';
+import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/core/session/event_bus.dart';
 import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_state.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
-    show AssistantText;
-import 'package:ai_sdk_dart/ai_sdk_dart.dart';
+import 'package:chatorai/core/tools/built_in/task_shared.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
+import 'package:chatorai/core/chat/chat/assistant_content.dart'
+    show AssistantText, AssistantTool;
 import 'package:synchronized/synchronized.dart';
 
 /// Collects the results of concurrent delegated tasks ("the box") for a single
@@ -102,30 +106,18 @@ class SessionRunnerHolder {
   /// routing — that uses [childToTaskPart].
   String? activeChildSessionId;
 
-  /// Callback fired when a child tool starts executing during task delegation.
-  /// Receives the child session ID so the parent can route the event to the
-  /// correct TaskPart even when several tasks run concurrently.
+  /// Tracks all active child [SessionRunnerSession] instances so they can be
+  /// cancelled atomically when the parent stream is aborted.
+  final Map<String, SessionRunnerSession> _childSessions = {};
+
+  void Function(String childSessionId)? onChildSessionResolved;
+  void Function(String taskPartId, String description, String agent)?
+  onTaskStart;
+  void Function(String taskPartId)? onTaskEnd;
   void Function(String childSessionId, String toolName, String? title)?
   onChildToolEvent;
 
-  /// Callback fired as soon as the child session for a delegated task is
-  /// created, carrying its session ID. The parent wires this to resolve the
-  /// TaskPart's `taskSessionId` so the widget can read the child's live tool
-  /// results (and render the sub-agent's current tool title dynamically).
-  void Function(String childSessionId)? onChildSessionResolved;
-
-  /// Callback that creates the visible TaskPart card for a delegated task
-  /// (used by both the single `task` tool and the `task_container`). Fired
-  /// from [runTaskInChild] once the child session is registered, so the chat
-  /// shows the task card with its live tool title instead of a raw tool
-  /// header.
-  void Function(String taskPartId, String description, String agent)?
-  onTaskStart;
-
-  /// Callback that finalizes the visible TaskPart card for a delegated task
-  /// (mirrors [onTaskStart]). Fired from [runTaskInChild] when the child
-  /// session completes or errors, so the card stops showing a spinner.
-  void Function(String taskPartId)? onTaskEnd;
+  SessionRunnerHolder(this.runner, {this.parentSessionId});
 
   /// Registers the link between a child session and its parent task part.
   void registerChild(String childSessionId, String taskPartId) {
@@ -134,17 +126,50 @@ class SessionRunnerHolder {
     activeChildSessionId = childSessionId;
   }
 
+  /// Tracks an active child session so it can be cancelled later.
+  void registerChildSession(
+    String childSessionId,
+    SessionRunnerSession session,
+  ) {
+    _childSessions[childSessionId] = session;
+  }
+
   /// Returns the parent task part ID for a child session, if registered.
   String? taskPartForChild(String childSessionId) =>
       childToTaskPart[childSessionId];
 
-  /// Removes the link for a finished child session.
+  /// Removes the link and session tracker for a finished child session.
   void unregisterChild(String childSessionId) {
     final taskPartId = childToTaskPart.remove(childSessionId);
     if (taskPartId != null) taskPartToChild.remove(taskPartId);
+    _childSessions.remove(childSessionId);
   }
 
-  SessionRunnerHolder(this.runner, {this.parentSessionId});
+  /// Cancels all running child sessions. Safe to call multiple times.
+  void cancelAllChildren() {
+    for (final entry in _childSessions.entries) {
+      try {
+        entry.value.dispose();
+      } on Object catch (_) {
+        // ignore
+      }
+      final taskPartId = childToTaskPart[entry.key];
+      if (taskPartId != null && parentSessionId != null) {
+        final now = DateTime.now();
+        final failedEvent = TaskPartError(
+          sessionId: SessionID.fromString(parentSessionId!),
+          partId: taskPartId,
+          error: 'cancelled',
+          timestamp: now,
+        );
+        unawaited(runner?.repository.appendEvent(failedEvent));
+        runner?.eventBus?.emit(failedEvent);
+      }
+    }
+    _childSessions.clear();
+    childToTaskPart.clear();
+    taskPartToChild.clear();
+  }
 }
 
 class TaskChildResult {
@@ -162,8 +187,9 @@ class TaskChildResult {
 class SessionRunner {
   final SessionRepository repository;
   final ToolRegistry? toolRegistry;
+  final SessionEventBus? eventBus;
 
-  SessionRunner(this.repository, this.toolRegistry);
+  SessionRunner(this.repository, this.toolRegistry, {this.eventBus});
 
   SessionRunnerSession startSession({
     required String agent,
@@ -184,6 +210,7 @@ class SessionRunner {
           ? SessionID.fromString(parentSessionId)
           : null,
       toolRegistry: toolRegistry,
+      eventBus: eventBus,
     );
   }
 
@@ -193,18 +220,25 @@ class SessionRunner {
   ///
   /// When [sessionId] is provided (continuation), reuses the existing session
   /// without emitting a new [SessionCreated] event.
+  ///
+  /// [messageId] seeds the id of the assistant message being streamed. Pass it
+  /// when the caller already appended an assistant placeholder via
+  /// `MessageAdded` so `onChunk` writes into that same message (no duplicates).
   Future<SessionRunnerSession> startInitializedSession({
     required String agent,
     String? modelRef,
     String? title,
     String? parentSessionId,
     SessionID? sessionId,
+    String? messageId,
   }) async {
     if (sessionId != null) {
       return SessionRunnerSession.forExisting(
         repository: repository,
         sessionId: sessionId,
         toolRegistry: toolRegistry,
+        eventBus: eventBus,
+        initialMessageId: messageId,
       );
     }
     final session = startSession(
@@ -295,17 +329,28 @@ class SessionRunner {
       repository: repository,
       sessionId: childId,
       immediate: true,
+      eventBus: eventBus,
     );
 
     final effectivePartId = taskPartId ?? taskId ?? childId.value;
     holder?.registerChild(childId.value, effectivePartId);
+    holder?.registerChildSession(childId.value, childSession);
     holder?.batch.add(effectivePartId, effectiveAgent);
     holder?.onChildSessionResolved?.call(childId.value);
-    holder?.onTaskStart?.call(
-      effectivePartId,
-      title ?? taskPrompt,
-      effectiveAgent,
+
+    // Register the task part in the parent session so the projector creates
+    // an AssistantTask and the parent UI can display it live.
+    final now = DateTime.now();
+    final startedEvent = TaskPartStarted(
+      sessionId: parentSessionId,
+      partId: effectivePartId,
+      description: title ?? taskPrompt,
+      agent: effectiveAgent,
+      taskSessionId: childId.value,
+      timestamp: now,
     );
+    unawaited(repository.appendEvent(startedEvent));
+    eventBus?.emit(startedEvent);
 
     // Persist user prompt as first message in child session (mirrors parent UX)
     await childSession.publishUserMessage(content: taskPrompt);
@@ -316,6 +361,20 @@ class SessionRunner {
       final fullText = state == null
           ? ''
           : state.parts.whereType<AssistantText>().map((p) => p.text).join();
+      final toolCallsCount = state == null
+          ? 0
+          : state.parts.whereType<AssistantTool>().length;
+
+      // Publish child completion on the parent session so the projector
+      // updates the AssistantTask to completed.
+      final completedEvent = TaskPartCompleted(
+        sessionId: parentSessionId,
+        partId: effectivePartId,
+        toolCallsCount: toolCallsCount,
+        timestamp: DateTime.now(),
+      );
+      unawaited(repository.appendEvent(completedEvent));
+      eventBus?.emit(completedEvent);
 
       // Drop the child's output into the shared batch ("the box") and publish
       // it on the parent session so the parent sees completion as it happens.
@@ -324,7 +383,7 @@ class SessionRunner {
         parentSessionId: parentSessionId,
         childSessionId: childId,
         output: fullText,
-        taskId: taskId,
+        taskId: effectivePartId,
       );
       return TaskChildResult(fullText, sessionId: childId);
     } catch (e) {
@@ -332,16 +391,28 @@ class SessionRunner {
       // (allDone flips) and the parent session learns of the failure instead
       // of showing a phantom success.
       holder?.batch.fail(effectivePartId);
+      final childStateOnError = await repository.loadSession(childId);
+      final toolCallsCountOnError = childStateOnError == null
+          ? 0
+          : childStateOnError.parts.whereType<AssistantTool>().length;
+      final failedEvent = TaskPartError(
+        sessionId: parentSessionId,
+        partId: effectivePartId,
+        error: e.toString(),
+        toolCallsCount: toolCallsCountOnError,
+        timestamp: DateTime.now(),
+      );
+      unawaited(repository.appendEvent(failedEvent));
+      eventBus?.emit(failedEvent);
       await repository.propagateChildOutput(
         parentSessionId: parentSessionId,
         childSessionId: childId,
         output: '',
-        taskId: taskId,
+        taskId: effectivePartId,
       );
       rethrow;
     } finally {
       holder?.unregisterChild(childId.value);
-      holder?.onTaskEnd?.call(effectivePartId);
       childSession.dispose();
     }
   }
@@ -363,18 +434,18 @@ class SessionRunnerSession {
   String? _openTextPartId;
   String? _openReasoningPartId;
 
-  /// Streaming deltas are buffered in memory and flushed to the event store
-  /// in batches (like opencode's `fragments`), so a long token stream does
-  /// not open one database transaction — and emit one `streamEvents`
-  /// notification — per token.
-  static const int _flushThreshold = 1024;
   final StringBuffer _pendingText = StringBuffer();
   final StringBuffer _pendingReasoning = StringBuffer();
   final StringBuffer _fullText = StringBuffer();
   final StringBuffer _fullReasoning = StringBuffer();
 
+  int _toolRunningCount = 0;
+  final StringBuffer _bufferedReasoning = StringBuffer();
+
   final Map<String, String> _toolPartIds = {};
   final Set<String> _startedToolCalls = {};
+
+  final SessionEventBus? eventBus;
 
   /// Serializes all per-session streaming mutations. The hot path
   /// (`onChunk`/`onReasoning`) is invoked `unawaited` per token, so without a
@@ -396,6 +467,7 @@ class SessionRunnerSession {
     SessionID? parentId,
     this.toolRegistry,
     this.immediate = false,
+    this.eventBus,
   }) : _agent = agent,
        _modelRef = modelRef,
        _title = title,
@@ -404,16 +476,25 @@ class SessionRunnerSession {
 
   /// Creates a session runner for an already-existing session (e.g. created by [SessionRepository.createChildSession]).
   /// The session is already initialized, so this constructor sets [initialized] to true.
+  ///
+  /// When [initialMessageId] is provided (continuation of a chat that already
+  /// appended an assistant placeholder via `MessageAdded`), the first
+  /// `onChunk` will target that message id instead of generating a fresh
+  /// `msg_…` id — otherwise the projector creates a second assistant message
+  /// and the replayed chat list shows duplicate bubbles.
   SessionRunnerSession.forExisting({
     required this.repository,
     required this.sessionId,
     this.toolRegistry,
     this.immediate = false,
+    this.eventBus,
+    String? initialMessageId,
   }) : _agent = null,
        _modelRef = null,
        _title = null,
        _parentId = null,
-       initialized = true;
+       initialized = true,
+       messageId = initialMessageId;
 
   String _genPartId(String suffix) =>
       'part_${DateTime.now().microsecondsSinceEpoch}_$suffix';
@@ -426,16 +507,16 @@ class SessionRunnerSession {
       _lock.synchronized(() async {
         if (initialized) return;
         final now = DateTime.now();
-        await repository.appendEvent(
-          SessionCreated(
-            sessionId: sessionId,
-            parentId: _parentId,
-            agent: agent ?? _agent ?? 'general',
-            modelRef: modelRef ?? _modelRef,
-            title: title ?? _title ?? '',
-            timestamp: now,
-          ),
+        final event = SessionCreated(
+          sessionId: sessionId,
+          parentId: _parentId,
+          agent: agent ?? _agent ?? 'general',
+          modelRef: modelRef ?? _modelRef,
+          title: title ?? _title ?? '',
+          timestamp: now,
         );
+        await repository.appendEvent(event);
+        eventBus?.emit(event);
         initialized = true;
       });
 
@@ -445,41 +526,46 @@ class SessionRunnerSession {
       messageId ??= _genMessageId();
       await _closeReasoningIfOpen();
       _openTextPartId = _genPartId('text');
-      await repository.appendEvent(
-        TextStarted(
-          sessionId: sessionId,
-          messageId: messageId!,
-          partId: _openTextPartId,
-          timestamp: DateTime.now(),
-        ),
+      final event = TextStarted(
+        sessionId: sessionId,
+        messageId: messageId!,
+        partId: _openTextPartId,
+        timestamp: DateTime.now(),
       );
+      await repository.appendEvent(event);
+      eventBus?.emit(event);
     }
     _pendingText.write(content);
     _fullText.write(content);
-    if (_pendingText.length >= _flushThreshold) {
-      await _flushTextDeltas();
-    }
+    await _flushTextDeltas();
   });
 
   Future<void> onReasoning(String content) => _lock.synchronized(() async {
     if (!initialized || _finalized || content.isEmpty) return;
-    _pendingReasoning.write(content);
-    _fullReasoning.write(content);
+    if (_toolRunningCount > 0) {
+      _bufferedReasoning.write(content);
+      return;
+    }
     if (_openReasoningPartId == null) {
       messageId ??= _genMessageId();
       _openReasoningPartId = _genPartId('reasoning');
-      await repository.appendEvent(
-        ReasoningStarted(
-          sessionId: sessionId,
-          messageId: messageId!,
-          partId: _openReasoningPartId!,
-          timestamp: DateTime.now(),
-        ),
+      final event = ReasoningStarted(
+        sessionId: sessionId,
+        messageId: messageId!,
+        partId: _openReasoningPartId!,
+        timestamp: DateTime.now(),
       );
+      await repository.appendEvent(event);
+      eventBus?.emit(event);
     }
-    if (_pendingReasoning.length >= _flushThreshold) {
-      await _flushReasoningDeltas();
-    }
+    _pendingReasoning.write(content);
+    _fullReasoning.write(content);
+    await _flushReasoningDeltas();
+  });
+
+  Future<void> onReasoningEnd() => _lock.synchronized(() async {
+    if (!initialized || _finalized) return;
+    await _closeReasoningIfOpen();
   });
 
   /// Flush buffered text deltas to the event store as a single batched event.
@@ -490,15 +576,15 @@ class SessionRunnerSession {
     }
     final delta = _pendingText.toString();
     _pendingText.clear();
-    await repository.appendEvents([
-      TextDelta(
-        sessionId: sessionId,
-        messageId: messageId!,
-        partId: _openTextPartId!,
-        delta: delta,
-        timestamp: DateTime.now(),
-      ),
-    ]);
+    final event = TextDelta(
+      sessionId: sessionId,
+      messageId: messageId!,
+      partId: _openTextPartId!,
+      delta: delta,
+      timestamp: DateTime.now(),
+    );
+    await repository.appendEvents([event]);
+    eventBus?.emit(event);
   }
 
   /// Flush buffered reasoning deltas to the event store as a single batched
@@ -511,15 +597,61 @@ class SessionRunnerSession {
     }
     final delta = _pendingReasoning.toString();
     _pendingReasoning.clear();
-    await repository.appendEvents([
-      ReasoningDelta(
-        sessionId: sessionId,
-        messageId: messageId!,
-        partId: _openReasoningPartId!,
-        delta: delta,
-        timestamp: DateTime.now(),
-      ),
-    ]);
+    final event = ReasoningDelta(
+      sessionId: sessionId,
+      messageId: messageId!,
+      partId: _openReasoningPartId!,
+      delta: delta,
+      timestamp: DateTime.now(),
+    );
+    await repository.appendEvents([event]);
+    eventBus?.emit(event);
+  }
+
+  /// Closes an open reasoning part. Must only be called from within a
+  /// [_lock.synchronized] section.
+  Future<void> _closeReasoningIfOpen() async {
+    if (_openReasoningPartId == null || messageId == null) return;
+    await _flushReasoningDeltas();
+    final event = ReasoningEnded(
+      sessionId: sessionId,
+      messageId: messageId!,
+      fullReasoning: _fullReasoning.toString(),
+      partId: _openReasoningPartId!,
+      timestamp: DateTime.now(),
+    );
+    await repository.appendEvent(event);
+    eventBus?.emit(event);
+    _openReasoningPartId = null;
+    _pendingReasoning.clear();
+    _fullReasoning.clear();
+  }
+
+  Future<void> _decrementToolRunning() async {
+    _toolRunningCount--;
+    if (_toolRunningCount <= 0) {
+      _toolRunningCount = 0;
+      await _flushBufferedReasoning();
+    }
+  }
+
+  Future<void> _flushBufferedReasoning() async {
+    if (_bufferedReasoning.isEmpty || messageId == null) return;
+    final partId = _genPartId('reasoning');
+    final now = DateTime.now();
+    _openReasoningPartId = partId;
+    _pendingReasoning.write(_bufferedReasoning.toString());
+    _fullReasoning.write(_bufferedReasoning.toString());
+    final startedEvent = ReasoningStarted(
+      sessionId: sessionId,
+      messageId: messageId!,
+      partId: partId,
+      timestamp: now,
+    );
+    await repository.appendEvent(startedEvent);
+    eventBus?.emit(startedEvent);
+    await _closeReasoningIfOpen();
+    _bufferedReasoning.clear();
   }
 
   Future<void> onToolStart(
@@ -528,22 +660,42 @@ class SessionRunnerSession {
     Map<String, dynamic> input,
   ) => _lock.synchronized(() async {
     if (!initialized) return;
+    if (isDelegatedTool(toolName)) return;
     if (!_startedToolCalls.add(toolCallId)) return;
     final partId = _genPartId(toolCallId);
     _toolPartIds[toolCallId] = partId;
-    await _closeReasoningIfOpen();
     await _flushTextDeltas();
+    await _closeReasoningIfOpen();
     _openTextPartId = null;
+    _toolRunningCount++;
     await repository.appendEvent(
-      ToolCalled(
+      ToolStarted(
         sessionId: sessionId,
         toolCallId: toolCallId,
         toolName: toolName,
-        input: input,
         partId: partId,
         timestamp: DateTime.now(),
       ),
     );
+    eventBus?.emit(
+      ToolStarted(
+        sessionId: sessionId,
+        toolCallId: toolCallId,
+        toolName: toolName,
+        partId: partId,
+        timestamp: DateTime.now(),
+      ),
+    );
+    final event = ToolCalled(
+      sessionId: sessionId,
+      toolCallId: toolCallId,
+      toolName: toolName,
+      input: input,
+      partId: partId,
+      timestamp: DateTime.now(),
+    );
+    await repository.appendEvent(event);
+    eventBus?.emit(event);
   });
 
   Future<void> onToolEnd(
@@ -556,17 +708,19 @@ class SessionRunnerSession {
     if (!initialized) return;
     final partId = _toolPartIds[toolCallId];
     if (partId == null) return;
-    await repository.appendEvent(
-      ToolSuccess(
-        sessionId: sessionId,
-        toolCallId: toolCallId,
-        outputText: result,
-        partId: partId,
-        durationMs: durationMs,
-        input: input,
-        timestamp: DateTime.now(),
-      ),
+    final event = ToolSuccess(
+      sessionId: sessionId,
+      toolCallId: toolCallId,
+      outputText: result,
+      partId: partId,
+      durationMs: durationMs,
+      input: input,
+      timestamp: DateTime.now(),
     );
+    await repository.appendEvent(event);
+    eventBus?.emit(event);
+    _startedToolCalls.remove(toolCallId);
+    await _decrementToolRunning();
   });
 
   Future<void> onToolError(
@@ -577,38 +731,58 @@ class SessionRunnerSession {
     Map<String, dynamic>? input,
   }) => _lock.synchronized(() async {
     if (!initialized) return;
-    final partId = _toolPartIds[toolCallId];
-    if (partId == null) return;
-    await repository.appendEvent(
-      ToolFailed(
+    var partId = _toolPartIds[toolCallId];
+    if (partId == null) {
+      if (!_startedToolCalls.add(toolCallId)) return;
+      partId = _genPartId(toolCallId);
+      _toolPartIds[toolCallId] = partId;
+      _toolRunningCount++;
+      final calledEvent = ToolCalled(
         sessionId: sessionId,
         toolCallId: toolCallId,
-        error: error,
+        toolName: toolName,
+        input: input ?? const {},
         partId: partId,
-        durationMs: durationMs,
-        input: input,
         timestamp: DateTime.now(),
-      ),
+      );
+      await repository.appendEvent(calledEvent);
+      eventBus?.emit(calledEvent);
+    }
+    final event = ToolFailed(
+      sessionId: sessionId,
+      toolCallId: toolCallId,
+      error: error,
+      partId: partId,
+      durationMs: durationMs,
+      input: input,
+      timestamp: DateTime.now(),
     );
+    await repository.appendEvent(event);
+    eventBus?.emit(event);
+    _startedToolCalls.remove(toolCallId);
+    await _decrementToolRunning();
   });
 
-  /// Closes an open reasoning part. Must only be called from within a
-  /// [_lock.synchronized] section.
-  Future<void> _closeReasoningIfOpen() async {
-    if (_openReasoningPartId == null || messageId == null) return;
-    await _flushReasoningDeltas();
-    await repository.appendEvent(
-      ReasoningEnded(
+  /// Emits `ToolFailed` for every tool call that was started but never
+  /// completed. Must only be called from within a [_lock.synchronized] section.
+  Future<void> _finalizeRunningTools() async {
+    final now = DateTime.now();
+    for (final entry in _toolPartIds.entries) {
+      final callId = entry.key;
+      if (!_startedToolCalls.contains(callId)) continue;
+      final partId = entry.value;
+      final event = ToolFailed(
         sessionId: sessionId,
-        messageId: messageId!,
-        fullReasoning: _fullReasoning.toString(),
-        partId: _openReasoningPartId!,
-        timestamp: DateTime.now(),
-      ),
-    );
-    _openReasoningPartId = null;
-    _pendingReasoning.clear();
-    _fullReasoning.clear();
+        toolCallId: callId,
+        error: 'Tool execution aborted before completion.',
+        partId: partId,
+        timestamp: now,
+      );
+      await repository.appendEvent(event);
+      eventBus?.emit(event);
+    }
+    _toolPartIds.clear();
+    _startedToolCalls.clear();
   }
 
   Future<SessionState> onCompletion({
@@ -630,6 +804,8 @@ class SessionRunnerSession {
     _finalized = true;
     final now = DateTime.now();
 
+    await _closeReasoningIfOpen();
+
     // Flush any buffered streaming deltas before finalizing.
     await _flushTextDeltas();
     await _flushReasoningDeltas();
@@ -637,16 +813,16 @@ class SessionRunnerSession {
     // Close any open text
     if (_openTextPartId != null && messageId != null) {
       final fullText = content.isNotEmpty ? content : _fullText.toString();
-      await repository.appendEvent(
-        TextEnded(
-          sessionId: sessionId,
-          messageId: messageId!,
-          partId: _openTextPartId!,
-          fullText: fullText,
-          model: model,
-          timestamp: now,
-        ),
+      final event = TextEnded(
+        sessionId: sessionId,
+        messageId: messageId!,
+        partId: _openTextPartId!,
+        fullText: fullText,
+        model: model,
+        timestamp: now,
       );
+      await repository.appendEvent(event);
+      eventBus?.emit(event);
       _openTextPartId = null;
       _fullText.clear();
     }
@@ -656,31 +832,37 @@ class SessionRunnerSession {
       final reasonText =
           reasoning ??
           (_fullReasoning.isEmpty ? '' : _fullReasoning.toString());
-      await repository.appendEvent(
-        ReasoningEnded(
-          sessionId: sessionId,
-          messageId: messageId!,
-          partId: _openReasoningPartId!,
-          fullReasoning: reasonText,
-          timestamp: now,
-        ),
+      final event = ReasoningEnded(
+        sessionId: sessionId,
+        messageId: messageId!,
+        partId: _openReasoningPartId!,
+        fullReasoning: reasonText,
+        timestamp: now,
       );
+      await repository.appendEvent(event);
+      eventBus?.emit(event);
       _openReasoningPartId = null;
       _fullReasoning.clear();
     }
 
-    await repository.appendEvent(
-      StepEnded(
-        sessionId: sessionId,
-        stepNumber: 1,
-        tokensInput: tokensInput,
-        tokensOutput: tokensOutput,
-        tokensReasoning: tokensReasoning,
-        tokensCacheRead: tokensCacheRead,
-        tokensCacheWrite: tokensCacheWrite,
-        timestamp: now,
-      ),
+    await _flushBufferedReasoning();
+    _toolRunningCount = 0;
+    _bufferedReasoning.clear();
+
+    await _finalizeRunningTools();
+
+    final stepEvent = StepEnded(
+      sessionId: sessionId,
+      stepNumber: 1,
+      tokensInput: tokensInput,
+      tokensOutput: tokensOutput,
+      tokensReasoning: tokensReasoning,
+      tokensCacheRead: tokensCacheRead,
+      tokensCacheWrite: tokensCacheWrite,
+      timestamp: now,
     );
+    await repository.appendEvent(stepEvent);
+    eventBus?.emit(stepEvent);
 
     final loaded = await repository.loadSession(sessionId);
     return loaded ??
@@ -694,42 +876,52 @@ class SessionRunnerSession {
     if (_finalized) return;
     _finalized = true;
     final now = DateTime.now();
+
+    await _closeReasoningIfOpen();
+
     await _flushTextDeltas();
     if (_openTextPartId != null && messageId != null) {
-      await repository.appendEvent(
-        TextEnded(
-          sessionId: sessionId,
-          messageId: messageId!,
-          partId: _openTextPartId!,
-          fullText: _fullText.toString(),
-          timestamp: now,
-        ),
+      final event = TextEnded(
+        sessionId: sessionId,
+        messageId: messageId!,
+        partId: _openTextPartId!,
+        fullText: _fullText.toString(),
+        timestamp: now,
       );
+      await repository.appendEvent(event);
+      eventBus?.emit(event);
       _openTextPartId = null;
       _fullText.clear();
     }
     await _flushReasoningDeltas();
     if (_openReasoningPartId != null && messageId != null) {
-      await repository.appendEvent(
-        ReasoningEnded(
-          sessionId: sessionId,
-          messageId: messageId!,
-          partId: _openReasoningPartId!,
-          fullReasoning: _fullReasoning.toString(),
-          timestamp: now,
-        ),
+      final event = ReasoningEnded(
+        sessionId: sessionId,
+        messageId: messageId!,
+        partId: _openReasoningPartId!,
+        fullReasoning: _fullReasoning.toString(),
+        timestamp: now,
       );
+      await repository.appendEvent(event);
+      eventBus?.emit(event);
       _openReasoningPartId = null;
       _fullReasoning.clear();
     }
-    await repository.appendEvent(
-      StepFailed(
-        sessionId: sessionId,
-        stepNumber: 1,
-        error: error.toString(),
-        timestamp: now,
-      ),
+
+    await _flushBufferedReasoning();
+    _toolRunningCount = 0;
+    _bufferedReasoning.clear();
+
+    await _finalizeRunningTools();
+
+    final stepEvent = StepFailed(
+      sessionId: sessionId,
+      stepNumber: 1,
+      error: error.toString(),
+      timestamp: now,
     );
+    await repository.appendEvent(stepEvent);
+    eventBus?.emit(stepEvent);
   });
 
   Future<void> publishUserMessage({
@@ -738,15 +930,15 @@ class SessionRunnerSession {
   }) => _lock.synchronized(() async {
     if (!initialized) return;
     final id = messageId ?? _genMessageId();
-    await repository.appendEvent(
-      MessageAdded(
-        sessionId: sessionId,
-        messageId: id,
-        role: 'user',
-        content: content,
-        timestamp: DateTime.now(),
-      ),
+    final event = MessageAdded(
+      sessionId: sessionId,
+      messageId: id,
+      role: 'user',
+      content: content,
+      timestamp: DateTime.now(),
     );
+    await repository.appendEvent(event);
+    eventBus?.emit(event);
   });
 
   Future<void> onTaskStart({
@@ -756,44 +948,60 @@ class SessionRunnerSession {
     String? sessionId,
   }) => _lock.synchronized(() async {
     if (!initialized) return;
-    await repository.appendEvent(
-      TaskPartStarted(
-        sessionId: this.sessionId,
-        partId: partId,
-        description: description,
-        agent: agent,
-        taskSessionId: sessionId,
-        timestamp: DateTime.now(),
-      ),
+    final event = TaskPartStarted(
+      sessionId: this.sessionId,
+      partId: partId,
+      description: description,
+      agent: agent,
+      taskSessionId: sessionId,
+      timestamp: DateTime.now(),
     );
+    await repository.appendEvent(event);
+    eventBus?.emit(event);
   });
 
   Future<void> onTaskEnd(String partId) => _lock.synchronized(() async {
     if (!initialized) return;
-    await repository.appendEvent(
-      TaskPartCompleted(
-        sessionId: sessionId,
-        partId: partId,
-        timestamp: DateTime.now(),
-      ),
+    final state = await repository.loadSessionState(sessionId);
+    final toolCallsCount = state.parts.whereType<AssistantTool>().length;
+    final event = TaskPartCompleted(
+      sessionId: sessionId,
+      partId: partId,
+      toolCallsCount: toolCallsCount,
+      timestamp: DateTime.now(),
     );
+    await repository.appendEvent(event);
+    eventBus?.emit(event);
   });
 
   Future<void> onTaskError(String partId, String error) =>
       _lock.synchronized(() async {
         if (!initialized) return;
-        await repository.appendEvent(
-          TaskPartError(
-            sessionId: sessionId,
-            partId: partId,
-            error: error,
-            timestamp: DateTime.now(),
-          ),
+        final state = await repository.loadSessionState(sessionId);
+        final toolCallsCount = state.parts.whereType<AssistantTool>().length;
+        final event = TaskPartError(
+          sessionId: sessionId,
+          partId: partId,
+          error: error,
+          toolCallsCount: toolCallsCount,
+          timestamp: DateTime.now(),
         );
+        await repository.appendEvent(event);
+        eventBus?.emit(event);
       });
 
   void dispose() {
+    _finalized = true;
     _startedToolCalls.clear();
+    _toolPartIds.clear();
+    _openTextPartId = null;
+    _openReasoningPartId = null;
+    _pendingText.clear();
+    _pendingReasoning.clear();
+    _fullText.clear();
+    _fullReasoning.clear();
+    _toolRunningCount = 0;
+    _bufferedReasoning.clear();
     toolRegistry?.pruneSession(sessionId.value);
   }
 }

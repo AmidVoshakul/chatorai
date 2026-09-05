@@ -1,6 +1,5 @@
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/core/permission/rule.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
+import 'package:chatorai/core/chat/chat/assistant_content.dart';
 import 'package:equatable/equatable.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -46,6 +45,12 @@ class SessionMessage extends Equatable {
   final String? reasoning;
   final String? error;
   final DateTime createdAt;
+  final bool isCompactionTrigger;
+  final bool isCompactionSummary;
+  final String? agent;
+  final int? tokensInput;
+  final int? tokensOutput;
+  final int? tokensReasoning;
 
   const SessionMessage({
     required this.id,
@@ -56,6 +61,12 @@ class SessionMessage extends Equatable {
     this.reasoning,
     this.error,
     required this.createdAt,
+    this.isCompactionTrigger = false,
+    this.isCompactionSummary = false,
+    this.agent,
+    this.tokensInput,
+    this.tokensOutput,
+    this.tokensReasoning,
   });
 
   factory SessionMessage.fromJson(Map<String, dynamic> json) =>
@@ -72,6 +83,12 @@ class SessionMessage extends Equatable {
     String? reasoning,
     String? error,
     DateTime? createdAt,
+    bool? isCompactionTrigger,
+    bool? isCompactionSummary,
+    String? agent,
+    int? tokensInput,
+    int? tokensOutput,
+    int? tokensReasoning,
   }) {
     return SessionMessage(
       id: id ?? this.id,
@@ -82,6 +99,12 @@ class SessionMessage extends Equatable {
       reasoning: reasoning ?? this.reasoning,
       error: error ?? this.error,
       createdAt: createdAt ?? this.createdAt,
+      isCompactionTrigger: isCompactionTrigger ?? this.isCompactionTrigger,
+      isCompactionSummary: isCompactionSummary ?? this.isCompactionSummary,
+      agent: agent ?? this.agent,
+      tokensInput: tokensInput ?? this.tokensInput,
+      tokensOutput: tokensOutput ?? this.tokensOutput,
+      tokensReasoning: tokensReasoning ?? this.tokensReasoning,
     );
   }
 
@@ -95,6 +118,12 @@ class SessionMessage extends Equatable {
     reasoning,
     error,
     createdAt,
+    isCompactionTrigger,
+    isCompactionSummary,
+    agent,
+    tokensInput,
+    tokensOutput,
+    tokensReasoning,
   ];
 }
 
@@ -205,6 +234,10 @@ class SessionState extends Equatable {
   @Default([])
   final List<AssistantContent> parts;
 
+  final List<SessionMessage>? compactedContext;
+
+  final String? directory;
+
   final DateTime createdAt;
 
   final DateTime updatedAt;
@@ -227,6 +260,8 @@ class SessionState extends Equatable {
     this.messages = const [],
     this.toolResults = const [],
     this.parts = const [],
+    this.compactedContext,
+    this.directory,
     required this.createdAt,
     required this.updatedAt,
     this.archivedAt,
@@ -253,6 +288,8 @@ class SessionState extends Equatable {
     List<SessionMessage>? messages,
     List<ToolResult>? toolResults,
     List<AssistantContent>? parts,
+    List<SessionMessage>? compactedContext,
+    String? directory,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? archivedAt,
@@ -277,6 +314,8 @@ class SessionState extends Equatable {
       messages: messages ?? this.messages,
       toolResults: toolResults ?? this.toolResults,
       parts: parts ?? this.parts,
+      compactedContext: compactedContext ?? this.compactedContext,
+      directory: directory ?? this.directory,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       archivedAt: clearArchivedAt ? null : (archivedAt ?? this.archivedAt),
@@ -289,60 +328,11 @@ class SessionState extends Equatable {
   static String? _sessionIdNullableToJson(SessionID? value) => value?.value;
 
   static PermissionRuleset? _permissionFromJson(Map<String, dynamic>? json) {
-    if (json == null) return null;
-    final rules = (json['rules'] as List?)
-        ?.map(
-          (e) => PermissionRule(
-            permission: e['permission'] as String,
-            pattern: e['pattern'] as String,
-            action: PermissionAction.values.firstWhere(
-              (a) => a.name == e['action'] as String,
-              orElse: () => PermissionAction.ask,
-            ),
-          ),
-        )
-        .toList();
-    final sessionApproved = (json['sessionApproved'] as List?)
-        ?.map(
-          (e) => PermissionRule(
-            permission: e['permission'] as String,
-            pattern: e['pattern'] as String,
-            action: PermissionAction.values.firstWhere(
-              (a) => a.name == e['action'] as String,
-              orElse: () => PermissionAction.ask,
-            ),
-          ),
-        )
-        .toList();
-    return PermissionRuleset(
-      rules: rules ?? const [],
-      sessionApproved: sessionApproved ?? const [],
-    );
+    return PermissionRulesetCodec.fromJson(json);
   }
 
   static Map<String, dynamic>? _permissionToJson(PermissionRuleset? pr) {
-    if (pr == null) return null;
-    if (pr.rules.isEmpty && pr.sessionApproved.isEmpty) return null;
-    return {
-      'rules': pr.rules
-          .map(
-            (r) => {
-              'permission': r.permission,
-              'pattern': r.pattern,
-              'action': r.action.name,
-            },
-          )
-          .toList(),
-      'sessionApproved': pr.sessionApproved
-          .map(
-            (r) => {
-              'permission': r.permission,
-              'pattern': r.pattern,
-              'action': r.action.name,
-            },
-          )
-          .toList(),
-    };
+    return PermissionRulesetCodec.toJson(pr);
   }
 
   /// Raw string form for code that hasn't migrated to `SessionID` yet.
@@ -366,6 +356,8 @@ class SessionState extends Equatable {
     messages,
     toolResults,
     parts,
+    compactedContext,
+    directory,
     createdAt,
     updatedAt,
     archivedAt,

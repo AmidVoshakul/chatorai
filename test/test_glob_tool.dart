@@ -71,7 +71,16 @@ void main() {
             ({required question, options = const [], multiple = false}) async =>
                 '',
       );
-      await tool.execute({'pattern': '**/*.dart'}, ctx);
+      final externalDir = Directory('/tmp/glob_test_perm');
+      externalDir.createSync(recursive: true);
+      try {
+        await tool.execute({
+          'pattern': '**/*.dart',
+          'path': externalDir.path,
+        }, ctx);
+      } finally {
+        externalDir.deleteSync(recursive: true);
+      }
       expect(capturedPermission, equals('glob'));
       expect(capturedPatterns, contains('**/*.dart'));
     });
@@ -370,6 +379,8 @@ void main() {
     group('permission denial', () {
       test('propagates exception when ctx.ask throws', () async {
         final tool = createGlobTool();
+        final externalDir = Directory('/tmp/glob_test_deny');
+        externalDir.createSync(recursive: true);
         final ctx = ToolContext(
           toolCallId: 'test-deny',
           sessionId: 'test',
@@ -391,22 +402,22 @@ void main() {
         );
 
         await expectLater(
-          tool.execute({'pattern': '*.dart'}, ctx),
+          tool.execute({'pattern': '*.dart', 'path': externalDir.path}, ctx),
           throwsA(isA<Exception>()),
         );
+        externalDir.deleteSync(recursive: true);
       });
 
-      test('throws when path is outside sandbox', () async {
+      test('returns error when path does not exist', () async {
         final tool = createGlobTool();
         final ctx = _mockCtx();
 
-        await expectLater(
-          tool.execute({
-            'pattern': '*.dart',
-            'path': '/tmp/outside_project',
-          }, ctx),
-          throwsA(isA<ArgumentError>()),
-        );
+        final output = await tool.execute({
+          'pattern': '*.dart',
+          'path': '/tmp/outside_project',
+        }, ctx);
+        expect(output.metadata?['error'], isTrue);
+        expect(output.output, contains('directory not found'));
       });
     });
 

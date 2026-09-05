@@ -456,6 +456,12 @@ const List<SkillMarketplaceEntry> skillMarketplaceCatalog = [
     category: SkillCategory.design,
     assetSlug: 'mobile-design',
   ),
+  SkillMarketplaceEntry.bundled(
+    id: 'brainstorming',
+    displayName: 'Brainstorming',
+    category: SkillCategory.design,
+    assetSlug: 'brainstorming',
+  ),
   // ---- Other (marketplace expansion) ----
   SkillMarketplaceEntry.bundled(
     id: 'api-security-best-practices',

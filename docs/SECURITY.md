@@ -1,6 +1,6 @@
 # Security Model
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-08-21
 
 ChatORAI implements a defense-in-depth security approach, covering permission controls, secret handling, logging sanitization, and secure communication.
 
@@ -12,25 +12,27 @@ ChatORAI uses a granular permission system to control tool access. Permissions a
 
 Out of the box, the following defaults apply (source: `lib/core/permission/ruleset.dart` — `PermissionRuleset.defaults()`):
 
-| Permission             | Default Action |
-| ---------------------- | -------------- |
-| `read`                 | `allow`        |
-| `glob`                 | `allow`        |
-| `grep`                 | `allow`        |
-| `webfetch`             | `allow`        |
-| `websearch`            | `allow`        |
-| `task`                 | `allow`        |
-| `question`             | `allow`        |
-| `todowrite`            | `allow`        |
-| `skill`                | `allow`        |
-| `lsp`                  | `allow`        |
-| `bash`                 | `ask`          |
-| `edit`                 | `ask`          |
-| `write`                | `ask`          |
-| `doom_loop`            | `ask`          |
-| `external_directory`   | `ask`          |
+| Permission           | Default Action |
+| -------------------- | -------------- |
+| `read`               | `allow`        |
+| `glob`               | `allow`        |
+| `grep`               | `allow`        |
+| `webfetch`           | `allow`        |
+| `websearch`          | `allow`        |
+| `task`               | `deny`        |
+| `question`           | `deny`        |
+| `todowrite`          | `deny`        |
+| `skill`              | `allow`        |
+| `lsp`                | `allow`        |
+| `shell`              | `ask`          |
+| `edit`               | `ask`          |
+| `write`              | `ask`          |
+| `doom_loop`          | `ask`          |
+| `external_directory` | `ask`          |
+| `plan_enter`         | `deny`         |
+| `plan_exit`          | `deny`         |
 
-Tools without an explicit ruleset entry (`apply_patch`, `format`, `invalid`, `plan_exit`, `json_schema`) fall back to `ask` via the permission evaluator (`lib/core/permission/evaluator.dart`).
+Tools without an explicit ruleset entry (`apply_patch`, `format`, `invalid`, `json_schema`, `document_extract_pdf`, `document_extract_docx`, `document_extract_xlsx`) fall back to `ask` via the permission evaluator (`lib/core/permission/evaluator.dart`).
 
 ### Configuration
 
@@ -54,7 +56,7 @@ Example:
   "version": 1,
   "permission": {
     "read": "allow",
-    "bash": "deny",
+    "shell": "deny",
     "edit": {
       "*.env": "deny",
       "lib/**": "allow"
@@ -108,6 +110,7 @@ To prevent accidental leakage of sensitive data, the app sanitizes error message
 ## MCP Trust Boundary
 
 Tools discovered from external MCP servers are treated as **untrusted**:
+
 - MCP tool execution follows the same permission rules as built-in tools (`ask` by default).
 - MCP server configurations are stored in `chatorai.json` under the `mcp` section.
 - Stdio transport: server processes are spawned with restricted environment variables.
@@ -117,7 +120,7 @@ Tools discovered from external MCP servers are treated as **untrusted**:
 
 - Session data is persisted in a Drift SQLite database at `dataHome/chatorai.db`.
 - No session content is transmitted to external servers (only to the configured AI provider API).
-- `SessionState` and `SessionMessage` use immutable freezed models with consistent JSON serialization.
+- `SessionState` and `SessionMessage` use immutable `Equatable` models with `json_serializable` for consistent JSON serialization.
 
 ## Session Management
 

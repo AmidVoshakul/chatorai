@@ -2,65 +2,97 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' show PlatformDispatcher;
 
-import 'package:chatorai/features/bootstrap/bootstrap_error_screen.dart';
-import 'package:chatorai/features/bootstrap/splash_screen.dart';
-import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
-import 'package:chatorai/features/chat/presentation/widgets/permission_overlay.dart';
-import 'package:chatorai/features/settings/screens/settings_screen.dart';
-import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/core/cli/cli_commands.dart';
+import 'package:chatorai/core/cli/cwd_override.dart';
+import 'package:chatorai/gui/keyboard/global_shortcut_handler.dart';
+import 'package:chatorai/gui/features/bootstrap/app_loading_screen.dart';
+import 'package:chatorai/gui/features/bootstrap/bootstrap_error_screen.dart';
+import 'package:chatorai/gui/features/chat/presentation/screens/chat_screen.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/permission_overlay.dart';
+import 'package:chatorai/gui/features/settings/screens/settings_screen.dart';
+import 'package:chatorai/gui/shared/theme/app_theme.dart';
+import 'package:chatorai/gui/shared/widgets/network_aware_widget.dart';
+import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/logger.dart';
-import 'package:chatorai/shared/widgets/network_aware_widget.dart';
+import 'package:chatorai/core/config/config_provider.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
+import 'package:chatorai/gui/shared/workspace/riverpod_workspace_port.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ===========================================================================
 // MAIN ENTRY POINT
 // ===========================================================================
 
-void main(List<String> args) async {
-  // CLI mode (--help / stats / models / upgrade / --version) must be handled
-  // before any Flutter initialization so the engine never starts for non-GUI
-  // use. The compiled GUI binary embeds the same CLI logic. exit() ensures
-  // background workers (drift/sqlite isolate) don't keep the process alive.
-  if (await runCliIfRequested(args)) exit(0);
+final _navigatorKey = GlobalKey<NavigatorState>();
 
-  WidgetsFlutterBinding.ensureInitialized();
+Future<void> main(List<String> args) async {
+  // Force-init the lazy top-level before any zone getter can read it.
+  // Without this, IOOverrides.runZoned(getCurrentDirectory: () => workspaceRuntimeCurrent)
+  // can recurse: first touch inside the zone triggers the lazy initializer,
+  // which calls Directory.current -> zone getter -> workspaceRuntimeCurrent again.
+  workspaceRuntimeCurrent = Directory.current;
 
-  LogConfig.enabled = true;
-  LogConfig.minimumLevel = LogLevel.debug;
+  final cwdResult = detectCwdOverride(args);
 
-  // Catch unhandled errors from ai_sdk_dart's internal async contexts.
-  // These originate inside streamText() (which has its own _withRetry), then
-  // escape through the stream's error channel and reach the zone handler.
-  // They are already handled by ChatAiService._retry — we just prevent them
-  // from reaching VSCode's exception breakpoint.
-  final platformHandler = PlatformDispatcher.instance.onError;
-  PlatformDispatcher.instance.onError = (error, estack) {
-    if (error is DioException) {
-      LogTags.chatService.logDebug(
-        '[Global] swallowed DioException (handled by _retry)',
+  if (cwdResult.hasOverride) {
+    workspaceRuntimeCurrent = Directory(cwdResult.path!);
+  }
+
+  await IOOverrides.runZoned(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    if (!cwdResult.hasOverride) {
+      final initial = await resolveInitialWorkspace(
+        cliPath: null,
+        readLastUsed: () async => (await SharedPreferences.getInstance())
+            .getString(lastWorkspacePrefsKey),
       );
-      return true;
+      workspaceRuntimeCurrent = Directory(initial);
     }
-    if (error is TimeoutException) {
-      LogTags.chatService.logDebug(
-        '[Global] swallowed TimeoutException (handled by _retry)',
-      );
-      return true;
-    }
-    return platformHandler?.call(error, estack) ?? false;
-  };
 
-  // Вся тяжёлая инициализация (XdgPaths, конфиг, AgentRegistry, catalog/
-  // preloadApiKeys, MCP) вынесена в appBootstrapProvider и выполняется за
-  // первым кадром. Splash-экран показывается сразу после runApp().
-  runApp(const ProviderScope(child: ChatoraiApp()));
+    Future<void> run() async {
+      if (await runCliIfRequested(cwdResult.remainingArgs)) exit(0);
+
+      LogConfig.enabled = true;
+      LogConfig.minimumLevel = LogLevel.debug;
+
+      final platformHandler = PlatformDispatcher.instance.onError;
+      PlatformDispatcher.instance.onError = (error, estack) {
+        if (error is DioException) {
+          LogTags.chatService.logDebug(
+            '[Global] swallowed DioException (handled by _retry)',
+          );
+          return true;
+        }
+        if (error is TimeoutException) {
+          LogTags.chatService.logDebug(
+            '[Global] swallowed TimeoutException (handled by _retry)',
+          );
+          return true;
+        }
+        return platformHandler?.call(error, estack) ?? false;
+      };
+
+      runApp(
+        ProviderScope(
+          overrides: [
+            workspacePortProvider.overrideWith(
+              (ref) => RiverpodWorkspacePort(ref),
+            ),
+          ],
+          child: const ChatoraiApp(),
+        ),
+      );
+    }
+
+    await run();
+  }, getCurrentDirectory: () => workspaceRuntimeCurrent);
 }
 
 // ===========================================================================
@@ -74,7 +106,7 @@ class ChatoraiApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final languageState = ref.watch(languageProvider);
     final themeState = ref.watch(themeProvider);
-    final bootstrap = ref.watch(appBootstrapProvider);
+    final bootstrap = ref.watch(appBootstrapFastProvider);
     final theme = themeState.getTheme();
     final locale = Locale(languageState.selectedLanguage);
 
@@ -86,25 +118,20 @@ class ChatoraiApp extends ConsumerWidget {
 
     return MaterialApp(
       title: 'ChatORAI',
+      navigatorKey: _navigatorKey,
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
         AppLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('ru'),
-        Locale('uk'),
-        Locale('zh'),
-        Locale('ja'),
-        Locale('ar'),
-      ],
+      supportedLocales: LanguageState.supportedLocales,
       locale: locale,
       theme: theme,
       debugShowCheckedModeBanner: false,
       home: bootstrap.when(
-        loading: () => const SplashScreen(),
+        skipLoadingOnReload: true,
+        loading: () => const AppLoadingScreen(),
         error: (e, _) => const BootstrapErrorScreen(),
         data: (_) => const PermissionOverlay(
           child: NetworkAwareWidget(child: ChatScreen()),
@@ -125,11 +152,17 @@ class ChatoraiApp extends ConsumerWidget {
         if (languageState.isRTL) {
           return Directionality(
             textDirection: TextDirection.rtl,
-            child: child!,
+            child: GlobalShortcutHandler(
+              navigatorKey: _navigatorKey,
+              child: child!,
+            ),
           );
         }
 
-        return child!;
+        return GlobalShortcutHandler(
+          navigatorKey: _navigatorKey,
+          child: child!,
+        );
       },
     );
   }

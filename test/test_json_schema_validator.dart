@@ -251,7 +251,7 @@ void main() {
       }
     });
 
-    test('tool-like schema: bash command required string', () {
+    test('tool-like schema: shell command required string', () {
       final schema = {
         'type': 'object',
         'properties': {

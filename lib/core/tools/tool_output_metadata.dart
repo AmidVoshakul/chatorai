@@ -13,10 +13,10 @@ extension ToolOutputMetadata on ToolOutput {
   /// True when the tool result was aborted (e.g. user pressed stop).
   bool get isAborted => metadata?['aborted'] == true;
 
-  // ── Bash ───────────────────────────────────────────────────────────────────
+  // ── Shell ───────────────────────────────────────────────────────────────────
 
-  int? get bashExitCode => metadata?['exit_code'] as int?;
-  String? get bashBannedCommand => metadata?['banned'] as String?;
+  int? get shellExitCode => metadata?['exit_code'] as int?;
+  String? get shellBannedCommand => metadata?['banned'] as String?;
 
   // ── Read ───────────────────────────────────────────────────────────────────
 
@@ -88,12 +88,4 @@ extension ToolOutputMetadata on ToolOutput {
 
   bool get skillLoaded => metadata?['skill'] == true;
   String? get skillName => metadata?['name'] as String?;
-
-  // ── ToolOutputPersistence ──────────────────────────────────────────────────
-
-  String? get persistenceToolCallId => metadata?['toolCallId'] as String?;
-  String? get persistenceToolName => metadata?['toolName'] as String?;
-  String? get persistenceSessionId => metadata?['sessionId'] as String?;
-  int? get persistenceDurationMs => metadata?['durationMs'] as int?;
-  String? get persistenceStatus => metadata?['status'] as String?;
 }

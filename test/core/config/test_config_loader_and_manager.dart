@@ -68,7 +68,7 @@ void main() {
           await projectConfig.writeAsString(
             json.encode({
               'version': 1,
-              'permission': {'bash': 'alloww'}, // typo
+              'permission': {'shell': 'alloww'}, // typo
             }),
           );
 
@@ -146,7 +146,7 @@ void main() {
             json.encode({
               'version': 1,
               'permission': {
-                'bash': {'*': 'invalid_action'},
+                'shell': {'*': 'invalid_action'},
               },
             }),
           );
@@ -189,7 +189,7 @@ void main() {
             json.encode({
               'version': 1,
               'permission': {
-                'bash': {'*': 42}, // not a string
+                'shell': {'*': 42}, // not a string
               },
             }),
           );

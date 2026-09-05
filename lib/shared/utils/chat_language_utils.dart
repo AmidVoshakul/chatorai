@@ -1,3 +1,5 @@
+import 'package:chatorai/core/i18n/language_provider.dart';
+
 class ChatLanguageUtils {
   ChatLanguageUtils._();
 
@@ -15,15 +17,7 @@ class ChatLanguageUtils {
     return 'en';
   }
 
-  static const List<String> _supportedLanguages = [
-    'ru',
-    'zh',
-    'ja',
-    'ar',
-    'uk',
-  ];
-
   static bool isSupportedLanguage(String lang) {
-    return _supportedLanguages.contains(lang);
+    return LanguageState.supportedLanguages.contains(lang);
   }
 }
