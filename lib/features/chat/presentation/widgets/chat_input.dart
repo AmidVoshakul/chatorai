@@ -32,9 +32,9 @@ class ChatInput extends ConsumerStatefulWidget {
   final bool Function(String)? checkModelSupportsImages;
   final Function(double)? onSoundLevelChanged;
   final Function(String)? onRecognizedText;
-  final VoidCallback? onMessageAdded;
   final VoidCallback? onOpenModelSettings;
   final Future<void> Function()? onCompact;
+  final ValueChanged<bool>? onPopupVisibilityChanged;
 
   const ChatInput({
     super.key,
@@ -47,9 +47,9 @@ class ChatInput extends ConsumerStatefulWidget {
     this.checkModelSupportsImages,
     this.onSoundLevelChanged,
     this.onRecognizedText,
-    this.onMessageAdded,
     this.onOpenModelSettings,
     this.onCompact,
+    this.onPopupVisibilityChanged,
   });
 
   @override
@@ -86,9 +86,6 @@ class _ChatInputState extends ConsumerState<ChatInput>
   PopupController get popupController => _popupController;
 
   @override
-  VoidCallback? get onMessageAdded => widget.onMessageAdded;
-
-  @override
   bool Function(String)? get checkModelSupportsImages =>
       widget.checkModelSupportsImages;
 
@@ -97,6 +94,10 @@ class _ChatInputState extends ConsumerState<ChatInput>
 
   @override
   Future<void> Function()? get onCompact => widget.onCompact;
+
+  @override
+  ValueChanged<bool>? get onPopupVisibilityChanged =>
+      widget.onPopupVisibilityChanged;
 
   @override
   void Function(SpeechUiState, String)? get onSpeechStateChanged =>
@@ -144,7 +145,6 @@ class _ChatInputState extends ConsumerState<ChatInput>
       if (result.content.startsWith('**Loaded skill:**')) {
         // No args → insert skill content into chat without AI response
         await insertSkillMessage(result.skill, result.content);
-        widget.onMessageAdded?.call();
         return null;
       }
       // Has args → send rendered content as user message, AI responds
@@ -242,6 +242,7 @@ class _ChatInputState extends ConsumerState<ChatInput>
   Widget build(BuildContext context) {
     super.build(context);
     listenForSkillChanges();
+    listenForCustomCommands();
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context)!;
     final isMobile = InputWidgetBuilders.isMobileLayout(context);

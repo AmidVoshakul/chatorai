@@ -1,78 +1,42 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
-import 'dart:math';
 
-import 'package:chatorai/core/agents/agent_registry.dart';
-import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/constants/chat_constants.dart';
-import 'package:chatorai/core/context/compaction_orchestrator.dart';
-import 'package:chatorai/core/context/compaction_service.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
-import 'package:chatorai/core/session/event_bus.dart';
-import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
-import 'package:chatorai/core/session/session_runner.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/features/chat/data/models/chat/message_converter.dart'
-    show assistantContentToPartMaps, filterPartsByMessage, sessionStateToChat;
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
 import 'package:chatorai/features/chat/data/models/chat_models.dart';
+import 'package:chatorai/features/chat/data/services/chat_actions.dart';
 import 'package:chatorai/features/chat/presentation/screens/child_session_screen.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_app_bar.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_desktop_layout.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_messages.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_messages_suggestions.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_messages_area.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_mobile_layout.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_scroll_follow_controller.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_sidebar_drawer.dart';
 import 'package:chatorai/features/chat/presentation/widgets/markdown_navigator_sidebar.dart';
-import 'package:chatorai/features/chat/presentation/widgets/speech_overlay.dart';
 import 'package:chatorai/features/chat/presentation/widgets/welcome_questions_data.dart';
 import 'package:chatorai/features/chat/services/continuation_suggestion_service.dart';
 import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
 import 'package:chatorai/features/models/screens/models_screen.dart';
-import 'package:chatorai/features/sessions/presentation/widgets/sidebar_wrapper.dart';
-import 'package:chatorai/features/settings/data/models/model_settings.dart';
 import 'package:chatorai/features/settings/widgets/model_settings_sheet.dart';
 import 'package:chatorai/features/settings/widgets/settings_modal.dart';
-import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart'
     show
         themeProvider,
         modelProvider,
-        modelSettingsProvider,
-        chatListProvider,
-        chatAiServiceProvider,
         currentChatIdProvider,
         currentChatProvider,
         chatScreenProvider,
-        toolRegistryProvider,
-        currentAgentProvider,
-        compactionConfigProvider,
         currentSessionRunnerProvider,
         sessionRepositoryProvider,
         sessionStackProvider,
-        permissionServiceProvider,
-        sessionPartsProvider,
         scaffoldKeyProvider,
         listenChatScrollIntent;
-import 'package:chatorai/shared/utils/chat_error_utils.dart';
-import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
-import 'package:chatorai/shared/utils/message_utils.dart';
-import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as p;
-
-part 'chat_screen_ai.dart';
-part 'chat_screen_build.dart';
-part 'chat_screen_edits.dart';
-part 'chat_screen_management.dart';
-part 'chat_screen_messaging.dart';
-part 'chat_screen_navigator.dart';
-part 'chat_screen_scroll.dart';
-part 'chat_screen_streaming.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, this.testScrollController});
@@ -87,23 +51,19 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen>
     with TickerProviderStateMixin {
   late ScrollController _messageScrollController;
+  late final ChatScrollFollowController _follow;
   late Future<SessionRepository> _sessionRepositoryFuture;
-  SessionRunnerSession? _sessionRunner;
+  late final ChatActions _chatActions;
 
-  final GlobalKey<ChatMessagesState> _chatMessagesKey =
-      GlobalKey<ChatMessagesState>();
   late final GlobalKey<ScaffoldState> _scaffoldKey;
 
-  DateTime? _lastScrollUpdate;
-  static const _scrollThrottleDuration = Duration(milliseconds: 16);
+  DateTime? _lastHeadingUpdate;
+  static const _scrollThrottleDuration = Duration(milliseconds: 32);
   late final FocusNode _chatInputFocusNode;
 
   double _cachedScreenWidth = 0;
   bool _isMobile = false;
-
-  Widget? _cachedSidebarDrawer;
-  double _cachedDrawerWidth = 0;
-  String? _cachedChatListHash;
+  bool _isInputPopupVisible = false;
 
   SpeechUiState _speechUiState = SpeechUiState.idle;
   String _speechStatusMessage = '';
@@ -113,40 +73,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   final ContinuationSuggestionService _suggestionService =
       ContinuationSuggestionService();
 
-  bool _autoScrollEnabled = true; // Auto-scroll enabled by default
-
-  /// Reusable session ID across multiple message turns in the same chat.
-  /// Created on the first message, reused on continuation.
-  String? _currentSessionId;
-  bool _streamCancelled = false;
-
-  /// Guard against concurrent _handleSendMessage calls. Without this,
-  /// two rapid sends each wait for toolRegistry (30s+), then both
-  /// create a SessionRunner and stream on the same session, interleaving
-  /// events and corrupting messages.
-  bool _isHandlingMessage = false;
-
-  /// Tracks the latest requested chat id during an in-flight `_selectChat`
-  /// so a stale load cannot overwrite a newer selection.
-  String? _pendingSelectChatId;
-
-  /// Test-only accessor for auto-scroll state.
-  bool get autoScrollEnabledForTest => _autoScrollEnabled;
-
   /// Test-only accessor for the scroll controller.
   ScrollController get testScrollController => _messageScrollController;
 
-  /// Test-only: scroll to bottom.
+  /// Test-only: instant snap to the newest message.
   @visibleForTesting
-  void scrollToBottom({bool force = false}) => _scrollToBottom(force: force);
-
-  /// Test-only: handle scroll event.
-  @visibleForTesting
-  void handleScroll() => _handleScroll();
-
-  /// Test-only: schedule auto-scroll like a streaming chunk does.
-  @visibleForTesting
-  void maybeAutoScrollDuringStreaming() => _maybeAutoScrollDuringStreaming();
+  void snapToBottom() => _follow.snapToBottom();
 
   Chat? get currentChat => ref.watch(currentChatProvider);
   String get selectedModelId => ref.watch(modelProvider).selectedModelId;
@@ -159,10 +91,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _sessionRepositoryFuture = ref.read(sessionRepositoryProvider.future);
     _messageScrollController =
         widget.testScrollController ?? ScrollController();
-    _messageScrollController.addListener(_handleScroll);
-    _messageScrollController.addListener(_handleHeadingSync);
+    _follow = ChatScrollFollowController();
+    _follow.attach(_messageScrollController);
+    _messageScrollController.addListener(_onScroll);
     _chatInputFocusNode = FocusNode();
     _scaffoldKey = ref.read(scaffoldKeyProvider);
+    _chatActions = ChatActions(ref);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showWelcomeSuggestions();
@@ -171,11 +105,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   @override
   void dispose() {
-    _messageScrollController.removeListener(_handleScroll);
-    _messageScrollController.removeListener(_handleHeadingSync);
+    _messageScrollController.removeListener(_onScroll);
     _messageScrollController.dispose();
+    _follow.dispose();
     _chatInputFocusNode.dispose();
-    _sessionRunner?.dispose();
+    _chatActions.dispose();
     super.dispose();
   }
 
@@ -237,17 +171,158 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     }
   }
 
-  Future<void> _showContinuationSuggestions(Message message) async {
-    final theme = ref.read(themeProvider);
-    if (!theme.showContinuationSuggestions) return;
-    await _suggestionService.showSuggestions(
-      ref: ref,
-      context: context,
-      messageContent: message.content,
-      selectedModelId: selectedModelId,
-      mounted: mounted,
-    );
+  // ── Scroll methods ──────────────────────────────────────────────────
+
+  // The message list is top-down: offset 0 is the oldest, maxScrollExtent
+  // is the newest. [_follow] is the sole emitter of programmatic jumps;
+  // the listener here only feeds heading sync. Home/End user jumps stay
+  // direct in [listenChatScrollIntent].
+  void _onScroll() {
+    _follow.onScroll();
+    _handleHeadingSync();
   }
+
+  void _snapToBottom() => _follow.snapToBottom();
+
+  void _handleHeadingSync() {
+    final now = DateTime.now();
+    if (_lastHeadingUpdate != null &&
+        now.difference(_lastHeadingUpdate!) < _scrollThrottleDuration) {
+      return;
+    }
+    _lastHeadingUpdate = now;
+
+    final navigatorHeadings = ref.read(chatScreenProvider).navigatorHeadings;
+    if (!_messageScrollController.hasClients || navigatorHeadings.isEmpty) {
+      return;
+    }
+
+    final currentOffset = _messageScrollController.offset;
+    final viewportHeight = _messageScrollController.position.viewportDimension;
+    int newActiveIndex = -1;
+
+    for (int i = 0; i < navigatorHeadings.length; i++) {
+      final heading = navigatorHeadings[i];
+      final ctx = heading.anchorKey.currentContext;
+      if (ctx == null || !ctx.mounted) continue;
+      try {
+        final RenderBox? box = ctx.findRenderObject() as RenderBox?;
+        if (box != null && box.hasSize) {
+          final position = box.localToGlobal(Offset.zero);
+          if (position.dy < viewportHeight / 2 && position.dy > -50) {
+            newActiveIndex = i;
+            break;
+          }
+        }
+      } catch (e) {
+        // Ignore render errors
+      }
+    }
+
+    if (newActiveIndex == -1) {
+      final scrollMax = _messageScrollController.position.maxScrollExtent;
+      if (currentOffset <= 100) {
+        newActiveIndex = 0;
+      } else if (currentOffset >= scrollMax - 100) {
+        newActiveIndex = navigatorHeadings.length - 1;
+      }
+    }
+
+    final activeHeadingIndex = ref.read(
+      chatScreenProvider.select((s) => s.activeHeadingIndex),
+    );
+    if (newActiveIndex != -1 && newActiveIndex != activeHeadingIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && newActiveIndex != -1) {
+          ref
+              .read(chatScreenProvider.notifier)
+              .setActiveHeadingIndex(newActiveIndex);
+        }
+      });
+    }
+  }
+
+  // ── Navigator methods ───────────────────────────────────────────────
+
+  void _onHeadingsUpdated(List<MarkdownHeadingInfoWithKey> headings) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(chatScreenProvider.notifier).setNavigatorHeadings(headings);
+      }
+    });
+  }
+
+  void _toggleNavigator() {
+    ref.read(chatScreenProvider.notifier).toggleNavigator();
+  }
+
+  void _onHeadingTap(String headingText, String messageId, int level) {
+    final navigatorHeadings = ref.read(
+      chatScreenProvider.select((s) => s.navigatorHeadings),
+    );
+    final normalizedTapText = stripMarkdownFormatting(headingText).trim();
+    int headingIndex = navigatorHeadings.indexWhere(
+      (h) =>
+          h.messageId == messageId &&
+          h.level == level &&
+          stripMarkdownFormatting(h.text).trim() == normalizedTapText,
+    );
+    // fallback: поиск без учёта messageId (если якорь пересоздан) или только по тексту
+    if (headingIndex < 0) {
+      headingIndex = navigatorHeadings.indexWhere(
+        (h) =>
+            h.level == level &&
+            stripMarkdownFormatting(h.text).trim() == normalizedTapText,
+      );
+    }
+
+    if (headingIndex >= 0) {
+      ref.read(chatScreenProvider.notifier).setActiveHeadingIndex(headingIndex);
+      final heading = navigatorHeadings[headingIndex];
+
+      void performScroll() {
+        final ctx = heading.anchorKey.currentContext;
+        if (ctx != null && ctx.mounted) {
+          // The chat list is top-down: the axis "leading" edge is the TOP
+          // of the viewport, so aligning a heading flush under the AppBar
+          // means pinning it to the LEADING edge (0.0).
+          final position = Scrollable.of(ctx).position;
+          final reversed = position.axisDirection == AxisDirection.up;
+          Scrollable.ensureVisible(
+            ctx,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: reversed ? 1.0 : 0.0,
+            alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+          );
+        } else if (_messageScrollController.hasClients) {
+          // Fallback: если контекст ещё не смонтирован (редкий случай
+          // после prune/пересоздания), скроллим к началу/концу эвристикой
+          // уже нельзя — просто логируем, т.к. с SingleChildScrollView
+          // все якоря должны быть смонтированы сразу.
+          debugPrint(
+            '[ChatScreen] heading tap: anchor not mounted id=${heading.anchor.id}',
+          );
+        }
+      }
+
+      final ctx = heading.anchorKey.currentContext;
+      if (ctx != null && ctx.mounted) {
+        performScroll();
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) performScroll();
+        });
+      }
+    } else {
+      debugPrint(
+        '[ChatScreen] heading tap: not found text=$headingText msg=$messageId lvl=$level',
+      );
+    }
+    ref.read(chatScreenProvider.notifier).setNavigatorVisible(false);
+  }
+
+  // ── Build ───────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -258,10 +333,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _cachedScreenWidth = MediaQuery.of(context).size.width;
     _isMobile = _cachedScreenWidth < ChatScreenConstants.mobileBreakpoint;
 
+    final chat = currentChat;
+    final continuationSuggestions = ref.watch(
+      chatScreenProvider.select((s) => s.continuationSuggestions),
+    );
+    final showSuggestions = ref.watch(
+      chatScreenProvider.select((s) => s.showSuggestions),
+    );
+    final isSuggestionsLoading = ref.watch(
+      chatScreenProvider.select((s) => s.isSuggestionsLoading),
+    );
+    final welcomeSuggestions = ref.watch(
+      chatScreenProvider.select((s) => s.welcomeSuggestions),
+    );
+    final showWelcomeSuggestions = ref.watch(
+      chatScreenProvider.select((s) => s.showWelcomeSuggestions),
+    );
+    final isNavigatorVisible = ref.watch(
+      chatScreenProvider.select((s) => s.isNavigatorVisible),
+    );
+    final wideScreenMode = ref.watch(
+      themeProvider.select((s) => s.wideScreenMode),
+    );
+
     final chatInput = ChatInput(
-      onSendMessage: _handleSendMessage,
+      onSendMessage: (messageData) {
+        _chatActions.handleSendMessage(
+          messageData,
+          context: context,
+          scrollController: _messageScrollController,
+          chatInputFocusNode: _chatInputFocusNode,
+          isMounted: () => mounted,
+          showWelcomeSuggestions: _showWelcomeSuggestions,
+          scrollToBottom: _snapToBottom,
+        );
+      },
       onToggleStreaming: (_) {},
-      onStopStreaming: _stopStreaming,
+      onStopStreaming: () {
+        _chatActions.stopStreaming(context: context, isMounted: () => mounted);
+      },
       isStreaming: isStreaming,
       focusNode: _chatInputFocusNode,
       onSpeechStateChanged: (state, message) {
@@ -282,29 +392,256 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       },
       checkModelSupportsImages: (_) =>
           ref.read(modelProvider.notifier).modelSupportsImagesSelected(),
-      onMessageAdded: () {
-        // Scroll so the last assistant message hides behind AppBar,
-        // leaving user's message + loading visible.
-        final topPadding = MediaQuery.of(context).padding.top;
-        _scrollToBottom(force: true, offset: topPadding + kToolbarHeight + 8);
-      },
       onOpenModelSettings: _openModelSettings,
       onCompact: () async {
         final chat = ref.read(currentChatProvider);
         if (chat == null || chat.messages.isEmpty) return;
-        await runCompaction(chat);
+        await _chatActions.runCompaction(chat);
+      },
+      onPopupVisibilityChanged: (visible) {
+        if (mounted) {
+          setState(() {
+            _isInputPopupVisible = visible;
+          });
+        }
       },
     );
 
-    Widget baseLayout = _isMobile
-        ? _buildMobileLayout(chatInput)
-        : _buildDesktopLayout(chatInput);
+    final chatMessagesArea = ChatMessagesArea(
+      chat: chat,
+      sessionRepositoryFuture: _sessionRepositoryFuture,
+      scrollController: _messageScrollController,
+      followController: _follow,
+      selectedModel: selectedModelId,
+      onSendMessage: (messageData) {
+        _chatActions.handleSendMessage(
+          messageData,
+          context: context,
+          scrollController: _messageScrollController,
+          chatInputFocusNode: _chatInputFocusNode,
+          isMounted: () => mounted,
+          showWelcomeSuggestions: _showWelcomeSuggestions,
+          scrollToBottom: _snapToBottom,
+        );
+      },
+      onMessageDeleted: () {
+        _chatActions.refreshChatMessages(
+          context: context,
+          isMounted: () => mounted,
+          showWelcomeSuggestions: _showWelcomeSuggestions,
+        );
+      },
+      onMessageEdited: (messageId, newContent) {
+        _chatActions.handleMessageEdited(
+          messageId,
+          newContent,
+          context: context,
+          isMounted: () => mounted,
+          showWelcomeSuggestions: _showWelcomeSuggestions,
+        );
+      },
+      onMessageEditAndSend: (messageId, newContent) {
+        _chatActions.handleMessageEditAndSend(
+          messageId,
+          newContent,
+          context: context,
+          isMounted: () => mounted,
+          showWelcomeSuggestions: _showWelcomeSuggestions,
+          scrollToBottom: _snapToBottom,
+          scrollController: _messageScrollController,
+          chatInputFocusNode: _chatInputFocusNode,
+        );
+      },
+      onContinueResponse: (lastMessageId) {
+        _chatActions.continueAIResponse(
+          lastMessageId,
+          context: context,
+          isMounted: () => mounted,
+          showWelcomeSuggestions: _showWelcomeSuggestions,
+          scrollToBottom: _snapToBottom,
+          scrollController: _messageScrollController,
+          chatInputFocusNode: _chatInputFocusNode,
+        );
+      },
+      onRegenerateResponse: (messageId) {
+        _chatActions.regenerateResponse(
+          messageId,
+          context: context,
+          isMounted: () => mounted,
+          showWelcomeSuggestions: _showWelcomeSuggestions,
+          scrollToBottom: _snapToBottom,
+          scrollController: _messageScrollController,
+          chatInputFocusNode: _chatInputFocusNode,
+        );
+      },
+      continuationSuggestions: continuationSuggestions,
+      showSuggestions: showSuggestions,
+      isSuggestionsLoading: isSuggestionsLoading,
+      onSuggestionsClose: () =>
+          ref.read(chatScreenProvider.notifier).hideSuggestions(),
+      onSuggestionsRefresh: () {
+        if (chat != null && chat.messages.isNotEmpty) {
+          _chatActions.showContinuationSuggestions(
+            chat.messages.last,
+            context: context,
+            isMounted: () => mounted,
+            suggestionService: _suggestionService,
+          );
+        }
+      },
+      welcomeSuggestions: welcomeSuggestions,
+      showWelcomeSuggestions: showWelcomeSuggestions,
+      onWelcomeSuggestionsClose: () =>
+          ref.read(chatScreenProvider.notifier).hideWelcomeSuggestions(),
+      onHeadingsUpdated: _onHeadingsUpdated,
+      onToggleNavigator: _toggleNavigator,
+      onQuestionAnswer: (messageId, answer) {
+        _chatActions.handleQuestionAnswer(
+          messageId,
+          answer,
+          context: context,
+          scrollController: _messageScrollController,
+          chatInputFocusNode: _chatInputFocusNode,
+          isMounted: () => mounted,
+          showWelcomeSuggestions: _showWelcomeSuggestions,
+          scrollToBottom: _snapToBottom,
+        );
+      },
+      onTaskTap: (partSessionId) {
+        final isRealSessionId =
+            partSessionId != null && partSessionId.startsWith('ses_');
+        final effectiveId = isRealSessionId
+            ? partSessionId
+            : ref
+                  .read(currentSessionRunnerProvider.notifier)
+                  .activeChildSessionId;
+        if (effectiveId != null && effectiveId.isNotEmpty) {
+          ref
+              .read(sessionStackProvider.notifier)
+              .push(SessionID.fromString(effectiveId));
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => ChildSessionScreen(sessionId: effectiveId),
+            ),
+          );
+        }
+      },
+      sessionId: _chatActions.currentSessionId,
+      wrapWithGesture: _isMobile,
+      hasHeadings: _hasHeadings,
+      toggleNavigator: _toggleNavigator,
+    );
+
+    final baseLayout = _isMobile
+        ? ChatMobileLayout(
+            chatInput: chatInput,
+            scaffoldKey: _scaffoldKey,
+            hasHeadings: _hasHeadings,
+            onToggleNavigator: _toggleNavigator,
+            onModelSelected: _updateSelectedModel,
+            onOpenModelSelector: _openModelSelector,
+            onMenuPressed: () {
+              FocusScope.of(context).unfocus();
+              _scaffoldKey.currentState?.openDrawer();
+            },
+            drawer: ChatSidebarDrawer(
+              width: ChatScreenConstants.sidebarWidth,
+              onToggleSidebar: () => Navigator.pop(context),
+              onChatSelect: (chatId) {
+                unawaited(
+                  _chatActions.selectChat(
+                    chatId,
+                    isMounted: () => mounted,
+                    showWelcomeSuggestions: _showWelcomeSuggestions,
+                    scrollToBottom: _snapToBottom,
+                  ),
+                );
+                Navigator.of(context).pop();
+              },
+              onChatDelete: (chatId) {
+                _chatActions.deleteChat(
+                  chatId,
+                  context: context,
+                  isMounted: () => mounted,
+                  showWelcomeSuggestions: _showWelcomeSuggestions,
+                );
+              },
+              onNewChat: () {
+                _chatActions.createNewChat(
+                  showWelcomeSuggestions: _showWelcomeSuggestions,
+                );
+                Navigator.of(context).pop();
+              },
+              onOpenSettings: _openSettings,
+            ),
+            speechUiState: _speechUiState,
+            speechStatusMessage: _speechStatusMessage,
+            speechSoundLevel: _speechSoundLevel,
+            speechRecognizedText: _speechRecognizedText,
+            chatMessagesArea: chatMessagesArea,
+            screenWidth: _cachedScreenWidth,
+            isNavigatorVisible: isNavigatorVisible,
+            wideScreenMode: wideScreenMode,
+            selectedModel: selectedModelId,
+            selectedModelObject: selectedModelObject,
+            isInputPopupVisible: _isInputPopupVisible,
+          )
+        : ChatDesktopLayout(
+            chatInput: chatInput,
+            scaffoldKey: _scaffoldKey,
+            hasHeadings: _hasHeadings,
+            onToggleNavigator: _toggleNavigator,
+            onModelSelected: _updateSelectedModel,
+            onOpenModelSelector: _openModelSelector,
+            onMenuPressed: () {
+              FocusScope.of(context).unfocus();
+              _scaffoldKey.currentState?.openDrawer();
+            },
+            drawer: ChatSidebarDrawer(
+              width: ChatScreenConstants.sidebarWidth,
+              onToggleSidebar: () => Navigator.pop(context),
+              onChatSelect: (chatId) {
+                unawaited(
+                  _chatActions.selectChat(
+                    chatId,
+                    isMounted: () => mounted,
+                    showWelcomeSuggestions: _showWelcomeSuggestions,
+                    scrollToBottom: _snapToBottom,
+                  ),
+                );
+                Navigator.of(context).pop();
+              },
+              onChatDelete: (chatId) {
+                _chatActions.deleteChat(
+                  chatId,
+                  context: context,
+                  isMounted: () => mounted,
+                  showWelcomeSuggestions: _showWelcomeSuggestions,
+                );
+              },
+              onNewChat: () {
+                _chatActions.createNewChat(
+                  showWelcomeSuggestions: _showWelcomeSuggestions,
+                );
+                Navigator.of(context).pop();
+              },
+              onOpenSettings: _openSettings,
+            ),
+            speechUiState: _speechUiState,
+            speechStatusMessage: _speechStatusMessage,
+            speechSoundLevel: _speechSoundLevel,
+            speechRecognizedText: _speechRecognizedText,
+            chatMessagesArea: chatMessagesArea,
+            screenWidth: _cachedScreenWidth,
+            isNavigatorVisible: isNavigatorVisible,
+            wideScreenMode: wideScreenMode,
+            selectedModel: selectedModelId,
+            selectedModelObject: selectedModelObject,
+            isInputPopupVisible: _isInputPopupVisible,
+          );
 
     final navigatorHeadings = ref.watch(
       chatScreenProvider.select((s) => s.navigatorHeadings),
-    );
-    final isNavigatorVisible = ref.watch(
-      chatScreenProvider.select((s) => s.isNavigatorVisible),
     );
     final screenContent = navigatorHeadings.isNotEmpty
         ? Stack(
@@ -324,85 +661,5 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         : baseLayout;
 
     return screenContent;
-  }
-
-  /// Generates a session title from the first user message when the chat
-  /// still carries the default (empty) title. Never throws — failures just
-  /// leave the default title in place.
-  Future<void> _autoGenerateTitleIfNeeded(Chat chat) async {
-    if (!chat.isDefaultTitle) return;
-    final userMessage = chat.messages
-        .where((m) => m.role == MessageRole.user)
-        .firstOrNull;
-    if (userMessage == null || userMessage.content.trim().isEmpty) return;
-    try {
-      final aiService = ref.read(chatAiServiceProvider);
-      final generatedTitle = await aiService.generateSessionTitle(
-        modelId: selectedModelId,
-        userMessage: userMessage.content,
-      );
-      if (generatedTitle.isNotEmpty) {
-        await ref
-            .read(chatListProvider.notifier)
-            .renameChat(chat.id, generatedTitle);
-        ref.read(currentChatIdProvider.notifier).setChatId(chat.id);
-      }
-    } catch (e, st) {
-      LogTags.chatScreen.logWarning('Title generation failed', e, st);
-    }
-  }
-
-  /// Single source of truth for starting an assistant turn: appends an
-  /// assistant placeholder message (`MessageAdded`), updates the in-memory
-  /// chat list, and starts streaming into that exact message id.
-  ///
-  /// Passing the placeholder id to [_initiateStream] is what prevents the
-  /// projector from creating a second `msg_…` assistant message (duplicate
-  /// bubbles after reload) — all four call sites (send, regenerate,
-  /// edit-and-send, continue) must go through here.
-  ///
-  /// Returns the chat including the placeholder, so callers can react to the
-  /// final state if needed.
-  Future<Chat> _startAssistantTurn({
-    required Chat chat,
-    required String sessionId,
-    required String agentName,
-    String? delegateAgentId,
-    String? agentMention,
-    bool isContinuation = false,
-    required List<Map<String, dynamic>> Function(Chat withPlaceholder)
-    buildMessages,
-  }) async {
-    final assistantMessage = _createAssistantMessage(agent: agentName);
-    final chatWithPlaceholder = chat.copyWith(
-      messages: [...chat.messages, assistantMessage],
-      updatedAt: DateTime.now(),
-    );
-    final sessionRepository = await ref.read(sessionRepositoryProvider.future);
-    await sessionRepository.appendEvent(
-      MessageAdded(
-        sessionId: SessionID.fromString(sessionId),
-        messageId: assistantMessage.id,
-        role: assistantMessage.role.name,
-        content: assistantMessage.content,
-        timestamp: assistantMessage.timestamp,
-      ),
-    );
-    ref.read(chatListProvider.notifier).updateChat(chatWithPlaceholder);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _autoScrollEnabled = true;
-      _scrollToBottom(force: true);
-    });
-    // Prevent _initiateStream from creating a duplicate session.
-    _currentSessionId = sessionId;
-    await _initiateStream(
-      chat: chatWithPlaceholder,
-      messages: buildMessages(chatWithPlaceholder),
-      isContinuation: isContinuation,
-      delegateAgentId: delegateAgentId,
-      agentMention: agentMention,
-      pendingAssistantMessageId: assistantMessage.id,
-    );
-    return chatWithPlaceholder;
   }
 }

@@ -6,6 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **Slash command UX improvements**:
+  - `/thinking` command toggles `expandReasoningByDefault` in `themeProvider`, clears input without snackbar feedback.
+  - Cyclic navigation for command and skills popups (`navigateCommandPopup`/`navigateSkillsPopup` wrap around).
+  - Full localization of built-in slash-command descriptions across 6 languages (`slashCommandSkills`, `slashCommandNew`, `slashCommandClear`, `slashCommandCompact`, `slashCommandHelp`, `slashCommandUndo`, `slashCommandRedo`, `slashCommandSessions`, `slashCommandModels`, `slashCommandTheme`, `slashCommandThinking`).
+  - `SlashCommandNavigator` helper class with unit tests (`test_slash_command_navigator.dart`).
 - **Unified chat auto-scroll**:
   - `ChatMessagesConstants.followBand` (`150.0`) and `userScrolledAwayBand` (`25.0`) are the single source of truth for scroll thresholds across all chat views.
   - `ChatScrollFollowController` drives auto-scroll identically for parent (`ChatMessagesArea`) and child (`SessionContextWindow`) sessions via `noteGrowth()` / `handleNotification()`.
@@ -15,6 +20,11 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **Popup visual polish**:
+  - Selected items in `CommandPopup` and `SkillsPopup` now use a gradient background (`ChatoraiColors.orangeJyice` → `theme.colorScheme.primaryContainer`).
+  - `PopupItemDefaults` in `app_theme.dart` centralizes selected-item decoration, icon color, name/description text styles, and dim overlay color.
+  - `AgentMentionPopup` migrated to shared `PopupItemDefaults` styles.
+  - Chat content dims with `ChatoraiColors.black30` when any input popup is open; chat input remains fully visible.
 - **Chat input button styling**:
   - Action, stop, and agent buttons now accept an optional `BorderRadius` parameter, defaulting to circular when omitted.
   - Desktop and mobile chat inputs use unified rounded-square buttons with `ChatoraiBorderRadius.md` (`12px`) for a cohesive premium look.
@@ -24,6 +34,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **Popup visibility propagation**: `onPopupVisibilityChanged` callback threaded from `ChatScreen` → layout widgets → `ChatLayoutContent` → dim overlay, ensuring chat content dims correctly when any input popup is open.
 - **Tool-card display order**: Tools no longer appear mid-thought. Reasoning blocks are closed before tool cards are emitted, and subsequent reasoning after a tool becomes a separate block — restoring the visual order `thought → tool → tool → thought → answer`.
 - **Child-session scroll and auto-scroll stability**:
   - Removed auto-scroll-to-bottom on session open for child windows; pages now respect the user's saved scroll position when swiping between siblings.
@@ -36,6 +47,8 @@ All notable changes to this project will be documented in this file.
 
 ### Tests
 
+- `test_slash_command_navigator.dart`: 6 tests covering cyclic navigation, empty-list safety, and selection matching.
+- `test_thinking_command.dart`: 2 tests verifying `/thinking` toggles `expandReasoningByDefault` via `themeProvider` and is selectable from the navigator.
 - `session_runner_streaming_test.dart`: Updated all deferred-tool-card tests to assert immediate emission; added tests for buffered post-tool reasoning flush, parallel tool waves, and `ToolStarted` ordering.
 - `session_runner_sdk_repro_test.dart`: Updated kilo-style SSE reproduction to expect 3 reasoning parts (pre-tool, buffered post-tool, step-2 thought) with tool cards emitted immediately after the first thought.
 - `test_tool_card_after_reasoning.dart`: Removed unused `events.dart` import; assertions now cover immediate tool-card emission with `ReasoningEnded` before `ToolCalled`.

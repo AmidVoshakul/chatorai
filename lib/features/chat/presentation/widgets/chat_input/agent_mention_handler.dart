@@ -13,6 +13,15 @@ mixin AgentMentionHandler<T extends ConsumerStatefulWidget>
   TextEditingController get textController;
   PopupController get popupController;
   GlobalKey get textFieldKey;
+  ValueChanged<bool>? get onPopupVisibilityChanged;
+
+  void _notifyPopupVisibility() {
+    final anyVisible =
+        popupController.isPopupVisible(PopupType.agent) ||
+        popupController.isPopupVisible(PopupType.command) ||
+        popupController.isPopupVisible(PopupType.skills);
+    onPopupVisibilityChanged?.call(anyVisible);
+  }
 
   List<AgentDefinition> filteredAgents() {
     final all = AgentRegistry().getSubagents();
@@ -79,10 +88,12 @@ mixin AgentMentionHandler<T extends ConsumerStatefulWidget>
 
     popupController.setOverlay(PopupType.agent, entry);
     overlay.insert(entry);
+    _notifyPopupVisibility();
   }
 
   void hideAgentPopup() {
     popupController.hidePopup(PopupType.agent);
+    _notifyPopupVisibility();
   }
 
   void insertAgentMention(AgentDefinition agent) {

@@ -32,6 +32,17 @@
   "showContinuationSuggestionsDesc": "عرض اقتراحات المتابعة بعد رد الذكاء الاصطناعي",
   "expandReasoningByDefault": "توسيع الاستدلال افتراضياً",
   "expandReasoningByDefaultDesc": "عرض كتل الاستدلال/التفكير مفتوحة عند رد الذكاء الاصطناعي",
+  "slashCommandSkills": "إظهار المهارات المتاحة",
+  "slashCommandNew": "بدء محادثة جديدة",
+  "slashCommandClear": "مسح المحادثة الحالية",
+  "slashCommandCompact": "ضغط سياق المحادثة",
+  "slashCommandHelp": "عرض المساعدة",
+  "slashCommandUndo": "تراجع عن الإجراء الأخير",
+  "slashCommandRedo": "إعادة الإجراء الأخير",
+  "slashCommandSessions": "قائمة الجلسات",
+  "slashCommandModels": "اختيار النموذج",
+  "slashCommandTheme": "تغيير المظهر",
+  "slashCommandThinking": "تبديل رؤية الاستدلال",
   "language": "اللغة",
   "english": "الإنجليزية",
   "russian": "الروسية",
@@ -44,6 +55,15 @@
   "save": "حفظ",
   "cancel": "إلغاء",
   "close": "إغلاق",
+  "errorLoadingChat": "فشل تحميل الدردشة: {error}",
+  "@errorLoadingChat": {
+    "type": "text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "confirmOpenLink": "هل تريد حقًا فتح:",
   "copy": "نسخ",
   "apiKeyCopied": "تم نسخ مفتاح API",
@@ -157,9 +177,21 @@
   "failedToShareMessage": "فشل في مشاركة الرسالة",
   "edit": "تعديل",
   "editToolTitle": "تعديل {path}",
-  "@editToolTitle": { "placeholders": { "path": { "type": "String" } } },
+  "@editToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "patchToolTitle": "رقع {path}",
-  "@patchToolTitle": { "placeholders": { "path": { "type": "String" } } },
+  "@patchToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "share": "مشاركة",
   "copyMessage": "نسخ الرسالة",
   "delete": "حذف",
@@ -552,7 +584,11 @@
   "mcpScopeGlobalProject": "عالمي + المشروع",
   "mcpRemoveFromScope": "إزالة من {scope}",
   "@mcpRemoveFromScope": {
-    "placeholders": { "scope": { "type": "String" } }
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
   },
   "mcpRemoveFromAll": "إزالة من الكل",
   "mcpTokenDialogTitle": "المصادقة",
@@ -648,7 +684,13 @@
   "skillsInstallToGlobal": "تثبيت في Global",
   "skillsInstallToProject": "تثبيت في Project",
   "skillsInstalledToast": "{name} · تم التثبيت",
-  "@skillsInstalledToast": { "placeholders": { "name": { "type": "String" } } },
+  "@skillsInstalledToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "skillsTabGlobalTooltip": "المهارات المتاحة في كل المشاريع",
   "skillsTabProjectTooltip": "مهارات خاصة بهذا المشروع فقط",
   "skillsTabMarketplaceTooltip": "تصفح وتثبيت مهارات جاهزة",
@@ -671,7 +713,13 @@
   "toolResultRestoredSnackbar": "تم استعادة الملفات إلى الحالة قبل التعديل",
   "toolResultOriginalTitle": "المحتوى الأصلي قبل التعديل",
   "restoreFailed": "فشلت الاستعادة: {error}",
-  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "compactingIndicator": "جارِ الضغط...",
   "compactionAgentName": "ضغط",
   "workspaces": "مساحات العمل",

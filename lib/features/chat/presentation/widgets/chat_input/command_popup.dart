@@ -1,10 +1,29 @@
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class SlashCommand {
   final String name;
   final String description;
-  const SlashCommand(this.name, this.description);
+
+  /// Payload of a file-defined command; null for built-in commands.
+  final String? template;
+  final String? agent;
+  final String? model;
+  final String? variant;
+  final bool? subtask;
+  final List<String> hints;
+
+  const SlashCommand(
+    this.name,
+    this.description, {
+    this.template,
+    this.agent,
+    this.model,
+    this.variant,
+    this.subtask,
+    this.hints = const [],
+  });
 }
 
 class CommandPopup extends StatefulWidget {
@@ -61,7 +80,7 @@ class _CommandPopupState extends State<CommandPopup> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context)!;
-    final query = widget.filter.toLowerCase();
+    final query = widget.filter.trim().toLowerCase();
     final filtered = query.isEmpty
         ? widget.commands
         : widget.commands
@@ -126,16 +145,16 @@ class _CommandPopupState extends State<CommandPopup> {
                         horizontal: 16,
                         vertical: 8,
                       ),
-                      color: selected
-                          ? theme.colorScheme.primaryContainer
-                          : Colors.transparent,
+                      decoration: selected
+                          ? PopupItemDefaults.selectedItemDecoration(context)
+                          : null,
                       child: Row(
                         children: [
                           Icon(
                             Icons.code,
                             size: 20,
                             color: selected
-                                ? theme.colorScheme.onPrimaryContainer
+                                ? PopupItemDefaults.selectedIconColor(context)
                                 : theme.colorScheme.primary,
                           ),
                           const SizedBox(width: 12),
@@ -146,16 +165,24 @@ class _CommandPopupState extends State<CommandPopup> {
                               children: [
                                 Text(
                                   cmd.name,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: selected
+                                      ? PopupItemDefaults.selectedNameStyle(context)
+                                      : theme.textTheme.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                 ),
                                 Text(
-                                  cmd.description,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.textTheme.bodySmall?.color
-                                        ?.withValues(alpha: 0.7),
-                                  ),
+                                  cmd.description.isEmpty &&
+                                          cmd.hints.isNotEmpty
+                                      ? cmd.hints.join('  ')
+                                      : cmd.description,
+                                  style: selected
+                                      ? PopupItemDefaults
+                                          .selectedDescriptionStyle(context)
+                                      : theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.textTheme.bodySmall?.color
+                                              ?.withValues(alpha: 0.7),
+                                        ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),

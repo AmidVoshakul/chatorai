@@ -32,6 +32,17 @@
   "showContinuationSuggestionsDesc": "在 AI 回复后显示续写建议",
   "expandReasoningByDefault": "默认展开推理过程",
   "expandReasoningByDefaultDesc": "AI 回复时默认展开思考/推理块",
+  "slashCommandSkills": "显示可用技能",
+  "slashCommandNew": "开始新对话",
+  "slashCommandClear": "清空当前对话",
+  "slashCommandCompact": "压缩对话上下文",
+  "slashCommandHelp": "显示帮助",
+  "slashCommandUndo": "撤销上一步操作",
+  "slashCommandRedo": "重做上一步操作",
+  "slashCommandSessions": "列出会话",
+  "slashCommandModels": "选择模型",
+  "slashCommandTheme": "切换主题",
+  "slashCommandThinking": "切换推理可见性",
   "language": "语言",
   "english": "英语",
   "russian": "俄语",
@@ -44,6 +55,15 @@
   "save": "保存",
   "cancel": "取消",
   "close": "关闭",
+  "errorLoadingChat": "加载聊天失败：{error}",
+  "@errorLoadingChat": {
+    "type": "text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "confirmOpenLink": "您确定要打开：",
   "copy": "复制",
   "apiKeyCopied": "API 密钥已复制",
@@ -157,9 +177,21 @@
   "failedToShareMessage": "无法分享消息",
   "edit": "编辑",
   "editToolTitle": "编辑 {path}",
-  "@editToolTitle": { "placeholders": { "path": { "type": "String" } } },
+  "@editToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "patchToolTitle": "补丁 {path}",
-  "@patchToolTitle": { "placeholders": { "path": { "type": "String" } } },
+  "@patchToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "share": "分享",
   "copyMessage": "复制消息",
   "delete": "删除",
@@ -552,7 +584,11 @@
   "mcpScopeGlobalProject": "全局 + 项目",
   "mcpRemoveFromScope": "从 {scope} 移除",
   "@mcpRemoveFromScope": {
-    "placeholders": { "scope": { "type": "String" } }
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
   },
   "mcpRemoveFromAll": "从所有位置移除",
   "mcpTokenDialogTitle": "身份验证",
@@ -648,7 +684,13 @@
   "skillsInstallToGlobal": "安装到 Global",
   "skillsInstallToProject": "安装到 Project",
   "skillsInstalledToast": "{name} · 已安装",
-  "@skillsInstalledToast": { "placeholders": { "name": { "type": "String" } } },
+  "@skillsInstalledToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "skillsTabGlobalTooltip": "在所有项目中可用的技能",
   "skillsTabProjectTooltip": "仅限本项目的技能",
   "skillsTabMarketplaceTooltip": "浏览并安装现成技能",
@@ -671,7 +713,13 @@
   "toolResultRestoredSnackbar": "文件已还原到编辑前状态",
   "toolResultOriginalTitle": "编辑前的原始内容",
   "restoreFailed": "还原失败：{error}",
-  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "compactingIndicator": "压缩中...",
   "compactionAgentName": "压缩",
   "workspaces": "工作区",

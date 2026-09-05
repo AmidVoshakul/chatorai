@@ -33,6 +33,17 @@
   "showContinuationSuggestionsDesc": "Display suggested follow-up messages after AI responses",
   "expandReasoningByDefault": "Expand reasoning by default",
   "expandReasoningByDefaultDesc": "Show reasoning/thought blocks expanded when AI responds",
+  "slashCommandSkills": "Show available skills",
+  "slashCommandNew": "Start a new chat",
+  "slashCommandClear": "Clear current chat",
+  "slashCommandCompact": "Compress conversation context",
+  "slashCommandHelp": "Show help",
+  "slashCommandUndo": "Undo last action",
+  "slashCommandRedo": "Redo last undone action",
+  "slashCommandSessions": "List sessions",
+  "slashCommandModels": "Select model",
+  "slashCommandTheme": "Change theme",
+  "slashCommandThinking": "Toggle reasoning visibility",
   "language": "Language",
   "english": "English",
   "russian": "Russian",
@@ -45,6 +56,15 @@
   "save": "Save",
   "cancel": "Cancel",
   "close": "Close",
+  "errorLoadingChat": "Failed to load chat: {error}",
+  "@errorLoadingChat": {
+    "type": "text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "confirmOpenLink": "Are you sure you want to open:",
   "copy": "Copy",
   "apiKeyCopied": "API key copied",
@@ -157,9 +177,21 @@
   "failedToShareMessage": "Failed to share message",
   "edit": "Edit",
   "editToolTitle": "Edit {path}",
-  "@editToolTitle": { "placeholders": { "path": { "type": "String" } } },
+  "@editToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "patchToolTitle": "Patch {path}",
-  "@patchToolTitle": { "placeholders": { "path": { "type": "String" } } },
+  "@patchToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "share": "Share",
   "copyMessage": "Copy message",
   "delete": "Delete",
@@ -553,7 +585,11 @@
   "mcpScopeGlobalProject": "Global + Project",
   "mcpRemoveFromScope": "Remove from {scope}",
   "@mcpRemoveFromScope": {
-    "placeholders": { "scope": { "type": "String" } }
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
   },
   "mcpRemoveFromAll": "Remove from all",
   "mcpTokenDialogTitle": "Authentication",
@@ -632,24 +668,40 @@
   "skillsReadOnly": "Read-only",
   "skillsFilesCount": "{count} files",
   "@skillsFilesCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "skillsCreated": "Skill created",
   "skillsSaved": "Skill saved",
   "skillsRemoved": "Skill removed",
   "skillsInstalled": "Installed {count} skill(s)",
   "@skillsInstalled": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "skillsInstallNone": "No skills found at that URL",
   "skillsRemoveTitle": "Remove skill",
   "skillsRemoveContent": "Remove \"{name}\"? This deletes its folder from disk.",
   "@skillsRemoveContent": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "skillsSaveError": "Could not complete: {error}",
   "@skillsSaveError": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "skillsEmpty": "No skills yet",
   "skillsEmptyHint": "Create a skill or install one from a URL to get started.",
@@ -661,7 +713,13 @@
   "skillsInstallToGlobal": "Install to Global",
   "skillsInstallToProject": "Install to Project",
   "skillsInstalledToast": "{name} · installed",
-  "@skillsInstalledToast": { "placeholders": { "name": { "type": "String" } } },
+  "@skillsInstalledToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "skillsTabGlobalTooltip": "Skills available in every project",
   "skillsTabProjectTooltip": "Skills scoped to this project",
   "skillsTabMarketplaceTooltip": "Browse and install ready-made skills",
@@ -684,7 +742,13 @@
   "toolResultRestoredSnackbar": "Files restored to before-edit state",
   "toolResultOriginalTitle": "Original content before edit",
   "restoreFailed": "Restore failed: {error}",
-  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "compactingIndicator": "Compacting...",
   "compactionAgentName": "Compaction",
   "workspaces": "Workspaces",

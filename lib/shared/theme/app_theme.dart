@@ -98,6 +98,7 @@ class ChatoraiColors {
   // Orange palette variants
   static const Color orangeLight = Color(0xFFFFC04C);
   static const Color orangeDark = Color(0xFFCC8400);
+  static const Color orangeJyice = Color(0xFFFF5E00);
 
   // Premium dark sheet (permission / question bottom sheets)
   static const Color premiumSurface = Color(0xFF151515);
@@ -781,4 +782,47 @@ class AppTheme {
 
   static ThemeData getTheme(Brightness brightness) =>
       brightness == Brightness.light ? lightTheme : darkTheme;
+}
+
+// ===============================================================
+// POPUP DEFAULTS
+// ===============================================================
+
+class PopupItemDefaults {
+  static BoxDecoration selectedItemDecoration(BuildContext context) {
+    final theme = Theme.of(context);
+    return BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          ChatoraiColors.orangeJyice,
+          theme.colorScheme.primaryContainer,
+        ],
+        stops: const [0.0, 1.0],
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+      ),
+    );
+  }
+
+  static Color selectedIconColor(BuildContext context) =>
+      Theme.of(context).colorScheme.onPrimaryContainer;
+
+  static TextStyle selectedNameStyle(BuildContext context) {
+    final theme = Theme.of(context);
+    return (theme.textTheme.bodyMedium ?? const TextStyle()).copyWith(
+      fontWeight: FontWeight.w600,
+      color: theme.colorScheme.onPrimaryContainer,
+    );
+  }
+
+  static TextStyle selectedDescriptionStyle(BuildContext context) {
+    final theme = Theme.of(context);
+    return (theme.textTheme.bodySmall ?? const TextStyle()).copyWith(
+      color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+    );
+  }
+
+  static Widget buildDimOverlay() {
+    return Container(color: ChatoraiColors.black30);
+  }
 }

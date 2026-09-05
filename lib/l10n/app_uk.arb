@@ -32,6 +32,17 @@
   "showContinuationSuggestionsDesc": "Відображати пропозиції для продовження після відповіді AI",
   "expandReasoningByDefault": "Розгортати reasoning за замовчуванням",
   "expandReasoningByDefaultDesc": "Показувати блоки розмірковування розгорнутими при відповіді AI",
+  "slashCommandSkills": "Показати доступні навички",
+  "slashCommandNew": "Почати новий чат",
+  "slashCommandClear": "Очистити поточний чат",
+  "slashCommandCompact": "Стиснути контекст розмови",
+  "slashCommandHelp": "Показати довідку",
+  "slashCommandUndo": "Скасувати останню дію",
+  "slashCommandRedo": "Повторити скасовану дію",
+  "slashCommandSessions": "Список сесій",
+  "slashCommandModels": "Вибрати модель",
+  "slashCommandTheme": "Змінити тему",
+  "slashCommandThinking": "Перемкнути видимість reasoning",
   "language": "Мова",
   "english": "Англійська",
   "russian": "Російська",
@@ -44,6 +55,15 @@
   "save": "Зберегти",
   "cancel": "Скасувати",
   "close": "Закрити",
+  "errorLoadingChat": "Не вдалося завантажити чат: {error}",
+  "@errorLoadingChat": {
+    "type": "text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "confirmOpenLink": "Ви дійсно хочете відкрити:",
   "copy": "Копіювати",
   "apiKeyCopied": "API ключ скопійовано",
@@ -157,9 +177,21 @@
   "failedToShareMessage": "Не вдалося поділитися повідомленням",
   "edit": "Редагувати",
   "editToolTitle": "Редагувати {path}",
-  "@editToolTitle": { "placeholders": { "path": { "type": "String" } } },
+  "@editToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "patchToolTitle": "Патч {path}",
-  "@patchToolTitle": { "placeholders": { "path": { "type": "String" } } },
+  "@patchToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "share": "Поділитися",
   "copyMessage": "Копіювати повідомлення",
   "delete": "Видалити",
@@ -552,7 +584,11 @@
   "mcpScopeGlobalProject": "Глобально + Проєкт",
   "mcpRemoveFromScope": "Видалити з {scope}",
   "@mcpRemoveFromScope": {
-    "placeholders": { "scope": { "type": "String" } }
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
   },
   "mcpRemoveFromAll": "Видалити з усіх",
   "mcpTokenDialogTitle": "Автентифікація",
@@ -648,7 +684,13 @@
   "skillsInstallToGlobal": "Встановити в Global",
   "skillsInstallToProject": "Встановити в Project",
   "skillsInstalledToast": "{name} · встановлено",
-  "@skillsInstalledToast": { "placeholders": { "name": { "type": "String" } } },
+  "@skillsInstalledToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "skillsTabGlobalTooltip": "Навички, доступні в усіх проєктах",
   "skillsTabProjectTooltip": "Навички лише для цього проєкту",
   "skillsTabMarketplaceTooltip": "Перегляд і встановлення готових навичок",
@@ -671,7 +713,13 @@
   "toolResultRestoredSnackbar": "Файли відновлено до стану до редагування",
   "toolResultOriginalTitle": "Оригінальний вміст перед редагуванням",
   "restoreFailed": "Не вдалося відновити: {error}",
-  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "compactingIndicator": "Стиснення...",
   "compactionAgentName": "Стиснення",
   "workspaces": "Робочі директорії",

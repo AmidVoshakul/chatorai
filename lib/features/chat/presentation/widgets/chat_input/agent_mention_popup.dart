@@ -111,16 +111,16 @@ class _AgentMentionPopupState extends State<AgentMentionPopup> {
                         horizontal: ChatoraiSpacing.lg,
                         vertical: ChatoraiSpacing.sm,
                       ),
-                      color: isSelected
-                          ? theme.colorScheme.primaryContainer
-                          : Colors.transparent,
+                      decoration: isSelected
+                          ? PopupItemDefaults.selectedItemDecoration(context)
+                          : null,
                       child: Row(
                         children: [
                           Icon(
                             Icons.auto_awesome,
                             size: ChatoraiIconSizes.buttonIcon,
                             color: isSelected
-                                ? theme.colorScheme.onPrimaryContainer
+                                ? PopupItemDefaults.selectedIconColor(context)
                                 : theme.colorScheme.primary,
                           ),
                           const SizedBox(width: ChatoraiSpacing.md),
@@ -131,17 +131,23 @@ class _AgentMentionPopupState extends State<AgentMentionPopup> {
                               children: [
                                 Text(
                                   agent.name,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: isSelected
+                                      ? PopupItemDefaults
+                                          .selectedNameStyle(context)
+                                      : theme.textTheme.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                 ),
                                 if (agent.description != null)
                                   Text(
                                     agent.description!,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.textTheme.bodySmall?.color
-                                          ?.withValues(alpha: 0.7),
-                                    ),
+                                    style: isSelected
+                                        ? PopupItemDefaults
+                                            .selectedDescriptionStyle(context)
+                                        : theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.textTheme.bodySmall?.color
+                                                ?.withValues(alpha: 0.7),
+                                          ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),

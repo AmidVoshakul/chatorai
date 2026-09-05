@@ -1,5 +1,6 @@
 import 'package:chatorai/core/skills/skill_info.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class SkillsPopup extends StatefulWidget {
@@ -144,16 +145,16 @@ class _SkillsPopupState extends State<SkillsPopup> {
                           horizontal: _ThemeDefaults.spacingLg,
                           vertical: _ThemeDefaults.spacingSm,
                         ),
-                        color: isSelected
-                            ? theme.colorScheme.primaryContainer
-                            : Colors.transparent,
+                        decoration: isSelected
+                            ? PopupItemDefaults.selectedItemDecoration(context)
+                            : null,
                         child: Row(
                           children: [
                             Icon(
                               Icons.psychology,
                               size: _ThemeDefaults.iconSize,
                               color: isSelected
-                                  ? theme.colorScheme.onPrimaryContainer
+                                  ? PopupItemDefaults.selectedIconColor(context)
                                   : theme.colorScheme.primary,
                             ),
                             if (!isAllowed) ...[
@@ -172,16 +173,22 @@ class _SkillsPopupState extends State<SkillsPopup> {
                                 children: [
                                   Text(
                                     skill.name,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: isSelected
+                                        ? PopupItemDefaults
+                                            .selectedNameStyle(context)
+                                        : theme.textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                   ),
                                   Text(
                                     skill.description,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.textTheme.bodySmall?.color
-                                          ?.withValues(alpha: 0.7),
-                                    ),
+                                    style: isSelected
+                                        ? PopupItemDefaults
+                                            .selectedDescriptionStyle(context)
+                                        : theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.textTheme.bodySmall?.color
+                                                ?.withValues(alpha: 0.7),
+                                          ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),

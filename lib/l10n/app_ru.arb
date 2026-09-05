@@ -32,6 +32,17 @@
   "showContinuationSuggestionsDesc": "Отображать предложения для продолжения после ответа AI",
   "expandReasoningByDefault": "Разворачивать reasoning по умолчанию",
   "expandReasoningByDefaultDesc": "Показывать блоки рассуждений развёрнутыми при ответе AI",
+  "slashCommandSkills": "Показать доступные навыки",
+  "slashCommandNew": "Начать новый чат",
+  "slashCommandClear": "Очистить текущий чат",
+  "slashCommandCompact": "Сжать контекст беседы",
+  "slashCommandHelp": "Показать справку",
+  "slashCommandUndo": "Отменить последнее действие",
+  "slashCommandRedo": "Повторить отменённое действие",
+  "slashCommandSessions": "Список сессий",
+  "slashCommandModels": "Выбрать модель",
+  "slashCommandTheme": "Сменить тему",
+  "slashCommandThinking": "Переключить видимость reasoning",
   "language": "Язык",
   "english": "Английский",
   "russian": "Русский",
@@ -44,6 +55,15 @@
   "save": "Сохранить",
   "cancel": "Отмена",
   "close": "Закрыть",
+  "errorLoadingChat": "Не удалось загрузить чат: {error}",
+  "@errorLoadingChat": {
+    "type": "text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "confirmOpenLink": "Вы действительно хотите открыть:",
   "copy": "Скопировать",
   "apiKeyCopied": "API ключ скопирован",
@@ -157,9 +177,21 @@
   "failedToShareMessage": "Не удалось поделиться сообщением",
   "edit": "Редактировать",
   "editToolTitle": "Редактировать {path}",
-  "@editToolTitle": { "placeholders": { "path": { "type": "String" } } },
+  "@editToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "patchToolTitle": "Патч {path}",
-  "@patchToolTitle": { "placeholders": { "path": { "type": "String" } } },
+  "@patchToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "share": "Поделиться",
   "copyMessage": "Копировать сообщение",
   "delete": "Удалить",
@@ -552,7 +584,11 @@
   "mcpScopeGlobalProject": "Глобально + Проект",
   "mcpRemoveFromScope": "Удалить из {scope}",
   "@mcpRemoveFromScope": {
-    "placeholders": { "scope": { "type": "String" } }
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
   },
   "mcpRemoveFromAll": "Удалить из всех",
   "mcpTokenDialogTitle": "Аутентификация",
@@ -648,7 +684,13 @@
   "skillsInstallToGlobal": "Установить в Global",
   "skillsInstallToProject": "Установить в Project",
   "skillsInstalledToast": "{name} · установлено",
-  "@skillsInstalledToast": { "placeholders": { "name": { "type": "String" } } },
+  "@skillsInstalledToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "skillsTabGlobalTooltip": "Навыки, доступные во всех проектах",
   "skillsTabProjectTooltip": "Навыки только для этого проекта",
   "skillsTabMarketplaceTooltip": "Просмотр и установка готовых навыков",
@@ -671,7 +713,13 @@
   "toolResultRestoredSnackbar": "Файлы восстановлены до состояния перед редактированием",
   "toolResultOriginalTitle": "Исходное содержимое перед редактированием",
   "restoreFailed": "Не удалось восстановить: {error}",
-  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "compactingIndicator": "Сжатие...",
   "compactionAgentName": "Сжатие",
   "workspaces": "Рабочие директории",

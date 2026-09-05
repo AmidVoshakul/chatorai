@@ -2,6 +2,8 @@
 // Agents
 import 'package:chatorai/core/agents/agent_provider.dart'
     show currentAgentProvider;
+import 'package:chatorai/core/commands/command_parser.dart';
+import 'package:chatorai/core/commands/command_providers.dart';
 import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/permission/permission_provider.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
@@ -21,6 +23,7 @@ import 'package:chatorai/features/chat/data/providers/chat_providers.dart';
 import 'package:chatorai/features/models/providers/model_provider.dart'
     show modelProvider;
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/shared/theme/theme_provider.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:flutter/material.dart';
@@ -46,18 +49,90 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
   String _commandQuery = '';
 
   // Extended command palette
-  final List<SlashCommand> _allCommands = const [
-    SlashCommand('/skills', 'Show available skills'),
-    SlashCommand('/new', 'Start a new chat'),
-    SlashCommand('/clear', 'Clear current chat'),
-    SlashCommand('/compact', 'Compress conversation context'),
-    SlashCommand('/help', 'Show help'),
-    SlashCommand('/undo', 'Undo last action'),
-    SlashCommand('/redo', 'Redo last undone action'),
-    SlashCommand('/sessions', 'List sessions'),
-    SlashCommand('/models', 'Select model'),
-    SlashCommand('/theme', 'Change theme'),
+  static const List<SlashCommand> _builtinCommands = [
+    SlashCommand('/skills', ''),
+    SlashCommand('/new', ''),
+    SlashCommand('/clear', ''),
+    SlashCommand('/compact', ''),
+    SlashCommand('/help', ''),
+    SlashCommand('/undo', ''),
+    SlashCommand('/redo', ''),
+    SlashCommand('/sessions', ''),
+    SlashCommand('/models', ''),
+    SlashCommand('/theme', ''),
+    SlashCommand('/thinking', ''),
   ];
+
+  static String _localizeBuiltinCommand(
+    AppLocalizations? localizations,
+    String name,
+  ) {
+    if (localizations == null) return '';
+    switch (name) {
+      case '/skills':
+        return localizations.slashCommandSkills;
+      case '/new':
+        return localizations.slashCommandNew;
+      case '/clear':
+        return localizations.slashCommandClear;
+      case '/compact':
+        return localizations.slashCommandCompact;
+      case '/help':
+        return localizations.slashCommandHelp;
+      case '/undo':
+        return localizations.slashCommandUndo;
+      case '/redo':
+        return localizations.slashCommandRedo;
+      case '/sessions':
+        return localizations.slashCommandSessions;
+      case '/models':
+        return localizations.slashCommandModels;
+      case '/theme':
+        return localizations.slashCommandTheme;
+      case '/thinking':
+        return localizations.slashCommandThinking;
+      default:
+        return '';
+    }
+  }
+
+  List<SlashCommand> _localizedBuiltinCommands() {
+    final localizations = AppLocalizations.of(context);
+    return _builtinCommands
+        .map(
+          (cmd) => SlashCommand(
+            cmd.name,
+            _localizeBuiltinCommand(localizations, cmd.name),
+            template: cmd.template,
+            agent: cmd.agent,
+            model: cmd.model,
+            variant: cmd.variant,
+            subtask: cmd.subtask,
+            hints: cmd.hints,
+          ),
+        )
+        .toList();
+  }
+
+  /// Built-ins plus file-defined commands from the global and project config
+  /// roots. Custom entries are mapped eagerly so the palette stays
+  /// synchronous; unknown-yet loads simply contribute nothing.
+  List<SlashCommand> get _allCommands {
+    final custom = ref.read(customCommandsProvider).value;
+    if (custom == null || custom.isEmpty) return _localizedBuiltinCommands();
+    return [..._localizedBuiltinCommands(), ...custom.map(_toSlashCommand)];
+  }
+
+  SlashCommand _toSlashCommand(CommandInfo info) => SlashCommand(
+    '/${info.name}',
+    info.description ?? '',
+    template: info.template,
+    agent: info.agent,
+    model: info.model,
+    variant: info.variant,
+    subtask: info.subtask,
+    hints: commandHints(info.template),
+  );
 
   List<SlashCommand> get _filteredCommands {
     if (_commandQuery.isEmpty) return _allCommands;
@@ -73,17 +148,19 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
 
   TextEditingController get textController;
   PopupController get popupController;
-  VoidCallback? get onMessageAdded;
   GlobalKey get textFieldKey;
   ScrollController get commandScrollController;
   ScrollController get skillsScrollController;
   Future<void> Function()? get onCompact;
+  ValueChanged<bool>? get onPopupVisibilityChanged;
   // ref is inherited from ConsumerState
 
   @override
   void initState() {
     super.initState();
     _loadSkillService();
+    // Warm the custom-command cache so the palette shows them on first '/'.
+    ref.read(customCommandsProvider.future).ignore();
   }
 
   /// Must be called from `build()` (Riverpod forbids `ref.listen` in
@@ -96,6 +173,20 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
       _skillService = next.value;
       _allSkills = [];
       _allowedSkillNames.clear();
+    });
+  }
+
+  /// Must be called from `build()` (same rule as [listenForSkillChanges]).
+  /// Re-renders the input when custom commands change on disk so the palette
+  /// getter (which reads the provider eagerly) is refreshed deterministically
+  /// instead of relying on incidental rebuilds from typing.
+  void listenForCustomCommands() {
+    ref.listen<AsyncValue<List<CommandInfo>>>(customCommandsProvider, (
+      previous,
+      next,
+    ) {
+      if (!mounted) return;
+      setState(() {});
     });
   }
 
@@ -168,8 +259,13 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
           _slashQuery = afterSlash.length > 6 ? afterSlash.substring(7) : '';
           showSkillsPopup();
           hideCommandPopup();
+        } else if (afterSlash.contains(' ')) {
+          // Arguments are being typed after a complete command name — the
+          // palette has served its purpose and must stay out of the way.
+          hideCommandPopup();
+          hideSkillsPopup();
         } else {
-          // Other exact command → show command palette (filtered to this command)
+          // Complete name, no arguments yet → keep the single candidate visible
           LogTags.chat.logDebug(
             '[SlashCommandHandler] exact command ${exactCmd.name} matched, showing command palette',
           );
@@ -263,22 +359,30 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
 
     popupController.setOverlay(PopupType.command, entry);
     overlay.insert(entry);
+    _notifyPopupVisibility();
+  }
+
+  void _notifyPopupVisibility() {
+    final anyVisible =
+        popupController.isPopupVisible(PopupType.command) ||
+        popupController.isPopupVisible(PopupType.skills) ||
+        popupController.isPopupVisible(PopupType.agent);
+    onPopupVisibilityChanged?.call(anyVisible);
   }
 
   void hideCommandPopup() {
     popupController.hidePopup(PopupType.command);
+    _notifyPopupVisibility();
   }
 
   void navigateCommandPopup(bool down) {
     final cmds = _filteredCommands;
     if (cmds.isEmpty) return;
-    final newIndex = down
-        ? _selectedCommandIndex + 1
-        : _selectedCommandIndex - 1;
-    if (newIndex >= 0 && newIndex < cmds.length) {
-      _selectedCommandIndex = newIndex;
-      _updateCommandPopup();
-    }
+    final len = cmds.length;
+    _selectedCommandIndex = down
+        ? (_selectedCommandIndex + 1) % len
+        : (_selectedCommandIndex - 1 + len) % len;
+    _updateCommandPopup();
   }
 
   void _updateCommandPopup() {
@@ -308,6 +412,13 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
       final newChat = await ref.read(chatListProvider.notifier).createNewChat();
       ref.read(currentChatIdProvider.notifier).setChatId(newChat.id);
       ref.read(permissionServiceProvider).clearSession();
+      return;
+    }
+
+    if (cmd.name == '/thinking') {
+      final current = ref.read(themeProvider).expandReasoningByDefault;
+      ref.read(themeProvider.notifier).setExpandReasoningByDefault(!current);
+      textController.clear();
       return;
     }
 
@@ -418,20 +529,22 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
 
     popupController.setOverlay(PopupType.skills, entry);
     overlay.insert(entry);
+    _notifyPopupVisibility();
   }
 
   void hideSkillsPopup() {
     popupController.hidePopup(PopupType.skills);
+    _notifyPopupVisibility();
   }
 
   void navigateSkillsPopup(bool down) {
     final skills = _filteredSkills;
     if (skills.isEmpty) return;
-    final newIndex = down ? _selectedSkillIndex + 1 : _selectedSkillIndex - 1;
-    if (newIndex >= 0 && newIndex < skills.length) {
-      _selectedSkillIndex = newIndex;
-      _updateSkillsPopup();
-    }
+    final len = skills.length;
+    _selectedSkillIndex = down
+        ? (_selectedSkillIndex + 1) % len
+        : (_selectedSkillIndex - 1 + len) % len;
+    _updateSkillsPopup();
   }
 
   void _updateSkillsPopup() {
@@ -671,7 +784,6 @@ mixin SlashCommandHandler<T extends ConsumerStatefulWidget>
     LogTags.chat.logDebug(
       '[SlashCommandHandler] Skill inserted: ${skill.name}',
     );
-    onMessageAdded?.call();
 
     if (mounted) {
       final localizations = AppLocalizations.of(context)!;

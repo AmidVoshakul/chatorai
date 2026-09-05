@@ -32,6 +32,17 @@
   "showContinuationSuggestionsDesc": "AIの応答後にフォローアップ提案を表示します",
   "expandReasoningByDefault": "デフォルトで推論を展開",
   "expandReasoningByDefaultDesc": "AIの応答時に思考ブロックを展開して表示します",
+  "slashCommandSkills": "利用可能なスキルを表示",
+  "slashCommandNew": "新しいチャットを開始",
+  "slashCommandClear": "現在のチャットをクリア",
+  "slashCommandCompact": "会話コンテキストを圧縮",
+  "slashCommandHelp": "ヘルプを表示",
+  "slashCommandUndo": "元に戻す",
+  "slashCommandRedo": "やり直し",
+  "slashCommandSessions": "セッション一覧",
+  "slashCommandModels": "モデルを選択",
+  "slashCommandTheme": "テーマを変更",
+  "slashCommandThinking": "推論の表示を切り替え",
   "language": "言語",
   "english": "英語",
   "russian": "ロシア語",
@@ -44,6 +55,15 @@
   "save": "保存",
   "cancel": "キャンセル",
   "close": "閉じる",
+  "errorLoadingChat": "チャットの読み込みに失敗しました：{error}",
+  "@errorLoadingChat": {
+    "type": "text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "confirmOpenLink": "本当に開きますか：",
   "copy": "コピー",
   "apiKeyCopied": "API キーがコピーされました",
@@ -157,9 +177,21 @@
   "failedToShareMessage": "メッセージの共有に失敗しました",
   "edit": "編集",
   "editToolTitle": "編集 {path}",
-  "@editToolTitle": { "placeholders": { "path": { "type": "String" } } },
+  "@editToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "patchToolTitle": "パッチ {path}",
-  "@patchToolTitle": { "placeholders": { "path": { "type": "String" } } },
+  "@patchToolTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "share": "共有",
   "copyMessage": "メッセージをコピー",
   "delete": "削除",
@@ -552,7 +584,11 @@
   "mcpScopeGlobalProject": "グローバル + プロジェクト",
   "mcpRemoveFromScope": "{scope} から削除",
   "@mcpRemoveFromScope": {
-    "placeholders": { "scope": { "type": "String" } }
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
   },
   "mcpRemoveFromAll": "すべての場所から削除",
   "mcpTokenDialogTitle": "認証",
@@ -648,7 +684,13 @@
   "skillsInstallToGlobal": "Global にインストール",
   "skillsInstallToProject": "Project にインストール",
   "skillsInstalledToast": "{name} · インストール済み",
-  "@skillsInstalledToast": { "placeholders": { "name": { "type": "String" } } },
+  "@skillsInstalledToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "skillsTabGlobalTooltip": "すべてのプロジェクトで使えるスキル",
   "skillsTabProjectTooltip": "このプロジェクト限定のスキル",
   "skillsTabMarketplaceTooltip": "既製スキルの閲覧とインストール",
@@ -671,7 +713,13 @@
   "toolResultRestoredSnackbar": "編集前の状態にファイルを復元しました",
   "toolResultOriginalTitle": "編集前の元のコンテンツ",
   "restoreFailed": "復元に失敗しました：{error}",
-  "@restoreFailed": { "placeholders": { "error": { "type": "String" } } },
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "compactingIndicator": "圧縮中...",
   "compactionAgentName": "圧縮",
   "workspaces": "ワークスペース",
