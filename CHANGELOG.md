@@ -25,6 +25,14 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - **Tool-card display order**: Tools no longer appear mid-thought. Reasoning blocks are closed before tool cards are emitted, and subsequent reasoning after a tool becomes a separate block — restoring the visual order `thought → tool → tool → thought → answer`.
+- **Child-session scroll and auto-scroll stability**:
+  - Removed auto-scroll-to-bottom on session open for child windows; pages now respect the user's saved scroll position when swiping between siblings.
+  - `PageController.keepPage: true` + `AutomaticKeepAliveClientMixin` preserve scroll position across sibling page changes.
+  - `_ensureTitle` race condition fixed: a monotonic request ID prevents stale async responses from overwriting the active title during fast swipes.
+  - `SessionContextWindow` now accepts an explicit `followController`, eliminating implicit internal instances in child sessions.
+  - `ChatMessages._signature` now hashes all messages (`id`, `content`, `isComplete`, `role`) so mid-list edits invalidate the cache correctly.
+  - `ChatScrollFollowController.noteGrowth()` schedules the snap via a post-frame callback with coalescing (`_scrollScheduled`), preventing multiple redundant scrolls per frame.
+  - Bottom snap uses `animateTo(30ms)` instead of `jumpTo()` so the scroll tracks new content dimensions after layout, eliminating the text-vs-bubble desync during streaming and after tool cards appear.
 
 ### Tests
 

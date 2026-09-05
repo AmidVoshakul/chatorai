@@ -1,19 +1,11 @@
 import 'package:chatorai/core/session/session_repository.dart';
-import 'package:chatorai/core/session/session_state.dart' show SessionState;
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
-    show AssistantContent, AssistantText;
 import 'package:chatorai/features/chat/data/models/chat/message_converter.dart'
-    show assistantContentToPartMaps;
-import 'package:chatorai/features/chat/data/models/chat_models.dart'
-    show Chat, Message, MessageRole;
+    show sessionStateToChat;
 import 'package:chatorai/features/chat/presentation/widgets/chat_messages.dart';
+import 'package:chatorai/features/chat/presentation/widgets/chat_scroll_follow_controller.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart'
-    show
-        modelProvider,
-        sessionPartsProvider,
-        sessionRepositoryProvider,
-        themeProvider;
+    show modelProvider, sessionPartsProvider, sessionRepositoryProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,12 +14,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class SessionContextWindow extends ConsumerStatefulWidget {
   final String sessionId;
   final ScrollController? scrollController;
+  final ChatScrollFollowController? followController;
   final void Function(String? taskSessionId)? onTaskTap;
 
   const SessionContextWindow({
     super.key,
     required this.sessionId,
     this.scrollController,
+    this.followController,
     this.onTaskTap,
   });
 
@@ -38,133 +32,19 @@ class SessionContextWindow extends ConsumerStatefulWidget {
 
 class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
   late ScrollController _scrollController;
-  bool _autoScrollEnabled = true;
-  int _previousPartsLength = 0;
 
   @override
   void initState() {
     super.initState();
     _scrollController = widget.scrollController ?? ScrollController();
-    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     if (widget.scrollController == null) {
       _scrollController.dispose();
     }
     super.dispose();
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final offset = _scrollController.offset;
-    final max = _scrollController.position.maxScrollExtent;
-    final distanceFromBottom = max - offset;
-    _autoScrollEnabled = distanceFromBottom <= 150;
-  }
-
-  void _scrollToBottom() {
-    if (!_scrollController.hasClients) return;
-    if (!ref.read(themeProvider).autoScrollDuringStreaming) return;
-    if (!_autoScrollEnabled) return;
-    final position = _scrollController.position;
-    if (!position.hasContentDimensions) return;
-    final maxScroll = position.maxScrollExtent;
-    final currentScroll = _scrollController.offset;
-    final diff = (maxScroll - currentScroll).abs();
-    if (diff < 5) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-    });
-  }
-
-  Message? _buildAssistantMessageFromParts(
-    List<AssistantContent> parts, {
-    String? model,
-  }) {
-    if (parts.isEmpty) return null;
-
-    String? textContent;
-
-    for (final part in parts) {
-      if (part is AssistantText) {
-        textContent = (textContent ?? '') + part.text;
-      }
-    }
-
-    return Message(
-      id: 'child_assistant_${DateTime.now().millisecondsSinceEpoch}',
-      role: MessageRole.assistant,
-      content: textContent ?? '',
-      timestamp: DateTime.now(),
-      // FIX #1: Do NOT flatten reasoning — partsJson is the source of truth.
-      reasoning: null,
-      isComplete: true,
-      partsJson: assistantContentToPartMaps(parts),
-      // FIX #2: Set model from state when available.
-      model: model,
-    );
-  }
-
-  List<Message> _buildMessages(SessionState state) {
-    final result = <Message>[];
-
-    // Emit user messages first
-    for (final m in state.messages) {
-      final roleName = m.role.toString().split('.').last;
-      if (roleName == 'user') {
-        result.add(
-          Message(
-            id: m.id,
-            role: MessageRole.user,
-            content: m.content,
-            timestamp: m.createdAt,
-          ),
-        );
-      }
-    }
-
-    // All assistant parts (reasoning + text + tools) go into ONE message
-    // This matches architecture where an assistant message contains
-    // an array of parts, and matches ChatMessages expectation
-    final assistantMessage = _buildAssistantMessageFromParts(
-      state.parts,
-      model: state.modelRef,
-    );
-    if (assistantMessage != null) {
-      result.add(assistantMessage);
-    }
-
-    return result;
-  }
-
-  void _applySessionTokens(List<Message> messages, SessionState state) {
-    if (state.tokensInput == 0 &&
-        state.tokensOutput == 0 &&
-        state.tokensReasoning == 0) {
-      return;
-    }
-    final lastAsst = messages.lastIndexWhere(
-      (m) => m.role == MessageRole.assistant,
-    );
-    if (lastAsst < 0) return;
-    final m = messages[lastAsst];
-    messages[lastAsst] = Message(
-      id: m.id,
-      role: m.role,
-      content: m.content,
-      timestamp: m.timestamp,
-      model: m.model,
-      reasoning: m.reasoning,
-      partsJson: m.partsJson,
-      isComplete: m.isComplete,
-      tokensInput: state.tokensInput,
-      tokensOutput: state.tokensOutput,
-      tokensReasoning: state.tokensReasoning,
-    );
   }
 
   @override
@@ -200,15 +80,9 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
       );
     }
 
-    if (state.parts.length > _previousPartsLength) {
-      _previousPartsLength = state.parts.length;
-      _scrollToBottom();
-    }
+    final chat = sessionStateToChat(state);
 
-    final legacyMessages = _buildMessages(state);
-    _applySessionTokens(legacyMessages, state);
-
-    if (legacyMessages.isEmpty) {
+    if (chat.messages.isEmpty) {
       final theme = Theme.of(context);
       return Center(
         child: Text(
@@ -217,14 +91,6 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
         ),
       );
     }
-
-    final chat = Chat(
-      id: widget.sessionId,
-      title: '',
-      messages: legacyMessages,
-      createdAt: legacyMessages.first.timestamp,
-      updatedAt: legacyMessages.last.timestamp,
-    );
 
     return FutureBuilder<SessionRepository>(
       future: ref.read(sessionRepositoryProvider.future),
@@ -246,6 +112,7 @@ class _SessionContextWindowState extends ConsumerState<SessionContextWindow> {
           onContinueResponse: (_) {},
           onRegenerateResponse: (_) {},
           scrollController: _scrollController,
+          followController: widget.followController,
           onTaskTap: widget.onTaskTap,
         );
       },

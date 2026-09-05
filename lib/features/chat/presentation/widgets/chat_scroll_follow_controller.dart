@@ -6,18 +6,18 @@ class ChatScrollFollowController {
   bool _autoScroll = true;
   bool _userAtBottom = true;
   bool _dragActive = false;
-  bool _needsInitialScroll = false;
+  bool _scrollScheduled = false;
   int _snapRetries = 0;
 
   void attach(ScrollController controller) {
     _scroll = controller;
-    _needsInitialScroll = true;
     _snapRetries = 0;
   }
 
   void dispose() {
     _scroll = null;
     _dragActive = false;
+    _scrollScheduled = false;
   }
 
   bool handleNotification(ScrollNotification notification) {
@@ -34,7 +34,6 @@ class ChatScrollFollowController {
     final c = _scroll;
     if (c == null || !c.hasClients) return;
     _userAtBottom = _isAtBottom(c);
-    _needsInitialScroll = false;
   }
 
   void noteGrowth({required bool autoScroll}) {
@@ -43,13 +42,25 @@ class ChatScrollFollowController {
     if (!c.position.hasContentDimensions) return;
     _autoScroll = autoScroll;
     _userAtBottom = _isAtBottom(c);
-    if (_needsInitialScroll && _autoScroll && !_dragActive) {
-      _needsInitialScroll = false;
-      _jumpToBottom(c);
+    if (_scrollScheduled) return;
+    if (!_autoScroll || !_userAtBottom || _dragActive) return;
+    _scrollScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollScheduled = false;
+      _trySnapToBottom();
+    });
+  }
+
+  void _trySnapToBottom() {
+    final c = _scroll;
+    if (c == null) return;
+    if (!c.hasClients || !c.position.hasContentDimensions) {
+      _snapToBottomImpl();
       return;
     }
+    _userAtBottom = _isAtBottom(c);
     if (_autoScroll && _userAtBottom && !_dragActive) {
-      _jumpToBottom(c);
+      _snapToBottomImpl();
     }
   }
 
@@ -75,7 +86,11 @@ class ChatScrollFollowController {
   void _jumpToBottom(ScrollController controller) {
     final target = controller.position.maxScrollExtent;
     if ((controller.offset - target).abs() <= 1.0) return;
-    controller.jumpTo(target);
+    controller.animateTo(
+      target,
+      duration: const Duration(milliseconds: 30),
+      curve: Curves.linear,
+    );
   }
 
   bool _isAtBottom(ScrollController controller) {

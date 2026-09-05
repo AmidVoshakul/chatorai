@@ -128,13 +128,12 @@ class ChatMessagesState extends ConsumerState<ChatMessages>
   /// build (the previous hash joined every message into one large String).
   static int _signature(List<Message>? source) {
     if (source == null) return 0;
-    final last = source.isEmpty ? null : source.last;
-    return Object.hash(
-      source.length,
-      last?.content.hashCode ?? 0,
-      last?.isComplete.hashCode ?? 0,
-      last?.partsJson?.length ?? 0,
-    );
+    if (source.isEmpty) return 1;
+    int hash = source.length;
+    for (final m in source) {
+      hash = Object.hash(hash, m.id.hashCode, m.content.hashCode, m.isComplete.hashCode, m.role.hashCode);
+    }
+    return hash;
   }
 
   List<Message> get _visibleMessages {
