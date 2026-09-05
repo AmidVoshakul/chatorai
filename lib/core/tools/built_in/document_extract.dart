@@ -4,7 +4,7 @@ import 'package:chatorai/core/tools/document_extractor_service.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as p;

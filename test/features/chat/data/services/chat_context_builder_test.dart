@@ -1,7 +1,7 @@
 import 'package:chatorai/core/agents/agent_registry.dart';
-import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/chat/data/services/chat_context_builder.dart';
-import 'package:chatorai/features/settings/data/models/model_settings.dart';
+import 'package:chatorai/core/chat/chat_models.dart';
+import 'package:chatorai/gui/features/chat/data/services/chat_context_builder.dart';
+import 'package:chatorai/gui/features/settings/data/models/model_settings.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

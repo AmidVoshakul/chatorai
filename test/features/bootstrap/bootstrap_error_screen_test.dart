@@ -1,4 +1,4 @@
-import 'package:chatorai/features/bootstrap/bootstrap_error_screen.dart';
+import 'package:chatorai/gui/features/bootstrap/bootstrap_error_screen.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';

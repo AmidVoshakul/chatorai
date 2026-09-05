@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
+import 'package:chatorai/core/chat/chat/chat_message.dart';
 
 void main() {
   group('AssistantMessage.copyWith', () {

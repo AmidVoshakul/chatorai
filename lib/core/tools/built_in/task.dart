@@ -4,7 +4,7 @@ import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
-import 'package:chatorai/features/chat/services/chat_ai_service.dart';
+import 'package:chatorai/core/chat/services/chat_ai_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 
 import 'task_shared.dart';

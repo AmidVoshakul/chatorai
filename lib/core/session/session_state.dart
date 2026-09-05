@@ -1,5 +1,5 @@
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
+import 'package:chatorai/core/chat/chat/assistant_content.dart';
 import 'package:equatable/equatable.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 

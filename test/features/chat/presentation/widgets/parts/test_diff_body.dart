@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/diff_body.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/parts/diff_body.dart';
+import 'package:chatorai/gui/shared/theme/app_theme.dart';
 
 void main() {
   Widget createTestWidget({

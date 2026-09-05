@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/features/chat/data/providers/chat_input_provider.dart';
-import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
+import 'package:chatorai/gui/features/chat/data/providers/chat_input_provider.dart';
+import 'package:chatorai/gui/features/chat/services/speech_to_text_service.dart';
 
 void main() {
   group('ChatInputNotifier', () {

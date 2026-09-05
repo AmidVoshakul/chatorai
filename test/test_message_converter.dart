@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_state.dart' as session_state;
-import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
-import 'package:chatorai/features/chat/data/models/chat_models.dart';
+import 'package:chatorai/core/chat/chat/chat_message.dart';
+import 'package:chatorai/core/chat/chat/message_converter.dart';
+import 'package:chatorai/core/chat/chat_models.dart';
 
 void main() {
   group('message_converter', () {

@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/utils/link_launcher.dart';
-import 'package:chatorai/features/chat/presentation/widgets/link_confirm_sheet.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/table_block.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/link_confirm_sheet.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/parts/table_block.dart';
 
 class _RecordingLauncher {
   final List<String> calls = <String>[];

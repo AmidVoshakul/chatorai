@@ -2,7 +2,7 @@ import 'package:test/test.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/plan.dart';
 import 'package:chatorai/core/tools/json_schema_validator.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 
 ToolDef _planTool() => createPlanExitTool();
 

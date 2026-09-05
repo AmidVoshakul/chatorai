@@ -4,7 +4,7 @@ import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
+import 'package:chatorai/core/chat/chat/assistant_content.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

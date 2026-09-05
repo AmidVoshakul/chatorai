@@ -1,7 +1,7 @@
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart'
+import 'package:chatorai/core/chat/chat/question_option.dart'
     show QuestionOption;
 
 /// Integration test context that auto-approves all permission requests.

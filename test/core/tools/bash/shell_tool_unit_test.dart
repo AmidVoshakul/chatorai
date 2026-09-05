@@ -7,8 +7,8 @@ import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/shell.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 
 // Mock for CancellationToken
 class MockCancellationToken extends Mock implements sdk.CancellationToken {}

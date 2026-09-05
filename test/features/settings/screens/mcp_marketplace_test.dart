@@ -1,6 +1,6 @@
 import 'package:chatorai/core/mcp/mcp_config.dart';
-import 'package:chatorai/features/settings/providers/mcp_management_provider.dart';
-import 'package:chatorai/features/settings/screens/mcp_servers_screen.dart';
+import 'package:chatorai/gui/features/settings/providers/mcp_management_provider.dart';
+import 'package:chatorai/gui/features/settings/screens/mcp_servers_screen.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';

@@ -10,7 +10,7 @@ import 'package:chatorai/core/tools/built_in/task_shared.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/chat/services/chat_ai_service.dart';
+import 'package:chatorai/core/chat/services/chat_ai_service.dart';
 
 class _MockSessionRunner extends Mock implements SessionRunner {}
 

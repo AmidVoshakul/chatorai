@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_state.dart' as session_state;
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
+import 'package:chatorai/core/chat/chat/assistant_content.dart'
     show
         AssistantReasoning,
         AssistantText,
@@ -10,11 +10,11 @@ import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
         AssistantQuestion,
         AssistantTodo,
         AssistantFile;
-import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/chat/data/models/chat/message_part.dart'
+import 'package:chatorai/core/chat/chat_models.dart';
+import 'package:chatorai/core/chat/chat/message_part.dart'
     show ToolState;
-import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/message_converter.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 
 void main() {
   group('assistantContentToMessagePart', () {

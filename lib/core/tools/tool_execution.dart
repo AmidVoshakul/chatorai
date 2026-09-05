@@ -10,7 +10,7 @@ import 'package:chatorai/core/tools/json_schema_validator.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/tool_error.dart';
 import 'package:chatorai/core/tools/truncation_service.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 import 'package:chatorai/shared/utils/canonical_json.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 

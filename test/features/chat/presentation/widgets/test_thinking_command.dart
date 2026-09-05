@@ -1,6 +1,6 @@
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/command_popup.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/slash_command_navigator.dart';
-import 'package:chatorai/shared/theme/theme_provider.dart';
+import 'package:chatorai/core/commands/slash_command.dart';
+import 'package:chatorai/core/commands/slash_command_navigator.dart';
+import 'package:chatorai/gui/shared/theme/theme_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -13,17 +13,19 @@ void main() {
       final initial = container.read(themeProvider).expandReasoningByDefault;
       final toggled = !initial;
 
-      container.read(themeProvider.notifier).setExpandReasoningByDefault(toggled);
+      container
+          .read(themeProvider.notifier)
+          .setExpandReasoningByDefault(toggled);
       expect(container.read(themeProvider).expandReasoningByDefault, toggled);
 
-      container.read(themeProvider.notifier).setExpandReasoningByDefault(initial);
+      container
+          .read(themeProvider.notifier)
+          .setExpandReasoningByDefault(initial);
       expect(container.read(themeProvider).expandReasoningByDefault, initial);
     });
 
     test('navigator selects /thinking command', () {
-      final commands = const [
-        SlashCommand('/thinking', 'Toggle reasoning'),
-      ];
+      final commands = const [SlashCommand('/thinking', 'Toggle reasoning')];
       final nav = SlashCommandNavigator(commands: commands);
       expect(nav.matchesSelection('/thinking'), isTrue);
     });

@@ -1184,6 +1184,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get systemPromptSuggestion => '你是一个有用的助手。继续对话，为最后一条消息提供3个具体且合乎逻辑的延续。用中文回答。';
 
   @override
+  String get supportBecomeSponsor => '成为赞助者';
+
+  @override
+  String get supportProjectSubtitle => '如果您喜欢 ChatORAI，请考虑通过以下方式支持本项目：';
+
+  @override
+  String get supportProjectTitle => '支持本项目';
+
+  @override
+  String get supportShareThoughts => '分享您的想法';
+
+  @override
+  String get supportStarOnGitHub => '在 GitHub 上加星';
+
+  @override
   String get temperature => '温度';
 
   @override

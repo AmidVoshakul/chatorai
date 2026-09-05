@@ -25,13 +25,13 @@ import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/session/session_state.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
-import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
+import 'package:chatorai/core/chat/chat/assistant_content.dart';
+import 'package:chatorai/core/chat/chat/message_part.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
 import 'package:chatorai/core/tools/built_in/task.dart';
 import 'package:chatorai/core/tools/built_in/task_shared.dart';
-import 'package:chatorai/features/chat/services/chat_ai_service.dart';
+import 'package:chatorai/core/chat/services/chat_ai_service.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
 
 // ─── Mocks ──────────────────────────────────────────────────────────────

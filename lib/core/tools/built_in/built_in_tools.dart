@@ -5,7 +5,7 @@ import 'package:chatorai/core/session/file_snapshot_service.dart';
 import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/skills/skill_service.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
-import 'package:chatorai/features/chat/services/chat_ai_service.dart';
+import 'package:chatorai/core/chat/services/chat_ai_service.dart';
 
 import 'apply_patch.dart';
 import 'document_extract.dart';

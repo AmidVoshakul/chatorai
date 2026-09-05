@@ -2389,6 +2389,36 @@ abstract class AppLocalizations {
   /// **'You are a helpful assistant.'**
   String get systemPromptSuggestion;
 
+  /// No description provided for @supportBecomeSponsor.
+  ///
+  /// In en, this message translates to:
+  /// **'Become a Sponsor'**
+  String get supportBecomeSponsor;
+
+  /// No description provided for @supportProjectSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'If you enjoy using ChatORAI, please consider supporting the project by:'**
+  String get supportProjectSubtitle;
+
+  /// No description provided for @supportProjectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Support the Project'**
+  String get supportProjectTitle;
+
+  /// No description provided for @supportShareThoughts.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your thoughts'**
+  String get supportShareThoughts;
+
+  /// No description provided for @supportStarOnGitHub.
+  ///
+  /// In en, this message translates to:
+  /// **'Star on GitHub'**
+  String get supportStarOnGitHub;
+
   /// No description provided for @temperature.
   ///
   /// In en, this message translates to:

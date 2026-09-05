@@ -10,14 +10,14 @@ import 'package:chatorai/core/session/session_db_provider.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_state.dart';
-import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
-import 'package:chatorai/features/chat/presentation/widgets/workspace_dialog.dart';
+import 'package:chatorai/gui/features/chat/data/providers/chat_screen_notifier.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/workspace_dialog.dart';
 import 'package:chatorai/providers.dart';
-import 'package:chatorai/features/sessions/providers/session_providers.dart';
+import 'package:chatorai/gui/features/sessions/providers/session_providers.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
-import 'package:chatorai/shared/workspace/workspace_provider.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/gui/shared/theme/app_theme.dart';
+import 'package:chatorai/gui/shared/workspace/workspace_provider.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _StreamingChatScreenNotifier extends ChatScreenNotifier {

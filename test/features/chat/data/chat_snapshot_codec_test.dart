@@ -1,15 +1,15 @@
 import 'dart:convert';
 
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_snapshot_codec.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_part.dart';
-import 'package:chatorai/features/chat/data/models/chat/reasoning_part.dart';
-import 'package:chatorai/features/chat/data/models/chat/task_part.dart';
-import 'package:chatorai/features/chat/data/models/chat/text_part.dart';
-import 'package:chatorai/features/chat/data/models/chat/tool_result_part.dart';
-import 'package:chatorai/features/chat/data/models/chat/todo_part.dart';
+import 'package:chatorai/core/chat/chat/assistant_content.dart';
+import 'package:chatorai/core/chat/chat/chat_message.dart';
+import 'package:chatorai/core/chat/chat/chat_snapshot_codec.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_part.dart';
+import 'package:chatorai/core/chat/chat/reasoning_part.dart';
+import 'package:chatorai/core/chat/chat/task_part.dart';
+import 'package:chatorai/core/chat/chat/text_part.dart';
+import 'package:chatorai/core/chat/chat/tool_result_part.dart';
+import 'package:chatorai/core/chat/chat/todo_part.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

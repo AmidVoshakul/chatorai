@@ -4,9 +4,9 @@ import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/session/events.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_runner.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
+import 'package:chatorai/core/chat/chat/assistant_content.dart'
     show AssistantReasoning, AssistantText, AssistantTool;
-import 'package:chatorai/features/chat/data/models/chat/message_part.dart'
+import 'package:chatorai/core/chat/chat/message_part.dart'
     show ToolState;
 
 void main() {
@@ -537,30 +537,30 @@ void main() {
 
     // --- New Design F tests ---
 
-     test('reasoning after tool starts a new part', () async {
-       final session = await runner.startInitializedSession(agent: 'general');
+    test('reasoning after tool starts a new part', () async {
+      final session = await runner.startInitializedSession(agent: 'general');
 
-       session.onReasoning('A');
-       await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
-       session.onReasoning('B');
-       session.onReasoning('C');
+      session.onReasoning('A');
+      await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
+      session.onReasoning('B');
+      session.onReasoning('C');
 
-       await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 50));
 
-       final events = await repository.eventStore.getEvents(session.sessionId);
-       // Reasoning 'A' was closed before the tool call.
-       // Reasoning 'B'+'C' is buffered during tool execution and NOT emitted yet.
-       expect(events.whereType<ReasoningStarted>().length, 1);
-       expect(events.whereType<ReasoningEnded>().length, 1);
-       expect(events.whereType<ToolStarted>().length, 1);
-       expect(events.whereType<ToolCalled>().length, 1);
-       final firstEnded = events.whereType<ReasoningEnded>().single;
-       expect(firstEnded.fullReasoning, 'A');
-       // ToolStarted and ToolCalled appear immediately.
-       final toolStartedIndex = events.indexWhere((e) => e is ToolStarted);
-       final toolCalledIndex = events.indexWhere((e) => e is ToolCalled);
-       expect(toolStartedIndex, lessThan(toolCalledIndex));
-     });
+      final events = await repository.eventStore.getEvents(session.sessionId);
+      // Reasoning 'A' was closed before the tool call.
+      // Reasoning 'B'+'C' is buffered during tool execution and NOT emitted yet.
+      expect(events.whereType<ReasoningStarted>().length, 1);
+      expect(events.whereType<ReasoningEnded>().length, 1);
+      expect(events.whereType<ToolStarted>().length, 1);
+      expect(events.whereType<ToolCalled>().length, 1);
+      final firstEnded = events.whereType<ReasoningEnded>().single;
+      expect(firstEnded.fullReasoning, 'A');
+      // ToolStarted and ToolCalled appear immediately.
+      final toolStartedIndex = events.indexWhere((e) => e is ToolStarted);
+      final toolCalledIndex = events.indexWhere((e) => e is ToolCalled);
+      expect(toolStartedIndex, lessThan(toolCalledIndex));
+    });
 
     test('tool card appears immediately even when reasoning is open', () async {
       final session = await runner.startInitializedSession(agent: 'general');
@@ -579,72 +579,72 @@ void main() {
       await session.onCompletion(content: 'done', model: 'gpt-4');
     });
 
-     test('onToolEnd emits ToolCalled then ToolSuccess in order', () async {
-       final session = await runner.startInitializedSession(agent: 'general');
+    test('onToolEnd emits ToolCalled then ToolSuccess in order', () async {
+      final session = await runner.startInitializedSession(agent: 'general');
 
-       session.onReasoning('A');
-       await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
-       // Reasoning 'B' is buffered during tool execution.
-       session.onReasoning('B');
-       await session.onToolEnd('tc1', 'shell', 'file1');
-       // After tool ends, buffered reasoning is flushed as a new part.
+      session.onReasoning('A');
+      await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
+      // Reasoning 'B' is buffered during tool execution.
+      session.onReasoning('B');
+      await session.onToolEnd('tc1', 'shell', 'file1');
+      // After tool ends, buffered reasoning is flushed as a new part.
 
-       await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 50));
 
-       final events = await repository.eventStore.getEvents(session.sessionId);
-       // ReasoningEnded 'A' from tool start, then 'B' from buffer flush.
-       expect(events.whereType<ReasoningEnded>().length, 2);
-       expect(events.whereType<ToolCalled>().length, 1);
-       expect(events.whereType<ToolSuccess>().length, 1);
-       final reasoningEndedIndex = events.indexWhere((e) => e is ReasoningEnded);
-       final toolCalledIndex = events.indexWhere((e) => e is ToolCalled);
-       final toolSuccessIndex = events.indexWhere((e) => e is ToolSuccess);
-       expect(reasoningEndedIndex, lessThan(toolCalledIndex));
-       expect(toolCalledIndex, lessThan(toolSuccessIndex));
-     });
+      final events = await repository.eventStore.getEvents(session.sessionId);
+      // ReasoningEnded 'A' from tool start, then 'B' from buffer flush.
+      expect(events.whereType<ReasoningEnded>().length, 2);
+      expect(events.whereType<ToolCalled>().length, 1);
+      expect(events.whereType<ToolSuccess>().length, 1);
+      final reasoningEndedIndex = events.indexWhere((e) => e is ReasoningEnded);
+      final toolCalledIndex = events.indexWhere((e) => e is ToolCalled);
+      final toolSuccessIndex = events.indexWhere((e) => e is ToolSuccess);
+      expect(reasoningEndedIndex, lessThan(toolCalledIndex));
+      expect(toolCalledIndex, lessThan(toolSuccessIndex));
+    });
 
-     test('two waves: reasoning, tool, reasoning in correct order', () async {
-       final session = await runner.startInitializedSession(agent: 'general');
+    test('two waves: reasoning, tool, reasoning in correct order', () async {
+      final session = await runner.startInitializedSession(agent: 'general');
 
-       // Wave 1
-       session.onReasoning('A1');
-       await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
-       session.onReasoning('A2');
-       await session.onToolEnd('tc1', 'shell', 'file1');
-       // Buffered 'A2' is flushed as a new reasoning part after tc1 ends.
+      // Wave 1
+      session.onReasoning('A1');
+      await session.onToolStart('tc1', 'shell', {'cmd': 'ls'});
+      session.onReasoning('A2');
+      await session.onToolEnd('tc1', 'shell', 'file1');
+      // Buffered 'A2' is flushed as a new reasoning part after tc1 ends.
 
-       // Wave 2
-       session.onReasoning('B1');
-       await session.onToolStart('tc2', 'shell', {'cmd': 'pwd'});
-       // 'B1' is closed immediately by tc2 start.
-       session.onReasoning('B2');
-       await session.onToolEnd('tc2', 'shell', '/home');
-       // Buffered 'B2' is flushed after tc2 ends.
+      // Wave 2
+      session.onReasoning('B1');
+      await session.onToolStart('tc2', 'shell', {'cmd': 'pwd'});
+      // 'B1' is closed immediately by tc2 start.
+      session.onReasoning('B2');
+      await session.onToolEnd('tc2', 'shell', '/home');
+      // Buffered 'B2' is flushed after tc2 ends.
 
-       await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 50));
 
-       final events = await repository.eventStore.getEvents(session.sessionId);
-       final reasoningStarted = events.whereType<ReasoningStarted>().toList();
-       expect(reasoningStarted.length, 4);
-       final reasoningEnded = events.whereType<ReasoningEnded>().toList();
-       expect(reasoningEnded.length, 4);
-       expect(reasoningEnded[0].fullReasoning, 'A1');
-       expect(reasoningEnded[1].fullReasoning, 'A2');
-       expect(reasoningEnded[2].fullReasoning, 'B1');
-       expect(reasoningEnded[3].fullReasoning, 'B2');
-       expect(reasoningEnded[0].partId, reasoningStarted[0].partId);
-       expect(reasoningEnded[1].partId, reasoningStarted[1].partId);
-       expect(reasoningEnded[2].partId, reasoningStarted[2].partId);
-       expect(reasoningEnded[3].partId, reasoningStarted[3].partId);
-       final toolStarted = events.whereType<ToolStarted>().toList();
-       expect(toolStarted.length, 2);
-       expect(toolStarted[0].toolCallId, 'tc1');
-       expect(toolStarted[1].toolCallId, 'tc2');
-       final toolCalled = events.whereType<ToolCalled>().toList();
-       expect(toolCalled.length, 2);
-       expect(toolCalled[0].toolCallId, 'tc1');
-       expect(toolCalled[1].toolCallId, 'tc2');
-     });
+      final events = await repository.eventStore.getEvents(session.sessionId);
+      final reasoningStarted = events.whereType<ReasoningStarted>().toList();
+      expect(reasoningStarted.length, 4);
+      final reasoningEnded = events.whereType<ReasoningEnded>().toList();
+      expect(reasoningEnded.length, 4);
+      expect(reasoningEnded[0].fullReasoning, 'A1');
+      expect(reasoningEnded[1].fullReasoning, 'A2');
+      expect(reasoningEnded[2].fullReasoning, 'B1');
+      expect(reasoningEnded[3].fullReasoning, 'B2');
+      expect(reasoningEnded[0].partId, reasoningStarted[0].partId);
+      expect(reasoningEnded[1].partId, reasoningStarted[1].partId);
+      expect(reasoningEnded[2].partId, reasoningStarted[2].partId);
+      expect(reasoningEnded[3].partId, reasoningStarted[3].partId);
+      final toolStarted = events.whereType<ToolStarted>().toList();
+      expect(toolStarted.length, 2);
+      expect(toolStarted[0].toolCallId, 'tc1');
+      expect(toolStarted[1].toolCallId, 'tc2');
+      final toolCalled = events.whereType<ToolCalled>().toList();
+      expect(toolCalled.length, 2);
+      expect(toolCalled[0].toolCallId, 'tc1');
+      expect(toolCalled[1].toolCallId, 'tc2');
+    });
 
     test(
       'tool without preceding thought emits ToolCalled immediately',

@@ -8,7 +8,7 @@ import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/truncation_service.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/core/permission/arity.dart' as arity;
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
 import 'package:command_shield/command_shield.dart';
 import 'package:path/path.dart' as p;

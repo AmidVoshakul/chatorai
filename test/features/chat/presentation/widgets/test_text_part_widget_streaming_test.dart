@@ -1,5 +1,5 @@
-import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/text_part_widget.dart';
+import 'package:chatorai/core/chat/chat/chat_message.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/parts/text_part_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

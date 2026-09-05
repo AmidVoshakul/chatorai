@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dio/dio.dart';
 import 'package:chatorai/core/error/error_classifier.dart';
-import 'package:chatorai/features/chat/services/chat_retry_service.dart';
-import 'package:chatorai/features/chat/services/chat_cancellation.dart';
+import 'package:chatorai/core/chat/services/chat_retry_service.dart';
+import 'package:chatorai/core/chat/services/chat_cancellation.dart';
 
 class FakeError implements Exception {
   final String message;

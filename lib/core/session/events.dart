@@ -1,6 +1,6 @@
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
-import 'package:chatorai/features/chat/data/models/chat/todo_part.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/todo_part.dart';
 
 import 'session_id.dart';
 

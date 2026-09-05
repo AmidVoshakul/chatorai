@@ -7,7 +7,7 @@ import 'package:chatorai/core/config/config_manager.dart';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/config/models/permission_section.dart';
 import 'package:test/test.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 
 void main() {
   group('ConfigLoader', () {

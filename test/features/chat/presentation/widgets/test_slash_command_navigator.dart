@@ -1,5 +1,5 @@
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/command_popup.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_input/slash_command_navigator.dart';
+import 'package:chatorai/core/commands/slash_command.dart';
+import 'package:chatorai/core/commands/slash_command_navigator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/config/config_writer.dart';
-import 'package:chatorai/features/settings/providers/auto_approve_provider.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/gui/features/settings/providers/auto_approve_provider.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

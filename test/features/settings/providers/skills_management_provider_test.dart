@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:chatorai/core/skills/skill_marketplace_catalog.dart';
 import 'package:chatorai/core/skills/skill_writer.dart';
-import 'package:chatorai/features/settings/providers/skills_management_provider.dart';
+import 'package:chatorai/gui/features/settings/providers/skills_management_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;

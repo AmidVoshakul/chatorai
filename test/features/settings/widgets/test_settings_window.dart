@@ -1,8 +1,8 @@
 import 'package:chatorai/core/keyboard/keyboard_shortcut.dart';
 import 'package:chatorai/core/keyboard/shortcut_handler.dart';
-import 'package:chatorai/features/settings/providers/auto_approve_provider.dart';
-import 'package:chatorai/features/settings/widgets/settings_modal.dart';
-import 'package:chatorai/features/settings/widgets/settings_window.dart';
+import 'package:chatorai/gui/features/settings/providers/auto_approve_provider.dart';
+import 'package:chatorai/gui/features/settings/widgets/settings_modal.dart';
+import 'package:chatorai/gui/features/settings/widgets/settings_window.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
 import 'package:flutter/material.dart';

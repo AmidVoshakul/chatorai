@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
-import 'package:chatorai/shared/utils/markdown_parser.dart';
+import 'package:chatorai/gui/features/chat/data/providers/chat_screen_notifier.dart';
+import 'package:chatorai/gui/shared/utils/markdown_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatorai/core/i18n/language_provider.dart';
 import 'package:chatorai/core/llm/catalog_providers.dart';

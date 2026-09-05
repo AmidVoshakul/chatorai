@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
+import 'package:chatorai/core/chat/chat/chat_message.dart';
+import 'package:chatorai/gui/shared/theme/app_theme.dart';
 
 void main() {
   const String shortText = 'Short output';

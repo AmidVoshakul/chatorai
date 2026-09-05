@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/core/config/config_manager.dart';
 import 'package:chatorai/core/config/config_writer.dart';
 import 'package:chatorai/core/mcp/mcp_config.dart';
-import 'package:chatorai/features/settings/providers/mcp_management_provider.dart';
+import 'package:chatorai/gui/features/settings/providers/mcp_management_provider.dart';
 
 void main() {
   group('McpManagementNotifier', () {

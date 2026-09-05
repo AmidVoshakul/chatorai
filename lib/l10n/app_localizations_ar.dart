@@ -1184,6 +1184,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get systemPromptSuggestion => 'أنت مساعد مفيد. استمر في المحادثة من خلال تقديم 3 استمرارات محددة ومنطقية لآخر رسالة. رد باللغة نفسها التي يستخدمها المستخدم.';
 
   @override
+  String get supportBecomeSponsor => 'كن راعيًا';
+
+  @override
+  String get supportProjectSubtitle => 'إذا كنت تستمتع باستخدام ChatORAI، فكّر في دعم المشروع عبر:';
+
+  @override
+  String get supportProjectTitle => 'ادعم المشروع';
+
+  @override
+  String get supportShareThoughts => 'شارك رأيك';
+
+  @override
+  String get supportStarOnGitHub => 'ضع نجمة على GitHub';
+
+  @override
   String get temperature => 'درجة الحرارة';
 
   @override

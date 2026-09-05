@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:chatorai/core/session/session_db_provider.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_state.dart';
-import 'package:chatorai/features/sessions/providers/sidebar_provider.dart';
+import 'package:chatorai/gui/features/sessions/providers/sidebar_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';

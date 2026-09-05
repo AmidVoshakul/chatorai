@@ -1,5 +1,5 @@
-import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
-import 'package:chatorai/features/sessions/providers/session_providers.dart';
+import 'package:chatorai/gui/features/chat/data/providers/chat_screen_notifier.dart';
+import 'package:chatorai/gui/features/sessions/providers/session_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -35,8 +35,7 @@ void main() {
       expect(ids, {'session-123'});
     });
 
-    test('returns empty set when streaming but streamingSessionId is null',
-        () {
+    test('returns empty set when streaming but streamingSessionId is null', () {
       final notifier = container.read(chatScreenProvider.notifier);
       notifier.setStreaming(true);
 

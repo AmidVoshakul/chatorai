@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/settings/providers/auto_approve_provider.dart';
-import 'package:chatorai/features/settings/screens/auto_approve_screen.dart';
+import 'package:chatorai/gui/features/settings/providers/auto_approve_provider.dart';
+import 'package:chatorai/gui/features/settings/screens/auto_approve_screen.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
 class _FakeAutoApproveNotifier extends AutoApproveNotifier {

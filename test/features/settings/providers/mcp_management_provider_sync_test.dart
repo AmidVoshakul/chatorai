@@ -8,7 +8,7 @@ import 'package:chatorai/core/config/config_writer.dart';
 import 'package:chatorai/core/mcp/mcp_client_service.dart';
 import 'package:chatorai/core/mcp/mcp_config.dart';
 import 'package:chatorai/core/mcp/mcp_types.dart';
-import 'package:chatorai/features/settings/providers/mcp_management_provider.dart';
+import 'package:chatorai/gui/features/settings/providers/mcp_management_provider.dart';
 
 void main() {
   group('McpManagementNotifier service sync', () {

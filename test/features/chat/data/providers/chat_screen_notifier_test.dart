@@ -1,17 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
+import 'package:chatorai/core/chat/chat/assistant_content.dart'
     show
         AssistantContent,
         AssistantReasoning,
         AssistantText,
         AssistantTool,
         AssistantTask;
-import 'package:chatorai/features/chat/data/models/chat/message_part.dart'
+import 'package:chatorai/core/chat/chat/message_part.dart'
     show ToolState;
-import 'package:chatorai/features/chat/data/models/chat/message_converter.dart'
+import 'package:chatorai/core/chat/chat/message_converter.dart'
     show assistantContentToPartMaps;
-import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
+import 'package:chatorai/gui/features/chat/data/providers/chat_screen_notifier.dart';
 
 void main() {
   group('ChatScreenNotifier streaming session id', () {

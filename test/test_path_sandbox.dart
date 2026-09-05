@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:chatorai/shared/utils/path_sandbox.dart' hide contains;
 import 'package:chatorai/shared/utils/hard_denied_paths.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 
 void main() {
   group('path_sandbox managedReadRoots', () {

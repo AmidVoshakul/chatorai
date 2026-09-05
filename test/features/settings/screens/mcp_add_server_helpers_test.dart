@@ -1,5 +1,5 @@
 import 'package:chatorai/core/mcp/mcp_config.dart';
-import 'package:chatorai/features/settings/screens/mcp_add_server_helpers.dart';
+import 'package:chatorai/gui/features/settings/screens/mcp_add_server_helpers.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Unit tests for the pure parsing/validation helpers used by the

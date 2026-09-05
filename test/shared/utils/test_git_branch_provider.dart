@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:chatorai/shared/utils/project_info_provider.dart';
-import 'package:chatorai/shared/workspace/workspace_provider.dart';
+import 'package:chatorai/gui/shared/utils/project_info_provider.dart';
+import 'package:chatorai/gui/shared/workspace/workspace_provider.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

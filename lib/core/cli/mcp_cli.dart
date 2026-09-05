@@ -11,7 +11,7 @@ import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/mcp/mcp_client_service.dart';
 import 'package:chatorai/core/mcp/mcp_config.dart';
 import 'package:chatorai/core/mcp/mcp_types.dart';
-import 'package:chatorai/core/tui/mcp_tui.dart';
+import 'package:chatorai/tui/mcp_tui.dart';
 import 'package:mcp_dart/mcp_dart.dart';
 
 const _cReset = style.CliStyle.reset;
@@ -30,6 +30,10 @@ String _gray(String s) => style.CliStyle.gray_(s);
 /// This is the scriptable surface of MCP management. The full-screen TUI
 /// (added in a later stage) and the GUI pages all read/write the same
 /// `chatorai.json`, so what is shown here always reflects that file.
+///
+/// Note: `core/cli` is the binary entry router (like `main.dart` for GUI),
+/// so it is allowed to reference `tui` screens to launch them. Business
+/// logic modules under `core` must not depend on `gui`/`tui`.
 Future<void> runMcp(List<String> args, {String? configPath}) async {
   if (args.isNotEmpty && (args.first == '--help' || args.first == '-h')) {
     _printMcpHelp();

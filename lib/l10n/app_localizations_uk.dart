@@ -1184,6 +1184,21 @@ class AppLocalizationsUk extends AppLocalizations {
   String get systemPromptSuggestion => 'Ви — корисний асистент. Продовжте діалог, запропонувавши 3 конкретні та логічні продовження останнього повідомлення. Відповідайте українською мовою.';
 
   @override
+  String get supportBecomeSponsor => 'Стати спонсором';
+
+  @override
+  String get supportProjectSubtitle => 'Якщо вам подобається ChatORAI, підтримайте проєкт:';
+
+  @override
+  String get supportProjectTitle => 'Підтримайте проєкт';
+
+  @override
+  String get supportShareThoughts => 'Поділитися думкою';
+
+  @override
+  String get supportStarOnGitHub => 'Поставити зірку на GitHub';
+
+  @override
   String get temperature => 'Температура';
 
   @override

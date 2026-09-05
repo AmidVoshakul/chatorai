@@ -2,20 +2,22 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' show PlatformDispatcher;
 
-import 'package:chatorai/core/cli/cwd_override.dart';
 import 'package:chatorai/core/cli/cli_commands.dart';
-import 'package:chatorai/features/bootstrap/app_loading_screen.dart';
-import 'package:chatorai/features/bootstrap/bootstrap_error_screen.dart';
-import 'package:chatorai/core/keyboard/global_shortcut_handler.dart';
-import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
-import 'package:chatorai/features/chat/presentation/widgets/permission_overlay.dart';
-import 'package:chatorai/features/settings/screens/settings_screen.dart';
+import 'package:chatorai/core/cli/cwd_override.dart';
+import 'package:chatorai/gui/keyboard/global_shortcut_handler.dart';
+import 'package:chatorai/gui/features/bootstrap/app_loading_screen.dart';
+import 'package:chatorai/gui/features/bootstrap/bootstrap_error_screen.dart';
+import 'package:chatorai/gui/features/chat/presentation/screens/chat_screen.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/permission_overlay.dart';
+import 'package:chatorai/gui/features/settings/screens/settings_screen.dart';
+import 'package:chatorai/gui/shared/theme/app_theme.dart';
+import 'package:chatorai/gui/shared/widgets/network_aware_widget.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:chatorai/shared/utils/logger.dart';
-import 'package:chatorai/shared/widgets/network_aware_widget.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/core/config/config_provider.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
+import 'package:chatorai/gui/shared/workspace/riverpod_workspace_port.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -77,7 +79,16 @@ Future<void> main(List<String> args) async {
         return platformHandler?.call(error, estack) ?? false;
       };
 
-      runApp(const ProviderScope(child: ChatoraiApp()));
+      runApp(
+        ProviderScope(
+          overrides: [
+            workspacePortProvider.overrideWith(
+              (ref) => RiverpodWorkspacePort(ref),
+            ),
+          ],
+          child: const ChatoraiApp(),
+        ),
+      );
     }
 
     await run();

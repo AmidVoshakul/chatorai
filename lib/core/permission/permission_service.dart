@@ -1,8 +1,10 @@
 import 'dart:async';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
-import 'package:chatorai/shared/utils/logger.dart';
-import 'evaluator.dart';
+
 import 'package:chatorai/core/permission/permission_storage.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
+import 'package:chatorai/shared/utils/logger.dart';
+
+import 'evaluator.dart';
 import 'rule.dart';
 import 'ruleset.dart';
 

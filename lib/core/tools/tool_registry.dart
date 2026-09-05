@@ -28,6 +28,8 @@ class ToolRegistry {
     _executor.agentRules = rules;
   }
 
+  PermissionRuleset? get agentRules => _executor.agentRules;
+
   set switchAgentCallback(
     void Function(String agentId, {String? messageText})? callback,
   ) {
@@ -75,9 +77,7 @@ class ToolRegistry {
 
     return _tools
         .where(
-          (t) =>
-              evaluate(t.id, '*', rulesets).action !=
-              PermissionAction.deny,
+          (t) => evaluate(t.id, '*', rulesets).action != PermissionAction.deny,
         )
         .toList();
   }

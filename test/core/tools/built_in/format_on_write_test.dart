@@ -6,7 +6,7 @@ import 'package:chatorai/core/tools/built_in/write.dart';
 import 'package:chatorai/core/tools/built_in/apply_patch.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/format/format_service.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 
 String _tempDir() {
   final d = Directory('test/temp_format_workspace');

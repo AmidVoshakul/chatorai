@@ -3,10 +3,10 @@ import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/core/session/session_repository.dart';
-import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_messages.dart';
-import 'package:chatorai/features/settings/providers/model_settings_provider.dart';
+import 'package:chatorai/core/chat/chat_models.dart';
+import 'package:chatorai/gui/features/chat/data/providers/chat_screen_notifier.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/chat_messages.dart';
+import 'package:chatorai/gui/features/settings/providers/model_settings_provider.dart';
 import 'package:chatorai/core/llm/catalog_providers.dart'
     show providerCatalogServiceProvider;
 import 'package:chatorai/l10n/app_localizations.dart';
@@ -17,8 +17,8 @@ import 'package:chatorai/providers.dart'
         modelSettingsProvider,
         sessionRepositoryProvider,
         currentAgentProvider;
-import 'package:chatorai/shared/theme/theme_provider.dart';
-import 'package:chatorai/shared/utils/markdown_parser.dart';
+import 'package:chatorai/gui/shared/theme/theme_provider.dart';
+import 'package:chatorai/gui/shared/utils/markdown_parser.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

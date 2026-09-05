@@ -1,5 +1,5 @@
-import 'package:chatorai/features/settings/widgets/premium_blocks.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/gui/features/settings/widgets/premium_blocks.dart';
+import 'package:chatorai/gui/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

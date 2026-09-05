@@ -9,7 +9,7 @@
 /// their `AssistantTool` parts stuck in `ToolState.running` (infinite spinner
 /// in the UI). The tracker restores the invariant by finalizing any tool that
 /// started but never finished.
-import 'package:chatorai/features/chat/services/tool_call_tracker.dart';
+import 'package:chatorai/core/chat/services/tool_call_tracker.dart';
 import 'package:test/test.dart';
 
 void main() {

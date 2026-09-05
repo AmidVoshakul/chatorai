@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/shell.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 
 /// Captures all `ask()` calls from a ToolContext for assertion.
 class _AskRecorder {

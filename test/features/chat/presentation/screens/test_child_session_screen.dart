@@ -8,9 +8,9 @@ import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_stack.dart';
 import 'package:chatorai/core/session/session_state.dart';
-import 'package:chatorai/features/chat/presentation/screens/child_session_screen.dart';
-import 'package:chatorai/features/sessions/providers/session_parts_provider.dart';
-import 'package:chatorai/features/sessions/providers/session_providers.dart';
+import 'package:chatorai/gui/features/chat/presentation/screens/child_session_screen.dart';
+import 'package:chatorai/gui/features/sessions/providers/session_parts_provider.dart';
+import 'package:chatorai/gui/features/sessions/providers/session_providers.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 
 class MockSessionRepository extends Mock implements SessionRepository {}

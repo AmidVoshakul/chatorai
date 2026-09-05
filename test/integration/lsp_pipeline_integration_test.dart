@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/tools/lsp_diagnostics_format.dart';
 import 'package:chatorai/core/lsp/lsp_types.dart';
-import 'package:chatorai/features/chat/data/models/chat/tool_result_part.dart';
-import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
-import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/core/chat/chat/tool_result_part.dart';
+import 'package:chatorai/core/chat/chat/message_part.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
+import 'package:chatorai/gui/shared/theme/app_theme.dart';
 
 void main() {
   group('LSP Pipeline Integration', () {

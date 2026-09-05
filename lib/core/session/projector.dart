@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:chatorai/core/context/token_counter.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
-import 'package:chatorai/features/chat/data/models/chat/message_part.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/assistant_content.dart';
+import 'package:chatorai/core/chat/chat/message_part.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 

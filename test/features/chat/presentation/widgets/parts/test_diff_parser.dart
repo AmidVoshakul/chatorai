@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:chatorai/features/chat/presentation/widgets/parts/diff_parser.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/parts/diff_parser.dart';
 
 void main() {
   group('DiffParser', () {

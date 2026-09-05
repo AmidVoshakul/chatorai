@@ -1184,6 +1184,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get systemPromptSuggestion => 'あなたは有用なアシスタントです。会話を続け、最後のメッセージに対して3つの具体的で論理的な続きを提案してください。ユーザーと同じ言語で回答してください。';
 
   @override
+  String get supportBecomeSponsor => 'スポンサーになる';
+
+  @override
+  String get supportProjectSubtitle => 'ChatORAIをお楽しみの方は、ぜひプロジェクトの支援をご検討ください：';
+
+  @override
+  String get supportProjectTitle => 'プロジェクトを支援';
+
+  @override
+  String get supportShareThoughts => '感想を共有する';
+
+  @override
+  String get supportStarOnGitHub => 'GitHubでスターをつける';
+
+  @override
   String get temperature => '温度';
 
   @override

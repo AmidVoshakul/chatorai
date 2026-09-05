@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:chatorai/features/chat/data/models/chat_models.dart';
+import 'package:chatorai/core/chat/chat_models.dart';
 
 void main() {
   group('Message.synthetic', () {

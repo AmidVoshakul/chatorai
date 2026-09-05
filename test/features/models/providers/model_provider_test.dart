@@ -2,7 +2,7 @@ import 'package:chatorai/core/llm/catalog_providers.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/core/llm/providers/built_in_providers.dart';
 import 'package:chatorai/core/llm/models/model_config.dart';
-import 'package:chatorai/features/models/providers/model_provider.dart';
+import 'package:chatorai/gui/features/models/providers/model_provider.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

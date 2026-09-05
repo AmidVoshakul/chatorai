@@ -147,6 +147,8 @@ ChatORAI — единый бинарник. `chatorai --help` выводит к�
 
 См. [CONTRIBUTING.md](CONTRIBUTING.md) для информации о workflow, стиле кода и тестировании.
 
+Если вам нравится ChatORAI, вы можете поддержать проект, поставив звезду на [GitHub](https://github.com/AmidVoshakul/chatorai) или став спонсором [AmidVoshakul](https://github.com/sponsors/AmidVoshakul).
+
 ## 📄 Лицензия
 
 MIT

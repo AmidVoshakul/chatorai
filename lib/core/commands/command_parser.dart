@@ -1,4 +1,5 @@
 import 'package:chatorai/core/agents/agent_registry.dart';
+import 'package:chatorai/core/commands/skill_template_renderer.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -106,45 +107,10 @@ String? matchModelId(Set<String> availableIds, String wanted) {
 
 /// Substitutes argument placeholders in a command template.
 ///
-/// - `$N` maps to the N-th whitespace-separated argument; the highest N
-///   present consumes all remaining arguments joined by spaces.
-/// - `$ARGUMENTS` expands to the raw, unsplit argument string.
-/// - A template without any placeholder gets the trimmed arguments appended
-///   as a new paragraph.
-String expandCommandTemplate(String template, String arguments) {
-  final args = arguments
-      .trim()
-      .split(RegExp(r'\s+'))
-      .where((a) => a.isNotEmpty)
-      .toList();
-  final placeholders = RegExp(r'\$(\d+)').allMatches(template).toList();
-
-  var result = template;
-  if (placeholders.isNotEmpty) {
-    var last = 0;
-    for (final match in placeholders) {
-      final value = int.parse(match.group(1)!);
-      if (value > last) last = value;
-    }
-    result = template.replaceAllMapped(RegExp(r'\$(\d+)'), (match) {
-      final position = int.parse(match.group(1)!);
-      // Positions are 1-based: `$0` references no argument, so it contributes
-      // an empty string instead of indexing before the start of [args].
-      if (position < 1) return '';
-      final argIndex = position - 1;
-      if (argIndex >= args.length) return '';
-      if (position == last) return args.skip(argIndex).join(' ');
-      return args[argIndex];
-    });
-  }
-
-  if (template.contains(r'$ARGUMENTS')) {
-    result = result.replaceAll(r'$ARGUMENTS', arguments);
-  } else if (placeholders.isEmpty && arguments.trim().isNotEmpty) {
-    result = '$result\n\n${arguments.trim()}';
-  }
-  return result.trim();
-}
+/// Delegates to [SkillTemplateRenderer] so command and skill templates share
+/// the same substitution logic (quoted args, `[Image N]`, `$N`, `$ARGUMENTS`).
+String expandCommandTemplate(String template, String arguments) =>
+    SkillTemplateRenderer.render(template, arguments);
 
 /// Parses markdown files with YAML frontmatter into [CommandInfo].
 class CommandParser {

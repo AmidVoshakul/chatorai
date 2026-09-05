@@ -374,7 +374,7 @@ The message system uses a concrete `Message` class (not abstract) with `MessageR
 | `QuestionPart`   | Multi-question flow awaiting user response                     | `QuestionPartWidget`   |
 | `TodoPart`       | Todo list with items                                           | `TodoPartWidget`       |
 
-**ReasoningPart fields** (defined in `lib/features/chat/data/models/chat/reasoning_part.dart`):
+**ReasoningPart fields** (defined in `lib/core/chat/chat/reasoning_part.dart`):
 
 | Field         | Type        | Description                                                  |
 | ------------- | ----------- | ------------------------------------------------------------ |

@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 
 /// Tests for PermissionAction enum, PermissionRule model, PermissionRequest,
 /// QuestionRequest, PermissionReply, and error classes.

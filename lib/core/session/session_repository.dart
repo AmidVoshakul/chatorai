@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_snapshot_codec.dart';
+import 'package:chatorai/core/chat/chat/chat_message.dart';
+import 'package:chatorai/core/chat/chat/chat_snapshot_codec.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:drift/drift.dart';
 

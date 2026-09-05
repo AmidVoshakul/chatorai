@@ -11,7 +11,7 @@ import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/session_state.dart';
 import 'package:chatorai/core/tools/built_in/task_shared.dart';
 import 'package:chatorai/core/tools/tool_registry.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart'
+import 'package:chatorai/core/chat/chat/assistant_content.dart'
     show AssistantText, AssistantTool;
 import 'package:synchronized/synchronized.dart';
 
@@ -627,7 +627,7 @@ class SessionRunnerSession {
     _fullReasoning.clear();
   }
 
-   Future<void> _decrementToolRunning() async {
+  Future<void> _decrementToolRunning() async {
     _toolRunningCount--;
     if (_toolRunningCount <= 0) {
       _toolRunningCount = 0;

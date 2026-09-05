@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test/test.dart';
 import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
-import 'package:chatorai/shared/workspace/workspace_provider.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/gui/shared/workspace/workspace_provider.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 
 void main() {
   group('WorkspaceNotifier', () {
@@ -21,7 +21,8 @@ void main() {
     });
 
     tearDown(() async {
-      workspaceRuntimeCurrent = Directory.current;
+      Directory.current = originalCwd;
+      workspaceRuntimeCurrent = originalCwd;
     });
 
     group('init', () {

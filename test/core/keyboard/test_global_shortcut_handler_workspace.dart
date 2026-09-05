@@ -1,6 +1,6 @@
 import 'package:chatorai/core/keyboard/global_shortcut_handler.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
-import 'package:chatorai/shared/workspace/workspace_provider.dart';
+import 'package:chatorai/gui/shared/workspace/workspace_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -20,10 +20,10 @@ import 'package:chatorai/core/tools/built_in/task.dart';
 import 'package:chatorai/core/tools/built_in/question.dart';
 import 'package:chatorai/core/tools/built_in/apply_patch.dart';
 import 'package:chatorai/core/tools/built_in/todowrite.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart'
+import 'package:chatorai/core/chat/chat/question_option.dart'
     show QuestionOption;
-import 'package:chatorai/features/chat/services/chat_retry_service.dart';
-import 'package:chatorai/features/chat/services/chat_ai_service.dart';
+import 'package:chatorai/core/chat/services/chat_retry_service.dart';
+import 'package:chatorai/core/chat/services/chat_ai_service.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
 
 class MockSecureStorageService extends Mock implements SecureStorageService {}

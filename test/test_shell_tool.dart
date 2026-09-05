@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 import 'package:ai_sdk_dart/ai_sdk_dart.dart' as sdk;
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/core/tools/built_in/shell.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 
 /// Creates a [ToolContext] with optional [sdk.CancellationToken].
 ToolContext _ctx({

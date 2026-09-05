@@ -2,7 +2,7 @@ import 'package:path/path.dart' as p;
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
 import 'package:chatorai/shared/utils/hard_denied_paths.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 import 'package:chatorai/core/tools/filesystem_boundary.dart';
 import 'package:chatorai/core/permission/permission_service.dart';
 

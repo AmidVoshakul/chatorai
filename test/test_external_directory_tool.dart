@@ -1,4 +1,4 @@
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatorai/core/tools/tool.dart';

@@ -4,9 +4,9 @@ targets:
       freezed:
         generate_for:
           include:
-            - lib/features/chat/data/models/chat/assistant_content.dart
+            - lib/core/chat/chat/assistant_content.dart
       json_serializable:
         generate_for:
           include:
-            - lib/features/chat/data/models/chat/assistant_content.dart
+            - lib/core/chat/chat/assistant_content.dart
             - lib/core/session/session_state.dart

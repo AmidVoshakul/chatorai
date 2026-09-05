@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatorai/core/agents/agent_registry.dart';
 import 'package:chatorai/core/agents/agent_provider.dart';
-import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/chat/data/services/chat_actions.dart';
-import 'package:chatorai/features/models/providers/model_provider.dart';
+import 'package:chatorai/core/chat/chat_models.dart';
+import 'package:chatorai/gui/features/chat/data/services/chat_actions.dart';
+import 'package:chatorai/gui/features/models/providers/model_provider.dart';
 import 'package:chatorai/providers.dart';
 
 // ---------------------------------------------------------------------------

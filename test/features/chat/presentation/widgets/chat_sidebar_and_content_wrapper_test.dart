@@ -1,6 +1,6 @@
-import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_content_wrapper.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_sidebar_drawer.dart';
+import 'package:chatorai/core/chat/chat_models.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/chat_content_wrapper.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/chat_sidebar_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

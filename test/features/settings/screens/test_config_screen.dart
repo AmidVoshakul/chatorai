@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:chatorai/core/config/config_loader.dart';
-import 'package:chatorai/shared/workspace/workspace_provider.dart';
+import 'package:chatorai/gui/shared/workspace/workspace_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;

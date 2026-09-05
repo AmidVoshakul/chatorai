@@ -7,8 +7,8 @@ import 'package:chatorai/core/session/session_runner.dart';
 import 'package:chatorai/core/session/session_repository.dart';
 import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/session/session_state.dart';
-import 'package:chatorai/features/chat/data/models/chat/assistant_content.dart';
-import 'package:chatorai/features/chat/data/models/chat/message_part.dart'
+import 'package:chatorai/core/chat/chat/assistant_content.dart';
+import 'package:chatorai/core/chat/chat/message_part.dart'
     show ToolState;
 import 'package:test/test.dart';
 

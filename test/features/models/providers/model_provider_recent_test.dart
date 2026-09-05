@@ -1,5 +1,5 @@
 import 'package:chatorai/core/llm/models/model_config.dart';
-import 'package:chatorai/features/models/providers/model_provider.dart';
+import 'package:chatorai/gui/features/models/providers/model_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 ModelConfig _m(String id) {

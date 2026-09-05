@@ -10,9 +10,9 @@ import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/config/models/permission_section.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/shared/utils/path_sandbox_provider.dart';
-import 'package:chatorai/shared/workspace/workspace_provider.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/gui/shared/utils/path_sandbox_provider.dart';
+import 'package:chatorai/gui/shared/workspace/workspace_provider.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 
 class _FakeWorkspaceNotifier extends WorkspaceNotifier {
   final WorkspaceState fakeState;

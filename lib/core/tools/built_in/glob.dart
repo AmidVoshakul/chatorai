@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:chatorai/core/tools/tool.dart';
 import 'package:chatorai/shared/utils/path_sandbox.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:chatorai/core/tools/built_in/tool_path_resolve.dart';

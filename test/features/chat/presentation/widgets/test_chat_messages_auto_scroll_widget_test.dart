@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/presentation/screens/chat_screen.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_messages.dart';
-import 'package:chatorai/features/chat/presentation/widgets/chat_scroll_follow_controller.dart';
+import 'package:chatorai/gui/features/chat/presentation/screens/chat_screen.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/chat_messages.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/chat_scroll_follow_controller.dart';
 import 'package:chatorai/core/session/session_id.dart';
 import 'package:chatorai/core/session/session_state.dart' show SessionState;
-import 'package:chatorai/features/chat/presentation/widgets/chat_messages_area.dart';
-import 'package:chatorai/features/chat/data/models/chat_models.dart';
-import 'package:chatorai/features/chat/data/providers/chat_screen_notifier.dart';
+import 'package:chatorai/gui/features/chat/presentation/widgets/chat_messages_area.dart';
+import 'package:chatorai/core/chat/chat_models.dart';
+import 'package:chatorai/gui/features/chat/data/providers/chat_screen_notifier.dart';
 import 'package:chatorai/core/session/session_repository.dart';
-import 'package:chatorai/features/chat/data/providers/chat_providers.dart';
-import 'package:chatorai/features/settings/providers/model_settings_provider.dart';
+import 'package:chatorai/gui/features/chat/data/providers/chat_providers.dart';
+import 'package:chatorai/gui/features/settings/providers/model_settings_provider.dart';
 import 'package:chatorai/core/agents/agent_provider.dart';
 import 'package:chatorai/core/llm/catalog_providers.dart';
-import 'package:chatorai/shared/theme/theme_provider.dart';
+import 'package:chatorai/gui/shared/theme/theme_provider.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
@@ -25,12 +25,12 @@ import 'package:chatorai/core/permission/permission_service.dart';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/session/session_stack.dart';
 import 'package:chatorai/core/mcp/mcp_types.dart';
-import 'package:chatorai/features/sessions/providers/session_providers.dart'
+import 'package:chatorai/gui/features/sessions/providers/session_providers.dart'
     show sessionStackProvider;
 import 'package:chatorai/core/permission/ruleset.dart';
-import 'package:chatorai/features/models/providers/model_provider.dart';
-import 'package:chatorai/shared/utils/project_info_provider.dart';
-import 'package:chatorai/features/sessions/providers/session_parts_provider.dart';
+import 'package:chatorai/gui/features/models/providers/model_provider.dart';
+import 'package:chatorai/gui/gui/shared/utils/project_info_provider.dart';
+import 'package:chatorai/gui/features/sessions/providers/session_parts_provider.dart';
 import 'package:chatorai/providers.dart'
     show
         sessionRepositoryProvider,

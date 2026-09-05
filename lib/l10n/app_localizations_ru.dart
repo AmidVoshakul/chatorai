@@ -1184,6 +1184,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String get systemPromptSuggestion => 'Ты полезный ассистент.';
 
   @override
+  String get supportBecomeSponsor => 'Стать спонсором';
+
+  @override
+  String get supportProjectSubtitle => 'Если вам нравится ChatORAI, поддержите проект:';
+
+  @override
+  String get supportProjectTitle => 'Поддержите проект';
+
+  @override
+  String get supportShareThoughts => 'Поделиться мнением';
+
+  @override
+  String get supportStarOnGitHub => 'Поставить звезду на GitHub';
+
+  @override
   String get temperature => 'Температура';
 
   @override

@@ -11,7 +11,7 @@ import 'package:chatorai/core/llm/models/model_config.dart';
 import 'package:chatorai/core/llm/models/provider_config.dart';
 import 'package:chatorai/core/llm/provider_catalog_service.dart';
 import 'package:chatorai/shared/utils/secure_storage_service.dart';
-import 'package:chatorai/features/chat/services/chat_ai_service.dart';
+import 'package:chatorai/core/chat/services/chat_ai_service.dart';
 
 // ─── Mocks ──────────────────────────────────────────────────────────────
 
@@ -114,9 +114,7 @@ class _TestableChatAiService extends ChatAiService {
     Map<String, String>? headers,
   }) : super(resolver: resolver, headers: headers ?? const {});
 
-  static ModelResolver _createFakeResolverWithModel(
-    LanguageModelV4 model,
-  ) {
+  static ModelResolver _createFakeResolverWithModel(LanguageModelV4 model) {
     final mockSecureStorage = _MockSecureStorage();
     final mockPrefs = _MockSharedPreferences();
 
@@ -140,89 +138,93 @@ class _TestableChatAiService extends ChatAiService {
 
 void main() {
   group('ChatAiService.streamChatCompletion — AiNoSuchToolError', () {
-    test('gracefully finalizes on AiNoSuchToolError without throwing',
-        () async {
-      final error = AiNoSuchToolError('unknown tool "write"');
-      final fakeModel = _ErrorEmittingLanguageModelV4(error);
-      final resolver = _TestableChatAiService._createFakeResolverWithModel(
-        fakeModel,
-      );
+    test(
+      'gracefully finalizes on AiNoSuchToolError without throwing',
+      () async {
+        final error = AiNoSuchToolError('unknown tool "write"');
+        final fakeModel = _ErrorEmittingLanguageModelV4(error);
+        final resolver = _TestableChatAiService._createFakeResolverWithModel(
+          fakeModel,
+        );
 
-      final service = _TestableChatAiService(
-        resolver: resolver,
-        headers: const {},
-      );
-      service.currentModelForTesting = 'fake/error-model';
-      service.currentTemperatureForTesting = 0.7;
+        final service = _TestableChatAiService(
+          resolver: resolver,
+          headers: const {},
+        );
+        service.currentModelForTesting = 'fake/error-model';
+        service.currentTemperatureForTesting = 0.7;
 
-      final chunks = <String>[];
-      final toolStarts = <(String, String, Map<String, dynamic>)>[];
-      final toolErrors = <(String, String, String)>[];
-      var completionCalled = false;
-      var completionText = '';
+        final chunks = <String>[];
+        final toolStarts = <(String, String, Map<String, dynamic>)>[];
+        final toolErrors = <(String, String, String)>[];
+        var completionCalled = false;
+        var completionText = '';
 
-      await service.streamChatCompletion(
-        messages: const [
-          {'role': 'user', 'content': 'Hello'},
-        ],
-        model: 'fake/error-model',
-        temperature: 0.7,
-        onChunk: (chunk) async => chunks.add(chunk),
-        onReasoning: (_) async {},
-        onCompletion: (text) async {
-          completionCalled = true;
-          completionText = text;
-        },
-        onToolStart: (callId, toolName, input) async {
-          toolStarts.add((callId, toolName, input));
-        },
-        onToolError: (callId, toolName, error) async {
-          toolErrors.add((callId, toolName, error));
-        },
-        onUsage: (_, __, ___, ____, _____, ______) {},
-      );
+        await service.streamChatCompletion(
+          messages: const [
+            {'role': 'user', 'content': 'Hello'},
+          ],
+          model: 'fake/error-model',
+          temperature: 0.7,
+          onChunk: (chunk) async => chunks.add(chunk),
+          onReasoning: (_) async {},
+          onCompletion: (text) async {
+            completionCalled = true;
+            completionText = text;
+          },
+          onToolStart: (callId, toolName, input) async {
+            toolStarts.add((callId, toolName, input));
+          },
+          onToolError: (callId, toolName, error) async {
+            toolErrors.add((callId, toolName, error));
+          },
+          onUsage: (_, __, ___, ____, _____, ______) {},
+        );
 
-      expect(completionCalled, isTrue);
-      expect(completionText, '');
-      expect(toolStarts.length, 1);
-      expect(toolStarts.first.$2, 'write');
-      expect(toolErrors.length, 1);
-      expect(toolErrors.first.$2, 'write');
-    });
+        expect(completionCalled, isTrue);
+        expect(completionText, '');
+        expect(toolStarts.length, 1);
+        expect(toolStarts.first.$2, 'write');
+        expect(toolErrors.length, 1);
+        expect(toolErrors.first.$2, 'write');
+      },
+    );
 
-    test('onCompletion failure after AiNoSuchToolError is logged, not thrown',
-        () async {
-      final error = AiNoSuchToolError('unknown tool "write"');
-      final fakeModel = _ErrorEmittingLanguageModelV4(error);
-      final resolver = _TestableChatAiService._createFakeResolverWithModel(
-        fakeModel,
-      );
+    test(
+      'onCompletion failure after AiNoSuchToolError is logged, not thrown',
+      () async {
+        final error = AiNoSuchToolError('unknown tool "write"');
+        final fakeModel = _ErrorEmittingLanguageModelV4(error);
+        final resolver = _TestableChatAiService._createFakeResolverWithModel(
+          fakeModel,
+        );
 
-      final service = _TestableChatAiService(
-        resolver: resolver,
-        headers: const {},
-      );
-      service.currentModelForTesting = 'fake/error-model';
-      service.currentTemperatureForTesting = 0.7;
+        final service = _TestableChatAiService(
+          resolver: resolver,
+          headers: const {},
+        );
+        service.currentModelForTesting = 'fake/error-model';
+        service.currentTemperatureForTesting = 0.7;
 
-      var onCompletionCalled = false;
+        var onCompletionCalled = false;
 
-      await service.streamChatCompletion(
-        messages: const [
-          {'role': 'user', 'content': 'Hello'},
-        ],
-        model: 'fake/error-model',
-        temperature: 0.7,
-        onChunk: (_) async {},
-        onReasoning: (_) async {},
-        onCompletion: (_) async {
-          onCompletionCalled = true;
-          throw StateError('completion boom');
-        },
-        onUsage: (_, __, ___, ____, _____, ______) {},
-      );
+        await service.streamChatCompletion(
+          messages: const [
+            {'role': 'user', 'content': 'Hello'},
+          ],
+          model: 'fake/error-model',
+          temperature: 0.7,
+          onChunk: (_) async {},
+          onReasoning: (_) async {},
+          onCompletion: (_) async {
+            onCompletionCalled = true;
+            throw StateError('completion boom');
+          },
+          onUsage: (_, __, ___, ____, _____, ______) {},
+        );
 
-      expect(onCompletionCalled, isTrue);
-    });
+        expect(onCompletionCalled, isTrue);
+      },
+    );
   });
 }

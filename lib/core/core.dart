@@ -1,4 +1,11 @@
 // Core — shared kernel (no feature dependencies)
+export 'chat/chat_models.dart';
+export 'commands/slash_command.dart';
+export 'commands/slash_command_catalog.dart';
+export 'commands/slash_command_executor.dart';
+export 'commands/slash_command_navigator.dart';
+export 'commands/skill_command_resolver.dart';
+export 'commands/skill_template_renderer.dart';
 export 'config/config_provider.dart';
 export 'constants/chat_messages_constants.dart';
 export 'context/compaction_service.dart';
@@ -10,3 +17,7 @@ export 'llm/model_resolver.dart';
 export 'llm/provider_catalog_service.dart';
 export 'permission/permission_provider.dart';
 export 'permission/permissions.dart';
+export 'tools/tool_registry.dart';
+export 'tools/tool_registry_factory.dart';
+export 'workspace/workspace_port.dart';
+export 'workspace/workspace_runtime.dart';

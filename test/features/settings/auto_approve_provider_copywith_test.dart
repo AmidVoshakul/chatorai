@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/settings/providers/auto_approve_provider.dart';
+import 'package:chatorai/gui/features/settings/providers/auto_approve_provider.dart';
 
 void main() {
   group('AutoApproveCategory.copyWith', () {

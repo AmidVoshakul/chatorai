@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chatorai/shared/utils/xdg_paths.dart';
-import 'package:chatorai/shared/workspace/workspace_runtime.dart';
+import 'package:chatorai/core/workspace/workspace_runtime.dart';
 import 'package:path/path.dart' as p;
 
 /// Errors that can occur during config loading.

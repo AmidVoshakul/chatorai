@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
-import 'package:chatorai/features/chat/data/models/chat/message_converter.dart';
-import 'package:chatorai/features/chat/data/models/chat/question_option.dart';
-import 'package:chatorai/features/chat/data/models/chat_models.dart';
+import 'package:chatorai/core/chat/chat/chat_message.dart';
+import 'package:chatorai/core/chat/chat/message_converter.dart';
+import 'package:chatorai/core/chat/chat/question_option.dart';
+import 'package:chatorai/core/chat/chat_models.dart';
 
 void main() {
   // ── Enums ──────────────────────────────────────────────────

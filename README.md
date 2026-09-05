@@ -154,6 +154,8 @@ ChatORAI is a single binary. `chatorai --help` lists commands (`stats`, `models`
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for git workflow, code style, and testing requirements.
 
+If you enjoy using ChatORAI, you can also support the project by starring it on [GitHub](https://github.com/AmidVoshakul/chatorai) or sponsoring [AmidVoshakul](https://github.com/sponsors/AmidVoshakul).
+
 ## 📄 License
 
 MIT
