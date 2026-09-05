@@ -626,3 +626,10 @@ jobs:
           prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure release body is updated
+        if: always()
+        run: |
+          set -e
+          BODY="$(cat release_body.txt)"
+          gh release edit "${{ github.ref_name }}" --notes "$BODY"
