@@ -10,6 +10,7 @@ import 'package:chatorai/features/chat/presentation/widgets/parts/todo_part_widg
 import 'package:chatorai/features/chat/presentation/widgets/parts/tool_result_part_widget.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:flutter/material.dart';
 
 List<MessagePart> _groupConsecutiveParts(List<MessagePart> parts) {
@@ -71,6 +72,7 @@ class AssistantMessageBubble extends StatelessWidget {
   final bool reasoningEnabled;
   final void Function(String? sessionId)? onTaskTap;
   final SessionRepository sessionRepository;
+  final List<MarkdownHeadingInfoWithKey> headings;
 
   const AssistantMessageBubble({
     super.key,
@@ -87,6 +89,7 @@ class AssistantMessageBubble extends StatelessWidget {
     this.reasoningEnabled = true,
     this.onTaskTap,
     required this.sessionRepository,
+    this.headings = const [],
   });
 
   @override
@@ -123,6 +126,8 @@ class AssistantMessageBubble extends StatelessWidget {
             reasoningEnabled: reasoningEnabled,
             expandReasoningByDefault: expandReasoningByDefault,
             onTaskTap: onTaskTap,
+            messageId: messageId,
+            headings: headings,
           ),
         );
       }
@@ -220,11 +225,17 @@ class AssistantMessageBubble extends StatelessWidget {
     required bool reasoningEnabled,
     required bool expandReasoningByDefault,
     required void Function(String? sessionId)? onTaskTap,
+    required String messageId,
+    required List<MarkdownHeadingInfoWithKey> headings,
   }) {
     return switch (part) {
       TextPart p => Padding(
         padding: const EdgeInsets.only(top: 4, bottom: 12),
-        child: TextPartWidget(part: p),
+        child: TextPartWidget(
+          part: p,
+          messageId: messageId,
+          headings: headings,
+        ),
       ),
       ReasoningPart p => ReasoningPartWidget(
         part: p,

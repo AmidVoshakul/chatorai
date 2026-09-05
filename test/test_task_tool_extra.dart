@@ -88,6 +88,7 @@ class _FakeChatAiService extends ChatAiService {
     required double temperature,
     required Future<void> Function(String) onChunk,
     required Future<void> Function(String) onReasoning,
+    Future<void> Function()? onReasoningEnd,
     required Future<void> Function(String) onCompletion,
     ToolSet tools = const {},
     ToolStartCallback? onToolStart,
@@ -100,6 +101,7 @@ class _FakeChatAiService extends ChatAiService {
   }) async {
     onChunk(completionResult);
     onReasoning('mock reasoning');
+    onReasoningEnd?.call();
     onCompletion(completionResult);
     onToolStart?.call('call-id', 'shell', {'cmd': 'ls'});
     onToolEnd?.call('call-id', 'shell', 'file1.txt');

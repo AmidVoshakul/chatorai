@@ -175,12 +175,8 @@ ToolDef createTaskTool({
             LogTags.chatService.logInfo(
               'TaskTool: child stream starting agent=$subagentType parent=$normalizedSessionId child=${child.sessionId.value}',
             );
-            var lastTokensInput = 0;
-            var lastTokensOutput = 0;
-            var lastTokensCacheRead = 0;
-            var lastTokensCacheWrite = 0;
-            var lastTokensReasoning = 0;
-            await chatAiService!.runChildCompletion(
+            await chatAiService!.runSubagentCompletion(
+              child: child,
               messages: messages,
               model: childModel,
               temperature: temperatureToUse,
@@ -188,53 +184,16 @@ ToolDef createTaskTool({
               tools: subagentTools,
               maxSteps: agent.maxSteps ?? unlimitedMaxSteps,
               abortSignal: ctx.abortSignal,
-              onUsage: (input, output, cacheRead, cacheWrite, reasoning, _) {
-                lastTokensInput = input;
-                lastTokensOutput = output;
-                lastTokensCacheRead = cacheRead;
-                lastTokensCacheWrite = cacheWrite;
-                lastTokensReasoning = reasoning;
-              },
-              onChunk: child.onChunk,
-              onReasoning: child.onReasoning,
-              onReasoningEnd: child.onReasoningEnd,
-              onToolStart: (toolCallId, toolName, input) async {
-                await child.onToolStart(toolCallId, toolName, input);
-                final title =
-                    input['command'] as String? ??
-                    input['query'] as String? ??
-                    input['filePath'] as String? ??
-                    input['path'] as String?;
+              onChildToolTitle: (childSessionId, toolName, title) {
                 currentSessionRunner?.onChildToolEvent?.call(
-                  child.sessionId.value,
+                  childSessionId,
                   toolName,
                   title,
                 );
-                return;
               },
-              onToolEnd: (toolCallId, toolName, result) async {
-                await child.onToolEnd(toolCallId, toolName, result);
-                return;
-              },
-              onToolError: (toolCallId, toolName, error) async {
-                // Use onToolError (not onError) to mark the tool as failed
-                // WITHOUT finalizing the child session. This lets the agent
-                // recover and continue working after a tool error.
-                await child.onToolError(toolCallId, toolName, error);
-                return;
-              },
-              onCompletion: (content) async {
-                await child.onCompletion(
-                  content: content,
-                  reasoning: null,
-                  model: childModel,
-                  tokensInput: lastTokensInput,
-                  tokensOutput: lastTokensOutput,
-                  tokensCacheRead: lastTokensCacheRead,
-                  tokensCacheWrite: lastTokensCacheWrite,
-                  tokensReasoning: lastTokensReasoning,
-                );
-              },
+            );
+            LogTags.chatService.logInfo(
+              'TaskTool: child finished streaming agent=$subagentType part=$taskPartId',
             );
           },
         );

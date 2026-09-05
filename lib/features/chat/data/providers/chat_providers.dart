@@ -245,7 +245,14 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
     if (rows.isEmpty) return metadata;
     final events = rows.map(EventStore.deserializeEvent).toList();
     final state = replayEvents(events);
-    if (state.messages.isEmpty) return metadata;
+    if (state.messages.isEmpty) {
+      // Every message of the session was deleted. Returning [metadata] here
+      // would keep the deleted bubbles alive in the UI, and the next send
+      // would build on a chat that no longer matches the event log — its
+      // deferred deletion then wipes several bubbles at once. Keep only the
+      // metadata shell and let the UI clear (welcome state takes over).
+      return metadata.copyWith(messages: const <Message>[]);
+    }
     return sessionStateToChat(state);
   }
 
@@ -387,6 +394,7 @@ class ChatListNotifier extends Notifier<AsyncValue<List<Chat>>> {
         timestamp: cm.timestamp,
         imageData: cm.imageData,
         imageType: cm.imageType,
+        imageName: cm.imageName,
         attachedDocPath: cm.attachedDocPath,
         isComplete: true,
       );

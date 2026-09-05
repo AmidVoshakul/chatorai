@@ -166,4 +166,7 @@ class _FakeToolOptions {
   final Map<String, dynamic>? experimentalContext;
 
   _FakeToolOptions({this.sessionId, this.experimentalContext});
+
+  Map<String, String>? get runtimeContext =>
+      sessionId == null ? null : {'sessionId': sessionId!};
 }

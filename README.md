@@ -2,7 +2,8 @@
 
 ![Screenshot of ChatORAI interface](https://github.com/AmidVoshakul/chatorai/raw/main/screenshots/Screenshot_2025-12-30_01-04-32.png)
 
-A modern AI chat application built with Flutter and Riverpod. Connect to any OpenAI-compatible API (OpenRouter, local models, custom endpoints) and chat with powerful language models.
+A personal AI workstation for working with projects through intelligent agents across desktop, terminal, and mobile.
+Once core. Multiple interfaces. Your projects, your models, your agents.
 
 **🇷🇺 Русская версия**: [README_RU.md](README_RU.md)
 
@@ -141,16 +142,6 @@ chatorai uninstall
 ### CLI
 
 ChatORAI is a single binary. `chatorai --help` lists commands (`stats`, `models`, `upgrade`, `--version`); `chatorai` with no args launches the GUI.
-
-## 🔧 Development Commands
-
-```bash
-flutter pub get              # fetch dependencies
-flutter gen-l10n             # regenerate localization strings
-flutter analyze             # lint (tests excluded)
-flutter test                # run unit and widget tests
-flutter build <platform>    # build release bundle
-```
 
 ## 🛡️ Security & Permissions
 

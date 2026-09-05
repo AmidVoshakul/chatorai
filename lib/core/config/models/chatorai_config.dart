@@ -151,6 +151,7 @@ class ChatOrAIConfig {
   final LspConfig? lsp;
   final McpConfig? mcp;
   final AgentSectionConfig? agent;
+  final CommandSectionConfig? command;
   final Map<String, dynamic>? tools;
   final List<String> instructions;
   final ProviderSectionConfig? provider;
@@ -165,6 +166,7 @@ class ChatOrAIConfig {
     this.lsp,
     this.mcp,
     this.agent,
+    this.command,
     this.tools,
     this.instructions = const [],
     this.provider,
@@ -206,6 +208,11 @@ class ChatOrAIConfig {
       agent: json['agent'] != null
           ? AgentSectionConfig.fromJson(json['agent'] as Map<String, dynamic>)
           : null,
+      command: json['command'] != null
+          ? CommandSectionConfig.fromJson(
+              json['command'] as Map<String, dynamic>,
+            )
+          : null,
       tools: json['tools'] is Map
           ? Map<String, dynamic>.from(json['tools'] as Map)
           : null,
@@ -230,6 +237,7 @@ class ChatOrAIConfig {
     if (lsp != null) 'lsp': lsp!.toJson(),
     if (mcp != null) 'mcp': mcp!.toJson(),
     if (agent != null) 'agent': agent!.toJson(),
+    if (command != null) 'command': command!.toJson(),
     if (tools != null) 'tools': tools,
     if (instructions.isNotEmpty) 'instructions': instructions,
     if (provider != null) 'provider': provider!.toJson(),
@@ -395,6 +403,72 @@ class AgentSectionConfig {
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
     for (final entry in agents.entries) {
+      map[entry.key] = entry.value.toJson();
+    }
+    return map;
+  }
+}
+
+/// A single command defined in the chatorai.json `command` section.
+class CommandConfigEntry {
+  final String template;
+  final String? description;
+  final String? agent;
+  final String? model;
+  final String? variant;
+  final bool? subtask;
+
+  const CommandConfigEntry({
+    required this.template,
+    this.description,
+    this.agent,
+    this.model,
+    this.variant,
+    this.subtask,
+  });
+
+  factory CommandConfigEntry.fromJson(Map<String, dynamic> json) {
+    return CommandConfigEntry(
+      template: json['template'] as String? ?? '',
+      description: json['description'] as String?,
+      agent: json['agent'] as String?,
+      model: json['model'] as String?,
+      variant: json['variant'] as String?,
+      subtask: json['subtask'] is bool ? json['subtask'] as bool : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'template': template,
+    if (description != null) 'description': description,
+    if (agent != null) 'agent': agent,
+    if (model != null) 'model': model,
+    if (variant != null) 'variant': variant,
+    if (subtask != null) 'subtask': subtask,
+  };
+}
+
+/// Command section in chatorai.json.
+class CommandSectionConfig {
+  final Map<String, CommandConfigEntry> commands;
+
+  const CommandSectionConfig({this.commands = const {}});
+
+  factory CommandSectionConfig.fromJson(Map<String, dynamic> json) {
+    final commands = <String, CommandConfigEntry>{};
+    for (final entry in json.entries) {
+      if (entry.value is Map<String, dynamic>) {
+        commands[entry.key] = CommandConfigEntry.fromJson(
+          entry.value as Map<String, dynamic>,
+        );
+      }
+    }
+    return CommandSectionConfig(commands: commands);
+  }
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    for (final entry in commands.entries) {
       map[entry.key] = entry.value.toJson();
     }
     return map;

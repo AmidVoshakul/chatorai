@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/permission/rule.dart';
 import 'package:chatorai/core/permission/ruleset.dart';
+import 'package:chatorai/shared/utils/chatorai_roots.dart';
 import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/xdg_paths.dart';
 import 'package:path/path.dart' as p;
@@ -219,11 +220,11 @@ Available subagents: explore (codebase exploration), general (general-purpose ta
           pattern: '*',
           action: PermissionAction.allow,
         ),
-        // PermissionRule(
-        //   permission: 'plan_enter',
-        //   pattern: '*',
-        //   action: PermissionAction.allow,
-        // ),
+        PermissionRule(
+          permission: 'plan_enter',
+          pattern: '*',
+          action: PermissionAction.deny,
+        ),
         PermissionRule(
           permission: 'plan_exit',
           pattern: '*',
@@ -621,24 +622,38 @@ class AgentRegistry {
 
     _initCompleter = Completer<void>();
     try {
-      // 1. Built-in fallback (always available)
-      _agents.addAll(builtInAgents);
-
-      // 2. Load custom agents (override built-in)
-      final customAgents = await _loadCustomAgents();
-      _agents.addAll(customAgents);
-
-      // 3. Apply JSON overrides
-      if (config != null) {
-        applyOverrides(_agents, config);
-      }
-
+      await _rebuild(config);
       _initialized = true;
       _initCompleter!.complete();
     } catch (e) {
       _initCompleter!.completeError(e);
       rethrow;
     }
+  }
+
+  /// Re-reads custom agent files from both the project and global directories
+  /// and re-applies config overrides. The previous set stays visible until the
+  /// rebuilt one swaps in atomically, so concurrent readers never observe an
+  /// empty registry mid-reload.
+  Future<void> reload([ChatOrAIConfig? config]) async {
+    if (!_initialized) return init(config);
+    await _rebuild(config);
+  }
+
+  Future<void> _rebuild(ChatOrAIConfig? config) async {
+    final agents = Map<String, AgentDefinition>.from(builtInAgents);
+
+    // Custom agents override built-ins.
+    agents.addAll(await _loadCustomAgents());
+
+    // JSON overrides win last.
+    if (config != null) {
+      applyOverrides(agents, config);
+    }
+
+    _agents
+      ..clear()
+      ..addAll(agents);
   }
 
   bool get isInitialized => _initialized;
@@ -670,10 +685,12 @@ class AgentRegistry {
   static Future<Map<String, AgentDefinition>> _loadCustomAgents() async {
     final agents = <String, AgentDefinition>{};
 
-    // Project agents
-    final projectDir = Directory('.chatorai/agents');
-    if (projectDir.existsSync()) {
-      await for (final entity in projectDir.list()) {
+    // Project agents: every `.chatorai` root up the directory chain,
+    // topmost first so the level closest to the working dir wins.
+    for (final root in projectChatoraiRoots()) {
+      final projectDir = Directory(p.join(root, 'agents'));
+      if (!projectDir.existsSync()) continue;
+      await for (final entity in projectDir.list(followLinks: false)) {
         if (entity is! File) continue;
         if (!entity.path.endsWith('.md')) continue;
         try {
@@ -692,7 +709,7 @@ class AgentRegistry {
     // Global agents
     final globalDir = Directory(p.join(XdgPaths.configHome, 'agents'));
     if (globalDir.existsSync()) {
-      await for (final entity in globalDir.list()) {
+      await for (final entity in globalDir.list(followLinks: false)) {
         if (entity is! File) continue;
         if (!entity.path.endsWith('.md')) continue;
         try {

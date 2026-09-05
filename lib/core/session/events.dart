@@ -181,6 +181,23 @@ class ToolInputStarted extends SessionEvent {
   });
 }
 
+/// Emitted immediately when a tool starts, before execution begins.
+/// Creates a lightweight placeholder (pending → running → completed).
+class ToolStarted extends SessionEvent {
+  final String toolCallId;
+  final String toolName;
+  final String? partId;
+
+  const ToolStarted({
+    required super.sessionId,
+    required this.toolCallId,
+    required this.toolName,
+    this.partId,
+    required super.timestamp,
+    super.sequence,
+  });
+}
+
 class ToolInputDelta extends SessionEvent {
   final String toolCallId;
   final String delta;

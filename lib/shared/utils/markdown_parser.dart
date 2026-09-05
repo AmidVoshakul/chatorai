@@ -88,7 +88,7 @@ class MarkdownHeadingInfo {
 }
 
 // ===========================================================================
-// HEADING ANCHOR (Lightweight alternative to GlobalKey)
+// HEADING ANCHOR (Stable GlobalKey for Scrollable.ensureVisible)
 // ===========================================================================
 
 class HeadingAnchor {
@@ -98,7 +98,7 @@ class HeadingAnchor {
   final int lineIndex;
   final String rawLine;
   final String messageId;
-  BuildContext? context;
+  final GlobalKey anchorKey;
 
   HeadingAnchor({
     required this.id,
@@ -107,21 +107,18 @@ class HeadingAnchor {
     required this.lineIndex,
     required this.rawLine,
     required this.messageId,
-    this.context,
-  });
+    GlobalKey? anchorKey,
+  }) : anchorKey = anchorKey ?? GlobalKey();
 
-  String get uniqueKey => '${messageId}_${level}_$text';
+  String get uniqueKey => '${messageId}_${level}_${lineIndex}_$text';
 }
 
 // ===========================================================================
-// ANCHOR REGISTRY (Manages BuildContext for headings - SINGLETON)
+// ANCHOR REGISTRY (Manages anchors - per-chat instance)
 // ===========================================================================
 
 class HeadingAnchorRegistry {
-  static final HeadingAnchorRegistry _instance =
-      HeadingAnchorRegistry._internal();
-  factory HeadingAnchorRegistry() => _instance;
-  HeadingAnchorRegistry._internal();
+  HeadingAnchorRegistry();
 
   final Map<String, HeadingAnchor> _anchors = {};
 
@@ -133,16 +130,13 @@ class HeadingAnchorRegistry {
     _anchors.remove(id);
   }
 
-  void updateContext(String id, BuildContext context) {
-    final anchor = _anchors[id];
-    if (anchor != null) {
-      anchor.context = context;
-    }
-  }
-
   HeadingAnchor? getAnchor(String id) => _anchors[id];
 
   List<HeadingAnchor> get allAnchors => _anchors.values.toList();
+
+  void prune(Set<String> keepIds) {
+    _anchors.removeWhere((id, _) => !keepIds.contains(id));
+  }
 
   void clear() {
     _anchors.clear();
@@ -150,7 +144,7 @@ class HeadingAnchorRegistry {
 }
 
 // ===========================================================================
-// MARKDOWN HEADING INFO WITH ANCHOR (Optimized - uses singleton registry)
+// MARKDOWN HEADING INFO WITH ANCHOR
 // ===========================================================================
 
 class MarkdownHeadingInfoWithKey extends MarkdownHeadingInfo {
@@ -167,7 +161,7 @@ class MarkdownHeadingInfoWithKey extends MarkdownHeadingInfo {
   }) : anchor =
            anchor ??
            HeadingAnchor(
-             id: '${messageId}_${level}_$text',
+             id: '${messageId}_${level}_${lineIndex}_$text',
              text: text,
              level: level,
              lineIndex: lineIndex,
@@ -175,9 +169,9 @@ class MarkdownHeadingInfoWithKey extends MarkdownHeadingInfo {
              messageId: messageId,
            );
 
-  String get uniqueKey => '${messageId}_${level}_$text';
+  String get uniqueKey => '${messageId}_${level}_${lineIndex}_$text';
 
-  BuildContext? get context => anchor.context;
+  GlobalKey get anchorKey => anchor.anchorKey;
 }
 
 // ===========================================================================
@@ -206,9 +200,9 @@ class MarkdownParserWithKeys {
   static List<MarkdownHeadingInfoWithKey> parseAllMessagesHeadings(
     List<dynamic> messages, {
     List<MarkdownHeadingInfoWithKey>? existingHeadings,
+    required HeadingAnchorRegistry registry,
   }) {
     final allHeadings = <MarkdownHeadingInfoWithKey>[];
-    final registry = HeadingAnchorRegistry(); // Singleton
 
     for (final message in messages) {
       final messageRole = message.role?.toString().split('.').last;
@@ -216,9 +210,11 @@ class MarkdownParserWithKeys {
         final newHeadings = MarkdownParser.parseHeadings(message.content);
 
         for (final newHeading in newHeadings) {
-          // Try to get existing anchor from registry (singleton)
+          // Try to get existing anchor from registry. The id includes the
+          // line index so two identical headings in the same message
+          // (e.g. two "## Introduction") never share a GlobalKey.
           final anchorId =
-              '${message.id}_${newHeading.level}_${newHeading.text}';
+              '${message.id}_${newHeading.level}_${newHeading.lineIndex}_${newHeading.text}';
           HeadingAnchor? existingAnchor = registry.getAnchor(anchorId);
 
           // Also try to find in existingHeadings if not found in registry
@@ -245,7 +241,7 @@ class MarkdownParserWithKeys {
             messageId: message.id,
           );
 
-          // Register anchor in singleton registry
+          // Register anchor in per-chat registry
           registry.registerAnchor(heading.anchor);
           allHeadings.add(heading);
         }
@@ -253,21 +249,6 @@ class MarkdownParserWithKeys {
     }
 
     return allHeadings;
-  }
-
-  static MarkdownHeadingInfoWithKey? findHeadingByKey(
-    List<MarkdownHeadingInfoWithKey> headings,
-    String messageId,
-    int level,
-    String text,
-  ) {
-    try {
-      return headings.firstWhere(
-        (h) => h.messageId == messageId && h.level == level && h.text == text,
-      );
-    } catch (e) {
-      return null;
-    }
   }
 }
 

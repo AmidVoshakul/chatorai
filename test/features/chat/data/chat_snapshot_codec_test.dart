@@ -30,6 +30,7 @@ void main() {
           files: const ['a.txt'],
           imageData: 'img',
           imageType: 'image/png',
+          imageName: 'photo.png',
           attachedDocName: 'doc.pdf',
           attachedDocPath: '/tmp/doc.pdf',
           timestamp: DateTime(2025, 1, 1),
@@ -46,6 +47,7 @@ void main() {
       expect(u.files, ['a.txt']);
       expect(u.imageData, 'img');
       expect(u.imageType, 'image/png');
+      expect(u.imageName, 'photo.png');
       expect(u.attachedDocName, 'doc.pdf');
       expect(u.attachedDocPath, '/tmp/doc.pdf');
     });

@@ -331,6 +331,45 @@ const Map<String, dynamic> chatoraiSchema = {
         },
       },
     },
+    'command': {
+      'type': 'object',
+      'description':
+          'Custom slash commands. Each key is the command name (invoked as '
+          '"/<key>"); markdown files under .chatorai/commands override '
+          'same-named entries here.',
+      'additionalProperties': {
+        'type': 'object',
+        'required': ['template'],
+        'properties': {
+          'template': {
+            'type': 'string',
+            'description':
+                'Prompt payload. Supports \$1, \$2 positional argument '
+                'placeholders, \$ARGUMENTS for the raw argument string.',
+          },
+          'description': {
+            'type': 'string',
+            'description': 'Shown in the command palette.',
+          },
+          'agent': {
+            'type': 'string',
+            'description':
+                'Agent that executes the command. Subagents run it as a '
+                'delegated task by default.',
+          },
+          'model': {
+            'type': 'string',
+            'description': 'Model override, e.g. "openai/gpt-4o".',
+          },
+          'variant': {'type': 'string'},
+          'subtask': {
+            'type': 'boolean',
+            'description':
+                'Force on/off delegated-task execution for this command.',
+          },
+        },
+      },
+    },
     'tools': {
       'type': 'object',
       'description':

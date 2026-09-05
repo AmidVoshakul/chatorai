@@ -298,6 +298,13 @@ SessionState projectEvent(SessionState state, SessionEvent event) {
 
     ToolInputEnded _ => state,
 
+    ToolStarted(
+      toolCallId: final toolCallId,
+      toolName: final toolName,
+      partId: final partId,
+    ) =>
+      _projectToolStarted(state, event, toolCallId, toolName, partId),
+
     ToolCalled(
       toolCallId: final toolCallId,
       toolName: final toolName,
@@ -1079,6 +1086,48 @@ List<AssistantContent> _updateLastTextPart(
   return [...parts.sublist(0, idx), updated, ...parts.sublist(idx + 1)];
 }
 
+SessionState _projectToolStarted(
+  SessionState state,
+  SessionEvent event,
+  String toolCallId,
+  String toolName,
+  String? partId,
+) {
+  final assistantMsgId = _lastAssistantMsgId(state);
+  final messages = [
+    ...state.messages,
+    if (assistantMsgId.isEmpty)
+      SessionMessage(
+        id: 'msg_${event.timestamp.millisecondsSinceEpoch}',
+        role: MessageRole.assistant,
+        content: '',
+        seq: state.messages.length + 1,
+        createdAt: event.timestamp,
+      ),
+  ];
+  final effectiveMsgId = assistantMsgId.isEmpty
+      ? messages[messages.length - 1].id
+      : assistantMsgId;
+  return state.copyWith(
+    messages: messages,
+    parts: [
+      ...state.parts,
+      AssistantTool(
+        id:
+            partId ??
+            'part_${event.timestamp.millisecondsSinceEpoch}_$toolCallId',
+        sessionId: event.sessionId.value,
+        messageId: effectiveMsgId,
+        callId: toolCallId,
+        tool: toolName,
+        state: ToolState.pending,
+        input: const {},
+      ),
+    ],
+    updatedAt: event.timestamp,
+  );
+}
+
 SessionState _projectToolCalled(
   SessionState state,
   SessionEvent event,
@@ -1109,6 +1158,7 @@ SessionState _projectToolCalled(
   final effectiveMsgId = assistantMsgId.isEmpty
       ? messages[messages.length - 2].id
       : assistantMsgId;
+  final toolPartId = partId ?? effectiveMsgId;
   return state.copyWith(
     messages: messages,
     toolResults: [
@@ -1123,12 +1173,17 @@ SessionState _projectToolCalled(
         createdAt: event.timestamp,
       ),
     ],
-    parts: [
-      ...state.parts,
-      AssistantTool(
-        id:
-            partId ??
-            'part_${event.timestamp.millisecondsSinceEpoch}_$toolCallId',
+    parts: _updatePartById<AssistantTool>(
+      state.parts,
+      toolPartId,
+      (current) => current.copyWith(
+        callId: toolCallId,
+        tool: toolName,
+        state: ToolState.running,
+        input: input,
+      ),
+      create: () => AssistantTool(
+        id: toolPartId,
         sessionId: event.sessionId.value,
         messageId: effectiveMsgId,
         callId: toolCallId,
@@ -1136,7 +1191,7 @@ SessionState _projectToolCalled(
         state: ToolState.running,
         input: input,
       ),
-    ],
+    ),
     updatedAt: event.timestamp,
   );
 }

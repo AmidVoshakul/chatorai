@@ -2,15 +2,22 @@ import 'package:chatorai/features/chat/data/models/chat/chat_message.dart';
 import 'package:chatorai/features/chat/presentation/widgets/markdown_with_headings.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/code_block.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/table_block.dart';
-import 'package:chatorai/features/chat/presentation/widgets/link_confirm_sheet.dart';
 import 'package:chatorai/shared/theme/markdown_styles.dart';
+import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 class TextPartWidget extends StatefulWidget {
   final TextPart part;
+  final String messageId;
+  final List<MarkdownHeadingInfoWithKey> headings;
 
-  const TextPartWidget({super.key, required this.part});
+  const TextPartWidget({
+    super.key,
+    required this.part,
+    required this.messageId,
+    this.headings = const [],
+  });
 
   @override
   State<TextPartWidget> createState() => _TextPartWidgetState();
@@ -218,15 +225,10 @@ class _TextPartWidgetState extends State<TextPartWidget> {
     MarkdownStyleSheet styleSheet,
   ) {
     return RepaintBoundary(
-      child: MarkdownBody(
+      child: MarkdownWithHeadings(
         data: data,
-        styleSheet: styleSheet,
-        builders: HeadingBuilder.headingBuilders(),
-        onTapLink: (text, href, title) {
-          if (href != null) {
-            showLinkConfirmSheet(context, href: href);
-          }
-        },
+        headings: widget.headings,
+        messageId: widget.messageId,
       ),
     );
   }

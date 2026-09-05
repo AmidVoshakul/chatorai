@@ -44,8 +44,8 @@ class AppDatabase extends _$AppDatabase {
       },
       onUpgrade: (mgr, from, to) async {
         if (from < 2) {
-          await mgr.addColumn(sessions, sessions.tokensCacheRead as dynamic);
-          await mgr.addColumn(sessions, sessions.tokensCacheWrite as dynamic);
+          await _addColumnIfMissing(mgr, sessions, sessions.tokensCacheRead);
+          await _addColumnIfMissing(mgr, sessions, sessions.tokensCacheWrite);
         }
         if (from < 4) {
           await mgr.createTable(sessionSnapshots);
@@ -81,21 +81,38 @@ class AppDatabase extends _$AppDatabase {
           await mgr.createTable(chatSnapshots);
         }
         if (from < 8) {
-          await mgr.addColumn(messages, messages.tokensInput as dynamic);
-          await mgr.addColumn(messages, messages.tokensOutput as dynamic);
-          await mgr.addColumn(messages, messages.tokensReasoning as dynamic);
+          await _addColumnIfMissing(mgr, messages, messages.tokensInput);
+          await _addColumnIfMissing(mgr, messages, messages.tokensOutput);
+          await _addColumnIfMissing(mgr, messages, messages.tokensReasoning);
         }
         if (from < 9) {
-          await mgr.addColumn(
+          await _addColumnIfMissing(
+            mgr,
             chatSnapshots,
-            chatSnapshots.schemaVersion as dynamic,
+            chatSnapshots.schemaVersion,
           );
         }
         if (from < 10) {
-          await mgr.addColumn(sessions, sessions.directory as dynamic);
+          await _addColumnIfMissing(mgr, sessions, sessions.directory);
         }
       },
     );
+  }
+
+  /// Adds [column] to [table] only when it is missing.
+  ///
+  /// Makes onUpgrade idempotent against interrupted migrations that left
+  /// objects on disk without bumping user_version.
+  Future<void> _addColumnIfMissing(
+    Migrator m,
+    TableInfo table,
+    GeneratedColumn column,
+  ) async {
+    final info = await customSelect(
+      'PRAGMA table_info(${table.actualTableName})',
+    ).get();
+    if (info.any((row) => row.data['name'] == column.name)) return;
+    await m.addColumn(table, column);
   }
 
   /// Creates an in-memory database for testing.

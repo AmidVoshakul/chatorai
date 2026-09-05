@@ -25,9 +25,8 @@ Set<String> get managedReadRoots => _cachedManagedReadRoots ??= {
 
 /// Pure helper: true when [parent] equals [child] or sits inside it.
 ///
-/// Mirrors opencode's `FSUtil.contains` semantics — string-based, does NOT
-/// resolve symlinks. Callers needing symlink-safe checks must pass canonical
-/// paths (e.g. [FilesystemBoundary.resolve]'s `resolution.path`, which is
+/// Purely string-based containment: does NOT resolve symlinks. Callers needing
+/// symlink-safe checks must pass canonical paths (e.g. [FilesystemBoundary.resolve]'s `resolution.path`, which is
 /// already symlink-resolved via `resolveSymbolicLinksSync`).
 bool pathContains(String parent, String child) {
   if (parent == child) return true;

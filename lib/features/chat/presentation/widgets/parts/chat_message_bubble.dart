@@ -6,6 +6,7 @@ import 'package:chatorai/features/chat/presentation/widgets/bubbles/user_bubble.
 import 'package:chatorai/features/chat/presentation/widgets/parts/error_message_widget.dart';
 import 'package:chatorai/features/chat/presentation/widgets/parts/user_message_edit.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
+import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,6 +27,7 @@ class ChatMessageBubble extends StatefulWidget {
   final void Function(String? sessionId)? onTaskTap;
   final bool expandReasoningByDefault;
   final bool reasoningEnabled;
+  final List<MarkdownHeadingInfoWithKey> headings;
 
   const ChatMessageBubble({
     super.key,
@@ -44,6 +46,7 @@ class ChatMessageBubble extends StatefulWidget {
     this.onTaskTap,
     this.expandReasoningByDefault = true,
     this.reasoningEnabled = true,
+    this.headings = const [],
   });
 
   @override
@@ -153,6 +156,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         reasoningEnabled: widget.reasoningEnabled,
         onTaskTap: widget.onTaskTap,
         sessionRepository: widget.sessionRepository,
+        headings: widget.headings,
       ),
       SystemMessage m => SystemMessageBubble(message: m),
       ErrorMessage m => _errorBubble(m, context),

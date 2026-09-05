@@ -60,6 +60,10 @@ class ConfigLoader {
   }
 
   static Future<String> _globalConfigPath() async {
+    // XdgPaths caches mobile paths in init(); without it, configHomeAsync
+    // throws UnsupportedError. init() is idempotent and cheap, so calling it
+    // here makes the global layer resolve on every platform.
+    await XdgPaths.init();
     final configDir = await XdgPaths.configHomeAsync;
     return p.join(configDir, 'chatorai.json');
   }

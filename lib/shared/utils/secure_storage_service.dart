@@ -25,9 +25,18 @@ class SecureStorageService {
   }
 
   static Future<SecretStorageFactory> get _resolved async {
-    if (_factory != null) return _factory!;
+    final ready = _factory;
+    if (ready != null) return ready;
     await init();
-    return _factory!;
+    final after = _factory;
+    if (after == null) {
+      // Fail with a diagnosable message instead of a bare null-check error.
+      throw StateError(
+        'SecureStorageService.init() completed without creating a storage '
+        'factory — secret reads are impossible in this state.',
+      );
+    }
+    return after;
   }
 
   static Future<bool> get usingFallback async =>

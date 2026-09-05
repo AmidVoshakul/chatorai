@@ -370,16 +370,8 @@ lib/features/chat/
 │       ├── chat_scroll_intent_provider.dart
 │       └── chat_providers.dart
 ├── presentation/
-│   ├── screens/     # ChatScreen (split into parts)
+│   ├── screens/     # ChatScreen (consolidated)
 │   │   ├── chat_screen.dart
-│   │   ├── chat_screen_ai.dart
-│   │   ├── chat_screen_build.dart
-│   │   ├── chat_screen_edits.dart
-│   │   ├── chat_screen_management.dart
-│   │   ├── chat_screen_messaging.dart
-│   │   ├── chat_screen_navigator.dart
-│   │   ├── chat_screen_scroll.dart
-│   │   ├── chat_screen_streaming.dart
 │   │   └── child_session_screen.dart
 │   ├── providers/
 │   │   └── chat_stream_actions.dart

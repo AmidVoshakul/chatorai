@@ -27,9 +27,9 @@ class _ContainerTaskOutcome {
 /// Invisible-to-chat container: the model calls it with a list of tasks, it
 /// runs each as its own child session in parallel via [Future.wait], waits for
 /// all of them, and returns one aggregated result. The header of this tool is
-/// suppressed in the chat UI (see chat_screen_streaming.dart) — only the
-/// individual TaskPart cards (with live tool titles) are shown, exactly like a
-/// set of ordinary delegated `task` calls.
+/// suppressed in the chat UI — only the individual TaskPart cards (with live
+/// tool titles) are shown, exactly like a set of ordinary delegated `task`
+/// calls.
 ToolDef createTaskContainerTool({
   ChatAiService? chatAiService,
   ToolRegistry? toolRegistry,
@@ -221,68 +221,25 @@ ToolDef createTaskContainerTool({
             taskPartId: effectiveTaskId,
             holder: currentSessionRunner,
             abortSignal: ctx.abortSignal,
-            streamFn: (child) async {
+            streamFn: (child) {
               LogTags.chatService.logInfo(
                 'TaskContainer: child stream starting agent=$subagentType '
                 'parent=$normalizedSessionId child=${child.sessionId.value}',
               );
-              var lastTokensInput = 0;
-              var lastTokensOutput = 0;
-              var lastTokensCacheRead = 0;
-              var lastTokensCacheWrite = 0;
-              var lastTokensReasoning = 0;
-              await chatAiService!.runChildCompletion(
+              return chatAiService!.runSubagentCompletion(
+                child: child,
                 messages: messages,
                 model: childModel,
                 temperature: temperatureToUse,
+                sessionId: normalizedSessionId,
                 tools: subagentTools,
                 maxSteps: agent.maxSteps ?? unlimitedMaxSteps,
                 abortSignal: ctx.abortSignal,
-                onUsage: (input, output, cacheRead, cacheWrite, reasoning, _) {
-                  lastTokensInput = input;
-                  lastTokensOutput = output;
-                  lastTokensCacheRead = cacheRead;
-                  lastTokensCacheWrite = cacheWrite;
-                  lastTokensReasoning = reasoning;
-                },
-                onChunk: child.onChunk,
-                onReasoning: child.onReasoning,
-                onReasoningEnd: child.onReasoningEnd,
-                onToolStart: (toolCallId, toolName, input) async {
-                  await child.onToolStart(toolCallId, toolName, input);
-                  final title =
-                      input['command'] as String? ??
-                      input['query'] as String? ??
-                      input['filePath'] as String? ??
-                      input['path'] as String?;
+                onChildToolTitle: (childSessionId, toolName, title) {
                   currentSessionRunner?.onChildToolEvent?.call(
-                    child.sessionId.value,
+                    childSessionId,
                     toolName,
                     title,
-                  );
-                  return;
-                },
-                onToolEnd: (toolCallId, toolName, result) async {
-                  await child.onToolEnd(toolCallId, toolName, result);
-                  return;
-                },
-                onToolError: (toolCallId, toolName, error) async {
-                  // Use onToolError (not onError) to mark the tool as failed
-                  // WITHOUT finalizing the child session. This lets the agent
-                  // recover and continue working after a tool error.
-                  await child.onToolError(toolCallId, toolName, error);
-                  return;
-                },
-                onCompletion: (content) async {
-                  await child.onCompletion(
-                    content: content,
-                    reasoning: null,
-                    model: childModel,
-                    tokensInput: lastTokensInput,
-                    tokensOutput: lastTokensOutput,
-                    tokensCacheRead: lastTokensCacheRead,
-                    tokensCacheWrite: lastTokensCacheWrite,
-                    tokensReasoning: lastTokensReasoning,
                   );
                 },
               );

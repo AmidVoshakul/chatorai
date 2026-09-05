@@ -21,6 +21,7 @@ class _MockChatAiService extends Mock implements ChatAiService {
     required double temperature,
     required Future<void> Function(String) onChunk,
     required Future<void> Function(String) onReasoning,
+    Future<void> Function()? onReasoningEnd,
     required Future<void> Function(String) onCompletion,
     sdk.ToolSet tools = const {},
     ToolStartCallback? onToolStart,
@@ -33,6 +34,50 @@ class _MockChatAiService extends Mock implements ChatAiService {
   }) async {
     await onChunk('mock task result');
     await onCompletion('mock task result');
+  }
+
+  @override
+  Future<void> runSubagentCompletion({
+    required SessionRunnerSession child,
+    required List<Map<String, dynamic>> messages,
+    required String model,
+    required double temperature,
+    required String sessionId,
+    required sdk.ToolSet tools,
+    required int maxSteps,
+    sdk.CancellationToken? abortSignal,
+    void Function(
+      int tokensInput,
+      int tokensOutput,
+      int tokensCacheRead,
+      int tokensCacheWrite,
+      int tokensReasoning,
+    )?
+    onUsage,
+    void Function(String childSessionId, String toolName, String? title)?
+    onChildToolTitle,
+  }) {
+    return runChildCompletion(
+      messages: messages,
+      model: model,
+      temperature: temperature,
+      sessionId: sessionId,
+      tools: tools,
+      maxSteps: maxSteps,
+      abortSignal: abortSignal,
+      onUsage: onUsage == null
+          ? null
+          : (input, output, cacheRead, cacheWrite, reasoning, _) =>
+                onUsage(input, output, cacheRead, cacheWrite, reasoning),
+      onChunk: child.onChunk,
+      onReasoning: child.onReasoning,
+      onReasoningEnd: child.onReasoningEnd,
+      onToolStart: child.onToolStart,
+      onToolEnd: child.onToolEnd,
+      onToolError: child.onToolError,
+      onCompletion: (content) =>
+          child.onCompletion(content: content, reasoning: null, model: model),
+    );
   }
 }
 

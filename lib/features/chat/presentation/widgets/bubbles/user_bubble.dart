@@ -7,7 +7,7 @@ import 'package:chatorai/features/chat/presentation/widgets/parts/action_row.dar
 import 'package:chatorai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
-class UserMessageBubble extends StatelessWidget {
+class UserMessageBubble extends StatefulWidget {
   final UserMessage message;
   final String chatId;
   final String messageId;
@@ -18,14 +18,6 @@ class UserMessageBubble extends StatelessWidget {
   final Future<void> Function(String)? onContinuationSelected;
   final DateTime? timestamp;
   final double maxWidth;
-
-  static Uint8List _imageBytes(String base64) {
-    try {
-      return base64Decode(base64);
-    } catch (_) {
-      return Uint8List(0);
-    }
-  }
 
   const UserMessageBubble({
     super.key,
@@ -42,13 +34,50 @@ class UserMessageBubble extends StatelessWidget {
   });
 
   @override
+  State<UserMessageBubble> createState() => _UserMessageBubbleState();
+}
+
+class _UserMessageBubbleState extends State<UserMessageBubble> {
+  Uint8List? _cachedBytes;
+  String? _cachedMessageId;
+
+  @override
+  void didUpdateWidget(covariant UserMessageBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.message.id != widget.message.id ||
+        oldWidget.message.imageData != widget.message.imageData) {
+      _cachedBytes = null;
+      _cachedMessageId = null;
+    }
+  }
+
+  Uint8List _decodeImage(String base64) {
+    try {
+      return base64Decode(base64);
+    } catch (_) {
+      return Uint8List(0);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final imageData = widget.message.imageData;
+    final imageType = widget.message.imageType;
+
+    if (imageData != null && imageType != null) {
+      final messageId = widget.message.id;
+      if (_cachedMessageId != messageId) {
+        _cachedBytes = _decodeImage(imageData);
+        _cachedMessageId = messageId;
+      }
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        final effectiveMaxWidth = maxWidth > 1.0
-            ? maxWidth
-            : constraints.maxWidth * maxWidth;
+        final effectiveMaxWidth = widget.maxWidth > 1.0
+            ? widget.maxWidth
+            : constraints.maxWidth * widget.maxWidth;
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -72,8 +101,7 @@ class UserMessageBubble extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (message.imageData != null &&
-                          message.imageType != null)
+                      if (imageData != null && imageType != null)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: ClipRRect(
@@ -81,15 +109,39 @@ class UserMessageBubble extends StatelessWidget {
                               ChatoraiBorderRadius.sm,
                             ),
                             child: Image.memory(
-                              _imageBytes(message.imageData!),
+                              _cachedBytes ?? Uint8List(0),
                               fit: BoxFit.contain,
                               width: effectiveMaxWidth,
-                              errorBuilder: (_, _, _) =>
+                              errorBuilder: (_, __, ___) =>
                                   const Icon(Icons.broken_image, size: 48),
                             ),
                           ),
                         ),
-                      if (message.attachedDocName != null)
+                      if (widget.message.imageName != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.image,
+                                size: 16,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  widget.message.imageName!,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (widget.message.attachedDocName != null)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Row(
@@ -103,7 +155,7 @@ class UserMessageBubble extends StatelessWidget {
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  message.attachedDocName!,
+                                  widget.message.attachedDocName!,
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.primary,
                                   ),
@@ -113,8 +165,9 @@ class UserMessageBubble extends StatelessWidget {
                             ],
                           ),
                         ),
-                      if (message.files.isNotEmpty && message.imageData == null)
-                        ...message.files.map(
+                      if (widget.message.files.isNotEmpty &&
+                          widget.message.imageData == null)
+                        ...widget.message.files.map(
                           (f) => Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
@@ -125,7 +178,10 @@ class UserMessageBubble extends StatelessWidget {
                             ),
                           ),
                         ),
-                      Text(message.content, style: theme.textTheme.bodyMedium),
+                      Text(
+                        widget.message.content,
+                        style: theme.textTheme.bodyMedium,
+                      ),
                     ],
                   ),
                 ),
@@ -134,17 +190,17 @@ class UserMessageBubble extends StatelessWidget {
             ActionRow(
               isUser: true,
               isLastMessage: false,
-              content: message.content,
-              chatId: chatId,
-              messageId: messageId,
-              sessionRepository: sessionRepository,
-              onEdit: onEdit,
-              onMessageDeleted: onMessageDeleted,
-              onMessageRegenerate: onMessageRegenerate,
-              onContinuationSelected: onContinuationSelected,
+              content: widget.message.content,
+              chatId: widget.chatId,
+              messageId: widget.messageId,
+              sessionRepository: widget.sessionRepository,
+              onEdit: widget.onEdit,
+              onMessageDeleted: widget.onMessageDeleted,
+              onMessageRegenerate: widget.onMessageRegenerate,
+              onContinuationSelected: widget.onContinuationSelected,
               agentName: null,
               model: null,
-              timestamp: timestamp,
+              timestamp: widget.timestamp,
             ),
           ],
         );

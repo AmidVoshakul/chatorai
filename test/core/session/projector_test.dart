@@ -156,6 +156,47 @@ void main() {
       expect(state.messages.first.reasoning, 'Thought process');
     });
 
+    test('ToolStarted creates pending tool part', () {
+      final state = projectEvent(
+        empty,
+        ToolStarted(
+          sessionId: id,
+          toolCallId: 'tc_1',
+          toolName: 'shell',
+          partId: 'part_1',
+          timestamp: DateTime.now(),
+        ),
+      );
+
+      expect(state.parts.length, 1);
+      expect(state.parts.first, isA<AssistantTool>());
+      expect((state.parts.first as AssistantTool).state, ToolState.pending);
+      expect((state.parts.first as AssistantTool).tool, 'shell');
+      expect((state.parts.first as AssistantTool).callId, 'tc_1');
+    });
+
+    test(
+      'ToolStarted without partId generates one and creates assistant message',
+      () {
+        final state = projectEvent(
+          empty,
+          ToolStarted(
+            sessionId: id,
+            toolCallId: 'tc_1',
+            toolName: 'shell',
+            timestamp: DateTime.now(),
+          ),
+        );
+
+        expect(state.messages.length, 1);
+        expect(state.messages.first.role, MessageRole.assistant);
+        expect(state.parts.length, 1);
+        expect(state.parts.first, isA<AssistantTool>());
+        expect((state.parts.first as AssistantTool).id, isNotEmpty);
+        expect((state.parts.first as AssistantTool).callId, 'tc_1');
+      },
+    );
+
     test('ToolCalled creates tool message', () {
       final state = projectEvent(
         empty,
@@ -200,6 +241,37 @@ void main() {
       expect(state.toolResults.length, 1);
       expect(state.toolResults.first.status, 'success');
     });
+
+    test(
+      'ToolStarted followed by ToolCalled updates part from pending to running',
+      () {
+        var state = projectEvent(
+          empty,
+          ToolStarted(
+            sessionId: id,
+            toolCallId: 'tc_1',
+            toolName: 'shell',
+            partId: 'part_1',
+            timestamp: DateTime.now(),
+          ),
+        );
+        state = projectEvent(
+          state,
+          ToolCalled(
+            sessionId: id,
+            toolCallId: 'tc_1',
+            toolName: 'shell',
+            input: {'cmd': 'ls'},
+            partId: 'part_1',
+            timestamp: DateTime.now(),
+          ),
+        );
+
+        expect(state.parts.length, 1);
+        expect(state.parts.first, isA<AssistantTool>());
+        expect((state.parts.first as AssistantTool).state, ToolState.running);
+      },
+    );
 
     test('ToolFailed adds error to message', () {
       var state = projectEvent(

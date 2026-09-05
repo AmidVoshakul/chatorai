@@ -22,7 +22,7 @@ class ChatMessagesConstants {
   /// Полоса для детекта ухода пользователя: если пользователь
   /// скроллил выше чем на [userScrolledAwayBand], автоскролл
   /// отключается до возврата вниз.
-  static const double userScrolledAwayBand = 25.0;
+  static const double userScrolledAwayBand = 100.0;
 
   // =======================================================================
   // LOADING

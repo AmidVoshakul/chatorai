@@ -59,7 +59,7 @@ dependencies:
   json_annotation: ^4.12.0
   mcp_dart: ^2.2.2
   synchronized: ^3.1.0
-  nocterm: ^0.8.0
+  nocterm: ^0.9.0
   dartdiff: ^1.0.0
   pdf_graphics: ^1.0.0
   pdf_document: ^1.4.7
@@ -73,6 +73,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   flutter_lints: ^6.0.0
   test: ^1.26.3
   mocktail: ^1.0.3
@@ -80,7 +82,7 @@ dev_dependencies:
   drift_dev: ^2.25.1
   build_runner: ^2.4.0
   json_serializable: ^6.14.0
-  freezed: 3.2.6-dev.1
+  freezed: 3.2.5
   flutter_native_splash: ^2.4.0
 
 flutter_native_splash:

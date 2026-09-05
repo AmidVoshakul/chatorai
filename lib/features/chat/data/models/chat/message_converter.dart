@@ -41,6 +41,7 @@ ChatMessage messageToChatMessage(Message message) {
         files: files,
         imageData: message.imageData,
         imageType: message.imageType,
+        imageName: message.imageName,
         attachedDocName: message.attachedDocPath != null
             ? p.basename(message.attachedDocPath!)
             : null,

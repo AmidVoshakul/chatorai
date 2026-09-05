@@ -62,6 +62,7 @@ class UserMessage extends ChatMessage {
   final List<String> files;
   final String? imageData;
   final String? imageType;
+  final String? imageName;
   final String? attachedDocName;
   final String? attachedDocPath;
   const UserMessage({
@@ -70,6 +71,7 @@ class UserMessage extends ChatMessage {
     this.files = const [],
     this.imageData,
     this.imageType,
+    this.imageName,
     this.attachedDocName,
     this.attachedDocPath,
     required super.timestamp,
@@ -83,6 +85,7 @@ class UserMessage extends ChatMessage {
     'files': files,
     'imageData': imageData,
     'imageType': imageType,
+    'imageName': imageName,
     'attachedDocName': attachedDocName,
     'attachedDocPath': attachedDocPath,
     'timestamp': timestamp.toIso8601String(),
@@ -95,6 +98,7 @@ class UserMessage extends ChatMessage {
       files: (json['files'] as List?)?.cast<String>() ?? [],
       imageData: json['imageData'] as String?,
       imageType: json['imageType'] as String?,
+      imageName: json['imageName'] as String?,
       attachedDocName: json['attachedDocName'] as String?,
       attachedDocPath: json['attachedDocPath'] as String?,
       timestamp: DateTime.parse(json['timestamp'] as String),

@@ -257,8 +257,10 @@ class SpeechToTextService {
         onSoundLevelChange: (level) {
           onSoundLevelChange?.call(level);
         },
-        listenFor: timeout,
-        pauseFor: pauseFor,
+        listenOptions: SpeechListenOptions(
+          listenFor: timeout,
+          pauseFor: pauseFor,
+        ),
       );
 
       return result ?? false;

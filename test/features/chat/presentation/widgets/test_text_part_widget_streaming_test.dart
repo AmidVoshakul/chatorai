@@ -7,7 +7,9 @@ void main() {
   Future<void> pumpPart(WidgetTester tester, TextPart part) {
     return tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(body: TextPartWidget(part: part)),
+        home: Scaffold(
+          body: TextPartWidget(part: part, messageId: 'test'),
+        ),
       ),
     );
   }

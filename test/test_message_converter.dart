@@ -59,6 +59,36 @@ void main() {
       expect(summary.isCompactionSummary, isTrue);
     });
 
+    test('sessionStateToChat filters out tool-role messages', () {
+      final state = session_state.SessionState(
+        id: SessionID.create(),
+        title: 'Test',
+        createdAt: DateTime(2025, 6, 1),
+        updatedAt: DateTime(2025, 6, 1),
+        messages: [
+          session_state.SessionMessage(
+            id: 'msg_1',
+            role: session_state.MessageRole.user,
+            content: 'Hello',
+            seq: 1,
+            createdAt: DateTime(2025, 6, 1),
+          ),
+          session_state.SessionMessage(
+            id: 'tool_1',
+            role: session_state.MessageRole.tool,
+            content: 'Tool output',
+            seq: 2,
+            createdAt: DateTime(2025, 6, 1),
+          ),
+        ],
+      );
+
+      final chat = sessionStateToChat(state);
+
+      expect(chat.messages.length, 1);
+      expect(chat.messages[0].role, MessageRole.user);
+    });
+
     test('converts user message with imageData and imageType', () {
       final legacy = Message(
         role: MessageRole.user,
@@ -67,6 +97,7 @@ void main() {
         isComplete: true,
         imageData: 'base64encodeddata',
         imageType: 'image/jpeg',
+        imageName: 'photo.jpg',
       );
 
       final converted = messageToChatMessage(legacy) as UserMessage;
@@ -74,6 +105,7 @@ void main() {
       expect(converted.content, 'Check this image');
       expect(converted.imageData, 'base64encodeddata');
       expect(converted.imageType, 'image/jpeg');
+      expect(converted.imageName, 'photo.jpg');
     });
 
     test('converts user message with attachedDocPath', () {
@@ -152,6 +184,7 @@ void main() {
           content: 'Hello with attachment',
           imageData: 'base64img',
           imageType: 'image/png',
+          imageName: 'photo.png',
           attachedDocName: 'doc.pdf',
           attachedDocPath: '/path/to/doc.pdf',
           timestamp: DateTime(2025, 6, 1),
@@ -163,6 +196,7 @@ void main() {
         expect(restored.content, original.content);
         expect(restored.imageData, 'base64img');
         expect(restored.imageType, 'image/png');
+        expect(restored.imageName, 'photo.png');
         expect(restored.attachedDocName, 'doc.pdf');
         expect(restored.attachedDocPath, '/path/to/doc.pdf');
       },

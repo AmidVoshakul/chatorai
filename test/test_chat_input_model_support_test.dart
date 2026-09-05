@@ -30,12 +30,14 @@ void main() {
         text: 'Test message',
         imagePath: '/path/to/image.jpg',
         imageType: 'image/jpeg',
+        imageName: 'image.jpg',
         base64Data: 'base64data',
       );
 
       expect(message.text, 'Test message');
       expect(message.imagePath, '/path/to/image.jpg');
       expect(message.imageType, 'image/jpeg');
+      expect(message.imageName, 'image.jpg');
       expect(message.base64Data, 'base64data');
     });
 

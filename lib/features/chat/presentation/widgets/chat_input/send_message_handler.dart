@@ -1,10 +1,13 @@
 import 'package:chatorai/core/agents/agent_registry.dart';
+import 'package:chatorai/core/commands/command_parser.dart';
+import 'package:chatorai/core/commands/command_providers.dart';
 import 'package:chatorai/features/chat/presentation/widgets/chat_input/message_data.dart';
 import 'package:chatorai/features/chat/services/speech_to_text_service.dart';
 import 'package:chatorai/features/settings/widgets/model_settings_sheet.dart';
 import 'package:chatorai/l10n/app_localizations.dart';
 import 'package:chatorai/providers.dart';
 import 'package:chatorai/shared/theme/app_theme.dart';
+import 'package:chatorai/shared/utils/logger.dart';
 import 'package:chatorai/shared/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +22,65 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   /// Override to transform/resolve text before sending.
   /// Return null to cancel normal send (e.g. skill with no args).
   /// Return a [ResolvedText] to continue with modified text and optional delegate.
+  /// Expands a file-defined command invocation (`/name args`) into its
+  /// template payload. Returns null when [name] is not a known custom
+  /// command, letting the caller keep the text untouched.
+  Future<ResolvedText?> _resolveCustomCommand(
+    String name,
+    String arguments,
+  ) async {
+    final command = await (await ref.read(
+      commandServiceProvider.future,
+    )).getByName(name);
+    if (command == null) return null;
+
+    final targetId = command.agent;
+    final explicitTarget = (targetId == null || targetId.isEmpty)
+        ? null
+        : AgentRegistry().get(targetId);
+    // Reference semantics: an undeclared agent resolves to the session's
+    // default agent, which then participates in the subtask rule.
+    final target = resolveCommandTarget(
+      explicitTarget,
+      ref.read(currentAgentProvider),
+    );
+
+    if (isSubtaskRule(target, command.subtask)) {
+      // Delegated execution: the expanded template goes to the child session;
+      // the parent keeps only the original invocation.
+      return ResolvedText(
+        text: expandCommandTemplate(command.template, arguments),
+        agentMention: target.id,
+        runAsSubtask: true,
+        taskTitle: command.description ?? '/$name',
+        invocation: arguments.isEmpty
+            ? '/${command.name}'
+            : '/${command.name} $arguments',
+      );
+    }
+
+    // Inline execution: model chain is the command's own model first, then
+    // the explicitly declared agent's model; applied only when it exists.
+    final wantedModel = command.model ?? explicitTarget?.model;
+    if (wantedModel != null && wantedModel.isNotEmpty) {
+      final ids = ref
+          .read(modelProvider)
+          .availableModels
+          .map((m) => m.id)
+          .toSet();
+      final matched = matchModelId(ids, wantedModel);
+      if (matched != null) {
+        await ref.read(modelProvider.notifier).setSelectedModel(matched);
+      } else {
+        LogTags.chat.logDebug('Command model "$wantedModel" unavailable');
+      }
+    }
+
+    return ResolvedText(
+      text: expandCommandTemplate(command.template, arguments),
+    );
+  }
+
   Future<ResolvedText?> resolveText(String text) async {
     String? agentMention;
     final agentMatch = RegExp(r'^@(\S+)\s*').firstMatch(text);
@@ -36,6 +98,19 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
         }
       }
     }
+
+    final commandMatch = RegExp(
+      r'^(/.+?)(?:\s+(.*))?$',
+      dotAll: true,
+    ).firstMatch(text);
+    if (commandMatch != null) {
+      final resolved = await _resolveCustomCommand(
+        commandMatch.group(1)!.substring(1),
+        commandMatch.group(2) ?? '',
+      );
+      if (resolved != null) return resolved;
+    }
+
     return ResolvedText(text: text, agentMention: agentMention);
   }
 
@@ -100,13 +175,21 @@ mixin SendMessageHandler<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       return;
     }
 
-    text = resolved.text;
+    // Subtask commands keep the original invocation visible in the parent
+    // session; the expanded template travels in taskPrompt.
+    text = resolved.runAsSubtask
+        ? (resolved.invocation ?? text)
+        : resolved.text;
     final chatInput = ref.read(chatInputProvider);
     final messageData = MessageData(
       text: text,
       agentMention: resolved.agentMention,
+      runAsSubtask: resolved.runAsSubtask,
+      taskPrompt: resolved.runAsSubtask ? resolved.text : null,
+      taskTitle: resolved.taskTitle,
       imagePath: chatInput.attachedFilePath,
       imageType: chatInput.attachedImageType,
+      imageName: chatInput.attachedFileName,
       base64Data: chatInput.attachedBase64Data,
       // attachedImageType == null && attachedFilePath != null → document
       // attachedImageType != null                         → image
@@ -236,5 +319,22 @@ class ResolvedText {
   final String text;
   final String? agentMention;
 
-  const ResolvedText({required this.text, this.agentMention});
+  /// True when the resolved text must execute as a delegated subagent task
+  /// instead of a normal parent-session message.
+  final bool runAsSubtask;
+
+  /// Short card title for the delegated task (command description).
+  final String? taskTitle;
+
+  /// Original `/name args` invocation shown in the parent session when the
+  /// command runs as a subtask.
+  final String? invocation;
+
+  const ResolvedText({
+    required this.text,
+    this.agentMention,
+    this.runAsSubtask = false,
+    this.taskTitle,
+    this.invocation,
+  });
 }

@@ -1,3 +1,4 @@
+import 'package:chatorai/features/chat/presentation/widgets/chat_shimmer_text.dart';
 import 'package:chatorai/core/lsp/lsp_types.dart';
 import 'package:chatorai/core/session/database.dart';
 import 'package:chatorai/core/session/session_db_provider.dart';
@@ -368,6 +369,7 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
     final isError = part.error != null;
     final isRunning = part.state == ToolState.running;
     final isCompleted = part.state == ToolState.completed;
+    final isPending = part.state == ToolState.pending;
     final toolNameLower = part.toolName.toLowerCase();
     final isNoBodyTool =
         _noBodyTools.contains(toolNameLower) ||
@@ -375,6 +377,30 @@ class _ToolResultPartWidgetState extends ConsumerState<ToolResultPartWidget> {
             !_builtInCompoundNames.contains(toolNameLower));
     final isShell = toolNameLower == 'shell';
     final canExpand = (isCompleted || isError) && !isRunning && !isNoBodyTool;
+
+    if (isPending) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 1),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SpinKitCircle(size: 14, color: theme.colorScheme.muted),
+            const SizedBox(width: 8),
+            ToolIcon(
+              toolName: part.toolName,
+              color: theme.colorScheme.muted,
+              size: 13,
+            ),
+            const SizedBox(width: 6),
+            ChatShimmerText(
+              text: 'Preparing ${part.toolName}...',
+              textSize: ChatoraiFontSizes.sm,
+              color: theme.colorScheme.muted,
+            ),
+          ],
+        ),
+      );
+    }
 
     if (part.toolName.toLowerCase() == 'todowrite') {
       return _buildTodoBody(theme, part);

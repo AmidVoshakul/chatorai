@@ -4,7 +4,6 @@ import 'dart:io';
 
 // ANSI styling helpers for a premium CLI render (shared with other commands).
 import 'package:chatorai/core/cli/cli_style.dart' as style;
-import 'package:chatorai/core/cli/mcp_tui.dart';
 import 'package:chatorai/core/config/config_loader.dart';
 import 'package:chatorai/core/config/config_manager.dart';
 import 'package:chatorai/core/config/config_writer.dart';
@@ -12,6 +11,7 @@ import 'package:chatorai/core/config/models/chatorai_config.dart';
 import 'package:chatorai/core/mcp/mcp_client_service.dart';
 import 'package:chatorai/core/mcp/mcp_config.dart';
 import 'package:chatorai/core/mcp/mcp_types.dart';
+import 'package:chatorai/core/tui/mcp_tui.dart';
 import 'package:mcp_dart/mcp_dart.dart';
 
 const _cReset = style.CliStyle.reset;

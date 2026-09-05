@@ -115,8 +115,7 @@ class PermissionService {
   /// seeded.
   ///
   /// Called on every (re)load of `chatorai.json` so live edits to the
-  /// `permission` section take effect without a restart (mirrors the
-  /// live-reload behaviour of opencode/kilocode). Session-scoped grants
+  /// `permission` section take effect without a restart. Session-scoped grants
   /// ([_approved] / [_onceApproved]) are preserved so in-flight permission
   /// dialogs are not affected by a live config reload.
   void replaceDefaultRules(PermissionRuleset ruleset) {

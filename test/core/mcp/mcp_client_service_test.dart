@@ -108,6 +108,18 @@ JsonRpcResponse _buildCallToolResponse({
   );
 }
 
+/// Creates a client for the legacy initialize handshake.
+///
+/// mcp_dart 2.4+ probes `server/discover` before `initialize` by default;
+/// the fake transport only implements the legacy flow, so disable probing
+/// to keep the request sequence (and response ids) deterministic.
+McpClient _createTestClient() {
+  return McpClient(
+    Implementation(name: 'test-client', version: '1.0.0'),
+    options: McpClientOptions(useServerDiscover: false),
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -291,9 +303,7 @@ void main() {
   group('McpClient integration with FakeTransport', () {
     test('client can initialize through fake transport', () async {
       final transport = FakeTransport();
-      final client = McpClient(
-        Implementation(name: 'test-client', version: '1.0.0'),
-      );
+      final client = _createTestClient();
 
       transport.onRequest = (request) {
         if (request.method == 'initialize') {
@@ -308,9 +318,7 @@ void main() {
 
     test('client listTools returns tools from server', () async {
       final transport = FakeTransport();
-      final client = McpClient(
-        Implementation(name: 'test-client', version: '1.0.0'),
-      );
+      final client = _createTestClient();
 
       final toolsJson = [
         {
@@ -347,9 +355,7 @@ void main() {
 
     test('client callTool returns result from server', () async {
       final transport = FakeTransport();
-      final client = McpClient(
-        Implementation(name: 'test-client', version: '1.0.0'),
-      );
+      final client = _createTestClient();
 
       transport.onRequest = (request) {
         if (request.method == 'initialize') {
@@ -379,9 +385,7 @@ void main() {
 
     test('client callTool handles error response', () async {
       final transport = FakeTransport();
-      final client = McpClient(
-        Implementation(name: 'test-client', version: '1.0.0'),
-      );
+      final client = _createTestClient();
 
       transport.onRequest = (request) {
         if (request.method == 'initialize') {
@@ -410,9 +414,7 @@ void main() {
 
     test('client handles structuredContent in call result', () async {
       final transport = FakeTransport();
-      final client = McpClient(
-        Implementation(name: 'test-client', version: '1.0.0'),
-      );
+      final client = _createTestClient();
 
       transport.onRequest = (request) {
         if (request.method == 'initialize') {
@@ -440,9 +442,7 @@ void main() {
 
     test('client listTools with multiple tools preserves all', () async {
       final transport = FakeTransport();
-      final client = McpClient(
-        Implementation(name: 'test-client', version: '1.0.0'),
-      );
+      final client = _createTestClient();
 
       final toolsJson = [
         {
@@ -499,9 +499,7 @@ void main() {
 
     test('client handles paginated listTools with nextCursor', () async {
       final transport = FakeTransport();
-      final client = McpClient(
-        Implementation(name: 'test-client', version: '1.0.0'),
-      );
+      final client = _createTestClient();
 
       final toolsJson = [
         {
@@ -535,9 +533,7 @@ void main() {
 
     test('client handles tool with complex inputSchema', () async {
       final transport = FakeTransport();
-      final client = McpClient(
-        Implementation(name: 'test-client', version: '1.0.0'),
-      );
+      final client = _createTestClient();
 
       final toolsJson = [
         {
@@ -582,9 +578,7 @@ void main() {
 
     test('client handles empty tools list', () async {
       final transport = FakeTransport();
-      final client = McpClient(
-        Implementation(name: 'test-client', version: '1.0.0'),
-      );
+      final client = _createTestClient();
 
       transport.onRequest = (request) {
         if (request.method == 'initialize') {
@@ -606,9 +600,7 @@ void main() {
 
     test('client callTool passes correct arguments', () async {
       final transport = FakeTransport();
-      final client = McpClient(
-        Implementation(name: 'test-client', version: '1.0.0'),
-      );
+      final client = _createTestClient();
 
       Map<String, dynamic>? capturedArgs;
 
@@ -644,9 +636,7 @@ void main() {
 
     test('client callTool with empty arguments', () async {
       final transport = FakeTransport();
-      final client = McpClient(
-        Implementation(name: 'test-client', version: '1.0.0'),
-      );
+      final client = _createTestClient();
 
       transport.onRequest = (request) {
         if (request.method == 'initialize') {
@@ -672,9 +662,7 @@ void main() {
 
     test('client handles multiple content parts in result', () async {
       final transport = FakeTransport();
-      final client = McpClient(
-        Implementation(name: 'test-client', version: '1.0.0'),
-      );
+      final client = _createTestClient();
 
       transport.onRequest = (request) {
         if (request.method == 'initialize') {
@@ -690,7 +678,8 @@ void main() {
                 {
                   'type': 'image',
                   'mimeType': 'image/png',
-                  'data': 'base64data',
+                  // mcp_dart 2.4+ validates that image data is real base64.
+                  'data': 'ZmFrZS1pbWFnZQ==',
                 },
               ],
               'isError': false,

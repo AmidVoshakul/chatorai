@@ -136,26 +136,45 @@ class _PermissionOverlayState extends ConsumerState<PermissionOverlay> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                   child: Row(
+                    // Three action buttons must share the available width or the
+                    // Row overflows on narrow screens (the dialog is 288 wide,
+                    // but the buttons + gaps want ~379). Each button is
+                    // Flexible so it shrinks instead of pushing siblings off.
                     children: [
-                      premiumGhostButton(
-                        context: ctx,
-                        onPressed: () =>
-                            Navigator.pop(ctx, PermissionReply.reject),
-                        child: Text(l10n.permissionReject),
+                      Flexible(
+                        fit: FlexFit.loose,
+                        child: premiumGhostButton(
+                          context: ctx,
+                          onPressed: () =>
+                              Navigator.pop(ctx, PermissionReply.reject),
+                          child: Text(l10n.permissionReject),
+                        ),
                       ),
-                      const Spacer(),
-                      premiumTonalButton(
-                        context: ctx,
-                        onPressed: () =>
-                            Navigator.pop(ctx, PermissionReply.once),
-                        child: Text(l10n.permissionOnce),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        fit: FlexFit.loose,
+                        child: premiumTonalButton(
+                          context: ctx,
+                          onPressed: () =>
+                              Navigator.pop(ctx, PermissionReply.once),
+                          child: Text(
+                            l10n.permissionOnce,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 10),
-                      premiumPrimaryButton(
-                        context: ctx,
-                        onPressed: () =>
-                            Navigator.pop(ctx, PermissionReply.always),
-                        child: Text(l10n.permissionAlways),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        fit: FlexFit.loose,
+                        child: premiumPrimaryButton(
+                          context: ctx,
+                          onPressed: () =>
+                              Navigator.pop(ctx, PermissionReply.always),
+                          child: Text(
+                            l10n.permissionAlways,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
                     ],
                   ),

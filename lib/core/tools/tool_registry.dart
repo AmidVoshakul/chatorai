@@ -72,9 +72,12 @@ class ToolRegistry {
         sessionApproved: _permissions.onceApprovedRules,
       ),
     ];
+
     return _tools
         .where(
-          (t) => evaluate(t.id, '*', rulesets).action != PermissionAction.deny,
+          (t) =>
+              evaluate(t.id, '*', rulesets).action !=
+              PermissionAction.deny,
         )
         .toList();
   }

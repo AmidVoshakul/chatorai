@@ -1,3 +1,4 @@
+import 'package:chatorai/features/chat/presentation/widgets/link_confirm_sheet.dart';
 import 'package:chatorai/shared/theme/markdown_styles.dart';
 import 'package:chatorai/shared/utils/markdown_parser.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,6 @@ class MarkdownWithHeadings extends StatelessWidget {
   final String data;
   final List<MarkdownHeadingInfoWithKey> headings;
   final String? messageId;
-
   const MarkdownWithHeadings({
     super.key,
     required this.data,
@@ -40,7 +40,7 @@ class MarkdownWithHeadings extends StatelessWidget {
       ),
       onTapLink: (text, href, title) {
         if (href != null) {
-          // Link handling reserved for future
+          showLinkConfirmSheet(context, href: href);
         }
       },
     );
@@ -55,6 +55,11 @@ class HeadingBuilder extends MarkdownElementBuilder {
   final List<MarkdownHeadingInfoWithKey> headings;
   final int level;
   final String messageId;
+
+  // Tracks how many times a (messageId, text) heading has been rendered at
+  // this level, so that identical headings (e.g. two "## Introduction" in one
+  // message) bind to distinct anchors instead of sharing one GlobalKey.
+  final Map<String, int> _occurrences = {};
 
   HeadingBuilder({
     this.headings = const [],
@@ -89,21 +94,33 @@ class HeadingBuilder extends MarkdownElementBuilder {
   Widget visitElementAfter(md.Element element, TextStyle? preferredStyle) {
     final text = element.textContent.trim();
 
-    headings.firstWhere(
-      (h) => h.text == text && h.level == level && h.messageId == messageId,
-      orElse: () {
-        return MarkdownHeadingInfoWithKey(
-          text: text,
-          level: level,
-          lineIndex: 0,
-          rawLine: '',
-          messageId: messageId,
-        );
-      },
-    );
+    // Match against the parsed heading anchors, disambiguating identical
+    // headings by their occurrence order at this level. No fallback that
+    // allocates a fresh GlobalKey: doing so would (a) change on every rebuild
+    // causing remount thrashing, and (b) collide with a real anchor's id if a
+    // heading with the same text/level exists. When there is no match the
+    // rendered heading simply has no key — it cannot be scroll-targeted, which
+    // is acceptable because a mismatch should not happen in practice.
+    final matches = headings
+        .where(
+          (h) => h.text == text && h.level == level && h.messageId == messageId,
+        )
+        .toList();
+
+    MarkdownHeadingInfoWithKey? match;
+    if (matches.isNotEmpty) {
+      final occKey = '$messageId:$text';
+      final index = _occurrences.putIfAbsent(occKey, () => 0);
+      _occurrences[occKey] = index + 1;
+      // Rendered occurrences may exceed parsed headings (setext headings or
+      // headings inside blockquotes are rendered but not parsed). Extra
+      // occurrences get no key instead of colliding with an earlier
+      // occurrence's GlobalKey — a duplicate key crashes the widget tree.
+      if (index < matches.length) match = matches[index];
+    }
 
     return Container(
-      key: UniqueKey(),
+      key: match?.anchorKey,
       padding: paddingForLevel(level),
       child: Text(text, style: preferredStyle),
     );

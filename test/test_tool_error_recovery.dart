@@ -90,6 +90,7 @@ class _FakeChatAiServiceToolError extends ChatAiService {
     required double temperature,
     required Function(String) onChunk,
     required Function(String) onReasoning,
+    Future<void> Function()? onReasoningEnd,
     required Function(String) onCompletion,
     ToolSet tools = const {},
     ToolStartCallback? onToolStart,

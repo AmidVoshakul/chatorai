@@ -564,6 +564,15 @@ class ChatAiService implements CompletionProvider {
                         'hallucinated_${DateTime.now().microsecondsSinceEpoch}';
                     onToolStart?.call(syntheticCallId, toolName, {});
                     onToolError?.call(syntheticCallId, toolName, error.message);
+                    try {
+                      await onCompletion('');
+                    } catch (e) {
+                      LogTags.chatService.logError(
+                        'streamChatCompletion: onCompletion failed after AiNoSuchToolError',
+                        e,
+                      );
+                    }
+                    return;
                   }
                   throw error;
                 case StreamTextFinishEvent(:final text, :final usage):

@@ -402,6 +402,12 @@ class EventStore {
         'todos': e.todos,
       },
       TodoPartCompleted e => {'type': 'TodoPartCompleted', 'partId': e.partId},
+      ToolStarted e => {
+        'type': 'ToolStarted',
+        'toolCallId': e.toolCallId,
+        'toolName': e.toolName,
+        if (e.partId != null) 'partId': e.partId,
+      },
     };
   }
 
@@ -516,6 +522,14 @@ class EventStore {
         sessionId: sid,
         toolCallId: data['toolCallId'] as String,
         fullInput: data['fullInput'] as String,
+        timestamp: row.createdAt,
+        sequence: row.sequence,
+      ),
+      'ToolStarted' => ToolStarted(
+        sessionId: sid,
+        toolCallId: data['toolCallId'] as String,
+        toolName: data['toolName'] as String,
+        partId: data['partId'] as String?,
         timestamp: row.createdAt,
         sequence: row.sequence,
       ),

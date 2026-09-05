@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:chatorai/core/agents/agent_provider.dart';
 import 'package:chatorai/core/agents/agent_registry.dart';
+import 'package:chatorai/core/commands/command_providers.dart';
 import 'package:chatorai/core/config/config_initializer.dart';
 import 'package:chatorai/core/config/config_provider.dart';
 import 'package:chatorai/core/config/config_watcher.dart';
@@ -51,6 +53,10 @@ final appBootstrapFastProvider = FutureProvider<void>((ref) async {
 
   // Activate the config file watcher for live reloads.
   ref.watch(configWatcherProvider);
+
+  // Hot-reload custom agents and commands from their config directories.
+  ref.watch(agentHotReloadProvider);
+  ref.watch(commandServiceProvider);
 
   // SSOT для конфига — configProvider валидирует по JSON-схеме.
   // При ошибке валидации chatorai.json продолжаем с null (MCP/overrides не
@@ -132,8 +138,8 @@ final appBootstrapHeavyProvider = FutureProvider<void>((ref) async {
 
   try {
     await catalogWarm;
-  } catch (e) {
-    LogTags.config.logWarning('catalog preload failed: $e');
+  } catch (e, st) {
+    LogTags.config.logWarning('catalog preload failed: $e', e, st);
   }
 
   try {
