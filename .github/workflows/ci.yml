@@ -599,16 +599,17 @@ jobs:
           set -e
           TAG="${GITHUB_REF#refs/tags/}"
           VERSION="${TAG#v}"
-          # Extract the section between ## [VERSION] and the next ## [ or EOF.
-          # Brackets must be escaped for awk regex; use backslash-quoting.
-          awk -v ver="\\["$VERSION"\\]" '
-            $0 ~ "^## " ver {found=1; print; next}
-            found && $0 ~ /^## \[/ {exit}
-            found {print}
-          ' CHANGELOG.md > release_body.txt
-          if [ ! -s release_body.txt ]; then
+          START=$(grep -n "^## \[$VERSION\]" CHANGELOG.md | head -n1 | cut -d: -f1)
+          if [ -z "$START" ]; then
             echo "No changelog section found for $VERSION, using fallback." >&2
             echo "Release $TAG" > release_body.txt
+          else
+            END=$(awk -v start="$START" 'NR>start && /^## \[/{print NR; exit}' CHANGELOG.md)
+            if [ -n "$END" ]; then
+              sed -n "${START},$((END-1))p" CHANGELOG.md > release_body.txt
+            else
+              sed -n "${START},\$p" CHANGELOG.md > release_body.txt
+            fi
           fi
 
       - name: Create GitHub Release
